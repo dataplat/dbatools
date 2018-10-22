@@ -48,7 +48,7 @@ function Remove-DbaTrace {
         Stops and removes selected traces on sql2008
 
 #>
-    [CmdletBinding()]
+    [CmdletBinding(SupportsShouldProcess)]
     param (
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
@@ -80,22 +80,24 @@ function Remove-DbaTrace {
             $stopsql = "sp_trace_setstatus $traceid, 0"
             $removesql = "sp_trace_setstatus $traceid, 2"
 
-            try {
-                $server.Query($stopsql)
-                if (Get-DbaTrace -SqlInstance $server -Id $traceid) {
-                    $server.Query($removesql)
+            if ($Pscmdlet.ShouldProcess($traceid, "Removing the trace flag")) {
+                try {
+                    $server.Query($stopsql)
+                    if (Get-DbaTrace -SqlInstance $server -Id $traceid) {
+                        $server.Query($removesql)
+                    }
+                    [pscustomobject]@{
+                        ComputerName      = $server.ComputerName
+                        InstanceName      = $server.ServiceName
+                        SqlInstance       = $server.DomainInstanceName
+                        Id                = $traceid
+                        Status            = "Stopped, closed and deleted"
+                    }
                 }
-                [pscustomobject]@{
-                    ComputerName      = $server.ComputerName
-                    InstanceName      = $server.ServiceName
-                    SqlInstance       = $server.DomainInstanceName
-                    Id                = $traceid
-                    Status            = "Stopped, closed and deleted"
+                catch {
+                    Stop-Function -Message "Failure" -ErrorRecord $_ -Target $server -Continue
+                    return
                 }
-            }
-            catch {
-                Stop-Function -Message "Failure" -ErrorRecord $_ -Target $server -Continue
-                return
             }
         }
     }

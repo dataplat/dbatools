@@ -59,7 +59,7 @@ function New-DbaConnectionStringBuilder {
         Returns a connection string builder that can be used to connect to the local sql server instance on the default port.
 
 #>
-    [CmdletBinding()]
+    [CmdletBinding(SupportsShouldProcess)]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingPlainTextForPassword", "")]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingUserNameAndPassWordParams", "")]
     param (
@@ -90,35 +90,37 @@ function New-DbaConnectionStringBuilder {
     )
     process {
         foreach ($cs in $ConnectionString) {
-            $builder = New-Object Data.SqlClient.SqlConnectionStringBuilder $cs
-            if ($builder.ApplicationName -eq ".Net SqlClient Data Provider") {
-                $builder['Application Name'] = $ApplicationName
+            if ($Pscmdlet.ShouldProcess($cs, "Creating new connection string")) {
+                $builder = New-Object Data.SqlClient.SqlConnectionStringBuilder $cs
+                if ($builder.ApplicationName -eq ".Net SqlClient Data Provider") {
+                    $builder['Application Name'] = $ApplicationName
+                }
+                if (![string]::IsNullOrWhiteSpace($DataSource)) {
+                    $builder['Data Source'] = $DataSource
+                }
+                if (![string]::IsNullOrWhiteSpace($InitialCatalog)) {
+                    $builder['Initial Catalog'] = $InitialCatalog
+                }
+                if (![string]::IsNullOrWhiteSpace($IntegratedSecurity)) {
+                    $builder['Integrated Security'] = $IntegratedSecurity
+                }
+                if (![string]::IsNullOrWhiteSpace($UserName)) {
+                    $builder["User ID"] = $UserName
+                }
+                if (![string]::IsNullOrWhiteSpace($Password)) {
+                    $builder['Password'] = $Password
+                }
+                if (![string]::IsNullOrWhiteSpace($WorkstationId)) {
+                    $builder['Workstation ID'] = $WorkstationId
+                }
+                if ($MultipleActiveResultSets -eq $true) {
+                    $builder['MultipleActiveResultSets'] = $true
+                }
+                if ($ColumnEncryptionSetting -eq [Data.SqlClient.SqlConnectionColumnEncryptionSetting]::Enabled) {
+                    $builder['Column Encryption Setting'] = [Data.SqlClient.SqlConnectionColumnEncryptionSetting]::Enabled
+                }
+                $builder
             }
-            if (![string]::IsNullOrWhiteSpace($DataSource)) {
-                $builder['Data Source'] = $DataSource
-            }
-            if (![string]::IsNullOrWhiteSpace($InitialCatalog)) {
-                $builder['Initial Catalog'] = $InitialCatalog
-            }
-            if (![string]::IsNullOrWhiteSpace($IntegratedSecurity)) {
-                $builder['Integrated Security'] = $IntegratedSecurity
-            }
-            if (![string]::IsNullOrWhiteSpace($UserName)) {
-                $builder["User ID"] = $UserName
-            }
-            if (![string]::IsNullOrWhiteSpace($Password)) {
-                $builder['Password'] = $Password
-            }
-            if (![string]::IsNullOrWhiteSpace($WorkstationId)) {
-                $builder['Workstation ID'] = $WorkstationId
-            }
-            if ($MultipleActiveResultSets -eq $true) {
-                $builder['MultipleActiveResultSets'] = $true
-            }
-            if ($ColumnEncryptionSetting -eq [Data.SqlClient.SqlConnectionColumnEncryptionSetting]::Enabled) {
-                $builder['Column Encryption Setting'] = [Data.SqlClient.SqlConnectionColumnEncryptionSetting]::Enabled
-            }
-            $builder
         }
     }
     end {

@@ -56,7 +56,7 @@
         In this example, no connections are made, and a Publish Profile XML would be created at C:\temp\localdb-MSSQLLocalDB-WorldWideImporters-publish.xml
 
 #>
-    [CmdletBinding()]
+    [CmdletBinding(SupportsShouldProcess)]
     param (
         [parameter(ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
@@ -122,26 +122,28 @@
 
         foreach ($connstring in $ConnectionString) {
             foreach ($db in $Database) {
-                $profileTemplate = Get-Template $db, $connstring
-                $instancename = Get-ServerName $connstring
+                if ($Pscmdlet.ShouldProcess($db, "Creating new DAC Profile")) {
+                    $profileTemplate = Get-Template $db, $connstring
+                    $instancename = Get-ServerName $connstring
 
-                try {
-                    $server = [DbaInstance]($instancename.ToString().Replace('--', '\'))
-                    $PublishProfile = Join-Path $Path "$($instancename.Replace('--','-'))-$db-publish.xml" -ErrorAction Stop
-                    Write-Message -Level Verbose -Message "Writing to $PublishProfile"
-                    $profileTemplate | Out-File $PublishProfile -ErrorAction Stop
-                    [pscustomobject]@{
-                        ComputerName     = $server.ComputerName
-                        InstanceName     = $server.InstanceName
-                        SqlInstance      = $server.FullName
-                        Database         = $db
-                        FileName         = $PublishProfile
-                        ConnectionString = $connstring
-                        ProfileTemplate  = $profileTemplate
-                    } | Select-DefaultView -ExcludeProperty ComputerName, InstanceName, ProfileTemplate
-                }
-                catch {
-                    Stop-Function -ErrorRecord $_ -Message "Failure" -Target $instancename -Continue
+                    try {
+                        $server = [DbaInstance]($instancename.ToString().Replace('--', '\'))
+                        $PublishProfile = Join-Path $Path "$($instancename.Replace('--','-'))-$db-publish.xml" -ErrorAction Stop
+                        Write-Message -Level Verbose -Message "Writing to $PublishProfile"
+                        $profileTemplate | Out-File $PublishProfile -ErrorAction Stop
+                        [pscustomobject]@{
+                            ComputerName     = $server.ComputerName
+                            InstanceName     = $server.InstanceName
+                            SqlInstance      = $server.FullName
+                            Database         = $db
+                            FileName         = $PublishProfile
+                            ConnectionString = $connstring
+                            ProfileTemplate  = $profileTemplate
+                        } | Select-DefaultView -ExcludeProperty ComputerName, InstanceName, ProfileTemplate
+                    }
+                    catch {
+                        Stop-Function -ErrorRecord $_ -Message "Failure" -Target $instancename -Continue
+                    }
                 }
             }
         }

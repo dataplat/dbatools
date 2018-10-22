@@ -126,7 +126,7 @@
         In many cases, using the default settings is desirable. For specific settings, use New-DbaCmConnection as part of the profile in order to explicitly configure a connection.
 
 #>
-    [CmdletBinding(DefaultParameterSetName = 'Credential')]
+    [CmdletBinding(SupportsShouldProcess,DefaultParameterSetName = 'Credential')]
     param (
         [Parameter(ValueFromPipeline)]
         [Sqlcollaborative.Dbatools.Parameter.DbaCmConnectionParameter[]]
@@ -204,85 +204,87 @@
     }
     process {
         foreach ($connectionObject in $ComputerName) {
-            if (-not $connectionObject.Success) { Stop-Function -Message "Failed to interpret computername input: $($connectionObject.InputObject)" -Category InvalidArgument -Target $connectionObject.InputObject -Continue }
-            Write-Message -Level VeryVerbose -Message "Processing computer: $($connectionObject.Connection.ComputerName)"
+            if ($Pscmdlet.ShouldProcess($($connectionObject.Connection.ComputerName), "Setting Connection")) {
+                if (-not $connectionObject.Success) { Stop-Function -Message "Failed to interpret computername input: $($connectionObject.InputObject)" -Category InvalidArgument -Target $connectionObject.InputObject -Continue }
+                Write-Message -Level VeryVerbose -Message "Processing computer: $($connectionObject.Connection.ComputerName)"
 
-            $connection = $connectionObject.Connection
+                $connection = $connectionObject.Connection
 
-            if ($ResetConfiguration) {
-                Write-Message -Level Verbose -Message "Resetting the configuration to system default"
+                if ($ResetConfiguration) {
+                    Write-Message -Level Verbose -Message "Resetting the configuration to system default"
 
-                $connection.RestoreDefaultConfiguration()
-            }
+                    $connection.RestoreDefaultConfiguration()
+                }
 
-            if ($ResetConnectionStatus) {
-                Write-Message -Level Verbose -Message "Resetting the connection status"
+                if ($ResetConnectionStatus) {
+                    Write-Message -Level Verbose -Message "Resetting the connection status"
 
-                $connection.CimRM = 'Unknown'
-                $connection.CimDCOM = 'Unknown'
-                $connection.Wmi = 'Unknown'
-                $connection.PowerShellRemoting = 'Unknown'
+                    $connection.CimRM = 'Unknown'
+                    $connection.CimDCOM = 'Unknown'
+                    $connection.Wmi = 'Unknown'
+                    $connection.PowerShellRemoting = 'Unknown'
 
-                $connection.LastCimRM = New-Object System.DateTime(0)
-                $connection.LastCimDCOM = New-Object System.DateTime(0)
-                $connection.LastWmi = New-Object System.DateTime(0)
-                $connection.LastPowerShellRemoting = New-Object System.DateTime(0)
-            }
+                    $connection.LastCimRM = New-Object System.DateTime(0)
+                    $connection.LastCimDCOM = New-Object System.DateTime(0)
+                    $connection.LastWmi = New-Object System.DateTime(0)
+                    $connection.LastPowerShellRemoting = New-Object System.DateTime(0)
+                }
 
-            if ($ResetCredential) {
-                Write-Message -Level Verbose -Message "Resetting credentials"
-
-                $connection.KnownBadCredentials.Clear()
-                $connection.Credentials = $null
-                $connection.UseWindowsCredentials = $false
-                $connection.WindowsCredentialsAreBad = $false
-            }
-            else {
-                if ($ClearBadCredential) {
-                    Write-Message -Level Verbose -Message "Clearing bad credentials"
+                if ($ResetCredential) {
+                    Write-Message -Level Verbose -Message "Resetting credentials"
 
                     $connection.KnownBadCredentials.Clear()
-                    $connection.WindowsCredentialsAreBad = $false
-                }
-
-                if ($ClearCredential) {
-                    Write-Message -Level Verbose -Message "Clearing credentials"
-
                     $connection.Credentials = $null
                     $connection.UseWindowsCredentials = $false
+                    $connection.WindowsCredentialsAreBad = $false
                 }
-            }
+                else {
+                    if ($ClearBadCredential) {
+                        Write-Message -Level Verbose -Message "Clearing bad credentials"
 
-            foreach ($badCred in $RemoveBadCredential) {
-                $connection.RemoveBadCredential($badCred)
-            }
+                        $connection.KnownBadCredentials.Clear()
+                        $connection.WindowsCredentialsAreBad = $false
+                    }
 
-            foreach ($badCred in $AddBadCredential) {
-                $connection.AddBadCredential($badCred)
-            }
+                    if ($ClearCredential) {
+                        Write-Message -Level Verbose -Message "Clearing credentials"
 
-            if (Test-Bound "Credential") { $connection.Credentials = $Credential }
-            if ($UseWindowsCredentials) {
-                $connection.Credentials = $null
-                $connection.UseWindowsCredentials = $UseWindowsCredentials
-            }
-            if (Test-Bound "OverrideExplicitCredential") { $connection.OverrideExplicitCredential = $OverrideExplicitCredential }
-            if (Test-Bound "DisabledConnectionTypes") { $connection.DisabledConnectionTypes = $DisabledConnectionTypes }
-            if (Test-Bound "DisableBadCredentialCache") { $connection.DisableBadCredentialCache = $DisableBadCredentialCache }
-            if (Test-Bound "DisableCimPersistence") { $connection.DisableCimPersistence = $DisableCimPersistence }
-            if (Test-Bound "DisableCredentialAutoRegister") { $connection.DisableCredentialAutoRegister = $DisableCredentialAutoRegister }
-            if (Test-Bound "EnableCredentialFailover") { $connection.DisableCredentialAutoRegister = $EnableCredentialFailover }
-            if (Test-Bound "WindowsCredentialsAreBad") { $connection.WindowsCredentialsAreBad = $WindowsCredentialsAreBad }
-            if (Test-Bound "CimWinRMOptions") { $connection.CimWinRMOptions = $CimWinRMOptions }
-            if (Test-Bound "CimDCOMOptions") { $connection.CimDCOMOptions = $CimDCOMOptions }
-            if (Test-Bound "OverrideConnectionPolicy") { $connection.OverrideConnectionPolicy = $OverrideConnectionPolicy }
+                        $connection.Credentials = $null
+                        $connection.UseWindowsCredentials = $false
+                    }
+                }
 
-            if (-not $disable_cache) {
-                Write-Message -Level Verbose -Message "Writing connection to cache"
-                [Sqlcollaborative.Dbatools.Connection.ConnectionHost]::Connections[$connectionObject.Connection.ComputerName] = $connection
+                foreach ($badCred in $RemoveBadCredential) {
+                    $connection.RemoveBadCredential($badCred)
+                }
+
+                foreach ($badCred in $AddBadCredential) {
+                    $connection.AddBadCredential($badCred)
+                }
+
+                if (Test-Bound "Credential") { $connection.Credentials = $Credential }
+                if ($UseWindowsCredentials) {
+                    $connection.Credentials = $null
+                    $connection.UseWindowsCredentials = $UseWindowsCredentials
+                }
+                if (Test-Bound "OverrideExplicitCredential") { $connection.OverrideExplicitCredential = $OverrideExplicitCredential }
+                if (Test-Bound "DisabledConnectionTypes") { $connection.DisabledConnectionTypes = $DisabledConnectionTypes }
+                if (Test-Bound "DisableBadCredentialCache") { $connection.DisableBadCredentialCache = $DisableBadCredentialCache }
+                if (Test-Bound "DisableCimPersistence") { $connection.DisableCimPersistence = $DisableCimPersistence }
+                if (Test-Bound "DisableCredentialAutoRegister") { $connection.DisableCredentialAutoRegister = $DisableCredentialAutoRegister }
+                if (Test-Bound "EnableCredentialFailover") { $connection.DisableCredentialAutoRegister = $EnableCredentialFailover }
+                if (Test-Bound "WindowsCredentialsAreBad") { $connection.WindowsCredentialsAreBad = $WindowsCredentialsAreBad }
+                if (Test-Bound "CimWinRMOptions") { $connection.CimWinRMOptions = $CimWinRMOptions }
+                if (Test-Bound "CimDCOMOptions") { $connection.CimDCOMOptions = $CimDCOMOptions }
+                if (Test-Bound "OverrideConnectionPolicy") { $connection.OverrideConnectionPolicy = $OverrideConnectionPolicy }
+
+                if (-not $disable_cache) {
+                    Write-Message -Level Verbose -Message "Writing connection to cache"
+                    [Sqlcollaborative.Dbatools.Connection.ConnectionHost]::Connections[$connectionObject.Connection.ComputerName] = $connection
+                }
+                else { Write-Message -Level Verbose -Message "Skipping writing to cache, since the cache has been disabled!" }
+                $connection
             }
-            else { Write-Message -Level Verbose -Message "Skipping writing to cache, since the cache has been disabled!" }
-            $connection
         }
     }
     end {

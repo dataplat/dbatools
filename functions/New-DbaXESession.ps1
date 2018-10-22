@@ -43,7 +43,7 @@ function New-DbaXESession {
         Returns a new XE Session object from sql2017 then adds an event, an action then creates it.
 
 #>
-    [CmdletBinding()]
+    [CmdletBinding(SupportsShouldProcess)]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
@@ -62,11 +62,13 @@ function New-DbaXESession {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
-            $SqlConn = $server.ConnectionContext.SqlConnectionObject
-            $SqlStoreConnection = New-Object Microsoft.SqlServer.Management.Sdk.Sfc.SqlStoreConnection $SqlConn
-            $store = New-Object  Microsoft.SqlServer.Management.XEvent.XEStore $SqlStoreConnection
+            if ($Pscmdlet.ShouldProcess($instance, "Creating new XESession")) {
+                $SqlConn = $server.ConnectionContext.SqlConnectionObject
+                $SqlStoreConnection = New-Object Microsoft.SqlServer.Management.Sdk.Sfc.SqlStoreConnection $SqlConn
+                $store = New-Object  Microsoft.SqlServer.Management.XEvent.XEStore $SqlStoreConnection
 
-            $store.CreateSession($Name)
+                $store.CreateSession($Name)
+            }
         }
     }
 }

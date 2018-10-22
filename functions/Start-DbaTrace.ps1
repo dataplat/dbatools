@@ -48,7 +48,7 @@ function Start-DbaTrace {
         Starts selected traces on sql2008
 
 #>
-    [CmdletBinding()]
+    [CmdletBinding(SupportsShouldProcess)]
     param (
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
@@ -78,14 +78,15 @@ function Start-DbaTrace {
             }
 
             $sql = "sp_trace_setstatus $traceid, 1"
-
-            try {
-                $server.Query($sql)
-                Get-DbaTrace -SqlInstance $server -Id $traceid
-            }
-            catch {
-                Stop-Function -Message "Failure" -ErrorRecord $_ -Target $server -Continue
-                return
+            if ($Pscmdlet.ShouldProcess($traceid, "Starting the TraceID on $server")) {
+                try {
+                    $server.Query($sql)
+                    Get-DbaTrace -SqlInstance $server -Id $traceid
+                }
+                catch {
+                    Stop-Function -Message "Failure" -ErrorRecord $_ -Target $server -Continue
+                    return
+                }
             }
         }
     }

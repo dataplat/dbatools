@@ -83,7 +83,7 @@ function New-DbaXESmartEmail {
         Sends an email each time a querytracker event is captured.
 
 #>
-    [CmdletBinding()]
+    [CmdletBinding(SupportsShouldProcess)]
     param (
         [parameter(Mandatory)]
         [string]$SmtpServer,
@@ -117,34 +117,36 @@ function New-DbaXESmartEmail {
     process {
         if (Test-FunctionInterrupt) { return }
 
-        try {
-            $email = New-Object -TypeName XESmartTarget.Core.Responses.EmailResponse
-            $email.SmtpServer = $SmtpServer
-            $email.Sender = $Sender
-            $email.To = $To
-            $email.Cc = $Cc
-            $email.Bcc = $Bcc
-            $email.Subject = $Subject
-            $email.Body = $Body
-            $email.Attachment = $Attachment
-            $email.AttachmentFileName = $AttachmentFileName
-            $email.HTMLFormat = ($PlainText -eq $false)
-            if (Test-Bound -ParameterName "Event") {
-                $email.Events = $Event
-            }
-            if (Test-Bound -ParameterName "Filter") {
-                $email.Filter = $Filter
-            }
+        if ($Pscmdlet.ShouldProcess("Creating new XESmartEmail Object")) {
+            try {
+                $email = New-Object -TypeName XESmartTarget.Core.Responses.EmailResponse
+                $email.SmtpServer = $SmtpServer
+                $email.Sender = $Sender
+                $email.To = $To
+                $email.Cc = $Cc
+                $email.Bcc = $Bcc
+                $email.Subject = $Subject
+                $email.Body = $Body
+                $email.Attachment = $Attachment
+                $email.AttachmentFileName = $AttachmentFileName
+                $email.HTMLFormat = ($PlainText -eq $false)
+                if (Test-Bound -ParameterName "Event") {
+                    $email.Events = $Event
+                }
+                if (Test-Bound -ParameterName "Filter") {
+                    $email.Filter = $Filter
+                }
 
-            if ($Credential) {
-                $email.UserName = $Credential.UserName
-                $email.Password = $Credential.GetNetworkCredential().Password
-            }
+                if ($Credential) {
+                    $email.UserName = $Credential.UserName
+                    $email.Password = $Credential.GetNetworkCredential().Password
+                }
 
-            $email
-        }
-        catch {
-            Stop-Function -Message "Failure" -ErrorRecord $_ -Target "XESmartTarget" -Continue
+                $email
+            }
+            catch {
+                Stop-Function -Message "Failure" -ErrorRecord $_ -Target "XESmartTarget" -Continue
+            }
         }
     }
 }

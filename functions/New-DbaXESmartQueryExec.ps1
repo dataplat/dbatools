@@ -50,7 +50,7 @@ function New-DbaXESmartQueryExec {
         Executes a T-SQL command against dbadb on sql2017 whenever a deadlock event is recorded.
 
 #>
-    [CmdletBinding()]
+    [CmdletBinding(SupportsShouldProcess)]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
@@ -84,24 +84,26 @@ function New-DbaXESmartQueryExec {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
-            $execute = New-Object -TypeName XESmartTarget.Core.Responses.ExecuteTSQLResponse
-            $execute.ServerName = $server.Name
-            $execute.DatabaseName = $Database
-            $execute.TSQL = $Query
+            if ($Pscmdlet.ShouldProcess($instance, "Creating new XESmartQueryExec")) {
+                $execute = New-Object -TypeName XESmartTarget.Core.Responses.ExecuteTSQLResponse
+                $execute.ServerName = $server.Name
+                $execute.DatabaseName = $Database
+                $execute.TSQL = $Query
 
-            if ($SqlCredential) {
-                $execute.UserName = $SqlCredential.UserName
-                $execute.Password = $SqlCredential.GetNetworkCredential().Password
-            }
+                if ($SqlCredential) {
+                    $execute.UserName = $SqlCredential.UserName
+                    $execute.Password = $SqlCredential.GetNetworkCredential().Password
+                }
 
-            if (Test-Bound -ParameterName "Event") {
-                $execute.Events = $Event
-            }
-            if (Test-Bound -ParameterName "Filter") {
-                $execute.Filter = $Filter
-            }
+                if (Test-Bound -ParameterName "Event") {
+                    $execute.Events = $Event
+                }
+                if (Test-Bound -ParameterName "Filter") {
+                    $execute.Filter = $Filter
+                }
 
-            $execute
+                $execute
+            }
         }
     }
 }

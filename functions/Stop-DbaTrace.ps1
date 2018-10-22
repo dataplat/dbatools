@@ -48,7 +48,7 @@ function Stop-DbaTrace {
         Stops selected traces on sql2008
 
 #>
-    [CmdletBinding()]
+    [CmdletBinding(SupportsShouldProcess)]
     param (
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
@@ -79,41 +79,43 @@ function Stop-DbaTrace {
 
             $sql = "sp_trace_setstatus $traceid, 0"
 
-            try {
-                $server.Query($sql)
-                $output = Get-DbaTrace -SqlInstance $server -Id $traceid
-                if (-not $output) {
-                    $output = [PSCustomObject]@{
-                        ComputerName            = $server.ComputerName
-                        InstanceName            = $server.ServiceName
-                        SqlInstance             = $server.DomainInstanceName
-                        Id                      = $traceid
-                        Status                  = $null
-                        IsRunning               = $false
-                        Path                    = $null
-                        MaxSize                 = $null
-                        StopTime                = $null
-                        MaxFiles                = $null
-                        IsRowset                = $null
-                        IsRollover              = $null
-                        IsShutdown              = $null
-                        IsDefault               = $null
-                        BufferCount             = $null
-                        BufferSize              = $null
-                        FilePosition            = $null
-                        ReaderSpid              = $null
-                        StartTime               = $null
-                        LastEventTime           = $null
-                        EventCount              = $null
-                        DroppedEventCount       = $null
-                        Parent                  = $server
-                    } | Select-DefaultView -Property 'ComputerName', 'InstanceName', 'SqlInstance', 'Id', 'IsRunning'
+            if ($Pscmdlet.ShouldProcess($traceid, "Stopping the TraceID on $server")) {
+                try {
+                    $server.Query($sql)
+                    $output = Get-DbaTrace -SqlInstance $server -Id $traceid
+                    if (-not $output) {
+                        $output = [PSCustomObject]@{
+                            ComputerName            = $server.ComputerName
+                            InstanceName            = $server.ServiceName
+                            SqlInstance             = $server.DomainInstanceName
+                            Id                      = $traceid
+                            Status                  = $null
+                            IsRunning               = $false
+                            Path                    = $null
+                            MaxSize                 = $null
+                            StopTime                = $null
+                            MaxFiles                = $null
+                            IsRowset                = $null
+                            IsRollover              = $null
+                            IsShutdown              = $null
+                            IsDefault               = $null
+                            BufferCount             = $null
+                            BufferSize              = $null
+                            FilePosition            = $null
+                            ReaderSpid              = $null
+                            StartTime               = $null
+                            LastEventTime           = $null
+                            EventCount              = $null
+                            DroppedEventCount       = $null
+                            Parent                  = $server
+                        } | Select-DefaultView -Property 'ComputerName', 'InstanceName', 'SqlInstance', 'Id', 'IsRunning'
+                    }
+                    $output
                 }
-                $output
-            }
-            catch {
-                Stop-Function -Message "Failure" -ErrorRecord $_ -Target $server -Continue
-                return
+                catch {
+                    Stop-Function -Message "Failure" -ErrorRecord $_ -Target $server -Continue
+                    return
+                }
             }
         }
     }

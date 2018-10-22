@@ -64,7 +64,7 @@ function New-DbaXESmartReplay {
         Replays events from the 'Profiler Standard' session on sql2016 to sql2017's planning database. Does not run as a job so you can see the raw output.
 
 #>
-    [CmdletBinding()]
+    [CmdletBinding(SupportsShouldProcess)]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
@@ -97,27 +97,28 @@ function New-DbaXESmartReplay {
             catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
+            if ($Pscmdlet.ShouldProcess($instance, "Creating new XESmartReply")) {
+                try {
+                    $replay = New-Object -TypeName XESmartTarget.Core.Responses.ReplayResponse
+                    $replay.ServerName = $instance
+                    $replay.DatabaseName = $Database
+                    $replay.Events = $Event
+                    $replay.StopOnError = $StopOnError
+                    $replay.Filter = $Filter
+                    $replay.DelaySeconds = $DelaySeconds
+                    $replay.ReplayIntervalSeconds = $ReplayIntervalSeconds
 
-            try {
-                $replay = New-Object -TypeName XESmartTarget.Core.Responses.ReplayResponse
-                $replay.ServerName = $instance
-                $replay.DatabaseName = $Database
-                $replay.Events = $Event
-                $replay.StopOnError = $StopOnError
-                $replay.Filter = $Filter
-                $replay.DelaySeconds = $DelaySeconds
-                $replay.ReplayIntervalSeconds = $ReplayIntervalSeconds
+                    if ($SqlCredential) {
+                        $replay.UserName = $SqlCredential.UserName
+                        $replay.Password = $SqlCredential.GetNetworkCredential().Password
+                    }
 
-                if ($SqlCredential) {
-                    $replay.UserName = $SqlCredential.UserName
-                    $replay.Password = $SqlCredential.GetNetworkCredential().Password
+                    $replay
                 }
-
-                $replay
-            }
-            catch {
-                $message = $_.Exception.InnerException.InnerException | Out-String
-                Stop-Function -Message $message -Target "XESmartTarget" -Continue
+                catch {
+                    $message = $_.Exception.InnerException.InnerException | Out-String
+                    Stop-Function -Message $message -Target "XESmartTarget" -Continue
+                }
             }
         }
     }

@@ -98,7 +98,7 @@
         Essentially, this configures all connections to those computers to prefer failure with the specified credentials over using alternative credentials.
 
 #>
-    [CmdletBinding(DefaultParameterSetName = 'Credential')]
+    [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = 'Credential')]
     param (
         [Parameter(ValueFromPipeline)]
         [Sqlcollaborative.Dbatools.Parameter.DbaCmConnectionParameter[]]
@@ -140,31 +140,33 @@
     }
     process {
         foreach ($connectionObject in $ComputerName) {
-            if (-not $connectionObject.Success) { Stop-Function -Message "Failed to interpret computername input: $($connectionObject.InputObject)" -Category InvalidArgument -Target $connectionObject.InputObject -Continue }
-            Write-Message -Level VeryVerbose -Message "Processing computer: $($connectionObject.Connection.ComputerName)" -Target $connectionObject.Connection
+            if ($Pscmdlet.ShouldProcess($($connectionObject.connection.computername), "Creating connection object")) {
+                if (-not $connectionObject.Success) { Stop-Function -Message "Failed to interpret computername input: $($connectionObject.InputObject)" -Category InvalidArgument -Target $connectionObject.InputObject -Continue }
+                Write-Message -Level VeryVerbose -Message "Processing computer: $($connectionObject.Connection.ComputerName)" -Target $connectionObject.Connection
 
-            $connection = New-Object -TypeName Sqlcollaborative.Dbatools.Connection.ManagementConnection -ArgumentList $connectionObject.Connection.ComputerName
-            if (Test-Bound "Credential") { $connection.Credentials = $Credential }
-            if (Test-Bound "UseWindowsCredentials") {
-                $connection.Credentials = $null
-                $connection.UseWindowsCredentials = $UseWindowsCredentials
-            }
-            if (Test-Bound "OverrideExplicitCredential") { $connection.OverrideExplicitCredential = $OverrideExplicitCredential }
-            if (Test-Bound "DisabledConnectionTypes") { $connection.DisabledConnectionTypes = $DisabledConnectionTypes }
-            if (Test-Bound "DisableBadCredentialCache") { $connection.DisableBadCredentialCache = $DisableBadCredentialCache }
-            if (Test-Bound "DisableCimPersistence") { $connection.DisableCimPersistence = $DisableCimPersistence }
-            if (Test-Bound "DisableCredentialAutoRegister") { $connection.DisableCredentialAutoRegister = $DisableCredentialAutoRegister }
-            if (Test-Bound "EnableCredentialFailover") { $connection.DisableCredentialAutoRegister = $EnableCredentialFailover }
-            if (Test-Bound "WindowsCredentialsAreBad") { $connection.WindowsCredentialsAreBad = $WindowsCredentialsAreBad }
-            if (Test-Bound "CimWinRMOptions") { $connection.CimWinRMOptions = $CimWinRMOptions }
-            if (Test-Bound "CimDCOMOptions") { $connection.CimDCOMOptions = $CimDCOMOptions }
+                $connection = New-Object -TypeName Sqlcollaborative.Dbatools.Connection.ManagementConnection -ArgumentList $connectionObject.Connection.ComputerName
+                if (Test-Bound "Credential") { $connection.Credentials = $Credential }
+                if (Test-Bound "UseWindowsCredentials") {
+                    $connection.Credentials = $null
+                    $connection.UseWindowsCredentials = $UseWindowsCredentials
+                }
+                if (Test-Bound "OverrideExplicitCredential") { $connection.OverrideExplicitCredential = $OverrideExplicitCredential }
+                if (Test-Bound "DisabledConnectionTypes") { $connection.DisabledConnectionTypes = $DisabledConnectionTypes }
+                if (Test-Bound "DisableBadCredentialCache") { $connection.DisableBadCredentialCache = $DisableBadCredentialCache }
+                if (Test-Bound "DisableCimPersistence") { $connection.DisableCimPersistence = $DisableCimPersistence }
+                if (Test-Bound "DisableCredentialAutoRegister") { $connection.DisableCredentialAutoRegister = $DisableCredentialAutoRegister }
+                if (Test-Bound "EnableCredentialFailover") { $connection.DisableCredentialAutoRegister = $EnableCredentialFailover }
+                if (Test-Bound "WindowsCredentialsAreBad") { $connection.WindowsCredentialsAreBad = $WindowsCredentialsAreBad }
+                if (Test-Bound "CimWinRMOptions") { $connection.CimWinRMOptions = $CimWinRMOptions }
+                if (Test-Bound "CimDCOMOptions") { $connection.CimDCOMOptions = $CimDCOMOptions }
 
-            if (-not $disable_cache) {
-                Write-Message -Level Verbose -Message "Writing connection to cache"
-                [Sqlcollaborative.Dbatools.Connection.ConnectionHost]::Connections[$connectionObject.Connection.ComputerName] = $connection
+                if (-not $disable_cache) {
+                    Write-Message -Level Verbose -Message "Writing connection to cache"
+                    [Sqlcollaborative.Dbatools.Connection.ConnectionHost]::Connections[$connectionObject.Connection.ComputerName] = $connection
+                }
+                else { Write-Message -Level Verbose -Message "Skipping writing to cache, since the cache has been disabled!" }
+                $connection
             }
-            else { Write-Message -Level Verbose -Message "Skipping writing to cache, since the cache has been disabled!" }
-            $connection
         }
     }
     end {

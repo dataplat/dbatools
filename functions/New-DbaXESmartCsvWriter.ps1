@@ -52,7 +52,7 @@ function New-DbaXESmartCsvWriter {
         Writes Extended Events to the file "C:\temp\workload.csv".
 
 #>
-    [CmdletBinding()]
+    [CmdletBinding(SupportsShouldProcess)]
     param (
         [parameter(Mandatory)]
         [string]$OutputFile,
@@ -75,23 +75,25 @@ function New-DbaXESmartCsvWriter {
     process {
         if (Test-FunctionInterrupt) { return }
 
-        try {
-            $writer = New-Object -TypeName XESmartTarget.Core.Responses.CsvAppenderResponse
-            $writer.OutputFile = $OutputFile
-            $writer.OverWrite = $Overwrite
-            if (Test-Bound -ParameterName "Event") {
-                $writer.Events = $Event
+        if ($Pscmdlet.ShouldProcess("Creating new XESmartCsvWriter Object")) {
+            try {
+                $writer = New-Object -TypeName XESmartTarget.Core.Responses.CsvAppenderResponse
+                $writer.OutputFile = $OutputFile
+                $writer.OverWrite = $Overwrite
+                if (Test-Bound -ParameterName "Event") {
+                    $writer.Events = $Event
+                }
+                if (Test-Bound -ParameterName "OutputColumn") {
+                    $writer.OutputColumns = $OutputColumn
+                }
+                if (Test-Bound -ParameterName "Filter") {
+                    $writer.Filter = $Filter
+                }
+                $writer
             }
-            if (Test-Bound -ParameterName "OutputColumn") {
-                $writer.OutputColumns = $OutputColumn
+            catch {
+                Stop-Function -Message "Failure" -ErrorRecord $_ -Target "XESmartTarget" -Continue
             }
-            if (Test-Bound -ParameterName "Filter") {
-                $writer.Filter = $Filter
-            }
-            $writer
-        }
-        catch {
-            Stop-Function -Message "Failure" -ErrorRecord $_ -Target "XESmartTarget" -Continue
         }
     }
 }
