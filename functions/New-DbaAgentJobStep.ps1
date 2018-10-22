@@ -170,13 +170,13 @@ function New-DbaAgentJobStep {
 
     begin {
         # Check the parameter on success step id
-        if (($OnSuccessAction -in 'GoToStep', 'GoToNextStep') -and ($OnSuccessStepId -ge 1)) {
+        if (($OnSuccessAction -notin 'GoToStep', 'GoToNextStep') -and ($OnSuccessStepId -ge 1)) {
             Stop-Function -Message "Parameter OnSuccessStepId can only be used with OnSuccessAction 'GoToStep'." -Target $SqlInstance
             return
         }
 
-        # Check the parameter on success step id
-        if (($OnFailAction -in 'GoToStep', 'GoToNextStep') -and ($OnFailStepId -ge 1)) {
+        # Check the parameter on fail step id
+        if (($OnFailAction -notin 'GoToStep', 'GoToNextStep') -and ($OnFailStepId -ge 1)) {
             Stop-Function -Message "Parameter OnFailStepId can only be used with OnFailAction 'GoToStep'." -Target $SqlInstance
             return
         }
