@@ -154,9 +154,18 @@ function Add-DbaAgReplica {
                     $null = $ep | Start-DbaEndpoint
                 }
             }
-
+            
             if ((Test-Bound -Not -ParameterName Name)) {
-                $Name = $server.DomainInstanceName
+                $isip = [dbainstance]$server.Name
+                if ($isip) {
+                    try {
+                        $null = [ipaddress]($isip.ComputerName)
+                        $Name = $server.Name
+                    }
+                    catch {
+                        $Name = $server.DomainInstanceName
+                    }    
+                }
             }
 
             if ($Pscmdlet.ShouldProcess($server.Name, "Creating a replica for $($InputObject.Name) named $Name")) {

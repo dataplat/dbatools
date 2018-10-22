@@ -550,7 +550,7 @@ function New-DbaAvailabilityGroup {
         }
         
         # Grant permissions, but first, get all necessary service accounts
-        $primaryserviceaccount = $server.ServiceAccount
+        $primaryserviceaccount = $server.ServiceAccount.Trim()
         $saname = ([DbaInstanceParameter]($server.DomainInstanceName)).ComputerName
         
         if ($primaryserviceaccount) {
@@ -569,7 +569,7 @@ function New-DbaAvailabilityGroup {
         
         foreach ($second in $secondaries) {
             # If service account is empty, add the computer account instead
-            $secondaryserviceaccount = $second.ServiceAccount
+            $secondaryserviceaccount = $second.ServiceAccount.Trim()
             $saname = ([DbaInstanceParameter]($second.DomainInstanceName)).ComputerName
             
             if ($secondaryserviceaccount) {
