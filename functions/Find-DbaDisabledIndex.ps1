@@ -1,4 +1,4 @@
-﻿function Find-DbaDisabledIndex {
+function Find-DbaDisabledIndex {
 <#
     .SYNOPSIS
         Find Disabled indexes

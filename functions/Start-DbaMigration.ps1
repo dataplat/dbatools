@@ -1,4 +1,4 @@
-﻿function Start-DbaMigration {
+function Start-DbaMigration {
 <#
     .SYNOPSIS
         Migrates SQL Server *ALL* databases, logins, database mail profiles/accounts, credentials, SQL Agent objects, linked servers,

@@ -1,4 +1,4 @@
-﻿function Get-DbaAgentAlert {
+function Get-DbaAgentAlert {
 <#
     .SYNOPSIS
         Returns all SQL Agent alerts on a SQL Server Agent.

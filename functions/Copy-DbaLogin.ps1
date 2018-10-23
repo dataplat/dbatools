@@ -1,4 +1,4 @@
-﻿function Copy-DbaLogin {
+function Copy-DbaLogin {
 <#
     .SYNOPSIS
         Migrates logins from source to destination SQL Servers. Supports SQL Server versions 2000 and newer.

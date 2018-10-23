@@ -1,4 +1,4 @@
-﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Invoke-SteppablePipeline
 {
 <#
@@ -34,3 +34,4 @@ function Invoke-SteppablePipeline
         $Pipeline.Process($InputObject)
     }
 }
+

@@ -1,4 +1,4 @@
-﻿function Get-ErrorMessage {
+function Get-ErrorMessage {
     [CmdletBinding()]
     param (
         [Parameter(Mandatory, ValueFromPipeline)]

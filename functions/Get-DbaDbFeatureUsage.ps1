@@ -1,4 +1,4 @@
-﻿function Get-DbaDbFeatureUsage {
+function Get-DbaDbFeatureUsage {
 <#
     .SYNOPSIS
         Shows features that are enabled in the database but not supported on all editions of SQL Server. Basically checks for Enterprise feature usage.

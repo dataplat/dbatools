@@ -1,4 +1,4 @@
-﻿function Backup-DbaDatabase {
+function Backup-DbaDatabase {
 <#
     .SYNOPSIS
         Backup one or more SQL Sever databases from a single SQL Server SqlInstance.

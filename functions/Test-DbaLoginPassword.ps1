@@ -1,4 +1,4 @@
-﻿function Test-DbaLoginPassword {
+function Test-DbaLoginPassword {
 <#
     .SYNOPSIS
         Test-DbaLoginPassword finds any logins on SQL instance that are SQL Logins and have a password that is either null or same as the login

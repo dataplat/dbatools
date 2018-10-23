@@ -1,4 +1,4 @@
-﻿function Set-DbaDbCompression {
+function Set-DbaDbCompression {
 <#
     .SYNOPSIS
         Sets tables and indexes with preferred compression setting.

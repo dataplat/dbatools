@@ -1,4 +1,4 @@
-﻿function Get-DbaNetworkCertificate {
+function Get-DbaNetworkCertificate {
 <#
     .SYNOPSIS
         Simplifies finding computer certificates that are candidates for using with SQL Server's network encryption

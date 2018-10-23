@@ -1,4 +1,4 @@
-﻿function New-DbaDacOption {
+function New-DbaDacOption {
     <#
     .SYNOPSIS
         Creates a new Microsoft.SqlServer.Dac.DacExtractOptions/DacExportOptions object depending on the chosen Type
@@ -109,3 +109,4 @@
         }
     }
 }
+

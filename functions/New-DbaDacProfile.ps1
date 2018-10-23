@@ -1,4 +1,4 @@
-﻿function New-DbaDacProfile {
+function New-DbaDacProfile {
     <#
     .SYNOPSIS
         Creates a new Publish Profile.

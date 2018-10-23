@@ -1,4 +1,4 @@
-﻿function Test-DbaDbCompression {
+function Test-DbaDbCompression {
 <#
     .SYNOPSIS
         Returns tables and indexes with preferred compression setting.

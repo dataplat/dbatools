@@ -1,4 +1,4 @@
-﻿function Get-DbaResourceGovernor {
+function Get-DbaResourceGovernor {
 <#
     .SYNOPSIS
         Gets the Resource Governor object

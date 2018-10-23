@@ -1,4 +1,4 @@
-﻿function Test-DbaDbLogShipStatus {
+function Test-DbaDbLogShipStatus {
 <#
     .SYNOPSIS
         Test-DbaDbLogShipStatus returns the status of your log shipping databases

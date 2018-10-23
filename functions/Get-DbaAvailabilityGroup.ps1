@@ -1,4 +1,4 @@
-﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaAvailabilityGroup {
 <#
     .SYNOPSIS
@@ -110,3 +110,4 @@ function Get-DbaAvailabilityGroup {
         }
     }
 }
+

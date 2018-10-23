@@ -1,4 +1,4 @@
-﻿function Restore-DbaDatabase {
+function Restore-DbaDatabase {
 <#
     .SYNOPSIS
         Restores a SQL Server Database from a set of backup files

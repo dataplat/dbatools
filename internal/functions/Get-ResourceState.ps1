@@ -1,4 +1,4 @@
-﻿function Get-ResourceState ($state) {
+function Get-ResourceState ($state) {
     switch ($state) {
         -1 { "Unknown" }
         0   { "Inherited" }

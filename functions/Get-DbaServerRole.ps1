@@ -1,4 +1,4 @@
-﻿function Get-DbaServerRole {
+function Get-DbaServerRole {
 <#
     .SYNOPSIS
         Gets the list of server-level roles.

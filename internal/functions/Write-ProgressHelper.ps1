@@ -1,4 +1,4 @@
-﻿function Write-ProgressHelper {
+function Write-ProgressHelper {
     # thanks adam!
     # https://www.adamtheautomator.com/building-progress-bar-powershell-scripts/
     param (

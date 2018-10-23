@@ -1,4 +1,4 @@
-﻿function Copy-DbaDataCollector {
+function Copy-DbaDataCollector {
 <#
     .SYNOPSIS
         Migrates user SQL Data Collector collection sets. SQL Data Collector configuration is on the agenda, but it's hard.

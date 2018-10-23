@@ -1,4 +1,4 @@
-﻿# The default formatting style for dates
+# The default formatting style for dates
 Set-DbatoolsConfig -FullName 'Formatting.Date' -Value "dd MMM yyyy" -Initialize -Validation string -Handler { [Sqlcollaborative.Dbatools.Utility.UtilityHost]::FormatDate = $args[0] } -Description "The default formatting of Dates"
 
 # The default formatting style for full datetime objects

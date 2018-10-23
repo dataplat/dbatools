@@ -1,4 +1,4 @@
-﻿function Get-DbaDBMailAccount {
+function Get-DbaDBMailAccount {
 <#
     .SYNOPSIS
         Gets database mail accounts from SQL Server

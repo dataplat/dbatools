@@ -1,4 +1,4 @@
-﻿function Save-DbaDiagnosticQueryScript {
+function Save-DbaDiagnosticQueryScript {
 <#
     .SYNOPSIS
         Save-DbaDiagnosticQueryScript downloads the most recent version of all Glenn Berry DMV scripts

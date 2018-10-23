@@ -126,3 +126,4 @@ function Get-SqlFileStructure {
     $filestructure = [pscustomobject]@{ "databases" = $dbcollection }
     return $filestructure
 }
+

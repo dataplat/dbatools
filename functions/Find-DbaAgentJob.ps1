@@ -1,4 +1,4 @@
-﻿function Find-DbaAgentJob {
+function Find-DbaAgentJob {
 <#
     .SYNOPSIS
         Find-DbaAgentJob finds agent job/s that fit certain search filters.

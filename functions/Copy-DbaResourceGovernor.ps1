@@ -1,4 +1,4 @@
-﻿function Copy-DbaResourceGovernor {
+function Copy-DbaResourceGovernor {
 <#
     .SYNOPSIS
         Migrates Resource Pools

@@ -1,4 +1,4 @@
-﻿function Set-DbaDbCompatibility {
+function Set-DbaDbCompatibility {
 <#
     .SYNOPSIS
         Sets the compatibility level for SQL Server databases.

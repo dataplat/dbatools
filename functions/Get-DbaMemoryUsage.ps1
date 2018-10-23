@@ -1,4 +1,4 @@
-﻿#ValidationTags#Messaging,CodeStyle#
+#ValidationTags#Messaging,CodeStyle#
 function Get-DbaMemoryUsage {
 <#
     .SYNOPSIS

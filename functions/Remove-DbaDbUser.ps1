@@ -1,4 +1,4 @@
-﻿function Remove-DbaDbUser {
+function Remove-DbaDbUser {
 <#
     .SYNOPSIS
         Drop database user
@@ -238,3 +238,4 @@
     }
 
 }
+

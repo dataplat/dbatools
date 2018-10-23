@@ -1,4 +1,4 @@
-﻿function Get-DbaTcpPort {
+function Get-DbaTcpPort {
 <#
     .SYNOPSIS
         Returns the TCP port used by the specified SQL Server.

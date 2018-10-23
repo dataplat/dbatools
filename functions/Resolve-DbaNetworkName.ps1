@@ -1,4 +1,4 @@
-﻿function Resolve-DbaNetworkName {
+function Resolve-DbaNetworkName {
 <#
     .SYNOPSIS
         Returns information about the network connection of the target computer including NetBIOS name, IP Address, domain name and fully qualified domain name (FQDN).

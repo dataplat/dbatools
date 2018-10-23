@@ -21,3 +21,4 @@ function Get-SmoServerForDynamicParams {
         Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential -ParameterConnection
     }
 }
+

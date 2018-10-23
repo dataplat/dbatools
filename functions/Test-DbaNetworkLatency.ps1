@@ -1,4 +1,4 @@
-﻿function Test-DbaNetworkLatency {
+function Test-DbaNetworkLatency {
 <#
     .SYNOPSIS
         Tests how long a query takes to return from SQL Server

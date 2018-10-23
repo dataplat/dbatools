@@ -1,4 +1,4 @@
-﻿function Get-DbaDbLogShipError {
+function Get-DbaDbLogShipError {
 <#
     .SYNOPSIS
         Get-DbaDbLogShipError returns all the log shipping errors that occurred

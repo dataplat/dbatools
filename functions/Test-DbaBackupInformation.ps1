@@ -1,4 +1,4 @@
-﻿function Test-DbaBackupInformation {
+function Test-DbaBackupInformation {
 <#
     .SYNOPSIS
         Tests a dbatools backup history object is correct for restoring

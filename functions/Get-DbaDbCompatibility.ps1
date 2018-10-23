@@ -1,4 +1,4 @@
-﻿function Get-DbaDbCompatibility {
+function Get-DbaDbCompatibility {
 <#
     .SYNOPSIS
         Displays the compatibility level for SQL Server databases.

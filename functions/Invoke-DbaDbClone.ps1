@@ -1,4 +1,4 @@
-﻿function Invoke-DbaDbClone {
+function Invoke-DbaDbClone {
 <#
     .SYNOPSIS
         Clones a database schema and statistics

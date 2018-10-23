@@ -1,4 +1,4 @@
-﻿function Get-DbaDbTrigger {
+function Get-DbaDbTrigger {
 <#
     .SYNOPSIS
         Get all existing database triggers on one or more SQL instances.

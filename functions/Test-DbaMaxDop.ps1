@@ -1,4 +1,4 @@
-﻿function Test-DbaMaxDop {
+function Test-DbaMaxDop {
 <#
     .SYNOPSIS
         Displays information relating to SQL Server Max Degree of Parallelism setting. Works on SQL Server 2005-2016.

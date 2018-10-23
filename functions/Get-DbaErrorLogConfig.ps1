@@ -1,4 +1,4 @@
-﻿function Get-DbaErrorLogConfig {
+function Get-DbaErrorLogConfig {
 <#
     .SYNOPSIS
         Pulls the configuration for the ErrorLog on a given SQL Server instance

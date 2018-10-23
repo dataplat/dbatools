@@ -1,4 +1,4 @@
-﻿function Get-DbaMessageLevelModifier {
+function Get-DbaMessageLevelModifier {
 <#
     .SYNOPSIS
         Returns all registered message level modifiers with similar name.

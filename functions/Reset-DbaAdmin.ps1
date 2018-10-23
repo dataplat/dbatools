@@ -1,4 +1,4 @@
-﻿function Reset-DbaAdmin {
+function Reset-DbaAdmin {
 <#
     .SYNOPSIS
         This function allows administrators to regain access to SQL Servers in the event that passwords or access was lost.

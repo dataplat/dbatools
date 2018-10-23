@@ -1,4 +1,4 @@
-﻿function Get-DbaWindowsLog {
+function Get-DbaWindowsLog {
 <#
     .SYNOPSIS
         Gets Windows Application events associated with an instance

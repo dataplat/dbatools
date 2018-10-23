@@ -1,4 +1,4 @@
-﻿function Publish-DbaDacPackage {
+function Publish-DbaDacPackage {
     <#
     .SYNOPSIS
         The Publish-DbaDacPackage command takes a dacpac which is the output from an SSDT project and publishes it to a database. Changing the schema to match the dacpac and also to run any scripts in the dacpac (pre/post deploy scripts).

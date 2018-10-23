@@ -1,4 +1,4 @@
-﻿function Invoke-DbaCycleErrorLog {
+function Invoke-DbaCycleErrorLog {
 <#
     .SYNOPSIS
         Cycles the current instance or agent log.

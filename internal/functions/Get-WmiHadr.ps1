@@ -1,4 +1,4 @@
-﻿function Get-WmiHadr {
+function Get-WmiHadr {
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]

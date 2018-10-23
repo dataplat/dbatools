@@ -1,4 +1,4 @@
-﻿function Copy-DbaServerTrigger {
+function Copy-DbaServerTrigger {
 <#
     .SYNOPSIS
         Copy-DbaServerTrigger migrates server triggers from one SQL Server to another.

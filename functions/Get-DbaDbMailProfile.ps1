@@ -1,4 +1,4 @@
-﻿function Get-DbaDbMailProfile {
+function Get-DbaDbMailProfile {
 <#
     .SYNOPSIS
         Gets database mail profiles from SQL Server

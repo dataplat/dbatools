@@ -1,4 +1,4 @@
-﻿function Get-DbaInstanceUserOption {
+function Get-DbaInstanceUserOption {
 <#
     .SYNOPSIS
         Gets SQL Instance user options of one or more instance(s) of SQL Server.

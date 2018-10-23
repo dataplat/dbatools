@@ -1,4 +1,4 @@
-﻿function Export-DbaScript {
+function Export-DbaScript {
 <#
     .SYNOPSIS
         Exports scripts from SQL Management Objects (SMO)

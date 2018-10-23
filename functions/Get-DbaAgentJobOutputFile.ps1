@@ -1,4 +1,4 @@
-﻿function Get-DbaAgentJobOutputFile {
+function Get-DbaAgentJobOutputFile {
 <#
     .Synopsis
         Returns the Output File for each step of one or many agent job with the Job Names provided dynamically if

@@ -1,4 +1,4 @@
-﻿function Get-DbaServerInstallDate {
+function Get-DbaServerInstallDate {
 <#
     .SYNOPSIS
         Returns the install date of a SQL Instance and Windows Server.

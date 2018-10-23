@@ -1,4 +1,4 @@
-﻿function Test-DbaRecoveryModel {
+function Test-DbaRecoveryModel {
 <#
     .SYNOPSIS
         Find if database is really a specific recovery model or not.

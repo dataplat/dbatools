@@ -1,4 +1,4 @@
-﻿function Get-DbatoolsConfig {
+function Get-DbatoolsConfig {
 <#
     .SYNOPSIS
         Retrieves configuration elements by name.

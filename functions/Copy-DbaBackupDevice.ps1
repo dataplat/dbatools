@@ -1,4 +1,4 @@
-﻿function Copy-DbaBackupDevice {
+function Copy-DbaBackupDevice {
 <#
     .SYNOPSIS
         Copies backup devices one by one. Copies both SQL code and the backup file itself.

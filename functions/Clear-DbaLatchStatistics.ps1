@@ -1,4 +1,4 @@
-﻿function Clear-DbaLatchStatistics {
+function Clear-DbaLatchStatistics {
 <#
     .SYNOPSIS
         Clears Latch Statistics

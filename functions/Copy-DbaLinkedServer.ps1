@@ -1,4 +1,4 @@
-﻿function Copy-DbaLinkedServer {
+function Copy-DbaLinkedServer {
 <#
     .SYNOPSIS
         Copy-DbaLinkedServer migrates Linked Servers from one SQL Server to another. Linked Server logins and passwords are migrated as well.

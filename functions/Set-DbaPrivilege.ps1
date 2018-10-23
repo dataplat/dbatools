@@ -1,4 +1,4 @@
-﻿function Set-DbaPrivilege {
+function Set-DbaPrivilege {
 <#
     .SYNOPSIS
         Adds the SQL Service account to local privileges on one or more computers.

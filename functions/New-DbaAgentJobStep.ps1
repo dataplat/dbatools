@@ -1,4 +1,4 @@
-﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function New-DbaAgentJobStep {
     <#
     .SYNOPSIS
@@ -380,3 +380,4 @@ function New-DbaAgentJobStep {
         Write-Message -Message "Finished creating job step(s)" -Level Verbose
     }
 }
+

@@ -1,4 +1,4 @@
-﻿function Get-DbaDbMailServer {
+function Get-DbaDbMailServer {
 <#
     .SYNOPSIS
         Gets database mail servers from SQL Server

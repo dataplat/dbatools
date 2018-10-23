@@ -1,4 +1,4 @@
-﻿function ConvertTo-JsDate {
+function ConvertTo-JsDate {
     <#
         .SYNOPSIS
             Converts Datetime input to a Java Script date format

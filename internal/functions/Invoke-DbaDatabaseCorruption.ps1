@@ -186,3 +186,4 @@ function Invoke-DbaDbCorruption {
         }
     }
 }
+

@@ -1,4 +1,4 @@
-﻿function Get-DbaLatchStatistic {
+function Get-DbaLatchStatistic {
 <#
     .SYNOPSIS
         Displays latch statistics from sys.dm_os_latch_stats

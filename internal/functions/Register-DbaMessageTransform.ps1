@@ -1,4 +1,4 @@
-﻿function Register-DbaMessageTransform {
+function Register-DbaMessageTransform {
 <#
     .SYNOPSIS
         Registers a scriptblock that can transform message content.

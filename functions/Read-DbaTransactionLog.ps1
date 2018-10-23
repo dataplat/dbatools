@@ -1,4 +1,4 @@
-﻿function Read-DbaTransactionLog {
+function Read-DbaTransactionLog {
 <#
     .SYNOPSIS
         Reads the live Transaction log from specified SQL Server Database

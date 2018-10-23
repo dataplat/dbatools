@@ -1,4 +1,4 @@
-﻿function Start-DbaAgentJob {
+function Start-DbaAgentJob {
 <#
     .SYNOPSIS
         Starts a running SQL Server Agent Job.

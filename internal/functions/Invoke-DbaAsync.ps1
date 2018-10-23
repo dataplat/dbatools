@@ -1,4 +1,4 @@
-﻿function Invoke-DbaAsync {
+function Invoke-DbaAsync {
     <#
         .SYNOPSIS
             Runs a T-SQL script.
@@ -297,3 +297,4 @@
 
     }
 }
+

@@ -1,4 +1,4 @@
-﻿function Copy-DbaQueryStoreConfig {
+function Copy-DbaQueryStoreConfig {
 <#
     .SYNOPSIS
         Copies the configuration of a Query Store enabled database and sets the copied configuration on other databases.

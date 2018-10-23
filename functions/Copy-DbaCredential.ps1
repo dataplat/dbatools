@@ -1,4 +1,4 @@
-﻿function Copy-DbaCredential {
+function Copy-DbaCredential {
 <#
     .SYNOPSIS
         Copy-DbaCredential migrates SQL Server Credentials from one SQL Server to another while maintaining Credential passwords.

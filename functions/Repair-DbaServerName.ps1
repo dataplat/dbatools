@@ -1,4 +1,4 @@
-﻿function Repair-DbaServerName {
+function Repair-DbaServerName {
 <#
     .SYNOPSIS
         Renames @@SERVERNAME to match with the Windows name.

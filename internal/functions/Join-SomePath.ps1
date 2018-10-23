@@ -1,4 +1,4 @@
-﻿function Join-SomePath {
+function Join-SomePath {
     <#
     An internal command that does not require the local path to exist
     

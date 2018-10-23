@@ -23,3 +23,4 @@ function Test-SqlSa {
     }
     catch { return $false }
 }
+

@@ -1,4 +1,4 @@
-﻿function Test-DbaDbOwner {
+function Test-DbaDbOwner {
 <#
     .SYNOPSIS
         Checks database owners against a login to validate which databases do not match that owner.

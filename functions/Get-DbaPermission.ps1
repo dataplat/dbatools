@@ -1,4 +1,4 @@
-﻿function Get-DbaPermission {
+function Get-DbaPermission {
 <#
     .SYNOPSIS
         Get a list of Server and Database level permissions

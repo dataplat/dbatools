@@ -1,4 +1,4 @@
-﻿#ValidationTags#FlowControl,Pipeline#
+#ValidationTags#FlowControl,Pipeline#
 function Test-DbaSpn {
     <#
     .SYNOPSIS

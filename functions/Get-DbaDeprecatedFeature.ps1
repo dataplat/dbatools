@@ -1,4 +1,4 @@
-﻿function Get-DbaDeprecatedFeature {
+function Get-DbaDeprecatedFeature {
     <#
     .SYNOPSIS
         Displays information relating to deprecated features for SQL Server 2005 and above.

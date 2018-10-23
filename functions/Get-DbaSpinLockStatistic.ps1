@@ -1,4 +1,4 @@
-﻿function Get-DbaSpinLockStatistic {
+function Get-DbaSpinLockStatistic {
 <#
     .SYNOPSIS
         Displays information from sys.dm_os_spinlock_stats.  Works on SQL Server 2008 and above.

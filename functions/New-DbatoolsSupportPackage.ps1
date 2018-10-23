@@ -1,4 +1,4 @@
-﻿function New-DbatoolsSupportPackage {
+function New-DbatoolsSupportPackage {
 <#
     .SYNOPSIS
         Creates a package of troubleshooting information that can be used by dbatools to help debug issues.

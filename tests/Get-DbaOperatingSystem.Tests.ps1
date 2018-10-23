@@ -62,3 +62,4 @@ Describe "Get-DbaOperatingSystem Integration Test" -Tag "IntegrationTests" {
         }
     }
 }
+

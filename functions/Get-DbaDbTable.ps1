@@ -1,4 +1,4 @@
-﻿function Get-DbaDbTable {
+function Get-DbaDbTable {
 <#
     .SYNOPSIS
         Returns a summary of information on the tables

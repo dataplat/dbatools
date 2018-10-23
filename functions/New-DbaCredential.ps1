@@ -1,4 +1,4 @@
-﻿function New-DbaCredential {
+function New-DbaCredential {
 <#
     .SYNOPSIS
         Creates a new SQL Server credential

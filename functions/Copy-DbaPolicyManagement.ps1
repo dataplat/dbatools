@@ -1,4 +1,4 @@
-﻿function Copy-DbaPolicyManagement {
+function Copy-DbaPolicyManagement {
 <#
     .SYNOPSIS
         Migrates SQL Policy Based Management Objects, including both policies and conditions.

@@ -1,4 +1,4 @@
-﻿function Remove-DbaLogin {
+function Remove-DbaLogin {
 <#
     .SYNOPSIS
         Drops a Login

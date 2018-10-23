@@ -1,4 +1,4 @@
-﻿function Invoke-DbaDbLogShipRecovery {
+function Invoke-DbaDbLogShipRecovery {
 <#
     .SYNOPSIS
         Invoke-DbaDbLogShipRecovery recovers log shipped databases to a normal state to act upon a migration or disaster.

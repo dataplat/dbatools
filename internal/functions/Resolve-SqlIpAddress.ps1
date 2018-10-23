@@ -12,3 +12,4 @@ function Resolve-SqlIpAddress {
     $ipaddr = (Test-Connection $servernetbios -count 1).Ipv4Address
     return $ipaddr
 }
+

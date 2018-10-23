@@ -1,4 +1,4 @@
-﻿function Test-Bound {
+function Test-Bound {
     <#
         .SYNOPSIS
             Helperfunction that tests, whether a parameter was bound.

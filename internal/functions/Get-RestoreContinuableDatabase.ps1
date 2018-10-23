@@ -39,3 +39,4 @@ function Get-RestoreContinuableDatabase {
     }
     $server.ConnectionContext.ExecuteWithResults($sql).Tables.Rows
 }
+

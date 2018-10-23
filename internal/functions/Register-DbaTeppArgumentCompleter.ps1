@@ -1,4 +1,4 @@
-﻿function Register-DbaTeppArgumentCompleter {
+function Register-DbaTeppArgumentCompleter {
     <#
         .SYNOPSIS
             Registers a parameter for a prestored Tepp.
@@ -85,3 +85,4 @@
         }
     }
 }
+

@@ -1,4 +1,4 @@
-﻿function Watch-DbaDbLogin {
+function Watch-DbaDbLogin {
 <#
     .SYNOPSIS
         Tracks SQL Server logins: which host they came from, what database they're using, and what program is being used to log in.

@@ -1,4 +1,4 @@
-﻿function Copy-DbaCentralManagementServer {
+function Copy-DbaCentralManagementServer {
 <#
     .SYNOPSIS
         Migrates SQL Server Central Management groups and server instances from one SQL Server to another.

@@ -1,4 +1,4 @@
-﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaOperatingSystem {
 <#
     .SYNOPSIS
@@ -191,3 +191,4 @@ function Get-DbaOperatingSystem {
         }
     }
 }
+

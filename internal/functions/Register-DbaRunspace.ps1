@@ -63,3 +63,4 @@ function Register-DbaRunspace {
         [Sqlcollaborative.Dbatools.Runspace.RunspaceHost]::Runspaces[$Name.ToLower()] = New-Object Sqlcollaborative.Dbatools.Runspace.RunspaceContainer($Name.ToLower(), $ScriptBlock)
     }
 }
+

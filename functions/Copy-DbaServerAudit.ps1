@@ -1,4 +1,4 @@
-﻿function Copy-DbaServerAudit {
+function Copy-DbaServerAudit {
 <#
     .SYNOPSIS
         Copy-DbaServerAudit migrates server audits from one SQL Server to another.
