@@ -1,5 +1,5 @@
 function Get-DbaWindowsLog {
-<#
+    <#
     .SYNOPSIS
         Gets Windows Application events associated with an instance
 
@@ -176,8 +176,7 @@ function Get-DbaWindowsLog {
                     while (-not $reader.EndOfStream) {
                         Convert-ErrorRecord -Line $reader.ReadLine()
                     }
-                }
-                catch { }
+                } catch { }
             }
             #endregion Script that processes an individual file
 
@@ -302,3 +301,4 @@ function Get-DbaWindowsLog {
         $RunspacePool.Dispose()
     }
 }
+

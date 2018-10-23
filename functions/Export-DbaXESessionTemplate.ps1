@@ -1,6 +1,6 @@
 #ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Export-DbaXESessionTemplate {
-<#
+    <#
     .SYNOPSIS
         Exports an XESession XML Template using XE Session(s) output by Get-DbaXESession
 
@@ -64,8 +64,7 @@ function Export-DbaXESessionTemplate {
         foreach ($instance in $SqlInstance) {
             try {
                 $InputObject += Get-DbaXESession -SqlInstance $instance -SqlCredential $SqlCredential -Session $Session -EnableException
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
         }
@@ -79,8 +78,7 @@ function Export-DbaXESessionTemplate {
 
             if ($path.EndsWith(".xml")) {
                 $filename = $path
-            }
-            else {
+            } else {
                 $filename = "$path\$xesname.xml"
             }
             Write-Message -Level Verbose -Message "Wrote $xesname to $filename"
@@ -89,3 +87,4 @@ function Export-DbaXESessionTemplate {
         }
     }
 }
+

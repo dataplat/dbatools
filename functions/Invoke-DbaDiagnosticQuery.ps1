@@ -227,8 +227,7 @@ function Invoke-DbaDiagnosticQuery {
             $counter = 0
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -236,8 +235,7 @@ function Invoke-DbaDiagnosticQuery {
 
             if ($server.VersionMinor -eq 50) {
                 $version = "2008R2"
-            }
-            else {
+            } else {
                 $version = switch ($server.VersionMajor) {
                     9 { "2005" }
                     10 { "2008" }
@@ -259,8 +257,7 @@ function Invoke-DbaDiagnosticQuery {
             if (!$instanceOnly) {
                 if (-not $Database) {
                     $databases = (Get-DbaDatabase -SqlInstance $server -ExcludeAllSystemDb -ExcludeDatabase $ExcludeDatabase).Name
-                }
-                else {
+                } else {
                     $databases = (Get-DbaDatabase -SqlInstance $server -ExcludeAllSystemDb -Database $Database -ExcludeDatabase $ExcludeDatabase).Name
                 }
             }
@@ -292,8 +289,7 @@ function Invoke-DbaDiagnosticQuery {
                 #if running all queries, then calculate total to run by instance queries count + (db specific count * databases to run each against)
                 $countDBSpecific = @($parsedscript | Where-Object {$_.QueryName -in $QueryName -and $_.DBSpecific -eq $true}).Count
                 $countInstanceSpecific = @($parsedscript | Where-Object {$_.QueryName -in $QueryName -and $_.DBSpecific -eq $false}).Count
-            }
-            else {
+            } else {
                 #if narrowing queries to database specific, calculate total to process based on instance queries count + (db specific count * databases to run each against)
                 $countDBSpecific = @($parsedscript | Where-Object DBSpecific).Count
                 $countInstanceSpecific = @($parsedscript | Where-Object DBSpecific -eq $false).Count
@@ -301,14 +297,11 @@ function Invoke-DbaDiagnosticQuery {
             }
             if (!$instanceonly -and !$DatabaseSpecific -and !$QueryName) {
                 $scriptcount = $countInstanceSpecific + ($countDBSpecific * $CountOfDatabases )
-            }
-            elseif ($instanceOnly) {
+            } elseif ($instanceOnly) {
                 $scriptcount = $countInstanceSpecific
-            }
-            elseif ($DatabaseSpecific) {
+            } elseif ($DatabaseSpecific) {
                 $scriptcount = $countDBSpecific * $CountOfDatabases
-            }
-            elseif ($QueryName.Count -ne 0) {
+            } elseif ($QueryName.Count -ne 0) {
                 $scriptcount = $countInstanceSpecific + ($countDBSpecific * $CountOfDatabases )
 
 
@@ -352,8 +345,7 @@ function Invoke-DbaDiagnosticQuery {
                                 }
                                 Write-Message -Level Verbose -Message ("Empty result for Query {0} - {1} - {2}" -f $scriptpart.QueryNr, $scriptpart.QueryName, $scriptpart.Description)
                             }
-                        }
-                        catch {
+                        } catch {
                             Write-Message -Level Verbose -Message ('Some error has occured on Server: {0} - Script: {1}, result unavailable' -f $instance, $scriptpart.QueryName) -Target $instance -ErrorRecord $_
                         }
                         if ($result) {
@@ -373,8 +365,7 @@ function Invoke-DbaDiagnosticQuery {
                             }
 
                         }
-                    }
-                    else {
+                    } else {
                         # if running WhatIf, then return the queries that would be run as an object, not just whatif output
 
                         [pscustomobject]@{
@@ -391,8 +382,7 @@ function Invoke-DbaDiagnosticQuery {
                         }
                     }
 
-                }
-                elseif ($scriptpart.DBSpecific -and !$instanceOnly) {
+                } elseif ($scriptpart.DBSpecific -and !$instanceOnly) {
 
                     foreach ($currentdb in $databases) {
                         if ($ExportQueries) {
@@ -430,8 +420,7 @@ function Invoke-DbaDiagnosticQuery {
                                     }
                                     Write-Message -Level Verbose -Message ("Empty result for Query {0} - {1} - {2}" -f $scriptpart.QueryNr, $scriptpart.QueryName, $scriptpart.Description) -Target $scriptpart -ErrorRecord $_
                                 }
-                            }
-                            catch {
+                            } catch {
                                 Write-Message -Level Verbose -Message ('Some error has occured on Server: {0} - Script: {1} - Database: {2}, result will not be saved' -f $instance, $scriptpart.QueryName, $currentDb) -Target $currentdb -ErrorRecord $_
                             }
 
@@ -451,8 +440,7 @@ function Invoke-DbaDiagnosticQuery {
                                     Result           = $result | Select-Object * -ExcludeProperty 'Item', 'RowError', 'RowState', 'Table', 'ItemArray', 'HasErrors'
                                 }
                             }
-                        }
-                        else {
+                        } else {
                             # if running WhatIf, then return the queries that would be run as an object, not just whatif output
 
                             [pscustomobject]@{
@@ -477,3 +465,4 @@ function Invoke-DbaDiagnosticQuery {
         Write-Progress -Id $ProgressId -Activity 'Invoke-DbaDiagnosticQuery' -Completed
     }
 }
+

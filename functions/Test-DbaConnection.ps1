@@ -1,7 +1,7 @@
 #ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 
 function Test-DbaConnection {
-<#
+    <#
     .SYNOPSIS
         Tests the connection to a single instance.
 
@@ -97,8 +97,7 @@ function Test-DbaConnection {
                         FullComputerName :
                      #>
                 $resolved = Resolve-DbaNetworkName -ComputerName $instance.ComputerName -Credential $Credential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Unable to resolve server information" -Category ConnectionError -Target $instance -ErrorRecord $_ -Continue
             }
 
@@ -107,8 +106,7 @@ function Test-DbaConnection {
             try {
                 $null = Invoke-Command2 -ComputerName $instance.ComputerName -Credential $Credential -ScriptBlock { Get-ChildItem } -ErrorAction Stop
                 $remoting = $true
-            }
-            catch {
+            } catch {
                 $remoting = $_
             }
 
@@ -119,8 +117,7 @@ function Test-DbaConnection {
             # SQL Server connection
             if ($instance.InstanceName -ne "MSSQLSERVER") {
                 $sqlport = "N/A"
-            }
-            else {
+            } else {
                 Write-Message -Level Verbose -Message "Testing raw socket connection to default SQL port"
                 $tcp = New-Object System.Net.Sockets.TcpClient
                 try {
@@ -128,8 +125,7 @@ function Test-DbaConnection {
                     $tcp.Close()
                     $tcp.Dispose()
                     $sqlport = $true
-                }
-                catch {
+                } catch {
                     $sqlport = $false
                 }
             }
@@ -137,8 +133,7 @@ function Test-DbaConnection {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance.FullSmoName -SqlCredential $SqlCredential
                 $connectSuccess = $true
-            }
-            catch {
+            } catch {
                 $connectSuccess = $false
                 Stop-Function -Message "Issue connection to SQL Server on $instance" -Category ConnectionError -Target $instance -ErrorRecord $_ -Continue
             }
@@ -146,24 +141,21 @@ function Test-DbaConnection {
             $username = $server.ConnectionContext.TrueLogin
             if ($username -like "*\*") {
                 $authType = "Windows Authentication"
-            }
-            else {
+            } else {
                 $authType = "SQL Authentication"
             }
 
             # TCP Port
             try {
                 $tcpport = (Get-DbaTcpPort -SqlInstance $server -EnableException).Port
-            }
-            catch {
+            } catch {
                 $tcpport = $_
             }
 
             # Auth Scheme
             try {
                 $authscheme = (Test-DbaConnectionAuthScheme -SqlInstance $server -WarningVariable authwarning -WarningAction SilentlyContinue).AuthScheme
-            }
-            catch {
+            } catch {
                 $authscheme = $_
             }
 
@@ -199,3 +191,4 @@ function Test-DbaConnection {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Test-SqlConnection
     }
 }
+

@@ -1,5 +1,5 @@
 function Get-DbaPbmStore {
-<#
+    <#
     .SYNOPSIS
         Returns the policy based management store.
 
@@ -66,8 +66,7 @@ function Get-DbaPbmStore {
                 $sqlStoreConnection = New-Object Microsoft.SqlServer.Management.Sdk.Sfc.SqlStoreConnection $server.ConnectionContext.SqlConnectionObject
                 # DMF is the Declarative Management Framework, Policy Based Management's old name
                 $store = New-Object Microsoft.SqlServer.Management.DMF.PolicyStore $sqlStoreConnection
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -79,3 +78,4 @@ function Get-DbaPbmStore {
         }
     }
 }
+

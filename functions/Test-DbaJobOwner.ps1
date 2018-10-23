@@ -1,5 +1,5 @@
 function Test-DbaJobOwner {
-<#
+    <#
     .SYNOPSIS
         Checks SQL Agent Job owners against a login to validate which jobs do not match that owner.
 
@@ -92,8 +92,7 @@ function Test-DbaJobOwner {
                 if ($SqlInstance.count -eq 1) {
                     Stop-Function -Message "Invalid login: $Login."
                     return
-                }
-                else {
+                } else {
                     Write-Message -Level Warning -Message "$Login is not a valid login on $instance. Moving on."
                     continue
                 }
@@ -104,7 +103,7 @@ function Test-DbaJobOwner {
             }
 
             #Sets the Default Login to sa if the Login Paramater is not set.
-            if(!($PSBoundParameters.ContainsKey('Login'))){
+            if (!($PSBoundParameters.ContainsKey('Login'))) {
                 $Login = "sa"
             }
             #sql2000 id property is empty -force target login to 'sa' login
@@ -121,11 +120,9 @@ function Test-DbaJobOwner {
             Write-Message -Level Verbose -Message "Gathering jobs to check."
             if ($Job) {
                 $jobCollection = $server.JobServer.Jobs | Where-Object { $Job -contains $_.Name }
-            }
-            elseif ($ExcludeJob) {
+            } elseif ($ExcludeJob) {
                 $jobCollection = $server.JobServer.Jobs | Where-Object { $ExcludeJob -notcontains $_.Name }
-            }
-            else {
+            } else {
                 $jobCollection = $server.JobServer.Jobs
             }
 
@@ -135,26 +132,26 @@ function Test-DbaJobOwner {
                 $row = [ordered]@{
                     Server       = $server.Name
                     Job          = $j.Name
-                    JobType      = if ($j.CategoryID -eq 1){ "Remote" } else { $j.JobType }
+                    JobType      = if ($j.CategoryID -eq 1) { "Remote" } else { $j.JobType }
                     CurrentOwner = $j.OwnerLoginName
                     TargetOwner  = $Login
-                    OwnerMatch   = if ($j.CategoryID -eq 1){ $true } else { $j.OwnerLoginName -eq $Login }
+                    OwnerMatch   = if ($j.CategoryID -eq 1) { $true } else { $j.OwnerLoginName -eq $Login }
 
                 }
                 #add each custom object to the return array
                 $return += New-Object PSObject -Property $row
             }
-            if($Job){
+            if ($Job) {
                 $results = $return
-            }
-            else{
+            } else {
                 $results = $return | Where-Object {$_.OwnerMatch -eq $False}
             }
         }
     }
     end {
         #return results
-            Select-DefaultView -InputObject $results -Property Server, Job, JobType, CurrentOwner, TargetOwner, OwnerMatch
+        Select-DefaultView -InputObject $results -Property Server, Job, JobType, CurrentOwner, TargetOwner, OwnerMatch
     }
 
 }
+

@@ -1,5 +1,5 @@
 function Export-DbaInstance {
-<#
+    <#
     .SYNOPSIS
         Exports SQL Server *ALL* database restore scripts, logins, database mail profiles/accounts, credentials, SQL Agent objects, linked servers,
         Central Management Server objects, server configuration settings (sp_configure), user objects in systems databases,
@@ -168,8 +168,7 @@ function Export-DbaInstance {
             $stepCounter = $filecounter = 0
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential -MinimumVersion 10
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -182,8 +181,7 @@ function Export-DbaInstance {
             if (-not (Test-Path $Path)) {
                 try {
                     $null = New-Item -ItemType Directory -Path $Path -ErrorAction Stop
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Failure" -ErrorRecord $_
                     return
                 }
@@ -371,7 +369,7 @@ function Export-DbaInstance {
                 $null = Get-DbaResourceGovernor -SqlInstance $server | Export-DbaScript -Path "$Path\$fileCounter-resourcegov.sql" -Append -BatchSeparator $BatchSeparator -ScriptingOptionsObject $ScriptingOption
                 $null = Get-DbaRgClassifierFunction -SqlInstance $server | Export-DbaScript -Path "$Path\$fileCounter-resourcegov.sql" -Append -BatchSeparator $BatchSeparator -ScriptingOptionsObject $ScriptingOption
                 $null = Get-DbaRgResourcePool -SqlInstance $server | Where-Object Name -notin 'default', 'internal' | Export-DbaScript -Path "$Path\$fileCounter-resourcegov.sql" -Append -BatchSeparator $BatchSeparator -ScriptingOptionsObject $ScriptingOption
-                $null = Get-DbaRgWorkloadGroup -SqlInstance $server | Where-Object Name -notin 'default','internal' | Export-DbaScript -Path "$Path\$fileCounter-resourcegov.sql" -Append -BatchSeparator $BatchSeparator -ScriptingOptionsObject $ScriptingOption
+                $null = Get-DbaRgWorkloadGroup -SqlInstance $server | Where-Object Name -notin 'default', 'internal' | Export-DbaScript -Path "$Path\$fileCounter-resourcegov.sql" -Append -BatchSeparator $BatchSeparator -ScriptingOptionsObject $ScriptingOption
                 $null = Add-Content -Value "ALTER RESOURCE GOVERNOR RECONFIGURE" -Path "$Path\$stepCounter-resourcegov.sql"
                 Get-ChildItem -ErrorAction Ignore -Path "$Path\$fileCounter-resourcegov.sql"
                 if (-not (Test-Path "$Path\$fileCounter-resourcegov.sql")) {
@@ -451,3 +449,4 @@ function Export-DbaInstance {
         Write-Message -Level Verbose -Message "Total Elapsed time: $totaltime"
     }
 }
+

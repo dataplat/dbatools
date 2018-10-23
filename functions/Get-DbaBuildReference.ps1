@@ -1,6 +1,6 @@
 #ValidationTags#CodeStyle,Messaging,FlowControl,Pipeline#
 function Get-DbaBuildReference {
-<#
+    <#
     .SYNOPSIS
         Returns SQL Server Build infos on a SQL instance
 
@@ -124,8 +124,7 @@ function Get-DbaBuildReference {
                 if ($module_time -gt $data_time) {
                     Copy-Item -Path $orig_idxfile -Destination $writable_idxfile -Force -ErrorAction Stop
                     $result = $module_content
-                }
-                else {
+                } else {
                     $result = $data_content
                     $offline_time = $data_time
                 }
@@ -168,14 +167,12 @@ function Get-DbaBuildReference {
             [System.Net.ServicePointManager]::SecurityProtocol = "Tls12"
             try {
                 $WebContent = Invoke-WebRequest $url -ErrorAction Stop
-            }
-            catch {
+            } catch {
                 try {
                     Write-Message -Level Verbose -Message "Probably using a proxy for internet access, trying default proxy settings"
                     (New-Object System.Net.WebClient).Proxy.Credentials = [System.Net.CredentialCache]::DefaultNetworkCredentials
                     $WebContent = Invoke-WebRequest $url -ErrorAction Stop
-                }
-                catch {
+                } catch {
                     Write-Message -Level Warning -Message "Couldn't download updated index from $url"
                     return
                 }
@@ -207,8 +204,7 @@ function Get-DbaBuildReference {
             If ($IdxVersion.Length -eq 0) {
                 Write-Message -Level Warning -Message "No info in store for this Release"
                 $Detected.Warning = "No info in store for this Release"
-            }
-            else {
+            } else {
                 $LastVer = $IdxVersion[0]
             }
             foreach ($el in $IdxVersion) {
@@ -245,8 +241,7 @@ function Get-DbaBuildReference {
 
         try {
             $IdxRef = Get-DbaBuildReferenceIndex -Moduledirectory $moduledirectory -Update $Update -EnableException $EnableException
-        }
-        catch {
+        } catch {
             Stop-Function -Message "Error loading SQL build reference" -ErrorRecord $_
             return
         }
@@ -258,15 +253,13 @@ function Get-DbaBuildReference {
             #region Ensure the connection is established
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failed to process Instance $Instance" -ErrorRecord $_ -Target $instance -Continue
             }
 
             try {
                 $null = $server.Version.ToString()
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
             #endregion Ensure the connection is established
@@ -306,3 +299,4 @@ function Get-DbaBuildReference {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-DbaSqlBuildReference
     }
 }
+

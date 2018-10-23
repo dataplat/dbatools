@@ -1,6 +1,6 @@
 #ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Stop-DbaXESession {
-<#
+    <#
     .SYNOPSIS
         Stops Extended Events sessions.
 
@@ -60,7 +60,7 @@ function Stop-DbaXESession {
         Stops the sessions returned from the Get-DbaXESession function.
 
 #>
-    [CmdletBinding(SupportsShouldProcess,DefaultParameterSetName = 'Session')]
+    [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = 'Session')]
     param (
         [parameter(Position = 1, Mandatory, ParameterSetName = 'Session')]
         [parameter(Position = 1, Mandatory, ParameterSetName = 'All')]
@@ -97,13 +97,11 @@ function Stop-DbaXESession {
                     if ($Pscmdlet.ShouldProcess("$instance", "Stopping XEvent Session $session")) {
                         try {
                             $xe.Stop()
-                        }
-                        catch {
+                        } catch {
                             Stop-Function -Message "Could not stop XEvent Session on $instance" -Target $session -ErrorRecord $_ -Continue
                         }
                     }
-                }
-                else {
+                } else {
                     Write-Message -Level Warning -Message "$session on $instance is already stopped"
                 }
                 Get-DbaXESession -SqlInstance $xe.Parent -Session $session
@@ -116,16 +114,14 @@ function Stop-DbaXESession {
             if ($Pscmdlet.ShouldProcess("Configuring XEvent Sessions to stop")) {
                 Stop-XESessions $InputObject
             }
-        }
-        else {
+        } else {
             foreach ($instance in $SqlInstance) {
                 $xeSessions = Get-DbaXESession -SqlInstance $instance -SqlCredential $SqlCredential
 
                 # Filter xesessions based on parameters
                 if ($Session) {
                     $xeSessions = $xeSessions | Where-Object { $_.Name -in $Session }
-                }
-                elseif ($AllSessions) {
+                } elseif ($AllSessions) {
                     $systemSessions = @('AlwaysOn_health', 'system_health', 'telemetry_xevents')
                     $xeSessions = $xeSessions | Where-Object { $_.Name -notin $systemSessions }
                 }
@@ -137,3 +133,4 @@ function Stop-DbaXESession {
         }
     }
 }
+

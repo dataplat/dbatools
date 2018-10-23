@@ -1,6 +1,6 @@
 #ValidationTags#Messaging,FlowControl,CodeStyle#
 function Get-DbaCustomError {
-<#
+    <#
     .SYNOPSIS
         Gets SQL Custom Error Message information for each instance(s) of SQL Server.
 
@@ -54,8 +54,7 @@ function Get-DbaCustomError {
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -69,4 +68,5 @@ function Get-DbaCustomError {
         }
     }
 }
+
 

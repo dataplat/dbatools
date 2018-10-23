@@ -1,6 +1,6 @@
 #ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Stop-DbaPfDataCollectorSet {
-<#
+    <#
     .SYNOPSIS
         Stops Performance Monitor Data Collector Set.
 
@@ -116,8 +116,7 @@ function Stop-DbaPfDataCollectorSet {
             if ($Pscmdlet.ShouldProcess($computer, "Stoping Performance Monitor collection set")) {
                 try {
                     Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $setscript -ArgumentList $setname, $wait -ErrorAction Stop
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Failure stopping $setname on $computer." -ErrorRecord $_ -Target $computer -Continue
                 }
 
@@ -126,3 +125,4 @@ function Stop-DbaPfDataCollectorSet {
         }
     }
 }
+

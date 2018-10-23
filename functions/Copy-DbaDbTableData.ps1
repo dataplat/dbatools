@@ -1,6 +1,6 @@
 #ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Copy-DbaDbTableData {
-<#
+    <#
     .SYNOPSIS
         Copies data between SQL Server tables.
 
@@ -231,8 +231,7 @@ function Copy-DbaDbTableData {
 
             try {
                 $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $SqlInstance
                 return
             }
@@ -246,13 +245,11 @@ function Copy-DbaDbTableData {
                 $dbTable = Get-DbaDbTable -SqlInstance $server -Table $Table -Database $Database -EnableException -Verbose:$false
                 if ($dbTable.Count -eq 1) {
                     $InputObject += $dbTable
-                }
-                else {
+                } else {
                     Write-Message -Level Warning -Message "The table $Table matches $($dbTable.Count) objects. Unable to determine which object to copy"
                     continue
                 }
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Unable to determine source table : $Table"
                 return
             }
@@ -272,12 +269,10 @@ function Copy-DbaDbTableData {
 
             if ((Test-Bound -Not -ParameterName Destination)) {
                 $destServer = $server
-            }
-            else {
+            } else {
                 try {
                     $destServer = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Destination
                     return
                 }
@@ -290,8 +285,7 @@ function Copy-DbaDbTableData {
 
             try {
                 $desttable = Get-DbaDbTable -SqlInstance $destServer -Table $DestinationTable -Database $DestinationDatabase -EnableException -Verbose:$false | Select-Object -First 1
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Unable to determine destination table: $DestinationTable"
                 return
             }
@@ -336,11 +330,11 @@ function Copy-DbaDbTableData {
 
                     $elapsed = [System.Diagnostics.Stopwatch]::StartNew()
                     # Add RowCount output
-                    $bulkCopy.Add_SqlRowsCopied({
+                    $bulkCopy.Add_SqlRowsCopied( {
                             $RowsPerSec = [math]::Round($args[1].RowsCopied / $elapsed.ElapsedMilliseconds * 1000.0, 1)
                             Write-Progress -id 1 -activity "Inserting rows" -Status ([System.String]::Format("{0} rows ({1} rows/sec)", $args[1].RowsCopied, $RowsPerSec))
                         })
-                    }
+                }
 
                 if ($Pscmdlet.ShouldProcess($destServer, "Writing rows to $fqtndest")) {
                     $reader = $cmd.ExecuteReader()
@@ -357,18 +351,17 @@ function Copy-DbaDbTableData {
                     $reader.Close()
 
                     [pscustomobject]@{
-                        SourceInstance       = $server.Name
-                        SourceDatabase       = $Database
-                        SourceTable          = $sqltable.Name
-                        DestinationInstance  = $destServer.name
-                        DestinationDatabase  = $DestinationDatabase
-                        DestinationTable     = $desttable.Name
-                        RowsCopied           = $rowstotal
-                        Elapsed              = [prettytimespan]$elapsed.Elapsed
+                        SourceInstance      = $server.Name
+                        SourceDatabase      = $Database
+                        SourceTable         = $sqltable.Name
+                        DestinationInstance = $destServer.name
+                        DestinationDatabase = $DestinationDatabase
+                        DestinationTable    = $desttable.Name
+                        RowsCopied          = $rowstotal
+                        Elapsed             = [prettytimespan]$elapsed.Elapsed
                     }
                 }
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Something went wrong" -ErrorRecord $_ -Target $server -continue
             }
         }
@@ -377,3 +370,4 @@ function Copy-DbaDbTableData {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-DbaTableData
     }
 }
+

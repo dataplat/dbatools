@@ -1,6 +1,6 @@
 #ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function New-DbaXESmartCsvWriter {
-<#
+    <#
     .SYNOPSIS
         This response type is used to write Extended Events to a CSV file.
 
@@ -72,8 +72,7 @@ function New-DbaXESmartCsvWriter {
     begin {
         try {
             Add-Type -Path "$script:PSModuleRoot\bin\XESmartTarget\XESmartTarget.Core.dll" -ErrorAction Stop
-        }
-        catch {
+        } catch {
             Stop-Function -Message "Could not load XESmartTarget.Core.dll" -ErrorRecord $_ -Target "XESmartTarget"
             return
         }
@@ -96,10 +95,10 @@ function New-DbaXESmartCsvWriter {
                     $writer.Filter = $Filter
                 }
                 $writer
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -ErrorRecord $_ -Target "XESmartTarget" -Continue
             }
         }
     }
 }
+

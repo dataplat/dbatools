@@ -1,5 +1,5 @@
 function Clear-DbaConnectionPool {
-<#
+    <#
     .SYNOPSIS
         Resets (or empties) the connection pool.
 
@@ -62,22 +62,18 @@ function Clear-DbaConnectionPool {
                     Write-Message -Level Verbose -Message "Clearing all pools on remote computer $computer"
                     if (Test-Bound 'Credential') {
                         Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock { [System.Data.SqlClient.SqlConnection]::ClearAllPools() }
-                    }
-                    else {
+                    } else {
                         Invoke-Command2 -ComputerName $computer -ScriptBlock { [System.Data.SqlClient.SqlConnection]::ClearAllPools() }
                     }
-                }
-                else {
+                } else {
                     Write-Message -Level Verbose -Message "Clearing all local pools"
                     if (Test-Bound 'Credential') {
                         Invoke-Command2 -Credential $Credential -ScriptBlock { [System.Data.SqlClient.SqlConnection]::ClearAllPools() }
-                    }
-                    else {
+                    } else {
                         Invoke-Command2 -ScriptBlock { [System.Data.SqlClient.SqlConnection]::ClearAllPools() }
                     }
                 }
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -ErrorRecord $_ -Target $computer -Continue
             }
         }
@@ -86,3 +82,4 @@ function Clear-DbaConnectionPool {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Clear-DbaSqlConnectionPool
     }
 }
+

@@ -1,5 +1,5 @@
 function Copy-DbaServerTrigger {
-<#
+    <#
     .SYNOPSIS
         Copy-DbaServerTrigger migrates server triggers from one SQL Server to another.
 
@@ -89,8 +89,7 @@ function Copy-DbaServerTrigger {
     begin {
         try {
             $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -MinimumVersion 9
-        }
-        catch {
+        } catch {
             Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Source
             return
         }
@@ -101,8 +100,7 @@ function Copy-DbaServerTrigger {
         foreach ($destinstance in $Destination) {
             try {
                 $destServer = Connect-SqlInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential -MinimumVersion 9
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
             }
             if ($destServer.VersionMajor -lt $sourceServer.VersionMajor) {
@@ -115,13 +113,13 @@ function Copy-DbaServerTrigger {
                 $triggerName = $trigger.Name
 
                 $copyTriggerStatus = [pscustomobject]@{
-                    SourceServer = $sourceServer.Name
+                    SourceServer      = $sourceServer.Name
                     DestinationServer = $destServer.Name
-                    Name         = $triggerName
-                    Type         = "Server Trigger"
-                    Status       = $null
-                    Notes        = $null
-                    DateTime     = [DbaDateTime](Get-Date)
+                    Name              = $triggerName
+                    Type              = "Server Trigger"
+                    Status            = $null
+                    Notes             = $null
+                    DateTime          = [DbaDateTime](Get-Date)
                 }
 
                 if ($ServerTrigger -and $triggerName -notin $ServerTrigger -or $triggerName -in $ExcludeServerTrigger) {
@@ -136,14 +134,12 @@ function Copy-DbaServerTrigger {
                         $copyTriggerStatus.Status = "Already exists"
                         $copyTriggerStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                         continue
-                    }
-                    else {
+                    } else {
                         if ($Pscmdlet.ShouldProcess($destinstance, "Dropping server trigger $triggerName and recreating")) {
                             try {
                                 Write-Message -Level Verbose -Message "Dropping server trigger $triggerName"
                                 $destServer.Triggers[$triggerName].Drop()
-                            }
-                            catch {
+                            } catch {
                                 $copyTriggerStatus.Status = "Failed"
                                 $copyTriggerStatus.Notes = (Get-ErrorMessage -Record $_)
                                 $copyTriggerStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
@@ -168,8 +164,7 @@ function Copy-DbaServerTrigger {
 
                         $copyTriggerStatus.Status = "Successful"
                         $copyTriggerStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                    }
-                    catch {
+                    } catch {
                         $copyTriggerStatus.Status = "Failed"
                         $copyTriggerStatus.Notes = (Get-ErrorMessage -Record $_)
                         $copyTriggerStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
@@ -184,3 +179,4 @@ function Copy-DbaServerTrigger {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-SqlServerTrigger
     }
 }
+

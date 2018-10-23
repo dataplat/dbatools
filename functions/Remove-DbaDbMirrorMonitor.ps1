@@ -1,6 +1,6 @@
 #ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Remove-DbaDbMirrorMonitor {
-<#
+    <#
     .SYNOPSIS
         Stops and deletes the mirroring monitor job for all the databases on the server instance.
 
@@ -54,24 +54,23 @@ function Remove-DbaDbMirrorMonitor {
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
             if ($Pscmdlet.ShouldProcess($instance, "Removing mirror monitoring")) {
                 try {
                     $server.Query("msdb.dbo.sp_dbmmonitordropmonitoring")
                     [pscustomobject]@{
-                        ComputerName = $server.ComputerName
-                        InstanceName = $server.ServiceName
-                        SqlInstance  = $server.DomainInstanceName
-                        MonitorStatus       = "Removed"
+                        ComputerName  = $server.ComputerName
+                        InstanceName  = $server.ServiceName
+                        SqlInstance   = $server.DomainInstanceName
+                        MonitorStatus = "Removed"
                     }
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
                 }
             }
         }
     }
 }
+

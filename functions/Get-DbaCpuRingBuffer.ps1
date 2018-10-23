@@ -1,5 +1,5 @@
 function Get-DbaCpuRingBuffer {
-<#
+    <#
     .SYNOPSIS
         Collects CPU data from sys.dm_os_ring_buffers.  Works on SQL Server 2005 and above.
 
@@ -85,15 +85,13 @@ function Get-DbaCpuRingBuffer {
 
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             if ($server.VersionMajor -gt 9) {
                 $currentTimestamp = ($server.Query("SELECT cpu_ticks / CONVERT (float, ( cpu_ticks / ms_ticks )) as TimeStamp FROM sys.dm_os_sys_info"))[0]
-            }
-            else {
+            } else {
                 $currentTimestamp = ($server.Query("SELECT cpu_ticks / CONVERT(FLOAT, cpu_ticks_in_ms) as TimeStamp FROM sys.dm_os_sys_info"))[0]
             }
             Write-Message -Level Verbose -Message "Using current timestampe of $currentTimestamp"
@@ -142,3 +140,4 @@ function Get-DbaCpuRingBuffer {
         }
     }
 }
+

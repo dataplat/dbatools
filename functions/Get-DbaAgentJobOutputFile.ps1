@@ -1,5 +1,5 @@
 function Get-DbaAgentJobOutputFile {
-<#
+    <#
     .Synopsis
         Returns the Output File for each step of one or many agent job with the Job Names provided dynamically if
         required for one or more SQL Instances
@@ -105,8 +105,7 @@ function Get-DbaAgentJobOutputFile {
         foreach ($instance in $sqlinstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -130,8 +129,7 @@ function Get-DbaAgentJobOutputFile {
                             RemoteOutputFileName = Join-AdminUNC $Server.ComputerName $Step.OutputFileName
                             StepId               = $Step.Id
                         } | Select-DefaultView -ExcludeProperty StepId
-                    }
-                    else {
+                    } else {
                         Write-Message -Level Verbose -Message "$step for $j has no output file"
                     }
                 }
@@ -139,3 +137,4 @@ function Get-DbaAgentJobOutputFile {
         }
     }
 }
+

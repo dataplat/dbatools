@@ -70,8 +70,7 @@ function New-DbaSsisCatalog {
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 10
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -93,16 +92,14 @@ function New-DbaSsisCatalog {
 
             try {
                 $ssis = New-Object Microsoft.SqlServer.Management.IntegrationServices.IntegrationServices $server
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Can't load server" -Target $instance -ErrorRecord $_
                 return
             }
 
             if ($ssis.Catalogs[$SsisCatalog]) {
                 Stop-Function -Message "SSIS Catalog already exists" -Continue -Target $ssis.Catalogs[$SsisCatalog]
-            }
-            else {
+            } else {
                 if ($Pscmdlet.ShouldProcess($server, "Creating SSIS catalog: $SsisCatalog")) {
                     try {
                         $ssisdb = New-Object Microsoft.SqlServer.Management.IntegrationServices.Catalog ($ssis, $SsisCatalog, $(([System.Runtime.InteropServices.marshal]::PtrToStringAuto([System.Runtime.InteropServices.marshal]::SecureStringToBSTR($password)))))
@@ -115,8 +112,7 @@ function New-DbaSsisCatalog {
                             SsisCatalog  = $SsisCatalog
                             Created      = $true
                         }
-                    }
-                    catch {
+                    } catch {
                         Stop-Function -Message "Failed to create SSIS Catalog: $_" -Target $_ -Continue
                     }
                 }
@@ -124,3 +120,4 @@ function New-DbaSsisCatalog {
         }
     }
 }
+

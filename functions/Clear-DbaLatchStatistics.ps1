@@ -1,5 +1,5 @@
 function Clear-DbaLatchStatistics {
-<#
+    <#
     .SYNOPSIS
         Clears Latch Statistics
 
@@ -70,8 +70,7 @@ function Clear-DbaLatchStatistics {
 
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -79,8 +78,7 @@ function Clear-DbaLatchStatistics {
                 try {
                     $server.Query("DBCC SQLPERF (N'sys.dm_os_latch_stats' , CLEAR);")
                     $status = "Success"
-                }
-                catch {
+                } catch {
                     $status = $_.Exception
                 }
 
@@ -94,3 +92,4 @@ function Clear-DbaLatchStatistics {
         }
     }
 }
+

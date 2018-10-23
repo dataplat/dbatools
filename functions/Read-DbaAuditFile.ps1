@@ -1,5 +1,5 @@
 function Read-DbaAuditFile {
-<#
+    <#
     .SYNOPSIS
         Read Audit details from *.sqlaudit files.
 
@@ -65,12 +65,10 @@ function Read-DbaAuditFile {
             if ($file -is [System.String]) {
                 $currentfile = $file
                 $manualadd = $true
-            }
-            elseif ($file -is [System.IO.FileInfo]) {
+            } elseif ($file -is [System.IO.FileInfo]) {
                 $currentfile = $file.FullName
                 $manualadd = $true
-            }
-            else {
+            } else {
                 if ($file -isnot [Microsoft.SqlServer.Management.Smo.Audit]) {
                     Stop-Function -Message "Unsupported file type."
                     return
@@ -85,8 +83,7 @@ function Read-DbaAuditFile {
 
                 if ($instance.IsLocalHost) {
                     $currentfile = $file.FullName
-                }
-                else {
+                } else {
                     $currentfile = $file.RemoteFullName
                 }
             }
@@ -143,3 +140,4 @@ function Read-DbaAuditFile {
         }
     }
 }
+

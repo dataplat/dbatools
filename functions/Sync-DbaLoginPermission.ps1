@@ -1,5 +1,5 @@
 function Sync-DbaLoginPermission {
-<#
+    <#
     .SYNOPSIS
         Copies SQL login permissions from one server to another.
 
@@ -91,8 +91,7 @@ function Sync-DbaLoginPermission {
 
             try {
                 $sa = ($destServer.Logins | Where-Object { $_.id -eq 1 }).Name
-            }
-            catch {
+            } catch {
                 $sa = "sa"
             }
 
@@ -143,7 +142,7 @@ function Sync-DbaLoginPermission {
         if (!$Login) {
             $login = $sourceServer.Logins.Name
         }
-        if($PSCmdlet.ShouldProcess("$Login","Syncing Logins")){
+        if ($PSCmdlet.ShouldProcess("$Login", "Syncing Logins")) {
             Sync-Only -SourceServer $sourceServer -DestServer $destServer -Logins $login -Exclude $ExcludeLogin
         }
     }
@@ -152,3 +151,4 @@ function Sync-DbaLoginPermission {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Sync-DbaSqlLoginPermission
     }
 }
+

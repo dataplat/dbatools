@@ -1,5 +1,5 @@
 function Import-DbaCsvToSql {
-<#
+    <#
     .SYNOPSIS
         Efficiently imports very large (and small) CSV files into SQL Server using only the .NET Framework and PowerShell.
 
@@ -223,8 +223,7 @@ function Import-DbaCsvToSql {
 
             if ($SqlCredential.count -eq 0 -or $null -eq $SqlCredential) {
                 $paramconn.ConnectionString = "Data Source=$SqlInstance;Integrated Security=True;"
-            }
-            else {
+            } else {
                 $paramconn.ConnectionString = "Data Source=$SqlInstance;User Id=$($SqlCredential.UserName); Password=$($SqlCredential.GetNetworkCredential().Password);"
             }
 
@@ -238,8 +237,7 @@ function Import-DbaCsvToSql {
                 $null = $paramcmd.Dispose()
                 $null = $paramconn.Close()
                 $null = $paramconn.Dispose()
-            }
-            catch {
+            } catch {
                 # But if the routine fails, at least let them specify a database manually
                 $databaselist = ""
             }
@@ -294,8 +292,7 @@ function Import-DbaCsvToSql {
 
             if ($FirstRowColumns -eq $true) {
                 $columns = ($rawcolumns | ForEach-Object { $_ -Replace '"' } | Select-Object -Property @{ Name = "name"; Expression = { "[$_]" } }).name
-            }
-            else {
+            } else {
                 $columns = @()
                 foreach ($number in 1..$rawcolumns.count) {
                     $columns += "[column$number]"
@@ -397,24 +394,19 @@ function Import-DbaCsvToSql {
 
                     try {
                         [System.Guid]::Parse($datatype) | Out-Null; $isguid = $true
-                    }
-                    catch {
+                    } catch {
                         $isguid = $false
                     }
 
                     if ($isguid -eq $true) {
                         $oledatatype = "Text"
-                    }
-                    elseif ([int64]::TryParse($datatype, [ref]0) -eq $true) {
+                    } elseif ([int64]::TryParse($datatype, [ref]0) -eq $true) {
                         $oledatatype = "Long"
-                    }
-                    elseif ([double]::TryParse($datatype, [ref]0) -eq $true) {
+                    } elseif ([double]::TryParse($datatype, [ref]0) -eq $true) {
                         $oledatatype = "Double"
-                    }
-                    elseif ([datetime]::TryParse($datatype, [ref]0) -eq $true) {
+                    } elseif ([datetime]::TryParse($datatype, [ref]0) -eq $true) {
                         $oledatatype = "Text"
-                    }
-                    else {
+                    } else {
                         $oledatatype = "Memo"
                     }
 
@@ -460,14 +452,11 @@ function Import-DbaCsvToSql {
                 # as often as it should have, so we'll just go for a smaller datatype
                 if ([int64]::TryParse($column, [ref]0) -eq $true) {
                     $sqldatatype = "varchar(255)"
-                }
-                elseif ([double]::TryParse($column, [ref]0) -eq $true) {
+                } elseif ([double]::TryParse($column, [ref]0) -eq $true) {
                     $sqldatatype = "varchar(255)"
-                }
-                elseif ([datetime]::TryParse($column, [ref]0) -eq $true) {
+                } elseif ([datetime]::TryParse($column, [ref]0) -eq $true) {
                     $sqldatatype = "varchar(255)"
-                }
-                else {
+                } else {
                     $sqldatatype = "varchar(MAX)"
                 }
 
@@ -478,8 +467,7 @@ function Import-DbaCsvToSql {
             $sqlcmd = New-Object System.Data.SqlClient.SqlCommand($sql, $sqlconn, $transaction)
             try {
                 $null = $sqlcmd.ExecuteNonQuery()
-            }
-            catch {
+            } catch {
                 $errormessage = $_.Exception.Message.ToString()
                 throw "Failed to execute $sql. `nDid you specify the proper delimiter? `n$errormessage"
             }
@@ -530,8 +518,7 @@ function Import-DbaCsvToSql {
         # Hack to get around the delimter parameter ValidateSet
         if ($SingleColumn -eq $true) {
             $InternalDelimiter = ''
-        }
-        else {
+        } else {
             $InternalDelimiter = $Delimiter
         }
 
@@ -581,8 +568,7 @@ function Import-DbaCsvToSql {
             if ($csv.length -eq 0) {
                 throw "No CSV file selected."
             }
-        }
-        else {
+        } else {
             foreach ($file in $csv) {
                 $exists = Test-Path $file
                 if ($exists -eq $false) {
@@ -603,16 +589,14 @@ function Import-DbaCsvToSql {
             $sqlcheckconn = New-Object System.Data.SqlClient.SqlConnection
             if ($SqlCredential.count -eq 0 -or $null -eq $SqlCredential) {
                 $sqlcheckconn.ConnectionString = "Data Source=$SqlInstance;Integrated Security=True;Connection Timeout=3; Initial Catalog=master"
-            }
-            else {
+            } else {
                 $username = ($SqlCredential.UserName).TrimStart("\")
                 $sqlcheckconn.ConnectionString = "Data Source=$SqlInstance;User Id=$username; Password=$($SqlCredential.GetNetworkCredential().Password);Connection Timeout=3; Initial Catalog=master"
             }
 
             try {
                 $sqlcheckconn.Open()
-            }
-            catch {
+            } catch {
                 throw $_.Exception
             }
 
@@ -662,8 +646,7 @@ function Import-DbaCsvToSql {
             if ($null -ne $provider) {
                 if ($provider -is [system.array]) {
                     $provider = $provider[$provider.GetUpperBound(0)].SOURCES_NAME
-                }
-                else {
+                } else {
                     $provider = $provider.SOURCES_NAME
                 }
             }
@@ -758,8 +741,7 @@ function Import-DbaCsvToSql {
                     }
                 }
 
-            }
-            else {
+            } else {
                 $title = "Table name not specified."
                 $message = "Would you like to use the automatically generated name: $table"
                 $yes = New-Object System.Management.Automation.Host.ChoiceDescription "&Yes", "Uses table name $table for import."
@@ -817,8 +799,7 @@ function Import-DbaCsvToSql {
         # Display SQL Server Login info
         if ($sqlcredential.count -gt 0) {
             $username = "SQL login $($SqlCredential.UserName)"
-        }
-        else {
+        } else {
             $username = "Windows login $(whoami)"
         }
         # Open Connection to SQL Server
@@ -826,15 +807,13 @@ function Import-DbaCsvToSql {
         $sqlconn = New-Object System.Data.SqlClient.SqlConnection
         if ($SqlCredential.count -eq 0) {
             $sqlconn.ConnectionString = "Data Source=$SqlInstance;Integrated Security=True;Connection Timeout=3; Initial Catalog=master"
-        }
-        else {
+        } else {
             $sqlconn.ConnectionString = "Data Source=$SqlInstance;User Id=$($SqlCredential.UserName); Password=$($SqlCredential.GetNetworkCredential().Password);Connection Timeout=3; Initial Catalog=master"
         }
 
         try {
             $sqlconn.Open()
-        }
-        catch {
+        } catch {
             throw "Could not open SQL Server connection. Is $SqlInstance online?"
         }
 
@@ -866,8 +845,7 @@ function Import-DbaCsvToSql {
             $sqlcmd = New-Object System.Data.SqlClient.SqlCommand($sql, $sqlconn, $transaction)
             try {
                 $null = $sqlcmd.ExecuteNonQuery()
-            }
-            catch {
+            } catch {
                 Write-Warning "Could not create $schema"
             }
 
@@ -884,8 +862,7 @@ function Import-DbaCsvToSql {
             Write-Output "[*] Table does not exist"
             Write-Output "[*] Creating table"
             New-SqlTable -Csv $Csv -Delimiter $InternalDelimiter -Columns $columns -ColumnText $columntext -SqlConn $sqlconn -Transaction $transaction
-        }
-        else {
+        } else {
             Write-Output "[*] Table exists"
         }
 
@@ -897,8 +874,7 @@ function Import-DbaCsvToSql {
             $sqlcmd = New-Object System.Data.SqlClient.SqlCommand($sql, $sqlconn, $transaction)
             try {
                 $null = $sqlcmd.ExecuteNonQuery()
-            }
-            catch {
+            } catch {
                 Write-Warning "Could not truncate $schema.$table"
             }
         }
@@ -922,8 +898,7 @@ function Import-DbaCsvToSql {
             if ($notifyAfter -eq 0) {
                 if ($resultcount -is [int]) {
                     $notifyafter = $resultcount / 10
-                }
-                else {
+                } else {
                     $notifyafter = 50000
                 }
             }
@@ -945,8 +920,7 @@ function Import-DbaCsvToSql {
             # Create SqlBulkCopy using default options, or options specified in command line.
             if ($bulkCopyOptions.count -gt 1) {
                 $bulkcopy = New-Object Data.SqlClient.SqlBulkCopy($oleconnstring, $bulkCopyOptions, $transaction)
-            }
-            else {
+            } else {
                 $bulkcopy = New-Object Data.SqlClient.SqlBulkCopy($sqlconn, "Default", $transaction)
             }
 
@@ -982,8 +956,7 @@ function Import-DbaCsvToSql {
 
                 try {
                     $oleconn.Open()
-                }
-                catch {
+                } catch {
                     throw "Could not open OLEDB connection."
                 }
 
@@ -991,8 +964,7 @@ function Import-DbaCsvToSql {
                 # This takes extra time, and files over 100MB take too long, so just skip them.
                 if ($sql -match "GROUP BY") {
                     Write-Warning -Message "Query contains GROUP BY clause. Skipping result count."
-                }
-                else {
+                } else {
                     Write-Output "[*] Determining total rows to be copied. This may take a few seconds."
                 }
 
@@ -1001,12 +973,10 @@ function Import-DbaCsvToSql {
                         $split = $sql -split "\bselect top \b"
                         $resultcount = [int]($split[1].Trim().Split()[0])
                         Write-Output "[*] Attempting to fetch $resultcount rows"
-                    }
-                    catch {
+                    } catch {
                         Write-Warning "Couldn't determine total rows to be copied."
                     }
-                }
-                elseif ($sql -notmatch "GROUP BY") {
+                } elseif ($sql -notmatch "GROUP BY") {
                     $filesize = (Get-ChildItem $file).Length / 1MB
                     if ($filesize -lt 100) {
                         try {
@@ -1018,12 +988,10 @@ function Import-DbaCsvToSql {
                             $olecmd.CommandText = $sqlcount
                             $resultcount = [int]($olecmd.ExecuteScalar())
                             Write-Output "[*] $resultcount rows will be copied"
-                        }
-                        catch {
+                        } catch {
                             Write-Warning "Couldn't determine total rows to be copied"
                         }
-                    }
-                    else {
+                    } else {
                         Write-Output "[*] File is too large for efficient result count; progress bar will not be shown."
                     }
                 }
@@ -1124,8 +1092,7 @@ function Import-DbaCsvToSql {
                             $i++
                             if ($quoted -eq $true) {
                                 $null = $datatable.Rows.Add(($line.TrimStart('"').TrimEnd('"')) -Split "`"$InternalDelimiter`"")
-                            }
-                            else {
+                            } else {
                                 $row = $datatable.Rows.Add($line.Split($InternalDelimiter))
                             }
 
@@ -1135,8 +1102,7 @@ function Import-DbaCsvToSql {
                                 $datatable.Clear()
                             }
                         }
-                    }
-                    else {
+                    } else {
                         if ($turbo -eq $true -and $first -gt 0) { Write-Warning -Message "Using -First makes turbo a little slower." }
                         # Start import!
                         while ($null -ne ($line = $reader.ReadLine())) {
@@ -1144,12 +1110,10 @@ function Import-DbaCsvToSql {
                             try {
                                 if ($quoted -eq $true) {
                                     $row = $datatable.Rows.Add(($line.TrimStart('"').TrimEnd('"')) -Split $pattern)
-                                }
-                                else {
+                                } else {
                                     $row = $datatable.Rows.Add($line.Split($InternalDelimiter))
                                 }
-                            }
-                            catch {
+                            } catch {
                                 $row = $datatable.NewRow()
                                 try {
                                     $tempcolumn = $line.Split($InternalDelimiter)
@@ -1157,15 +1121,13 @@ function Import-DbaCsvToSql {
                                     foreach ($column in $tempcolumn) {
                                         if ($column.length -ne 0) {
                                             $row.item($colnum) = $column
-                                        }
-                                        else {
+                                        } else {
                                             $row.item($colnum) = [DBnull]::Value
                                         }
                                         $colnum++
                                     }
                                     $newrow = $datatable.Rows.Add($row)
-                                }
-                                catch {
+                                } catch {
                                     Write-Warning "The following line ($i) is causing issues:"
                                     Write-Output $line.Replace($InternalDelimiter, "`n")
 
@@ -1197,8 +1159,7 @@ function Import-DbaCsvToSql {
                         $bulkcopy.WriteToServer($datatable)
                         $datatable.Clear()
                     }
-                }
-                else {
+                } else {
                     # Add rowcount output
                     $bulkCopy.Add_SqlRowscopied( {
                             $script:totalrows = $args[1].RowsCopied
@@ -1206,8 +1167,7 @@ function Import-DbaCsvToSql {
                                 $percent = [int](($script:totalrows / $resultcount) * 100)
                                 $timetaken = [math]::Round($elapsed.Elapsed.TotalSeconds, 2)
                                 Write-Progress -id 1 -activity "Inserting $resultcount rows" -percentcomplete $percent -status ([System.String]::Format("Progress: {0} rows ({1}%) in {2} seconds", $script:totalrows, $percent, $timetaken))
-                            }
-                            else {
+                            } else {
                                 Write-Host "$($script:totalrows) rows copied in $([math]::Round($elapsed.Elapsed.TotalSeconds, 2)) seconds."
                             }
                         })
@@ -1219,8 +1179,7 @@ function Import-DbaCsvToSql {
 
                 }
                 $completed = $true
-            }
-            catch {
+            } catch {
                 # If possible, give more information about common errors.
                 if ($resultcount -is [int]) { Write-Progress -id 1 -activity "Inserting $resultcount rows" -status "Failed" -Completed }
                 $errormessage = $_.Exception.Message.ToString()
@@ -1230,8 +1189,7 @@ function Import-DbaCsvToSql {
                     Write-Error -Message "Looks like your SQL syntax may be invalid. `nCheck the documentation for more information or start with a simple -Query 'select top 10 * from csv'."
                     Write-Error -Message "Valid CSV columns are $columns."
 
-                }
-                elseif ($errormessage -match "invalid column length") {
+                } elseif ($errormessage -match "invalid column length") {
 
                     # Get more information about malformed CSV input
                     $pattern = @("\d+")
@@ -1248,13 +1206,11 @@ function Import-DbaCsvToSql {
                         Write-Warning "Column $index ($column) contains data with a length greater than $length."
                         Write-Warning "SqlBulkCopy makes it pretty much impossible to know which row caused the issue, but it's somewhere after row $($script:totalrows)."
                     }
-                }
-                elseif ($errormessage -match "does not allow DBNull" -or $errormessage -match "The given value of type") {
+                } elseif ($errormessage -match "does not allow DBNull" -or $errormessage -match "The given value of type") {
 
                     if ($tablexists -eq $false) {
                         Write-Error "Looks like the datatype prediction didn't work out. Please create the table manually with proper datatypes then rerun the import script."
-                    }
-                    else {
+                    } else {
                         $sql = "select name from sys.columns where object_id = object_id('$table') order by column_id"
                         $sqlcmd = New-Object System.Data.SqlClient.SqlCommand($sql, $sqlconn, $transaction)
                         $datatable = New-Object System.Data.DataTable
@@ -1274,12 +1230,10 @@ function Import-DbaCsvToSql {
                     }
 
 
-                }
-                elseif ($errormessage -match "Input string was not in a correct format" -or $errormessage -match "The given ColumnName") {
+                } elseif ($errormessage -match "Input string was not in a correct format" -or $errormessage -match "The given ColumnName") {
                     Write-Warning "CSV contents may be malformed."
                     Write-Error $errormessage
-                }
-                else { Write-Error $errormessage }
+                } else { Write-Error $errormessage }
             }
         }
 
@@ -1289,13 +1243,11 @@ function Import-DbaCsvToSql {
 
             if ($safe -eq $false) {
                 Write-Output "[*] $i total rows copied"
-            }
-            else {
+            } else {
                 $total = [System.Data.SqlClient.SqlBulkCopyExtension]::RowsCopiedCount($bulkcopy)
                 Write-Output "[*] $total total rows copied"
             }
-        }
-        else {
+        } else {
             Write-Output "[*] Transaction rolled back."
             Write-Output "[*] (Was the proper parameter specified? Is the first row the column name?)."
         }
@@ -1313,9 +1265,8 @@ function Import-DbaCsvToSql {
 
             $null = $sqlconn.close(); $null = $sqlconn.Dispose();
             $null = $bulkCopy.close(); $bulkcopy.dispose();
-            $null =  $reader.close(); $null = $reader.dispose()
-        }
-        catch {
+            $null = $reader.close(); $null = $reader.dispose()
+        } catch {
 
         }
 
@@ -1351,3 +1302,4 @@ function Import-DbaCsvToSql {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Import-CsvToSql
     }
 }
+

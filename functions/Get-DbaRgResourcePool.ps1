@@ -1,5 +1,5 @@
 function Get-DbaRgResourcePool {
-<#
+    <#
     .SYNOPSIS
         Gets Resource Governor Pool objects, including internal or external
 
@@ -77,8 +77,7 @@ function Get-DbaRgResourcePool {
                     $respool | Add-Member -Force -MemberType NoteProperty -Name SqlInstance -value $resourcegov.SqlInstance
                     $respool | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, Id, Name, CapCpuPercentage, IsSystemObject, MaximumCpuPercentage, MaximumIopsPerVolume, MaximumMemoryPercentage, MinimumCpuPercentage, MinimumIopsPerVolume, MinimumMemoryPercentage, WorkloadGroups
                 }
-            }
-            else {
+            } else {
                 $respool = $resourcegov.ResourcePools
                 if ($respool) {
                     $respool | Add-Member -Force -MemberType NoteProperty -Name ComputerName -value $resourcegov.ComputerName
@@ -90,3 +89,4 @@ function Get-DbaRgResourcePool {
         }
     }
 }
+

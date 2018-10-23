@@ -1,5 +1,5 @@
 function Get-DbaManagementObject {
-<#
+    <#
     .SYNOPSIS
         Gets SQL Mangaement Object versions installed on the machine.
 
@@ -69,8 +69,7 @@ function Get-DbaManagementObject {
                 $loadedversion = $loadedversion | ForEach-Object {
                     if ($_.Location -match "__") {
                         ((Split-Path (Split-Path $_.Location) -Leaf) -split "__")[0]
-                    }
-                    else {
+                    } else {
                         ((Get-ChildItem -Path $_.Location).VersionInfo.ProductVersion)
                     }
                 }
@@ -88,8 +87,7 @@ function Get-DbaManagementObject {
                         Loaded       = $loadedversion -contains $localversion
                         LoadTemplate = "Add-Type -Path $("$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Smo.dll")"
                     }
-                }
-                else {
+                } else {
                     Write-Verbose -Message "Passed version $VersionNumber, looking for that specific version"
                     if ($localversion.ToString().StartsWith("$VersionNumber.")) {
                         Write-Verbose -Message "Found the Version $VersionNumber"
@@ -117,8 +115,7 @@ function Get-DbaManagementObject {
                         Loaded       = $loadedversion -contains $currentversion
                         LoadTemplate = "Add-Type -AssemblyName `"Microsoft.SqlServer.Smo, Version=$($array[0]), Culture=neutral, PublicKeyToken=89845dcd8080cc91`""
                     }
-                }
-                else {
+                } else {
                     Write-Verbose -Message "Passed version $VersionNumber, looking for that specific version"
                     if ($array[0].StartsWith("$VersionNumber.")) {
                         Write-Verbose -Message "Found the Version $VersionNumber"
@@ -140,8 +137,7 @@ function Get-DbaManagementObject {
             try {
                 Write-Message -Level Verbose -Message "Executing scriptblock against $computer"
                 Invoke-Command2 -ComputerName $computer -ScriptBlock $scriptblock -Credential $Credential -ArgumentList $VersionNumber -ErrorAction Stop
-            }
-            catch {
+            } catch {
                 Stop-Function -Continue -Message "Failure" -ErrorRecord $_ -Target $ComputerName
             }
         }
@@ -150,3 +146,4 @@ function Get-DbaManagementObject {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-DbaSqlManagementObject
     }
 }
+

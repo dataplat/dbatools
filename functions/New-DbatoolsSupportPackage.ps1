@@ -1,5 +1,5 @@
 function New-DbatoolsSupportPackage {
-<#
+    <#
     .SYNOPSIS
         Creates a package of troubleshooting information that can be used by dbatools to help debug issues.
 
@@ -117,8 +117,7 @@ function New-DbatoolsSupportPackage {
 
                 # Cut results to the limit and return them
                 return $lines[$int .. $z]
-            }
-            catch { }
+            } catch { }
         }
         #endregion Helper functions
     }
@@ -128,7 +127,7 @@ function New-DbatoolsSupportPackage {
             $filePathXml = "$($Path.Trim('\'))\dbatools_support_pack_$(Get-Date -Format "yyyy_MM_dd-HH_mm_ss").xml"
             $filePathZip = $filePathXml -replace "\.xml$", ".zip"
 
-        Write-Message -Level Critical -Message @"
+            Write-Message -Level Critical -Message @"
 Gathering information...
 Will write the final output to: $filePathZip
 
@@ -190,3 +189,4 @@ This will make it easier for us to troubleshoot and you won't be sending us the 
         Write-Message -Level InternalComment -Message "Ending"
     }
 }
+

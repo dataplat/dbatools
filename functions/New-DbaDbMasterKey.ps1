@@ -1,6 +1,6 @@
 #ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function New-DbaDbMasterKey {
-<#
+    <#
     .SYNOPSIS
         Creates a new database master key
 
@@ -75,8 +75,7 @@ function New-DbaDbMasterKey {
     begin {
         if ($Credential) {
             $Password = $Credential.Password
-        }
-        else {
+        } else {
             if (-not $Password) {
                 $Password = Read-Host "Password" -AsSecureString
             }
@@ -103,8 +102,7 @@ function New-DbaDbMasterKey {
                     Add-Member -Force -InputObject $masterkey -MemberType NoteProperty -Name Database -value $db.Name
                     
                     Select-DefaultView -InputObject $masterkey -Property ComputerName, InstanceName, SqlInstance, Database, CreateDate, DateLastModified, IsEncryptedByServer
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Failed to create master key in $db on $instance. Exception: $($_.Exception.InnerException)" -Target $masterkey -ErrorRecord $_ -Continue
                 }
             }
@@ -114,3 +112,4 @@ function New-DbaDbMasterKey {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias New-DbaDatabaseMasterKey
     }
 }
+

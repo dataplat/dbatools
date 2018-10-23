@@ -1,5 +1,5 @@
 function Watch-DbaDbLogin {
-<#
+    <#
     .SYNOPSIS
         Tracks SQL Server logins: which host they came from, what database they're using, and what program is being used to log in.
 
@@ -85,8 +85,7 @@ function Watch-DbaDbLogin {
 
         try {
             $serverDest = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
-        }
-        catch {
+        } catch {
             Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $SqlInstance -Continue
         }
 
@@ -99,8 +98,7 @@ function Watch-DbaDbLogin {
         if ($SqlCms) {
             try {
                 $servers = Get-DbaCmsRegServerName -SqlInstance $SqlCms -SqlCredential $SqlCredential -EnableException
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "The CMS server, $SqlCms, was not accessible." -Target $SqlCms -ErrorRecord $_
                 return
             }
@@ -108,8 +106,7 @@ function Watch-DbaDbLogin {
         if (Test-Bound 'ServersFromFile') {
             if (Test-Path $ServersFromFile) {
                 $servers = Get-Content $ServersFromFile
-            }
-            else {
+            } else {
                 Stop-Function -Message "$ServersFromFile was not found." -Target $ServersFromFile
                 return
             }
@@ -121,8 +118,7 @@ function Watch-DbaDbLogin {
         foreach ($instance in $servers) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -153,8 +149,7 @@ function Watch-DbaDbLogin {
                 $procs | Select-Object @{Label = "ComputerName"; Expression = {$server.ComputerName}}, @{Label = "InstanceName"; Expression = {$server.ServiceName}}, @{Label = "SqlInstance"; Expression = {$server.DomainInstanceName}}, LoginTime, Login, Host, Program, DatabaseId, Database, IsSystem, CaptureTime | ConvertTo-DbaDataTable | Write-DbaDataTable -SqlInstance $serverDest -Database $Database -Table $Table -AutoCreateTable
 
                 Write-Output "Added process information for $instance to datatable."
-            }
-            else {
+            } else {
                 Write-message -Level Verbose -Message "No data returned for $instance."
             }
         }
@@ -163,3 +158,4 @@ function Watch-DbaDbLogin {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Watch-SqlDbLogin
     }
 }
+

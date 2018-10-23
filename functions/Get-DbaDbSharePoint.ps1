@@ -1,6 +1,6 @@
 #ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaDbSharePoint {
-<#
+    <#
     .SYNOPSIS
         Returns databases that are part of a SharePoint Farm.
 
@@ -68,10 +68,10 @@ function Get-DbaDbSharePoint {
                 $dbid = $db.Query("[dbo].[proc_getObjectsByBaseClass] @BaseClassId = '$guid', @ParentId = NULL").Id.Guid -join "', '"
                 $dbname = $db.Query("SELECT [Name] FROM [SharePoint_Config].[dbo].[Objects] WHERE id in ('$dbid')").Name
                 Get-DbaDatabase -SqlInstance $db.Parent -Database $dbname
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -ErrorRecord $_
             }
         }
     }
 }
+

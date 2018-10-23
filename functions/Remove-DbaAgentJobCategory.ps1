@@ -1,5 +1,5 @@
 function Remove-DbaAgentJobCategory {
-<#
+    <#
     .SYNOPSIS
         Remove-DbaAgentJobCategory removes a job category.
 
@@ -77,8 +77,7 @@ function Remove-DbaAgentJobCategory {
             # Try connecting to the instance
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -99,8 +98,7 @@ function Remove-DbaAgentJobCategory {
                         Write-Message -Message "Removing job category $cat" -Level Verbose
 
                         $currentCategory.Drop()
-                    }
-                    catch {
+                    } catch {
                         Stop-Function -Message "Something went wrong removing the job category $cat on $instance" -Target $cat -Continue -ErrorRecord $_
                     }
 
@@ -118,3 +116,4 @@ function Remove-DbaAgentJobCategory {
     }
 
 }
+

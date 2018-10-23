@@ -1,5 +1,5 @@
 function Get-DbaDBMailAccount {
-<#
+    <#
     .SYNOPSIS
         Gets database mail accounts from SQL Server
 
@@ -98,10 +98,10 @@ function Get-DbaDBMailAccount {
                 $accounts | Add-Member -Force -MemberType NoteProperty -Name InstanceName -value $mailserver.InstanceName
                 $accounts | Add-Member -Force -MemberType NoteProperty -Name SqlInstance -value $mailserver.SqlInstance
                 $accounts | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, ID, Name, DisplayName, Description, EmailAddress, ReplyToAddress, IsBusyAccount, MailServers
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
             }
         }
     }
 }
+

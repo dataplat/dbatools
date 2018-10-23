@@ -1,6 +1,6 @@
 #ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Import-DbaCmsRegServer {
-<#
+    <#
     .SYNOPSIS
         Imports registered servers and registered server groups to SQL Server Central Management Server (CMS)
 
@@ -85,8 +85,7 @@ function Import-DbaCmsRegServer {
             if ((Test-Bound -ParameterName Group) -and (Test-Bound -Not -ParameterName Path)) {
                 if ($Group -is [Microsoft.SqlServer.Management.RegisteredServers.ServerGroup]) {
                     $groupobject = $Group
-                }
-                else {
+                } else {
                     $groupobject = Get-DbaCmsRegServerGroup -SqlInstance $instance -SqlCredential $SqlCredential -Group $Group
                 }
                 if (-not $groupobject) {
@@ -102,8 +101,7 @@ function Import-DbaCmsRegServer {
                         $groupexists = Add-DbaCmsRegServerGroup -SqlInstance $instance -SqlCredential $SqlCredential -Name $object.Parent.Name
                     }
                     Add-DbaCmsRegServer -SqlInstance $instance -SqlCredential $SqlCredential -Name $object.Name -ServerName $object.ServerName -Description $object.Description -Group $groupexists
-                }
-                elseif ($object -is [Microsoft.SqlServer.Management.RegisteredServers.ServerGroup]) {
+                } elseif ($object -is [Microsoft.SqlServer.Management.RegisteredServers.ServerGroup]) {
                     foreach ($regserver in $object.RegisteredServers) {
                         $groupexists = Get-DbaCmsRegServerGroup -SqlInstance $instance -SqlCredential $SqlCredential -Group $regserver.Parent.Name
                         if (-not $groupexists) {
@@ -111,17 +109,14 @@ function Import-DbaCmsRegServer {
                         }
                         Add-DbaCmsRegServer -SqlInstance $instance -SqlCredential $SqlCredential -Name $regserver.Name -ServerName $regserver.ServerName -Description $regserver.Description -Group $groupexists
                     }
-                }
-                elseif ($object -is [System.IO.FileInfo]) {
+                } elseif ($object -is [System.IO.FileInfo]) {
                     if ((Test-Bound -ParameterName Group)) {
                         if ($Group -is [Microsoft.SqlServer.Management.RegisteredServers.ServerGroup]) {
                             $reggroups = $Group
-                        }
-                        else {
+                        } else {
                             $reggroups = Get-DbaCmsRegServerGroup -SqlInstance $instance -SqlCredential $SqlCredential -Group $Group
                         }
-                    }
-                    else {
+                    } else {
                         $reggroups = Get-DbaCmsRegServerGroup -SqlInstance $instance -SqlCredential $SqlCredential -Id 1
                     }
 
@@ -136,14 +131,12 @@ function Import-DbaCmsRegServer {
                                 $urnlist = $reggroup.RegisteredServers.Urn.Value
                                 $reggroup.Import($file.FullName)
                                 Get-DbaCmsRegServer -SqlInstance $instance -SqlCredential $SqlCredential | Where-Object { $_.Urn.Value -notin $urnlist }
-                            }
-                            catch {
+                            } catch {
                                 Stop-Function -Message "Failure attempting to import $file to $instance" -ErrorRecord $_ -Continue
                             }
                         }
                     }
-                }
-                else {
+                } else {
                     if (-not $object.ServerName) {
                         Stop-Function -Message "Property 'ServerName' not found in InputObject. No servers added." -Continue
                     }
@@ -156,3 +149,4 @@ function Import-DbaCmsRegServer {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Import-DbaRegisteredServer
     }
 }
+

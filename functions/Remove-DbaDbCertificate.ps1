@@ -1,6 +1,6 @@
 #ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Remove-DbaDbCertificate {
-<#
+    <#
     .SYNOPSIS
         Deletes specified database certificate
 
@@ -89,11 +89,11 @@ function Remove-DbaDbCertificate {
                         Certificate  = $cert.Name
                         Status       = "Success"
                     }
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Failed to drop certificate named $($cert.Name) from $($db.Name) on $($server.Name)." -Target $smocert -ErrorRecord $_ -Continue
                 }
             }
         }
     }
 }
+

@@ -1,5 +1,5 @@
 function Show-DbaDbList {
-<#
+    <#
     .SYNOPSIS
         Shows a list of databases in a GUI.
 
@@ -62,8 +62,7 @@ function Show-DbaDbList {
     begin {
         try {
             Add-Type -AssemblyName PresentationFramework
-        }
-        catch {
+        } catch {
             throw "Windows Presentation Framework required but not installed"
         }
 
@@ -161,8 +160,7 @@ function Show-DbaDbList {
 
         try {
             $databases = $sourceserver.databases.name
-        }
-        catch {
+        } catch {
             return
         }
 
@@ -201,3 +199,4 @@ function Show-DbaDbList {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Show-DbaDatabaseList
     }
 }
+

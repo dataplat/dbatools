@@ -1,5 +1,5 @@
 function Test-DbaDiskSpeed {
-<#
+    <#
     .SYNOPSIS
         Tests how disks are performing.
 
@@ -110,8 +110,7 @@ function Test-DbaDiskSpeed {
 
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
             Write-Message -Level Debug -Message "Executing $sql"
@@ -119,3 +118,4 @@ function Test-DbaDiskSpeed {
         }
     }
 }
+

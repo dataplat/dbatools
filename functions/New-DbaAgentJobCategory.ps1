@@ -1,5 +1,5 @@
 function New-DbaAgentJobCategory {
-<#
+    <#
     .SYNOPSIS
         New-DbaAgentJobCategory creates a new job category.
 
@@ -88,8 +88,7 @@ function New-DbaAgentJobCategory {
             # Try connecting to the instance
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -97,8 +96,7 @@ function New-DbaAgentJobCategory {
                 # Check if the category already exists
                 if ($cat -in $server.JobServer.JobCategories.Name) {
                     Stop-Function -Message "Job category $cat already exists on $instance" -Target $instance -Continue
-                }
-                else {
+                } else {
                     if ($PSCmdlet.ShouldProcess($instance, "Adding the job category $cat")) {
                         try {
                             $jobcategory = New-Object Microsoft.SqlServer.Management.Smo.Agent.JobCategory($server.JobServer, $cat)
@@ -107,8 +105,7 @@ function New-DbaAgentJobCategory {
                             $jobcategory.Create()
 
                             $server.JobServer.Refresh()
-                        }
-                        catch {
+                        } catch {
                             Stop-Function -Message "Something went wrong creating the job category $cat on $instance" -Target $cat -Continue -ErrorRecord $_
                         }
 
@@ -130,3 +127,4 @@ function New-DbaAgentJobCategory {
     }
 
 }
+

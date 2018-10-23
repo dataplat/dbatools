@@ -1,5 +1,5 @@
 function Restore-DbaDatabase {
-<#
+    <#
     .SYNOPSIS
         Restores a SQL Server Database from a set of backup files
 
@@ -410,13 +410,12 @@ function Restore-DbaDatabase {
         #region Validation
         try {
             $RestoreInstance = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
-        }
-        catch {
+        } catch {
             Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             return
         }
-        if ($RestoreInstance.VersionMajor -eq 8 -and $true -ne $TrustDbBackupHistory){
-$sql2000txt = @'
+        if ($RestoreInstance.VersionMajor -eq 8 -and $true -ne $TrustDbBackupHistory) {
+            $sql2000txt = @'
 Due to SQL Server 2000 not returning all the backup headers we cannot restore directly. As this is an issues with the SQL engine all we can offer is the following workaround
 This will use a SQL Server instance > 2000 to read the headers, and then pass them in to Restore-DbaDatabase as a BacukupHistory object:
 
@@ -506,8 +505,7 @@ $BackupHistory | Restore-Dbadatabase -SqlInstance sql2000 -TrustDbBackupHistory
         # changing statement timeout to $StatementTimeout
         if ($StatementTimeout -eq 0) {
             Write-Message -Level Verbose -Message "Changing statement timeout to infinity"
-        }
-        else {
+        } else {
             Write-Message -Level Verbose -Message "Changing statement timeout to ($StatementTimeout) minutes"
         }
         $RestoreInstance.ConnectionContext.StatementTimeout = ($StatementTimeout * 60)
@@ -559,14 +557,12 @@ $BackupHistory | Restore-Dbadatabase -SqlInstance sql2000 -TrustDbBackupHistory
                     $BackupHistory += $F | Select-Object *, @{ Name = "ServerName"; Expression = { $_.SqlInstance } }, @{ Name = "BackupStartDate"; Expression = { $_.Start -as [DateTime] } }
 
                 }
-            }
-            else {
+            } else {
                 $files = @()
                 foreach ($f in $Path) {
                     if ($f -is [System.IO.FileSystemInfo]) {
                         $files += $f.fullname
-                    }
-                    else {
+                    } else {
                         $files += $f
                     }
                 }
@@ -580,19 +576,16 @@ $BackupHistory | Restore-Dbadatabase -SqlInstance sql2000 -TrustDbBackupHistory
                 }
                 $WithReplace = $true
             }
-        }
-        elseif ($PSCmdlet.ParameterSetName -eq "Recovery") {
+        } elseif ($PSCmdlet.ParameterSetName -eq "Recovery") {
             Write-Message -Message "$($Database.count) databases to recover" -level Verbose
             ForEach ($DataBase in $DatabaseName) {
                 if ($database -is [object]) {
                     #We've got an object, try the normal options Database, DatabaseName, Name
                     if ("Database" -in $Database.PSobject.Properties.name) {
                         [string]$DataBase = $database.Database
-                    }
-                    elseif ("DatabaseName" -in $Database.PSobject.Properties.name) {
+                    } elseif ("DatabaseName" -in $Database.PSobject.Properties.name) {
                         [string]$DataBase = $database.DatabaseName
-                    }
-                    elseif ("Name" -in $Database.PSobject.Properties.name) {
+                    } elseif ("Name" -in $Database.PSobject.Properties.name) {
                         [string]$DataBase = $database.name
                     }
                 }
@@ -612,13 +605,11 @@ $BackupHistory | Restore-Dbadatabase -SqlInstance sql2000 -TrustDbBackupHistory
                 Write-Message -Message "Recovery Sql Query - $RecoverSql" -level verbose
                 Try {
                     $RestoreInstance.query($RecoverSql)
-                }
-                Catch {
+                } Catch {
                     $RestoreComplete = $False
                     $ExitError = $_.Exception.InnerException
                     Write-Message -Level Warning -Message "Failed to recover $Database on $RestoreInstance, `n $ExitError"
-                }
-                Finally {
+                } Finally {
                     [PSCustomObject]@{
                         SqlInstance     = $SqlInstance
                         DatabaseName    = $Database
@@ -669,8 +660,7 @@ $BackupHistory | Restore-Dbadatabase -SqlInstance sql2000 -TrustDbBackupHistory
             try {
                 Write-Message -Level Verbose -Message "VerifyOnly = $VerifyOnly"
                 $null = $FilteredBackupHistory | Test-DbaBackupInformation -SqlInstance $RestoreInstance -WithReplace:$WithReplace -Continue:$Continue -VerifyOnly:$VerifyOnly -EnableException:$true -OutputScriptOnly:$OutputScriptOnly
-            }
-            catch {
+            } catch {
                 Stop-Function -ErrorRecord $_ -Message "Failure" -Continue
             }
 
@@ -687,8 +677,7 @@ $BackupHistory | Restore-Dbadatabase -SqlInstance sql2000 -TrustDbBackupHistory
                 $DbUnVerified = ($FilteredBackupHistory | Where-Object { $_.IsVerified -eq $False } | Select-Object -Property Database -Unique).Database -join ','
                 if ($AllowContinue) {
                     Write-Message -Message "$DbUnverified failed testing, AllowContinue set" -Level Verbose
-                }
-                else {
+                } else {
                     Stop-Function -Message "Database $DbUnverified failed testing, AllowContinue not set, exiting"
                     return
                 }
@@ -698,8 +687,7 @@ $BackupHistory | Restore-Dbadatabase -SqlInstance sql2000 -TrustDbBackupHistory
                 if (($FilteredBackupHistory.Database | select-Object -unique | Measure-Object).count -ne 1) {
                     Stop-Function -Message "Must only 1 database passed in for Page Restore. Sorry"
                     return
-                }
-                else {
+                } else {
                     $WithReplace = $false
                     $PageDb = ($FilteredBackupHistory.Database | select-Object -unique).Database
                 }
@@ -711,8 +699,7 @@ $BackupHistory | Restore-Dbadatabase -SqlInstance sql2000 -TrustDbBackupHistory
             }
             try {
                 $FilteredBackupHistory | Where-Object { $_.IsVerified -eq $true } | Invoke-DbaAdvancedRestore -SqlInstance $RestoreInstance -WithReplace:$WithReplace -RestoreTime $RestoreTime -StandbyDirectory $StandbyDirectory -NoRecovery:$NoRecovery -Continue:$Continue -OutputScriptOnly:$OutputScriptOnly -BlockSize $BlockSize -MaxTransferSize $MaxTransferSize -Buffercount $Buffercount -KeepCDC:$KeepCDC -VerifyOnly:$VerifyOnly -PageRestore $PageRestore -EnableException -AzureCredential $AzureCredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -ErrorRecord $_ -Continue -Target $RestoreInstance
             }
             if ($PSCmdlet.ParameterSetName -eq "RestorePage" ) {
@@ -728,3 +715,4 @@ $BackupHistory | Restore-Dbadatabase -SqlInstance sql2000 -TrustDbBackupHistory
         }
     }
 }
+

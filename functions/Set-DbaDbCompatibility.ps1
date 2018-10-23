@@ -1,5 +1,5 @@
 function Set-DbaDbCompatibility {
-<#
+    <#
     .SYNOPSIS
         Sets the compatibility level for SQL Server databases.
 
@@ -75,7 +75,7 @@ function Set-DbaDbCompatibility {
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string[]]$Database,
-        [ValidateSet(9,10,11,12,13,14,15)]
+        [ValidateSet(9, 10, 11, 12, 13, 14, 15)]
         [int]$TargetCompatibility,
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
@@ -117,14 +117,12 @@ function Set-DbaDbCompatibility {
                             $db.ExecuteNonQuery($sql)
                             $db.Refresh()
                             Get-DbaDbCompatibility -SqlInstance $server -Database $db.Name
-                        }
-                        catch {
+                        } catch {
                             Stop-Function -Message "Failed to change Compatibility Level" -ErrorRecord $_ -Target $instance -Continue
                         }
                     }
                 }
-            }
-            else {
+            } else {
                 if ($Pscmdlet.ShouldProcess($server.Name, "Updating $db version from $dbversion to $TargetCompatibility")) {
                     $comp = $TargetCompatibility * 10
                     $sql = "ALTER DATABASE $db SET COMPATIBILITY_LEVEL = $comp"
@@ -132,8 +130,7 @@ function Set-DbaDbCompatibility {
                         $db.ExecuteNonQuery($sql)
                         $db.Refresh()
                         Get-DbaDbCompatibility -SqlInstance $server -Database $db.Name
-                    }
-                    catch {
+                    } catch {
                         Stop-Function -Message "Failed to change Compatibility Level" -ErrorRecord $_ -Target $instance -Continue
                     }
                 }
@@ -141,3 +138,4 @@ function Set-DbaDbCompatibility {
         }
     }
 }
+

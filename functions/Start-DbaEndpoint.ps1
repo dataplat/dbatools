@@ -1,6 +1,6 @@
 #ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Start-DbaEndpoint {
-<#
+    <#
     .SYNOPSIS
         Starts endpoints on a SQL Server instance.
 
@@ -86,11 +86,11 @@ function Start-DbaEndpoint {
                     $ep.Start()
                     $ep
                 }
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
             }
         }
     }
 }
+
 

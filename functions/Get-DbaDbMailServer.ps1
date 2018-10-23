@@ -1,5 +1,5 @@
 function Get-DbaDbMailServer {
-<#
+    <#
     .SYNOPSIS
         Gets database mail servers from SQL Server
 
@@ -98,10 +98,10 @@ function Get-DbaDbMailServer {
                     $servers | Add-Member -Force -MemberType NoteProperty -Name Account -value $servers[0].Parent.Name
                     $servers | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, Account, Name, Port, EnableSsl, ServerType, UserName, UseDefaultCredentials, NoCredentialChange
                 }
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
             }
         }
     }
 }
+

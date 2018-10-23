@@ -1,5 +1,5 @@
 function Set-DbatoolsConfig {
-<#
+    <#
     .SYNOPSIS
         Sets configuration entries.
 
@@ -143,8 +143,7 @@ function Set-DbatoolsConfig {
         $Module = $FullName.Split(".")[0].ToLower().Trim(".")
         $Name = $FullName.Substring(($Module.Length + 1)).ToLower().Trim(".")
         $internalFullName = $FullName.ToLower().Trim(".")
-    }
-    else {
+    } else {
         $Name = $Name.ToLower().Trim(".")
         if ($Module) { $Module = $Module.ToLower().Trim(".") }
 
@@ -152,8 +151,7 @@ function Set-DbatoolsConfig {
             $r = $Name | select-string "^(.+?)\..+" -AllMatches
             $Module = $r.Matches[0].Groups[1].Value
             $Name = $Name.Substring($Module.Length + 1)
-        }
-        elseif ((Test-Bound -ParameterName "Module" -Not) -and ($Name -notmatch ".+\..+")) {
+        } elseif ((Test-Bound -ParameterName "Module" -Not) -and ($Name -notmatch ".+\..+")) {
             Stop-Function -Message "Invalid Name: $Name ! At least one '.' is required when not explicitly specifying a module name, to separate module from name" -EnableException $EnableException -Category InvalidArgument
             return
         }
@@ -168,8 +166,7 @@ function Set-DbatoolsConfig {
         $itExists = $true
         $itIsInitialized = [Sqlcollaborative.Dbatools.Configuration.ConfigurationHost]::Configurations[$internalFullName].Initialized
         $itIsEnforced = [Sqlcollaborative.Dbatools.Configuration.ConfigurationHost]::Configurations[$internalFullName].PolicyEnforced
-    }
-    else {
+    } else {
         $itExists = $false
         $itIsInitialized = $false
         $itIsEnforced = $false
@@ -195,8 +192,7 @@ function Set-DbatoolsConfig {
         if ($itExists) {
             $oldValue = [Sqlcollaborative.Dbatools.Configuration.ConfigurationHost]::Configurations[$internalFullName].Value
             $cfg = [Sqlcollaborative.Dbatools.Configuration.ConfigurationHost]::Configurations[$internalFullName]
-        }
-        else { $cfg = New-Object Sqlcollaborative.Dbatools.Configuration.Config }
+        } else { $cfg = New-Object Sqlcollaborative.Dbatools.Configuration.Config }
         $cfg.Name = $Name
         $cfg.Module = $Module
         $cfg.Description = $Description
@@ -255,3 +251,4 @@ function Set-DbatoolsConfig {
     }
     #endregion Regular configuration update
 }
+

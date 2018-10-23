@@ -1,6 +1,6 @@
 #ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaCmsRegServerGroup {
-<#
+    <#
     .SYNOPSIS
         Gets list of Server Groups objects stored in SQL Server Central Management Server (CMS).
 
@@ -76,8 +76,7 @@ function Get-DbaCmsRegServerGroup {
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Get-DbaCmsRegServerStore -SqlInstance $instance -SqlCredential $SqlCredential -EnableException
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Cannot access Central Management Server '$instance'" -ErrorRecord $_ -Continue
             }
 
@@ -108,20 +107,17 @@ function Get-DbaCmsRegServerGroup {
                         if ($groupobject) {
                             $groups += $groupobject
                         }
-                    }
-                    else {
+                    } else {
                         try {
                             $thisgroup = $server.DatabaseEngineServerGroup.ServerGroups[$currentgroup]
                             if ($thisgroup) {
                                 Write-Message -Level Verbose -Message "Added $($thisgroup.Name)"
                                 $groups += $thisgroup
                             }
-                        }
-                        catch { }
+                        } catch { }
                     }
                 }
-            }
-            else {
+            } else {
                 Write-Message -Level Verbose -Message "Added all root server groups"
                 $groups = $server.DatabaseEngineServerGroup.ServerGroups
             }
@@ -141,8 +137,7 @@ function Get-DbaCmsRegServerGroup {
                 Write-Message -Level Verbose -Message "Filtering for id $Id. Id 1 = default."
                 if ($Id -eq 1) {
                     $groups = $server.DatabaseEngineServerGroup | Where-Object Id -in $Id
-                }
-                else {
+                } else {
                     $groups = $server.DatabaseEngineServerGroup.GetDescendantRegisteredServers().Parent | Where-Object Id -in $Id
                 }
             }
@@ -160,3 +155,4 @@ function Get-DbaCmsRegServerGroup {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Get-DbaRegisteredServerGroup
     }
 }
+

@@ -1,5 +1,5 @@
 function Get-DbaDbLogShipError {
-<#
+    <#
     .SYNOPSIS
         Get-DbaDbLogShipError returns all the log shipping errors that occurred
 
@@ -102,8 +102,7 @@ function Get-DbaDbLogShipError {
         foreach ($instance in $sqlinstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -203,21 +202,20 @@ DROP TABLE #DatabaseID;"
 
                 foreach ($result in $results) {
                     [PSCustomObject]@{
-                        ComputerName = $server.ComputerName
-                        InstanceName = $server.ServiceName
-                        SqlInstance  = $server.DomainInstanceName
-                        Database     = $result.DatabaseName
-                        Instance     = $result.Instance
-                        Action       = $result.Action
-                        SessionID    = $result.SessionID
+                        ComputerName   = $server.ComputerName
+                        InstanceName   = $server.ServiceName
+                        SqlInstance    = $server.DomainInstanceName
+                        Database       = $result.DatabaseName
+                        Instance       = $result.Instance
+                        Action         = $result.Action
+                        SessionID      = $result.SessionID
                         SequenceNumber = $result.SequenceNumber
-                        LogTime      = $result.LogTime
-                        Message      = $result.Message
+                        LogTime        = $result.LogTime
+                        Message        = $result.Message
                     }
 
                 }
-            }
-            else {
+            } else {
                 Write-Message -Message "No log shipping errors found" -Level Verbose
             }
         }
@@ -226,3 +224,4 @@ DROP TABLE #DatabaseID;"
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Get-DbaLogShippingError
     }
 }
+

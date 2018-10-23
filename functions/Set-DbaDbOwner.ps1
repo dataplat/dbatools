@@ -1,5 +1,5 @@
 function Set-DbaDbOwner {
-<#
+    <#
     .SYNOPSIS
         Sets database owners with a desired login if databases do not match that owner.
 
@@ -81,8 +81,7 @@ function Set-DbaDbOwner {
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure." -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -137,8 +136,7 @@ function Set-DbaDbOwner {
                         #Is the login mapped as a user? Logins already mapped in the database can not be the owner
                         elseif ($db.Users.name -contains $TargetLogin) {
                             Write-Message -Level Warning -Message "$dbname on $instance has $TargetLogin as a mapped user. Mapped users can not be database owners."
-                        }
-                        else {
+                        } else {
                             $db.SetOwner($TargetLogin)
                             [PSCustomObject]@{
                                 ComputerName = $server.ComputerName
@@ -148,8 +146,7 @@ function Set-DbaDbOwner {
                                 Owner        = $TargetLogin
                             }
                         }
-                    }
-                    catch {
+                    } catch {
                         Stop-Function -Message "Failure updating owner." -ErrorRecord $_ -Target $instance -Continue
                     }
                 }
@@ -160,3 +157,4 @@ function Set-DbaDbOwner {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Set-DbaDatabaseOwner
     }
 }
+

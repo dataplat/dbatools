@@ -1,6 +1,6 @@
 #ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaRestoreHistory {
-<#
+    <#
     .SYNOPSIS
         Returns restore history details for databases on a SQL Server.
 
@@ -110,8 +110,7 @@ function Get-DbaRestoreHistory {
                     $select = "SELECT '$computername' AS [ComputerName],
                     '$instancename' AS [InstanceName],
                     '$servername' AS [SqlInstance], * "
-                }
-                else {
+                } else {
                     $select = "SELECT
                     '$computername' AS [ComputerName],
                     '$instancename' AS [InstanceName],
@@ -191,16 +190,16 @@ function Get-DbaRestoreHistory {
                 if ($last) {
                     $ga = $results | Group-Object Database
                     $tmpres = @()
-                    foreach($g in $ga) {
+                    foreach ($g in $ga) {
                         $tmpres += $g.Group | Sort-Object -Property Date -Descending | Select-Object -First 1
                     }
                     $results = $tmpres
                 }
                 $results | Select-DefaultView -ExcludeProperty first_lsn, last_lsn, checkpoint_lsn, database_backup_lsn, backup_finish_date
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Target $SqlInstance -Error $_ -Exception $_.Exception.InnerException -Continue
             }
         }
     }
 }
+

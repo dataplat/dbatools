@@ -1,6 +1,6 @@
 #ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Invoke-DbaDbMirrorFailover {
-<#
+    <#
     .SYNOPSIS
         Failover a mirrored database
 
@@ -84,8 +84,7 @@ function Invoke-DbaDbMirrorFailover {
                 if ($Pscmdlet.ShouldProcess($db.Parent.Name, "Forcing failover of $db and allowing data loss")) {
                     $db | Set-DbaDbMirror -State ForceFailoverAndAllowDataLoss
                 }
-            }
-            else {
+            } else {
                 if ($Pscmdlet.ShouldProcess($db.Parent.Name, "Setting safety level to full and failing over $db to partner server")) {
                     $db | Set-DbaDbMirror -SafetyLevel Full
                     $db | Set-DbaDbMirror -State Failover
@@ -94,3 +93,4 @@ function Invoke-DbaDbMirrorFailover {
         }
     }
 }
+

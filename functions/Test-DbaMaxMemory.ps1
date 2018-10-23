@@ -1,6 +1,6 @@
 #ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Test-DbaMaxMemory {
-<#
+    <#
     .SYNOPSIS
         Calculates the recommended value for SQL Server 'Max Server Memory' configuration setting. Works on SQL Server 2000-2014.
 
@@ -62,8 +62,7 @@ function Test-DbaMaxMemory {
 
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -73,13 +72,11 @@ function Test-DbaMaxMemory {
                 Write-Message -Level Verbose -Target $instance -Message "Retrieving number of instances from $($instance.ComputerName)"
                 if ($Credential) {
                     $serverService = Get-DbaService -ComputerName $instance -Credential $Credential -EnableException
-                }
-                else {
+                } else {
                     $serverService = Get-DbaService -ComputerName $instance -EnableException
                 }
                 $instanceCount = ($serverService | Where-Object State -Like Running | Where-Object InstanceName | Group-Object InstanceName | Measure-Object Count).Count
-            }
-            catch {
+            } catch {
                 Write-Message -Level Warning -Message "Couldn't get accurate SQL Server instance count on $instance. Defaulting to 1." -Target $instance -ErrorRecord $_
                 $instanceCount = 1
             }
@@ -98,15 +95,13 @@ function Test-DbaMaxMemory {
                     if ($currentCount -gt 16384) {
                         $reserve += 1
                         $currentCount += -8192
-                    }
-                    else {
+                    } else {
                         $reserve += 1
                         $currentCount += -4096
                     }
                 }
                 $recommendedMax = [int]($totalMemory - ($reserve * 1024))
-            }
-            else {
+            } else {
                 $recommendedMax = $totalMemory * .5
             }
 
@@ -124,3 +119,4 @@ function Test-DbaMaxMemory {
         }
     }
 }
+

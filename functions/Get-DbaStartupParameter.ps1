@@ -1,5 +1,5 @@
 function Get-DbaStartupParameter {
-<#
+    <#
     .SYNOPSIS
         Displays values for a detailed list of SQL Server Startup Parameters.
 
@@ -95,8 +95,7 @@ function Get-DbaStartupParameter {
 
                     if ($traceflags.length -eq 0) {
                         $traceflags = "None"
-                    }
-                    else {
+                    } else {
                         $traceflags = $traceflags.substring(2)
                     }
 
@@ -111,8 +110,7 @@ function Get-DbaStartupParameter {
                             TraceFlags      = $traceflags -join ','
                             ParameterString = $wmisvc.StartupParameters
                         }
-                    }
-                    else {
+                    } else {
                         # From https://msdn.microsoft.com/en-us/library/ms190737.aspx
 
                         $commandpromptparm = $params | Where-Object { $_ -eq '-c' }
@@ -160,8 +158,8 @@ function Get-DbaStartupParameter {
                             InstanceName         = $instanceName
                             SqlInstance          = $ogInstance
                             MasterData           = $masterdata -replace '^-[dD]', ''
-                            MasterLog            = $masterlog  -replace '^-[lL]', ''
-                            ErrorLog             = $errorlog   -replace '^-[eE]', ''
+                            MasterLog            = $masterlog -replace '^-[lL]', ''
+                            ErrorLog             = $errorlog -replace '^-[eE]', ''
                             TraceFlags           = $traceflags -join ','
                             CommandPromptStart   = $commandprompt
                             MinimalStart         = $minimalstart
@@ -181,14 +179,13 @@ function Get-DbaStartupParameter {
                 # It's sorta like Invoke-Command.
                 if ($credential) {
                     Invoke-ManagedComputerCommand -Server $computerName -Credential $credential -ScriptBlock $Scriptblock -ArgumentList $computerName, $displayname
-                }
-                else {
+                } else {
                     Invoke-ManagedComputerCommand -Server $computerName -ScriptBlock $Scriptblock -ArgumentList $computerName, $displayname
                 }
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "$instance failed." -ErrorRecord $_ -Continue -Target $instance
             }
         }
     }
 }
+

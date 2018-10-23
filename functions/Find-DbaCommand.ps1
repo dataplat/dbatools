@@ -1,6 +1,6 @@
 #ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Find-DbaCommand {
-<#
+    <#
     .SYNOPSIS
         Finds dbatools commands searching through the inline help text
 
@@ -158,7 +158,7 @@ function Find-DbaCommand {
             $parameters = $thishelp.parameters.parameter
             $command = Get-Command $commandName
             $params = @()
-            foreach($p in $parameters) {
+            foreach ($p in $parameters) {
                 $paramAlias = $command.parameters[$p.Name].Aliases
                 $paramDescr = Get-DbaTrimmedString -Text ($p.Description | Out-String -Width 200)
                 $params += , @($p.Name, $paramDescr, ($paramAlias -Join ','), ($p.Required -eq $true), $p.PipelineInput, $p.DefaultValue)
@@ -223,3 +223,4 @@ function Find-DbaCommand {
         Select-DefaultView -InputObject $result -Property CommandName, Synopsis
     }
 }
+

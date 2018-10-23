@@ -100,7 +100,7 @@ function Measure-DbaDiskSpaceRequirement {
                 [PSCredential]$credential
             )
             Get-DbaCmObject -Class Win32_MountPoint -ComputerName $computerName -Credential $credential |
-                Select-Object @{n='Mountpoint'; e= {$_.Directory.split('=')[1].Replace('"', '').Replace('\\', '\')}}
+                Select-Object @{n = 'Mountpoint'; e = {$_.Directory.split('=')[1].Replace('"', '').Replace('\\', '\')}}
         }
         function Get-MountPointFromPath {
             [CmdletBinding()]
@@ -115,8 +115,7 @@ function Measure-DbaDiskSpaceRequirement {
                 try {
                     $cacheMP.Add($computerName, (Get-MountPoint -computerName $computerName -credential $credential))
                     Write-Message -Level Verbose -Message "cacheMP[$computerName] is now cached"
-                }
-                catch {
+                } catch {
                     # This way, I won't be asking again for this computer.
                     $cacheMP.Add($computerName, '?')
                     Stop-Function -Message "Can't connect to $computerName. cacheMP[$computerName] = ?" -ErrorRecord $_ -Target $computerName -Continue
@@ -149,8 +148,7 @@ function Measure-DbaDiskSpaceRequirement {
                 try {
                     $cacheDP.Add($SqlInstance, (Get-DbaDefaultPath -SqlInstance $SqlInstance -SqlCredential $SqlCredential -EnableException))
                     Write-Message -Level Verbose -Message "cacheDP[$SqlInstance] is now cached"
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Can't connect to $SqlInstance" -Continue
                     $cacheDP.Add($SqlInstance, '?')
                     return '?'
@@ -165,8 +163,7 @@ function Measure-DbaDiskSpaceRequirement {
             if (!$cacheMP[$computerName]) {
                 try {
                     $cacheMP.Add($computerName, (Get-MountPoint -computerName $computerName -Credential $Credential))
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Can't connect to $computerName." -Continue
                     $cacheMP.Add($computerName, '?')
                     return '?'
@@ -174,8 +171,7 @@ function Measure-DbaDiskSpaceRequirement {
             }
             if ($DefaultPathType -eq 'Log') {
                 $path = $cacheDP[$SqlInstance].Log
-            }
-            else {
+            } else {
                 $path = $cacheDP[$SqlInstance].Data
             }
             foreach ($m in ($cacheMP[$computerName] | Sort-Object -Property Mountpoint -Descending)) {
@@ -188,15 +184,13 @@ function Measure-DbaDiskSpaceRequirement {
     process {
         try {
             $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
-        }
-        catch {
+        } catch {
             Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Source
         }
 
         try {
             $destServer = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
-        }
-        catch {
+        } catch {
             Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Destination
         }
 
@@ -209,15 +203,14 @@ function Measure-DbaDiskSpaceRequirement {
         if (Test-Bound 'Database' -not) {
             Stop-Function -Message "Database [$Database] MUST exist on Source Instance $Source." -ErrorRecord $_
         }
-        $sourceFiles = @($sourceDb.FileGroups.Files | Select-Object Name, FileName, Size, @{n='Type'; e= {'Data'}})
-        $sourceFiles += @($sourceDb.LogFiles        | Select-Object Name, FileName, Size, @{n='Type'; e= {'Log'}})
+        $sourceFiles = @($sourceDb.FileGroups.Files | Select-Object Name, FileName, Size, @{n = 'Type'; e = {'Data'}})
+        $sourceFiles += @($sourceDb.LogFiles        | Select-Object Name, FileName, Size, @{n = 'Type'; e = {'Log'}})
 
         if ($destDb = Get-DbaDatabase -SqlInstance $destServer -Database $DestinationDatabase -SqlCredential $DestinationSqlCredential) {
-            $destFiles = @($destDb.FileGroups.Files | Select-Object Name, FileName, Size, @{n='Type'; e= {'Data'}})
-            $destFiles += @($destDb.LogFiles        | Select-Object Name, FileName, Size, @{n='Type'; e= {'Log'}})
+            $destFiles = @($destDb.FileGroups.Files | Select-Object Name, FileName, Size, @{n = 'Type'; e = {'Data'}})
+            $destFiles += @($destDb.LogFiles        | Select-Object Name, FileName, Size, @{n = 'Type'; e = {'Log'}})
             $computerName = $destDb.ComputerName
-        }
-        else {
+        } else {
             Write-Message -Level Verbose -Message "Database [$DestinationDatabase] does not exist on Destination Instance $Destination."
             $computerName = $destServer.ComputerName
         }
@@ -300,3 +293,4 @@ function Measure-DbaDiskSpaceRequirement {
         $DestinationDatabase = $null
     }
 }
+

@@ -1,6 +1,6 @@
 #ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaOperatingSystem {
-<#
+    <#
     .SYNOPSIS
         Gets operating system information from the server.
 
@@ -75,14 +75,13 @@ function Get-DbaOperatingSystem {
 
             try {
                 $TestWS = Test-WSMan -ComputerName $computerResolved -ErrorAction SilentlyContinue
-            }
-            catch {
+            } catch {
                 Write-Message -Level Warning -Message "Remoting not availablle on $computer. Skipping checks"
                 $TestWS = $null
             }
 
             $splatDbaCmObject = @{
-                ComputerName   = $computerResolved
+                ComputerName    = $computerResolved
                 EnableException = $true
             }
             if (Test-Bound "Credential") {
@@ -92,44 +91,38 @@ function Get-DbaOperatingSystem {
                 try {
                     $psVersion = Invoke-Command2 -ComputerName $computerResolved -Credential $Credential -ScriptBlock { $PSVersionTable.PSVersion }
                     $PowerShellVersion = "$($psVersion.Major).$($psVersion.Minor)"
-                }
-                catch {
+                } catch {
                     Write-Message -Level Warning -Message "PowerShell Version information not available on $computer."
                     $PowerShellVersion = 'Unavailable'
                 }
-            }
-            else {
+            } else {
                 $PowerShellVersion = 'Unknown'
             }
 
             try {
                 $os = Get-DbaCmObject @splatDbaCmObject -ClassName Win32_OperatingSystem
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure collecting OS information on $computer" -Target $computer -ErrorRecord $_
                 return
             }
 
             try {
                 $tz = Get-DbaCmObject @splatDbaCmObject -ClassName Win32_TimeZone
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure collecting TimeZone information on $computer" -Target $computer -ErrorRecord $_
                 return
             }
 
             try {
                 $powerPlan = Get-DbaCmObject @splatDbaCmObject -ClassName Win32_PowerPlan -Namespace "root\cimv2\power"  | Select-Object ElementName, InstanceId, IsActive
-            }
-            catch {
+            } catch {
                 Write-Message -Level Warning -Message "Power plan information not available on $computer."
                 $powerPlan = $null
             }
 
             if ($powerPlan) {
                 $activePowerPlan = ($powerPlan | Where-Object IsActive).ElementName -join ','
-            }
-            else {
+            } else {
                 $activePowerPlan = 'Not Avaliable'
             }
 
@@ -139,12 +132,10 @@ function Get-DbaOperatingSystem {
                 $ss = Get-DbaCmObject @splatDbaCmObject -Class Win32_SystemServices
                 if ($ss | Select-Object PartComponent | Where-Object {$_ -like "*ClusSvc*"}) {
                     $IsWsfc = $true
-                }
-                else {
+                } else {
                     $IsWsfc = $false
                 }
-            }
-            catch {
+            } catch {
                 Write-Message -Level Warning -Message "Unable to determine Cluster State of $computer."
                 $IsWsfc = $null
             }
@@ -186,9 +177,10 @@ function Get-DbaOperatingSystem {
                 CodeSet                  = $os.CodeSet
                 CountryCode              = $os.CountryCode
                 Locale                   = $os.Locale
-                IsWsfc                  = $IsWsfc
+                IsWsfc                   = $IsWsfc
             } | Select-DefaultView -Property ComputerName, Manufacturer, Organization, Architecture, Version, Caption, LastBootTime, LocalDateTime, PowerShellVersion, TimeZone, TotalVisibleMemory, ActivePowerPlan, LanguageNative
         }
     }
 }
+
 

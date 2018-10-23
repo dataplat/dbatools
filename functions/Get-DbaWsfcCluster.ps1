@@ -1,6 +1,6 @@
 #ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaWsfcCluster {
-<#
+    <#
     .SYNOPSIS
         Gets information about one or more failover clusters in a given domain.
 
@@ -57,3 +57,4 @@ function Get-DbaWsfcCluster {
         }
     }
 }
+

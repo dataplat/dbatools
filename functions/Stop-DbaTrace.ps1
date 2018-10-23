@@ -1,6 +1,6 @@
 #ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Stop-DbaTrace {
-<#
+    <#
     .SYNOPSIS
         Stops SQL Server traces
 
@@ -91,34 +91,33 @@ function Stop-DbaTrace {
                     $output = Get-DbaTrace -SqlInstance $server -Id $traceid
                     if (-not $output) {
                         $output = [PSCustomObject]@{
-                            ComputerName            = $server.ComputerName
-                            InstanceName            = $server.ServiceName
-                            SqlInstance             = $server.DomainInstanceName
-                            Id                      = $traceid
-                            Status                  = $null
-                            IsRunning               = $false
-                            Path                    = $null
-                            MaxSize                 = $null
-                            StopTime                = $null
-                            MaxFiles                = $null
-                            IsRowset                = $null
-                            IsRollover              = $null
-                            IsShutdown              = $null
-                            IsDefault               = $null
-                            BufferCount             = $null
-                            BufferSize              = $null
-                            FilePosition            = $null
-                            ReaderSpid              = $null
-                            StartTime               = $null
-                            LastEventTime           = $null
-                            EventCount              = $null
-                            DroppedEventCount       = $null
-                            Parent                  = $server
+                            ComputerName      = $server.ComputerName
+                            InstanceName      = $server.ServiceName
+                            SqlInstance       = $server.DomainInstanceName
+                            Id                = $traceid
+                            Status            = $null
+                            IsRunning         = $false
+                            Path              = $null
+                            MaxSize           = $null
+                            StopTime          = $null
+                            MaxFiles          = $null
+                            IsRowset          = $null
+                            IsRollover        = $null
+                            IsShutdown        = $null
+                            IsDefault         = $null
+                            BufferCount       = $null
+                            BufferSize        = $null
+                            FilePosition      = $null
+                            ReaderSpid        = $null
+                            StartTime         = $null
+                            LastEventTime     = $null
+                            EventCount        = $null
+                            DroppedEventCount = $null
+                            Parent            = $server
                         } | Select-DefaultView -Property 'ComputerName', 'InstanceName', 'SqlInstance', 'Id', 'IsRunning'
                     }
                     $output
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Failure" -ErrorRecord $_ -Target $server -Continue
                     return
                 }
@@ -126,3 +125,4 @@ function Stop-DbaTrace {
         }
     }
 }
+

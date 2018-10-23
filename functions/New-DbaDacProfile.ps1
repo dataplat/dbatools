@@ -117,8 +117,7 @@ function New-DbaDacProfile {
         foreach ($instance in $sqlinstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -146,8 +145,7 @@ function New-DbaDacProfile {
                             ConnectionString = $connstring
                             ProfileTemplate  = $profileTemplate
                         } | Select-DefaultView -ExcludeProperty ComputerName, InstanceName, ProfileTemplate
-                    }
-                    catch {
+                    } catch {
                         Stop-Function -ErrorRecord $_ -Message "Failure" -Target $instancename -Continue
                     }
                 }
@@ -158,3 +156,4 @@ function New-DbaDacProfile {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias New-DbaPublishProfile
     }
 }
+

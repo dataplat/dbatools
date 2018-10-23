@@ -1,5 +1,5 @@
 function Get-DbaDbMailProfile {
-<#
+    <#
     .SYNOPSIS
         Gets database mail profiles from SQL Server
 
@@ -99,10 +99,10 @@ function Get-DbaDbMailProfile {
                 $profiles | Add-Member -Force -MemberType NoteProperty -Name SqlInstance -value $mailserver.SqlInstance
 
                 $profiles | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, ID, Name, Description, ForceDeleteForActiveProfiles, IsBusyProfile
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
             }
         }
     }
 }
+

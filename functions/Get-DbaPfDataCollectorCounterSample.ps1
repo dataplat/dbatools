@@ -1,6 +1,6 @@
 #ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaPfDataCollectorCounterSample {
-<#
+    <#
     .SYNOPSIS
         Gets Performance Counter Samples.
 
@@ -160,12 +160,10 @@ function Get-DbaPfDataCollectorCounterSample {
 
             if ($Continuous) {
                 Get-Counter @params
-            }
-            else {
+            } else {
                 try {
                     $pscounters = Get-Counter @params -ErrorAction Stop
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Failure for $($counterobject.Name) on $($counterobject.ComputerName)." -ErrorRecord $_ -Continue
                 }
 
@@ -198,3 +196,4 @@ function Get-DbaPfDataCollectorCounterSample {
         }
     }
 }
+

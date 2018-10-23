@@ -1,5 +1,5 @@
 function Get-DbaRepPublication {
-<#
+    <#
     .SYNOPSIS
         Displays all publications for a server or database.
 
@@ -66,8 +66,7 @@ function Get-DbaRepPublication {
             # Connect to Publisher
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -97,11 +96,11 @@ function Get-DbaRepPublication {
                 foreach ($pub in $pubTypes) {
 
                     [PSCustomObject]@{
-                        ComputerName = $server.ComputerName
-                        InstanceName = $server.InstanceName
-                        SqlInstance  = $server.SqlInstance
-                        Server = $server.name
-                        Database = $db.name
+                        ComputerName    = $server.ComputerName
+                        InstanceName    = $server.InstanceName
+                        SqlInstance     = $server.SqlInstance
+                        Server          = $server.name
+                        Database        = $db.name
                         PublicationName = $pub.Name
                         PublicationType = $pub.Type
                     }
@@ -110,3 +109,4 @@ function Get-DbaRepPublication {
         }
     }
 }
+

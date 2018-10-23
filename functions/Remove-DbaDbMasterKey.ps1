@@ -104,11 +104,11 @@ function Remove-DbaDbMasterKey {
                         Database     = $db.Name
                         Status       = "Master key removed"
                     }
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
                 }
             }
         }
     }
 }
+

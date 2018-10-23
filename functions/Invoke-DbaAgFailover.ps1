@@ -1,6 +1,6 @@
 #ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Invoke-DbaAgFailover {
-<#
+    <#
     .SYNOPSIS
         Failover an availability group.
         
@@ -87,8 +87,7 @@ function Invoke-DbaAgFailover {
                     $ag.Refresh()
                     $ag
                 }
-            }
-            else {
+            } else {
                 if ($Pscmdlet.ShouldProcess($server.Name, "Gracefully failing over $($ag.Name)")) {
                     $ag.Failover()
                     $ag.Refresh()
@@ -98,3 +97,4 @@ function Invoke-DbaAgFailover {
         }
     }
 }
+

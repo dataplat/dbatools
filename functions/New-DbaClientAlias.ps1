@@ -1,5 +1,5 @@
 function New-DbaClientAlias {
-<#
+    <#
     .SYNOPSIS
         Creates/updates a sql alias for the specified server - mimics cliconfg.exe
 
@@ -107,8 +107,7 @@ function New-DbaClientAlias {
 
                 if ($basekey -like "*WOW64*") {
                     $architecture = "32-bit"
-                }
-                else {
+                } else {
                     $architecture = "64-bit"
                 }
 
@@ -121,8 +120,7 @@ function New-DbaClientAlias {
     process {
         if ($protocol -eq "TCPIP") {
             $serverstring = "DBMSSOCN,$ServerName"
-        }
-        else {
+        } else {
             $serverstring = "DBNMPNTW,\\$ServerName\pipe\sql\query"
         }
 
@@ -133,8 +131,7 @@ function New-DbaClientAlias {
             if ($PScmdlet.ShouldProcess($computer, "Adding $alias")) {
                 try {
                     Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $scriptblock -ErrorAction Stop -ArgumentList $ServerName, $Alias, $serverstring
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Failure" -ErrorRecord $_ -Target $computer -Continue
                 }
             }
@@ -143,3 +140,4 @@ function New-DbaClientAlias {
         Get-DbaClientAlias -ComputerName $computer -Credential $Credential | Where-Object AliasName -eq $Alias
     }
 }
+

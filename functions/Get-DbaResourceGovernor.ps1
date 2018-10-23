@@ -1,5 +1,5 @@
 function Get-DbaResourceGovernor {
-<#
+    <#
     .SYNOPSIS
         Gets the Resource Governor object
 
@@ -51,8 +51,7 @@ function Get-DbaResourceGovernor {
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential -MinimumVersion 10
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -68,3 +67,4 @@ function Get-DbaResourceGovernor {
         }
     }
 }
+

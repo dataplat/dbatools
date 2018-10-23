@@ -1,5 +1,5 @@
 function Export-DbaUser {
-<#
+    <#
     .SYNOPSIS
         Exports users creation and its permissions to a T-SQL file or host.
 
@@ -173,19 +173,16 @@ function Export-DbaUser {
 
         try {
             $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
-        }
-        catch {
+        } catch {
             Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
         }
 
         if (!$database) {
             $databases = $server.Databases | Where-Object { $ExcludeDatabase -notcontains $_.Name -and $_.IsAccessible -eq $true }
-        }
-        else {
+        } else {
             if ($pipedatabase) {
                 $databases = $pipedatabase.name
-            }
-            else {
+            } else {
                 $databases = $server.Databases | Where-Object { $_.IsAccessible -eq $true -and ($database -contains $_.Name) }
             }
         }
@@ -201,8 +198,7 @@ function Export-DbaUser {
                 if ([string]::IsNullOrEmpty($destinationVersion)) {
                     #Get compatibility level for scripting the objects
                     $scriptVersion = $db.CompatibilityLevel
-                }
-                else {
+                } else {
                     $scriptVersion = $versions[$destinationVersion]
                 }
                 $versionNameDesc = $versionName[$scriptVersion.ToString()]
@@ -222,12 +218,10 @@ function Export-DbaUser {
 
                 if ($User.Count -eq 0) {
                     $users = $db.Users | Where-Object { $_.IsSystemObject -eq $false -and $_.Name -notlike "##*" }
-                }
-                else {
+                } else {
                     if ($pipedatabase) {
                         $users = $pipedatabase.name
-                    }
-                    else {
+                    } else {
                         $users = $db.Users | Where-Object { $User -contains $_.Name -and $_.IsSystemObject -eq $false -and $_.Name -notlike "##*" }
                     }
                 }
@@ -256,8 +250,7 @@ function Export-DbaUser {
                             foreach ($dbUserPermissionScript in $dbuser.Script($ScriptingOptionsObject)) {
                                 if ($dbuserPermissionScript.Contains("sp_addrolemember")) {
                                     $execute = "EXEC "
-                                }
-                                else {
+                                } else {
                                     $execute = ""
                                 }
                                 $outsql += "$execute$($dbUserPermissionScript.ToString())"
@@ -268,8 +261,7 @@ function Export-DbaUser {
                                 if ($databasePermission.PermissionState -eq "GrantWithGrant") {
                                     $withGrant = " WITH GRANT OPTION"
                                     $grantDatabasePermission = 'GRANT'
-                                }
-                                else {
+                                } else {
                                     $withGrant = " "
                                     $grantDatabasePermission = $databasePermission.PermissionState.ToString().ToUpper()
                                 }
@@ -424,8 +416,7 @@ function Export-DbaUser {
                                 if ($objectPermission.PermissionState -eq "GrantWithGrant") {
                                     $withGrant = " WITH GRANT OPTION"
                                     $grantObjectPermission = 'GRANT'
-                                }
-                                else {
+                                } else {
                                     $withGrant = " "
                                     $grantObjectPermission = $objectPermission.PermissionState.ToString().ToUpper()
                                 }
@@ -433,21 +424,18 @@ function Export-DbaUser {
                                 $outsql += "$grantObjectPermission $($objectPermission.PermissionType) ON $object TO [$($objectPermission.Grantee)]$withGrant AS [$($objectPermission.Grantor)];"
                             }
 
-                        }
-                        catch {
+                        } catch {
                             Stop-Function -Message "This user may be using functionality from $($versionName[$db.CompatibilityLevel.ToString()]) that does not exist on the destination version ($versionNameDesc)." -Continue -InnerErrorRecord $_ -Target $db
                         }
                     }
-                }
-                else {
+                } else {
                     Write-Message -Level Output -Message "No users found on database '$db'"
                 }
 
                 #reset collection
                 $users = $null
             }
-        }
-        else {
+        } else {
             Write-Message -Level Output -Message "No users found on instance '$server'"
         }
     }
@@ -457,8 +445,7 @@ function Export-DbaUser {
 
         if ($ExcludeGoBatchSeparator) {
             $sql = $outsql
-        }
-        else {
+        } else {
             $sql = $outsql -join "`r`nGO`r`n"
             #add the final GO
             $sql += "`r`nGO"
@@ -466,10 +453,10 @@ function Export-DbaUser {
 
         if ($Path) {
             $sql | Out-File -Encoding UTF8 -FilePath $Path -Append:$Append -NoClobber:$NoClobber
-        }
-        else {
+        } else {
             $sql
         }
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Export-SqlUser
     }
 }
+

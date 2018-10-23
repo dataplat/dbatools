@@ -1,6 +1,6 @@
 #ValidationTags#FlowControl,Pipeline#
 function Find-DbaOrphanedFile {
-<#
+    <#
     .SYNOPSIS
         Find-DbaOrphanedFile finds orphaned database files. Orphaned database files are files not associated with any attached database.
 
@@ -132,8 +132,7 @@ function Find-DbaOrphanedFile {
             )
             if ($smoserver.versionMajor -eq 8) {
                 $sql = "select filename from sysaltfiles"
-            }
-            else {
+            } else {
                 $sql = "select physical_name as filename from sys.master_files"
             }
 
@@ -179,8 +178,7 @@ function Find-DbaOrphanedFile {
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
             # Reset all the arrays
@@ -274,4 +272,5 @@ function Find-DbaOrphanedFile {
         }
     }
 }
+
 

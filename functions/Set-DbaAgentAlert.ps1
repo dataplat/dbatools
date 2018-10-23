@@ -1,6 +1,6 @@
 #ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Set-DbaAgentAlert {
-<#
+    <#
     .SYNOPSIS
         Set-DbaAgentAlert updates a the status of a SQL Agent Alert.
 
@@ -91,82 +91,79 @@ function Set-DbaAgentAlert {
     )
 
     begin {
-}
-        process {
+    }
+    process {
 
-            if (Test-FunctionInterrupt) { return }
+        if (Test-FunctionInterrupt) { return }
 
-            if ((-not $InputObject) -and (-not $Alert)) {
-                Stop-Function -Message "You must specify an alert name or pipe in results from another command" -Target $sqlinstance
-                return
+        if ((-not $InputObject) -and (-not $Alert)) {
+            Stop-Function -Message "You must specify an alert name or pipe in results from another command" -Target $sqlinstance
+            return
+        }
+
+        foreach ($instance in $sqlinstance) {
+            # Try connecting to the instance
+            try {
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
+            } catch {
+                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-
-            foreach ($instance in $sqlinstance) {
-                # Try connecting to the instance
-                try {
-                    $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-                }
-                catch {
-                    Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
-                }
             foreach ($a in $Alert) {
-                    # Check if the alert exists
-                    if ($server.JobServer.Alerts.Name -notcontains $a) {
-                        Stop-Function -Message "Alert $a doesn't exists on $instance" -Target $instance
-                    }
-                    else {
-                        # Get the alert
-                        try {
-                            $InputObject += $server.JobServer.Alerts[$a]
-
-                            # Refresh the object
-                            $InputObject.Refresh()
-                        }
-                        catch {
-                            Stop-Function -Message "Something went wrong retrieving the alert" -Target $a -ErrorRecord $_ -Continue
-                        }
-                    }
-                }
-            }
-
-            foreach ($currentalert in $InputObject) {
-                $server = $currentalert.Parent.Parent
-
-                #region alert options
-                # Settings the options for the alert
-                if ($NewName) {
-                    Write-Message -Message "Setting alert name to $NewName" -Level Verbose
-                    $currentalert.Rename($NewName)
-                }
-
-                if ($Enabled) {
-                    Write-Message -Message "Setting alert to enabled" -Level Verbose
-                    $currentalert.IsEnabled = $true
-                }
-
-                if ($Disabled) {
-                    Write-Message -Message "Setting alert to disabled" -Level Verbose
-                    $currentalert.IsEnabled = $false
-                }
-
-                #endregion alert options
-
-                # Execute
-                if ($PSCmdlet.ShouldProcess($SqlInstance, "Changing the alert $a")) {
+                # Check if the alert exists
+                if ($server.JobServer.Alerts.Name -notcontains $a) {
+                    Stop-Function -Message "Alert $a doesn't exists on $instance" -Target $instance
+                } else {
+                    # Get the alert
                     try {
-                        Write-Message -Message "Changing the alert" -Level Verbose
+                        $InputObject += $server.JobServer.Alerts[$a]
 
-                        # Change the alert
-                        $currentalert.Alter()
+                        # Refresh the object
+                        $InputObject.Refresh()
+                    } catch {
+                        Stop-Function -Message "Something went wrong retrieving the alert" -Target $a -ErrorRecord $_ -Continue
                     }
-                    catch {
-                        Stop-Function -Message "Something went wrong changing the alert" -ErrorRecord $_ -Target $instance -Continue
-                    }
-                    Get-DbaAgentAlert -SqlInstance $server | Where-Object Name -eq $currentalert.name
                 }
             }
         }
-}
-        {
-            Write-Message -Message "Finished changing alert(s)" -Level Verbose
+
+        foreach ($currentalert in $InputObject) {
+            $server = $currentalert.Parent.Parent
+
+            #region alert options
+            # Settings the options for the alert
+            if ($NewName) {
+                Write-Message -Message "Setting alert name to $NewName" -Level Verbose
+                $currentalert.Rename($NewName)
+            }
+
+            if ($Enabled) {
+                Write-Message -Message "Setting alert to enabled" -Level Verbose
+                $currentalert.IsEnabled = $true
+            }
+
+            if ($Disabled) {
+                Write-Message -Message "Setting alert to disabled" -Level Verbose
+                $currentalert.IsEnabled = $false
+            }
+
+            #endregion alert options
+
+            # Execute
+            if ($PSCmdlet.ShouldProcess($SqlInstance, "Changing the alert $a")) {
+                try {
+                    Write-Message -Message "Changing the alert" -Level Verbose
+
+                    # Change the alert
+                    $currentalert.Alter()
+                } catch {
+                    Stop-Function -Message "Something went wrong changing the alert" -ErrorRecord $_ -Target $instance -Continue
+                }
+                Get-DbaAgentAlert -SqlInstance $server | Where-Object Name -eq $currentalert.name
+            }
         }
+    }
+}
+{
+    Write-Message -Message "Finished changing alert(s)" -Level Verbose
+}
+

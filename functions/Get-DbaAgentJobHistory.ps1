@@ -1,6 +1,6 @@
 #ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaAgentJobHistory {
-<#
+    <#
     .SYNOPSIS
         Gets execution history of SQL Agent Job on instance(s) of SQL Server.
 
@@ -180,30 +180,24 @@ function Get-DbaAgentJobHistory {
                     if ($propmap.containskey($tok)) {
                         $repl = Resolve-TokenEscape -method $EscMethod -value $propmap[$tok]
                         $outfile = $outfile.Replace($x.Value, $repl)
-                    }
-                    elseif ($tok -eq 'STEPID') {
+                    } elseif ($tok -eq 'STEPID') {
                         $repl = Resolve-TokenEscape -method $EscMethod -value $exec.StepID
                         $outfile = $outfile.Replace($x.Value, $repl)
-                    }
-                    elseif ($tok -eq 'JOBID') {
+                    } elseif ($tok -eq 'JOBID') {
                         # convert(binary(16), ?)
                         $repl = @('0x') + @($exec.JobID.ToByteArray() | ForEach-Object -Process { $_.ToString('X2') }) -join ''
                         $repl = Resolve-TokenEscape -method $EscMethod -value $repl
                         $outfile = $outfile.Replace($x.Value, $repl)
-                    }
-                    elseif ($tok -eq 'STRTDT') {
+                    } elseif ($tok -eq 'STRTDT') {
                         $repl = Resolve-TokenEscape -method $EscMethod -value $outcome.RunDate.toString('yyyyMMdd')
                         $outfile = $outfile.Replace($x.Value, $repl)
-                    }
-                    elseif ($tok -eq 'STRTTM') {
+                    } elseif ($tok -eq 'STRTTM') {
                         $repl = Resolve-TokenEscape -method $EscMethod -value ([int]$outcome.RunDate.toString('HHmmss')).toString()
                         $outfile = $outfile.Replace($x.Value, $repl)
-                    }
-                    elseif ($tok -eq 'DATE') {
+                    } elseif ($tok -eq 'DATE') {
                         $repl = Resolve-TokenEscape -method $EscMethod -value $exec.RunDate.toString('yyyyMMdd')
                         $outfile = $outfile.Replace($x.Value, $repl)
-                    }
-                    elseif ($tok -eq 'TIME') {
+                    } elseif ($tok -eq 'TIME') {
                         $repl = Resolve-TokenEscape -method $EscMethod -value ([int]$exec.RunDate.toString('HHmmss')).toString()
                         $outfile = $outfile.Replace($x.Value, $repl)
                     }
@@ -217,8 +211,7 @@ function Get-DbaAgentJobHistory {
                         $filter.JobName = $currentjob
                         $executions += $server.JobServer.EnumJobHistory($filter)
                     }
-                }
-                else {
+                } else {
                     $executions = $server.JobServer.EnumJobHistory($filter)
                 }
                 if ($NoJobSteps) {
@@ -261,8 +254,7 @@ function Get-DbaAgentJobHistory {
                             $outname = $outmap[$execution.JobName][$execution.StepID]
                             $outname = Resolve-JobToken -exec $execution -outcome $outcome -outfile $outname
                             $outremote = Join-AdminUNC $Server.ComputerName $outname
-                        }
-                        catch {
+                        } catch {
                             $outname = ''
                             $outremote = ''
                         }
@@ -271,15 +263,13 @@ function Get-DbaAgentJobHistory {
                         # Add this in for easier ConvertTo-DbaTimeline Support
                         Add-Member -Force -InputObject $execution -MemberType NoteProperty -Name TypeName -value AgentJobHistory
                         Select-DefaultView -InputObject $execution -Property ComputerName, InstanceName, SqlInstance, 'JobName as Job', StepName, RunDate, StartDate, EndDate, Duration, Status, OperatorEmailed, Message, OutputFileName, RemoteOutputFileName -TypeName AgentJobHistory
-                    }
-                    else {
+                    } else {
                         Add-Member -Force -InputObject $execution -MemberType NoteProperty -Name TypeName -value AgentJobHistory
                         Select-DefaultView -InputObject $execution -Property ComputerName, InstanceName, SqlInstance, 'JobName as Job', StepName, RunDate, StartDate, EndDate, Duration, Status, OperatorEmailed, Message -TypeName AgentJobHistory
                     }
 
                 }
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Could not get Agent Job History from $instance" -Target $instance -Continue
             }
         }
@@ -298,8 +288,7 @@ function Get-DbaAgentJobHistory {
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -309,10 +298,10 @@ function Get-DbaAgentJobHistory {
                 foreach ($currentjob in $jobs) {
                     Get-JobHistory -Server $server -Job $currentjob -WithOutputFile:$WithOutputFile
                 }
-            }
-            else {
+            } else {
                 Get-JobHistory -Server $server -Job $Job -WithOutputFile:$WithOutputFile
             }
         }
     }
 }
+

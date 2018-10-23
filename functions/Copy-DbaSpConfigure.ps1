@@ -1,5 +1,5 @@
 function Copy-DbaSpConfigure {
-<#
+    <#
     .SYNOPSIS
         Copy-DbaSpConfigure migrates configuration values from one SQL Server to another.
 
@@ -86,8 +86,7 @@ function Copy-DbaSpConfigure {
         try {
             $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
             $sourceProps = Get-DbaSpConfigure -SqlInstance $sourceServer
-        }
-        catch {
+        } catch {
             Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Source
             return
         }
@@ -98,8 +97,7 @@ function Copy-DbaSpConfigure {
             try {
                 $destServer = Connect-SqlInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential
                 $destProps = Get-DbaSpConfigure -SqlInstance $destServer
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
             }
 
@@ -110,13 +108,13 @@ function Copy-DbaSpConfigure {
                 $requiresRestart = $sourceProp.IsDynamic
 
                 $copySpConfigStatus = [pscustomobject]@{
-                    SourceServer = $sourceServer.Name
+                    SourceServer      = $sourceServer.Name
                     DestinationServer = $destServer.Name
-                    Name         = $sConfigName
-                    Type         = "Configuration Value"
-                    Status       = $null
-                    Notes        = $null
-                    DateTime     = [DbaDateTime](Get-Date)
+                    Name              = $sConfigName
+                    Type              = "Configuration Value"
+                    Status            = $null
+                    Notes             = $null
+                    DateTime          = [DbaDateTime](Get-Date)
                 }
 
                 if ($ConfigName -and $sConfigName -notin $ConfigName -or $sConfigName -in $ExcludeConfigName) {
@@ -150,12 +148,10 @@ function Copy-DbaSpConfigure {
                         }
                         $copySpConfigStatus.Status = "Successful"
                         $copySpConfigStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                    }
-                    catch {
+                    } catch {
                         if ($_.Exception -match 'the same as the') {
                             $copySpConfigStatus.Status = "Successful"
-                        }
-                        else {
+                        } else {
                             $copySpConfigStatus.Status = "Failed"
                             $copySpConfigStatus.Notes = (Get-ErrorMessage -Record $_)
                         }
@@ -171,3 +167,4 @@ function Copy-DbaSpConfigure {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-SqlSpConfigure
     }
 }
+

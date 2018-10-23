@@ -1,5 +1,5 @@
 function Get-DbaNetworkCertificate {
-<#
+    <#
     .SYNOPSIS
         Simplifies finding computer certificates that are candidates for using with SQL Server's network encryption
 
@@ -51,8 +51,7 @@ function Get-DbaNetworkCertificate {
 
             try {
                 $sqlwmis = Invoke-ManagedComputerCommand -ComputerName $computer.ComputerName -ScriptBlock { $wmi.Services } -Credential $Credential -ErrorAction Stop | Where-Object DisplayName -match "SQL Server \("
-            }
-            catch {
+            } catch {
                 Stop-Function -Message $_ -Target $sqlwmi -Continue
             }
 
@@ -70,8 +69,7 @@ function Get-DbaNetworkCertificate {
                     if (![System.String]::IsNullOrEmpty($regroot)) {
                         $regroot = ($regroot -Split 'Value\=')[1]
                         $vsname = ($vsname -Split 'Value\=')[1]
-                    }
-                    else {
+                    } else {
                         Write-Message -Level Warning -Message "Can't find instance $vsname on $env:COMPUTERNAME"
                         return
                     }
@@ -96,8 +94,7 @@ function Get-DbaNetworkCertificate {
 
                     try {
                         $cert = Get-ChildItem Cert:\LocalMachine -Recurse -ErrorAction Stop | Where-Object Thumbprint -eq $Thumbprint
-                    }
-                    catch {
+                    } catch {
                         # Don't care - sometimes there's errors that are thrown for apparent good reason
                     }
 
@@ -122,11 +119,11 @@ function Get-DbaNetworkCertificate {
                 try {
                     Invoke-Command2 -ComputerName $computer.ComputerName -Credential $Credential -ArgumentList $regroot, $serviceaccount, $instancename, $vsname -ScriptBlock $scriptblock -ErrorAction Stop |
                         Select-DefaultView -ExcludeProperty Certificate
-                }
-                catch {
+                } catch {
                     Stop-Function -Message $_ -ErrorRecord $_ -Target $ComputerName -Continue
                 }
             }
         }
     }
 }
+

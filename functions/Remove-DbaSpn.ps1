@@ -1,6 +1,6 @@
 #ValidationTags#FlowControl,Pipeline#
 function Remove-DbaSpn {
-<#
+    <#
     .SYNOPSIS
         Removes an SPN for a given service account in active directory and also removes delegation to the same SPN, if found
 
@@ -88,19 +88,16 @@ function Remove-DbaSpn {
         }
         try {
             $Result = Get-DbaADObject -ADObject $ServiceAccount -Type $searchfor -Credential $Credential -EnableException
-        }
-        catch {
+        } catch {
             Stop-Function -Message "AD lookup failure. This may be because the domain cannot be resolved for the SQL Server service account ($ServiceAccount). $($_.Exception.Message)" -EnableException $EnableException -InnerErrorRecord $_ -Target $ServiceAccount
         }
         if ($Result.Count -gt 0) {
             try {
                 $adentry = $Result.GetUnderlyingObject()
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "The SQL Service account ($ServiceAccount) has been found, but you don't have enough permission to inspect its properties $($_.Exception.Message)" -EnableException $EnableException -InnerErrorRecord $_ -Target $ServiceAccount
             }
-        }
-        else {
+        } else {
             Stop-Function -Message "The SQL Service account ($ServiceAccount) has not been found" -EnableException $EnableException -Target $ServiceAccount
         }
 
@@ -123,8 +120,7 @@ function Remove-DbaSpn {
                     $set = $false
                     $status = "Successfully removed SPN"
                 }
-            }
-            catch {
+            } catch {
                 Write-Message -Message "Could not remove SPN. $($_.Exception.Message)" -Level Warning -EnableException $EnableException.ToBool() -ErrorRecord $_ -Target $ServiceAccountWrite
                 $set = $true
                 $status = "Failed to remove SPN"
@@ -152,8 +148,7 @@ function Remove-DbaSpn {
                         IsSet          = $false
                         Notes          = "Delegation not found"
                     }
-                }
-                else {
+                } else {
                     # we indeed need the cleanup
                     try {
                         $null = $adentry.Properties['msDS-AllowedToDelegateTo'].Remove($spn)
@@ -161,8 +156,7 @@ function Remove-DbaSpn {
                         Write-Message -Message "Removed kerberos delegation $spn for $ServiceAccount" -Level Verbose
                         $set = $false
                         $status = "Successfully removed delegation"
-                    }
-                    catch {
+                    } catch {
                         Write-Message -Message "Could not remove delegation. $($_.Exception.Message)" -Level Warning -EnableException $EnableException.ToBool() -ErrorRecord $_ -Target $ServiceAccount
                         $set = $true
                         $status = "Failed to remove delegation"
@@ -181,3 +175,4 @@ function Remove-DbaSpn {
         }
     }
 }
+

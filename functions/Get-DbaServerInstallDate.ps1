@@ -1,5 +1,5 @@
 function Get-DbaServerInstallDate {
-<#
+    <#
     .SYNOPSIS
         Returns the install date of a SQL Instance and Windows Server.
 
@@ -80,8 +80,7 @@ function Get-DbaServerInstallDate {
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failed to process Instance $Instance" -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -90,8 +89,7 @@ function Get-DbaServerInstallDate {
                 $sql = "SELECT create_date FROM sys.server_principals WHERE sid = 0x010100000000000512000000"
                 [DbaDateTime]$sqlInstallDate = $server.Query($sql, 'master', $true).create_date
 
-            }
-            else {
+            } else {
                 Write-Message -Level Verbose -Message "Getting Install Date for: $instance"
                 $sql = "SELECT schemadate FROM sysservers"
                 [DbaDateTime]$sqlInstallDate = $server.Query($sql, 'master', $true).create_date
@@ -102,8 +100,7 @@ function Get-DbaServerInstallDate {
             if ($IncludeWindows) {
                 try {
                     [DbaDateTime]$windowsInstallDate = (Get-DbaCmObject -ClassName win32_OperatingSystem -ComputerName $WindowsServerName -Credential $Credential -EnableException).InstallDate
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Failed to connect to: $WindowsServerName" -Continue -Target $instance -ErrorRecord $_
                 }
             }
@@ -118,11 +115,11 @@ function Get-DbaServerInstallDate {
 
             if ($IncludeWindows) {
                 Select-DefaultView -InputObject $object -Property ComputerName, InstanceName, SqlInstance, SqlInstallDate, WindowsInstallDate
-            }
-            else {
+            } else {
                 Select-DefaultView -InputObject $object -Property ComputerName, InstanceName, SqlInstance, SqlInstallDate
             }
 
         }
     }
 }
+

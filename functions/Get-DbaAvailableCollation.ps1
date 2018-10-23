@@ -1,5 +1,5 @@
 function Get-DbaAvailableCollation {
-<#
+    <#
     .SYNOPSIS
         Function to get available collations for a given SQL Server
 
@@ -58,12 +58,10 @@ function Get-DbaAvailableCollation {
         function Get-LocaleDescription ($LocaleId) {
             if ($locales.ContainsKey($LocaleId)) {
                 $localeName = $locales.Get_Item($LocaleId)
-            }
-            else {
+            } else {
                 try {
                     $localeName = (Get-Language $LocaleId).DisplayName
-                }
-                catch {
+                } catch {
                     $localeName = $null
                 }
                 $locales.Set_Item($LocaleId, $localeName)
@@ -74,12 +72,10 @@ function Get-DbaAvailableCollation {
         function Get-CodePageDescription ($codePageId) {
             if ($codePages.ContainsKey($codePageId)) {
                 $codePageName = $codePages.Get_Item($codePageId)
-            }
-            else {
+            } else {
                 try {
                     $codePageName = (Get-CodePage $codePageId).EncodingName
-                }
-                catch {
+                } catch {
                     $codePageName = $null
                 }
                 $codePages.Set_Item($codePageId, $codePageName)
@@ -92,8 +88,7 @@ function Get-DbaAvailableCollation {
         foreach ($Instance in $sqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -110,3 +105,4 @@ function Get-DbaAvailableCollation {
         }
     }
 }
+

@@ -1,5 +1,5 @@
 function Get-DbaAgentLog {
-<#
+    <#
     .SYNOPSIS
         Gets the "SQL Agent Error Log" of an instance
 
@@ -66,8 +66,7 @@ function Get-DbaAgentLog {
 
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -83,13 +82,11 @@ function Get-DbaAgentLog {
                             # Select all of the columns you'd like to show
                             Select-DefaultView -InputObject $object -Property ComputerName, InstanceName, SqlInstance, LogDate, ProcessInfo, Text
                         }
-                    }
-                    catch {
+                    } catch {
                         Stop-Function -Continue -Target $server -Message "Could not read from SQL Server Agent"
                     }
                 }
-            }
-            else {
+            } else {
                 try {
                     foreach ($object in $server.JobServer.ReadErrorLog()) {
                         Write-Message -Level Verbose -Message "Processing $object"
@@ -100,11 +97,11 @@ function Get-DbaAgentLog {
                         # Select all of the columns you'd like to show
                         Select-DefaultView -InputObject $object -Property ComputerName, InstanceName, SqlInstance, LogDate, ProcessInfo, Text
                     }
-                }
-                catch {
+                } catch {
                     Stop-Function -Continue -Target $server -Message "Could not read from SQL Server Agent"
                 }
             }
         }
     }
 }
+

@@ -1,6 +1,6 @@
 #ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Set-DbaAgentJob {
-<#
+    <#
     .SYNOPSIS
         Set-DbaAgentJob updates a job.
 
@@ -244,8 +244,7 @@ function Set-DbaAgentJob {
             # Try connecting to the instance
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -254,16 +253,14 @@ function Set-DbaAgentJob {
                 # Check if the job exists
                 if ($server.JobServer.Jobs.Name -notcontains $j) {
                     Stop-Function -Message "Job $j doesn't exists on $instance" -Target $instance
-                }
-                else {
+                } else {
                     # Get the job
                     try {
                         $InputObject += $server.JobServer.Jobs[$j]
 
                         # Refresh the object
                         $InputObject.Refresh()
-                    }
-                    catch {
+                    } catch {
                         Stop-Function -Message "Something went wrong retrieving the job" -Target $j -ErrorRecord $_ -Continue
                     }
                 }
@@ -290,8 +287,7 @@ function Set-DbaAgentJob {
                         # Add schedule to job
                         Write-Message -Message "Adding schedule id $sID to job" -Level Verbose
                         $currentjob.AddSharedSchedule($sID)
-                    }
-                    else {
+                    } else {
                         Stop-Function -Message "Schedule $s cannot be found on instance $instance" -Target $s -Continue
                     }
 
@@ -307,8 +303,7 @@ function Set-DbaAgentJob {
                         Write-Message -Message "Adding schedule id $sID to job" -Level Verbose
                         $currentjob.AddSharedSchedule($sID)
 
-                    }
-                    else {
+                    } else {
                         Stop-Function -Message "Schedule ID $sID cannot be found on instance $instance" -Target $sID -Continue
                     }
                 }
@@ -340,18 +335,15 @@ function Set-DbaAgentJob {
 
                                 Write-Message -Message "Setting job category to $Category" -Level Verbose
                                 $currentjob.Category = $Category
-                            }
-                            catch {
+                            } catch {
                                 Stop-Function -Message "Couldn't create job category $Category from $instance" -Target $instance -ErrorRecord $_
                             }
                         }
-                    }
-                    else {
+                    } else {
                         Stop-Function -Message "Job category $Category doesn't exist on $instance. Use -Force to create it." -Target $instance
                         return
                     }
-                }
-                else {
+                } else {
                     Write-Message -Message "Setting job category to $Category" -Level Verbose
                     $currentjob.Category = $Category
                 }
@@ -367,13 +359,11 @@ function Set-DbaAgentJob {
                     if ($currentjobSteps.ID -contains $StartStepId) {
                         Write-Message -Message "Setting job start step id to $StartStepId" -Level Verbose
                         $currentjob.StartStepID = $StartStepId
-                    }
-                    else {
+                    } else {
                         Write-Message -Message "The step id is not present in job $j on instance $instance" -Warning
                     }
 
-                }
-                else {
+                } else {
                     Stop-Function -Message "There are no job steps present for job $j on instance $instance" -Target $instance -Continue
                 }
 
@@ -384,8 +374,7 @@ function Set-DbaAgentJob {
                 if ($server.Logins.Name -contains $OwnerLogin) {
                     Write-Message -Message "Setting job owner login name to $OwnerLogin" -Level Verbose
                     $currentjob.OwnerLoginName = $OwnerLogin
-                }
-                else {
+                } else {
                     Stop-Function -Message "The given owner log in name $OwnerLogin does not exist on instance $instance" -Target $instance -Continue
                 }
             }
@@ -403,14 +392,12 @@ function Set-DbaAgentJob {
 
                     # Remove the notification
                     $currentjob.EmailLevel = $EmailLevel
-                }
-                else {
+                } else {
                     # Check if either the operator e-mail parameter is set or the operator is set in the job
                     if ($EmailOperator -or $currentjob.OperatorToEmail) {
                         Write-Message -Message "Setting job e-mail level to $EmailLevel" -Level Verbose
                         $currentjob.EmailLevel = $EmailLevel
-                    }
-                    else {
+                    } else {
                         Stop-Function -Message "Cannot set e-mail level $EmailLevel without a valid e-mail operator name" -Target $instance -Continue
                     }
                 }
@@ -424,14 +411,12 @@ function Set-DbaAgentJob {
 
                     # Remove the notification
                     $currentjob.NetSendLevel = $NetsendLevel
-                }
-                else {
+                } else {
                     # Check if either the operator netsend parameter is set or the operator is set in the job
                     if ($NetsendOperator -or $currentjob.OperatorToNetSend) {
                         Write-Message -Message "Setting job netsend level to $NetsendLevel" -Level Verbose
                         $currentjob.NetSendLevel = $NetsendLevel
-                    }
-                    else {
+                    } else {
                         Stop-Function -Message "Cannot set netsend level $NetsendLevel without a valid netsend operator name" -Target $instance -Continue
                     }
                 }
@@ -445,14 +430,12 @@ function Set-DbaAgentJob {
 
                     # Remove the notification
                     $currentjob.PageLevel = $PageLevel
-                }
-                else {
+                } else {
                     # Check if either the operator pager parameter is set or the operator is set in the job
                     if ($PageOperator -or $currentjob.OperatorToPage) {
                         Write-Message -Message "Setting job pager level to $PageLevel" -Level Verbose
                         $currentjob.PageLevel = $PageLevel
-                    }
-                    else {
+                    } else {
                         Stop-Function -Message "Cannot set page level $PageLevel without a valid netsend operator name" -Target $instance -Continue
                     }
                 }
@@ -464,8 +447,7 @@ function Set-DbaAgentJob {
                 if ($server.JobServer.Operators.Name -contains $EmailOperator) {
                     Write-Message -Message "Setting job e-mail operator to $EmailOperator" -Level Verbose
                     $currentjob.OperatorToEmail = $EmailOperator
-                }
-                else {
+                } else {
                     Stop-Function -Message "The e-mail operator name $EmailOperator does not exist on instance $instance. Exiting.." -Target $j -Continue
                 }
             }
@@ -475,8 +457,7 @@ function Set-DbaAgentJob {
                 if ($server.JobServer.Operators.Name -contains $NetsendOperator) {
                     Write-Message -Message "Setting job netsend operator to $NetsendOperator" -Level Verbose
                     $currentjob.OperatorToNetSend = $NetsendOperator
-                }
-                else {
+                } else {
                     Stop-Function -Message "The netsend operator name $NetsendOperator does not exist on instance $instance. Exiting.." -Target $j -Continue
                 }
             }
@@ -486,8 +467,7 @@ function Set-DbaAgentJob {
                 if ($server.JobServer.Operators.Name -contains $PageOperator) {
                     Write-Message -Message "Setting job pager operator to $PageOperator" -Level Verbose
                     $currentjob.OperatorToPage = $PageOperator
-                }
-                else {
+                } else {
                     Stop-Function -Message "The page operator name $PageOperator does not exist on instance $instance. Exiting.." -Target $instance -Continue
                 }
             }
@@ -505,8 +485,7 @@ function Set-DbaAgentJob {
 
                     # Change the job
                     $currentjob.Alter()
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Something went wrong changing the job" -ErrorRecord $_ -Target $instance -Continue
                 }
                 Get-DbaAgentJob -SqlInstance $server | Where-Object Name -eq $currentjob.name
@@ -518,3 +497,4 @@ function Set-DbaAgentJob {
         Write-Message -Message "Finished changing job(s)" -Level Verbose
     }
 }
+

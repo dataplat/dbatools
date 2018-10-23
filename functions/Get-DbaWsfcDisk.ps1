@@ -1,6 +1,6 @@
 #ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaWsfcDisk {
-<#
+    <#
     .SYNOPSIS
         Gets information about the clustered disks on one or more failover clusters in a given domain.
 
@@ -52,24 +52,25 @@ function Get-DbaWsfcDisk {
                 foreach ($disk in $disks) {
                     $diskpart = $disk | Get-CimAssociatedInstance -ResultClassName MSCluster_DiskPartition
                     [pscustomobject]@{
-                        ClusterName = $resource.ClusterName
-                        ClusterFqdn = $resource.ClusterFqdn
-                        ResourceGroup = $resource.OwnerGroup
-                        Disk        = $resource.Name
-                        State       = $resource.State
-                        FileSystem  = $diskpart.FileSystem
-                        Path        = $diskpart.Path
-                        Label       = $diskpart.VolumeLabel
-                        Size        = [dbasize]($diskpart.TotalSize * 1MB)
-                        Free        = [dbasize]($diskpart.FreeSpace * 1MB)
-                        MountPoints = $diskpart.MountPoints
-                        SerialNumber = $diskpart.SerialNumber
-                        ClusterDisk        = $disk
-                        ClusterDiskPart    = $diskpart
-                        ClusterResource    = $resource
+                        ClusterName     = $resource.ClusterName
+                        ClusterFqdn     = $resource.ClusterFqdn
+                        ResourceGroup   = $resource.OwnerGroup
+                        Disk            = $resource.Name
+                        State           = $resource.State
+                        FileSystem      = $diskpart.FileSystem
+                        Path            = $diskpart.Path
+                        Label           = $diskpart.VolumeLabel
+                        Size            = [dbasize]($diskpart.TotalSize * 1MB)
+                        Free            = [dbasize]($diskpart.FreeSpace * 1MB)
+                        MountPoints     = $diskpart.MountPoints
+                        SerialNumber    = $diskpart.SerialNumber
+                        ClusterDisk     = $disk
+                        ClusterDiskPart = $diskpart
+                        ClusterResource = $resource
                     } | Select-DefaultView -ExcludeProperty ClusterDisk, ClusterDiskPart, ClusterResource
                 }
             }
         }
     }
 }
+

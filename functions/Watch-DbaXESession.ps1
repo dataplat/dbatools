@@ -1,6 +1,6 @@
 #ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Watch-DbaXESession {
-<#
+    <#
     .SYNOPSIS
         Watch live XEvent Data as it happens
 
@@ -72,12 +72,10 @@ function Watch-DbaXESession {
     process {
         if (-not $SqlInstance) {
            
-        }
-        else {
+        } else {
             try {
                 $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential -MinimumVersion 11
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $SqlInstance -Continue
             }
             $SqlConn = $server.ConnectionContext.SqlConnectionObject
@@ -143,18 +141,15 @@ function Watch-DbaXESession {
 
                     [PSCustomObject]($hash)
                 }
-            }
-            catch {
+            } catch {
                 Start-Sleep 1
                 $status = Get-DbaXESession -SqlInstance $server -Session $sessionname
                 if ($status.Status -ne "Running") {
                     Stop-Function -Message "$($xesession.Name) was stopped."
-                }
-                else {
+                } else {
                     Stop-Function -Message "Failure" -ErrorRecord $_ -Target $sessionname
                 }
-            }
-            finally {
+            } finally {
                 if ($xevent -is [IDisposable]) {
                     $xevent.Dispose()
                 }
@@ -162,3 +157,4 @@ function Watch-DbaXESession {
         }
     }
 }
+

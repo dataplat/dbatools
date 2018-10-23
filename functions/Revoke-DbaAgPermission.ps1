@@ -1,6 +1,6 @@
 #ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Revoke-DbaAgPermission {
-<#
+    <#
     .SYNOPSIS
         Revokes endpoint and availability group permissions to a login.
 
@@ -130,8 +130,7 @@ function Revoke-DbaAgPermission {
                     if ($Pscmdlet.ShouldProcess($server.Name, "Revoking $perm on $endpoint")) {
                         if ($perm -eq "CreateAnyDatabase") {
                             $ag.Parent.Query("ALTER AVAILABILITY GROUP $ag REVOKE CREATE ANY DATABASE")
-                        }
-                        else {
+                        } else {
                             $bigperms = New-Object Microsoft.SqlServer.Management.Smo.ObjectPermissionSet([Microsoft.SqlServer.Management.Smo.ObjectPermission]::$perm)
                             try {
                                 $endpoint.Revoke($bigperms, $account.Name)
@@ -144,8 +143,7 @@ function Revoke-DbaAgPermission {
                                     Type         = "Revoke"
                                     Status       = "Success"
                                 }
-                            }
-                            catch {
+                            } catch {
                                 Stop-Function -Message "Failure" -ErrorRecord $_
                             }
                         }
@@ -173,8 +171,7 @@ function Revoke-DbaAgPermission {
                                     Type         = "Revoke"
                                     Status       = "Success"
                                 }
-                            }
-                            catch {
+                            } catch {
                                 Stop-Function -Message "Failure" -ErrorRecord $_
                             }
                         }
@@ -184,3 +181,4 @@ function Revoke-DbaAgPermission {
         }
     }
 }
+

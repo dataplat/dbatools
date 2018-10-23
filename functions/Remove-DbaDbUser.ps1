@@ -1,5 +1,5 @@
 function Remove-DbaDbUser {
-<#
+    <#
     .SYNOPSIS
         Drop database user
 
@@ -134,8 +134,7 @@ function Remove-DbaDbUser {
                                 $ownedUrns = $schema.EnumOwnedObjects()
                                 if (-Not $ownedUrns) {
                                     $dropSchemas += $schema
-                                }
-                                else {
+                                } else {
                                     Write-Message -Level Warning -Message "User owns objects in the database and will not be removed."
                                     foreach ($ownedUrn in $ownedUrns) {
                                         $obj = $server.GetSmoObject($ownedUrn)
@@ -151,8 +150,7 @@ function Remove-DbaDbUser {
                                 $ownedUrns = $schema.EnumOwnedObjects()
                                 if (($ownedUrns -And $Force) -Or (-Not $ownedUrns)) {
                                     $alterSchemas += $schema
-                                }
-                                else {
+                                } else {
                                     Write-Message -Level Warning -Message "User $user owns the Schema $schema, which owns $($ownedUrns.Count) Object(s).  If you want to change the schemas' owner to [dbo] and drop the user anyway, use -Force parameter.  User $user will not be removed."
                                     $ownedObjects = $true
                                 }
@@ -185,8 +183,7 @@ function Remove-DbaDbUser {
 
                             $status = "Dropped"
 
-                        }
-                        catch {
+                        } catch {
                             Write-Error -Message "Could not drop $user from Database $db on target $server"
                             $status = "Not Dropped"
                         }
@@ -208,13 +205,11 @@ function Remove-DbaDbUser {
     process {
         if ($InputObject) {
             Remove-DbUser $InputObject
-        }
-        else {
+        } else {
             foreach ($instance in $SqlInstance) {
                 try {
                     $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
                 }
 
@@ -238,4 +233,5 @@ function Remove-DbaDbUser {
     }
 
 }
+
 

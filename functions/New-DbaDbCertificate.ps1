@@ -1,6 +1,6 @@
 #ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function New-DbaDbCertificate {
-<#
+    <#
     .SYNOPSIS
         Creates a new database certificate
 
@@ -120,8 +120,7 @@ function New-DbaDbCertificate {
                         
                         if ($Password) {
                             $smocert.Create(([System.Runtime.InteropServices.marshal]::PtrToStringAuto([System.Runtime.InteropServices.marshal]::SecureStringToBSTR($password))))
-                        }
-                        else {
+                        } else {
                             $smocert.Create()
                         }
                         
@@ -131,8 +130,7 @@ function New-DbaDbCertificate {
                         Add-Member -Force -InputObject $smocert -MemberType NoteProperty -Name Database -value $db.Name
                         
                         Select-DefaultView -InputObject $smocert -Property ComputerName, InstanceName, SqlInstance, Database, Name, Subject, StartDate, ActiveForServiceBrokerDialog, ExpirationDate, Issuer, LastBackupDate, Owner, PrivateKeyEncryptionType, Serial
-                    }
-                    catch {
+                    } catch {
                         $ErrorActionPreference = $eap
                         Stop-Function -Message "Failed to create certificate in $($db.Name) on $($db.Parent.Name)" -Target $smocert -ErrorRecord $_ -Continue
                     }
@@ -142,3 +140,4 @@ function New-DbaDbCertificate {
         }
     }
 }
+

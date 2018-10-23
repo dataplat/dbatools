@@ -1,6 +1,6 @@
 #ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Remove-DbaPfDataCollectorCounter {
-<#
+    <#
     .SYNOPSIS
         Removes a Performance Data Collector Counter.
 
@@ -130,11 +130,11 @@ function Remove-DbaPfDataCollectorCounter {
                         Name             = $counterName
                         Status           = "Removed"
                     }
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Failure importing $Countername to $computer." -ErrorRecord $_ -Target $computer -Continue
                 }
             }
         }
     }
 }
+

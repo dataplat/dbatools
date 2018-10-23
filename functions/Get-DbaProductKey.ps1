@@ -1,5 +1,5 @@
 function Get-DbaProductKey {
-<#
+    <#
     .SYNOPSIS
         Gets SQL Server Product Keys from local or destination SQL Servers. Works with SQL Server 2005-2016
 
@@ -77,8 +77,7 @@ function Get-DbaProductKey {
                         $productKey = "-" + $productKey
                     }
                 }
-            }
-            catch {
+            } catch {
                 $productkey = "Cannot decode product key."
             }
             return $productKey
@@ -100,16 +99,14 @@ function Get-DbaProductKey {
             $computerName = $instance.ComputerName
             try {
                 $regRoots = Get-DbaRegistryRoot -ComputerName $computerName -EnableException
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Can't access registry for $computerName. Is the Remote Registry service started?" -Continue
             }
             if ($instance.IsLocalhost) {
                 $localmachine = [Microsoft.Win32.RegistryHive]::LocalMachine
                 $defaultview = [Microsoft.Win32.RegistryView]::Default
                 $reg = [Microsoft.Win32.RegistryKey]::OpenBaseKey($localmachine, $defaultview)
-            }
-            else {
+            } else {
                 # Get IP for remote registry access. It's the most reliable.
                 try { $ipaddr = ([System.Net.Dns]::GetHostAddresses($computerName)).IPAddressToString }
                 catch {
@@ -118,8 +115,7 @@ function Get-DbaProductKey {
 
                 try {
                     $reg = [Microsoft.Win32.RegistryKey]::OpenRemoteBaseKey("LocalMachine", $ipaddr)
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Can't access registry for $computerName. Is the Remote Registry service started?" -Continue
                 }
             }
@@ -133,8 +129,7 @@ function Get-DbaProductKey {
 
                 try {
                     $server = Connect-SqlInstance -SqlInstance $instanceReg.SqlInstance -SqlCredential $SqlCredential -MinimumVersion 10
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instanceReg.SqlInstance -Continue
                 }
 
@@ -186,25 +181,21 @@ function Get-DbaProductKey {
                         try {
                             $binarykey = $($reg.OpenSubKey($subkey)).GetValue($binaryvalue)
                             break
-                        }
-                        catch {
+                        } catch {
                             $binarykey = $null
                         }
                     }
 
                     if ($null -eq $binarykey) {
                         $sqlkey = "Could not read Product Key from registry on $computername"
-                    }
-                    else {
+                    } else {
                         try {
                             $sqlkey = Unlock-SqlInstanceKey $binarykey $server.VersionMajor
-                        }
-                        catch {
+                        } catch {
                             $sqlkey = "Unable to unlock key"
                         }
                     }
-                }
-                else {
+                } else {
                     $sqlkey = "SQL Server Express Edition"
                 }
 
@@ -226,3 +217,4 @@ function Get-DbaProductKey {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Parameter ServersFromFile
     }
 }
+

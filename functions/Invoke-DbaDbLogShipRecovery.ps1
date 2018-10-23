@@ -1,5 +1,5 @@
 function Invoke-DbaDbLogShipRecovery {
-<#
+    <#
     .SYNOPSIS
         Invoke-DbaDbLogShipRecovery recovers log shipped databases to a normal state to act upon a migration or disaster.
 
@@ -132,8 +132,7 @@ function Invoke-DbaDbLogShipRecovery {
                     Stop-Function -Message "The agent service is not in a running state. Please start the service." -ErrorRecord $_ -Target $server.name
                     return
                 }
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Unable to get SQL Server Agent Service status" -ErrorRecord $_ -Target $server.name
                 return
             }
@@ -152,8 +151,7 @@ function Invoke-DbaDbLogShipRecovery {
                 Write-Message -Message "Retrieving log shipping information from the secondary instance" -Level Verbose
                 Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Retrieving log shipping information from the secondary instance"
                 $logshipping_details = $server.Query($query)
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Error retrieving the log shipping details: $($_.Exception.Message)" -ErrorRecord $_ -Target $server.name
                 return
             }
@@ -161,8 +159,7 @@ function Invoke-DbaDbLogShipRecovery {
             # Check if there are any databases to recover
             if ($null -eq $logshipping_details) {
                 Stop-Function -Message "The database $db is not configured as a secondary database for log shipping." -Continue
-            }
-            else {
+            } else {
                 # Loop through each of the log shipped databases
                 foreach ($ls in $logshipping_details) {
                     $secondarydb = $ls.secondary_database
@@ -174,8 +171,7 @@ function Invoke-DbaDbLogShipRecovery {
                     # Check if the database is in the right state
                     if ($server.Databases[$secondarydb].Status -notin ('Normal, Standby', 'Standby', 'Restoring')) {
                         Stop-Function -Message "The database $db doesn't have the right status to be recovered" -Continue
-                    }
-                    else {
+                    } else {
                         Write-Message -Message "Started Recovery for $secondarydb" -Level Verbose
 
                         # Start the job to get the latest files
@@ -185,8 +181,7 @@ function Invoke-DbaDbLogShipRecovery {
                             Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Starting copy job"
                             try {
                                 $null = Start-DbaAgentJob -SqlInstance $instance -SqlCredential $sqlcredential -Job $ls.copyjob
-                            }
-                            catch {
+                            } catch {
                                 $recoverResult = "Failed"
                                 $comment = "Something went wrong starting the copy job $($ls.copyjob)"
                                 Stop-Function -Message "Something went wrong starting the copy job.`n$($_)" -ErrorRecord $_ -Target $server.name
@@ -229,8 +224,7 @@ function Invoke-DbaDbLogShipRecovery {
                                 try {
                                     Write-Message -Message "Disabling copy job $($ls.copyjob)" -Level Verbose
                                     $null = Set-DbaAgentJob -SqlInstance $instance -SqlCredential $sqlcredential -Job $ls.copyjob -Disabled
-                                }
-                                catch {
+                                } catch {
                                     $recoverResult = "Failed"
                                     $comment = "Something went wrong disabling the copy job."
                                     Stop-Function -Message "Something went wrong disabling the copy job.`n$($_)" -ErrorRecord $_ -Target $server.name
@@ -246,8 +240,7 @@ function Invoke-DbaDbLogShipRecovery {
                                 Write-Message -Message "Starting restore job $($ls.restorejob)" -Level Verbose
                                 try {
                                     $null = Start-DbaAgentJob -SqlInstance $instance -SqlCredential $sqlcredential -Job $ls.restorejob
-                                }
-                                catch {
+                                } catch {
                                     $comment = "Something went wrong starting the restore job."
                                     Stop-Function -Message "Something went wrong starting the restore job.`n$($_)" -ErrorRecord $_ -Target $server.name
                                 }
@@ -282,8 +275,7 @@ function Invoke-DbaDbLogShipRecovery {
                                 try {
                                     Write-Message -Message ("Disabling restore job " + $ls.restorejob) -Level Verbose
                                     $null = Set-DbaAgentJob -SqlInstance $instance -SqlCredential $sqlcredential -Job $ls.restorejob -Disabled
-                                }
-                                catch {
+                                } catch {
                                     $recoverResult = "Failed"
                                     $comment = "Something went wrong disabling the restore job."
                                     Stop-Function -Message "Something went wrong disabling the restore job.`n$($_)" -ErrorRecord $_ -Target $server.name
@@ -300,15 +292,13 @@ function Invoke-DbaDbLogShipRecovery {
                                         $query = "RESTORE DATABASE [$secondarydb] WITH RECOVERY"
                                         $server.Query($query)
 
-                                    }
-                                    catch {
+                                    } catch {
                                         $recoverResult = "Failed"
                                         $comment = "Something went wrong restoring the database to a normal state."
                                         Stop-Function -Message "Something went wrong restoring the database to a normal state.`n$($_)" -ErrorRecord $_ -Target $secondarydb
                                     }
                                 }
-                            }
-                            else {
+                            } else {
                                 $comment = "Skipping restore with recovery."
                                 Write-Message -Message "Skipping restore with recovery" -Level Verbose
                             }
@@ -320,12 +310,12 @@ function Invoke-DbaDbLogShipRecovery {
                         $logshipping_details = $null
 
                         [PSCustomObject]@{
-                            ComputerName = $server.ComputerName
-                            InstanceName = $server.InstanceName
-                            SqlInstance  = $server.DomainInstanceName
-                            Database     = $secondarydb
+                            ComputerName  = $server.ComputerName
+                            InstanceName  = $server.InstanceName
+                            SqlInstance   = $server.DomainInstanceName
+                            Database      = $secondarydb
                             RecoverResult = $recoverResult
-                            Comment      = $comment
+                            Comment       = $comment
                         }
 
                     }
@@ -339,3 +329,4 @@ function Invoke-DbaDbLogShipRecovery {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Invoke-DbaLogShippingRecovery
     }
 }
+

@@ -1,5 +1,5 @@
 function Test-DbaNetworkLatency {
-<#
+    <#
     .SYNOPSIS
         Tests how long a query takes to return from SQL Server
 
@@ -79,8 +79,7 @@ function Test-DbaNetworkLatency {
                 $currentCount = 0
                 try {
                     $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
                 }
 
@@ -102,8 +101,7 @@ function Test-DbaNetworkLatency {
                 $totalWarm = $last.TotalMilliseconds
                 if ($Count -eq 1) {
                     $averageWarm = $totalWarm
-                }
-                else {
+                } else {
                     $averageWarm = $totalWarm / $count
                 }
 
@@ -118,8 +116,7 @@ function Test-DbaNetworkLatency {
                     ExecuteOnlyAvg   = [prettytimespan]::FromMilliseconds($averageWarm)
                     NetworkOnlyTotal = [prettytimespan]::FromMilliseconds($totalTime - $totalWarm)
                 } | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, 'Count as ExecutionCount', Total, 'Avg as Average', ExecuteOnlyTotal, 'ExecuteOnlyAvg as ExecuteOnlyAverage', NetworkOnlyTotal #backwards compat
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Error occurred testing dba network latency: $_" -ErrorRecord $_ -Continue -Target $instance
             }
         }
@@ -128,3 +125,4 @@ function Test-DbaNetworkLatency {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Test-SqlNetworkLatency
     }
 }
+

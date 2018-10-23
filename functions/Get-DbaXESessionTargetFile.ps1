@@ -1,6 +1,6 @@
 #ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaXESessionTargetFile {
-<#
+    <#
     .SYNOPSIS
         Get a file system object from the Extended Events Session Target Files.
 
@@ -78,16 +78,15 @@ function Get-DbaXESessionTargetFile {
                     $file = $object.TargetFile
                     Write-Message -Level Verbose -Message "Getting $file"
                     Get-ChildItem "$file*" -ErrorAction Stop
-                }
-                else {
+                } else {
                     $file = $object.RemoteTargetFile
                     Write-Message -Level Verbose -Message "Getting $file"
                     Get-ChildItem -Recurse "$file*" -ErrorAction Stop
                 }
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -ErrorRecord $_
             }
         }
     }
 }
+

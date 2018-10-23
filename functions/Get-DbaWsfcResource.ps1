@@ -1,6 +1,6 @@
 #ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaWsfcResource {
-<#
+    <#
     .SYNOPSIS
         Gets information about one or more resources in a failover cluster.
 
@@ -62,3 +62,4 @@ function Get-DbaWsfcResource {
         }
     }
 }
+

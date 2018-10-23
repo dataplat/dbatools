@@ -1,6 +1,6 @@
 #ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaXEStore {
-<#
+    <#
     .SYNOPSIS
         Get a Extended Events store
 
@@ -48,8 +48,7 @@ function Get-DbaXEStore {
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 11
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -64,3 +63,4 @@ function Get-DbaXEStore {
         }
     }
 }
+

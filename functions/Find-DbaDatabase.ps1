@@ -1,6 +1,6 @@
 #ValidationTags#Messaging#
 function Find-DbaDatabase {
-<#
+    <#
     .SYNOPSIS
         Find database/s on multiple servers that match criteria you input
 
@@ -82,19 +82,16 @@ function Find-DbaDatabase {
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             if ($exact -eq $true) {
                 $dbs = $server.Databases | Where-Object IsAccessible | Where-Object { $_.$property -eq $pattern }
-            }
-            else {
+            } else {
                 try {
                     $dbs = $server.Databases | Where-Object IsAccessible | Where-Object { $_.$property.ToString() -match $pattern }
-                }
-                catch {
+                } catch {
                     # they probably put asterisks thinking it's a like
                     $Pattern = $Pattern -replace '\*', ''
                     $Pattern = $Pattern -replace '\%', ''
@@ -133,3 +130,4 @@ function Find-DbaDatabase {
         }
     }
 }
+

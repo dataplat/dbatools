@@ -1,6 +1,6 @@
 #ValidationTags#Messaging#
 function Export-DbaAvailabilityGroup {
-<#
+    <#
     .SYNOPSIS
         Exports SQL Server Availability Groups to a T-SQL file.
 
@@ -87,15 +87,13 @@ function Export-DbaAvailabilityGroup {
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             if ($server.IsHadrEnabled -eq $false) {
                 Stop-Function -Message "Hadr is not enabled on this instance" -Continue
-            }
-            else {
+            } else {
                 # Get all of the Availability Groups and filter if required
                 $ags = $server.AvailabilityGroups
             }
@@ -125,16 +123,14 @@ function Export-DbaAvailabilityGroup {
                     if ($AppendDateToOutputFilename.IsPresent) {
                         $formatteddate = (Get-Date -Format 'yyyyMMdd_hhmm')
                         $outFile = "$outputLocation\${AGname}_${formatteddate}.sql"
-                    }
-                    else {
+                    } else {
                         $outFile = "$outputLocation\$agName.sql"
                     }
 
                     # Check NoClobber and script out the AG
                     if ($NoClobber.IsPresent -and (Test-Path -Path $outFile -PathType Leaf)) {
                         Write-Message -Level Warning -Message "OutputFile $outFile already exists. Skipping due to -NoClobber parameter"
-                    }
-                    else {
+                    } else {
                         Write-Message -Level Verbose -Message "Scripting Availability Group [$agName] on $instance to $outFile"
 
                         # Create comment block header for AG script
@@ -163,16 +159,15 @@ function Export-DbaAvailabilityGroup {
                         try {
                             $ag.Script() | Out-File -FilePath $outFile -Encoding ASCII -Append
                             Get-ChildItem $outFile
-                        }
-                        catch {
+                        } catch {
                             Stop-Function -ErrorRecord $_ -Message "Error scripting out the availability groups. This is likely due to a bug in SMO." -Continue
                         }
                     }
                 }
-            }
-            else {
+            } else {
                 Write-Message -Level Output -Message "No Availability Groups detected on $instance"
             }
         }
     }
 }
+

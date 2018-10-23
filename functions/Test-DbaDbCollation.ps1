@@ -1,5 +1,5 @@
 function Test-DbaDbCollation {
-<#
+    <#
     .SYNOPSIS
         Compares Database Collations to Server Collation
 
@@ -79,8 +79,7 @@ function Test-DbaDbCollation {
             # Try connecting to the instance
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -112,3 +111,4 @@ function Test-DbaDbCollation {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Test-DbaDatabaseCollation
     }
 }
+

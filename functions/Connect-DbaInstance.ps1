@@ -1,5 +1,5 @@
 function Connect-DbaInstance {
-<#
+    <#
     .SYNOPSIS
         Creates a robust SMO SQL Server object.
 
@@ -214,8 +214,7 @@ function Connect-DbaInstance {
             $loadedSmoVersion = $loadedSmoVersion | ForEach-Object {
                 if ($_.Location -match "__") {
                     ((Split-Path (Split-Path $_.Location) -Leaf) -split "__")[0]
-                }
-                else {
+                } else {
                     ((Get-ChildItem -Path $_.Location).VersionInfo.ProductVersion)
                 }
             }
@@ -266,8 +265,7 @@ function Connect-DbaInstance {
                 $connstring = $server.ConnectionContext.ConnectionString
                 $server.ConnectionContext.ConnectionString = "$connstring;$appendconnectionstring"
                 $server.ConnectionContext.Connect()
-            }
-            else {
+            } else {
 
                 $server.ConnectionContext.ApplicationName = $ClientName
 
@@ -310,8 +308,7 @@ function Connect-DbaInstance {
                             $server.ConnectionContext.ConnectAsUser = $true
                             $server.ConnectionContext.ConnectAsUserName = $username
                             $server.ConnectionContext.ConnectAsUserPassword = ($Credential).GetNetworkCredential().Password
-                        }
-                        else {
+                        } else {
                             $authtype = "SQL Authentication"
                             $server.ConnectionContext.LoginSecure = $false
                             $server.ConnectionContext.set_Login($username)
@@ -321,16 +318,13 @@ function Connect-DbaInstance {
 
                     if ($NonPooled) {
                         $server.ConnectionContext.Connect()
-                    }
-                    elseif ($authtype -eq "Windows Authentication with Credential") {
+                    } elseif ($authtype -eq "Windows Authentication with Credential") {
                         # Make it connect in a natural way, hard to explain.
                         $null = $server.IsMemberOfWsfcCluster
-                    }
-                    else {
+                    } else {
                         $server.ConnectionContext.SqlConnectionObject.Open()
                     }
-                }
-                catch {
+                } catch {
                     $message = $_.Exception.InnerException.InnerException
                     $message = $message.ToString()
                     $message = ($message -Split '-->')[0]
@@ -375,8 +369,7 @@ function Connect-DbaInstance {
 
             if ($SqlConnectionOnly) {
                 return $server.ConnectionContext.SqlConnectionObject
-            }
-            else {
+            } else {
                 if (-not $server.ComputerName) {
                     $parsedcomputername = $server.NetName
                     if (-not $parsedcomputername) {
@@ -389,3 +382,4 @@ function Connect-DbaInstance {
         }
     }
 }
+

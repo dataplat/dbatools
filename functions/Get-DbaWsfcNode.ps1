@@ -1,6 +1,6 @@
 #ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaWsfcNode {
-<#
+    <#
     .SYNOPSIS
         Gets information about one or more nodes, or servers, in a failover cluster.
 
@@ -59,3 +59,4 @@ function Get-DbaWsfcNode {
         }
     }
 }
+

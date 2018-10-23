@@ -1,5 +1,5 @@
 function Get-DbaPbmPolicy {
-<#
+    <#
     .SYNOPSIS
         Returns policies from Policy-Based Management from an instance.
 
@@ -102,4 +102,5 @@ function Get-DbaPbmPolicy {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-DbaPolicy
     }
 }
+
 

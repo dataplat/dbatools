@@ -1,5 +1,5 @@
 function Get-DbaSsisEnvironmentVariable {
-<#
+    <#
     .SYNOPSIS
         This command gets specified SSIS Environment and all its variables
 
@@ -128,8 +128,7 @@ function Get-DbaSsisEnvironmentVariable {
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -MinimumVersion 11
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -137,8 +136,7 @@ function Get-DbaSsisEnvironmentVariable {
                 $ISNamespace = "Microsoft.SqlServer.Management.IntegrationServices"
 
                 $SSIS = New-Object "$ISNamespace.IntegrationServices" $server
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Could not connect to SSIS Catalog on $instance or current SMO library does not support SSIS catalog"
                 return
             }
@@ -149,8 +147,7 @@ function Get-DbaSsisEnvironmentVariable {
             # get all folders names if none provided
             if ($null -eq $Folder) {
                 $searchFolders = $catalog.Folders.Name
-            }
-            else {
+            } else {
                 $searchFolders = $Folder
             }
 
@@ -161,14 +158,12 @@ function Get-DbaSsisEnvironmentVariable {
 
             if ($null -eq $searchFolders) {
                 Write-Message -Message "Instance: $instance > -Folder and -FolderExclude filters return an empty collection. Skipping" -Level Warning
-            }
-            else {
+            } else {
                 foreach ($f in $searchFolders) {
                     # get all environments names if none provided
                     if ($null -eq $Environment) {
                         $searchEnvironments = $catalog.Folders.Environments.Name
-                    }
-                    else {
+                    } else {
                         $searchEnvironments = $Environment
                     }
 
@@ -179,8 +174,7 @@ function Get-DbaSsisEnvironmentVariable {
 
                     if ($null -eq $searchEnvironments) {
                         Write-Message -Message "Instance: $instance / Folder: $f > -Environment and -EnvironmentExclude filters return an empty collection. Skipping." -Level Warning
-                    }
-                    else {
+                    } else {
                         $Environments = $catalog.Folders[$f].Environments | Where-Object { $_.Name -in $searchEnvironments }
 
                         foreach ($e in $Environments) {
@@ -233,8 +227,7 @@ function Get-DbaSsisEnvironmentVariable {
                             foreach ($variable in $ssisVariables) {
                                 if ($variable.sensitive -eq $true) {
                                     $value = $variable.decrypted
-                                }
-                                else {
+                                } else {
                                     $value = $variable.value
                                 }
 
@@ -260,3 +253,4 @@ function Get-DbaSsisEnvironmentVariable {
         }
     }
 }
+

@@ -1,5 +1,5 @@
 function Copy-DbaLinkedServer {
-<#
+    <#
     .SYNOPSIS
         Copy-DbaLinkedServer migrates Linked Servers from one SQL Server to another. Linked Server logins and passwords are migrated as well.
 
@@ -108,8 +108,7 @@ function Copy-DbaLinkedServer {
                 try {
                     $destServer.LinkedServers.Refresh()
                     $destServer.LinkedServers.LinkedServerLogins.Refresh()
-                }
-                catch { }
+                } catch { }
 
                 $linkedServerName = $currentLinkedServer.Name
 
@@ -144,8 +143,7 @@ function Copy-DbaLinkedServer {
                             Write-Message -Level Verbose -Message "$linkedServerName exists $($destServer.Name). Skipping."
                         }
                         continue
-                    }
-                    else {
+                    } else {
                         if ($Pscmdlet.ShouldProcess($destinstance, "Dropping $linkedServerName")) {
                             if ($currentLinkedServer.Name -eq 'repl_distributor') {
                                 Write-Message -Level Verbose -Message "repl_distributor cannot be dropped. Not going to try."
@@ -178,8 +176,7 @@ function Copy-DbaLinkedServer {
 
                         $copyLinkedServer.Status = "Successful"
                         $copyLinkedServer | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                    }
-                    catch {
+                    } catch {
                         $copyLinkedServer.Status = "Failed"
                         $copyLinkedServer | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
@@ -205,8 +202,7 @@ function Copy-DbaLinkedServer {
 
                                     $copyLinkedServer.Status = "Successful"
                                     $copyLinkedServer | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                                }
-                                catch {
+                                } catch {
                                     $copyLinkedServer.Status = "Failed"
                                     $copyLinkedServer | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
@@ -225,8 +221,7 @@ function Copy-DbaLinkedServer {
         try {
             $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
             return
-        }
-        catch {
+        } catch {
             Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Source
             return
         }
@@ -240,8 +235,7 @@ function Copy-DbaLinkedServer {
         Write-Message -Level Verbose -Message "Checking if Remote Registry is enabled on $source."
         try {
             Invoke-Command2 -Raw -Credential $Credential -ComputerName $sourceNetBios -ScriptBlock { Get-ItemProperty -Path "HKLM:\SOFTWARE\" } -ErrorAction Stop
-        }
-        catch {
+        } catch {
             Stop-Function -Message "Can't connect to registry on $source." -Target $sourceNetBios -ErrorRecord $_
             return
         }
@@ -252,8 +246,7 @@ function Copy-DbaLinkedServer {
         foreach ($destinstance in $Destination) {
             try {
                 $destServer = Connect-SqlInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
             }
             if (!(Test-SqlSa -SqlInstance $destServer -SqlCredential $DestinationSqlCredential)) {
@@ -268,3 +261,4 @@ function Copy-DbaLinkedServer {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-SqlLinkedServer
     }
 }
+

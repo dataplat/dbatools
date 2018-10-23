@@ -1,6 +1,6 @@
 #ValidationTags#Messaging#
 function Get-DbaBackupDevice {
-<#
+    <#
     .SYNOPSIS
         Gets SQL Backup Device information for each instance(s) of SQL Server.
 
@@ -54,8 +54,7 @@ function Get-DbaBackupDevice {
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -69,4 +68,5 @@ function Get-DbaBackupDevice {
         }
     }
 }
+
 

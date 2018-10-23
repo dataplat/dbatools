@@ -107,8 +107,7 @@ function Get-DbaErrorLog {
 
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -127,8 +126,7 @@ function Get-DbaErrorLog {
                         Select-DefaultView -InputObject $object -Property ComputerName, InstanceName, SqlInstance, LogDate, 'ProcessInfo as Source', Text
                     }
                 }
-            }
-            else {
+            } else {
                 foreach ($object in $server.ReadErrorLog()) {
                     if ( ($Source -and $object.ProcessInfo -ne $Source) -or ($Text -and $object.Text -notlike "*$Text*") -or ($After -and $object.LogDate -lt $After) -or ($Before -and $object.LogDate -gt $Before) ) {
                         continue
@@ -145,3 +143,4 @@ function Get-DbaErrorLog {
         }
     }
 }
+

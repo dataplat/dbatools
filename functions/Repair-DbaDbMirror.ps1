@@ -1,6 +1,6 @@
 #ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Repair-DbaDbMirror {
-<#
+    <#
     .SYNOPSIS
         Attempts to repair a suspended or paused mirroring database.
 
@@ -85,10 +85,10 @@ function Repair-DbaDbMirror {
                 if ($Pscmdlet.ShouldProcess("console", "displaying output")) {
                     $db
                 }
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -ErrorRecord $_
             }
         }
     }
 }
+

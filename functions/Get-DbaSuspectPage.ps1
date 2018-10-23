@@ -1,5 +1,5 @@
 function Get-DbaSuspectPage {
-<#
+    <#
     .SYNOPSIS
         Returns data that is stored in SQL for Suspect Pages on the specified SQL Server Instance
 
@@ -54,8 +54,7 @@ function Get-DbaSuspectPage {
         foreach ($instance in $sqlinstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
                 return
             }
@@ -78,8 +77,7 @@ function Get-DbaSuspectPage {
 
             try {
                 $results = $server.Query($sql)
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Issue collecting data on $server" -Target $server -ErrorRecord $_ -Continue
             }
 
@@ -103,3 +101,4 @@ function Get-DbaSuspectPage {
         }
     }
 }
+

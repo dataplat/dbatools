@@ -1,5 +1,5 @@
 function Get-DbaRegistryRoot {
-<#
+    <#
     .SYNOPSIS
         Uses SQL WMI to find the Registry Root of each SQL Server instance on a computer
 
@@ -49,8 +49,7 @@ function Get-DbaRegistryRoot {
         foreach ($computer in $computername) {
             try {
                 $sqlwmis = Invoke-ManagedComputerCommand -ComputerName $computer.ComputerName -ScriptBlock { $wmi.Services } -Credential $Credential -ErrorAction Stop | Where-Object DisplayName -match "SQL Server \("
-            }
-            catch {
+            } catch {
                 Stop-Function -Message $_ -Target $sqlwmi -Continue
             }
 
@@ -67,8 +66,7 @@ function Get-DbaRegistryRoot {
                     if (![System.String]::IsNullOrEmpty($regroot)) {
                         $regroot = ($regroot -Split 'Value\=')[1]
                         $vsname = ($vsname -Split 'Value\=')[1]
-                    }
-                    else {
+                    } else {
                         Write-Message -Level Warning -Message "Can't find instance $vsname on $env:COMPUTERNAME"
                         return
                     }
@@ -101,3 +99,4 @@ function Get-DbaRegistryRoot {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-DbaSqlRegistryRoot
     }
 }
+

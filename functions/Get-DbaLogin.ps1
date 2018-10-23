@@ -1,5 +1,5 @@
 function Get-DbaLogin {
-<#
+    <#
     .SYNOPSIS
         Function to get an SMO login object of the logins for a given SQL Instance. Takes a server object from the pipe
 
@@ -154,8 +154,7 @@ function Get-DbaLogin {
 
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -217,8 +216,7 @@ function Get-DbaLogin {
                     Write-Message -Level Verbose -Message "Getting last login time"
                     $sql = "SELECT MAX(login_time) AS [login_time] FROM sys.dm_exec_sessions WHERE login_name = '$($serverLogin.name)'"
                     Add-Member -Force -InputObject $serverLogin -MemberType NoteProperty -Name LastLogin -Value $server.ConnectionContext.ExecuteScalar($sql)
-                }
-                else {
+                } else {
                     Add-Member -Force -InputObject $serverLogin -MemberType NoteProperty -Name LastLogin -Value $null
                 }
 
@@ -231,3 +229,4 @@ function Get-DbaLogin {
         }
     }
 }
+

@@ -1,6 +1,6 @@
 #ValidationTags#CodeStyle,Messaging,FlowControl,Pipeline#
 function Show-DbaServerFileSystem {
-<#
+    <#
     .SYNOPSIS
         Shows file system on remote SQL Server in a local GUI and returns the selected directory name
 
@@ -52,8 +52,7 @@ function Show-DbaServerFileSystem {
     begin {
         try {
             Add-Type -AssemblyName PresentationFramework
-        }
-        catch {
+        } catch {
             Stop-Function -Message "Windows Presentation Framework required but not installed."
             return
         }
@@ -83,8 +82,7 @@ function Show-DbaServerFileSystem {
                 $textblock.Text = "$name`:"
                 $childitem.Tag = "$name`:"
 
-            }
-            else {
+            } else {
                 $image.Source = $foldericon
                 $textblock.Text = $name
                 $childitem.Tag = "$tag\$name"
@@ -108,8 +106,7 @@ function Show-DbaServerFileSystem {
             $textbox.Text = $nameSpace
             try {
                 $dirs = $server.EnumDirectories($nameSpace)
-            }
-            catch {
+            } catch {
                 return
             }
             $subdirs = $dirs.Name
@@ -142,8 +139,7 @@ function Show-DbaServerFileSystem {
         
         try {
             $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
-        }
-        catch {
+        } catch {
             Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $SqlInstance
             return
         }
@@ -172,8 +168,7 @@ function Show-DbaServerFileSystem {
 
         try {
             $drives = ($server.EnumAvailableMedia()).Name
-        }
-        catch {
+        } catch {
             Stop-Function -Message "No access to remote SQL Server files." -Target $SqlInstance
             return
         }
@@ -217,3 +212,4 @@ function Show-DbaServerFileSystem {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Show-SqlServerFileSystem
     }
 }
+

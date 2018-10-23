@@ -1,5 +1,5 @@
 function Get-DbaDbTrigger {
-<#
+    <#
     .SYNOPSIS
         Get all existing database triggers on one or more SQL instances.
 
@@ -78,10 +78,10 @@ function Get-DbaDbTrigger {
                     Add-Member -Force -InputObject $trigger -MemberType NoteProperty -Name SqlInstance -value $db.Parent.DomainInstanceName
                     Select-DefaultView -InputObject $trigger -Property ComputerName, InstanceName, SqlInstance, Name, IsEnabled, DateLastModified
                 }
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
             }
         }
     }
 }
+

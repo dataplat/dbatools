@@ -1,5 +1,5 @@
 function Get-DbaRepDistributor {
-<#
+    <#
     .SYNOPSIS
         Gets the information about a replication distributor for a given SQL Server instance.
 
@@ -58,8 +58,7 @@ function Get-DbaRepDistributor {
             # connect to the instance
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -69,8 +68,7 @@ function Get-DbaRepDistributor {
             try {
                 $sourceSqlConn = $server.ConnectionContext.SqlConnectionObject
                 $distributor = New-Object Microsoft.SqlServer.Replication.ReplicationServer $sourceSqlConn
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -85,3 +83,4 @@ function Get-DbaRepDistributor {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-DbaDistributor
     }
 }
+

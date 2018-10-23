@@ -1,6 +1,6 @@
 #ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaXESession {
-<#
+    <#
     .SYNOPSIS
         Gets a list of Extended Events Sessions from the specified SQL Server instance(s).
 
@@ -72,8 +72,7 @@ function Get-DbaXESession {
                 $SqlConn = $server.ConnectionContext.SqlConnectionObject
                 $SqlStoreConnection = New-Object Microsoft.SqlServer.Management.Sdk.Sfc.SqlStoreConnection $SqlConn
                 $XEStore = New-Object  Microsoft.SqlServer.Management.XEvent.XEStore $SqlStoreConnection
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -115,3 +114,4 @@ function Get-DbaXESession {
         }
     }
 }
+

@@ -1,5 +1,5 @@
 function Dismount-DbaDatabase {
-<#
+    <#
     .SYNOPSIS
         Detach a SQL Server Database.
 
@@ -86,15 +86,13 @@ function Dismount-DbaDatabase {
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             if ($Database) {
                 $InputObject += $server.Databases | Where-Object Name -in $Database
-            }
-            else {
+            } else {
                 $InputObject += $server.Databases
             }
 
@@ -157,8 +155,7 @@ function Dismount-DbaDatabase {
                             $db.ChangeMirroringState([Microsoft.SqlServer.Management.Smo.MirroringOption]::Off)
                             $db.Alter()
                             $db.Refresh()
-                        }
-                        catch {
+                        } catch {
                             Stop-Function -Message "Could not break mirror for $db on $server - not detaching." -Target $db -ErrorRecord $_ -Continue
                         }
                     }
@@ -170,8 +167,7 @@ function Dismount-DbaDatabase {
                         try {
                             $server.AvailabilityGroups[$ag].AvailabilityDatabases[$db.name].Drop()
                             Write-Message -Level Verbose -Message "Successfully removed $db from  detach from $ag on $server."
-                        }
-                        catch {
+                        } catch {
                             if ($_.Exception.InnerException) {
                                 $exception = $_.Exception.InnerException.ToString() -Split "System.Data.SqlClient.SqlException: "
                                 $exception = " | $(($exception[1] -Split "at Microsoft.SqlServer.Management.Common.ConnectionManager")[0])".TrimEnd()
@@ -202,12 +198,12 @@ function Dismount-DbaDatabase {
                         Database     = $db.name
                         DetachResult = "Success"
                     }
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Failure" -Target $db -ErrorRecord $_ -Continue
                 }
             }
         }
     }
 }
+
 

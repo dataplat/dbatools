@@ -1,6 +1,6 @@
 #ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Remove-DbaDbMirror {
-<#
+    <#
     .SYNOPSIS
         Removes database mirrors.
 
@@ -83,12 +83,10 @@ function Remove-DbaDbMirror {
                     try {
                         $db.ChangeMirroringState([Microsoft.SqlServer.Management.Smo.MirroringOption]::Off)
                         $db.Alter()
-                    }
-                    catch {
+                    } catch {
                         try {
                             $db.Parent.Query("ALTER DATABASE $db SET PARTNER OFF")
-                        }
-                        catch {
+                        } catch {
                             Stop-Function -Message "Failure on $($db.Parent) for $db" -ErrorRecord $_ -Continue
                         }
                     }
@@ -99,11 +97,11 @@ function Remove-DbaDbMirror {
                         Database     = $db.Name
                         Status       = "Removed"
                     }
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Failure on $($db.Parent.Name)" -ErrorRecord $_
                 }
             }
         }
     }
 }
+
