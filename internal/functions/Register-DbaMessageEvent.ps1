@@ -1,5 +1,5 @@
-﻿function Register-DbaMessageEvent {
-<#
+function Register-DbaMessageEvent {
+    <#
     .SYNOPSIS
         Registers an event to when a message is written.
     
@@ -124,3 +124,4 @@
     
     [Sqlcollaborative.Dbatools.Message.MessageHost]::Events[$newName] = $eventSubscription
 }
+

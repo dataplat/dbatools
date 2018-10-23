@@ -1,5 +1,5 @@
-﻿function Test-DbaManagementObject {
-<#
+function Test-DbaManagementObject {
+    <#
     .SYNOPSIS
         Tests to see if the SMO version specified exists on the computer.
 
@@ -60,8 +60,7 @@
                         Version      = $number
                         Exists       = $true
                     }
-                }
-                else {
+                } else {
                     [pscustomobject]@{
                         ComputerName = $env:COMPUTERNAME
                         Version      = $number
@@ -75,8 +74,7 @@
         foreach ($computer in $ComputerName.ComputerName) {
             try {
                 Invoke-Command2 -ComputerName $computer -ScriptBlock $scriptblock -Credential $Credential -ArgumentList $VersionNumber -ErrorAction Stop
-            }
-            catch {
+            } catch {
                 Stop-Function -Continue -Message "Failure" -ErrorRecord $_ -Target $computer -Continue
             }
         }
@@ -85,3 +83,4 @@
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Test-DbaSqlManagementObject
     }
 }
+

@@ -1,7 +1,6 @@
-﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
-function Invoke-SteppablePipeline
-{
-<#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+function Invoke-SteppablePipeline {
+    <#
     .SYNOPSIS
         Allows using steppable pipelines on the pipeline.
     
@@ -29,8 +28,9 @@ function Invoke-SteppablePipeline
         $Pipeline
     )
     
-    process
-    {
+    process {
         $Pipeline.Process($InputObject)
     }
 }
+
+

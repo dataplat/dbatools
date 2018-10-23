@@ -1,5 +1,5 @@
-﻿function Remove-DbaLogin {
-<#
+function Remove-DbaLogin {
+    <#
     .SYNOPSIS
         Drops a Login
 
@@ -85,8 +85,7 @@
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
             $InputObject += $server.Logins | Where-Object { $_.Name -in $Login }
@@ -103,24 +102,24 @@
                     $currentlogin.Drop()
 
                     [pscustomobject]@{
-                        ComputerName  = $server.ComputerName
-                        InstanceName  = $server.ServiceName
-                        SqlInstance   = $server.DomainInstanceName
-                        Login         = $currentlogin.name
-                        Status        = "Dropped"
+                        ComputerName = $server.ComputerName
+                        InstanceName = $server.ServiceName
+                        SqlInstance  = $server.DomainInstanceName
+                        Login        = $currentlogin.name
+                        Status       = "Dropped"
                     }
                 }
-            }
-            catch {
+            } catch {
                 [pscustomobject]@{
-                    ComputerName  = $server.ComputerName
-                    InstanceName  = $server.ServiceName
-                    SqlInstance   = $server.DomainInstanceName
-                    Login         = $currentlogin.name
-                    Status        = $_
+                    ComputerName = $server.ComputerName
+                    InstanceName = $server.ServiceName
+                    SqlInstance  = $server.DomainInstanceName
+                    Login        = $currentlogin.name
+                    Status       = $_
                 }
                 Stop-Function -Message "Could not drop Login $currentlogin on $server" -ErrorRecord $_ -Target $currentlogin -Continue
             }
         }
     }
 }
+

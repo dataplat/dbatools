@@ -1,5 +1,5 @@
-﻿function Start-DbaAgentJob {
-<#
+function Start-DbaAgentJob {
+    <#
     .SYNOPSIS
         Starts a running SQL Server Agent Job.
 
@@ -107,8 +107,7 @@
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -171,11 +170,11 @@
                         $currentjob.Refresh()
                     }
                     Get-DbaAgentJob -SqlInstance $server -Job $currentjob.Name
-                }
-                else {
+                } else {
                     Get-DbaAgentJob -SqlInstance $server -Job $currentjob.Name
                 }
             }
         }
     }
 }
+

@@ -1,4 +1,4 @@
-﻿function Get-DbaLastGoodCheckDb {
+function Get-DbaLastGoodCheckDb {
     <#
     .SYNOPSIS
         Get date/time for last known good DBCC CHECKDB
@@ -89,8 +89,7 @@
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -132,8 +131,7 @@
 
                 if (($createVersion -lt 611) -and ($dbccFlags -eq 0)) {
                     $dataPurityEnabled = $false
-                }
-                else {
+                } else {
                     $dataPurityEnabled = $true
                 }
 
@@ -142,11 +140,9 @@
 
                 if ($daysSinceCheckDb -lt 7) {
                     $Status = 'Ok'
-                }
-                elseif ($daysSinceDbCreated -lt 7) {
+                } elseif ($daysSinceDbCreated -lt 7) {
                     $Status = 'New database, not checked yet'
-                }
-                else {
+                } else {
                     $Status = 'CheckDB should be performed'
                 }
 
@@ -172,3 +168,4 @@
         }
     }
 }
+

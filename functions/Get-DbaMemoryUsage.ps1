@@ -1,6 +1,6 @@
-﻿#ValidationTags#Messaging,CodeStyle#
+#ValidationTags#Messaging,CodeStyle#
 function Get-DbaMemoryUsage {
-<#
+    <#
     .SYNOPSIS
         Get amount of memory in use by *all* SQL Server components and instances
 
@@ -73,8 +73,7 @@ function Get-DbaMemoryUsage {
             $BufManpagecounters = 'Total pages'
             $SSAScounters = '(\\memory usage)'
             $SSIScounters = '(memory)'
-        }
-        else {
+        } else {
             $Memcounters = '(Total Server Memory |Target Server Memory |Connection Memory |Lock Memory |SQL Cache Memory |Optimizer Memory |Granted Workspace Memory |Cursor memory usage|Maximum Workspace)'
             $Plancounters = '(cache pages|procedure plan|ad hoc sql plan|prepared SQL Plan)'
             $BufManpagecounters = '(Free pages|Reserved pages|Stolen pages|Total pages|Database pages|target pages|extension .* pages)'
@@ -106,8 +105,7 @@ function Get-DbaMemoryUsage {
                         MemMB           = $_.cookedvalue / 1024
                     }
                 }
-            }
-            catch {
+            } catch {
                 Write-Verbose "No Memory Manager Counters on $Computer"
             }
 
@@ -129,8 +127,7 @@ function Get-DbaMemoryUsage {
                         MemMB           = $_.cookedvalue * 8192 / 1048576
                     }
                 }
-            }
-            catch {
+            } catch {
                 Write-Verbose "No Plan Cache Counters on $Computer"
             }
 
@@ -152,8 +149,7 @@ function Get-DbaMemoryUsage {
                         MemMB           = $_.cookedvalue * 8192 / 1048576.0
                     }
                 }
-            }
-            catch {
+            } catch {
                 Write-Verbose "No Buffer Manager Counters on $Computer"
             }
 
@@ -175,8 +171,7 @@ function Get-DbaMemoryUsage {
                         MemMB           = $_.cookedvalue / 1024
                     }
                 }
-            }
-            catch {
+            } catch {
                 Write-Verbose "No SSAS Counters on $Computer"
             }
 
@@ -198,8 +193,7 @@ function Get-DbaMemoryUsage {
                         MemMB           = $_.cookedvalue / 1024 / 1024
                     }
                 }
-            }
-            catch {
+            } catch {
                 Write-Verbose "No SSIS Counters on $Computer"
             }
         }
@@ -212,15 +206,14 @@ function Get-DbaMemoryUsage {
                 $Computer = $reply.FullComputerName
                 try {
                     Invoke-Command2 -ComputerName $Computer -Credential $Credential -ScriptBlock $scriptblock -argumentlist $Memcounters, $Plancounters, $BufManpagecounters, $SSAScounters, $SSIScounters
-                }
-                catch {
+                } catch {
                     Stop-Function -Continue -Message "Failure" -ErrorRecord $_ -Target $computer -Continue
                 }
-            }
-            else {
+            } else {
                 Write-Message -Level Warning -Message "Can't resolve $Computer."
                 Continue
             }
         }
     }
 }
+

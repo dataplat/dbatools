@@ -1,5 +1,5 @@
-﻿function Mount-DbaDatabase {
-<#
+function Mount-DbaDatabase {
+    <#
     .SYNOPSIS
         Attach a SQL Server Database - aliased to Attach-DbaDatabase
 
@@ -86,16 +86,14 @@
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             if (-not $server.Logins.Item($DatabaseOwner)) {
                 try {
                     $DatabaseOwner = ($server.Logins | Where-Object { $_.id -eq 1 }).Name
-                }
-                catch {
+                } catch {
                     $DatabaseOwner = "sa"
                 }
             }
@@ -146,8 +144,7 @@
                             AttachOption  = $AttachOption
                             FileStructure = $FileStructure
                         }
-                    }
-                    catch {
+                    } catch {
                         Stop-Function -Message "Failure" -ErrorRecord $_ -Target $server
                     }
                 }
@@ -155,3 +152,4 @@
         }
     }
 }
+

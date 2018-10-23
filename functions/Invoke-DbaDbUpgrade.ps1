@@ -1,5 +1,5 @@
-﻿function Invoke-DbaDbUpgrade {
-<#
+function Invoke-DbaDbUpgrade {
+    <#
     .SYNOPSIS
         Take a database and upgrades it to compatibility of the SQL Instance its hosted on. Based on https://thomaslarock.com/2014/06/upgrading-to-sql-server-2014-a-dozen-things-to-check/
 
@@ -126,8 +126,7 @@
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
                 $server.ConnectionContext.StatementTimeout = [Int32]::MaxValue
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failed to process Instance $Instance" -ErrorRecord $_ -Target $instance -Continue
             }
             $InputObject += $server.Databases | Where-Object IsAccessible
@@ -172,14 +171,12 @@
                     try {
                         $db.ExecuteNonQuery($tsqlComp)
                         $comResult = $Comp
-                    }
-                    catch {
+                    } catch {
                         Write-Message -Level Warning -Message "Failed run Compatibility Upgrade" -ErrorRecord $_ -Target $instance
                         $comResult = "Fail"
                     }
                 }
-            }
-            else {
+            } else {
                 $comResult = "No change"
             }
 
@@ -190,14 +187,12 @@
                     try {
                         $db.ExecuteNonQuery($tsqlCheckDB)
                         $DataPurityResult = "Success"
-                    }
-                    catch {
+                    } catch {
                         Write-Message -Level Warning -Message "Failed run DBCC CHECKDB with DATA_PURITY on $db" -ErrorRecord $_ -Target $instance
                         $DataPurityResult = "Fail"
                     }
                 }
-            }
-            else {
+            } else {
                 Write-Message -Level Verbose -Message "Ignoring CHECKDB DATA_PURITY"
             }
 
@@ -208,14 +203,12 @@
                     try {
                         $db.ExecuteNonQuery($tsqlUpdateUsage)
                         $UpdateUsageResult = "Success"
-                    }
-                    catch {
+                    } catch {
                         Write-Message -Level Warning -Message "Failed to run DBCC UPDATEUSAGE on $db" -ErrorRecord $_ -Target $instance
                         $UpdateUsageResult = "Fail"
                     }
                 }
-            }
-            else {
+            } else {
                 Write-Message -Level Verbose -Message "Ignore DBCC UPDATEUSAGE"
                 $UpdateUsageResult = "Skipped"
             }
@@ -227,14 +220,12 @@
                     try {
                         $db.ExecuteNonQuery($tsqlStats)
                         $UpdateStatsResult = "Success"
-                    }
-                    catch {
+                    } catch {
                         Write-Message -Level Warning -Message "Failed to run sp_updatestats on $db" -ErrorRecord $_ -Target $instance
                         $UpdateStatsResult = "Fail"
                     }
                 }
-            }
-            else {
+            } else {
                 Write-Message -Level Verbose -Message "Ignoring sp_updatestats"
                 $UpdateStatsResult = "Skipped"
             }
@@ -253,15 +244,13 @@
                     If ($Pscmdlet.ShouldProcess($server, "Refreshing view $fullName on $db")) {
                         try {
                             $db.ExecuteNonQuery($tsqlupdateView)
-                        }
-                        catch {
+                        } catch {
                             Write-Message -Level Warning -Message "Failed update view $fullName on $db" -ErrorRecord $_ -Target $instance
                             $RefreshViewResult = "Fail"
                         }
                     }
                 }
-            }
-            else {
+            } else {
                 Write-Message -Level Verbose -Message "Ignore View Refreshes"
                 $RefreshViewResult = "Skipped"
             }
@@ -289,3 +278,4 @@
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Invoke-DbaDatabaseUpgrade
     }
 }
+

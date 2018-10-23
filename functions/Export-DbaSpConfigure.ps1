@@ -1,6 +1,6 @@
-﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Export-DbaSpConfigure {
-<#
+    <#
     .SYNOPSIS
         Exports advanced sp_configure global configuration options to sql file.
 
@@ -76,8 +76,7 @@ function Export-DbaSpConfigure {
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential -MinimumVersion 9
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -88,16 +87,14 @@ function Export-DbaSpConfigure {
             }
 
             if (Test-Path $Path -PathType Container) {
-                $timenow= (Get-Date -uformat "%m%d%Y%H%M%S")
+                $timenow = (Get-Date -uformat "%m%d%Y%H%M%S")
                 $filepath = Join-Path -Path $Path -ChildPath "$($server.name.replace('\', '$'))-$timenow-sp_configure.sql"
-            }
-            elseif (Test-Path $Path -PathType Leaf) {
+            } elseif (Test-Path $Path -PathType Leaf) {
                 if ($SqlInstance.Count -gt 1) {
-                    $timenow= (Get-Date -uformat "%m%d%Y%H%M%S")
-                    $PathData =  Get-ChildItem $Path
+                    $timenow = (Get-Date -uformat "%m%d%Y%H%M%S")
+                    $PathData = Get-ChildItem $Path
                     $filepath = "$($PathData.DirectoryName)\$($server.name.replace('\', '$'))-$timenow-$($PathData.Name)"
-                }
-                else {
+                } else {
                     $filepath = $Path
                 }
             }
@@ -114,20 +111,18 @@ function Export-DbaSpConfigure {
 
             $ShowAdvancedOptions = $server.Configuration.ShowAdvancedOptions.ConfigValue
 
-            if($ShowAdvancedOptions -eq 0) {
+            if ($ShowAdvancedOptions -eq 0) {
                 try {
                     $server.Configuration.ShowAdvancedOptions.ConfigValue = $true
                     $server.Configuration.Alter($true)
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Can't set 'show advanced options' to 1 on instance $instance" -ErrorRecord $_ -Continue
                 }
             }
 
             try {
                 Set-Content -Path $filepath "EXEC sp_configure 'show advanced options' , 1;  RECONFIGURE WITH OVERRIDE"
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Can't write to $filepath" -ErrorRecord $_ -Continue
             }
 
@@ -137,7 +132,7 @@ function Export-DbaSpConfigure {
                 Add-Content -Path $filepath "EXEC sp_configure '$displayname' , $configvalue;"
             }
 
-            if($ShowAdvancedOptions -eq 0) {
+            if ($ShowAdvancedOptions -eq 0) {
                 Add-Content -Path $filepath "EXEC sp_configure 'show advanced options' , 0;"
                 Add-Content -Path $filepath "RECONFIGURE WITH OVERRIDE"
 
@@ -154,3 +149,4 @@ function Export-DbaSpConfigure {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Export-SqlSpConfigure
     }
 }
+

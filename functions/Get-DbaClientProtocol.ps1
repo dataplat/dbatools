@@ -1,5 +1,5 @@
-﻿function Get-DbaClientProtocol {
-<#
+function Get-DbaClientProtocol {
+    <#
     .SYNOPSIS
         Gets the SQL Server related client protocols on a computer.
 
@@ -85,8 +85,7 @@
                         foreach ( $protocol in $prot ) {
                             Select-DefaultView -InputObject $protocol -Property 'PSComputerName as ComputerName', 'ProtocolDisplayName as DisplayName', 'ProtocolDll as DLL', 'ProtocolOrder as Order', 'IsEnabled'
                         }
-                    }
-                    catch {
+                    } catch {
                         Write-Message -Level Warning -Message "No Sql ClientNetworkProtocol found on $computer"
                     }
                 } #if namespace
@@ -100,3 +99,4 @@
         } #foreach computer
     }
 }
+

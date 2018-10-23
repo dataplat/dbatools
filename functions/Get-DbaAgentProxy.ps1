@@ -1,5 +1,5 @@
-﻿function Get-DbaAgentProxy {
-<#
+function Get-DbaAgentProxy {
+    <#
     .SYNOPSIS
         Returns all SQL Agent proxies on a SQL Server Agent.
 
@@ -55,8 +55,7 @@
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -84,3 +83,4 @@
         }
     }
 }
+

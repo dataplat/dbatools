@@ -1,4 +1,4 @@
-﻿<#
+<#
 This is designed for all things that control how anything that caches acts
 #>
 

@@ -1,5 +1,5 @@
-﻿function Copy-DbaAgentOperator {
-<#
+function Copy-DbaAgentOperator {
+    <#
     .SYNOPSIS
         Copy-DbaAgentOperator migrates operators from one SQL Server to another.
 
@@ -89,8 +89,7 @@
     begin {
         try {
             $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
-        }
-        catch {
+        } catch {
             Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Source
             return
         }
@@ -101,8 +100,7 @@
         foreach ($destinstance in $Destination) {
             try {
                 $destServer = Connect-SqlInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
             }
 
@@ -112,13 +110,13 @@
                 $operatorName = $sOperator.Name
 
                 $copyOperatorStatus = [pscustomobject]@{
-                    SourceServer = $sourceServer.Name
+                    SourceServer      = $sourceServer.Name
                     DestinationServer = $destServer.Name
-                    Name         = $operatorName
-                    Type         = "Agent Operator"
-                    Status       = $null
-                    Notes        = $null
-                    DateTime     = [DbaDateTime](Get-Date)
+                    Name              = $operatorName
+                    Type              = "Agent Operator"
+                    Status            = $null
+                    Notes             = $null
+                    DateTime          = [DbaDateTime](Get-Date)
                 }
 
                 if ($Operator -and $Operator -notcontains $operatorName -or $ExcludeOperator -in $operatorName) {
@@ -134,8 +132,7 @@
                             Write-Message -Level Verbose -Message "Operator $operatorName exists at destination. Use -Force to drop and migrate."
                         }
                         continue
-                    }
-                    else {
+                    } else {
                         if ($failsafe.FailSafeOperator -eq $operatorName) {
                             Write-Message -Level Verbose -Message "$operatorName is the failsafe operator. Skipping drop."
                             continue
@@ -145,8 +142,7 @@
                             try {
                                 Write-Message -Level Verbose -Message "Dropping Operator $operatorName"
                                 $destServer.JobServer.Operators[$operatorName].Drop()
-                            }
-                            catch {
+                            } catch {
                                 $copyOperatorStatus.Status = "Failed"
                                 $copyOperatorStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
@@ -165,8 +161,7 @@
 
                         $copyOperatorStatus.Status = "Successful"
                         $copyOperatorStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                    }
-                    catch {
+                    } catch {
                         $copyOperatorStatus.Status = "Failed"
                         $copyOperatorStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                         Stop-Function -Message "Issue creating operator." -Category InvalidOperation -ErrorRecord $_ -Target $destServer
@@ -179,3 +174,4 @@
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-SqlOperator
     }
 }
+

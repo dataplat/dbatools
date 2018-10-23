@@ -1,6 +1,6 @@
-﻿#ValidationTags#CodeStyle,Messaging,FlowControl,Pipeline#
+#ValidationTags#CodeStyle,Messaging,FlowControl,Pipeline#
 function Get-DbaDbQueryStoreOption {
-<#
+    <#
     .SYNOPSIS
         Get the Query Store configuration for Query Store enabled databases.
 
@@ -75,8 +75,7 @@ function Get-DbaDbQueryStoreOption {
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 13
-            }
-            catch {
+            } catch {
                 Write-Message -Level Warning -Message "Can't connect to $instance. Moving on."
                 continue
             }
@@ -100,3 +99,4 @@ function Get-DbaDbQueryStoreOption {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-DbaDbQueryStoreOptions
     }
 }
+

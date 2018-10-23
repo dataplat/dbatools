@@ -1,5 +1,5 @@
-﻿function Remove-DbaDatabase {
-<#
+function Remove-DbaDatabase {
+    <#
     .SYNOPSIS
         Drops a database, hopefully even the really stuck ones.
 
@@ -92,8 +92,7 @@
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
             $InputObject += $server.Databases | Where-Object { $_.Name -in $Database }
@@ -120,8 +119,7 @@
                         Status       = "Dropped"
                     }
                 }
-            }
-            catch {
+            } catch {
                 try {
                     if ($Pscmdlet.ShouldProcess("$db on $server", "alter db set single_user with rollback immediate then drop")) {
                         $null = $server.Query("if exists (select * from sys.databases where name = '$($db.name)' and state = 0) alter database $db set single_user with rollback immediate; drop database $db")
@@ -134,8 +132,7 @@
                             Status       = "Dropped"
                         }
                     }
-                }
-                catch {
+                } catch {
                     try {
                         if ($Pscmdlet.ShouldProcess("$db on $server", "SMO drop")) {
                             $server.databases[$dbname].Drop()
@@ -149,8 +146,7 @@
                                 Status       = "Dropped"
                             }
                         }
-                    }
-                    catch {
+                    } catch {
                         Write-Message -Level Verbose -Message "Could not drop database $db on $server"
 
                         [pscustomobject]@{
@@ -166,3 +162,4 @@
         }
     }
 }
+

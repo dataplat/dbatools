@@ -1,4 +1,4 @@
-﻿Register-DbatoolsConfigValidation -Name "integer" -ScriptBlock {
+Register-DbatoolsConfigValidation -Name "integer" -ScriptBlock {
     param (
         $Value
     )

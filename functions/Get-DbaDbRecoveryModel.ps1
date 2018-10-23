@@ -1,5 +1,5 @@
-﻿function Get-DbaDbRecoveryModel {
-<#
+function Get-DbaDbRecoveryModel {
+    <#
     .SYNOPSIS
         Get-DbaDbRecoveryModel displays the Recovery Model.
 
@@ -79,9 +79,9 @@
 
         if ($RecoveryModel) {
             Get-DbaDatabase @params | Where-Object RecoveryModel -in $RecoveryModel | Where-Object IsAccessible | Select-DefaultView -Property $defaults
-        }
-        else {
+        } else {
             Get-DbaDatabase @params | Select-DefaultView -Property $defaults
         }
     }
 }
+

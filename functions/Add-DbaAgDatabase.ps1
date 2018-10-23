@@ -1,6 +1,6 @@
-﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Add-DbaAgDatabase {
-<#
+    <#
     .SYNOPSIS
         Adds a database to an availability group on a SQL Server instance.
         
@@ -76,7 +76,7 @@ function Add-DbaAgDatabase {
     )
     process {
         if ((Test-Bound -ParameterName SqlInstance)) {
-                if ((Test-Bound -Not -ParameterName Database) -or (Test-Bound -Not -ParameterName AvailabilityGroup)) {
+            if ((Test-Bound -Not -ParameterName Database) -or (Test-Bound -Not -ParameterName AvailabilityGroup)) {
                 Stop-Function -Message "You must specify one or more databases and one Availability Groups when using the SqlInstance parameter."
                 return
             }
@@ -96,8 +96,7 @@ function Add-DbaAgDatabase {
                         # something is up with .net create(), force a stop
                         Invoke-Create -Object $agdb
                         Get-DbaAgDatabase -SqlInstance $ag.Parent -Database $db.Name
-                    }
-                    catch {
+                    } catch {
                         Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
                     }
                 }
@@ -105,3 +104,4 @@ function Add-DbaAgDatabase {
         }
     }
 }
+

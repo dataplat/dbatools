@@ -1,6 +1,6 @@
-﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaAgReplica {
-<#
+    <#
     .SYNOPSIS
         Returns the availability group replica object found on the server.
 
@@ -87,3 +87,4 @@ function Get-DbaAgReplica {
         }
     }
 }
+

@@ -1,5 +1,5 @@
-﻿function New-DbaAgentProxy {
-<#
+function New-DbaAgentProxy {
+    <#
     .SYNOPSIS
         Adds one or more proxies to SQL Server Agent
 
@@ -120,15 +120,13 @@
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             try {
                 $jobServer = $server.JobServer
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure. Is SQL Agent started?" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -140,8 +138,7 @@
                             $jobServer.ProxyAccounts[$proxyName].Drop()
                             $jobServer.ProxyAccounts.Refresh()
                         }
-                    }
-                    else {
+                    } else {
                         Write-Message -Level Warning -Message "Proxy account $proxy already exists on $instance. Use -Force to drop and recreate."
                         continue
                     }
@@ -165,8 +162,7 @@
 
                     try {
                         $proxy.Create()
-                    }
-                    catch {
+                    } catch {
                         Stop-Function -Message "Could not create proxy account" -ErrorRecord $_ -Target $instance -Continue
                     }
                 }
@@ -176,8 +172,7 @@
                         if ($Pscmdlet.ShouldProcess($instance, "Adding login $loginname to proxy")) {
                             $proxy.AddLogin($loginname)
                         }
-                    }
-                    else {
+                    } else {
                         Write-Message -Level Warning -Message "Login '$loginname' does not exist on $instance"
                     }
                 }
@@ -187,8 +182,7 @@
                         if ($Pscmdlet.ShouldProcess($instance, "Adding server role $role to proxy")) {
                             $proxy.AddServerRole($role)
                         }
-                    }
-                    else {
+                    } else {
                         Write-Message -Level Warning -Message "Server Role '$role' does not exist on $instance"
                     }
                 }
@@ -198,8 +192,7 @@
                         if ($Pscmdlet.ShouldProcess($instance, "Adding msdb role $role to proxy")) {
                             $proxy.AddMsdbRole($role)
                         }
-                    }
-                    else {
+                    } else {
                         Write-Message -Level Warning -Message "msdb role '$role' does not exist on $instance"
                     }
                 }
@@ -227,3 +220,4 @@
         }
     }
 }
+

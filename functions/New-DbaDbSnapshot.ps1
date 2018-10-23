@@ -1,6 +1,6 @@
-﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function New-DbaDbSnapshot {
-<#
+    <#
     .SYNOPSIS
         Creates database snapshots
 
@@ -121,8 +121,7 @@ function New-DbaDbSnapshot {
             #Validate if Name can be interpolated
             try {
                 $null = $NameSuffix -f 'some_string'
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "NameSuffix parameter must be a template only containing one parameter {0}" -ErrorRecord $_
             }
         }
@@ -142,8 +141,7 @@ function New-DbaDbSnapshot {
             $message = ""
             if ($errhelp.Length -gt 0) {
                 $message += "Please make sure your version supports snapshots : ($errhelp)"
-            }
-            else {
+            } else {
                 $message += "This module can't tell you why the snapshot creation failed. Feel free to report back to dbatools what happened"
             }
             Write-Message -Level Warning -Message $message
@@ -158,8 +156,7 @@ function New-DbaDbSnapshot {
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
             #Checks for path existence, left the length test because test-bound wasn't working for some reason
@@ -185,14 +182,11 @@ function New-DbaDbSnapshot {
             foreach ($db in $dbs) {
                 if ($db.IsDatabaseSnapshot) {
                     Write-Message -Level Warning -Message "$($db.name) is a snapshot, skipping"
-                }
-                elseif ($db.name -in $NoSupportForSnap) {
+                } elseif ($db.name -in $NoSupportForSnap) {
                     Write-Message -Level Warning -Message "$($db.name) snapshots are prohibited"
-                }
-                elseif ($db.IsAccessible -ne $true) {
+                } elseif ($db.IsAccessible -ne $true) {
                     Write-Message -Level Verbose -Message "$($db.name) is not accessible, skipping"
-                }
-                else {
+                } else {
                     $InputObject += $db
                 }
             }
@@ -216,11 +210,9 @@ function New-DbaDbSnapshot {
                     #no interpolation, just append
                     $SnapName = '{0}{1}' -f $db.Name, $NameSuffix
                 }
-            }
-            elseif ($Name.Length -gt 0) {
+            } elseif ($Name.Length -gt 0) {
                 $SnapName = $Name
-            }
-            else {
+            } else {
                 $SnapName = "{0}_{1}" -f $db.Name, $DefaultSuffix
             }
             if ($SnapName -in $server.Databases.Name) {
@@ -289,8 +281,7 @@ function New-DbaDbSnapshot {
                     $SnapDB.Create()
                     $server.Databases.Refresh()
                     Get-DbaDbSnapshot -SqlInstance $server -Snapshot $Snapname
-                }
-                catch {
+                } catch {
                     try {
                         $server.Databases.Refresh()
                         if ($SnapName -notin $server.Databases.Name) {
@@ -298,8 +289,7 @@ function New-DbaDbSnapshot {
                             $null = $server.Query($sql[0])
                             $server.Databases.Refresh()
                             $SnapDB = Get-DbaDbSnapshot -SqlInstance $server -Snapshot $Snapname
-                        }
-                        else {
+                        } else {
                             $SnapDB = Get-DbaDbSnapshot -SqlInstance $server -Snapshot $Snapname
                         }
 
@@ -321,8 +311,7 @@ function New-DbaDbSnapshot {
                         Write-Message -Level Debug -Message ($hints -Join "`n")
 
                         $SnapDB
-                    }
-                    catch {
+                    } catch {
                         # Resolve-SnapshotError $server
                         $hints = @("Executing these commands led to a failure")
                         foreach ($stmt in $sql) {
@@ -340,3 +329,4 @@ function New-DbaDbSnapshot {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias New-DbaDatabaseSnapshot
     }
 }
+

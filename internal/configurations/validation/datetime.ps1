@@ -1,4 +1,4 @@
-﻿Register-DbatoolsConfigValidation -Name "datetime" -ScriptBlock {
+Register-DbatoolsConfigValidation -Name "datetime" -ScriptBlock {
     param (
         $Value
     )

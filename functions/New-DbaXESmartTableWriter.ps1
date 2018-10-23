@@ -1,6 +1,6 @@
-﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function New-DbaXESmartTableWriter {
-<#
+    <#
     .SYNOPSIS
         This response type is used to write Extended Events to a database table.
 
@@ -97,8 +97,7 @@ function New-DbaXESmartTableWriter {
     begin {
         try {
             Add-Type -Path "$script:PSModuleRoot\bin\XESmartTarget\XESmartTarget.Core.dll" -ErrorAction Stop
-        }
-        catch {
+        } catch {
             Stop-Function -Message "Could not load XESmartTarget.Core.dll" -ErrorRecord $_ -Target "XESmartTarget"
             return
         }
@@ -109,8 +108,7 @@ function New-DbaXESmartTableWriter {
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 11
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
             if ($Pscmdlet.ShouldProcess($instance, "Creating new XESmartTableWriter")) {
@@ -131,11 +129,11 @@ function New-DbaXESmartTableWriter {
                         $writer.Filter = $Filter
                     }
                     $writer
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Failure" -ErrorRecord $_ -Target "XESmartTarget" -Continue
                 }
             }
         }
     }
 }
+

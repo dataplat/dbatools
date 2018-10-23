@@ -1,6 +1,6 @@
-﻿#ValidationTags#Messaging#
+#ValidationTags#Messaging#
 function Find-DbaLoginInGroup {
-<#
+    <#
     .SYNOPSIS
         Finds Logins in Active Directory groups that have logins on the SQL Instance.
 
@@ -61,8 +61,7 @@ function Find-DbaLoginInGroup {
     begin {
         try {
             Add-Type -AssemblyName System.DirectoryServices.AccountManagement
-        }
-        catch {
+        } catch {
             Stop-Function -Message "Failed to load Assembly needed" -ErrorRecord $_
         }
 
@@ -90,12 +89,10 @@ function Find-DbaLoginInGroup {
                             if ($fullName -in $discard) {
                                 Write-Message -Level Verbose -Message "skipping $fullName, already enumerated"
                                 continue
-                            }
-                            else {
+                            } else {
                                 $subgroups += $fullName
                             }
-                        }
-                        else {
+                        } else {
                             $output += [PSCustomObject]@{
                                 SqlInstance        = $server.Name
                                 InstanceName       = $server.ServiceName
@@ -107,8 +104,7 @@ function Find-DbaLoginInGroup {
                             }
                         }
                     }
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Failed to connect to Group: $member." -Target $member -ErrorRecord $_
                 }
                 $discard += $ADGroup
@@ -130,8 +126,7 @@ function Find-DbaLoginInGroup {
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -144,8 +139,7 @@ function Find-DbaLoginInGroup {
 
             if (-not $Login) {
                 $res = $ADGroupOut
-            }
-            else {
+            } else {
                 $res = $ADGroupOut | Where-Object { $Login -contains $_.Login }
                 if ($res.Length -eq 0) {
                     continue
@@ -155,3 +149,4 @@ function Find-DbaLoginInGroup {
         }
     }
 }
+

@@ -1,5 +1,5 @@
-﻿function Copy-DbaSysDbUserObject {
-<#
+function Copy-DbaSysDbUserObject {
+    <#
     .SYNOPSIS
         Imports all user objects found in source SQL Server's master, msdb and model databases to the destination.
 
@@ -87,8 +87,7 @@
     process {
         try {
             $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
-        }
-        catch {
+        } catch {
             Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Source
             return
         }
@@ -102,8 +101,7 @@
         foreach ($destinstance in $Destination) {
             try {
                 $destServer = Connect-SqlInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
             }
 
@@ -123,13 +121,13 @@
 
                     foreach ($schema in $schemas) {
                         $copyobject = [pscustomobject]@{
-                            SourceServer = $sourceServer.Name
+                            SourceServer      = $sourceServer.Name
                             DestinationServer = $destServer.Name
-                            Name         = $schema
-                            Type         = "User schema in $systemDb"
-                            Status       = $null
-                            Notes        = $null
-                            DateTime     = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
+                            Name              = $schema
+                            Type              = "User schema in $systemDb"
+                            Status            = $null
+                            Notes             = $null
+                            DateTime          = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
                         }
 
                         $destschema = $destdb.Schemas | Where-Object Name -eq $schema.Name
@@ -140,14 +138,12 @@
                                 $copyobject.Status = "Skipped"
                                 $copyobject.Notes = "$schema exists on destination"
                                 $schmadoit = $false
-                            }
-                            else {
+                            } else {
                                 if ($PSCmdlet.ShouldProcess($destServer, "Dropping schema $schema in $systemDb")) {
                                     try {
                                         Write-Message -Level Verbose -Message "Force specified. Dropping $schema in $destdb on $destinstance"
                                         $destschema.Drop()
-                                    }
-                                    catch {
+                                    } catch {
                                         $schmadoit = $false
                                         $copyobject.Status = "Failed"
                                         $copyobject.Notes = $_.Exception.InnerException.InnerException.InnerException.Message
@@ -168,8 +164,7 @@
                                     $null = $destServer.Query($sql, $systemDb)
                                     $copyobject.Status = "Successful"
                                     $copyobject.Notes = "May have also created dependencies"
-                                }
-                                catch {
+                                } catch {
                                     $copyobject.Status = "Failed"
                                     $copyobject.Notes = (Get-ErrorMessage -Record $_)
                                 }
@@ -181,13 +176,13 @@
 
                     foreach ($table in $tables) {
                         $copyobject = [pscustomobject]@{
-                            SourceServer = $sourceServer.Name
+                            SourceServer      = $sourceServer.Name
                             DestinationServer = $destServer.Name
-                            Name         = $table
-                            Type         = "User table in $systemDb"
-                            Status       = $null
-                            Notes        = $null
-                            DateTime     = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
+                            Name              = $table
+                            Type              = "User table in $systemDb"
+                            Status            = $null
+                            Notes             = $null
+                            DateTime          = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
                         }
 
                         $desttable = $destdb.Tables.Item($table.Name, $table.Schema)
@@ -198,14 +193,12 @@
                                 $copyobject.Status = "Skipped"
                                 $copyobject.Notes = "$table exists on destination"
                                 $doit = $false
-                            }
-                            else {
+                            } else {
                                 if ($PSCmdlet.ShouldProcess($destServer, "Dropping table $table in $systemDb")) {
                                     try {
                                         Write-Message -Level Verbose -Message "Force specified. Dropping $table in $destdb on $destinstance"
                                         $desttable.Drop()
-                                    }
-                                    catch {
+                                    } catch {
                                         $doit = $false
                                         $copyobject.Status = "Failed"
                                         $copyobject.Notes = $_.Exception.InnerException.InnerException.InnerException.Message
@@ -226,8 +219,7 @@
                                     $null = $destServer.Query($sql, $systemDb)
                                     $copyobject.Status = "Successful"
                                     $copyobject.Notes = "May have also created dependencies"
-                                }
-                                catch {
+                                } catch {
                                     $copyobject.Status = "Failed"
                                     $copyobject.Notes = (Get-ErrorMessage -Record $_)
                                 }
@@ -247,26 +239,25 @@
                         $schema = $userobject.SchemaName
 
                         $copyobject = [pscustomobject]@{
-                            SourceServer = $sourceServer.Name
+                            SourceServer      = $sourceServer.Name
                             DestinationServer = $destServer.Name
-                            Name         = $name
-                            Type         = "$type in $systemDb"
-                            Status       = $null
-                            Notes        = $null
-                            DateTime     = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
+                            Name              = $name
+                            Type              = "$type in $systemDb"
+                            Status            = $null
+                            Notes             = $null
+                            DateTime          = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
                         }
                         Write-Message -Level Debug -Message $sql
                         try {
                             Write-Message -Level Verbose -Message "Searching for $name in $db on $destinstance"
                             $result = Get-DbaModule -SqlInstance $destServer -NoSystemObjects -Database $db |
-                            Where-Object { $psitem.Name -eq $userobject.Name -and $psitem.Type -eq $userobject.Type }
+                                Where-Object { $psitem.Name -eq $userobject.Name -and $psitem.Type -eq $userobject.Type }
                             if ($result) {
                                 Write-Message -Level Verbose -Message "Found $name in $db on $destinstance"
                                 if (-not $Force) {
                                     $copyobject.Status = "Skipped"
                                     $copyobject.Notes = "$name exists on destination"
-                                }
-                                else {
+                                } else {
                                     $smobject = switch ($userobject.Type) {
                                         "VIEW" { $smodb.Views.Item($userobject.Name, $userobject.SchemaName) }
                                         "SQL_STORED_PROCEDURE" { $smodb.StoredProcedures.Item($userobject.Name, $userobject.SchemaName) }
@@ -289,8 +280,7 @@
                                         if ($PSCmdlet.ShouldProcess($destServer, "Attempting to drop $type $name from $systemDb")) {
                                             $null = $destdb.Query("$dropsql")
                                         }
-                                    }
-                                    else {
+                                    } else {
                                         if ($PSCmdlet.ShouldProcess($destServer, "Attempting to drop $type $name from $systemDb using T-SQL")) {
                                             $null = $destdb.Query("DROP FUNCTION $($userobject.name)")
                                         }
@@ -300,15 +290,13 @@
                                         $copyobject.Status = "Successful"
                                     }
                                 }
-                            }
-                            else {
+                            } else {
                                 if ($PSCmdlet.ShouldProcess($destServer, "Attempting to add $type $name to $systemDb")) {
                                     $null = $destdb.Query("$sql")
                                     $copyobject.Status = "Successful"
                                 }
                             }
-                        }
-                        catch {
+                        } catch {
                             try {
                                 $smobject = switch ($userobject.Type) {
                                     "VIEW" { $smodb.Views.Item($userobject.Name, $userobject.SchemaName) }
@@ -329,13 +317,11 @@
                                     }
                                     $copyobject.Status = "Successful"
                                     $copyobject.Notes = "May have also installed dependencies"
-                                }
-                                else {
+                                } else {
                                     $copyobject.Status = "Failed"
                                     $copyobject.Notes = (Get-ErrorMessage -Record $_)
                                 }
-                            }
-                            catch {
+                            } catch {
                                 $copyobject.Status = "Failed"
                                 $copyobject.Notes = (Get-ErrorMessage -Record $_)
                             }
@@ -343,8 +329,7 @@
                         $copyobject | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                     }
                 }
-            }
-            else {
+            } else {
                 foreach ($systemDb in $systemDbs) {
                     $sysdb = $sourceServer.databases[$systemDb]
                     $transfer = New-Object Microsoft.SqlServer.Management.Smo.Transfer $sysdb
@@ -383,14 +368,12 @@
                             if ($PSCmdlet.ShouldProcess($destServer, $sql)) {
                                 try {
                                     $destServer.Query($sql, $systemDb)
-                                }
-                                catch {
+                                } catch {
                                     # Don't care - long story having to do with duplicate stuff
                                 }
                             }
                         }
-                    }
-                    catch {
+                    } catch {
                         # Don't care - long story having to do with duplicate stuff
                     }
                 }
@@ -401,3 +384,4 @@
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-SqlSysDbUserObjects
     }
 }
+

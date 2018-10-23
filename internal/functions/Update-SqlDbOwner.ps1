@@ -21,12 +21,10 @@ function Update-SqlDbOwner {
     try {
         if ($Destination -IsNot [Microsoft.SqlServer.Management.Smo.SqlSmoObject]) {
             $destServer = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $SqlCredential
-        }
-        else {
+        } else {
             $destServer = $Destination
         }
-    }
-    catch {
+    } catch {
         Write-Message -Level Warning "Cannot connect to $SqlInstance"
         break
     }
@@ -36,8 +34,7 @@ function Update-SqlDbOwner {
 
     if ($DbName.length -eq 0) {
         $databases = ($sourceServer.Databases | Where-Object { $destServer.databases.name -contains $_.name -and $_.IsSystemObject -eq $false }).Name
-    }
-    else { $databases = $DbName }
+    } else { $databases = $DbName }
 
     foreach ($DbName in $databases) {
         $destdb = $destServer.databases[$DbName]
@@ -52,8 +49,7 @@ function Update-SqlDbOwner {
             if ($null -eq $dbowner -or $null -eq $destServer.logins[$dbowner]) {
                 try {
                     $dbowner = ($destServer.logins | Where-Object { $_.id -eq 1 }).Name
-                }
-                catch {
+                } catch {
                     $dbowner = "sa"
                 }
             }
@@ -71,13 +67,13 @@ function Update-SqlDbOwner {
                     Update-SqlDbReadOnly $destServer $DbName $true
                     $changeroback = $null
                 }
-            }
-            catch {
+            } catch {
                 throw "Failed to update $DbName owner to $dbowner."
             }
-        }
-        else {
+        } else {
             Write-Message -Level Output -Message "Proper owner already set on $DbName"
         }
     }
 }
+
+

@@ -1,5 +1,5 @@
-﻿function Get-DbaDefaultPath {
-<#
+function Get-DbaDefaultPath {
+    <#
     .SYNOPSIS
         Gets the default SQL Server paths for data, logs and backups
 
@@ -56,8 +56,7 @@
 
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -AzureUnsupported
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -103,3 +102,4 @@
         }
     }
 }
+

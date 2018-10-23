@@ -1,5 +1,5 @@
-﻿function Measure-DbatoolsImport {
-<#
+function Measure-DbatoolsImport {
+    <#
     .SYNOPSIS
         Displays the import load times of the dbatools PowerShell module
 
@@ -30,3 +30,4 @@
 #>
     [Sqlcollaborative.Dbatools.dbaSystem.DebugHost]::ImportTime
 }
+

@@ -1,5 +1,5 @@
-﻿function Get-DbaDump {
-<#
+function Get-DbaDump {
+    <#
     .SYNOPSIS
         Locate a SQL Server that has generated any memory dump files.
 
@@ -70,10 +70,10 @@
                         Size         = [dbasize]$result.size_in_bytes
                     }
                 }
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Issue collecting data on $server" -Target $server -ErrorRecord $_ -Continue
             }
         }
     }
 }
+

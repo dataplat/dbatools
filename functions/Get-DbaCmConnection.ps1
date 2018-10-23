@@ -1,5 +1,5 @@
-﻿function Get-DbaCmConnection {
-<#
+function Get-DbaCmConnection {
+    <#
     .SYNOPSIS
         Retrieves windows management connections from the cache
 
@@ -73,3 +73,4 @@
         Write-Message -Level InternalComment -Message "Ending"
     }
 }
+

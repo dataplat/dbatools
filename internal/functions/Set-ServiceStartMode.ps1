@@ -47,8 +47,7 @@ function Set-ServiceStartMode {
         $callStack = Get-PSCallStack
         if ($callStack.Length -gt 1) {
             $callerName = $callStack[1].Command
-        }
-        else {
+        } else {
             $callerName = $callStack[0].Command
         }
         $ProcessArray = @()
@@ -71,3 +70,4 @@ function Set-ServiceStartMode {
         }
     }
 }
+

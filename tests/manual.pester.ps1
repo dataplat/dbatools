@@ -237,3 +237,4 @@ foreach ($f in $AllTestsWithinScenario) {
         Invoke-ScriptAnalyzer -Path $HeadFunctionPath -ExcludeRule $ScriptAnalyzerRulesExclude
     }
 }
+

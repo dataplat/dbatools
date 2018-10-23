@@ -1,5 +1,5 @@
-﻿function Get-DbaRgWorkloadGroup {
-<#
+function Get-DbaRgWorkloadGroup {
+    <#
     .SYNOPSIS
         Gets all Resource Governor Pool objects, including both internal and external
 
@@ -68,3 +68,4 @@
         }
     }
 }
+

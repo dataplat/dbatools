@@ -72,16 +72,14 @@ function New-DbaLogShippingPrimarySecondary {
     # Try connecting to the instance
     try {
         $ServerPrimary = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
-    }
-    catch {
+    } catch {
         Stop-Function -Message "Could not connect to Sql Server instance" -Target $SqlInstance -Continue
     }
 
     # Try connecting to the instance
     try {
         $ServerSecondary = Connect-SqlInstance -SqlInstance $SecondaryServer -SqlCredential $SecondarySqlCredential
-    }
-    catch {
+    } catch {
         Stop-Function -Message "Could not connect to Sql Server instance" -Target $SecondaryServer -Continue
     }
 
@@ -103,8 +101,7 @@ function New-DbaLogShippingPrimarySecondary {
         if ($Result.Count -eq 0 -or $Result[0] -ne $PrimaryDatabase) {
             Stop-Function -Message "Database $PrimaryDatabase does not exist as log shipping primary.`nPlease run New-DbaLogShippingPrimaryDatabase first."  -ErrorRecord $_ -Target $SqlInstance -Continue
         }
-    }
-    catch {
+    } catch {
         Stop-Function -Message "Error executing the query.`n$($_.Exception.Message)`n$Query" -ErrorRecord $_ -Target $SqlInstance -Continue
     }
 
@@ -116,8 +113,7 @@ function New-DbaLogShippingPrimarySecondary {
 
     if ($ServerPrimary.Version.Major -gt 9) {
         $Query += ",@overwrite = 1;"
-    }
-    else {
+    } else {
         $Query += ";"
     }
 
@@ -127,8 +123,7 @@ function New-DbaLogShippingPrimarySecondary {
             Write-Message -Message "Configuring logshipping connecting the primary database $PrimaryDatabase to secondary database $SecondaryDatabase on $SqlInstance." -Level Verbose
             Write-Message -Message "Executing query:`n$Query" -Level Verbose
             $ServerPrimary.Query($Query)
-        }
-        catch {
+        } catch {
             Write-Message -Message "$($_.Exception.InnerException.InnerException.InnerException.InnerException.Message)" -Level Warning
             Stop-Function -Message "Error executing the query.`n$($_.Exception.Message)`n$Query" -ErrorRecord $_ -Target $SqlInstance -Continue
         }
@@ -137,3 +132,4 @@ function New-DbaLogShippingPrimarySecondary {
     Write-Message -Message "Finished configuring of primary database $PrimaryDatabase to secondary database $SecondaryDatabase." -Level Verbose
 
 }
+

@@ -20,8 +20,7 @@ function Test-PSRemoting {
         try {
             $null = Test-WSMan -ComputerName $ComputerName.ComputerName -Credential $Credential -Authentication Default -ErrorAction Stop
             $true
-        }
-        catch {
+        } catch {
             Write-Message -Level Verbose -Message "Testing $($ComputerName.Computername)" -Target $ComputerName -ErrorRecord $_
             $false
         }
@@ -29,3 +28,5 @@ function Test-PSRemoting {
     } #process
 
 } #close function
+
+

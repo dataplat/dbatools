@@ -1,5 +1,5 @@
-﻿function Get-DbaTraceFlag {
-<#
+function Get-DbaTraceFlag {
+    <#
     .SYNOPSIS
         Get global Trace Flag(s) information for each instance(s) of SQL Server.
 
@@ -65,8 +65,7 @@
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -95,3 +94,4 @@
         }
     }
 }
+

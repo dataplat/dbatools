@@ -1,6 +1,6 @@
-﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Add-DbaDbMirrorMonitor {
-<#
+    <#
     .SYNOPSIS
         Creates a database mirroring monitor job that periodically updates the mirroring status for every mirrored database on the server instance.
 
@@ -54,8 +54,7 @@ function Add-DbaDbMirrorMonitor {
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -63,16 +62,16 @@ function Add-DbaDbMirrorMonitor {
                 try {
                     $server.Query("msdb.dbo.sp_dbmmonitoraddmonitoring")
                     [pscustomobject]@{
-                        ComputerName = $server.ComputerName
-                        InstanceName = $server.ServiceName
-                        SqlInstance  = $server.DomainInstanceName
+                        ComputerName  = $server.ComputerName
+                        InstanceName  = $server.ServiceName
+                        SqlInstance   = $server.DomainInstanceName
                         MonitorStatus = "Added"
                     }
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
                 }
             }
         }
     }
 }
+
