@@ -100,6 +100,12 @@
     .PARAMETER WorkstationId
         Sets the name of the workstation connecting to SQL Server.
 
+    .PARAMETER WhatIf
+        If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
+
+    .PARAMETER Confirm
+        If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
+
     .NOTES
         Tags: Connection, Connect, ConnectionString
         Author: Chrissy LeMaire (@cl), netnerds.net

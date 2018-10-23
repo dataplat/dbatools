@@ -5,7 +5,7 @@
 
     .DESCRIPTION
         This command will help you to find duplicate and overlapping indexes on a database or a list of databases.
-    
+
         On SQL Server 2008 and higher, the IsFiltered property will also be checked
 
         Only supports CLUSTERED and NONCLUSTERED indexes.
@@ -36,12 +36,6 @@
 
         Example: If the first key column is the same between two indexes, but one has included columns and the other not, this will be shown.
 
-    .PARAMETER WhatIf
-        If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
-
-    .PARAMETER Confirm
-        If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
-
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -60,9 +54,9 @@
 
     .EXAMPLE
         PS C:\> Find-DbaDuplicateIndex -SqlInstance sql2005
-    
+
         Returns duplicate indexes found on sql2005
-    
+
     .EXAMPLE
         PS C:\> Find-DbaDuplicateIndex -SqlInstance sql2017 -SqlCredential sqladmin
 
@@ -90,7 +84,7 @@
         [switch]$IncludeOverlapping,
         [switch]$EnableException
     )
-    
+
     begin {
         $exactDuplicateQuery2005 = "
             WITH CTE_IndexCols
@@ -176,7 +170,7 @@
                         AND CI1.IncludedColumns = CI2.IncludedColumns
                         AND CI1.IndexName <> CI2.IndexName
                     )"
-        
+
         $overlappingQuery2005 = "
             WITH CTE_IndexCols
             AS (
@@ -269,7 +263,7 @@
                             )
                         AND CI1.IndexName <> CI2.IndexName
                     )"
-        
+
         # Support Compression 2008+
         $exactDuplicateQuery = "
             WITH CTE_IndexCols
@@ -361,7 +355,7 @@
                         AND CI1.IsFiltered = CI2.IsFiltered
                         AND CI1.IndexName <> CI2.IndexName
                     )"
-        
+
         $overlappingQuery = "
             WITH CTE_IndexCols AS
             (
@@ -452,7 +446,7 @@
     }
     process {
         if (Test-FunctionInterrupt) { return }
-        
+
         foreach ($instance in $sqlinstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential -MinimumVersion 9
@@ -460,18 +454,18 @@
             catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-            
+
             if ($database) {
                 $databases = $server.Databases | Where-Object Name -in $database
             }
             else {
                 $databases = $server.Databases | Where-Object IsAccessible -eq $true
             }
-            
+
             foreach ($db in $databases) {
                 try {
                     Write-Message -Level Verbose -Message "Getting indexes from database '$db'."
-                    
+
                     $query = if ($server.versionMajor -eq 9) {
                         if ($IncludeOverlapping) { $overlappingQuery2005 }
                         else { $exactDuplicateQuery2005 }
@@ -480,9 +474,9 @@
                         if ($IncludeOverlapping) { $overlappingQuery }
                         else { $exactDuplicateQuery }
                     }
-                    
+
                     $db.Query($query)
-                    
+
                 }
                 catch {
                     Stop-Function -Message "Query failure" -Target $db

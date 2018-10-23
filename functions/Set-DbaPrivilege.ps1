@@ -14,14 +14,20 @@
     .PARAMETER Credential
         Credential object used to connect to the computer as a different user.
 
+    .PARAMETER Type
+        Use this to choose the privilege(s) to which you want to add the SQL Service account.
+        Accepts 'IFI', 'LPIM' and/or 'BatchLogon' for local privileges 'Instant File Initialization', 'Lock Pages in Memory' and 'Logon as Batch'.
+
+    .PARAMETER WhatIf
+        If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
+
+    .PARAMETER Confirm
+        If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-
-    .PARAMETER Type
-        Use this to choose the privilege(s) to which you want to add the SQL Service account.
-        Accepts 'IFI', 'LPIM' and/or 'BatchLogon' for local privileges 'Instant File Initialization', 'Lock Pages in Memory' and 'Logon as Batch'.
 
     .NOTES
         Tags: Privilege
