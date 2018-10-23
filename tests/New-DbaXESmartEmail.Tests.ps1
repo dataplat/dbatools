@@ -5,7 +5,7 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
         $paramCount = 14
-        $defaultParamCount = 11
+        $defaultParamCount = 13
         [object[]]$params = (Get-ChildItem function:\New-DbaXESmartEmail).Parameters.Keys
         $knownParameters = 'SmtpServer','Sender','To','Cc','Bcc','Credential','Subject','Body','Attachment','AttachmentFileName','PlainText','Event','Filter','EnableException'
         It "Should contain our specific parameters" {

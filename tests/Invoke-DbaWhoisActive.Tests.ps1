@@ -5,7 +5,7 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
         $paramCount = 28
-        $defaultParamCount = 13
+        $defaultParamCount = 11
         [object[]]$params = (Get-ChildItem function:\Invoke-DbaWhoisActive).Parameters.Keys
         $knownParameters = 'SqlInstance','SqlCredential','Database','Filter','FilterType','NotFilter','NotFilterType','ShowOwnSpid','ShowSystemSpids','ShowSleepingSpids','GetFullInnerText','GetPlans','GetOuterCommand','GetTransactionInfo','GetTaskInfo','GetLocks','GetAverageTime','GetAdditonalInfo','FindBlockLeaders','DeltaInterval','OutputColumnList','SortOrder','FormatOutput','DestinationTable','ReturnSchema','Schema','Help','EnableException'
         It "Should contain our specific parameters" {
