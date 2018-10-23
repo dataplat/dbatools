@@ -55,9 +55,9 @@
         You will be prompted to securely enter your password, then a credential will be created in the master database on server1 if it does not exist.
 
     .EXAMPLE
-        PS C:\> New-DbaCredential -SqlInstance Server1 -Database db1 -Confirm:$false
+        PS C:\> New-DbaCredential -SqlInstance Server1 -Confirm:$false
 
-        Suppresses all prompts to install but prompts to securely enter your password and creates a credential in the 'db1' database
+        Suppresses all prompts to install but prompts to securely enter your password and creates a credential on Server1.
 
     .EXAMPLE
         PS C:\> New-DbaCredential -SqlInstance Server1 -Name AzureBackupBlobStore -Identity '<Azure Storage Account Name>' -Password (ConvertTo-SecureString '<Azure Storage Account Access Key>' -AsPlainText -Force)

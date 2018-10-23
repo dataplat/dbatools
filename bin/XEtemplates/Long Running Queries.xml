@@ -33,7 +33,7 @@
                <leaf>
                   <comparator name="greater_than_equal_uint64" package="package0" />
                   <event name="rpc_completed" package="sqlserver" field="duration" />
-                  <value>1000000</value>
+                  <value>10000000</value>
                </leaf>
             </and>
          </predicate>
@@ -61,7 +61,7 @@
                <leaf>
                   <comparator name="greater_than_equal_uint64" package="package0" />
                   <event name="sql_batch_completed" package="sqlserver" field="duration" />
-                  <value>500000</value>
+                  <value>10000000</value>
                </leaf>
             </and>
          </predicate>

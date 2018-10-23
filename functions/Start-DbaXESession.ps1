@@ -25,6 +25,12 @@ function Start-DbaXESession {
     .PARAMETER StopAt
         Specifies a datetime at which the session will be stopped. This is done via a self-deleting schedule.
 
+    .PARAMETER WhatIf
+        If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
+
+    .PARAMETER Confirm
+        If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -62,7 +68,7 @@ function Start-DbaXESession {
         Starts the sessions returned from the Get-DbaXESession function.
 
 #>
-    [CmdletBinding(DefaultParameterSetName = 'Session')]
+    [CmdletBinding(SupportsShouldProcess,DefaultParameterSetName = 'Session')]
     param (
         [parameter(Position = 1, Mandatory, ParameterSetName = 'Session')]
         [parameter(Position = 1, Mandatory, ParameterSetName = 'All')]
@@ -85,19 +91,22 @@ function Start-DbaXESession {
     begin {
         # Start each XESession
         function Start-XESessions {
-            [CmdletBinding()]
+            [CmdletBinding(SupportsShouldProcess)]
             param ([Microsoft.SqlServer.Management.XEvent.Session[]]$xeSessions)
 
             foreach ($xe in $xeSessions) {
                 $instance = $xe.Parent.Name
                 $session = $xe.Name
+
                 if (-Not $xe.isRunning) {
                     Write-Message -Level Verbose -Message "Starting XEvent Session $session on $instance."
-                    try {
-                        $xe.Start()
-                    }
-                    catch {
-                        Stop-Function -Message "Could not start XEvent Session on $instance." -Target $session -ErrorRecord $_ -Continue
+                    if ($Pscmdlet.ShouldProcess("$instance", "Starting XEvent Session $session")) {
+                        try {
+                            $xe.Start()
+                        }
+                        catch {
+                            Stop-Function -Message "Could not start XEvent Session on $instance." -Target $session -ErrorRecord $_ -Continue
+                        }
                     }
                 }
                 else {
@@ -108,7 +117,7 @@ function Start-DbaXESession {
         }
 
         function New-StopJob {
-            [CmdletBinding()]
+            [CmdletBinding(SupportsShouldProcess)]
             param (
                 [Microsoft.SqlServer.Management.XEvent.Session[]]$xeSessions,
                 [datetime]$StopAt
@@ -118,19 +127,20 @@ function Start-DbaXESession {
                 $server = $xe.Parent
                 $session = $xe.Name
                 $name = "XE Session Stop - $session"
+                if ($Pscmdlet.ShouldProcess("$Server", "Making New XEvent StopJob for $session")) {
+                    # Setup the schedule time
+                    $time = ($StopAt).ToString("HHmmss")
 
-                # Setup the schedule time
-                $time = ($StopAt).ToString("HHmmss")
+                    # Create the schedule
+                    $schedule = New-DbaAgentSchedule -SqlInstance $server -Schedule $name -FrequencyType Once -StartTime ($StopAt).ToString("HHmmss") -Force
 
-                # Create the schedule
-                $schedule = New-DbaAgentSchedule -SqlInstance $server -Schedule $name -FrequencyType Once -StartTime ($StopAt).ToString("HHmmss") -Force
+                    # Create the job and attach the schedule
+                    $job = New-DbaAgentJob -SqlInstance $server -Job $name -Schedule $schedule -DeleteLevel Always -Force
 
-                # Create the job and attach the schedule
-                $job = New-DbaAgentJob -SqlInstance $server -Job $name -Schedule $schedule -DeleteLevel Always -Force
-
-                # Create the job step
-                $sql = "ALTER EVENT SESSION [$session] ON SERVER STATE = stop;"
-                $jobstep = New-DbaAgentJobStep -SqlInstance $server -Job $job -StepName 'T-SQL Stop' -Subsystem TransactSql -Command $sql -Force
+                    # Create the job step
+                    $sql = "ALTER EVENT SESSION [$session] ON SERVER STATE = stop;"
+                    $jobstep = New-DbaAgentJobStep -SqlInstance $server -Job $job -StepName 'T-SQL Stop' -Subsystem TransactSql -Command $sql -Force
+                }
             }
         }
     }
@@ -151,10 +161,12 @@ function Start-DbaXESession {
                     $xeSessions = $xeSessions | Where-Object { $_.Name -notin $systemSessions }
                 }
 
-                Start-XESessions $xeSessions
+                if ($Pscmdlet.ShouldProcess("$instance", "Configuring XEvent Session $session to start")) {
+                    Start-XESessions $xeSessions
 
-                if ($StopAt) {
-                    New-StopJob -xeSessions $xeSessions -StopAt $stopat
+                    if ($StopAt) {
+                        New-StopJob -xeSessions $xeSessions -StopAt $stopat
+                    }
                 }
             }
         }

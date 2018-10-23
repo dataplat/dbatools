@@ -69,7 +69,7 @@
         Installs sp_WhoisActive to all servers within CMS
 #>
 
-    [CmdletBinding(SupportsShouldProcess)]
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
     param (
         [parameter(Mandatory, ValueFromPipeline, Position = 0)]
         [Alias("ServerInstance", "SqlServer")]
@@ -91,7 +91,7 @@
 
         if ($LocalFile -eq $null -or $LocalFile.Length -eq 0) {
             $baseUrl = "http://whoisactive.com/downloads"
-            $latest = ((Invoke-WebRequest -UseBasicParsing -uri http://whoisactive.com/downloads).Links | where-object { $PSItem.href -match "who_is_active" } | Select-Object href -First 1).href
+            $latest = ((Invoke-TlsWebRequest -UseBasicParsing -uri http://whoisactive.com/downloads).Links | where-object { $PSItem.href -match "who_is_active" } | Select-Object href -First 1).href
             $LocalCachedCopy = Join-Path -Path $DbatoolsData -ChildPath $latest;
 
             if ((Test-Path -Path $LocalCachedCopy -PathType Leaf) -and (-not $Force)) {
@@ -106,13 +106,13 @@
                         Write-Message -Level Verbose -Message "Downloading sp_WhoisActive zip file, unzipping and installing."
                         $url = $baseUrl + "/" + $latest
                         try {
-                            Invoke-WebRequest $url -OutFile $zipfile -ErrorAction Stop -UseBasicParsing
+                            Invoke-TlsWebRequest $url -OutFile $zipfile -ErrorAction Stop -UseBasicParsing
                             Copy-Item -Path $zipfile -Destination $LocalCachedCopy
                         }
                         catch {
                             #try with default proxy and usersettings
                             (New-Object System.Net.WebClient).Proxy.Credentials = [System.Net.CredentialCache]::DefaultNetworkCredentials
-                            Invoke-WebRequest $url -OutFile $zipfile -ErrorAction Stop -UseBasicParsing
+                            Invoke-TlsWebRequest $url -OutFile $zipfile -ErrorAction Stop -UseBasicParsing
                         }
                     }
                     catch {
@@ -175,10 +175,10 @@
 
             $matchString = 'Who Is Active? v'
 
-            If ($sql  -like "*$matchString*"){
+            If ($sql -like "*$matchString*") {
                 $posStart = $sql.IndexOf("$matchString")
                 $PosEnd = $sql.IndexOf(")", $PosStart)
-                $versionWhoIsActive = $sql.Substring($posStart+$matchString.Length, $posEnd - ($posStart + $matchString.Length)+ 1).TrimEnd()
+                $versionWhoIsActive = $sql.Substring($posStart + $matchString.Length, $posEnd - ($posStart + $matchString.Length) + 1).TrimEnd()
             }
             Else {
                 $versionWhoIsActive = ''
@@ -199,7 +199,7 @@
 
             if (-not $Database) {
                 if ($PSCmdlet.ShouldProcess($instance, "Prompting with GUI list of databases")) {
-                    $Database = Show-DbaDatabaseList -SqlInstance $server -Title "Install sp_WhoisActive" -Header "To deploy sp_WhoisActive, select a database or hit cancel to quit." -DefaultDb "master"
+                    $Database = Show-DbaDbList -SqlInstance $server -Title "Install sp_WhoisActive" -Header "To deploy sp_WhoisActive, select a database or hit cancel to quit." -DefaultDb "master"
 
                     if (-not $Database) {
                         Stop-Function -Message "You must select a database to install the procedure." -Target $Database

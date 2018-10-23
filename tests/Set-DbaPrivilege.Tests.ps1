@@ -5,7 +5,7 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
         $paramCount = 4
-        $defaultParamCount = 11
+        $defaultParamCount = 13
         [object[]]$params = (Get-ChildItem function:\Set-DbaPrivilege).Parameters.Keys
         $knownParameters = 'ComputerName','Credential','Type','EnableException'
         It "Should contain our specific parameters" {

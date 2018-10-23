@@ -4,7 +4,7 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 
 Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     It -Skip "returns success" {
-        $results = Test-DbaEndpoint -SqlInstance $script:instance2, $script:instance1
+        $results = Test-DbaEndpoint -SqlInstance $script:instance3
         $results | Select-Object -First 1 -ExpandProperty Connection | Should -Be 'Success'
     }
-}
+} #$script:instance2 for appveyor

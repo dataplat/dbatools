@@ -8,8 +8,7 @@ function Start-DbaEndpoint {
         Starts endpoints on a SQL Server instance.
 
     .PARAMETER SqlInstance
-        The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function
-        to be executed against multiple SQL Server instances.
+        The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
@@ -18,10 +17,10 @@ function Start-DbaEndpoint {
         Only start specific endpoints.
 
     .PARAMETER AllEndpoints
-        Start all endpoints on an instance, ignoring the packaged endpoints: AlwaysOn_health, system_health, telemetry_xevents.
+        Start all endpoints on an instance.
 
     .PARAMETER InputObject
-        Internal parameter to support piping from Get-Endpoint
+        Enables piping from Get-Endpoint.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

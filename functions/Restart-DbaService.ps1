@@ -130,13 +130,15 @@
             }
         }
         if ($processArray) {
-            $services = Update-ServiceStatus -InputObject $processArray -Action 'stop' -Timeout $Timeout -EnableException $EnableException
-            foreach ($service in ($services | Where-Object { $_.Status -eq 'Failed'})) {
-                $service
-            }
-            $services = $services | Where-Object { $_.Status -eq 'Successful'}
-            if ($services) {
-                Update-ServiceStatus -InputObject $services -Action 'restart' -Timeout $Timeout -EnableException $EnableException
+            if($PSCmdlet.ShouldProcess("$ProcessArray","Restarting Service")){
+                $services = Update-ServiceStatus -InputObject $processArray -Action 'stop' -Timeout $Timeout -EnableException $EnableException
+                foreach ($service in ($services | Where-Object { $_.Status -eq 'Failed'})) {
+                    $service
+                }
+                $services = $services | Where-Object { $_.Status -eq 'Successful'}
+                if ($services) {
+                    Update-ServiceStatus -InputObject $services -Action 'restart' -Timeout $Timeout -EnableException $EnableException
+                }
             }
         }
         else {

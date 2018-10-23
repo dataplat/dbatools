@@ -142,7 +142,7 @@ function Write-DbaDataTable {
         This is an example of the type conversion in action. All process properties are converted, including special types like TimeSpan. Script properties are resolved before the type conversion starts thanks to ConvertTo-DbaDataTable.
 
 #>
-    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "High")]
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "High")]
     param (
         [Parameter(Position = 0, Mandatory)]
         [Alias("ServerInstance", "SqlServer")]
@@ -264,7 +264,7 @@ function Write-DbaDataTable {
             .PARAMETER UseDynamicStringLength
                 Automatically inherits from parent.
         #>
-            [CmdletBinding()]
+            [CmdletBinding(SupportsShouldProcess)]
             param (
                 $DataTable,
                 $PStoSQLTypes = $PStoSQLTypes,

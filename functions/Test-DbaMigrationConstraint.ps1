@@ -60,9 +60,9 @@
         All databases on sqlserver2014a will be verified for features in use that can't be supported on sqlcluster.
 
     .EXAMPLE
-        PS C:\> Test-DbaMigrationConstraint -Source sqlserver2014a -Destination sqlcluster -SqlCredential $cred
+        PS C:\> Test-DbaMigrationConstraint -Source sqlserver2014a -Destination sqlcluster -SourceSqlCredential $cred
 
-        All databases will be verified for features in use that can't be supported on the destination server. SQL credentials are used to authenticate against sqlserver2014 and Windows Authentication is used for sqlcluster.
+        All databases will be verified for features in use that can't be supported on the destination server. SQL credentials are used to authenticate against sqlserver2014a and Windows Authentication is used for sqlcluster.
 
     .EXAMPLE
         PS C:\> Test-DbaMigrationConstraint -Source sqlserver2014a -Destination sqlcluster -Database db1
