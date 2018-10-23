@@ -276,13 +276,14 @@ function New-DbaAvailabilityGroup {
         
         Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Checking perquisites"
         
-        if (Get-DbaAvailabilityGroup -SqlInstance $server -AvailabilityGroup $Name) {
+        # Don't reuse $server here, it fails
+        if (Get-DbaAvailabilityGroup -SqlInstance $Primary -SqlCredential $PrimarySqlCredential -AvailabilityGroup $Name) {
             Stop-Function -Message "Availability group named $Name already exists on $Primary"
             return
         }
         
         if ($Certificate) {
-            $cert = Get-DbaDbCertificate -SqlInstance $server -Certificate $Certificate
+            $cert = Get-DbaDbCertificate -SqlInstance $Primary -SqlCredential $PrimarySqlCredential -Certificate $Certificate
             if (-not $cert) {
                 Stop-Function -Message "Certificate $Certificate does not exist on $Primary" -ErrorRecord $_ -Target $Primary
                 return
