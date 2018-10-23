@@ -33,6 +33,8 @@ process {
 
 
 '@
+    #ensure empty lines also at the end
+    $content = $content + "`r`n    `r`n"
     $wantedContent = @'
 function Get-DbaStub {
     <#
