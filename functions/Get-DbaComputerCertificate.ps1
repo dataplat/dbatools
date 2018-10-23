@@ -1,6 +1,6 @@
-﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaComputerCertificate {
-<#
+    <#
     .SYNOPSIS
         Simplifies finding computer certificates that are candidates for using with SQL Server's network encryption
 
@@ -89,17 +89,14 @@ function Get-DbaComputerCertificate {
                 try {
                     Write-Verbose "Searching Cert:\$Store\$Folder"
                     Get-ChildItem "Cert:\$Store\$Folder" -Recurse | Where-Object Thumbprint -in $Thumbprint
-                }
-                catch {
+                } catch {
                     # don't care - there's a weird issue with remoting where an exception gets thrown for no apparent reason
                 }
-            }
-            else {
+            } else {
                 try {
                     Write-Verbose "Searching Cert:\$Store\$Folder"
                     Get-ChildItem "Cert:\$Store\$Folder" -Recurse | Where-Object { "$($_.EnhancedKeyUsageList)" -match '1\.3\.6\.1\.5\.5\.7\.3\.1' }
-                }
-                catch {
+                } catch {
                     # still don't care
                 }
             }
@@ -111,10 +108,10 @@ function Get-DbaComputerCertificate {
         foreach ($computer in $computername) {
             try {
                 Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $scriptblock -ArgumentList $thumbprint, $Store, $Folder, $Path -ErrorAction Stop | Select-DefaultView -Property FriendlyName, DnsNameList, Thumbprint, NotBefore, NotAfter, Subject, Issuer
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Issue connecting to computer" -ErrorRecord $_ -Target $computer -Continue
             }
         }
     }
 }
+

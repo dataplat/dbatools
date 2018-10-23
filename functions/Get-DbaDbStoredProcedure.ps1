@@ -1,5 +1,5 @@
-﻿function Get-DbaDbStoredProcedure {
-<#
+function Get-DbaDbStoredProcedure {
+    <#
     .SYNOPSIS
         Gets database Stored Procedures
 
@@ -77,8 +77,7 @@
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -119,3 +118,4 @@
         }
     }
 }
+

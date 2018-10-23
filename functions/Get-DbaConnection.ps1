@@ -1,6 +1,6 @@
-﻿#ValidationTags#CodeStyle,Messaging,FlowControl,Pipeline#
+#ValidationTags#CodeStyle,Messaging,FlowControl,Pipeline#
 function Get-DbaConnection {
-<#
+    <#
     .SYNOPSIS
         Returns a bunch of information from dm_exec_connections.
 
@@ -65,18 +65,17 @@ function Get-DbaConnection {
 
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             Write-Message -Level Debug -Message "Getting results for the following query: $sql."
             try {
                 $server.Query($sql)
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Target $server -Exception $_ -Continue
             }
         }
     }
 }
+

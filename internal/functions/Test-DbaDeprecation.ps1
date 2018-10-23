@@ -105,3 +105,4 @@ function Test-DbaDeprecation {
         }
     }
 }
+

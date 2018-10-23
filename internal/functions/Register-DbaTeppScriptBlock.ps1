@@ -1,4 +1,4 @@
-﻿function Register-DbaTeppScriptblock {
+function Register-DbaTeppScriptblock {
     <#
         .SYNOPSIS
             Registers a scriptblock under name, to later be available for TabExpansion.
@@ -33,3 +33,5 @@
 
     [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Scripts[$Name.ToLower()] = $scp
 }
+
+

@@ -1,5 +1,5 @@
-﻿function Install-DbaWhoIsActive {
-<#
+function Install-DbaWhoIsActive {
+    <#
     .SYNOPSIS
         Automatically installs or updates sp_WhoisActive by Adam Machanic.
 
@@ -99,8 +99,7 @@
                 if ($PSCmdlet.ShouldProcess($env:computername, "Copying sp_WhoisActive from local cache for installation")) {
                     Copy-Item -Path $LocalCachedCopy -Destination $zipfile;
                 }
-            }
-            else {
+            } else {
                 if ($PSCmdlet.ShouldProcess($env:computername, "Downloading sp_WhoisActive")) {
                     try {
                         Write-Message -Level Verbose -Message "Downloading sp_WhoisActive zip file, unzipping and installing."
@@ -108,28 +107,24 @@
                         try {
                             Invoke-TlsWebRequest $url -OutFile $zipfile -ErrorAction Stop -UseBasicParsing
                             Copy-Item -Path $zipfile -Destination $LocalCachedCopy
-                        }
-                        catch {
+                        } catch {
                             #try with default proxy and usersettings
                             (New-Object System.Net.WebClient).Proxy.Credentials = [System.Net.CredentialCache]::DefaultNetworkCredentials
                             Invoke-TlsWebRequest $url -OutFile $zipfile -ErrorAction Stop -UseBasicParsing
                         }
-                    }
-                    catch {
+                    } catch {
                         Stop-Function -Message "Couldn't download sp_WhoisActive. Please download and install manually from $url." -ErrorRecord $_
                         return
                     }
                 }
             }
-        }
-        else {
+        } else {
             # Look local
             if ($PSCmdlet.ShouldProcess($env:computername, "Copying local file to temp directory")) {
 
                 if ($LocalFile.EndsWith("zip")) {
                     Copy-Item -Path $LocalFile -Destination $zipfile -Force
-                }
-                else {
+                } else {
                     Copy-Item -Path $LocalFile -Destination (Join-Path -path $temp -childpath "whoisactivelocal.sql")
                 }
             }
@@ -144,13 +139,11 @@
                 if (Get-Command -ErrorAction SilentlyContinue -Name "Expand-Archive") {
                     try {
                         Expand-Archive -Path $zipfile -DestinationPath $temp -Force
-                    }
-                    catch {
+                    } catch {
                         Stop-Function -Message "Unable to extract $zipfile. Archive may not be valid." -ErrorRecord $_
                         return
                     }
-                }
-                else {
+                } else {
                     # Keep it backwards compatible
                     $shell = New-Object -ComObject Shell.Application
                     $zipPackage = $shell.NameSpace($zipfile)
@@ -161,8 +154,7 @@
                 Remove-Item -Path $zipfile
             }
             $sqlfile = (Get-ChildItem "$temp\who*active*.sql" -ErrorAction SilentlyContinue | Select-Object -First 1).FullName
-        }
-        else {
+        } else {
             $sqlfile = $LocalFile
         }
 
@@ -179,8 +171,7 @@
                 $posStart = $sql.IndexOf("$matchString")
                 $PosEnd = $sql.IndexOf(")", $PosStart)
                 $versionWhoIsActive = $sql.Substring($posStart + $matchString.Length, $posEnd - ($posStart + $matchString.Length) + 1).TrimEnd()
-            }
-            Else {
+            } Else {
                 $versionWhoIsActive = ''
             }
         }
@@ -192,8 +183,7 @@
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -220,16 +210,14 @@
                         foreach ($batch in $batches) {
                             try {
                                 $null = $server.databases[$Database].ExecuteNonQuery($batch)
-                            }
-                            catch {
+                            } catch {
                                 Stop-Function -Message "Failed to install stored procedure." -ErrorRecord $_ -Continue -Target $instance
                             }
                         }
 
                         if ($ProcedureExists -gt 0) {
                             $status = 'Updated'
-                        }
-                        else {
+                        } else {
                             $status = 'Installed'
                         }
 
@@ -243,13 +231,11 @@
                             Version      = $versionWhoIsActive
                             Status       = $status
                         }
-                    }
-                    else {
+                    } else {
                         Stop-Function -Message "Failed to find database $Database on $instance or $Database is not writeable." -ErrorRecord $_ -Continue -Target $instance
                     }
 
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Failed to install stored procedure." -ErrorRecord $_ -Continue -Target $instance
                 }
 
@@ -263,3 +249,4 @@
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Install-SqlWhoIsActive
     }
 }
+

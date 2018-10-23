@@ -1,5 +1,5 @@
-﻿function Install-DbaWatchUpdate {
-<#
+function Install-DbaWatchUpdate {
+    <#
     .SYNOPSIS
         Adds the scheduled task to support Watch-DbaUpdate.
 
@@ -61,8 +61,7 @@
                 $principal = New-ScheduledTaskPrincipal -LogonType S4U -UserId (whoami)
                 $settings = New-ScheduledTaskSettingsSet -ExecutionTimeLimit ([timespan]::Zero) -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -StartWhenAvailable -RunOnlyIfNetworkAvailable -DontStopOnIdleEnd
                 $task = Register-ScheduledTask -Principal $principal -TaskName 'dbatools version check' -Action $action -Trigger $trigger -Settings $settings -ErrorAction Stop
-            }
-            catch {
+            } catch {
                 # keep moving
             }
         }
@@ -87,8 +86,7 @@
                         Write-Message -Level Output -Message "Scheduled Task [$TaskName] created! A notification should appear momentarily. Here's something cute to look at in the interim."
                         Show-Notification -Title "dbatools wants you" -Text "come hang out at dbatools.io/slack"
                     }
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Could not create scheduled task $TaskName" -Target $env:COMPUTERNAME -ErrorRecord $_
                 }
             }
@@ -98,9 +96,9 @@
                     Write-Message -Level Warning -Message "Scheduled Task was not created."
                 }
             }
-        }
-        else {
+        } else {
             Write-Message -Level Output -Message "Scheduled Task $TaskName is already installed on this machine."
         }
     }
 }
+

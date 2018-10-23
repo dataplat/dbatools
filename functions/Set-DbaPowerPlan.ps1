@@ -1,5 +1,5 @@
-﻿function Set-DbaPowerPlan {
-<#
+function Set-DbaPowerPlan {
+    <#
     .SYNOPSIS
         Sets the SQL Server OS's Power Plan.
 
@@ -81,8 +81,7 @@
                 Write-Message -Level Verbose -Message "Testing connection to $server and resolving IP address."
                 $ipaddr = (Test-Connection $server -Count 1 -ErrorAction SilentlyContinue).Ipv4Address | Select-Object -First 1
 
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $server
                 return
             }
@@ -92,8 +91,7 @@
                 $query = "Select ElementName from Win32_PowerPlan WHERE IsActive = 'true'"
                 $currentplan = Get-WmiObject -Namespace Root\CIMV2\Power -ComputerName $ipaddr -Query $query -ErrorAction SilentlyContinue
                 $currentplan = $currentplan.ElementName
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Can't connect to WMI on $server." -Category ConnectionError -ErrorRecord $_ -Target $server
                 return
             }
@@ -109,20 +107,18 @@
                 PreviousPowerPlan = $currentplan
                 ActivePowerPlan   = $PowerPlan
             }
-            if ($Pscmdlet.ShouldProcess($PowerPlan,"Setting Powerplan on $server")) {
+            if ($Pscmdlet.ShouldProcess($PowerPlan, "Setting Powerplan on $server")) {
                 if ($PowerPlan -ne $currentplan) {
                     if ($Pscmdlet.ShouldProcess($server, "Changing Power Plan from $CurrentPlan to $PowerPlan")) {
                         try {
                             Write-Message -Level Verbose -Message "Setting Power Plan to $PowerPlan."
                             $null = (Get-WmiObject -Name root\cimv2\power -ComputerName $ipaddr -Class Win32_PowerPlan -Filter "ElementName='$PowerPlan'").Activate()
-                        }
-                        catch {
+                        } catch {
                             Stop-Function -Message "Couldn't set Power Plan on $server." -Category ConnectionError -ErrorRecord $_ -Target $server
                             return
                         }
                     }
-                }
-                else {
+                } else {
                     if ($Pscmdlet.ShouldProcess($server, "Stating power plan is already set to $PowerPlan, won't change.")) {
                         Write-Message -Level Verbose -Message "PowerPlan on $server is already set to $PowerPlan. Skipping."
                     }
@@ -155,8 +151,7 @@
 
             if ($server -notin $processed) {
                 $null = $processed.Add($server)
-            }
-            else {
+            } else {
                 continue
             }
 
@@ -164,8 +159,7 @@
 
             if ($data.Count -gt 1) {
                 $data.GetEnumerator() | ForEach-Object { $null = $collection.Add($_) }
-            }
-            else {
+            } else {
                 $null = $collection.Add($data)
             }
         }
@@ -177,3 +171,4 @@
         }
     }
 }
+

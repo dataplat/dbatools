@@ -1,6 +1,6 @@
-﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Read-DbaTraceFile {
-<#
+    <#
     .SYNOPSIS
         Reads SQL Server trace files
 
@@ -181,8 +181,7 @@ function Read-DbaTraceFile {
     begin {
         if ($where) {
             $Where = "where $where"
-        }
-        elseif ($Database -or $Login -or $Spid -or $ApplicationName -or $EventClass -or $ObjectName -or $ObjectType -or $EventSequence -or $ErrorId) {
+        } elseif ($Database -or $Login -or $Spid -or $ApplicationName -or $EventClass -or $ObjectName -or $ObjectType -or $EventSequence -or $ErrorId) {
 
             $tempwhere = @()
 
@@ -244,16 +243,14 @@ function Read-DbaTraceFile {
         foreach ($instance in $sqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
                 return
             }
 
             if (Test-Bound -Parameter Path) {
                 $currentpath = $path
-            }
-            else {
+            } else {
                 $currentpath = $server.ConnectionContext.ExecuteScalar("Select path from sys.traces where is_default = 1")
             }
 
@@ -274,11 +271,11 @@ function Read-DbaTraceFile {
 
                 try {
                     $server.Query($sql)
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Error returned from SQL Server: $_" -Target $server -InnerErrorRecord $_
                 }
             }
         }
     }
 }
+

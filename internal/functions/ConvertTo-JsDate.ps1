@@ -1,4 +1,4 @@
-﻿function ConvertTo-JsDate {
+function ConvertTo-JsDate {
     <#
         .SYNOPSIS
             Converts Datetime input to a Java Script date format
@@ -43,3 +43,4 @@
     [string]$out = "new Date($(Get-Date $InputDate -format "yyyy"), $($(Get-Date $InputDate -format "MM")-1), $(Get-Date $InputDate -format "dd"), $(Get-Date $InputDate -format "HH"), $(Get-Date $InputDate -format "mm"), $(Get-Date $InputDate -format "ss"))"
     return $out
 }
+

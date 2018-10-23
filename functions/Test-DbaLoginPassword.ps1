@@ -1,5 +1,5 @@
-﻿function Test-DbaLoginPassword {
-<#
+function Test-DbaLoginPassword {
+    <#
     .SYNOPSIS
         Test-DbaLoginPassword finds any logins on SQL instance that are SQL Logins and have a password that is either null or same as the login
 
@@ -91,8 +91,7 @@
         foreach ($CheckPass in $CheckPasses) {
             if ($CheckPasses.IndexOf($CheckPass) -eq 0) {
                 $checks = "SELECT " + $CheckPass
-            }
-            else {
+            } else {
                 $checks += "
         UNION SELECT " + $CheckPass
             }
@@ -123,8 +122,7 @@
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential -MinimumVersion 10
                 Write-Message -Message "Connected to: $instance." -Level Verbose
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
             $InputObject += Get-DbaLogin -SqlInstance $server -Login $Login
@@ -142,10 +140,10 @@
             Write-Message -Level Verbose -Message "Testing: the following Passwords $CheckPasses"
             try {
                 $serverinstance.Query("$sql") | Where-Object SqlLogin -in $names
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -ErrorRecord $_ -Target $serverinstance -Continue
             }
         }
     }
 }
+

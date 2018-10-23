@@ -1,6 +1,6 @@
-﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Backup-DbaDbMasterKey {
-<#
+    <#
     .SYNOPSIS
         Backs up specified database master key.
 
@@ -139,8 +139,7 @@ function Backup-DbaDbMasterKey {
                 try {
                     $masterkey.Export($filename, [System.Runtime.InteropServices.marshal]::PtrToStringAuto([System.Runtime.InteropServices.marshal]::SecureStringToBSTR($password)))
                     $status = "Success"
-                }
-                catch {
+                } catch {
                     $status = "Failure"
                     Write-Message -Level Warning -Message "Backup failure: $($_.Exception.InnerException)"
                 }
@@ -160,3 +159,4 @@ function Backup-DbaDbMasterKey {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Backup-DbaDatabaseMasterKey
     }
 }
+

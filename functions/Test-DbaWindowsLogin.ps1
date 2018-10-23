@@ -1,6 +1,6 @@
-﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Test-DbaWindowsLogin {
-<#
+    <#
     .SYNOPSIS
         Test-DbaWindowsLogin finds any logins on SQL instance that are AD logins with either disabled AD user accounts or ones that no longer exist
 
@@ -115,8 +115,7 @@ function Test-DbaWindowsLogin {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
                 Write-Message -Message "Connected to: $instance." -Level Verbose
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -159,12 +158,11 @@ function Test-DbaWindowsLogin {
                 $exists = $false
                 try {
                     $u = Get-DbaADObject -ADObject $adLogin -Type User -EnableException
-                    if ($null -eq $u -and $adLogin -like '*$'){
+                    if ($null -eq $u -and $adLogin -like '*$') {
                         Write-Message -Message "Parsing Login as computer" -Level Verbose
                         $u = Get-DbaADObject -ADObject $adLogin -Type Computer -EnableException
                         $adType = 'Computer'
-                    }
-                    else {
+                    } else {
                         $adType = 'User'
                     }
                     $foundUser = $u.GetUnderlyingObject()
@@ -177,8 +175,7 @@ function Test-DbaWindowsLogin {
                         Write-Message -Message "SID mismatch detected for $adLogin (MSSQL: $loginSid, AD: $foundSid)." -Level Debug
                         $exists = $false
                     }
-                }
-                catch {
+                } catch {
                     Write-Message -Message "AD Searcher Error for $username." -Level Warning
                 }
 
@@ -257,8 +254,7 @@ function Test-DbaWindowsLogin {
                         Write-Message -Message "SID mismatch detected for $adLogin (MSSQL: $loginSid, AD: $foundSid)." -Level Debug
                         $exists = $false
                     }
-                }
-                catch {
+                } catch {
                     Write-Message -Message "AD Searcher Error for $groupName on $server" -Level Warning
                 }
                 $rtn = [PSCustomObject]@{
@@ -290,3 +286,4 @@ function Test-DbaWindowsLogin {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Test-DbaValidLogin
     }
 }
+

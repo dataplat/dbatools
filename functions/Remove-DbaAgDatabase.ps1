@@ -1,6 +1,6 @@
-﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Remove-DbaAgDatabase {
-<#
+    <#
     .SYNOPSIS
         Removes a database from an availability group on a SQL Server instance.
         
@@ -89,18 +89,18 @@ function Remove-DbaAgDatabase {
                     $ag = $db.Parent.Name
                     $db.Parent.AvailabilityDatabases[$db.Name].Drop()
                     [pscustomobject]@{
-                        ComputerName = $db.ComputerName
-                        InstanceName = $db.InstanceName
-                        SqlInstance  = $db.SqlInstance
+                        ComputerName      = $db.ComputerName
+                        InstanceName      = $db.InstanceName
+                        SqlInstance       = $db.SqlInstance
                         AvailabilityGroup = $ag
-                        Database     = $db.Name
-                        Status       = "Removed"
+                        Database          = $db.Name
+                        Status            = "Removed"
                     }
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
                 }
             }
         }
     }
 }
+

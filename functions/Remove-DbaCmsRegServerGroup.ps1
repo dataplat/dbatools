@@ -1,6 +1,6 @@
-﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Remove-DbaCmsRegServerGroup {
-<#
+    <#
     .SYNOPSIS
         Gets list of Server Groups objects stored in SQL Server Central Management Server (CMS).
 
@@ -85,14 +85,13 @@ function Remove-DbaCmsRegServerGroup {
                 $parentserver.ServerConnection.Disconnect()
                 try {
                     [pscustomobject]@{
-                        ComputerName            = $parentserver.ComputerName
-                        InstanceName            = $parentserver.InstanceName
-                        SqlInstance             = $parentserver.SqlInstance
-                        Name                    = $regservergroup.Name
-                        Status                  = "Dropped"
+                        ComputerName = $parentserver.ComputerName
+                        InstanceName = $parentserver.InstanceName
+                        SqlInstance  = $parentserver.SqlInstance
+                        Name         = $regservergroup.Name
+                        Status       = "Dropped"
                     }
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Failed to drop $regservergroup on $parentserver" -ErrorRecord $_ -Continue
                 }
             }
@@ -102,3 +101,4 @@ function Remove-DbaCmsRegServerGroup {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Remove-DbaRegisteredServerGroup
     }
 }
+

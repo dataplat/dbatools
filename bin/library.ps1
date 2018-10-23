@@ -1,4 +1,4 @@
-﻿# Current library Version the module expects
+# Current library Version the module expects
 $currentLibraryVersion = New-Object System.Version(0, 10, 0, 58)
 
 <#
@@ -139,3 +139,4 @@ If the issues continue to persist, please Remove-Item '$script:PSModuleRoot\bin\
 "@
 }
 #endregion Version Warning
+

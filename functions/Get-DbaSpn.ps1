@@ -1,6 +1,6 @@
-﻿#ValidationTags#FlowControl,Pipeline#
+#ValidationTags#FlowControl,Pipeline#
 function Get-DbaSpn {
-<#
+    <#
     .SYNOPSIS
         Returns a list of set service principal names for a given computer/AD account
 
@@ -71,8 +71,7 @@ function Get-DbaSpn {
                 }
                 try {
                     $Result = Get-DbaADObject -ADObject $account -Type $searchfor -Credential $Credential -EnableException
-                }
-                catch {
+                } catch {
                     Write-Message -Message "AD lookup failure. This may be because the domain cannot be resolved for the SQL Server service account ($Account)." -Level Warning
                     continue
                 }
@@ -80,13 +79,11 @@ function Get-DbaSpn {
                     try {
                         $results = $Result.GetUnderlyingObject()
                         $spns = $results.Properties.servicePrincipalName
-                    }
-                    catch {
+                    } catch {
                         Write-Message -Message "The SQL Service account ($Account) has been found, but you don't have enough permission to inspect its SPNs" -Level Warning
                         continue
                     }
-                }
-                else {
+                } else {
                     Write-Message -Message "The SQL Service account ($Account) has not been found" -Level Warning
                     continue
                 }
@@ -95,8 +92,7 @@ function Get-DbaSpn {
                     if ($spn -match "\:") {
                         try {
                             $port = [int]($spn -Split "\:")[1]
-                        }
-                        catch {
+                        } catch {
                             $port = $null
                         }
                         if ($spn -match "\/") {
@@ -148,8 +144,7 @@ function Get-DbaSpn {
                             SPN          = $spn.RequiredSPN
                         }
                     }
-                }
-                else {
+                } else {
                     [pscustomobject] @{
                         Input        = $computer
                         AccountName  = $spn.InstanceServiceAccount
@@ -169,3 +164,4 @@ function Get-DbaSpn {
         }
     }
 }
+

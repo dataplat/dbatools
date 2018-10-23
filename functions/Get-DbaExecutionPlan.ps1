@@ -1,6 +1,6 @@
-﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaExecutionPlan {
-<#
+    <#
     .SYNOPSIS
         Gets execution plans and metadata
 
@@ -100,15 +100,13 @@ function Get-DbaExecutionPlan {
             try {
                 try {
                     $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential -MinimumVersion 9
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
                 }
 
                 if ($force -eq $true) {
                     $select = "SELECT * "
-                }
-                else {
+                } else {
                     $select = "SELECT DB_NAME(deqp.dbid) as DatabaseName, OBJECT_NAME(deqp.objectid) as ObjectName,
                     detqp.query_plan AS SingleStatementPlan,
                     deqp.query_plan AS BatchQueryPlan,
@@ -166,8 +164,7 @@ function Get-DbaExecutionPlan {
 
                 if ($Force -eq $true) {
                     $server.Query($sql)
-                }
-                else {
+                } else {
                     foreach ($row in $server.Query($sql)) {
                         $simple = ([xml]$row.SingleStatementPlan).ShowPlanXML.BatchSequence.Batch.Statements.StmtSimple
                         $sqlhandle = "0x"; $row.sqlhandle | ForEach-Object { $sqlhandle += ("{0:X}" -f $_).PadLeft(2, "0") }
@@ -211,10 +208,10 @@ function Get-DbaExecutionPlan {
                         } | Select-DefaultView -ExcludeProperty BatchQueryPlan, SingleStatementPlan, BatchConditionXmlRaw, BatchQueryPlanRaw, SingleStatementPlanRaw, PlanWarnings
                     }
                 }
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Query Failure Failure" -ErrorRecord $_ -Target $instance -Continue
             }
         }
     }
 }
+

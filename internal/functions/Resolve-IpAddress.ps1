@@ -9,8 +9,9 @@ function Resolve-IpAddress {
 
     if ($Server.GetType() -eq [Microsoft.SqlServer.Management.Smo.Server]) {
         return $ipaddress = ((Test-Connection $Server.ComputerName -Count 1 -ErrorAction SilentlyContinue).Ipv4Address).IPAddressToString
-    }
-    else {
+    } else {
         return $ipaddress = ((Test-Connection $server.Split('\')[0] -Count 1 -ErrorAction SilentlyContinue).Ipv4Address).IPAddressToString
     }
 }
+
+

@@ -1,6 +1,6 @@
-﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Set-DbaStartupParameter {
-<#
+    <#
     .SYNOPSIS
         Sets the Startup Parameters for a SQL Server instance
 
@@ -200,14 +200,12 @@ function Set-DbaStartupParameter {
         if (-not $Offline) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
-            }
-            catch {
+            } catch {
                 Write-Message -Level Warning -Message "Failed to connect to $SqlInstance, will try to work with just WMI. Path options will be ignored unless Force was indicated"
                 $Server = $SqlInstance
                 $Offline = $true
             }
-        }
-        else {
+        } else {
             Write-Message -Level Verbose -Message "Offline switch set, proceeding with just WMI"
             $Server = $SqlInstance
         }
@@ -222,8 +220,7 @@ function Set-DbaStartupParameter {
             Write-Message -Level VeryVerbose -Message "StartupObject passed in"
             $newstartup = $StartUpConfig
             $TraceFlagsOverride = $true
-        }
-        else {
+        } else {
             Write-Message -Level VeryVerbose -Message "Parameters passed in"
             $newstartup = $currentstartup.PSObject.copy()
             foreach ($param in ($PsBoundParameters.keys | Where-Object { $_ -in ($newstartup.PSObject.Properties.name) })) {
@@ -240,21 +237,17 @@ function Set-DbaStartupParameter {
                     Write-Message -Level Warning -Message "Working offline, skipping untested MasterData path"
                     $ParameterString += "-d$($CurrentStartup.MasterData);"
 
-                }
-                else {
+                } else {
                     if ($Force) {
                         $ParameterString += "-d$($newstartup.MasterData);"
-                    }
-                    elseif (Test-DbaPath -SqlInstance $server -SqlCredential $SqlCredential -Path (Split-Path $newstartup.MasterData -Parent)) {
+                    } elseif (Test-DbaPath -SqlInstance $server -SqlCredential $SqlCredential -Path (Split-Path $newstartup.MasterData -Parent)) {
                         $ParameterString += "-d$($newstartup.MasterData);"
-                    }
-                    else {
+                    } else {
                         Stop-Function -Message "Specified folder for Master Data file is not reachable by instance $SqlInstance"
                         return
                     }
                 }
-            }
-            else {
+            } else {
                 Stop-Function -Message "MasterData value must be provided"
                 return
             }
@@ -263,21 +256,17 @@ function Set-DbaStartupParameter {
                 if ($Offline -and -not $Force) {
                     Write-Message -Level Warning -Message "Working offline, skipping untested ErrorLog path"
                     $ParameterString += "-e$($CurrentStartup.ErrorLog);"
-                }
-                else {
+                } else {
                     if ($Force) {
                         $ParameterString += "-e$($newstartup.ErrorLog);"
-                    }
-                    elseif (Test-DbaPath -SqlInstance $server -SqlCredential $SqlCredential -Path (Split-Path $newstartup.ErrorLog -Parent)) {
+                    } elseif (Test-DbaPath -SqlInstance $server -SqlCredential $SqlCredential -Path (Split-Path $newstartup.ErrorLog -Parent)) {
                         $ParameterString += "-e$($newstartup.ErrorLog);"
-                    }
-                    else {
+                    } else {
                         Stop-Function -Message "Specified folder for ErrorLog  file is not reachable by $SqlInstance"
                         return
                     }
                 }
-            }
-            else {
+            } else {
                 Stop-Function -Message "ErrorLog value must be provided"
                 return
             }
@@ -286,46 +275,38 @@ function Set-DbaStartupParameter {
                 if ($offline -and -not $Force) {
                     Write-Message -Level Warning -Message "Working offline, skipping untested MasterLog path"
                     $ParameterString += "-l$($CurrentStartup.MasterLog);"
-                }
-                else {
+                } else {
                     if ($Force) {
                         $ParameterString += "-l$($newstartup.MasterLog);"
-                    }
-                    elseif (Test-DbaPath -SqlInstance $server -SqlCredential $SqlCredential -Path (Split-Path $newstartup.MasterLog -Parent)) {
+                    } elseif (Test-DbaPath -SqlInstance $server -SqlCredential $SqlCredential -Path (Split-Path $newstartup.MasterLog -Parent)) {
                         $ParameterString += "-l$($newstartup.MasterLog);"
-                    }
-                    else {
+                    } else {
                         Stop-Function -Message "Specified folder for Master Log  file is not reachable by $SqlInstance"
                         return
                     }
                 }
-            }
-            else {
+            } else {
                 Stop-Function -Message "MasterLog value must be provided."
                 return
             }
-        }
-        else {
+        } else {
 
             Write-Message -Level Verbose -Message "Sql instance is presently configured for single user, skipping path validation"
             if ($newstartup.MasterData.Length -gt 0) {
                 $ParameterString += "-d$($newstartup.MasterData);"
-            }
-            else {
+            } else {
                 Stop-Function -Message "Must have a value for MasterData"
                 return
             }
             if ($newstartup.ErrorLog.Length -gt 0) {
                 $ParameterString += "-e$($newstartup.ErrorLog);"
-            }
-            else {
+            } else {
                 Stop-Function -Message "Must have a value for Errorlog"
                 return
             }
             if ($newstartup.MasterLog.Length -gt 0) {
                 $ParameterString += "-l$($newstartup.MasterLog);"
-            }
-            else {
+            } else {
                 Stop-Function -Message "Must have a value for MsterLog"
                 return
             }
@@ -346,8 +327,7 @@ function Set-DbaStartupParameter {
                     $SingleUserDetails = """$SingleUserDetails"""
                 }
                 $ParameterString += "-m$SingleUserDetails;"
-            }
-            else {
+            } else {
                 $ParameterString += "-m;"
             }
         }
@@ -371,18 +351,15 @@ function Set-DbaStartupParameter {
                 $newstartup.TraceFlags = $TraceFlags -join ','
                 $ParameterString += (($TraceFlags.split(',') | ForEach-Object { "-T$_" }) -join ';') + ";"
             }
-        }
-        else {
+        } else {
             if ('TraceFlags' -in $PsBoundParameters.keys) {
                 if ($null -eq $TraceFlags) { $TraceFlags = '' }
                 $oldflags = @($currentstartup.TraceFlags) -split ',' | Where-Object { $_ -ne 'None' }
                 $newflags = $TraceFlags
                 $newstartup.TraceFlags = (@($oldFlags) + @($newflags) | Sort-Object -Unique) -join ','
-            }
-            elseif ($TraceFlagsOverride) {
+            } elseif ($TraceFlagsOverride) {
                 $newstartup.TraceFlags = ''
-            }
-            else {
+            } else {
                 $newstartup.TraceFlags = if ($currentstartup.TraceFlags -eq 'None') { }
                 else { $currentstartup.TraceFlags -join ',' }
             }
@@ -414,8 +391,7 @@ function Set-DbaStartupParameter {
             $wmisvc.Refresh()
             if ($wmisvc.StartupParameters -eq $ParameterString) {
                 $true
-            }
-            else {
+            } else {
                 $false
             }
         }
@@ -426,8 +402,7 @@ function Set-DbaStartupParameter {
                     $response = Invoke-ManagedComputerCommand -ComputerName $instance -Credential $Credential -ScriptBlock $Scriptblock -ArgumentList $instance, $displayname, $ParameterString -EnableException
                     $output = Get-DbaStartupParameter -SqlInstance $server -Credential $Credential -EnableException
                     Add-Member -Force -InputObject $output -MemberType NoteProperty -Name OriginalStartupParameters -Value $originalparamstring
-                }
-                else {
+                } else {
                     $response = Invoke-ManagedComputerCommand -ComputerName $instance -ScriptBlock $Scriptblock -ArgumentList $instance, $displayname, $ParameterString -EnableException
                     $output = Get-DbaStartupParameter -SqlInstance $server -EnableException
                     Add-Member -Force -InputObject $output -MemberType NoteProperty -Name OriginalStartupParameters -Value $originalparamstring
@@ -436,11 +411,11 @@ function Set-DbaStartupParameter {
                 $output
 
                 Write-Message -Level Output -Message "Startup parameters changed on $SqlInstance. You must restart SQL Server for changes to take effect."
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Startup parameters failed to change on $SqlInstance. " -Target $SqlInstance -ErrorRecord $_
                 return
             }
         }
     }
 }
+

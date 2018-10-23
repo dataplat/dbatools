@@ -1,5 +1,5 @@
-﻿function Format-DbaBackupInformation {
-<#
+function Format-DbaBackupInformation {
+    <#
     .SYNOPSIS
         Transforms the data in a dbatools BackupHistory object for a restore
 
@@ -116,12 +116,10 @@
             if ($ReplaceDatabaseName -is [string] -or $ReplaceDatabaseName.ToString() -ne 'System.Collections.Hashtable') {
                 Write-Message -Message "String passed in for DB rename" -Level Verbose
                 $ReplaceDatabaseNameType = 'single'
-            }
-            elseif ($ReplaceDatabaseName -is [HashTable] -or $ReplaceDatabaseName.ToString() -eq 'System.Collections.Hashtable' ) {
+            } elseif ($ReplaceDatabaseName -is [HashTable] -or $ReplaceDatabaseName.ToString() -eq 'System.Collections.Hashtable' ) {
                 Write-Message -Message "Hashtable passed in for DB rename" -Level Verbose
                 $ReplaceDatabaseNameType = 'multi'
-            }
-            else {
+            } else {
                 Write-Message -Message "ReplacemenDatabaseName is $($ReplaceDatabaseName.Gettype().ToString()) - $ReplaceDatabaseName" -level Verbose
             }
         }
@@ -166,8 +164,7 @@
             if ($ReplaceDatabaseNameType -eq 'single' -and $ReplaceDatabaseName -ne '' ) {
                 $History.Database = $ReplaceDatabaseName
                 Write-Message -Message "New DbName (String) = $($History.Database)" -Level Verbose
-            }
-            elseif ($ReplaceDatabaseNameType -eq 'multi') {
+            } elseif ($ReplaceDatabaseNameType -eq 'multi') {
                 if ($null -ne $ReplaceDatabaseName[$History.Database]) {
                     $History.Database = $ReplaceDatabaseName[$History.Database]
                     Write-Message -Message "New DbName (Hash) = $($History.Database)" -Level Verbose
@@ -180,8 +177,7 @@
                         if ($null -ne $FileMapping[$_.LogicalName]) {
                             $_.PhysicalName = $FileMapping[$_.LogicalName]
                         }
-                    }
-                    else {
+                    } else {
                         if ($ReplaceDbNameInFile -eq $true) {
                             $_.PhysicalName = $_.PhysicalName -Replace $History.OriginalDatabase, $History.Database
                         }
@@ -192,20 +188,16 @@
                             if ('' -ne $DataFileDirectory) {
                                 $RestoreDir = $DataFileDirectory
                             }
-                        }
-                        elseif ($_.Type -eq 'L' -or $_.FileType -eq 'L') {
+                        } elseif ($_.Type -eq 'L' -or $_.FileType -eq 'L') {
                             if ('' -ne $LogFileDirectory) {
                                 $RestoreDir = $LogFileDirectory
-                            }
-                            elseif ('' -ne $DataFileDirectory) {
+                            } elseif ('' -ne $DataFileDirectory) {
                                 $RestoreDir = $DataFileDirectory
                             }
-                        }
-                        elseif ($_.Type -eq 'S' -or $_.FileType -eq 'S') {
+                        } elseif ($_.Type -eq 'S' -or $_.FileType -eq 'S') {
                             if ('' -ne $DestinationFileStreamDirectory) {
                                 $RestoreDir = $DestinationFileStreamDirectory
-                            }
-                            elseif ('' -ne $DataFileDirectory) {
+                            } elseif ('' -ne $DataFileDirectory) {
                                 $RestoreDir = $DataFileDirectory
                             }
                         }
@@ -218,7 +210,7 @@
             if ('' -ne $RebaseBackupFolder -and $History.FullName[0] -notmatch 'http') {
                 Write-Message -Message 'Rebasing backup files' -Level Verbose
 
-                for ($j = 0; $j -lt $History.fullname.count; $j++){
+                for ($j = 0; $j -lt $History.fullname.count; $j++) {
                     $file = [System.IO.FileInfo]($History.fullname[$j])
                     $History.fullname[$j] = $RebaseBackupFolder + "\" + $file.BaseName + $file.Extension
                 }
@@ -229,3 +221,4 @@
         }
     }
 }
+

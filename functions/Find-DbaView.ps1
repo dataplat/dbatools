@@ -1,5 +1,5 @@
-﻿function Find-DbaView {
-<#
+function Find-DbaView {
+    <#
     .SYNOPSIS
         Returns all views that contain a specific case-insensitive string or regex pattern.
 
@@ -92,8 +92,7 @@
         foreach ($Instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $Instance -SqlCredential $SqlCredential
-            }
-            catch {
+            } catch {
                 Write-Message -Level Warning -Message "Failed to connect to: $Instance"
                 continue
             }
@@ -105,8 +104,7 @@
 
             if ($IncludeSystemDatabases) {
                 $dbs = $server.Databases | Where-Object { $_.Status -eq "normal" }
-            }
-            else {
+            } else {
                 $dbs = $server.Databases | Where-Object { $_.Status -eq "normal" -and $_.IsSystemObject -eq $false }
             }
 
@@ -160,8 +158,7 @@
                             } | Select-DefaultView -ExcludeProperty View, ViewFullText
                         }
                     }
-                }
-                else {
+                } else {
                     $Views = $db.Views
 
                     foreach ($vw in $Views) {
@@ -202,3 +199,4 @@
         Write-Message -Level Verbose -Message "Evaluated $everyservervwcount total views"
     }
 }
+

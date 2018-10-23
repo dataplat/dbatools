@@ -1,6 +1,6 @@
-﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Remove-DbaAgListener {
-<#
+    <#
     .SYNOPSIS
         Removes a listener from an availability group on a SQL Server instance.
         
@@ -81,18 +81,18 @@ function Remove-DbaAgListener {
                     $ag = $aglistener.Parent.Name
                     $aglistener.Parent.AvailabilityGroupListeners[$aglistener.Name].Drop()
                     [pscustomobject]@{
-                        ComputerName = $aglistener.ComputerName
-                        InstanceName = $aglistener.InstanceName
-                        SqlInstance  = $aglistener.SqlInstance
+                        ComputerName      = $aglistener.ComputerName
+                        InstanceName      = $aglistener.InstanceName
+                        SqlInstance       = $aglistener.SqlInstance
                         AvailabilityGroup = $ag
-                        Listener     = $aglistener.Name
-                        Status       = "Removed"
+                        Listener          = $aglistener.Name
+                        Status            = "Removed"
                     }
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
                 }
             }
         }
     }
 }
+

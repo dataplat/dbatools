@@ -1,4 +1,4 @@
-﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Remove-DbaDbMasterKey {
     <#
     .SYNOPSIS
@@ -104,11 +104,11 @@ function Remove-DbaDbMasterKey {
                         Database     = $db.Name
                         Status       = "Master key removed"
                     }
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
                 }
             }
         }
     }
 }
+

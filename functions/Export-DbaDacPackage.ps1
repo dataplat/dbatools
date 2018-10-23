@@ -1,4 +1,4 @@
-﻿function Export-DbaDacPackage {
+function Export-DbaDacPackage {
     <#
     .SYNOPSIS
         Exports a dacpac from a server.
@@ -27,13 +27,13 @@
 
     .PARAMETER AllUserDatabases
         Run command against all user databases
-        
+
     .PARAMETER Type
         Selecting the type of the export: Dacpac (default) or Bacpac.
 
     .PARAMETER Table
         List of the tables to include into the export. Should be provided as an array of strings: dbo.Table1, Table2, Schema1.Table3.
-    
+
     .PARAMETER DacOption
         Export options for a corresponding export type. Can be created by New-DbaDacOption -Type Dacpac | Bacpac
 
@@ -73,7 +73,7 @@
         PS C:\> Export-DbaDacPackage -SqlInstance sql2016 -Database DB1 -Options
 
         Uses DacOption object to set the CommandTimeout to 0 then extracts the dacpac for DB1 on sql2016 to $home\Documents\DB1.dacpac including all table data.
-        
+
     .EXAMPLE
         PS C:\> Export-DbaDacPackage -SqlInstance sql2016 -AllUserDatabases -ExcludeDatabase "DBMaintenance","DBMonitoring" C:\temp
 
@@ -126,13 +126,11 @@
             }
             $leaf = Split-Path $path -Leaf
             $fileName = Join-Path (Get-Item $parentFolder) $leaf
-        }
-        else {
+        } else {
             $fileItem = Get-Item $Path
             if ($fileItem -is [System.IO.DirectoryInfo]) {
                 $parentFolder = $fileItem.FullName
-            }
-            elseif ($fileItem -is [System.IO.FileInfo]) {
+            } elseif ($fileItem -is [System.IO.FileInfo]) {
                 $fileName = $fileItem.FullName
             }
         }
@@ -141,18 +139,16 @@
         if ((Test-Path $dacfxPath) -eq $false) {
             Stop-Function -Message 'Dac Fx library not found.' -EnableException $EnableException
             return
-        }
-        else {
+        } else {
             try {
                 Add-Type -Path $dacfxPath
                 Write-Message -Level Verbose -Message "Dac Fx loaded."
-            }
-            catch {
+            } catch {
                 Stop-Function -Message 'No usable version of Dac Fx found.' -ErrorRecord $_
                 return
             }
         }
-        
+
         #check that at least one of the DB selection parameters was specified
         if (!$AllUserDatabases -and !$Database) {
             Stop-Function -Message "Either -Database or -AllUserDatabases should be specified" -Continue
@@ -163,14 +159,13 @@
                 Stop-Function -Message "Microsoft.SqlServer.Dac.DacExtractOptions object type is expected - got $($DacOption.GetType())."
                 return
             }
-        }
-        elseif ($Type -eq 'Bacpac') {
+        } elseif ($Type -eq 'Bacpac') {
             if ($DacOption -and $DacOption -isnot [Microsoft.SqlServer.Dac.DacExportOptions]) {
                 Stop-Function -Message "Microsoft.SqlServer.Dac.DacExportOptions object type is expected - got $($DacOption.GetType())."
                 return
             }
         }
-        
+
         #Create a tuple to be used as a table filter
         if ($Table) {
             $tblList = New-Object 'System.Collections.Generic.List[Tuple[String, String]]'
@@ -179,23 +174,20 @@
                 if ($tableSplit.Count -gt 1) {
                     $tblName = $tableSplit[-1]
                     $schemaName = $tableSplit[-2]
-                }
-                else {
+                } else {
                     $tblName = [string]$tableSplit
                     $schemaName = 'dbo'
                 }
                 $tblList.Add((New-Object "tuple[String, String]" -ArgumentList $schemaName, $tblName))
             }
-        }
-        else {
+        } else {
             $tblList = $null
         }
 
         foreach ($instance in $sqlinstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
             $cleaninstance = $instance.ToString().Replace('\', '-')
@@ -213,26 +205,23 @@
                 }
                 if ($fileName) {
                     $currentFileName = $fileName
-                }
-                else {
+                } else {
                     if ($Type -eq 'Dacpac') { $ext = 'dacpac' }
                     elseif ($Type -eq 'Bacpac') { $ext = 'bacpac' }
                     $currentFileName = Join-Path $parentFolder "$cleaninstance-$dbname.$ext"
                 }
                 Write-Message -Level Verbose -Message "Using connection string $connstring"
-                
+
                 #using SMO by default
                 if ($PsCmdlet.ParameterSetName -eq 'SMO') {
                     try {
-                        $dacSvc = New-Object -TypeName Microsoft.SqlServer.Dac.DacServices -ArgumentList $connstring -ErrorAction Stop
-                    }
-                    catch {
+                        $dacSvc = New-Object -TypeName Microsoft.SqlServer.Dac.DacServices -ArgumentList $connstring -ErrorAction Stop
+                    } catch {
                         Stop-Function -Message "Could not connect to the connection string $connstring" -Target $instance -Continue
                     }
                     if (!$DacOption) {
                         $opts = New-DbaDacOption -Type $Type -Action Export
-                    }
-                    else {
+                    } else {
                         $opts = $DacOption
                     }
                     $global:output = @()
@@ -244,29 +233,23 @@
                         $version = New-Object System.Version -ArgumentList '1.0.0.0'
                         try {
                             $dacSvc.Extract($currentFileName, $dbname, $dbname, $version, $null, $tblList, $opts, $null)
-                        }
-                        catch {
+                        } catch {
                             Stop-Function -Message "DacServices extraction failure" -ErrorRecord $_ -Continue
-                        }
-                        finally {
+                        } finally {
                             Unregister-Event -SourceIdentifier "msg"
                         }
-                    }
-                    elseif ($Type -eq 'Bacpac') {
+                    } elseif ($Type -eq 'Bacpac') {
                         Write-Message -Level Verbose -Message "Initiating Bacpac export to $currentFileName"
                         try {
                             $dacSvc.ExportBacpac($currentFileName, $dbname, $opts, $tblList, $null)
-                        }
-                        catch {
+                        } catch {
                             Stop-Function -Message "DacServices export failure" -ErrorRecord $_ -Continue
-                        }
-                        finally {
+                        } finally {
                             Unregister-Event -SourceIdentifier "msg"
                         }
                     }
                     $finalResult = ($global:output -join "`r`n" | Out-String).Trim()
-                }
-                elseif ($PsCmdlet.ParameterSetName -eq 'CMD') {
+                } elseif ($PsCmdlet.ParameterSetName -eq 'CMD') {
                     if ($Type -eq 'Dacpac') { $action = 'Extract' }
                     elseif ($Type -eq 'Bacpac') { $action = 'Export' }
                     $cmdConnString = $connstring.Replace('"', "'")
@@ -290,8 +273,7 @@
                         $process.WaitForExit()
                         Write-Message -level Verbose -Message "StandardOutput: $stdout"
                         $finalResult = $stdout
-                    }
-                    catch {
+                    } catch {
                         Stop-Function -Message "SQLPackage Failure" -ErrorRecord $_ -Continue
                     }
 

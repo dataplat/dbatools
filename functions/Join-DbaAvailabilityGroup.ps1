@@ -1,6 +1,6 @@
-﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Join-DbaAvailabilityGroup {
-<#
+    <#
     .SYNOPSIS
         Joins a secondary replica to an availability group on a SQL Server instance.
 
@@ -83,8 +83,7 @@ function Join-DbaAvailabilityGroup {
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
             
@@ -92,8 +91,7 @@ function Join-DbaAvailabilityGroup {
                 if ($Pscmdlet.ShouldProcess($server.Name, "Joining $ag")) {
                     try {
                         $server.JoinAvailabilityGroup($ag)
-                    }
-                    catch {
+                    } catch {
                         Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
                     }
                 }
@@ -101,3 +99,4 @@ function Join-DbaAvailabilityGroup {
         }
     }
 }
+

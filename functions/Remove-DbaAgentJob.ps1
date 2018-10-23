@@ -1,6 +1,6 @@
-﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Remove-DbaAgentJob {
-<#
+    <#
     .SYNOPSIS
         Remove-DbaAgentJob removes a job.
 
@@ -93,8 +93,7 @@ function Remove-DbaAgentJob {
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -138,8 +137,7 @@ function Remove-DbaAgentJob {
                         Name         = $currentJob.Name
                         Status       = 'Dropped'
                     }
-                }
-                catch {
+                } catch {
                     Write-Message -Level Verbose -Message "Could not drop job $job on $server"
 
                     [pscustomobject]@{
@@ -154,3 +152,4 @@ function Remove-DbaAgentJob {
         }
     }
 }
+

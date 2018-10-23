@@ -1,5 +1,5 @@
-﻿function Find-DbaSimilarTable {
-<#
+function Find-DbaSimilarTable {
+    <#
     .SYNOPSIS
         Returns all tables/views that are similar in structure by comparing the column names of matching and matched tables/views
 
@@ -189,8 +189,7 @@
 
         if ($wherearray.length -gt 0) {
             $sqlWhere = "$sqlWhere " + ($wherearray -join " AND ")
-        }
-        else {
+        } else {
             $sqlWhere = ""
         }
 
@@ -198,8 +197,7 @@
         $matchThreshold = 0
         if ($MatchPercentThreshold) {
             $matchThreshold = $MatchPercentThreshold
-        }
-        else {
+        } else {
             $matchThreshold = 0
         }
 
@@ -218,8 +216,7 @@
 
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -227,8 +224,7 @@
             #Use IsAccessible instead of Status -eq 'normal' because databases that are on readable secondaries for AG or mirroring replicas will cause errors to be thrown
             if ($IncludeSystemDatabases) {
                 $dbs = $server.Databases | Where-Object { $_.IsAccessible -eq $true }
-            }
-            else {
+            } else {
                 $dbs = $server.Databases | Where-Object { $_.IsAccessible -eq $true -and $_.IsSystemObject -eq $false }
             }
 
@@ -284,3 +280,4 @@
         Write-Message -Level Verbose -Message "Found $everyServerVwCount total tables/views"
     }
 }
+

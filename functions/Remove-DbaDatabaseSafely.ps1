@@ -1,5 +1,5 @@
-﻿function Remove-DbaDatabaseSafely {
-<#
+function Remove-DbaDatabaseSafely {
+    <#
     .SYNOPSIS
         Safely removes a SQL Database and creates an Agent Job to restore it.
 
@@ -166,8 +166,7 @@
                 Stop-Function -Message "Backup folder must be a network share if the source and destination servers are not the same." -ErrorRecord $_ -Target $backupFolder
                 return
             }
-        }
-        else {
+        } else {
             $destserver = $sourceserver
         }
 
@@ -202,8 +201,7 @@
             param ()
             if ($destserver.VersionMajor -eq 8) {
                 $serviceName = 'MSSQLSERVER'
-            }
-            else {
+            } else {
                 $instance = $destserver.InstanceName
                 if ($instance.length -eq 0) { $instance = "MSSQLSERVER" }
                 $serviceName = "SQL Server Agent ($instance)"
@@ -262,8 +260,7 @@
 
                     if ($force) {
                         return $true
-                    }
-                    else {
+                    } else {
                         return $false
                     }
                 }
@@ -288,8 +285,7 @@
                         $category.Name = $categoryname
                         $category.Create()
                         Write-Message -Level Verbose -Message "Created Agent Job Category $categoryname."
-                    }
-                    catch {
+                    } catch {
                         Stop-Function -Message "FAILED : To Create Agent Job Category - $categoryname - Aborting." -Target $categoryname -ErrorRecord $_
                         return
                     }
@@ -348,8 +344,7 @@
                     $restore.Devices.Add($device)
                     $restorescript = $restore.script($server)
                     return $restorescript
-                }
-                else {
+                } else {
                     $percent = [Microsoft.SqlServer.Management.Smo.PercentCompleteEventHandler] {
                         Write-Progress -id 1 -activity "Restoring $dbname to $servername" -percentcomplete $_.Percent -status ([System.String]::Format("Progress: {0} %", $_.Percent))
                     }
@@ -371,8 +366,7 @@
 
                     return $true
                 }
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Restore failed" -ErrorRecord $_ -Target $dbname
                 return $false
             }
@@ -385,8 +379,7 @@
         }
         try {
             Start-SqlAgent
-        }
-        catch {
+        } catch {
             Stop-Function -Message "Failure starting SQL Agent" -ErrorRecord $_
             return
         }
@@ -426,8 +419,7 @@
                         Continue
                     }
                 }
-            }
-            else {
+            } else {
                 Write-Message -Level Verbose -Message "Couldn't find last full backup time for database $dbname using Get-DbaBackupHistory."
             }
 
@@ -438,8 +430,7 @@
             if ($jobServer.Jobs[$jobname].count -gt 0) {
                 if ($force -eq $false) {
                     Stop-Function -Message "FAILED: The Job $jobname already exists. Have you done this before? Rename the existing job and try again or use -Force to drop and recreate." -Continue
-                }
-                else {
+                } else {
                     if ($Pscmdlet.ShouldProcess($dbname, "Dropping $jobname on $source")) {
                         Write-Message -Level Verbose -Message "Dropping $jobname on $source."
                         $jobServer.Jobs[$jobname].Drop()
@@ -460,8 +451,7 @@
                         if ($force -eq $false) {
                             Write-Message -Level Verbose -Message "DBCC failed for $dbname (you should check that).  Aborting routine for this database."
                             continue
-                        }
-                        else {
+                        } else {
                             Write-Message -Level Verbose -Message "DBCC failed, but Force specified. Continuing."
                         }
                     }
@@ -484,8 +474,7 @@
                     if ($force -and $dbccgood -eq $false) {
 
                         $filename = "$backupFolder\$($dbname)_DBCCERROR_$timenow.bak"
-                    }
-                    else {
+                    } else {
                         $filename = "$backupFolder\$($dbname)_Final_Before_Drop_$timenow.bak"
                     }
 
@@ -518,12 +507,10 @@
                         }
 
                         Write-Message -Level Verbose -Message "Restore Verify Only for $filename succeeded."
-                    }
-                    catch {
+                    } catch {
                         Stop-Function -Message "FAILED : Restore Verify Only failed for $filename on $server - aborting routine for this database. Exception: $_" -Target $filename -ErrorRecord $_ -Continue
                     }
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "FAILED : Restore Verify Only failed for $filename on $server - aborting routine for this database. Exception: $_" -Target $filename -ErrorRecord $_ -Continue
                 }
             }
@@ -552,8 +539,7 @@
                             Write-Message -Level Verbose -Message "Created Agent Job $jobname on $destination."
                             $job.Create()
                         }
-                    }
-                    catch {
+                    } catch {
                         Stop-Function -Message "FAILED : To Create Agent Job $jobname on $destination - aborting routine for this database." -Target $categoryname -ErrorRecord $_ -Continue
                     }
 
@@ -587,8 +573,7 @@
                         }
                         $jobStartStepid = $jobStep.ID
                         Write-Message -Level Verbose -Message "Created Agent JobStep $jobStepName on $destination."
-                    }
-                    catch {
+                    } catch {
                         Stop-Function -Message "FAILED : To Create Agent JobStep $jobStepName on $destination - Aborting." -Target $jobStepName -ErrorRecord $_ -Continue
                     }
                     if ($Pscmdlet.ShouldProcess($destination, "Applying Agent Job $jobname to $destination")) {
@@ -596,8 +581,7 @@
                         $job.StartStepID = $jobStartStepid
                         $job.Alter()
                     }
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "FAILED : To Create Agent Job $jobname on $destination - aborting routine for $dbname. Exception: $_" -Target $jobname -ErrorRecord $_ -Continue
                 }
             }
@@ -607,8 +591,7 @@
                 try {
                     $null = Remove-DbaDatabase -SqlInstance $sourceserver -Database $dbname -Confirm:$false
                     Write-Message -Level Verbose -Message "Dropped $dbname Database on $source prior to running the Agent Job"
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "FAILED : To Drop database $dbname on $server - aborting routine for $dbname. Exception: $_" -Continue
                 }
             }
@@ -632,8 +615,7 @@
                     Write-Message -Level Verbose -Message "Restore Job $jobname has completed on $destination."
                     Write-Message -Level Verbose -Message "Sleeping for a few seconds to ensure the next step (DBCC) succeeds."
                     Start-Sleep -Seconds 10 ## This is required to ensure the next DBCC Check succeeds
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "FAILED : Restore Job $jobname failed on $destination - aborting routine for $dbname. Exception: $_" -Continue
                 }
 
@@ -671,8 +653,7 @@
                 try {
                     $null = Remove-DbaDatabase -SqlInstance $sourceserver -Database $dbname -Confirm:$false
                     Write-Message -Level Verbose -Message "Dropped $dbname database on $destination."
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "FAILED : To Drop database $dbname on $destination - Aborting. Exception: $_" -Target $dbname -ErrorRecord $_ -Continue
                 }
             }
@@ -702,3 +683,4 @@
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Remove-SqlDatabaseSafely
     }
 }
+

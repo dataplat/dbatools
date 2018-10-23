@@ -1,5 +1,5 @@
-﻿function Get-DbatoolsConfigValue {
-<#
+function Get-DbatoolsConfigValue {
+    <#
     .SYNOPSIS
         Returns the configuration value stored under the specified name.
 
@@ -56,8 +56,8 @@
 
     if ($NotNull -and ($temp -eq $null)) {
         Stop-Function -Message "No Configuration Value available for $Name" -EnableException $true -Category InvalidData -Target $FullName
-    }
-    else {
+    } else {
         return $temp
     }
 }
+

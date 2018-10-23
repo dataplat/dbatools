@@ -1,6 +1,6 @@
-﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaAgHadr {
-<#
+    <#
     .SYNOPSIS
         Gets the Hadr service setting on the specified SQL Server instance.
 
@@ -46,8 +46,7 @@ function Get-DbaAgHadr {
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -59,3 +58,4 @@ function Get-DbaAgHadr {
         }
     }
 }
+

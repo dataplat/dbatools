@@ -1,5 +1,5 @@
-﻿function Export-DbaCredential {
-<#
+function Export-DbaCredential {
+    <#
     .SYNOPSIS
         Exports credentials INCLUDING PASSWORDS, unless specified otherwise, to sql file.
 
@@ -73,8 +73,7 @@
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential -MinimumVersion 9
                 $InputObject += $server.Credentials
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -92,8 +91,7 @@
             Write-Message -Level Verbose -Message "Checking if Remote Registry is enabled on $instance."
             try {
                 Invoke-Command2 -Raw -Credential $Credential -ComputerName $sourceNetBios -ScriptBlock { Get-ItemProperty -Path "HKLM:\SOFTWARE\" } -ErrorAction Stop
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Can't connect to registry on $instance." -Target $sourceNetBios -ErrorRecord $_
                 return
             }
@@ -109,12 +107,10 @@
             if ($ExcludePassword) {
                 Stop-Function -Message "So sorry, there's no other way around it for now. The password has to be exported in plain text."
                 return
-            }
-            else {
+            } else {
                 try {
                     $creds = Get-DecryptedObject -SqlInstance $server -Type Credential
-                }
-                catch {
+                } catch {
                     Stop-Function -Continue -Message "Failure" -ErrorRecord $_
                 }
                 foreach ($currentCred in $creds) {
@@ -128,13 +124,11 @@
             try {
                 if ($Append) {
                     Add-Content -Path $path -Value $sql
-                }
-                else {
+                } else {
                     Set-Content -Path $path -Value $sql
                 }
                 Get-ChildItem -Path $path
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Can't write to $path" -ErrorRecord $_ -Continue
             }
 
@@ -144,3 +138,4 @@
         }
     }
 }
+

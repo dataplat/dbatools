@@ -1,6 +1,6 @@
-﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function New-DbaXESmartQueryExec {
-<#
+    <#
     .SYNOPSIS
         This response type executes a T-SQL command against a target database whenever an event is recorded.
 
@@ -71,8 +71,7 @@ function New-DbaXESmartQueryExec {
     begin {
         try {
             Add-Type -Path "$script:PSModuleRoot\XESmartTarget\XESmartTarget.Core.dll" -ErrorAction Stop
-        }
-        catch {
+        } catch {
             Stop-Function -Message "Could not load XESmartTarget.Core.dll" -ErrorRecord $_ -Target "XESmartTarget"
             return
         }
@@ -85,8 +84,7 @@ function New-DbaXESmartQueryExec {
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 11
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -113,3 +111,4 @@ function New-DbaXESmartQueryExec {
         }
     }
 }
+

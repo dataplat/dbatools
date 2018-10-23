@@ -1,5 +1,5 @@
-﻿function Invoke-Sqlcmd2 {
-<#
+function Invoke-Sqlcmd2 {
+    <#
     .SYNOPSIS
         Runs a T-SQL script.
         
@@ -333,8 +333,7 @@
 
             try {
                 Add-Type -TypeDefinition $cSharp -ReferencedAssemblies 'System.Data', 'System.Xml' -ErrorAction stop
-            }
-            catch {
+            } catch {
                 if (-not $_.ToString() -like "*The type name 'DBNullScrubber' already exists*") {
                     Write-Warning "Could not load DBNullScrubber.  Defaulting to DataRow output: $_."
                     $As = "Datarow"
@@ -348,8 +347,7 @@
                 try {
                     Write-Verbose "Opening connection from '$($SQLConnection.State)' state."
                     $SQLConnection.Open()
-                }
-                catch {
+                } catch {
                     throw $_
                 }
             }
@@ -358,16 +356,14 @@
                 try {
                     Write-Verbose "Changing SQLConnection database from '$($SQLConnection.Database)' to $Database."
                     $SQLConnection.ChangeDatabase($Database)
-                }
-                catch {
+                } catch {
                     throw "Could not change Connection database '$($SQLConnection.Database)' to $Database`: $_"
                 }
             }
 
             if ($SQLConnection.state -like "Open") {
                 $ServerInstance = @($SQLConnection.DataSource)
-            }
-            else {
+            } else {
                 throw "SQLConnection is not open"
             }
         }
@@ -380,8 +376,7 @@
 
             if ($PSBoundParameters.Keys -contains "SQLConnection") {
                 $Conn = $SQLConnection
-            }
-            else {
+            } else {
                 $CSBuilder = New-Object -TypeName System.Data.SqlClient.SqlConnectionStringBuilder
                 $CSBuilder["Server"] = $SQLInstance
                 $CSBuilder["Database"] = $Database
@@ -395,14 +390,12 @@
                     $CSBuilder["Trusted_Connection"] = $false
                     $CSBuilder["User ID"] = $Credential.UserName
                     $CSBuilder["Password"] = $Credential.GetNetworkCredential().Password
-                }
-                else {
+                } else {
                     $CSBuilder["Integrated Security"] = $true
                 }
                 if ($ApplicationName) {
                     $CSBuilder["Application Name"] = $ApplicationName
-                }
-                else {
+                } else {
                     $ScriptName = (Get-PSCallStack)[-1].Command.ToString()
                     if ($ScriptName -ne "<ScriptBlock>") {
                         $CSBuilder["Application Name"] = $ScriptName
@@ -416,8 +409,7 @@
 
                 try {
                     $conn.Open()
-                }
-                catch {
+                } catch {
                     Write-Error $_
                     continue
                 }
@@ -432,8 +424,7 @@
             if ($ParseGO) {
                 Write-Verbose "Stripping GOs from source"
                 $Pieces = $GoSplitterRegex.Split($Query)
-            }
-            else {
+            } else {
                 $Pieces = , $Query
             }
             # Only execute non-empty statements
@@ -447,8 +438,7 @@
                         ForEach-Object {
                         if ($null -ne $_.Value) {
                             $cmd.Parameters.AddWithValue($_.Key, $_.Value)
-                        }
-                        else {
+                        } else {
                             $cmd.Parameters.AddWithValue($_.Key, [DBNull]::Value)
                         }
                     } > $null
@@ -459,8 +449,7 @@
 
                 try {
                     [void]$da.fill($ds)
-                }
-                catch [System.Data.SqlClient.SqlException] {
+                } catch [System.Data.SqlClient.SqlException] {
                     # For SQL exception
 
                     $Err = $_
@@ -485,8 +474,7 @@
                             Throw $Err
                         }
                     }
-                }
-                catch {
+                } catch {
                     # For other exception
                     Write-Verbose "Capture Other Error"
 
@@ -510,8 +498,7 @@
                             throw $Err
                         }
                     }
-                }
-                finally {
+                } finally {
                     #Close the connection
                     if (-not $PSBoundParameters.ContainsKey('SQLConnection')) {
                         $conn.Close()
@@ -563,3 +550,4 @@
         }
     }
 } #Invoke-Sqlcmd2
+

@@ -1,6 +1,6 @@
-﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaDbMasterKey {
-<#
+    <#
     .SYNOPSIS
         Gets specified database master key
 
@@ -94,3 +94,4 @@ function Get-DbaDbMasterKey {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-DbaDatabaseMasterKey
     }
 }
+

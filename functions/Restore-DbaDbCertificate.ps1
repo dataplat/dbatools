@@ -1,6 +1,6 @@
-﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Restore-DbaDbCertificate {
-<#
+    <#
     .SYNOPSIS
         Imports certificates from .cer files using SMO.
 
@@ -74,8 +74,7 @@ function Restore-DbaDbCertificate {
     process {
         try {
             $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $sqlcredential
-        }
-        catch {
+        } catch {
             Stop-Function -Message "Failed to connect to: $SqlInstance" -Target $SqlInstance -ErrorRecord $_
             return
         }
@@ -107,13 +106,11 @@ function Restore-DbaDbCertificate {
                     
                     if ($EncryptionPassword) {
                         $smocert.Create($fullcertname, $fromfile, $privatekey, [System.Runtime.InteropServices.marshal]::PtrToStringAuto([System.Runtime.InteropServices.marshal]::SecureStringToBSTR($password)), [System.Runtime.InteropServices.marshal]::PtrToStringAuto([System.Runtime.InteropServices.marshal]::SecureStringToBSTR($password)))
-                    }
-                    else {
+                    } else {
                         $smocert.Create($fullcertname, $fromfile, $privatekey, [System.Runtime.InteropServices.marshal]::PtrToStringAuto([System.Runtime.InteropServices.marshal]::SecureStringToBSTR($password)))
                     }
                     $cert = $smocert
-                }
-                catch {
+                } catch {
                     Write-Message -Level Warning -Message $_ -ErrorRecord $_ -Target $instance
                 }
             }
@@ -125,3 +122,4 @@ function Restore-DbaDbCertificate {
         
     }
 }
+

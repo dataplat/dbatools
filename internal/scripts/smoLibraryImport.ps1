@@ -1,4 +1,4 @@
-﻿$scriptBlock = {
+$scriptBlock = {
     param (
         $ModuleRoot,
 

@@ -46,3 +46,4 @@ Write-Host -Object "$indent Executing startup scripts for SQL Server 2008" -Fore
 foreach ($file in (Get-ChildItem C:\github\appveyor-lab\sql2008-startup\*.sql -Recurse -ErrorAction SilentlyContinue)) {
     Invoke-Sqlcmd2 -ServerInstance $sqlinstance -InputFile $file
 }
+

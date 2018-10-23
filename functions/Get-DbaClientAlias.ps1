@@ -1,5 +1,5 @@
-﻿function Get-DbaClientAlias {
-<#
+function Get-DbaClientAlias {
+    <#
     .SYNOPSIS
         Gets any SQL Server alias for the specified server(s)
 
@@ -95,8 +95,7 @@
 
                     if ($basekey -like "*WOW64*") {
                         $architecture = "32-bit"
-                    }
-                    else {
+                    } else {
                         $architecture = "64-bit"
                     }
 
@@ -122,10 +121,11 @@
             try {
                 Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $scriptblock -ErrorAction Stop |
                     Select-DefaultView -Property ComputerName, Architecture, NetworkLibrary, ServerName, AliasName
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -ErrorRecord $_ -Target $computer -Continue
             }
         }
     }
 }
+
+

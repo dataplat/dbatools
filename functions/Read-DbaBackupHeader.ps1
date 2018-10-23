@@ -1,7 +1,7 @@
-﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 
 function Read-DbaBackupHeader {
-<#
+    <#
     .SYNOPSIS
         Reads and displays detailed information about a SQL Server backup.
 
@@ -103,7 +103,7 @@ function Read-DbaBackupHeader {
     )
 
     begin {
-        foreach($p in $path) {
+        foreach ($p in $path) {
             if ([System.IO.Path]::GetExtension($p).Length -eq 0) {
                 Stop-Function -Message "Path ($p) should be a file, not a folder" -Category InvalidArgument
                 return
@@ -112,8 +112,7 @@ function Read-DbaBackupHeader {
         Write-Message -Level InternalComment -Message "Starting reading headers"
         try {
             $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
-        }
-        catch {
+        } catch {
             Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             return
         }
@@ -145,8 +144,7 @@ function Read-DbaBackupHeader {
 
             if ($null -eq $dataTable.Columns['CompressedBackupSize']) {
                 $formula = "0"
-            }
-            else {
+            } else {
                 $formula = "CompressedBackupSize / 1024 / 1024"
             }
 
@@ -177,8 +175,7 @@ function Read-DbaBackupHeader {
         foreach ($pathItem in $Path) {
             if ($null -ne $pathItem.FullName) {
                 $pathStrings += $pathItem.FullName
-            }
-            else {
+            } else {
                 $pathStrings += $pathItem
             }
         }
@@ -202,14 +199,12 @@ function Read-DbaBackupHeader {
         foreach ($file in $pathGroup) {
             if ($file -like 'http*') {
                 $deviceType = 'URL'
-            }
-            else {
+            } else {
                 $deviceType = 'FILE'
             }
             if ($pathCount -eq 1) {
                 $fileExists = $testPath
-            }
-            else {
+            } else {
                 $fileExists = ($testPath | Where-Object FilePath -eq $file).FileExists
             }
             if ($fileExists -or $deviceType -eq 'URL') {
@@ -236,8 +231,7 @@ function Read-DbaBackupHeader {
                     isRetrieved = $false
                     started     = Get-Date
                 }
-            }
-            else {
+            } else {
                 Write-Message -Level Warning -Message "File $file does not exist or access denied. The SQL Server service account may not have access to the source directory."
             }
         }
@@ -254,8 +248,7 @@ function Read-DbaBackupHeader {
                     if ($thread.thread.HadErrors) {
                         if ($thread.deviceType -eq 'FILE') {
                             Stop-Function -Message "Problem found with $($thread.file)." -Target $thread.file -ErrorRecord $thread.thread.Streams.Error -Continue
-                        }
-                        else {
+                        } else {
                             Stop-Function -Message "Unable to read $($thread.file), check credential $AzureCredential and network connectivity." -Target $thread.file -ErrorRecord $thread.thread.Streams.Error -Continue
                         }
                     }
@@ -271,11 +264,9 @@ function Read-DbaBackupHeader {
                     }
                     if ($Simple) {
                         $dataTable | Select-Object DatabaseName, BackupFinishDate, RecoveryModel, BackupSizeMB, CompressedBackupSizeMB, DatabaseCreationDate, UserName, ServerName, SqlVersion, BackupPath
-                    }
-                    elseif ($FileList) {
+                    } elseif ($FileList) {
                         $dataTable.filelist
-                    }
-                    else {
+                    } else {
                         $dataTable
                     }
 
@@ -288,3 +279,4 @@ function Read-DbaBackupHeader {
         $runspacePool.Close()
     }
 }
+

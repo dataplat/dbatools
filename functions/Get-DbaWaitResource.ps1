@@ -1,5 +1,5 @@
-﻿function Get-DbaWaitResource {
-<#
+function Get-DbaWaitResource {
+    <#
     .SYNOPSIS
         Returns the resource being waited upon
 
@@ -71,8 +71,7 @@
 
         try {
             $server = Connect-SqlInstance -SqlInstance $sqlinstance -SqlCredential $SqlCredential
-        }
-        catch {
+        } catch {
             Write-Message -Level Warning -Message "Cannot connect to $SqlInstance"
         }
 
@@ -95,8 +94,7 @@
             $ObjectIdSQL = "dbcc traceon (3604); dbcc page ($dbid,$($matches.fileID),$($matches.PageID),2) with tableresults;"
             try {
                 $ObjectID = ($server.databases[$dbname].Query($ObjectIdSQL) | Where-Object Field -eq 'Metadata: ObjectId').Value
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "You've requested a page beyond the end of the database, exiting"
                 return
             }
@@ -152,15 +150,14 @@
                 $Data = $server.databases[$dbname].query($DataSql)
                 if ($null -eq $data) {
                     Write-Message -Level warning -Message "Could not retrieve the data. It may have been deleted or moved since the wait resource value was generated"
-                }
-                else {
+                } else {
                     $output | Add-Member -Type NoteProperty -Name ObjectData -Value $Data
                     $output | Select-Object * -ExpandProperty ObjectData
                 }
-            }
-            else {
+            } else {
                 $output
             }
         }
     }
 }
+

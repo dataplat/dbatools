@@ -1,6 +1,6 @@
-﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function New-DbaAvailabilityGroup {
-<#
+    <#
     .SYNOPSIS
         Automates the creation of availaibility groups.
 
@@ -234,8 +234,7 @@ function New-DbaAvailabilityGroup {
         
         try {
             $server = Connect-SqlInstance -SqlInstance $Primary -SqlCredential $PrimarySqlCredential
-        }
-        catch {
+        } catch {
             Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Primary
             return
         }
@@ -296,8 +295,7 @@ function New-DbaAvailabilityGroup {
             foreach ($computer in $Secondary) {
                 try {
                     $secondaries += Connect-SqlInstance -SqlInstance $computer -SqlCredential $SecondarySqlCredential
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Primary
                     return
                 }
@@ -337,8 +335,7 @@ function New-DbaAvailabilityGroup {
                 if ((Test-Bound -ParameterName UseLastBackups)) {
                     Stop-Function -Message "$dbName not set to full recovery. UseLastBackups cannot be used."
                     return
-                }
-                else {
+                } else {
                     Set-DbaDbRecoveryModel -SqlInstance $Primary -SqlCredential $PrimarySqlCredential -Database $primarydb.Name -RecoveryModel Full
                 }
             }
@@ -379,8 +376,7 @@ function New-DbaAvailabilityGroup {
                 }
                 
                 $null = Add-DbaAgReplica @replicaparams -EnableException -SqlInstance $server
-            }
-            catch {
+            } catch {
                 $msg = $_.Exception.InnerException.InnerException.Message
                 if (-not $msg) {
                     $msg = $_
@@ -405,8 +401,7 @@ function New-DbaAvailabilityGroup {
                         foreach ($second in $secondaries) {
                             $null = $second.Query($sql)
                         }
-                    }
-                    catch {
+                    } catch {
                         Stop-Function -Message "Failure adding cluster service account permissions" -ErrorRecord $_
                     }
                 }
@@ -421,8 +416,7 @@ function New-DbaAvailabilityGroup {
                 try {
                     # Add replicas
                     $null = Add-DbaAgReplica @replicaparams -EnableException -SqlInstance $second
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Failure" -ErrorRecord $_ -Target $second -Continue
                 }
             }
@@ -431,8 +425,7 @@ function New-DbaAvailabilityGroup {
         try {
             # something is up with .net create(), force a stop
             Invoke-Create -Object $ag
-        }
-        catch {
+        } catch {
             $msg = $_.Exception.InnerException.InnerException.Message
             if (-not $msg) {
                 $msg = $_
@@ -467,8 +460,7 @@ function New-DbaAvailabilityGroup {
                             if (-not $allbackups[$db]) {
                                 if ($UseLastBackups) {
                                     $allbackups[$db] = Get-DbaBackupHistory -SqlInstance $primarydb.Parent -Database $primarydb.Name -IncludeCopyOnly -Last -EnableException
-                                }
-                                else {
+                                } else {
                                     $fullbackup = $primarydb | Backup-DbaDatabase -BackupDirectory $NetworkShare -Type Full -EnableException
                                     $logbackup = $primarydb | Backup-DbaDatabase -BackupDirectory $NetworkShare -Type Log -EnableException
                                     $allbackups[$db] = $fullbackup, $logbackup
@@ -479,8 +471,7 @@ function New-DbaAvailabilityGroup {
                                 # keep going to ensure output is shown even if dbs aren't added well.
                                 $null = $allbackups[$db] | Restore-DbaDatabase -SqlInstance $second -WithReplace -NoRecovery -TrustDbBackupHistory -EnableException
                             }
-                        }
-                        catch {
+                        } catch {
                             Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
                         }
                     }
@@ -496,8 +487,7 @@ function New-DbaAvailabilityGroup {
             if ($Pscmdlet.ShouldProcess($Primary, "Adding static IP listener for $Name to the Primary replica")) {
                 $null = Add-DbaAgListener -InputObject $ag -IPAddress $IPAddress -SubnetMask $SubnetMask -Port $Port -Dhcp:$Dhcp
             }
-        }
-        elseif ($Dhcp) {
+        } elseif ($Dhcp) {
             if ($Pscmdlet.ShouldProcess($Primary, "Adding DHCP listener for $Name to all replicas")) {
                 $null = Add-DbaAgListener -InputObject $ag -Port $Port -Dhcp:$Dhcp
                 foreach ($second in $secondaries) {
@@ -514,8 +504,7 @@ function New-DbaAvailabilityGroup {
                 try {
                     # join replicas to ag
                     Join-DbaAvailabilityGroup -SqlInstance $second -InputObject $ag -EnableException
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Failure" -ErrorRecord $_ -Target $second -Continue
                 }
             }
@@ -580,3 +569,4 @@ function New-DbaAvailabilityGroup {
         Get-DbaAvailabilityGroup -SqlInstance $Primary -SqlCredential $PrimarySqlCredential -AvailabilityGroup $Name
     }
 }
+

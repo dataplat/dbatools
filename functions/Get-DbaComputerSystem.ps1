@@ -1,6 +1,6 @@
-﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaComputerSystem {
-<#
+    <#
     .SYNOPSIS
         Gets computer system information from the server.
 
@@ -71,8 +71,7 @@ function Get-DbaComputerSystem {
 
                 if (Test-Bound "Credential") {
                     $computerSystem = Get-DbaCmObject -ClassName Win32_ComputerSystem -ComputerName $computerResolved -Credential $Credential
-                }
-                else {
+                } else {
                     $computerSystem = Get-DbaCmObject -ClassName Win32_ComputerSystem -ComputerName $computerResolved
                 }
 
@@ -115,8 +114,7 @@ function Get-DbaComputerSystem {
                             }
                         }
                         $awsProps = Invoke-Command2 -ComputerName $computerResolved -Credential $Credential -ScriptBlock $scriptBlock
-                    }
-                    else {
+                    } else {
                         Write-Message -Level Warning -Message "$computerResolved was not found to be an EC2 instance. Verify http://169.254.169.254 is accessible on the computer."
                     }
                 }
@@ -149,10 +147,10 @@ function Get-DbaComputerSystem {
                 }
                 $excludes = 'SystemSkuNumber', 'IsDaylightSavingsTime', 'DaylightInEffect', 'DnsHostName', 'AdminPasswordStatus'
                 Select-DefaultView -InputObject $inputObject -ExcludeProperty $excludes
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -ErrorRecord $_ -Target $computer -Continue
             }
         }
     }
 }
+

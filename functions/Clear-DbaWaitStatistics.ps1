@@ -1,5 +1,5 @@
-﻿function Clear-DbaWaitStatistics {
-<#
+function Clear-DbaWaitStatistics {
+    <#
     .SYNOPSIS
         Clears wait statistics
 
@@ -59,8 +59,7 @@
 
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -68,8 +67,7 @@
                 try {
                     $server.Query("DBCC SQLPERF (N'sys.dm_os_wait_stats', CLEAR);")
                     $status = "Success"
-                }
-                catch {
+                } catch {
                     $status = $_.Exception
                 }
 
@@ -83,3 +81,4 @@
         }
     }
 }
+

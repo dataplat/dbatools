@@ -22,3 +22,4 @@
                     'PSUseDeclaredVarsMoreThanAssignments'
                     )
 }
+

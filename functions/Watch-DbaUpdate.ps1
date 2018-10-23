@@ -1,5 +1,5 @@
-﻿function Watch-DbaUpdate {
-<#
+function Watch-DbaUpdate {
+    <#
     .SYNOPSIS
         Just for fun - checks the PowerShell Gallery every 1 hour for updates to dbatools. Notifies once per release.
 
@@ -66,8 +66,7 @@
                 Export-Clixml -InputObject $new -Path $file
                 Show-Notification -GalleryVersion $galleryVersion
             }
-        }
-        else {
+        } else {
             $directory = Split-Path $file
 
             if (!(Test-Path $directory)) {
@@ -79,3 +78,4 @@
         }
     }
 }
+

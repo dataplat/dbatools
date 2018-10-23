@@ -1,5 +1,5 @@
-﻿function Get-DbaIoLatency {
-<#
+function Get-DbaIoLatency {
+    <#
     .SYNOPSIS
         Displays IO subsystem latency statistics from sys.dm_io_virtual_file_stats.  Works on SQL Server 2005 and above.
 
@@ -130,39 +130,39 @@
 
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
             Write-Message -Level Verbose -Message "Connected to $instance"
 
             foreach ($row in $server.Query($sql)) {
                 [PSCustomObject]@{
-                    ComputerName           = $server.NetName
-                    InstanceName           = $server.ServiceName
-                    SqlInstance            = $server.DomainInstanceName
-                    DatabaseId             = $row.database_id
-                    DatabaseName           = $row.DatabaseName
-                    FileId                 = $row.file_id
-                    PhysicalName           = $row.physical_name
-                    NumberOfReads          = $row.num_of_reads
-                    IoStallRead            = $row.io_stall_read_ms
-                    NumberOfwrites         = $row.num_of_writes
-                    IoStallWrite           = $row.io_stall_write_ms
-                    IoStall                = $row.io_stall
-                    NumberOfBytesRead      = $row.num_of_bytes_read
-                    NumberOfBytesWritten   = $row.num_of_bytes_written
-                    SampleMilliseconds     = $row.sample_ms
-                    SizeOnDiskBytes        = $row.num_of_bytes_written
-                    FileHandle             = $row.file_handle
-                    ReadLatency            = $row.ReadLatency
-                    WriteLatency           = $row.WriteLatency
-                    Latency                = $row.Latency
-                    AvgBPerRead            = $row.AvgBPerRead
-                    AvgBPerWrite           = $row.AvgBPerWrite
-                    AvgBPerTransfer        = $row.AvgBPerTransfer
+                    ComputerName         = $server.NetName
+                    InstanceName         = $server.ServiceName
+                    SqlInstance          = $server.DomainInstanceName
+                    DatabaseId           = $row.database_id
+                    DatabaseName         = $row.DatabaseName
+                    FileId               = $row.file_id
+                    PhysicalName         = $row.physical_name
+                    NumberOfReads        = $row.num_of_reads
+                    IoStallRead          = $row.io_stall_read_ms
+                    NumberOfwrites       = $row.num_of_writes
+                    IoStallWrite         = $row.io_stall_write_ms
+                    IoStall              = $row.io_stall
+                    NumberOfBytesRead    = $row.num_of_bytes_read
+                    NumberOfBytesWritten = $row.num_of_bytes_written
+                    SampleMilliseconds   = $row.sample_ms
+                    SizeOnDiskBytes      = $row.num_of_bytes_written
+                    FileHandle           = $row.file_handle
+                    ReadLatency          = $row.ReadLatency
+                    WriteLatency         = $row.WriteLatency
+                    Latency              = $row.Latency
+                    AvgBPerRead          = $row.AvgBPerRead
+                    AvgBPerWrite         = $row.AvgBPerWrite
+                    AvgBPerTransfer      = $row.AvgBPerTransfer
                 } | Select-DefaultView -ExcludeProperty $excludeColumns
             }
         }
     }
 }
+
