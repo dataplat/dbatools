@@ -169,35 +169,6 @@ function New-DbaAvailabilityGroup {
 
         Creates a new availability group on sql2017 named SharePoint with a cluster type of non and a failover mode of manual
 
-    .EXAMPLE
-        PS C:\> $params = @{
-        >>    Primary = 'sql2017'
-        >>    Name    = 'SharePoint'
-        >>    IPAddress = '10.0.1.25'
-        >>    ClusterType = 'None'
-        >>    AutomatedBackupPreference = 'None'
-        >>}
-
-        PS C:\> New-DbaAvailabilityGroup @params
-
-        This needs to be updated
-
-    .EXAMPLE
-        PS C:\> $params = @{
-        >> Primary = 'sql2017a'
-        >> Secondary = 'sql2017b'
-        >> SecondarySqlCredential = 'sqladmin'
-        >> Witness = 'sql2019'
-        >> Database = 'pubs'
-        >> NetworkShare = '\\nas\sql\share'
-        >> Force = $true
-        >> Confirm = $false
-        >> }
-
-        PS C:\> Invoke-DbaDbMirror @params
-
-        This needs to be updated
-
 #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
     param (
