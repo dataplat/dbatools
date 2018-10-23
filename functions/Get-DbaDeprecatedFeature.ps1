@@ -29,24 +29,14 @@
         https://dbatools.io/Get-DbaDeprecatedFeature
 
     .EXAMPLE
-        PS C:\> Get-DbaDatabase -SqlInstance sql2008 -Database testdb, db2 | Get-DbaDeprecatedFeature
-
-        Check deprecated features on server sql2008 for only the testdb and db2 databases
-
-    .EXAMPLE
         PS C:\> Get-DbaDeprecatedFeature -SqlInstance sql2008, sqlserver2012
 
         Check deprecated features for all databases on the servers sql2008 and sqlserver2012.
 
     .EXAMPLE
-        PS C:\> Get-DbaDeprecatedFeature -SqlInstance sql2008 -Database TestDB
+        PS C:\> Get-DbaDeprecatedFeature -SqlInstance sql2008
 
-        Check deprecated features on server sql2008 for only the TestDB database
-
-    .EXAMPLE
-        PS C:\> Get-DbaDeprecatedFeature -SqlInstance sql2008 -Database TestDB -Threshold 20
-
-        Check deprecated features on server sql2008 for only the TestDB database, limiting results to 20% utilization of seed range or higher
+        Check deprecated features on server sql2008.
 
 #>
     [CmdletBinding()]

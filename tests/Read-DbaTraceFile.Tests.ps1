@@ -7,7 +7,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         $paramCount = 15
         $defaultParamCount = 11
         [object[]]$params = (Get-ChildItem function:\Read-DbaTraceFile).Parameters.Keys
-        $knownParameters = 'SqlInstance','SqlCredential','Path','Database','Login','Spid','EventClass','ObjectType','Error','EventSequence','TextData','ApplicationName','ObjectName','Where','EnableException'
+        $knownParameters = 'SqlInstance','SqlCredential','Path','Database','Login','Spid','EventClass','ObjectType','ErrorId','EventSequence','TextData','ApplicationName','ObjectName','Where','EnableException'
         It "Should contain our specific parameters" {
             ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
         }
@@ -51,4 +51,37 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $warn | Should -Be $null
         }
     }
+    Context "Verify Parameter Use" {
+
+        It "Should execute using paramters Database, Login, Spid" {
+            $results = $script:instance1, $script:instance2 | Get-DbaTrace -Id 1 | Read-DbaTraceFile -Database Master -Login sa -Spid 7 -WarningAction SilentlyContinue -WarningVariable warn
+            $warn | Should -Be $null
+        }
+        It "Should execute using paramters EventClass, ObjectType, ErrorId" {
+            $results = $script:instance1, $script:instance2 | Get-DbaTrace -Id 1 | Read-DbaTraceFile -EventClass 4 -ObjectType 4 -ErrorId 4 -WarningAction SilentlyContinue -WarningVariable warn
+            $warn | Should -Be $null
+        }
+        It "Should execute using paramters EventSequence, TextData, ApplicationName, ObjectName" {
+            $results = $script:instance1, $script:instance2 | Get-DbaTrace -Id 1 | Read-DbaTraceFile -EventSequence 4 -TextData "Text" -ApplicationName "Application" -ObjectName "Name" -WarningAction SilentlyContinue -WarningVariable warn
+            $warn | Should -Be $null
+        }
+
+    }
+    Context "Verify Failure with Mocks" {
+        It "Should Fail Connection to SqlInstance" {
+            mock Connect-SqlInstance {throw} -module dbatools
+            mock Stop-Function {"Failure"} -module dbatools
+            (Read-DbaTraceFile -SqlInstance "NotAnInstance" ) | Should -be "Failure"
+        }
+        It "Should try `$CurrentPath" {
+            #This mock forces line 257 to be tested
+            mock Test-Bound {$false} -module dbatools
+            (Read-DbaTraceFile -SqlInstance "$script:Instance2" ) | Should -Not -Be $null
+        }
+        It "Should Fail to find the Path" {
+            mock Test-DbaPath {$false} -module dbatools
+            mock Write-Message {"Path Does Not Exist"} -module dbatools
+            (Read-DbaTraceFile -SqlInstance "$script:Instance2" ) | Should -Be "Failure"
+        }
+        }
 }

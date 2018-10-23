@@ -278,7 +278,7 @@
         At each step, only the log files needed to roll the database forward are restored.
 
     .EXAMPLE
-        PS C:\> Restore-DbaDatabase -SqlInstance server\instance1 -Path c:\backups -DatabaseName example1 -WithNoRecovery
+        PS C:\> Restore-DbaDatabase -SqlInstance server\instance1 -Path c:\backups -DatabaseName example1 -NoRecovery
         PS C:\> Restore-DbaDatabase -SqlInstance server\instance1 -Recover -DatabaseName example1
 
         In this example we restore example1 database with no recovery, and then the second call is to set the database to recovery.

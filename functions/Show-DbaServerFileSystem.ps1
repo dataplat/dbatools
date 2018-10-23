@@ -37,7 +37,7 @@ function Show-DbaServerFileSystem {
         Shows a list of databases using Windows Authentication to connect to the SQL Server. Returns a string of the selected path.
 
     .EXAMPLE
-        PS C:\> Show-DbaServerFileSystem -Source sql2017 -SqlCredential $cred
+        PS C:\> Show-DbaServerFileSystem -SqlInstance sql2017 -SqlCredential $cred
 
         Shows a list of databases using SQL credentials to connect to the SQL Server. Returns a string of the selected path.
 

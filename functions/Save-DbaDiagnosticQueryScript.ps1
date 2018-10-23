@@ -44,11 +44,17 @@
     function Get-WebData {
         param ($uri)
         try {
-            $data = (Invoke-WebRequest -uri $uri -ErrorAction Stop)
+            try {
+                $data = (Invoke-TlsWebRequest -uri $uri -ErrorAction Stop)
+            }
+            catch {
+                (New-Object System.Net.WebClient).Proxy.Credentials = [System.Net.CredentialCache]::DefaultNetworkCredentials
+                $data = (Invoke-TlsWebRequest -uri $uri -ErrorAction Stop)
+            }
             return $data
         }
         catch {
-            Stop-Function -Message "Invoke-WebRequest failed: $_" -Target $data -ErrorRecord $_
+            Stop-Function -Message "Invoke-TlsWebRequest failed: $_" -Target $data -ErrorRecord $_
             return
         }
     }
@@ -91,7 +97,7 @@
         try {
             Write-Message -Level Output -Message "Downloading $($doc.URL)"
             $filename = "{0}\SQLServerDiagnosticQueries_{1}_{2}.sql" -f $Path, $doc.SQLVersion, "$($doc.FileYear)$($doc.FileMonth)"
-            Invoke-WebRequest -Uri $doc.URL -OutFile $filename -ErrorAction Stop
+            Invoke-TlsWebRequest -Uri $doc.URL -OutFile $filename -ErrorAction Stop
         }
         catch {
             Stop-Function -Message "Requesting and writing file failed: $_" -Target $filename -ErrorRecord $_

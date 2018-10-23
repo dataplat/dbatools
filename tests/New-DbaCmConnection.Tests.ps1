@@ -5,7 +5,7 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
         $paramCount = 13
-        $defaultParamCount = 11
+        $defaultParamCount = 13
         [object[]]$params = (Get-ChildItem function:\New-DbaCmConnection).Parameters.Keys
         $knownParameters = 'ComputerName','Credential','UseWindowsCredentials','OverrideExplicitCredential','DisabledConnectionTypes','DisableBadCredentialCache','DisableCimPersistence','DisableCredentialAutoRegister','EnableCredentialFailover','WindowsCredentialsAreBad','CimWinRMOptions','CimDCOMOptions','EnableException'
         It "Should contain our specific parameters" {

@@ -11,7 +11,7 @@
     RootModule             = 'dbatools.psm1'
 
     # Version number of this module.
-    ModuleVersion          = '0.9.487'
+    ModuleVersion          = '0.9.488'
 
     # ID used to uniquely identify this module
     GUID                   = '9d139310-ce45-41ce-8e8b-d76335aa1789'
@@ -541,7 +541,21 @@
         'Get-DbaCpuRingBuffer',
         'Get-DbaIoLatency',
         'Get-DbaLatchStatistic',
-        'Get-DbaSpinLockStatistic'
+        'Get-DbaSpinLockStatistic',
+        'Add-DbaAgDatabase',
+        'Add-DbaAgListener',
+        'Add-DbaAgReplica',
+        'Grant-DbaAgPermission',
+        'Invoke-DbaAgFailover',
+        'Join-DbaAvailabilityGroup',
+        'New-DbaAvailabilityGroup',
+        'Remove-DbaAgDatabase',
+        'Remove-DbaAgListener',
+        'Remove-DbaAvailabilityGroup',
+        'Revoke-DbaAgPermission',
+        'Get-DbaDbCompatibility',
+        'Set-DbaDbCompatibility',
+        'New-DbaDacOption'
     )
 
     # Cmdlets to export from this module

@@ -16,8 +16,50 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         }
     }
 }
-<#
-    Integration test should appear below and are custom to the command you are writing.
-    Read https://github.com/sqlcollaborative/dbatools/blob/development/contributing.md#tests
-    for more guidence.
-#>
+
+Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
+    BeforeAll{
+        $tempguid = [guid]::newguid();
+        $DBUserName = "dbatoolssci_$($tempguid.guid)"
+$CreateTestUser = @"
+CREATE LOGIN [$DBUserName]
+    WITH PASSWORD = '$($tempguid.guid)';
+USE Master;
+CREATE USER [$DBUserName] FOR LOGIN [$DBUserName]
+    WITH DEFAULT_SCHEMA = dbo;
+GRANT VIEW ANY DEFINITION to [$DBUserName];
+"@
+        Invoke-Sqlcmd2 -ServerInstance $script:instance2 -Query $CreateTestUser -Database master
+
+#This is used later in the test
+$CreateTestLogin = @"
+CREATE LOGIN [$DBUserName]
+    WITH PASSWORD = '$($tempguid.guid)';
+"@
+    }
+    AfterAll{
+        $DropTestUser = "DROP LOGIN [$DBUserName]"
+        Invoke-Sqlcmd2 -ServerInstance $script:instance2,$script:instance3 -Query $DropTestUser -Database master
+    }
+
+    Context "Verifying command output" {
+
+        It "Should not have the user permissions of $DBUserName" {
+            $permissionsBefore = Get-DbaUserPermission -SqlInstance $script:instance3 -Database master | Where-object {$_.member -eq $DBUserName}
+            $permissionsBefore | Should -be $null
+        }
+
+        It "Should execute against active nodes" {
+            #Creates the user on
+            Invoke-Sqlcmd2 -ServerInstance $script:instance3 -Query $CreateTestLogin
+            $results = Sync-DbaLoginPermission -Source $script:instance2 -Destination $script:instance3 -Login $DBUserName -ExcludeLogin 'NotaLogin' -Warningvariable $warn
+            $results | Should -be $null
+            $warn | Should -be $null
+        }
+
+        It "Should have coppied the user permissions of $DBUserName" {
+            $permissionsAfter = Get-DbaUserPermission -SqlInstance $script:instance3 -Database master | Where-object {$_.member -eq $DBUserName -and $_.permission -eq 'VIEW ANY DEFINITION' }
+            $permissionsAfter.member | Should -Be $DBUserName
+        }
+    }
+}

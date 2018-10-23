@@ -10,6 +10,9 @@ function Export-DbaAvailabilityGroup {
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. SQL Server 2012 and above supported.
 
+    .PARAMETER SqlCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+
     .PARAMETER Path
         The directory name where the output files will be written. A sub directory with the format 'ServerName$InstanceName' will be created. A T-SQL scripts named 'AGName.sql' will be created under this subdirectory for each scripted Availability Group.
 
@@ -21,9 +24,6 @@ function Export-DbaAvailabilityGroup {
 
     .PARAMETER NoClobber
         Do not overwrite existing export files.
-
-    .PARAMETER SqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
     .PARAMETER WhatIf
         Shows you what it'd output if you were to run the command
@@ -58,7 +58,7 @@ function Export-DbaAvailabilityGroup {
         Exports all Availability Groups from SQL server "sql2012". Output scripts are written to the C:\temp\availability_group_exports directory.
 
     .EXAMPLE
-        PS C:\> Export-DbaAvailabilityGroup -SqlInstance sql2012 -Path 'C:\dir with spaces\availability_group_exports' -AvailabilityGroups AG1,AG2
+        PS C:\> Export-DbaAvailabilityGroup -SqlInstance sql2012 -Path 'C:\dir with spaces\availability_group_exports' -AvailabilityGroup AG1,AG2
 
         Exports Availability Groups AG1 and AG2 from SQL server "sql2012". Output scripts are written to the C:\dir with spaces\availability_group_exports directory.
 

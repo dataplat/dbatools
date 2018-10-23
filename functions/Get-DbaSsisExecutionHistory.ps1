@@ -1,4 +1,4 @@
-﻿#ValidationTags#Messaging#
+#ValidationTags#Messaging#
 function Get-DbaSsisExecutionHistory {
 <#
     .SYNOPSIS
@@ -29,6 +29,12 @@ function Get-DbaSsisExecutionHistory {
 
     .PARAMETER Since
         Datetime object used to narrow the results to a date
+
+    .PARAMETER WhatIf
+        If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
+
+    .PARAMETER Confirm
+        If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -65,7 +71,7 @@ function Get-DbaSsisExecutionHistory {
     [CmdletBinding()]
     param (
         [parameter(Mandatory)]
-        [DbaInstanceParameter]$SqlInstance,
+        [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [datetime]$Since,
         [ValidateSet("Created", "Running", "Cancelled", "Failed", "Pending", "Halted", "Succeeded", "Stopping", "Completed")]
@@ -73,7 +79,6 @@ function Get-DbaSsisExecutionHistory {
         [String[]]$Project,
         [String[]]$Folder,
         [String[]]$Environment,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     begin {

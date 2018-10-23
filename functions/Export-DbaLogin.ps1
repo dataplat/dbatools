@@ -70,7 +70,7 @@
         Exports the logins for SQL Server "sql2005" and writes them to the file "C:\temp\sql2005-logins.sql"
 
     .EXAMPLE
-        PS C:\> Export-DbaLogin -SqlInstance sqlserver2014a -Exclude realcajun -SqlCredential $scred -Path C:\temp\logins.sql -Append
+        PS C:\> Export-DbaLogin -SqlInstance sqlserver2014a -ExcludeLogin realcajun -SqlCredential $scred -Path C:\temp\logins.sql -Append
 
         Authenticates to sqlserver2014a using SQL Authentication. Exports all logins except for realcajun to C:\temp\logins.sql, and appends to the file if it exists. If not, the file will be created.
 

@@ -1,19 +1,23 @@
-﻿function New-DbaServiceMasterKey {
+﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+function New-DbaServiceMasterKey {
 <#
     .SYNOPSIS
-        Creates a new service master key
+        Creates a new service master key.
 
     .DESCRIPTION
-        Creates a new service master key in the master database
+        Creates a new service master key in the master database.
 
     .PARAMETER SqlInstance
-        The target SQL Server instances
+        The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
         Allows you to login to SQL Server using alternative credentials.
 
     .PARAMETER Password
         Secure string used to create the key.
+
+    .PARAMETER Credential
+        Enables easy creation of a secure password.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
@@ -37,31 +41,24 @@
     .EXAMPLE
         PS C:\> New-DbaServiceMasterKey -SqlInstance Server1
 
-        You will be prompted to securely enter your Service Key Password twice, then a master key will be created in the master database on server1 if it does not exist.
+        You will be prompted to securely enter your Service Key password, then a master key will be created in the master database on server1 if it does not exist.
 
 #>
     [CmdletBinding(SupportsShouldProcess)]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
+        [PSCredential]$Credential,
         [Security.SecureString]$Password,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 
     process {
         foreach ($instance in $SqlInstance) {
-            if (Test-Bound -ParameterName Password -Not) {
-                $password = Read-Host -AsSecureString -Prompt "You must enter Service Key password for $instance"
-                $password2 = Read-Host -AsSecureString -Prompt "Type the password again"
-
-                if (([System.Runtime.InteropServices.marshal]::PtrToStringAuto([System.Runtime.InteropServices.marshal]::SecureStringToBSTR($password))) -ne ([System.Runtime.InteropServices.marshal]::PtrToStringAuto([System.Runtime.InteropServices.marshal]::SecureStringToBSTR($password2)))) {
-                    Stop-Function -Message "Passwords do not match" -Continue
-                }
+            if($PSCmdlet.ShouldProcess("$instance","Creating New MasterKey")){
+                New-DbaDbMasterKey -SqlInstance $instance -Database master -Password $password -Credential $Credential
             }
-            New-DbaDbMasterKey -SqlInstance $instance -Database master -Password $password
         }
     }
 }

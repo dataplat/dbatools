@@ -5,7 +5,7 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
         $paramCount = 24
-        $defaultParamCount = 11
+        $defaultParamCount = 13
         [object[]]$params = (Get-ChildItem function:\New-DbaConnectionString).Parameters.Keys
         $knownParameters = 'SqlInstance','Credential','AccessToken','ApplicationIntent','BatchSeparator','ClientName','ConnectTimeout','EncryptConnection','FailoverPartner','IsActiveDirectoryUniversalAuth','LockTimeout','MaxPoolSize','MinPoolSize','MultipleActiveResultSets','MultiSubnetFailover','NetworkProtocol','NonPooledConnection','PacketSize','PooledConnectionLifetime','SqlExecutionModes','StatementTimeout','TrustServerCertificate','WorkstationId','AppendConnectionString'
         It "Should contain our specific parameters" {
