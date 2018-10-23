@@ -56,7 +56,7 @@
         Sets the Power Plan to the custom power plan called "Maximum Performance". Skips it if its already set.
 
 #>
-    [CmdletBinding(SupportsShouldProcess = $true)]
+    [CmdletBinding(SupportsShouldProcess)]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer", "SqlInstance")]
@@ -74,6 +74,7 @@
         }
 
         function Set-DbaPowerPlanInternal {
+            [CmdletBinding(SupportsShouldProcess)]
             param($server)
 
             try {
@@ -108,26 +109,27 @@
                 PreviousPowerPlan = $currentplan
                 ActivePowerPlan   = $PowerPlan
             }
-
-            if ($PowerPlan -ne $currentplan) {
-                if ($Pscmdlet.ShouldProcess($server, "Changing Power Plan from $CurrentPlan to $PowerPlan")) {
-                    try {
-                        Write-Message -Level Verbose -Message "Setting Power Plan to $PowerPlan."
-                        $null = (Get-WmiObject -Name root\cimv2\power -ComputerName $ipaddr -Class Win32_PowerPlan -Filter "ElementName='$PowerPlan'").Activate()
-                    }
-                    catch {
-                        Stop-Function -Message "Couldn't set Power Plan on $server." -Category ConnectionError -ErrorRecord $_ -Target $server
-                        return
+            if ($Pscmdlet.ShouldProcess($PowerPlan,"Setting Powerplan on $server")) {
+                if ($PowerPlan -ne $currentplan) {
+                    if ($Pscmdlet.ShouldProcess($server, "Changing Power Plan from $CurrentPlan to $PowerPlan")) {
+                        try {
+                            Write-Message -Level Verbose -Message "Setting Power Plan to $PowerPlan."
+                            $null = (Get-WmiObject -Name root\cimv2\power -ComputerName $ipaddr -Class Win32_PowerPlan -Filter "ElementName='$PowerPlan'").Activate()
+                        }
+                        catch {
+                            Stop-Function -Message "Couldn't set Power Plan on $server." -Category ConnectionError -ErrorRecord $_ -Target $server
+                            return
+                        }
                     }
                 }
-            }
-            else {
-                if ($Pscmdlet.ShouldProcess($server, "Stating power plan is already set to $PowerPlan, won't change.")) {
-                    Write-Message -Level Verbose -Message "PowerPlan on $server is already set to $PowerPlan. Skipping."
+                else {
+                    if ($Pscmdlet.ShouldProcess($server, "Stating power plan is already set to $PowerPlan, won't change.")) {
+                        Write-Message -Level Verbose -Message "PowerPlan on $server is already set to $PowerPlan. Skipping."
+                    }
                 }
-            }
 
-            return $planinfo
+                return $planinfo
+            }
         }
 
 

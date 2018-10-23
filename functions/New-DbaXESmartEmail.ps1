@@ -50,6 +50,12 @@ function New-DbaXESmartEmail {
     .PARAMETER Filter
         You can specify a filter expression by using this attribute. The filter expression is in the same form that you would use in a SQL query. For example, a valid example looks like this: duration > 10000 AND cpu_time > 10000
 
+    .PARAMETER WhatIf
+        If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
+
+    .PARAMETER Confirm
+        If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -83,7 +89,7 @@ function New-DbaXESmartEmail {
         Sends an email each time a querytracker event is captured.
 
 #>
-    [CmdletBinding()]
+    [CmdletBinding(SupportsShouldProcess)]
     param (
         [parameter(Mandatory)]
         [string]$SmtpServer,
@@ -117,34 +123,36 @@ function New-DbaXESmartEmail {
     process {
         if (Test-FunctionInterrupt) { return }
 
-        try {
-            $email = New-Object -TypeName XESmartTarget.Core.Responses.EmailResponse
-            $email.SmtpServer = $SmtpServer
-            $email.Sender = $Sender
-            $email.To = $To
-            $email.Cc = $Cc
-            $email.Bcc = $Bcc
-            $email.Subject = $Subject
-            $email.Body = $Body
-            $email.Attachment = $Attachment
-            $email.AttachmentFileName = $AttachmentFileName
-            $email.HTMLFormat = ($PlainText -eq $false)
-            if (Test-Bound -ParameterName "Event") {
-                $email.Events = $Event
-            }
-            if (Test-Bound -ParameterName "Filter") {
-                $email.Filter = $Filter
-            }
+        if ($Pscmdlet.ShouldProcess("Creating new XESmartEmail Object")) {
+            try {
+                $email = New-Object -TypeName XESmartTarget.Core.Responses.EmailResponse
+                $email.SmtpServer = $SmtpServer
+                $email.Sender = $Sender
+                $email.To = $To
+                $email.Cc = $Cc
+                $email.Bcc = $Bcc
+                $email.Subject = $Subject
+                $email.Body = $Body
+                $email.Attachment = $Attachment
+                $email.AttachmentFileName = $AttachmentFileName
+                $email.HTMLFormat = ($PlainText -eq $false)
+                if (Test-Bound -ParameterName "Event") {
+                    $email.Events = $Event
+                }
+                if (Test-Bound -ParameterName "Filter") {
+                    $email.Filter = $Filter
+                }
 
-            if ($Credential) {
-                $email.UserName = $Credential.UserName
-                $email.Password = $Credential.GetNetworkCredential().Password
-            }
+                if ($Credential) {
+                    $email.UserName = $Credential.UserName
+                    $email.Password = $Credential.GetNetworkCredential().Password
+                }
 
-            $email
-        }
-        catch {
-            Stop-Function -Message "Failure" -ErrorRecord $_ -Target "XESmartTarget" -Continue
+                $email
+            }
+            catch {
+                Stop-Function -Message "Failure" -ErrorRecord $_ -Target "XESmartTarget" -Continue
+            }
         }
     }
 }

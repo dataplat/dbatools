@@ -87,7 +87,7 @@ function Remove-DbaXESession {
     begin {
         # Remove each XESession
         function Remove-XESessions {
-            [CmdletBinding()]
+            [CmdletBinding(SupportsShouldProcess)]
             param ([Microsoft.SqlServer.Management.XEvent.Session[]]$xeSessions)
 
             foreach ($xe in $xeSessions) {

@@ -19,6 +19,12 @@ function Stop-DbaTrace {
     .PARAMETER InputObject
         Internal parameter for piping
 
+    .PARAMETER WhatIf
+        If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
+
+    .PARAMETER Confirm
+        If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -48,7 +54,7 @@ function Stop-DbaTrace {
         Stops selected traces on sql2008
 
 #>
-    [CmdletBinding()]
+    [CmdletBinding(SupportsShouldProcess)]
     param (
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
@@ -79,41 +85,43 @@ function Stop-DbaTrace {
 
             $sql = "sp_trace_setstatus $traceid, 0"
 
-            try {
-                $server.Query($sql)
-                $output = Get-DbaTrace -SqlInstance $server -Id $traceid
-                if (-not $output) {
-                    $output = [PSCustomObject]@{
-                        ComputerName            = $server.ComputerName
-                        InstanceName            = $server.ServiceName
-                        SqlInstance             = $server.DomainInstanceName
-                        Id                      = $traceid
-                        Status                  = $null
-                        IsRunning               = $false
-                        Path                    = $null
-                        MaxSize                 = $null
-                        StopTime                = $null
-                        MaxFiles                = $null
-                        IsRowset                = $null
-                        IsRollover              = $null
-                        IsShutdown              = $null
-                        IsDefault               = $null
-                        BufferCount             = $null
-                        BufferSize              = $null
-                        FilePosition            = $null
-                        ReaderSpid              = $null
-                        StartTime               = $null
-                        LastEventTime           = $null
-                        EventCount              = $null
-                        DroppedEventCount       = $null
-                        Parent                  = $server
-                    } | Select-DefaultView -Property 'ComputerName', 'InstanceName', 'SqlInstance', 'Id', 'IsRunning'
+            if ($Pscmdlet.ShouldProcess($traceid, "Stopping the TraceID on $server")) {
+                try {
+                    $server.Query($sql)
+                    $output = Get-DbaTrace -SqlInstance $server -Id $traceid
+                    if (-not $output) {
+                        $output = [PSCustomObject]@{
+                            ComputerName            = $server.ComputerName
+                            InstanceName            = $server.ServiceName
+                            SqlInstance             = $server.DomainInstanceName
+                            Id                      = $traceid
+                            Status                  = $null
+                            IsRunning               = $false
+                            Path                    = $null
+                            MaxSize                 = $null
+                            StopTime                = $null
+                            MaxFiles                = $null
+                            IsRowset                = $null
+                            IsRollover              = $null
+                            IsShutdown              = $null
+                            IsDefault               = $null
+                            BufferCount             = $null
+                            BufferSize              = $null
+                            FilePosition            = $null
+                            ReaderSpid              = $null
+                            StartTime               = $null
+                            LastEventTime           = $null
+                            EventCount              = $null
+                            DroppedEventCount       = $null
+                            Parent                  = $server
+                        } | Select-DefaultView -Property 'ComputerName', 'InstanceName', 'SqlInstance', 'Id', 'IsRunning'
+                    }
+                    $output
                 }
-                $output
-            }
-            catch {
-                Stop-Function -Message "Failure" -ErrorRecord $_ -Target $server -Continue
-                return
+                catch {
+                    Stop-Function -Message "Failure" -ErrorRecord $_ -Target $server -Continue
+                    return
+                }
             }
         }
     }
