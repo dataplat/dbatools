@@ -13,10 +13,18 @@
         SqlCredential object used to connect to the SQL Server as a different user.
 
     .PARAMETER Database
-        The database(s) to process - this list is autopopulated from the server. If unspecified, all databases will be processed.
+        The database or databases to process. If unspecified, all databases will be processed.
 
-    .PARAMETER CompatabilityLevel
-        The compatability level version to change the databases to.
+    .PARAMETER TargetCompatibility
+        The target compatibility level version. This is an int and follows Microsoft's versioning:
+    
+        9 = SQL Server 2005
+        10 = SQL Server 2008
+        11 = SQL Server 2012
+        12 = SQL Server 2014
+        13 = SQL Server 2016
+        14 = SQL Server 2017
+        15 = SQL Server 2019
 
     .PARAMETER InputObject
         A collection of databases (such as returned by Get-DbaDatabase)
@@ -37,7 +45,7 @@
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: Compatability, Database
+        Tags: Compatibility, Database
         Author: Garry Bargsley, http://blog.garrybargsley.com/
 
         Website: https://dbatools.io
@@ -50,24 +58,25 @@
     .EXAMPLE
         PS C:\> Set-DbaDbCompatibility -SqlInstance localhost\sql2017
 
-        Changes database compatability level for all user databases on server localhost\sql2017 that have a compatability level that do not match
+        Changes database compatibility level for all user databases on server localhost\sql2017 that have a Compatibility level that do not match
 
     .EXAMPLE
-        PS C:\> Set-DbaDbCompatibility -SqlInstance localhost\sql2017 -CompatabilityLevel 12
+        PS C:\> Set-DbaDbCompatibility -SqlInstance localhost\sql2017 -TargetCompatibility 12
 
-        Changes database compatability level for all user databases on server localhost\sql2017 to Version120
+        Changes database compatibility level for all user databases on server localhost\sql2017 to Version120
 
     .EXAMPLE
-        PS C:\> Set-DbaDbCompatibility -SqlInstance localhost\sql2017 -Database Test -CompatabilityLevel 12
+        PS C:\> Set-DbaDbCompatibility -SqlInstance localhost\sql2017 -Database Test -TargetCompatibility 12
 
-        Changes database compatability level for database Test on server localhost\sql2017 to Version 120
+        Changes database compatibility level for database Test on server localhost\sql2017 to Version 120
 #>
     [CmdletBinding(SupportsShouldProcess)]
     param (
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string[]]$Database,
-        [int]$compatabilityLevel,
+        [ValidateSet(9,10,11,12,13,14,15)]
+        [int]$TargetCompatibility,
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
         [switch]$EnableException
@@ -99,7 +108,7 @@
                 default { 9 } # SQL Server 2005
             }
             
-            if (-not $compatabilityLevel) {
+            if (-not $TargetCompatibility) {
                 if ($dbversion -lt $ServerVersion) {
                     If ($Pscmdlet.ShouldProcess($server.Name, "Updating $db version from $dbversion to $ServerVersion")) {
                         $comp = $ServerVersion * 10
@@ -116,8 +125,8 @@
                 }
             }
             else {
-                if ($Pscmdlet.ShouldProcess($server.Name, "Updating $db version from $dbversion to $compatabilityLevel")) {
-                    $comp = $compatabilityLevel * 10
+                if ($Pscmdlet.ShouldProcess($server.Name, "Updating $db version from $dbversion to $TargetCompatibility")) {
+                    $comp = $TargetCompatibility * 10
                     $sql = "ALTER DATABASE $db SET COMPATIBILITY_LEVEL = $comp"
                     try {
                         $db.ExecuteNonQuery($sql)
