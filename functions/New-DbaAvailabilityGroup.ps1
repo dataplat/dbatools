@@ -291,7 +291,7 @@ function New-DbaAvailabilityGroup {
         }
         
         if (($NetworkShare)) {
-            if (-not (Test-DbaPath -SqlInstance $server -Path $NetworkShare)) {
+            if (-not (Test-DbaPath -SqlInstance $Primary -SqlCredential $PrimarySqlCredential -Path $NetworkShare)) {
                 Stop-Function -Continue -Message "Cannot access $NetworkShare from $Primary"
                 return
             }
@@ -348,7 +348,7 @@ function New-DbaAvailabilityGroup {
         
         # database checks
         if ($Database) {
-            $dbs += Get-DbaDatabase -SqlInstance $server -Database $Database
+            $dbs += Get-DbaDatabase -SqlInstance $Primary -SqlCredential $PrimarySqlCredential -Database $Database
         }
         
         foreach ($primarydb in $dbs) {
@@ -368,7 +368,7 @@ function New-DbaAvailabilityGroup {
                     return
                 }
                 else {
-                    Set-DbaDbRecoveryModel -SqlInstance $server -Database $primarydb.Name -RecoveryModel Full
+                    Set-DbaDbRecoveryModel -SqlInstance $Primary -SqlCredential $PrimarySqlCredential -Database $primarydb.Name -RecoveryModel Full
                 }
             }
         }
@@ -483,12 +483,12 @@ function New-DbaAvailabilityGroup {
             }
             
             if ($Pscmdlet.ShouldProcess($Primary, "Adding $db to $Name")) {
-                $null = Add-DbaAgDatabase -SqlInstance $server -AvailabilityGroup $Name -Database $db
+                $null = Add-DbaAgDatabase -SqlInstance $Primary -SqlCredential $PrimarySqlCredential -AvailabilityGroup $Name -Database $db
             }
             
             foreach ($second in $secondaries) {
                 if ($Pscmdlet.ShouldProcess($second.Name, "Adding $db to $Name")) {
-                    $primarydb = Get-DbaDatabase -SqlInstance $server -Database $db
+                    $primarydb = Get-DbaDatabase -SqlInstance $Primary -SqlCredential $PrimarySqlCredential -Database $db
                     $secondb = Get-DbaDatabase -SqlInstance $second -Database $db
                     
                     if ((-not $seconddb -or $Force) -and $SeedingMode -ne 'Automatic') {
