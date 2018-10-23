@@ -77,8 +77,7 @@ function Write-HostColor {
 
                             $index = $match[$count].Index + $match[$count].Length
                             $count++
-                        }
-                        else {
+                        } else {
                             Write-Host -Object $row.SubString($index) -ForegroundColor $DefaultColor
                             $count++
                         }
@@ -88,3 +87,4 @@ function Write-HostColor {
         }
     }
 }
+

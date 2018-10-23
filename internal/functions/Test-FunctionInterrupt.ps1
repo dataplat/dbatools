@@ -31,3 +31,4 @@ function Test-FunctionInterrupt {
 
     return $false
 }
+

@@ -1,5 +1,5 @@
 function New-DbaMessageLevelModifier {
-<#
+    <#
     .SYNOPSIS
         Allows modifying message levels by powerful filters.
     
@@ -129,4 +129,5 @@ function New-DbaMessageLevelModifier {
     
     $levelModifier
 }
+
 

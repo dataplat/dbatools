@@ -40,8 +40,7 @@ function Get-SqlFileStructure {
                 $d = @{ }
                 if ($ReuseSourceFolderStructure) {
                     $d.physical = $file.filename
-                }
-                else {
+                } else {
                     $directory = Get-SqlDefaultPaths $destserver data
                     $filename = Split-Path $($file.filename) -leaf
                     $d.physical = "$directory\$filename"
@@ -70,8 +69,7 @@ function Get-SqlFileStructure {
                 $logical = "$pre$name"
                 if ($ReuseSourceFolderStructure) {
                     $d.physical = $physical
-                }
-                else {
+                } else {
                     $directory = Get-SqlDefaultPaths $destserver data
                     if ($destserver.VersionMajor -lt 10) { $directory = "$directory\FTDATA" }
                     $filename = Split-Path($physical) -leaf
@@ -100,8 +98,7 @@ function Get-SqlFileStructure {
             $d = @{ }
             if ($ReuseSourceFolderStructure) {
                 $d.physical = $file.filename
-            }
-            else {
+            } else {
                 $directory = Get-SqlDefaultPaths $destserver log
                 $filename = Split-Path $($file.filename) -leaf
                 $d.physical = "$directory\$filename"
@@ -126,4 +123,5 @@ function Get-SqlFileStructure {
     $filestructure = [pscustomobject]@{ "databases" = $dbcollection }
     return $filestructure
 }
+
 

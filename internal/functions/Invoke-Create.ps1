@@ -9,14 +9,14 @@ function Invoke-Create {
     process {
         if ($Object.Name) {
             $Name = $Object.Name
-        }
-        else {
+        } else {
             $Name = "target object"
         }
-        if ($Pscmdlet.ShouldProcess($Name,"Performing create")) {
+        if ($Pscmdlet.ShouldProcess($Name, "Performing create")) {
             $ErrorActionPreference = 'Stop'
             $EnableException = $true
             $Object.Create()
         }
     }
 }
+

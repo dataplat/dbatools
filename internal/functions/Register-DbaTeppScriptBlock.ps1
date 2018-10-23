@@ -34,3 +34,4 @@ function Register-DbaTeppScriptblock {
     [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Scripts[$Name.ToLower()] = $scp
 }
 
+

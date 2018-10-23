@@ -22,7 +22,7 @@ function Join-AdminUnc {
     if ($filepath.length -gt 0 -and $filepath -ne [System.DbNull]::Value) {
         $newpath = Join-Path "\\$servername\" $filepath.replace(':', '$')
         return $newpath
-    }
-    else { return }
+    } else { return }
 }
+
 

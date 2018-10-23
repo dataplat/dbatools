@@ -8,3 +8,4 @@ function Test-HostOSLinux {
     $server.ConnectionContext.ExecuteScalar("SELECT @@VERSION") -match "Linux"
 }
 
+

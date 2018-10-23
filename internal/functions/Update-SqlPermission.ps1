@@ -45,16 +45,14 @@ function Update-SqlPermission {
         if ($null -ne $destRole) {
             try {
                 $destRoleMembers = $destRole.EnumMemberNames()
-            }
-            catch {
+            } catch {
                 $destRoleMembers = $destRole.EnumServerRoleMembers()
             }
         }
 
         try {
             $roleMembers = $role.EnumMemberNames()
-        }
-        catch {
+        } catch {
             $roleMembers = $role.EnumServerRoleMembers()
         }
 
@@ -64,8 +62,7 @@ function Update-SqlPermission {
                     try {
                         $destRole.AddMember($userName)
                         Write-Message -Level Verbose -Message "Adding $userName to $roleName server role on $destination successfully performed."
-                    }
-                    catch {
+                    } catch {
                         Stop-Function -Message "Failed to add $userName to $roleName server role on $destination." -Target $role -ErrorRecord $_
                     }
                 }
@@ -78,8 +75,7 @@ function Update-SqlPermission {
                 try {
                     $destRole.DropMember($userName)
                     Write-Message -Level Verbose -Message "Removing $userName from $destRoleName server role on $destination successfully performed."
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Failed to remove $userName from $destRoleName server role on $destination." -Target $role -ErrorRecord $_
                 }
             }
@@ -95,8 +91,7 @@ function Update-SqlPermission {
                     $destOwnedJob.Set_OwnerLoginName($userName)
                     $destOwnedJob.Alter()
                     Write-Message -Level Verbose -Message "Changing job owner to $userName for $($ownedJob.Name) on $destination successfully performed."
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Failed to change job owner for $($ownedJob.Name) on $destination." -Target $ownedJob -ErrorRecord $_
                 }
             }
@@ -115,8 +110,7 @@ function Update-SqlPermission {
             if ($permState -eq "GrantWithGrant") {
                 $grantWithGrant = $true;
                 $permState = "grant"
-            }
-            else {
+            } else {
                 $grantWithGrant = $false
             }
 
@@ -125,8 +119,7 @@ function Update-SqlPermission {
                 try {
                     $DestServer.PSObject.Methods[$permState].Invoke($permSet, $userName, $grantWithGrant)
                     Write-Message -Level Verbose -Message "$permState $($perm.PermissionType) to $userName on $destination successfully performed."
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Failed to $permState $($perm.PermissionType) to $userName on $destination." -Target $perm -ErrorRecord $_
                 }
             }
@@ -145,15 +138,13 @@ function Update-SqlPermission {
                             if ($permState -eq "GrantWithGrant") {
                                 $grantWithGrant = $true;
                                 $permState = "grant"
-                            }
-                            else {
+                            } else {
                                 $grantWithGrant = $false
                             }
 
                             $DestServer.PSObject.Methods["Revoke"].Invoke($permSet, $userName, $false, $grantWithGrant)
                             Write-Message -Level Verbose -Message "Revoking $($perm.PermissionType) for $userName on $destination successfully performed."
-                        }
-                        catch {
+                        } catch {
                             Stop-Function -Message "Failed to revoke $($perm.PermissionType) from $userName on $destination." -Target $perm -ErrorRecord $_
                         }
                     }
@@ -171,8 +162,7 @@ function Update-SqlPermission {
                         $newCred.Identity = $SourceLogin.Name
                         $newCred.Create()
                         Write-Message -Level Verbose -Message "Creating credential $($credential.Name) for $userName on $destination successfully performed."
-                    }
-                    catch {
+                    } catch {
                         Stop-Function -Message "Failed to create credential $($credential.Name) for $userName on $destination." -Target $credential -ErrorRecord $_
                     }
                 }
@@ -204,8 +194,7 @@ function Update-SqlPermission {
                         $destDb.Users[$dbUsername].Drop()
                         Write-Message -Level Verbose -Message "Dropping user $dbUsername (login: $dbLogin) from $dbName on destination successfully performed."
                         Write-Message -Level Verbose -Message "Any schema in $dbaName owned by $dbUsername may still exist."
-                    }
-                    catch {
+                    } catch {
                         Stop-Function -Message "Failed to drop $dbUsername (login: $dbLogin) from $dbName on destination." -Target $db -ErrorRecord $_
                     }
                 }
@@ -224,8 +213,7 @@ function Update-SqlPermission {
                                     $destRole.DropMember($dbUsername)
                                     $destDb.Alter()
                                     Write-Message -Level Verbose -Message "Dropping user $dbUsername (login: $dbLogin) from $destRoleName database role in $dbName on $destination successfully performed."
-                                }
-                                catch {
+                                } catch {
                                     Stop-Function -Message "Failed to remove $dbUsername (login: $dbLogin) from $destRoleName database role in $dbName on $destination." -Target $destRole -ErrorRecord $_
                                 }
                             }
@@ -249,15 +237,13 @@ function Update-SqlPermission {
                             if ($permState -eq "GrantWithGrant") {
                                 $grantWithGrant = $true;
                                 $permState = "grant"
-                            }
-                            else {
+                            } else {
                                 $grantWithGrant = $false
                             }
 
                             $destDb.PSObject.Methods["Revoke"].Invoke($permSet, $userName, $false, $grantWithGrant)
                             Write-Message -Level Verbose -Message "Revoking $($perm.PermissionType) from $userName in $dbName on $destination successfully performed."
-                        }
-                        catch {
+                        } catch {
                             Stop-Function -Message "Failed to revoke $($perm.PermissionType) from $userName in $dbName on $destination." -Target $perm -ErrorRecord $_
                         }
                     }
@@ -285,8 +271,7 @@ function Update-SqlPermission {
                     try {
                         $destDb.ExecuteNonQuery($sql)
                         Write-Message -Level Verbose -Message "Adding user $dbUsername (login: $dbLogin) to $dbName successfully performed."
-                    }
-                    catch {
+                    } catch {
                         Stop-Function -Message "Failed to add $dbUsername (login: $dbLogin) to $dbName on $destination." -Target $db -ErrorRecord $_
                     }
                 }
@@ -299,12 +284,10 @@ function Update-SqlPermission {
                         $result = Update-SqlDbOwner $SourceServer $DestServer -DbName $dbName
                         if ($result -eq $true) {
                             Write-Message -Level Verbose -Message "Changed $($destDb.Name) owner to $($sourceDb.owner)."
-                        }
-                        else {
+                        } else {
                             Write-Message -Level Warning -Message "Failed to update $($destDb.Name) owner to $($sourceDb.owner)."
                         }
-                    }
-                    catch {
+                    } catch {
                         Write-Message -Level Warning -Message "Failed to update $($destDb.Name) owner to $($sourceDb.owner)."
                     }
                 }
@@ -322,8 +305,7 @@ function Update-SqlPermission {
                                 $destDbRole.AddMember($userName)
                                 $destDb.Alter()
                                 Write-Message -Level Verbose -Message "Adding $userName to $roleName database role in $dbName on $destination successfully performed."
-                            }
-                            catch {
+                            } catch {
                                 Stop-Function -Message "Failed to add $userName to $roleName database role in $dbName on $destination." -Target $role -ErrorRecord $_
                             }
                         }
@@ -338,8 +320,7 @@ function Update-SqlPermission {
                 if ($permState -eq "GrantWithGrant") {
                     $grantWithGrant = $true;
                     $permState = "grant"
-                }
-                else {
+                } else {
                     $grantWithGrant = $false
                 }
                 $permSet = New-Object Microsoft.SqlServer.Management.Smo.DatabasePermissionSet($perm.PermissionType)
@@ -348,8 +329,7 @@ function Update-SqlPermission {
                     try {
                         $destDb.PSObject.Methods[$permState].Invoke($permSet, $userName, $grantWithGrant)
                         Write-Message -Level Verbose -Message "$permState on $($perm.PermissionType) to $userName on $dbName on $destination successfully performed."
-                    }
-                    catch {
+                    } catch {
                         Stop-Function -Message "Failed to perform $permState on $($perm.PermissionType) to $userName on $dbName on $destination." -Target $perm -ErrorRecord $_
                     }
                 }
@@ -357,3 +337,4 @@ function Update-SqlPermission {
         }
     }
 }
+

@@ -38,3 +38,4 @@ function Register-DbatoolsConfigValidation {
 
     [Sqlcollaborative.Dbatools.Configuration.ConfigurationHost]::Validation[$Name.ToLower()] = $ScriptBlock
 }
+

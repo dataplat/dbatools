@@ -20,7 +20,7 @@ function Test-SqlSa {
 
         $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
         return ($server.ConnectionContext.FixedServerRoles -match "SysAdmin")
-    }
-    catch { return $false }
+    } catch { return $false }
 }
+
 

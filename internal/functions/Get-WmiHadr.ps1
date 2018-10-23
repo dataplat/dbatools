@@ -15,24 +15,23 @@ function Get-WmiHadr {
                 $computer = $computerName = $instance.ComputerName
                 $instanceName = $instance.InstanceName
                 $currentState = Invoke-ManagedComputerCommand -ComputerName $computerName -ScriptBlock { $wmi.Services[$args[0]] | Select-Object IsHadrEnabled } -ArgumentList $instanceName -Credential $Credential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure connecting to $computer" -Category ConnectionError -ErrorRecord $_ -Target $instance
                 return
             }
             
             if ($null -eq $currentState.IsHadrEnabled) {
                 $isenabled = $false
-            }
-            else {
+            } else {
                 $isenabled = $currentState.IsHadrEnabled
             }
             [PSCustomObject]@{
-                ComputerName = $computer
-                InstanceName = $instanceName
-                SqlInstance  = $instance.FullName
+                ComputerName  = $computer
+                InstanceName  = $instanceName
+                SqlInstance   = $instance.FullName
                 IsHadrEnabled = $isenabled
             }
         }
     }
 }
+

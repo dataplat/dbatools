@@ -9,3 +9,4 @@ function Write-ProgressHelper {
     )
     Write-Progress -Activity $Activity -Status $Message -PercentComplete (($StepNumber / $TotalSteps) * 100)
 }
+

@@ -29,8 +29,7 @@ function Get-DbaSysDbUserObjectScript {
     process {
         try {
             $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
-        }
-        catch {
+        } catch {
             Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Source
             return
         }
@@ -78,7 +77,7 @@ function Get-DbaSysDbUserObjectScript {
                 $userobject.Definition
                 $schema = $userobject.SchemaName
                 $result = Get-DbaModule -SqlInstance $server -NoSystemObjects -Database $db |
-                Where-Object { $psitem.Name -eq $userobject.Name -and $psitem.Type -eq $userobject.Type }
+                    Where-Object { $psitem.Name -eq $userobject.Name -and $psitem.Type -eq $userobject.Type }
                 $smobject = switch ($userobject.Type) {
                     "VIEW" { $smodb.Views.Item($userobject.Name, $userobject.SchemaName) }
                     "SQL_STORED_PROCEDURE" { $smodb.StoredProcedures.Item($userobject.Name, $userobject.SchemaName) }
@@ -107,3 +106,4 @@ function Get-DbaSysDbUserObjectScript {
         }
     }
 }
+

@@ -1,5 +1,5 @@
 function Convert-DbaMessageTarget {
-<#
+    <#
     .SYNOPSIS
         Transforms the target input to the message system.
     
@@ -45,8 +45,7 @@ function Convert-DbaMessageTarget {
         try {
             $tempTarget = $ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create($scriptBlock.ToString())), $null, $Target)
             return $tempTarget
-        }
-        catch {
+        } catch {
             [Sqlcollaborative.Dbatools.Message.MessageHost]::WriteTransformError($_, $FunctionName, $ModuleName, $Target, "Target", ([System.Management.Automation.Runspaces.Runspace]::DefaultRunspace.InstanceId))
             return $Target
         }
@@ -56,8 +55,7 @@ function Convert-DbaMessageTarget {
         try {
             $tempTarget = $ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create($transform.ScriptBlock.ToString())), $null, $Target)
             return $tempTarget
-        }
-        catch {
+        } catch {
             [Sqlcollaborative.Dbatools.Message.MessageHost]::WriteTransformError($_, $FunctionName, $ModuleName, $Target, "Target", ([System.Management.Automation.Runspaces.Runspace]::DefaultRunspace.InstanceId))
             return $Target
         }
@@ -65,3 +63,4 @@ function Convert-DbaMessageTarget {
     
     return $Target
 }
+

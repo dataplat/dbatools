@@ -21,8 +21,7 @@ function Update-SqlDbReadOnly {
     if ($readonly) {
         Stop-DbaProcess -SqlInstance $SqlInstance -Database $dbname
         $sql = "ALTER DATABASE [$dbname] SET READ_ONLY WITH NO_WAIT"
-    }
-    else {
+    } else {
         $sql = "ALTER DATABASE [$dbname] SET READ_WRITE WITH NO_WAIT"
     }
 
@@ -31,10 +30,10 @@ function Update-SqlDbReadOnly {
         $null = $server.Query($sql)
         Write-Message -Level Verbose -Message "Changed ReadOnly status to $readonly for $dbname on $($server.name)"
         return $true
-    }
-    catch {
+    } catch {
         Write-Message -Level Warning "Could not change readonly status for $dbname on $($server.name)"
         return $false
     }
 }
+
 

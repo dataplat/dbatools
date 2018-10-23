@@ -50,8 +50,7 @@ function Get-DbaFileStreamFolder {
     begin {
         try {
             $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
-        }
-        catch {
+        } catch {
             Stop-Function -Message "Failed to process Instance $SqlInstance." -InnerErrorRecord $_ -Target $SqlInstance -Continue
         }
     }
@@ -81,3 +80,4 @@ function Get-DbaFileStreamFolder {
 
     END {}
 }
+

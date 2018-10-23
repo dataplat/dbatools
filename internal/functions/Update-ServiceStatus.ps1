@@ -64,8 +64,7 @@ function Update-ServiceStatus {
         $callStack = Get-PSCallStack
         if ($callStack.Length -gt 1) {
             $callerName = $callStack[1].Command
-        }
-        else {
+        } else {
             $callerName = $callStack[0].Command
         }
         #Prepare the service control script block
@@ -81,17 +80,14 @@ function Update-ServiceStatus {
                         $cimObject = $service._CimObject
                         if (($cimObject.State -eq 'Running' -and $action -eq 'start') -or ($cimObject.State -eq 'Stopped' -and $action -eq 'stop')) {
                             $service | Add-Member -Force -NotePropertyName Status -NotePropertyValue 'Successful' -PassThru |
-                            Add-Member -Force -NotePropertyName Message -NotePropertyValue "The service is already $actionText, no action required" -PassThru
-                        }
-                        elseif ($cimObject.StartMode -eq 'Disabled' -and $action -in 'start', 'restart') {
+                                Add-Member -Force -NotePropertyName Message -NotePropertyValue "The service is already $actionText, no action required" -PassThru
+                        } elseif ($cimObject.StartMode -eq 'Disabled' -and $action -in 'start', 'restart') {
                             $service | Add-Member -Force -NotePropertyName Status -NotePropertyValue 'Failed' -PassThru |
-                            Add-Member -Force -NotePropertyName Message -NotePropertyValue "The service is disabled and cannot be $actionText" -PassThru
-                        }
-                        else {
+                                Add-Member -Force -NotePropertyName Message -NotePropertyValue "The service is disabled and cannot be $actionText" -PassThru
+                        } else {
                             $servicesToRestart += $service
                         }
-                    }
-                    else {
+                    } else {
                         throw "Unknown object in pipeline - make sure to use Get-DbaService cmdlet"
                     }
                 }
@@ -100,8 +96,7 @@ function Update-ServiceStatus {
                     $methodName = 'StartService'
                     $desiredState = 'Running'
                     $undesiredState = 'Stopped'
-                }
-                elseif ($action -eq 'stop') {
+                } elseif ($action -eq 'stop') {
                     $methodName = 'StopService'
                     $desiredState = 'Stopped'
                     $undesiredState = 'Running'
@@ -112,11 +107,11 @@ function Update-ServiceStatus {
                         #Invoke corresponding CIM method
                         $invokeResult = Invoke-CimMethod -InputObject $service._CimObject -MethodName $methodName
                         $invokeResults += [psobject]@{
-                            InvokeResult = $invokeResult
-                            ServiceState = $invokeResult.State
+                            InvokeResult    = $invokeResult
+                            ServiceState    = $invokeResult.State
                             ServiceExitCode = $invokeResult.ReturnValue
-                            CheckPending = $true
-                            Service = $service
+                            CheckPending    = $true
+                            Service         = $service
                         }
                     }
                 }
@@ -129,8 +124,7 @@ function Update-ServiceStatus {
                             try {
                                 #Refresh Cim instance - not using Get-DbaCmObject because module is not loaded here, but it only refreshes existing object
                                 $result.Service._CimObject = $result.Service._CimObject | Get-CimInstance
-                            }
-                            catch {
+                            } catch {
                                 $result.ServiceExitCode = -3
                                 $result.ServiceState = 'Unknown'
                                 $result.CheckPending = $false
@@ -171,8 +165,7 @@ function Update-ServiceStatus {
                     #Add error message
                     $errorMessageFromReturnValue = if ($result.ServiceExitCode -in 0..($errorCodes.Length - 1)) {
                         $errorCodes[$result.ServiceExitCode]
-                    }
-                    else { "Unknown error." }
+                    } else { "Unknown error." }
                     $message = switch ($result.ServiceExitCode) {
                         -2 { "The service failed to $action." }
                         -1 { "The attempt to $action the service has timed out." }
@@ -199,15 +192,13 @@ function Update-ServiceStatus {
             $serviceNames = $group.Group.ServiceName -join "' OR name = '"
             try {
                 $svcCim = Get-DbaCmObject -ComputerName $group.Name -Namespace "root\cimv2" -query "SELECT * FROM Win32_Service WHERE name = '$serviceNames'" -Credential $credential
-            }
-            catch {
+            } catch {
                 Stop-Function -EnableException $EnableException -FunctionName $callerName -Message ("The attempt to get CIM session for the services on $($group.Name) returned the following error: " + ($_.Exception.Message -join ' ')) -Category ConnectionError -ErrorRecord $_
             }
             foreach ($service in $group.Group) {
                 if ($cimObject = ($svcCim | Where-Object Name -eq $service.ServiceName)) {
                     Add-Member -Force -InputObject $service -NotePropertyName _CimObject -NotePropertyValue $cimObject
-                }
-                else {
+                } else {
                     Stop-Function -Message "Failed to retrieve service name $($service.ServiceName) from the CIM object collection - the service will not be processed" -Continue
                 }
             }
@@ -215,11 +206,12 @@ function Update-ServiceStatus {
         if ($Pscmdlet.ShouldProcess("Running the following service action: $action")) {
             if ($serviceComputerGroup) {
                 $serviceComputerGroup | Invoke-Parallel -ScriptBlock $svcControlBlock -RunspaceTimeout $Timeout -Throttle 50 -ImportVariables |
-                Select-DefaultView -Property ComputerName, ServiceName, State, Status, Message
+                    Select-DefaultView -Property ComputerName, ServiceName, State, Status, Message
             }
         }
     }
     end {
     }
 }
+
 

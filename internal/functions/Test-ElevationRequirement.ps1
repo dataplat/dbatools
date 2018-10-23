@@ -79,8 +79,7 @@ function Test-ElevationRequirement {
 
     if ($PSCmdlet.ParameterSetName -like "NoStop") {
         return $testResult
-    }
-    elseif ($PSCmdlet.ParameterSetName -like "Stop") {
+    } elseif ($PSCmdlet.ParameterSetName -like "Stop") {
         if ($testResult) { return $testResult }
 
         $splatStopFunction = @{
@@ -95,4 +94,5 @@ function Test-ElevationRequirement {
         return $testResult
     }
 }
+
 
