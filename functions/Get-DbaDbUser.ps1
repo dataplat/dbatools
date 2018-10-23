@@ -1,5 +1,5 @@
 function Get-DbaDbUser {
-<#
+    <#
     .SYNOPSIS
         Gets database users
 
@@ -77,8 +77,7 @@ function Get-DbaDbUser {
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -120,3 +119,4 @@ function Get-DbaDbUser {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-DbaDatabaseUser
     }
 }
+

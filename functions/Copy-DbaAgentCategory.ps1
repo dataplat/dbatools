@@ -1,6 +1,6 @@
 #ValidationTags#Messaging#
 function Copy-DbaAgentCategory {
-<#
+    <#
     .SYNOPSIS
         Copy-DbaAgentCategory migrates SQL Agent categories from one SQL Server to another. This is similar to sp_add_category.
 
@@ -125,13 +125,13 @@ function Copy-DbaAgentCategory {
                     $categoryName = $jobCategory.Name
 
                     $copyJobCategoryStatus = [pscustomobject]@{
-                        SourceServer = $sourceServer.Name
+                        SourceServer      = $sourceServer.Name
                         DestinationServer = $destServer.Name
-                        Name         = $categoryName
-                        Type         = "Agent Job Category"
-                        Status       = $null
-                        Notes        = $null
-                        DateTime     = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
+                        Name              = $categoryName
+                        Type              = "Agent Job Category"
+                        Status            = $null
+                        Notes             = $null
+                        DateTime          = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
                     }
 
                     if ($jobCategories.Count -gt 0 -and $jobCategories -notcontains $categoryName) {
@@ -145,14 +145,12 @@ function Copy-DbaAgentCategory {
                             $copyJobCategoryStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                             Write-Message -Level Verbose -Message "Job category $categoryName exists at destination. Use -Force to drop and migrate."
                             continue
-                        }
-                        else {
+                        } else {
                             if ($Pscmdlet.ShouldProcess($destinstance, "Dropping job category $categoryName")) {
                                 try {
                                     Write-Message -Level Verbose -Message "Dropping Job category $categoryName"
                                     $destServer.JobServer.JobCategories[$categoryName].Drop()
-                                }
-                                catch {
+                                } catch {
                                     $copyJobCategoryStatus.Status = "Failed"
                                     $copyJobCategoryStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                                     Stop-Function -Message "Issue dropping job category" -Target $categoryName -ErrorRecord $_ -Continue
@@ -170,8 +168,7 @@ function Copy-DbaAgentCategory {
 
                             $copyJobCategoryStatus.Status = "Successful"
                             $copyJobCategoryStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                        }
-                        catch {
+                        } catch {
                             $copyJobCategoryStatus.Status = "Failed"
                             $copyJobCategoryStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                             Stop-Function -Message "Issue copying job category" -Target $categoryName -ErrorRecord $_
@@ -203,13 +200,13 @@ function Copy-DbaAgentCategory {
                     $categoryName = $operatorCategory.Name
 
                     $copyOperatorCategoryStatus = [pscustomobject]@{
-                        SourceServer = $sourceServer.Name
+                        SourceServer      = $sourceServer.Name
                         DestinationServer = $destServer.Name
-                        Type         = "Agent Operator Category"
-                        Name         = $categoryName
-                        Status       = $null
-                        Notes        = $null
-                        DateTime     = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
+                        Type              = "Agent Operator Category"
+                        Name              = $categoryName
+                        Status            = $null
+                        Notes             = $null
+                        DateTime          = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
                     }
 
                     if ($operatorCategories.Count -gt 0 -and $operatorCategories -notcontains $categoryName) {
@@ -223,8 +220,7 @@ function Copy-DbaAgentCategory {
                             $copyOperatorCategoryStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                             Write-Message -Level Verbose -Message "Operator category $categoryName exists at destination. Use -Force to drop and migrate."
                             continue
-                        }
-                        else {
+                        } else {
                             if ($Pscmdlet.ShouldProcess($destinstance, "Dropping operator category $categoryName and recreating")) {
                                 try {
                                     Write-Message -Level Verbose -Message "Dropping Operator category $categoryName"
@@ -233,16 +229,14 @@ function Copy-DbaAgentCategory {
                                     $sql = $operatorCategory.Script() | Out-String
                                     Write-Message -Level Debug -Message $sql
                                     $destServer.Query($sql)
-                                }
-                                catch {
+                                } catch {
                                     $copyOperatorCategoryStatus.Status = "Failed"
                                     $copyOperatorCategoryStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                                     Stop-Function -Message "Issue dropping operator category" -Target $categoryName -ErrorRecord $_
                                 }
                             }
                         }
-                    }
-                    else {
+                    } else {
                         if ($Pscmdlet.ShouldProcess($destinstance, "Creating Operator category $categoryName")) {
                             try {
                                 Write-Message -Level Verbose -Message "Copying Operator category $categoryName"
@@ -252,8 +246,7 @@ function Copy-DbaAgentCategory {
 
                                 $copyOperatorCategoryStatus.Status = "Successful"
                                 $copyOperatorCategoryStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                            }
-                            catch {
+                            } catch {
                                 $copyOperatorCategoryStatus.Status = "Failed"
                                 $copyOperatorCategoryStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                                 Stop-Function -Message "Issue copying operator category" -Target $categoryName -ErrorRecord $_
@@ -291,13 +284,13 @@ function Copy-DbaAgentCategory {
                     $categoryName = $alertCategory.Name
 
                     $copyAlertCategoryStatus = [pscustomobject]@{
-                        SourceServer = $sourceServer.Name
+                        SourceServer      = $sourceServer.Name
                         DestinationServer = $destServer.Name
-                        Type         = "Agent Alert Category"
-                        Name         = $categoryName
-                        Status       = $null
-                        Notes        = $null
-                        DateTime     = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
+                        Type              = "Agent Alert Category"
+                        Name              = $categoryName
+                        Status            = $null
+                        Notes             = $null
+                        DateTime          = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
                     }
 
                     if ($alertCategories.Length -gt 0 -and $alertCategories -notcontains $categoryName) {
@@ -311,8 +304,7 @@ function Copy-DbaAgentCategory {
                             $copyAlertCategoryStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                             Write-Message -Level Verbose -Message "Alert category $categoryName exists at destination. Use -Force to drop and migrate."
                             continue
-                        }
-                        else {
+                        } else {
                             if ($Pscmdlet.ShouldProcess($destinstance, "Dropping alert category $categoryName and recreating")) {
                                 try {
                                     Write-Message -Level Verbose -Message "Dropping Alert category $categoryName"
@@ -321,16 +313,14 @@ function Copy-DbaAgentCategory {
                                     $sql = $alertcategory.Script() | Out-String
                                     Write-Message -Level Debug -Message "SQL Statement: $sql"
                                     $destServer.Query($sql)
-                                }
-                                catch {
+                                } catch {
                                     $copyAlertCategoryStatus.Status = "Failed"
                                     $copyAlertCategoryStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                                     Stop-Function -Message "Issue dropping alert category" -Target $categoryName -ErrorRecord $_
                                 }
                             }
                         }
-                    }
-                    else {
+                    } else {
                         if ($Pscmdlet.ShouldProcess($destinstance, "Creating Alert category $categoryName")) {
                             try {
                                 Write-Message -Level Verbose -Message "Copying Alert category $categoryName"
@@ -340,8 +330,7 @@ function Copy-DbaAgentCategory {
 
                                 $copyAlertCategoryStatus.Status = "Successful"
                                 $copyAlertCategoryStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                            }
-                            catch {
+                            } catch {
                                 $copyAlertCategoryStatus.Status = "Failed"
                                 $copyAlertCategoryStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                                 Stop-Function -Message "Issue creating alert category" -Target $categoryName -ErrorRecord $_
@@ -354,8 +343,7 @@ function Copy-DbaAgentCategory {
 
         try {
             $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
-        }
-        catch {
+        } catch {
             Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Source
             return
         }
@@ -365,8 +353,7 @@ function Copy-DbaAgentCategory {
         foreach ($destinstance in $Destination) {
             try {
                 $destServer = Connect-SqlInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
             }
 
@@ -412,3 +399,4 @@ function Copy-DbaAgentCategory {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-SqlAgentCategory
     }
 }
+

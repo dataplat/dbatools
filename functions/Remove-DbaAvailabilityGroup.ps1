@@ -1,6 +1,6 @@
 #ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Remove-DbaAvailabilityGroup {
-<#
+    <#
     .SYNOPSIS
         Removes availability groups on a SQL Server instance.
 
@@ -92,17 +92,17 @@ function Remove-DbaAvailabilityGroup {
                 try {
                     $ag.Parent.Query("DROP AVAILABILITY GROUP $ag")
                     [pscustomobject]@{
-                        ComputerName = $ag.ComputerName
-                        InstanceName = $ag.InstanceName
-                        SqlInstance  = $ag.SqlInstance
+                        ComputerName      = $ag.ComputerName
+                        InstanceName      = $ag.InstanceName
+                        SqlInstance       = $ag.SqlInstance
                         AvailabilityGroup = $ag.Name
-                        Status       = "Removed"
+                        Status            = "Removed"
                     }
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
                 }
             }
         }
     }
 }
+

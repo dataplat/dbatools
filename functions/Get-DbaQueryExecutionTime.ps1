@@ -1,6 +1,6 @@
 #ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaQueryExecutionTime {
-<#
+    <#
     .SYNOPSIS
         Displays Stored Procedures and Ad hoc queries with the highest execution times.  Works on SQL Server 2008 and above.
 
@@ -166,8 +166,7 @@ function Get-DbaQueryExecutionTime {
 
             if ($MinExecMs -gt 0 -and $MinExecs) {
                 $sql += "`n AND AvgExec_ms >= " + $MinExecMs
-            }
-            elseif ($MinExecMs) {
+            } elseif ($MinExecMs) {
                 $sql += "`n AvgExecs_ms >= " + $MinExecMs
             }
         }
@@ -183,8 +182,7 @@ function Get-DbaQueryExecutionTime {
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 10
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -230,11 +228,11 @@ function Get-DbaQueryExecutionTime {
                             FullStatementText  = $row.full_statement_text
                         } | Select-DefaultView -ExcludeProperty FullStatementText
                     }
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Could not process $db on $instance" -Target $db -ErrorRecord $_ -Continue
                 }
             }
         }
     }
 }
+

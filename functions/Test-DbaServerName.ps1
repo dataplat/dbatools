@@ -1,5 +1,5 @@
 function Test-DbaServerName {
-<#
+    <#
     .SYNOPSIS
         Tests to see if it's possible to easily rename the server at the SQL Server instance level, or if it even needs to be changed.
 
@@ -85,8 +85,7 @@ function Test-DbaServerName {
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -100,21 +99,20 @@ function Test-DbaServerName {
             if ($instance.Length -eq 0) {
                 $serverInstanceName = $server.NetName
                 $instance = "MSSQLSERVER"
-            }
-            else {
+            } else {
                 $netname = $server.NetName
                 $serverInstanceName = "$netname\$instance"
             }
 
             $serverInfo = [PSCustomObject]@{
-                ComputerName = $server.NetName
-                ServerName   = $sqlInstanceName
-                InstanceName = $server.ServiceName
-                SqlInstance  = $server.DomainInstanceName
+                ComputerName   = $server.NetName
+                ServerName     = $sqlInstanceName
+                InstanceName   = $server.ServiceName
+                SqlInstance    = $server.DomainInstanceName
                 RenameRequired = $serverInstanceName -ne $sqlInstanceName
-                Updatable    = "N/A"
-                Warnings     = $null
-                Blockers     = $null
+                Updatable      = "N/A"
+                Warnings       = $null
+                Blockers       = $null
             }
 
             $reasons = @()
@@ -125,8 +123,7 @@ function Test-DbaServerName {
             if ($SkipSsrs -eq $false -or $NoWarning -eq $false) {
                 try {
                     $rs = Get-DbaService -ComputerName $instance.ComputerName -InstanceName $server.ServiceName -Type SSRS -EnableException -WarningAction Stop
-                }
-                catch {
+                } catch {
                     Write-Message -Level Warning -Message "Unable to pull information on $ssrsService." -ErrorRecord $_ -Target $instance
                 }
             }
@@ -134,13 +131,11 @@ function Test-DbaServerName {
             if ($null -ne $rs -or $rs.Count -gt 0) {
                 if ($rs.State -eq 'Running') {
                     $rstext = "$ssrsService must be stopped and updated."
-                }
-                else {
+                } else {
                     $rstext = "$ssrsService exists. When it is started again, it must be updated."
                 }
                 $serverInfo.Warnings = $rstext
-            }
-            else {
+            } else {
                 $serverInfo.Warnings = "N/A"
             }
 
@@ -177,8 +172,7 @@ function Test-DbaServerName {
             if ($reasons.Length -gt 0) {
                 $serverInfo.Updatable = $false
                 $serverInfo.Blockers = $reasons
-            }
-            else {
+            } else {
                 $serverInfo.Updatable = $true
                 $serverInfo.Blockers = "N/A"
             }
@@ -187,3 +181,4 @@ function Test-DbaServerName {
         }
     }
 }
+

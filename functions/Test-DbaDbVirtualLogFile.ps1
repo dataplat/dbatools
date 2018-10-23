@@ -1,6 +1,6 @@
 #ValidationTags#CodeStyle,Messaging,FlowControl,Pipeline#
 function Test-DbaDbVirtualLogFile {
-<#
+    <#
     .SYNOPSIS
         Returns calculations on the database virtual log files for database on a SQL instance.
 
@@ -85,8 +85,7 @@ function Test-DbaDbVirtualLogFile {
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -123,8 +122,7 @@ function Test-DbaDbVirtualLogFile {
                         LogFileGrowth     = $logFile.Growth -join ","
                         LogFileGrowthType = $logFile.GrowthType -join ","
                     } | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, Database, Total
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Unable to query $($db.name) on $instance." -ErrorRecord $_ -Target $db -Continue
                 }
             }
@@ -134,3 +132,4 @@ function Test-DbaDbVirtualLogFile {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Test-DbaVirtualLogFile
     }
 }
+

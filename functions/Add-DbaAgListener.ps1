@@ -1,6 +1,6 @@
 #ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Add-DbaAgListener {
-<#
+    <#
     .SYNOPSIS
         Adds a listener to an availability group on a SQL Server instance.
         
@@ -110,13 +110,11 @@ function Add-DbaAgListener {
                     
                     if ($Passthru) {
                         return $aglistener
-                    }
-                    else {
+                    } else {
                         # something is up with .net create(), force a stop
                         Invoke-Create -Object $aglistener
                     }
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Failure" -ErrorRecord $_
                 }
                 Get-DbaAgListener -SqlInstance $ag.Parent -AvailabilityGroup $ag.Name -Listener $Name
@@ -124,3 +122,4 @@ function Add-DbaAgListener {
         }
     }
 }
+

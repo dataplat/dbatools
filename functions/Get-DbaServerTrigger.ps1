@@ -1,5 +1,5 @@
 function Get-DbaServerTrigger {
-<#
+    <#
     .SYNOPSIS
         Get all existing server triggers on one or more SQL instances.
 
@@ -47,8 +47,7 @@ function Get-DbaServerTrigger {
         foreach ($Instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -58,11 +57,11 @@ function Get-DbaServerTrigger {
                     Add-Member -Force -InputObject $trigger -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
                     Add-Member -Force -InputObject $trigger -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
                     Select-DefaultView -InputObject $trigger -Property ComputerName, InstanceName, SqlInstance, ID, Name, AnsiNullsStatus, AssemblyName, BodyStartIndex, ClassName, CreateDate, DateLastModified, DdlTriggerEvents, ExecutionContext, ExecutionContextLogin, ImplementationType, IsDesignMode, IsEnabled, IsEncrypted, IsSystemObject, MethodName, QuotedIdentifierStatus, State, TextHeader, TextMode
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
                 }
             }
         }
     }
 }
+

@@ -1,6 +1,6 @@
 #ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Add-DbaComputerCertificate {
-<#
+    <#
     .SYNOPSIS
         Adds a computer certificate - useful for older systems.
 
@@ -86,8 +86,7 @@ function Add-DbaComputerCertificate {
                 $bytes = [System.IO.File]::ReadAllBytes($Path)
                 $Certificate = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2
                 $Certificate.Import($bytes, $Password, [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::DefaultKeySet)
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Can't import certificate." -ErrorRecord $_
                 return
             }
@@ -131,8 +130,7 @@ function Add-DbaComputerCertificate {
 
             try {
                 $certData = $cert.Export([System.Security.Cryptography.X509Certificates.X509ContentType]::PFX, $Password)
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Can't export certificate" -ErrorRecord $_ -Continue
             }
 
@@ -142,8 +140,7 @@ function Add-DbaComputerCertificate {
                     try {
                         Invoke-Command2 -ComputerName $computer -Credential $Credential -ArgumentList $certdata, $Password, $Store, $Folder -ScriptBlock $scriptblock -ErrorAction Stop |
                             Select-DefaultView -Property FriendlyName, DnsNameList, Thumbprint, NotBefore, NotAfter, Subject, Issuer
-                    }
-                    catch {
+                    } catch {
                         Stop-Function -Message "Failure" -ErrorRecord $_ -Target $computer -Continue
                     }
                 }
@@ -151,3 +148,4 @@ function Add-DbaComputerCertificate {
         }
     }
 }
+

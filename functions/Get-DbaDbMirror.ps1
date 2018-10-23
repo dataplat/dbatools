@@ -1,6 +1,6 @@
 #ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaDbMirror {
-<#
+    <#
     .SYNOPSIS
         Gets properties of database mirrors and mirror witnesses.
 
@@ -57,14 +57,13 @@ function Get-DbaDbMirror {
             # The witness is kinda hidden. Go get it manually.
             try {
                 $witnesses = $dbs[0].Parent.Query("select distinct database_name, principal_server_name, safety_level, safety_level_desc, partner_sync_state from master.sys.database_mirroring_witnesses")
-            }
-            catch { continue }
+            } catch { continue }
 
             foreach ($witness in $witnesses) {
                 $witnessdb = $dbs | Where-Object Name -eq $witness.database_name
 
                 foreach ($db in $witnessdb) {
-                    $state = switch($witness.partner_sync_state) {
+                    $state = switch ($witness.partner_sync_state) {
                         0 { "None" }
                         1 { "Suspended" }
                         2 { "Disconnected" }
@@ -82,3 +81,4 @@ function Get-DbaDbMirror {
         }
     }
 }
+

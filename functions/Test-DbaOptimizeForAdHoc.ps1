@@ -1,5 +1,5 @@
 function Test-DbaOptimizeForAdHoc {
-<#
+    <#
     .SYNOPSIS
         Displays information relating to SQL Server Optimize for AdHoc Workloads setting.  Works on SQL Server 2008-2016.
 
@@ -57,8 +57,7 @@ function Test-DbaOptimizeForAdHoc {
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential -MinimumVersion 10
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -68,8 +67,7 @@ function Test-DbaOptimizeForAdHoc {
             #Setting notes for optimize adhoc value
             if ($optimizeAdHoc -eq $recommendedValue) {
                 $notes = $notesAsRecommended
-            }
-            else {
+            } else {
                 $notes = $notesAdHocZero
             }
 
@@ -84,3 +82,4 @@ function Test-DbaOptimizeForAdHoc {
         }
     }
 }
+

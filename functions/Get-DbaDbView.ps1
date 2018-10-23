@@ -1,5 +1,5 @@
 function Get-DbaDbView {
-<#
+    <#
     .SYNOPSIS
         Gets database views for each SqlInstance.
 
@@ -77,8 +77,7 @@ function Get-DbaDbView {
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -118,3 +117,4 @@ function Get-DbaDbView {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-DbaDatabaseView
     }
 }
+

@@ -1,6 +1,6 @@
 #ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaMaxMemory {
-<#
+    <#
     .SYNOPSIS
         Gets the 'Max Server Memory' configuration setting and the memory of the server.  Works on SQL Server 2000-2014.
 
@@ -58,8 +58,7 @@ function Get-DbaMaxMemory {
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -80,3 +79,4 @@ function Get-DbaMaxMemory {
         }
     }
 }
+

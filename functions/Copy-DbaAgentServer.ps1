@@ -1,5 +1,5 @@
 function Copy-DbaAgentServer {
-<#
+    <#
     .SYNOPSIS
         Copy SQL Server Agent from one server to another.
 
@@ -87,8 +87,7 @@ function Copy-DbaAgentServer {
     begin {
         try {
             $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
-        }
-        catch {
+        } catch {
             Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Source
             return
         }
@@ -100,8 +99,7 @@ function Copy-DbaAgentServer {
         foreach ($destinstance in $Destination) {
             try {
                 $destServer = Connect-SqlInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
             }
             Invoke-SmoCheck -SqlInstance $destServer
@@ -129,21 +127,21 @@ function Copy-DbaAgentServer {
             Copy-DbaAgentJob -Source $sourceServer -Destination $destServer -Force:$force -DisableOnDestination:$DisableJobsOnDestination -DisableOnSource:$DisableJobsOnSource
 
             # To do
-        <#
+            <#
             Copy-DbaAgentMasterServer -Source $sourceServer -Destination $destServer -Force:$force
             Copy-DbaAgentTargetServer -Source $sourceServer -Destination $destServer -Force:$force
             Copy-DbaAgentTargetServerGroup -Source $sourceServer -Destination $destServer -Force:$force
         #>
 
-        <# Here are the properties which must be migrated separately #>
+            <# Here are the properties which must be migrated separately #>
             $copyAgentPropStatus = [pscustomobject]@{
-                SourceServer = $sourceServer.Name
+                SourceServer      = $sourceServer.Name
                 DestinationServer = $destServer.Name
-                Name         = "Server level properties"
-                Type         = "Agent Properties"
-                Status       = $null
-                Notes        = $null
-                DateTime     = [DbaDateTime](Get-Date)
+                Name              = "Server level properties"
+                Type              = "Agent Properties"
+                Status            = $null
+                Notes             = $null
+                DateTime          = [DbaDateTime](Get-Date)
             }
 
             if ($Pscmdlet.ShouldProcess($destinstance, "Copying Agent Properties")) {
@@ -158,8 +156,7 @@ function Copy-DbaAgentServer {
 
                     $copyAgentPropStatus.Status = "Successful"
                     $copyAgentPropStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                }
-                catch {
+                } catch {
                     $message = $_.Exception.InnerException.InnerException.InnerException.Message
                     if (-not $message) { $message = $_.Exception.Message }
                     $copyAgentPropStatus.Status = "Failed"
@@ -175,3 +172,4 @@ function Copy-DbaAgentServer {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-DbaSqlServerAgent
     }
 }
+

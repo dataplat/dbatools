@@ -1,6 +1,6 @@
 #ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Remove-DbaDbSnapshot {
-<#
+    <#
     .SYNOPSIS
         Removes database snapshots
 
@@ -124,8 +124,7 @@ function Remove-DbaDbSnapshot {
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -141,31 +140,29 @@ function Remove-DbaDbSnapshot {
 
             if ($Force) {
                 $db | Remove-DbaDatabase -Confirm:$false | Select-DefaultView -Property $defaultprops
-            }
-            else {
+            } else {
                 try {
                     if ($Pscmdlet.ShouldProcess("$db on $server", "Drop snapshot")) {
                         $db.Drop()
                         $server.Refresh()
 
                         [pscustomobject]@{
-                            ComputerName   = $server.ComputerName
-                            InstanceName   = $server.ServiceName
-                            SqlInstance    = $server.DomainInstanceName
-                            Database       = $db.name
-                            Status         = "Dropped"
+                            ComputerName = $server.ComputerName
+                            InstanceName = $server.ServiceName
+                            SqlInstance  = $server.DomainInstanceName
+                            Database     = $db.name
+                            Status       = "Dropped"
                         } | Select-DefaultView -Property $defaultprops
                     }
-                }
-                catch {
+                } catch {
                     Write-Message -Level Verbose -Message "Could not drop database $db on $server"
 
                     [pscustomobject]@{
-                        ComputerName   = $server.ComputerName
-                        InstanceName   = $server.ServiceName
-                        SqlInstance    = $server.DomainInstanceName
-                        Database       = $db.name
-                        Status         = (Get-ErrorMessage -Record $_)
+                        ComputerName = $server.ComputerName
+                        InstanceName = $server.ServiceName
+                        SqlInstance  = $server.DomainInstanceName
+                        Database     = $db.name
+                        Status       = (Get-ErrorMessage -Record $_)
                     } | Select-DefaultView -Property $defaultprops
                 }
             }
@@ -175,3 +172,4 @@ function Remove-DbaDbSnapshot {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Remove-DbaDatabaseSnapshot
     }
 }
+

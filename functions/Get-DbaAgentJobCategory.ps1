@@ -1,5 +1,5 @@
 function Get-DbaAgentJobCategory {
-<#
+    <#
     .SYNOPSIS
         Get-DbaAgentJobCategory retrieves the job categories.
 
@@ -75,8 +75,7 @@ function Get-DbaAgentJobCategory {
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -106,8 +105,7 @@ function Get-DbaAgentJobCategory {
                     # Show the result
                     Select-DefaultView -InputObject $cat -Property $defaults
                 }
-            }
-            catch {
+            } catch {
                 Stop-Function -ErrorRecord $_ -Target $instance -Message "Failure. Collection may have been modified" -Continue
             }
 
@@ -121,3 +119,4 @@ function Get-DbaAgentJobCategory {
     }
 
 }
+

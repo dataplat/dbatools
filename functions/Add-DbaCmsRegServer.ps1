@@ -1,6 +1,6 @@
 #ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Add-DbaCmsRegServer {
-<#
+    <#
     .SYNOPSIS
         Adds registered servers to SQL Server Central Management Server (CMS)
 
@@ -104,12 +104,10 @@ function Add-DbaCmsRegServer {
             if (($Group)) {
                 if ($Group -is [Microsoft.SqlServer.Management.RegisteredServers.ServerGroup]) {
                     $InputObject += Get-DbaCmsRegServerGroup -SqlInstance $instance -SqlCredential $SqlCredential -Group $Group.Name
-                }
-                else {
+                } else {
                     $InputObject += Get-DbaCmsRegServerGroup -SqlInstance $instance -SqlCredential $SqlCredential -Group $Group
                 }
-            }
-            else {
+            } else {
                 $InputObject += Get-DbaCmsRegServerGroup -SqlInstance $instance -SqlCredential $SqlCredential -Id 1
             }
 
@@ -135,8 +133,7 @@ function Add-DbaCmsRegServer {
                     $newserver.Create()
 
                     Get-DbaCmsRegServer -SqlInstance $server -Name $Name -ServerName $ServerName
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Failed to add $ServerName on $($parentserver.SqlInstance)" -ErrorRecord $_ -Continue
                 }
             }
@@ -146,3 +143,4 @@ function Add-DbaCmsRegServer {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Add-DbaRegisteredServer
     }
 }
+

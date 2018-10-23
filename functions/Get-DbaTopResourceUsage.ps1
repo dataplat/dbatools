@@ -1,5 +1,5 @@
 function Get-DbaTopResourceUsage {
-<#
+    <#
     .SYNOPSIS
         Returns the top 20 resource consumers for cached queries based on four different metrics: duration, frequency, IO, and CPU.
 
@@ -255,8 +255,7 @@ function Get-DbaTopResourceUsage {
 
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 10
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
             if ($server.ConnectionContext.StatementTimeout -ne 0) {
@@ -267,8 +266,7 @@ function Get-DbaTopResourceUsage {
                 try {
                     Write-Message -Level Debug -Message "Executing SQL: $duration"
                     $server.Query($duration) | Select-DefaultView -ExcludeProperty QueryPlan
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Failure executing query for duration." -ErrorRecord $_ -Target $server -Continue
                 }
             }
@@ -277,8 +275,7 @@ function Get-DbaTopResourceUsage {
                 try {
                     Write-Message -Level Debug -Message "Executing SQL: $frequency"
                     $server.Query($frequency) | Select-DefaultView -ExcludeProperty QueryPlan
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Failure executing query for frequency." -ErrorRecord $_ -Target $server -Continue
                 }
             }
@@ -287,8 +284,7 @@ function Get-DbaTopResourceUsage {
                 try {
                     Write-Message -Level Debug -Message "Executing SQL: $io"
                     $server.Query($io) | Select-DefaultView -ExcludeProperty QueryPlan
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Failure executing query for IO." -ErrorRecord $_ -Target $server -Continue
                 }
             }
@@ -297,11 +293,11 @@ function Get-DbaTopResourceUsage {
                 try {
                     Write-Message -Level Debug -Message "Executing SQL: $cpu"
                     $server.Query($cpu) | Select-DefaultView -ExcludeProperty QueryPlan
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Failure executing query for CPU." -ErrorRecord $_ -Target $server -Continue
                 }
             }
         }
     }
 }
+

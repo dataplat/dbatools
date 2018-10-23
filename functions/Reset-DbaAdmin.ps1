@@ -1,5 +1,5 @@
 function Reset-DbaAdmin {
-<#
+    <#
     .SYNOPSIS
         This function allows administrators to regain access to SQL Servers in the event that passwords or access was lost.
 
@@ -144,8 +144,7 @@ function Reset-DbaAdmin {
                 $conn.Close()
                 $conn.Dispose()
                 return $true
-            }
-            catch {
+            } catch {
                 return $false
             }
         }
@@ -188,8 +187,7 @@ function Reset-DbaAdmin {
                         $tcp.Connect($hostname, 135)
                         $tcp.Close()
                         $tcp.Dispose()
-                    }
-                    catch {
+                    } catch {
                         throw "Can't connect to $baseaddress either via ping or tcp (WMI port 135)"
                     }
                 }
@@ -197,8 +195,7 @@ function Reset-DbaAdmin {
                 try {
                     $hostentry = [System.Net.Dns]::GetHostEntry($baseaddress)
                     $ipaddr = ($hostentry.AddressList | Where-Object { $_ -notlike '169.*' } | Select-Object -First 1).IPAddressToString
-                }
-                catch {
+                } catch {
                     throw "Could not resolve SqlServer IP or NetBIOS name"
                 }
 
@@ -208,8 +205,7 @@ function Reset-DbaAdmin {
                     if ($null -eq $hostname) {
                         $hostname = (nbtstat -A $ipaddr | Where-Object { $_ -match '\<00\>  UNIQUE' } | ForEach-Object { $_.SubString(4, 14) }).Trim()
                     }
-                }
-                catch {
+                } catch {
                     throw "Could not access remote WMI object. Check permissions and firewall."
                 }
             }
@@ -218,8 +214,7 @@ function Reset-DbaAdmin {
             if ($hostname -ne $env:COMPUTERNAME) {
                 try {
                     $session = New-PSSession -ComputerName $hostname
-                }
-                catch {
+                } catch {
                     throw "Can't access $hostname using PSSession. Check your firewall settings and ensure Remoting is enabled or run the script locally."
                 }
             }
@@ -233,15 +228,13 @@ function Reset-DbaAdmin {
                     if ($hostname -eq $env:COMPUTERNAME) {
                         $account = New-Object System.Security.Principal.NTAccount($args)
                         $sid = $account.Translate([System.Security.Principal.SecurityIdentifier])
-                    }
-                    else {
+                    } else {
                         Invoke-Command -ErrorAction Stop -Session $session -ArgumentList $login -ScriptBlock {
                             $account = New-Object System.Security.Principal.NTAccount($args)
                             $sid = $account.Translate([System.Security.Principal.SecurityIdentifier])
                         }
                     }
-                }
-                catch {
+                } catch {
                     Write-Message -Level Warning -Message "Cannot resolve Windows User or Group $login. Trying anyway."
                 }
             }
@@ -271,13 +264,11 @@ function Reset-DbaAdmin {
                 if ($hostname -eq $env:COMPUTERNAME) {
                     $instanceservices = Get-Service -ErrorAction Stop | Where-Object { $_.DisplayName -like "*($instance)*" -and $_.Status -eq "Running" }
                     $sqlservice = Get-Service -ErrorAction Stop | Where-Object DisplayName -eq "SQL Server ($instance)"
-                }
-                else {
+                } else {
                     $instanceservices = Get-Service -ComputerName $ipaddr -ErrorAction Stop | Where-Object { $_.DisplayName -like "*($instance)*" -and $_.Status -eq "Running" }
                     $sqlservice = Get-Service -ComputerName $ipaddr -ErrorAction Stop | Where-Object DisplayName -eq "SQL Server ($instance)"
                 }
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Cannot connect to WMI on $hostname or SQL Service does not exist. Check permissions, firewall and SQL Server running status." -ErrorRecord $_ -Target $SqlInstance
                 return
             }
@@ -293,8 +284,7 @@ function Reset-DbaAdmin {
             # itself connects immediately) or -f, so they are handled differently.
             try {
                 $checkcluster = Get-Service -ComputerName $ipaddr -ErrorAction Stop | Where-Object { $_.Name -eq "ClusSvc" -and $_.Status -eq "Running" }
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Can't check services." -Target $SqlInstance -ErrorRecord $_
                 return
             }
@@ -309,20 +299,17 @@ function Reset-DbaAdmin {
                 $isclustered = $true
                 try {
                     $clusterResource | Where-Object { $_.Name -eq "SQL Server" } | ForEach-Object { $_.TakeOffline(60) }
-                }
-                catch {
+                } catch {
                     $clusterResource | Where-Object { $_.Name -eq "SQL Server" } | ForEach-Object { $_.BringOnline(60) }
                     $clusterResource | Where-Object { $_.Name -ne "SQL Server" } | ForEach-Object { $_.BringOnline(60) }
                     Stop-Function -Message "Could not stop the SQL Service. Restarted SQL Service and quit." -ErrorRecord $_ -Target $SqlInstance
                     return
                 }
-            }
-            else {
+            } else {
                 try {
                     Stop-Service -InputObject $sqlservice -Force -ErrorAction Stop
                     Write-Message -Level Verbose -Message "Successfully stopped SQL service."
-                }
-                catch {
+                } catch {
                     Start-Service -InputObject $instanceservices -ErrorAction Stop
                     Stop-Function -Message "Could not stop the SQL Service. Restarted SQL service and quit." -ErrorRecord $_ -Target $SqlInstance
                     return
@@ -337,22 +324,19 @@ function Reset-DbaAdmin {
                     if ("$netstart" -notmatch "success") {
                         throw
                     }
-                }
-                else {
+                } else {
                     $netstart = Invoke-Command -ErrorAction Stop -Session $session -ArgumentList $displayname -ScriptBlock { net start ""$args"" /mReset-DbaAdmin } 2>&1
                     foreach ($line in $netstart) {
                         if ($line.length -gt 0) { Write-Message -Level Verbose -Message $line }
                     }
                 }
-            }
-            catch {
+            } catch {
                 Stop-Service -InputObject $sqlservice -Force -ErrorAction SilentlyContinue
 
                 if ($isclustered) {
                     $clusterResource | Where-Object Name -eq "SQL Server" | ForEach-Object { $_.BringOnline(60) }
                     $clusterResource | Where-Object Name -ne "SQL Server" | ForEach-Object { $_.BringOnline(60) }
-                }
-                else {
+                } else {
                     Start-Service -InputObject $instanceservices -ErrorAction SilentlyContinue
                 }
                 Stop-Function -Message "Couldn't execute net start command. Restarted services and quit." -ErrorRecord $_
@@ -361,19 +345,16 @@ function Reset-DbaAdmin {
 
             try {
                 $null = Invoke-ResetSqlCmd -SqlInstance $sqlinstance -Sql "SELECT 1" -ErrorAction Stop
-            }
-            catch {
+            } catch {
                 try {
                     Start-Sleep 3
                     $null = Invoke-ResetSqlCmd -SqlInstance $sqlinstance -Sql "SELECT 1" -ErrorAction Stop
-                }
-                catch {
+                } catch {
                     Stop-Service Input-Object $sqlservice -Force -ErrorAction SilentlyContinue
                     if ($isclustered) {
                         $clusterResource | Where-Object { $_.Name -eq "SQL Server" } | ForEach-Object { $_.BringOnline(60) }
                         $clusterResource | Where-Object { $_.Name -ne "SQL Server" } | ForEach-Object { $_.BringOnline(60) }
-                    }
-                    else {
+                    } else {
                         Start-Service -InputObject $instanceservices -ErrorAction SilentlyContinue
                     }
                     Stop-Function -Message "Could not stop the SQL Service. Restarted SQL Service and quit." -ErrorRecord $_
@@ -389,8 +370,7 @@ function Reset-DbaAdmin {
                     Write-Message -Level Warning -Message "Couldn't create login."
                 }
 
-            }
-            elseif ($login -ne "sa") {
+            } elseif ($login -ne "sa") {
                 # Create new sql user
                 $sql = "IF NOT EXISTS (SELECT name FROM master.sys.server_principals WHERE name = '$login')
                     BEGIN CREATE LOGIN [$login] WITH PASSWORD = '$(ConvertTo-PlainText $Password)', CHECK_POLICY = OFF, CHECK_EXPIRATION = OFF END"
@@ -435,8 +415,7 @@ function Reset-DbaAdmin {
             if ($isclustered -eq $true) {
                 $clusterResource | Where-Object Name -eq "SQL Server" | ForEach-Object { $_.BringOnline(60) }
                 $clusterResource | Where-Object Name -ne "SQL Server" | ForEach-Object { $_.BringOnline(60) }
-            }
-            else {
+            } else {
                 Start-Service -InputObject $instanceservices -ErrorAction SilentlyContinue
             }
         }
@@ -445,3 +424,4 @@ function Reset-DbaAdmin {
         Write-Message -Level Verbose -Message "Script complete!"
     }
 }
+

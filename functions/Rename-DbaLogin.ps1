@@ -1,5 +1,5 @@
 function Rename-DbaLogin {
-<#
+    <#
     .SYNOPSIS
         Rename-DbaLogin will rename login and database mapping for a specified login.
 
@@ -77,8 +77,7 @@ function Rename-DbaLogin {
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -98,8 +97,7 @@ function Rename-DbaLogin {
                         NewLogin     = $NewLogin
                         Status       = "Successful"
                     }
-                }
-                catch {
+                } catch {
                     $dbenums = $null
                     [pscustomobject]@{
                         ComputerName = $server.ComputerName
@@ -133,8 +131,7 @@ function Rename-DbaLogin {
                             Status       = "Successful"
                         }
 
-                    }
-                    catch {
+                    } catch {
                         Write-Message -Level Warning -Message "Rolling back update to login: $Login"
                         $currentLogin.rename($Login)
 
@@ -154,3 +151,4 @@ function Rename-DbaLogin {
         }
     }
 }
+

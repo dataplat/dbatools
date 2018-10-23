@@ -1,6 +1,6 @@
 #ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaLastBackup {
-<#
+    <#
     .SYNOPSIS
         Get date/time for last known backups of databases.
 
@@ -83,8 +83,7 @@ function Get-DbaLastBackup {
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential -MinimumVersion 9
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -111,24 +110,21 @@ function Get-DbaLastBackup {
                 $LastFullBackup = ($FullHistory | Where-Object Database -eq $db.Name | Sort-Object -Property End -Descending | Select-Object -First 1).End
                 if ($null -ne $LastFullBackup) {
                     $SinceFull_ = [DbaTimeSpan](New-TimeSpan -Start $LastFullBackup)
-                }
-                else {
+                } else {
                     $SinceFull_ = $StartOfTime
                 }
 
                 $LastDiffBackup = ($DiffHistory | Where-Object Database -eq $db.Name | Sort-Object -Property End -Descending | Select-Object -First 1).End
                 if ($null -ne $LastDiffBackup) {
                     $SinceDiff_ = [DbaTimeSpan](New-TimeSpan -Start $LastDiffBackup)
-                }
-                else {
+                } else {
                     $SinceDiff_ = $StartOfTime
                 }
 
                 $LastIncrBackup = ($IncrHistory | Where-Object Database -eq $db.Name | Sort-Object -Property End -Descending | Select-Object -First 1).End
                 if ($null -ne $LastIncrBackup) {
                     $SinceLog_ = [DbaTimeSpan](New-TimeSpan -Start $LastIncrBackup)
-                }
-                else {
+                } else {
                     $SinceLog_ = $StartOfTime
                 }
 
@@ -136,14 +132,11 @@ function Get-DbaLastBackup {
 
                 if ($daysSinceDbCreated -lt 1 -and $SinceFull_ -eq 0) {
                     $Status = 'New database, not backed up yet'
-                }
-                elseif ($SinceFull_.Days -gt 0 -and $SinceDiff_.Days -gt 0) {
+                } elseif ($SinceFull_.Days -gt 0 -and $SinceDiff_.Days -gt 0) {
                     $Status = 'No Full or Diff Back Up in the last day'
-                }
-                elseif ($db.RecoveryModel -eq "Full" -and $SinceLog_.Hours -gt 0) {
+                } elseif ($db.RecoveryModel -eq "Full" -and $SinceLog_.Hours -gt 0) {
                     $Status = 'No Log Back Up in the last hour'
-                }
-                else {
+                } else {
                     $Status = 'OK'
                 }
 
@@ -168,3 +161,4 @@ function Get-DbaLastBackup {
         }
     }
 }
+

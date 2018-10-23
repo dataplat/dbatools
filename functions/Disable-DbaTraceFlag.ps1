@@ -1,5 +1,5 @@
 function Disable-DbaTraceFlag {
-<#
+    <#
     .SYNOPSIS
         Disable a Global Trace Flag that is currently running
 
@@ -54,8 +54,7 @@ function Disable-DbaTraceFlag {
 
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -82,8 +81,7 @@ function Disable-DbaTraceFlag {
                 try {
                     $query = "DBCC TRACEOFF ($tf, -1)"
                     $server.Query($query)
-                }
-                catch {
+                } catch {
                     $TraceFlagInfo.Status = "Failed"
                     $TraceFlagInfo.Notes = $_.Exception.Message
                     $TraceFlagInfo
@@ -95,3 +93,4 @@ function Disable-DbaTraceFlag {
         }
     }
 }
+

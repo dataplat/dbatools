@@ -1,6 +1,6 @@
 #ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaHelpIndex {
-<#
+    <#
     .SYNOPSIS
         Returns size, row and configuration information for indexes in databases.
 
@@ -144,8 +144,7 @@ function Get-DbaHelpIndex {
         #Add the table predicate to the query
         if (!$ObjectName) {
             $TablePredicate = "DECLARE @TableName NVARCHAR(256);";
-        }
-        else {
+        } else {
             $TablePredicate = "DECLARE @TableName NVARCHAR(256); SET @TableName = '$ObjectName';";
         }
 
@@ -165,16 +164,14 @@ function Get-DbaHelpIndex {
         #Figure out if we are including stats in the results
         if ($IncludeStats) {
             $IncludeStatsPredicate = "";
-        }
-        else {
+        } else {
             $IncludeStatsPredicate = "WHERE IndexType != 'STATISTICS'";
         }
 
         #Data types being returns with the results?
         if ($IncludeDataTypes) {
             $IncludeDataTypesPredicate = 'DECLARE @IncludeDataTypes BIT; SET @IncludeDataTypes = 1';
-        }
-        else {
+        } else {
             $IncludeDataTypesPredicate = 'DECLARE @IncludeDataTypes BIT; SET @IncludeDataTypes = 0';
         }
 
@@ -1004,8 +1001,7 @@ function Get-DbaHelpIndex {
 
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -1018,8 +1014,7 @@ function Get-DbaHelpIndex {
             #Need to check the version of SQL
             if ($server.versionMajor -ge 10) {
                 $indexesQuery = $SizesQuery
-            }
-            else {
+            } else {
                 $indexesQuery = $SizesQuery2005
             }
 
@@ -1040,27 +1035,27 @@ function Get-DbaHelpIndex {
                         }
 
                         [pscustomobject]@{
-                            ComputerName  = $server.ComputerName
-                            InstanceName  = $server.ServiceName
-                            SqlInstance   = $server.DomainInstanceName
-                            Database     = $db.Name
-                            Object        = $detail.FullObjectName
-                            Index         = $detail.IndexName
-                            IndexType     = $detail.IndexType
-                            KeyColumns    = $detail.KeyColumns
-                            IncludeColumns = $detail.IncludeColumns
-                            FilterDefinition = $detail.FilterDefinition
-                            DataCompression = $detail.DataCompression
-                            IndexReads    = "{0:N0}" -f $detail.IndexReads
-                            IndexUpdates  = "{0:N0}" -f $detail.IndexUpdates
-                            SizeKB        = "{0:N0}" -f $detail.SizeKB
-                            IndexRows     = "{0:N0}" -f $detail.IndexRows
-                            IndexLookups  = "{0:N0}" -f $detail.IndexLookups
-                            MostRecentlyUsed = $recentlyused
-                            StatsSampleRows = "{0:N0}" -f $detail.StatsSampleRows
-                            StatsRowMods  = "{0:N0}" -f $detail.StatsRowMods
-                            HistogramSteps = $detail.HistogramSteps
-                            StatsLastUpdated = $detail.StatsLastUpdated
+                            ComputerName       = $server.ComputerName
+                            InstanceName       = $server.ServiceName
+                            SqlInstance        = $server.DomainInstanceName
+                            Database           = $db.Name
+                            Object             = $detail.FullObjectName
+                            Index              = $detail.IndexName
+                            IndexType          = $detail.IndexType
+                            KeyColumns         = $detail.KeyColumns
+                            IncludeColumns     = $detail.IncludeColumns
+                            FilterDefinition   = $detail.FilterDefinition
+                            DataCompression    = $detail.DataCompression
+                            IndexReads         = "{0:N0}" -f $detail.IndexReads
+                            IndexUpdates       = "{0:N0}" -f $detail.IndexUpdates
+                            SizeKB             = "{0:N0}" -f $detail.SizeKB
+                            IndexRows          = "{0:N0}" -f $detail.IndexRows
+                            IndexLookups       = "{0:N0}" -f $detail.IndexLookups
+                            MostRecentlyUsed   = $recentlyused
+                            StatsSampleRows    = "{0:N0}" -f $detail.StatsSampleRows
+                            StatsRowMods       = "{0:N0}" -f $detail.StatsRowMods
+                            HistogramSteps     = $detail.HistogramSteps
+                            StatsLastUpdated   = $detail.StatsLastUpdated
                             IndexFragInPercent = "{0:F2}" -f $detail.IndexFragInPercent
                         } | Select-DefaultView -Property $OutputProperties
                     }
@@ -1075,35 +1070,35 @@ function Get-DbaHelpIndex {
                         }
 
                         [pscustomobject]@{
-                            ComputerName   = $server.ComputerName
-                            InstanceName   = $server.ServiceName
-                            SqlInstance    = $server.DomainInstanceName
-                            Database       = $db.Name
-                            Object         = $detail.FullObjectName
-                            Index          = $detail.IndexName
-                            IndexType      = $detail.IndexType
-                            KeyColumns     = $detail.KeyColumns
-                            IncludeColumns = $detail.IncludeColumns
-                            FilterDefinition = $detail.FilterDefinition
-                            DataCompression = $detail.DataCompression
-                            IndexReads     = $detail.IndexReads
-                            IndexUpdates   = $detail.IndexUpdates
-                            SizeKB         = $detail.SizeKB
-                            IndexRows      = $detail.IndexRows
-                            IndexLookups   = $detail.IndexLookups
-                            MostRecentlyUsed = $recentlyused
-                            StatsSampleRows = $detail.StatsSampleRows
-                            StatsRowMods   = $detail.StatsRowMods
-                            HistogramSteps = $detail.HistogramSteps
-                            StatsLastUpdated = $detail.StatsLastUpdated
+                            ComputerName       = $server.ComputerName
+                            InstanceName       = $server.ServiceName
+                            SqlInstance        = $server.DomainInstanceName
+                            Database           = $db.Name
+                            Object             = $detail.FullObjectName
+                            Index              = $detail.IndexName
+                            IndexType          = $detail.IndexType
+                            KeyColumns         = $detail.KeyColumns
+                            IncludeColumns     = $detail.IncludeColumns
+                            FilterDefinition   = $detail.FilterDefinition
+                            DataCompression    = $detail.DataCompression
+                            IndexReads         = $detail.IndexReads
+                            IndexUpdates       = $detail.IndexUpdates
+                            SizeKB             = $detail.SizeKB
+                            IndexRows          = $detail.IndexRows
+                            IndexLookups       = $detail.IndexLookups
+                            MostRecentlyUsed   = $recentlyused
+                            StatsSampleRows    = $detail.StatsSampleRows
+                            StatsRowMods       = $detail.StatsRowMods
+                            HistogramSteps     = $detail.HistogramSteps
+                            StatsLastUpdated   = $detail.StatsLastUpdated
                             IndexFragInPercent = $detail.IndexFragInPercent
                         } | Select-DefaultView -Property $OutputProperties
                     }
                 }
-            }
-            catch {
+            } catch {
                 Stop-Function -Continue -ErrorRecord $_ -Message "Cannot process $db on $server"
             }
         }
     }
 }
+

@@ -1,6 +1,6 @@
 #ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaDbMirrorMonitor {
-<#
+    <#
     .SYNOPSIS
         Returns status rows for a monitored database from the status table in which database mirroring monitoring history is stored and allows you to choose whether the procedure obtains the latest status beforehand.
 
@@ -114,30 +114,30 @@ function Get-DbaDbMirrorMonitor {
 
                 foreach ($result in $results) {
                     [pscustomobject]@{
-                        ComputerName = $db.Parent.ComputerName
-                        InstanceName = $db.Parent.ServiceName
-                        SqlInstance  = $db.Parent.DomainInstanceName
-                        DatabaseName = $result.database_name
-                        Role         = $result.role
-                        MirroringState = $result.mirroring_state
-                        WitnessStatus = $result.witness_status
-                        LogGenerationRate = $result.log_generation_rate
-                        UnsentLog    = $result.unsent_log
-                        SendRate     = $result.send_rate
-                        UnrestoredLog = $result.unrestored_log
-                        RecoveryRate = $result.recovery_rate
-                        TransactionDelay = $result.transaction_delay
+                        ComputerName          = $db.Parent.ComputerName
+                        InstanceName          = $db.Parent.ServiceName
+                        SqlInstance           = $db.Parent.DomainInstanceName
+                        DatabaseName          = $result.database_name
+                        Role                  = $result.role
+                        MirroringState        = $result.mirroring_state
+                        WitnessStatus         = $result.witness_status
+                        LogGenerationRate     = $result.log_generation_rate
+                        UnsentLog             = $result.unsent_log
+                        SendRate              = $result.send_rate
+                        UnrestoredLog         = $result.unrestored_log
+                        RecoveryRate          = $result.recovery_rate
+                        TransactionDelay      = $result.transaction_delay
                         TransactionsPerSecond = $result.transactions_per_sec
-                        AverageDelay = $result.average_delay
-                        TimeRecorded = $result.time_recorded
-                        TimeBehind   = $result.time_behind
-                        LocalTime    = $result.local_time
+                        AverageDelay          = $result.average_delay
+                        TimeRecorded          = $result.time_recorded
+                        TimeBehind            = $result.time_behind
+                        LocalTime             = $result.local_time
                     }
                 }
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -ErrorRecord $_
             }
         }
     }
 }
+

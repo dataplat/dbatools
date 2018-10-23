@@ -1,5 +1,5 @@
 function Get-DbaServerAudit {
-<#
+    <#
     .SYNOPSIS
         Gets SQL Security Audit information for each instance(s) of SQL Server.
 
@@ -62,8 +62,7 @@ function Get-DbaServerAudit {
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 10
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -94,3 +93,4 @@ function Get-DbaServerAudit {
         }
     }
 }
+

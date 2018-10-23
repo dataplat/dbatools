@@ -1,5 +1,5 @@
 function Remove-DbaCmConnection {
-<#
+    <#
     .SYNOPSIS
         Removes connection objects from the connection cache used for remote computer management.
 
@@ -42,7 +42,7 @@ function Remove-DbaCmConnection {
         Clears the entire connection cache.
 
 #>
-    [CmdletBinding(SupportsShouldProcess,ConfirmImpact = 'High')]
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
     param (
         [Parameter(ValueFromPipeline, Mandatory)]
         [Sqlcollaborative.Dbatools.Parameter.DbaCmConnectionParameter[]]
@@ -64,8 +64,7 @@ function Remove-DbaCmConnection {
                 if ([Sqlcollaborative.Dbatools.Connection.ConnectionHost]::Connections.ContainsKey($connectionObject.Connection.ComputerName)) {
                     $null = [Sqlcollaborative.Dbatools.Connection.ConnectionHost]::Connections.Remove($connectionObject.Connection.ComputerName)
                     Write-Message -Level Verbose -Message "Successfully removed $($connectionObject.Connection.ComputerName)" -Target $connectionObject.Connection.ComputerName
-                }
-                else {
+                } else {
                     Write-Message -Level Verbose -Message "Not found: $($connectionObject.Connection.ComputerName)" -Target $connectionObject.Connection.ComputerName
                 }
             }
@@ -75,3 +74,4 @@ function Remove-DbaCmConnection {
         Write-Message -Level InternalComment -Message "Ending"
     }
 }
+

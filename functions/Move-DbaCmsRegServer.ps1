@@ -1,6 +1,6 @@
 #ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Move-DbaCmsRegServer {
-<#
+    <#
     .SYNOPSIS
         Moves registered servers around SQL Server Central Management Server (CMS)
 
@@ -102,8 +102,7 @@ function Move-DbaCmsRegServer {
                 if (-not $group) {
                     Stop-Function -Message "$NewGroup not found on $server" -Continue
                 }
-            }
-            else {
+            } else {
                 $group = Get-DbaCmsRegServerGroup -SqlInstance $server -Id 1
             }
 
@@ -112,8 +111,7 @@ function Move-DbaCmsRegServer {
                     $null = $parentserver.ServerConnection.ExecuteNonQuery($regserver.ScriptMove($group).GetScript())
                     Get-DbaCmsRegServer -SqlInstance $server -Name $regserver.Name -ServerName $regserver.ServerName
                     $parentserver.ServerConnection.Disconnect()
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Failed to move $($regserver.Name) to $NewGroup on $($regserver.SqlInstance)" -ErrorRecord $_ -Continue
                 }
             }
@@ -123,3 +121,4 @@ function Move-DbaCmsRegServer {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Move-DbaRegisteredServer
     }
 }
+

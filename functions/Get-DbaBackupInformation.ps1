@@ -1,6 +1,6 @@
 #ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaBackupInformation {
-<#
+    <#
     .SYNOPSIS
         Scan backup files and creates a set, compatible with Restore-DbaDatabase
 
@@ -176,8 +176,7 @@ function Get-DbaBackupInformation {
         if ($PSCmdlet.ParameterSetName -eq "Create") {
             try {
                 $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
                 return
             }
@@ -199,13 +198,11 @@ function Get-DbaBackupInformation {
                         $Group.DatabaseBackupLsn = [BigInt]$group.DatabaseBackupLsn.ToString()
                         $Group.LastLsn = [BigInt]$group.LastLsn.ToString()
                     }
-                }
-                else {
+                } else {
                     Write-Message -Message "$f does not exist or is unreadable" -Level Warning
                 }
             }
-        }
-        else {
+        } else {
             $Files = @()
             $groupResults = @()
             if ($Path[0] -match 'http') { $NoXpDirTree = $true }
@@ -218,21 +215,17 @@ function Get-DbaBackupInformation {
                         Write-Message -Message "Testing a single file $f " -Level Verbose
                         if ((Test-DbaPath -Path $f.fullname -SqlInstance $server)) {
                             $files += $f
-                        }
-                        else {
+                        } else {
                             Write-Message -Level Verbose -Message "$server cannot 'see' file $($f.FullName)"
                         }
-                    }
-                    elseif ($True -eq $MaintenanceSolution) {
+                    } elseif ($True -eq $MaintenanceSolution) {
                         if ($true -eq $IgnoreLogBackup -and [System.IO.Path]::GetDirectoryName($f) -like '*LOG') {
                             Write-Message -Level Verbose -Message "Skipping Log Backups as requested"
-                        }
-                        else {
+                        } else {
                             Write-Message -Level Verbose -Message "OLA - Getting folder contents"
                             $Files += Get-XpDirTreeRestoreFile -Path $f -SqlInstance $server
                         }
-                    }
-                    else {
+                    } else {
                         Write-Message -Message "Testing a folder $f" -Level Verbose
                         $Files += $Check = Get-XpDirTreeRestoreFile -Path $f -SqlInstance $server
                         if ($null -eq $check) {
@@ -240,38 +233,31 @@ function Get-DbaBackupInformation {
                         }
                     }
                 }
-            }
-            else {
+            } else {
                 ForEach ($f in $path) {
                     Write-Message -Level VeryVerbose -Message "Not using sql for $f"
                     if ($f -is [System.IO.FileSystemInfo]) {
                         if ($f.PsIsContainer -eq $true -and $true -ne $MaintenanceSolution) {
                             Write-Message -Level VeryVerbose -Message "folder $($f.fullname)"
                             $Files += Get-ChildItem -Path $f.fullname -File -Recurse:$DirectoryRecurse
-                        }
-                        elseif ($f.PsIsContainer -eq $true -and $true -eq $MaintenanceSolution) {
+                        } elseif ($f.PsIsContainer -eq $true -and $true -eq $MaintenanceSolution) {
                             if ($IgnoreLogBackup -and $f -notlike '*LOG' ) {
                                 Write-Message -Level Verbose -Message "Skipping Log backups for Maintenance backups"
-                            }
-                            else {
+                            } else {
                                 $Files += Get-ChildItem -Path $f.fullname -File -Recurse:$DirectoryRecurse
                             }
-                        }
-                        elseif ($true -eq $MaintenanceSolution) {
+                        } elseif ($true -eq $MaintenanceSolution) {
                             $Files += Get-ChildItem -Path $f.fullname -Recurse:$DirectoryRecurse
-                        }
-                        else {
+                        } else {
                             Write-Message -Level VeryVerbose -Message "File"
                             $Files += $f.fullname
                         }
-                    }
-                    else {
+                    } else {
                         if ($true -eq $MaintenanceSolution) {
                             $Files += Get-XpDirTreeRestoreFile -Path $f\FULL -SqlInstance $server -NoRecurse
                             $Files += Get-XpDirTreeRestoreFile -Path $f\DIFF -SqlInstance $server -NoRecurse
                             $Files += Get-XpDirTreeRestoreFile -Path $f\LOG -SqlInstance $server -NoRecurse
-                        }
-                        else {
+                        } else {
                             Write-Message -Level VeryVerbose -Message "File"
                             $Files += $f
                         }
@@ -287,8 +273,7 @@ function Get-DbaBackupInformation {
             Write-Message -Level Verbose -Message "Reading backup headers of $($Files.Count) files"
             try {
                 $FileDetails = Read-DbaBackupHeader -SqlInstance $server -Path $Files -AzureCredential $AzureCredential -EnableException
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure reading backup header" -ErrorRecord $_ -Target $server -Continue
             }
 
@@ -349,3 +334,4 @@ function Get-DbaBackupInformation {
         $groupResults | Sort-Object -Property End -Descending
     }
 }
+

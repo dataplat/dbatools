@@ -1,5 +1,5 @@
 function Find-DbaDisabledIndex {
-<#
+    <#
     .SYNOPSIS
         Find Disabled indexes
 
@@ -103,15 +103,13 @@ function Find-DbaDisabledIndex {
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential  -MinimumVersion 9
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             if ($Database) {
                 $databases = $server.Databases | Where-Object Name -in $database
-            }
-            else {
+            } else {
                 $databases = $server.Databases | Where-Object IsAccessible -eq $true
             }
 
@@ -135,18 +133,15 @@ function Find-DbaDisabledIndex {
                                         $index
                                     }
                                 }
-                            }
-                            else {
+                            } else {
                                 Write-Message -Level Verbose -Message "No Disabled indexes found!"
                             }
                         }
-                    }
-                    catch {
+                    } catch {
                         Stop-Function -Message "Issue gathering indexes" -Category InvalidOperation -InnerErrorRecord $_ -Target $db
                     }
                 }
-            }
-            else {
+            } else {
                 Write-Message -Level Verbose -Message "There are no databases to analyse."
             }
         }
@@ -155,3 +150,4 @@ function Find-DbaDisabledIndex {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-SqlDisabledIndex
     }
 }
+

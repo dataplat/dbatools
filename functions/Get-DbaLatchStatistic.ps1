@@ -1,5 +1,5 @@
 function Get-DbaLatchStatistic {
-<#
+    <#
     .SYNOPSIS
         Displays latch statistics from sys.dm_os_latch_stats
 
@@ -87,7 +87,7 @@ function Get-DbaLatchStatistic {
     )
 
     BEGIN {
-       $sql = "WITH [Latches] AS
+        $sql = "WITH [Latches] AS
                (
                    SELECT
                        [latch_class],
@@ -119,8 +119,7 @@ function Get-DbaLatchStatistic {
             Write-Message -Level Verbose -Message "Connecting to $instance"
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
                 Return
             }
@@ -128,17 +127,18 @@ function Get-DbaLatchStatistic {
 
             foreach ($row in $server.Query($sql)) {
                 [PSCustomObject]@{
-                    ComputerName           = $server.NetName
-                    InstanceName           = $server.ServiceName
-                    SqlInstance            = $server.DomainInstanceName
-                    WaitType               = $row.LatchClass
-                    WaitSeconds            = $row.WaitSeconds
-                    WaitCount              = $row.WaitCount
-                    Percentage             = $row.Percentage
-                    AverageWaitSeconds     = $row.AvgWaitSeconds
-                    URL                    = $row.URL
+                    ComputerName       = $server.NetName
+                    InstanceName       = $server.ServiceName
+                    SqlInstance        = $server.DomainInstanceName
+                    WaitType           = $row.LatchClass
+                    WaitSeconds        = $row.WaitSeconds
+                    WaitCount          = $row.WaitCount
+                    Percentage         = $row.Percentage
+                    AverageWaitSeconds = $row.AvgWaitSeconds
+                    URL                = $row.URL
                 }
             }
         }
     }
 }
+

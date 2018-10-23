@@ -1,6 +1,6 @@
 #ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Find-DbaBackup {
-<#
+    <#
     .SYNOPSIS
         Finds SQL Server backups on disk.
 
@@ -141,8 +141,7 @@ function Find-DbaBackup {
         try {
             $RetentionDate = Convert-UserFriendlyRetentionToDatetime -UserFriendlyRetention $RetentionPeriod
             Write-Message -Message "Backup Retention Date set to $RetentionDate" -Level Verbose
-        }
-        catch {
+        } catch {
             Stop-Function -Message "Failed to interpret retention time!" -ErrorRecord $_
         }
 
@@ -154,8 +153,7 @@ function Find-DbaBackup {
                     $_
                 }
             }
-        }
-        else {
+        } else {
             filter DbaArchiveBitFilter {
                 $_
             }
@@ -170,3 +168,4 @@ function Find-DbaBackup {
         }
     }
 }
+

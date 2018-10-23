@@ -1,5 +1,5 @@
 function Get-DbaDbCompression {
-<#
+    <#
     .SYNOPSIS
         Gets tables and indexes size and current compression settings.
 
@@ -62,8 +62,7 @@ function Get-DbaDbCompression {
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 10
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failed to process Instance $Instance" -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -77,8 +76,7 @@ function Get-DbaDbCompression {
                 if ($ExcludeDatabase) {
                     $dbs = $dbs | Where-Object { $_.Name -NotIn $ExcludeDatabase }
                 }
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Unable to gather list of databases for $instance" -Target $instance -ErrorRecord $_ -Continue
             }
 
@@ -88,19 +86,19 @@ function Get-DbaDbCompression {
                         if ($obj.HasHeapIndex) {
                             foreach ($p in $obj.PhysicalPartitions) {
                                 [pscustomobject]@{
-                                    ComputerName        = $server.ComputerName
-                                    InstanceName        = $server.ServiceName
-                                    SqlInstance         = $server.DomainInstanceName
-                                    Database            = $db.Name
-                                    Schema              = $obj.Schema
-                                    TableName           = $obj.Name
-                                    IndexName           = $null
-                                    Partition           = $p.PartitionNumber
-                                    IndexID             = 0
-                                    IndexType           = "Heap"
-                                    DataCompression     = $p.DataCompression
-                                    SizeCurrent         = [dbasize]($obj.DataSpaceUsed * 1024)
-                                    RowCount            = $obj.RowCount
+                                    ComputerName    = $server.ComputerName
+                                    InstanceName    = $server.ServiceName
+                                    SqlInstance     = $server.DomainInstanceName
+                                    Database        = $db.Name
+                                    Schema          = $obj.Schema
+                                    TableName       = $obj.Name
+                                    IndexName       = $null
+                                    Partition       = $p.PartitionNumber
+                                    IndexID         = 0
+                                    IndexType       = "Heap"
+                                    DataCompression = $p.DataCompression
+                                    SizeCurrent     = [dbasize]($obj.DataSpaceUsed * 1024)
+                                    RowCount        = $obj.RowCount
                                 }
                             }
                         }
@@ -108,26 +106,25 @@ function Get-DbaDbCompression {
                         foreach ($index in $obj.Indexes) {
                             foreach ($p in $index.PhysicalPartitions) {
                                 [pscustomobject]@{
-                                    ComputerName        = $server.ComputerName
-                                    InstanceName        = $server.ServiceName
-                                    SqlInstance         = $server.DomainInstanceName
-                                    Database            = $db.Name
-                                    Schema              = $obj.Schema
-                                    TableName           = $obj.Name
-                                    IndexName           = $index.Name
-                                    Partition           = $p.PartitionNumber
-                                    IndexID             = $index.ID
-                                    IndexType           = $index.IndexType
-                                    DataCompression     = $p.DataCompression
-                                    SizeCurrent         = if($index.IndexType -eq "ClusteredIndex") { [dbasize]($obj.DataSpaceUsed * 1024) } else { [dbasize]($index.SpaceUsed * 1024) }
-                                    RowCount            = $p.RowCount
+                                    ComputerName    = $server.ComputerName
+                                    InstanceName    = $server.ServiceName
+                                    SqlInstance     = $server.DomainInstanceName
+                                    Database        = $db.Name
+                                    Schema          = $obj.Schema
+                                    TableName       = $obj.Name
+                                    IndexName       = $index.Name
+                                    Partition       = $p.PartitionNumber
+                                    IndexID         = $index.ID
+                                    IndexType       = $index.IndexType
+                                    DataCompression = $p.DataCompression
+                                    SizeCurrent     = if ($index.IndexType -eq "ClusteredIndex") { [dbasize]($obj.DataSpaceUsed * 1024) } else { [dbasize]($index.SpaceUsed * 1024) }
+                                    RowCount        = $p.RowCount
                                 }
                             }
                         }
 
                     }
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Unable to query $instance - $db" -Target $db -ErrorRecord $_ -Continue
                 }
 
@@ -135,3 +132,4 @@ function Get-DbaDbCompression {
         }
     }
 }
+

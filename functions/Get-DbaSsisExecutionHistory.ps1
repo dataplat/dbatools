@@ -1,6 +1,6 @@
 #ValidationTags#Messaging#
 function Get-DbaSsisExecutionHistory {
-<#
+    <#
     .SYNOPSIS
         Get-DbaSsisHistory Retreives SSIS project and package execution History, and environments from one SQL Server to another.
 
@@ -99,8 +99,7 @@ function Get-DbaSsisExecutionHistory {
         if ($Status) {
             $csv = ($statuses[$Status] -join ',')
             $statusq = "`n`t`tAND e.[Status] in ($csv)"
-        }
-        else {
+        } else {
             $statusq = ''
         }
 
@@ -108,14 +107,13 @@ function Get-DbaSsisExecutionHistory {
         if ($Project) {
             $projectq = "`n`t`tAND ( 1=0 "
             $i = 0
-            foreach($p in $Project){
+            foreach ($p in $Project) {
                 $i ++
                 $projectq += "`n`t`t`tOR e.[project_name] = @project$i"
-                $params.Add("project$i",$p)
+                $params.Add("project$i", $p)
             }
             $projectq += "`n`t`t)"
-        }
-        else {
+        } else {
             $projectq = ''
         }
 
@@ -123,36 +121,34 @@ function Get-DbaSsisExecutionHistory {
         if ($Folder) {
             $folderq = "`n`t`tAND ( 1=0 "
             $i = 0
-            foreach($f in $Folder){
+            foreach ($f in $Folder) {
                 $i ++
                 $folderq += "`n`t`t`tOR e.[folder_name] = @folder$i"
                 $params.Add("folder$i" , $f)
             }
             $folderq += "`n`t`t)"
-        }
-        else {
+        } else {
             $folderq = ''
         }
 
-         #construct parameterized collection predicate for environment array
-         if ($Environment) {
+        #construct parameterized collection predicate for environment array
+        if ($Environment) {
             $environmentq = "`n`t`tAND ( 1=0 "
             $i = 0
-            foreach($e in $Environment){
+            foreach ($e in $Environment) {
                 $i ++
                 $environmentq += "`n`t`t`tOR e.[environment_name] = @environment$i"
                 $params.Add("environment$i" , $e)
             }
             $environmentq += "`n`t`t)"
-        }
-        else {
+        } else {
             $environmentq = ''
         }
 
         #construct date filter for since
-        if($Since){
+        if ($Since) {
             $sinceq = "`n`t`tAND e.[start_time] >= @since"
-            $params.Add('since',$Since )
+            $params.Add('since', $Since )
         }
 
         $sql = "
@@ -223,4 +219,5 @@ function Get-DbaSsisExecutionHistory {
         }
     }
 }
+
 

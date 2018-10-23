@@ -1,6 +1,6 @@
 #ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Stop-DbaEndpoint {
-<#
+    <#
     .SYNOPSIS
         Stops endpoints on a SQL Server instance.
 
@@ -86,10 +86,10 @@ function Stop-DbaEndpoint {
                     $ep.Stop()
                     $ep
                 }
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
             }
         }
     }
 }
+

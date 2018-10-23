@@ -1,6 +1,6 @@
 #ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaAgListener {
-<#
+    <#
     .SYNOPSIS
         Returns availability group listeners.
 
@@ -86,3 +86,4 @@ function Get-DbaAgListener {
         }
     }
 }
+

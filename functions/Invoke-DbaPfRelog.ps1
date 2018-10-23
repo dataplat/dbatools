@@ -1,6 +1,6 @@
 #ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Invoke-DbaPfRelog {
-<#
+    <#
     .SYNOPSIS
         Pipeline-compatible wrapper for the relog command which is available on modern Windows platforms.
 
@@ -183,8 +183,7 @@ function Invoke-DbaPfRelog {
         if (Test-Bound -ParameterName Destination) {
             $script:destinationset = $true
             $originaldestination = $Destination
-        }
-        else {
+        } else {
             $script:destinationset = $false
         }
     }
@@ -203,16 +202,13 @@ function Invoke-DbaPfRelog {
                     if (-not $AllTime) {
                         if ($instance.IsLocalHost) {
                             $allpaths += (Get-ChildItem -Recurse -Path $object.LatestOutputLocation -Include *.blg -ErrorAction SilentlyContinue).FullName
-                        }
-                        else {
+                        } else {
                             $allpaths += (Get-ChildItem -Recurse -Path $object.RemoteLatestOutputLocation -Include *.blg -ErrorAction SilentlyContinue).FullName
                         }
-                    }
-                    else {
+                    } else {
                         if ($instance.IsLocalHost) {
                             $allpaths += (Get-ChildItem -Recurse -Path $object.OutputLocation -Include *.blg -ErrorAction SilentlyContinue).FullName
-                        }
-                        else {
+                        } else {
                             $allpaths += (Get-ChildItem -Recurse -Path $object.RemoteOutputLocation -Include *.blg -ErrorAction SilentlyContinue).FullName
                         }
                     }
@@ -227,16 +223,13 @@ function Invoke-DbaPfRelog {
                     if (-not $AllTime) {
                         if ($instance.IsLocalHost) {
                             $allpaths += (Get-ChildItem -Recurse -Path $object.LatestOutputLocation -Include *.blg -ErrorAction SilentlyContinue).FullName
-                        }
-                        else {
+                        } else {
                             $allpaths += (Get-ChildItem -Recurse -Path $object.RemoteLatestOutputLocation -Include *.blg -ErrorAction SilentlyContinue).FullName
                         }
-                    }
-                    else {
+                    } else {
                         if ($instance.IsLocalHost) {
                             $allpaths += (Get-ChildItem -Recurse -Path (Split-Path $object.LatestOutputLocation) -Include *.blg -ErrorAction SilentlyContinue).FullName
-                        }
-                        else {
+                        } else {
                             $allpaths += (Get-ChildItem -Recurse -Path (Split-Path $object.RemoteLatestOutputLocation) -Include *.blg -ErrorAction SilentlyContinue).FullName
                         }
                     }
@@ -258,8 +251,7 @@ function Invoke-DbaPfRelog {
         $scriptblock = {
             if ($args) {
                 $file = $args
-            }
-            else {
+            } else {
                 $file = $psitem
             }
             $item = Get-ChildItem -Path $file -ErrorAction SilentlyContinue
@@ -282,8 +274,7 @@ function Invoke-DbaPfRelog {
                 if ($script:destinationset -eq $true) {
                     if ($file -match "\:") {
                         $computer = $env:COMPUTERNAME
-                    }
-                    else {
+                    } else {
                         $computer = $file.Split("\")[2]
                     }
                     # Avoid naming conflicts
@@ -336,8 +327,7 @@ function Invoke-DbaPfRelog {
 
             if (-not ($Destination.StartsWith("DSN"))) {
                 $outputisfile = $true
-            }
-            else {
+            } else {
                 $outputisfile = $false
             }
 
@@ -347,8 +337,7 @@ function Invoke-DbaPfRelog {
                     if (-not (Test-Path -Path $dir)) {
                         try {
                             $null = New-Item -ItemType Directory -Path $dir -ErrorAction Stop
-                        }
-                        catch {
+                        } catch {
                             Stop-Function -Message "Failure" -ErrorRecord $_ -Target $Destination -Continue
                         }
                     }
@@ -357,16 +346,13 @@ function Invoke-DbaPfRelog {
                         if ($AllowClobber) {
                             try {
                                 Remove-Item -Path "$Destination" -ErrorAction Stop
-                            }
-                            catch {
+                            } catch {
                                 Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
                             }
-                        }
-                        else {
+                        } else {
                             if ($Type -eq "bin") {
                                 Stop-Function -Message "$Destination exists. Use -AllowClobber to overwrite or -Append to append." -Continue
-                            }
-                            else {
+                            } else {
                                 Stop-Function -Message "$Destination exists. Use -AllowClobber to overwrite." -Continue
                             }
                         }
@@ -376,16 +362,13 @@ function Invoke-DbaPfRelog {
                         if ($AllowClobber) {
                             try {
                                 Remove-Item -Path "$Destination.$type" -ErrorAction Stop
-                            }
-                            catch {
+                            } catch {
                                 Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
                             }
-                        }
-                        else {
+                        } else {
                             if ($Type -eq "bin") {
                                 Stop-Function -Message "$("$Destination.$type") exists. Use -AllowClobber to overwrite or -Append to append." -Continue
-                            }
-                            else {
+                            } else {
                                 Stop-Function -Message "$("$Destination.$type") exists. Use -AllowClobber to overwrite." -Continue
                             }
                         }
@@ -399,16 +382,14 @@ function Invoke-DbaPfRelog {
                 if ($Raw) {
                     Write-Message -Level Output -Message "relog $arguments"
                     cmd /c "relog $arguments"
-                }
-                else {
+                } else {
                     Write-Message -Level Verbose -Message "relog $arguments"
                     $scriptblock = {
                         $output = (cmd /c "relog $arguments" | Out-String).Trim()
 
                         if ($output -notmatch "Success") {
                             Stop-Function -Continue -Message $output.Trim("Input")
-                        }
-                        else {
+                        } else {
                             Write-Message -Level Verbose -Message "$output"
                             $array = $output -Split [environment]::NewLine
                             $files = $array | Select-String "File:"
@@ -425,8 +406,7 @@ function Invoke-DbaPfRelog {
                     }
                     Invoke-Command -ScriptBlock $scriptblock
                 }
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -ErrorRecord $_ -Target $path
             }
         }
@@ -436,9 +416,9 @@ function Invoke-DbaPfRelog {
             if ($parallelerror) {
                 Write-Message -Level Verbose -Message "$parallelerror"
             }
-        }
-        else {
+        } else {
             foreach ($file in $allpaths) { Invoke-Command -ScriptBlock $scriptblock -ArgumentList $file }
         }
     }
 }
+

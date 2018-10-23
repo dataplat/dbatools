@@ -1,6 +1,6 @@
 #ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Remove-DbaAgentJobStep {
-<#
+    <#
     .SYNOPSIS
         Removes a step from the specified SQL Agent job.
 
@@ -91,8 +91,7 @@ function Remove-DbaAgentJobStep {
 
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -108,8 +107,7 @@ function Remove-DbaAgentJobStep {
                             Stop-Function -Message "Job $j doesnn't exist on $instance." -Continue -ContinueLabel main -Target $instance -Category InvalidData
                         }
                     }
-                }
-                else {
+                } else {
                     # Check if the job step exists
                     if ($Server.JobServer.Jobs[$j].JobSteps.Name -notcontains $StepName) {
                         switch ($Mode) {
@@ -120,16 +118,14 @@ function Remove-DbaAgentJobStep {
                                 Stop-Function -Message "Step $StepName doesn't exist for $job on $instance." -Continue -ContinueLabel main -Target $instance -Category InvalidData
                             }
                         }
-                    }
-                    else {
+                    } else {
                         # Execute
                         if ($PSCmdlet.ShouldProcess($instance, "Removing the job step $StepName for job $j")) {
                             try {
                                 $JobStep = $Server.JobServer.Jobs[$j].JobSteps[$StepName]
                                 Write-Message -Level SomewhatVerbose -Message "Removing the job step $StepName for job $j."
                                 $JobStep.Drop()
-                            }
-                            catch {
+                            } catch {
                                 Stop-Function -Message "Something went wrong removing the job step" -Target $JobStep -Continue -ErrorRecord $_
                                 Write-Message -Level Verbose -Message "Could not remove the job step $StepName from $j"
                             }
@@ -143,3 +139,4 @@ function Remove-DbaAgentJobStep {
         Write-Message -Message "Finished removing the jobs step(s)" -Level Verbose
     }
 }
+

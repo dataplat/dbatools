@@ -1,5 +1,5 @@
 function Copy-DbaAgentSharedSchedule {
-<#
+    <#
     .SYNOPSIS
         Copy-DbaAgentSharedSchedule migrates shared job schedules from one SQL Server to another.
 
@@ -75,8 +75,7 @@ function Copy-DbaAgentSharedSchedule {
     begin {
         try {
             $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -MinimumVersion 9
-        }
-        catch {
+        } catch {
             Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Source
             return
         }
@@ -87,8 +86,7 @@ function Copy-DbaAgentSharedSchedule {
         foreach ($destinstance in $Destination) {
             try {
                 $destServer = Connect-SqlInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential -MinimumVersion 9
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
             }
 
@@ -96,13 +94,13 @@ function Copy-DbaAgentSharedSchedule {
             foreach ($schedule in $serverSchedules) {
                 $scheduleName = $schedule.Name
                 $copySharedScheduleStatus = [pscustomobject]@{
-                    SourceServer = $sourceServer.Name
+                    SourceServer      = $sourceServer.Name
                     DestinationServer = $destServer.Name
-                    Type         = "Agent Schedule"
-                    Name         = $scheduleName
-                    Status       = $null
-                    Notes        = $null
-                    DateTime     = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
+                    Type              = "Agent Schedule"
+                    Name              = $scheduleName
+                    Status            = $null
+                    Notes             = $null
+                    DateTime          = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
                 }
 
                 if ($schedules.Length -gt 0 -and $schedules -notcontains $scheduleName) {
@@ -118,8 +116,7 @@ function Copy-DbaAgentSharedSchedule {
                             Write-Message -Level Verbose -Message "Shared job schedule $scheduleName exists at destination. Use -Force to drop and migrate."
                             continue
                         }
-                    }
-                    else {
+                    } else {
                         if ($Pscmdlet.ShouldProcess($destinstance, "Schedule [$scheduleName] has associated jobs. Skipping.")) {
                             if ($destServer.JobServer.Jobs.JobSchedules.Name -contains $scheduleName) {
                                 $copySharedScheduleStatus.Status = "Skipped"
@@ -127,14 +124,12 @@ function Copy-DbaAgentSharedSchedule {
                                 Write-Message -Level Verbose -Message "Schedule [$scheduleName] has associated jobs. Skipping."
                             }
                             continue
-                        }
-                        else {
+                        } else {
                             if ($Pscmdlet.ShouldProcess($destinstance, "Dropping schedule $scheduleName and recreating")) {
                                 try {
                                     Write-Message -Level Verbose -Message "Dropping schedule $scheduleName"
                                     $destServer.JobServer.SharedSchedules[$scheduleName].Drop()
-                                }
-                                catch {
+                                } catch {
                                     $copySharedScheduleStatus.Status = "Failed"
                                     $copySharedScheduleStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                                     Stop-Function -Message "Issue dropping schedule" -Target $scheduleName -ErrorRecord $_ -Continue
@@ -154,8 +149,7 @@ function Copy-DbaAgentSharedSchedule {
 
                         $copySharedScheduleStatus.Status = "Successful"
                         $copySharedScheduleStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                    }
-                    catch {
+                    } catch {
                         $copySharedScheduleStatus.Status = "Failed"
                         $copySharedScheduleStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                         Stop-Function -Message "Issue creating schedule" -Target $scheduleName -ErrorRecord $_ -Continue
@@ -168,3 +162,4 @@ function Copy-DbaAgentSharedSchedule {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-SqlSharedSchedule
     }
 }
+

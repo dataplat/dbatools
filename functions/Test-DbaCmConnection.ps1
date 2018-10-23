@@ -1,5 +1,5 @@
 function Test-DbaCmConnection {
-<#
+    <#
     .SYNOPSIS
         Tests over which paths a computer can be managed.
 
@@ -107,16 +107,14 @@ function Test-DbaCmConnection {
                     Timestamp     = Get-Date
                     Authenticated = $true
                 }
-            }
-            catch {
+            } catch {
                 if (($_.Exception.InnerException -eq 0x8007052e) -or ($_.Exception.InnerException -eq 0x80070005)) {
                     New-Object PSObject -Property @{
                         Success       = "Error"
                         Timestamp     = Get-Date
                         Authenticated = $false
                     }
-                }
-                else {
+                } else {
                     New-Object PSObject -Property @{
                         Success       = "Error"
                         Timestamp     = Get-Date
@@ -144,16 +142,14 @@ function Test-DbaCmConnection {
                     Timestamp     = Get-Date
                     Authenticated = $true
                 }
-            }
-            catch {
+            } catch {
                 if (($_.Exception.InnerException -eq 0x8007052e) -or ($_.Exception.InnerException -eq 0x80070005)) {
                     New-Object PSObject -Property @{
                         Success       = "Error"
                         Timestamp     = Get-Date
                         Authenticated = $false
                     }
-                }
-                else {
+                } else {
                     New-Object PSObject -Property @{
                         Success       = "Error"
                         Timestamp     = Get-Date
@@ -180,15 +176,13 @@ function Test-DbaCmConnection {
                     Timestamp     = Get-Date
                     Authenticated = $true
                 }
-            }
-            catch [System.UnauthorizedAccessException] {
+            } catch [System.UnauthorizedAccessException] {
                 New-Object PSObject -Property @{
                     Success       = "Error"
                     Timestamp     = Get-Date
                     Authenticated = $false
                 }
-            }
-            catch {
+            } catch {
                 New-Object PSObject -Property @{
                     Success       = "Error"
                     Timestamp     = Get-Date
@@ -221,8 +215,7 @@ function Test-DbaCmConnection {
                     Timestamp     = Get-Date
                     Authenticated = $true
                 }
-            }
-            catch {
+            } catch {
                 # Will always consider authenticated, since any call with credentials to a server that doesn't exist will also carry invalid credentials error.
                 # There simply is no way to differentiate between actual authentication errors and server not reached
                 New-Object PSObject -Property @{
@@ -250,8 +243,7 @@ function Test-DbaCmConnection {
             if ($con.DisableBadCredentialCache) { $con.KnownBadCredentials.Clear() }
             elseif ($con.IsBadCredential($Credential) -and (-not $Force)) {
                 Stop-Function -Message "[$Computer] The credentials supplied are on the list of known bad credentials, skipping. Use -Force to override this." -Continue -Category InvalidArgument -Target $Computer
-            }
-            elseif ($con.IsBadCredential($Credential) -and $Force) {
+            } elseif ($con.IsBadCredential($Credential) -and $Force) {
                 $con.RemoveBadCredential($Credential)
             }
             #endregion Handle credentials
@@ -328,3 +320,4 @@ function Test-DbaCmConnection {
 
     }
 }
+

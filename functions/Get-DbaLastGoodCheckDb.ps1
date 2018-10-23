@@ -89,8 +89,7 @@ function Get-DbaLastGoodCheckDb {
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -132,8 +131,7 @@ function Get-DbaLastGoodCheckDb {
 
                 if (($createVersion -lt 611) -and ($dbccFlags -eq 0)) {
                     $dataPurityEnabled = $false
-                }
-                else {
+                } else {
                     $dataPurityEnabled = $true
                 }
 
@@ -142,11 +140,9 @@ function Get-DbaLastGoodCheckDb {
 
                 if ($daysSinceCheckDb -lt 7) {
                     $Status = 'Ok'
-                }
-                elseif ($daysSinceDbCreated -lt 7) {
+                } elseif ($daysSinceDbCreated -lt 7) {
                     $Status = 'New database, not checked yet'
-                }
-                else {
+                } else {
                     $Status = 'CheckDB should be performed'
                 }
 
@@ -172,3 +168,4 @@ function Get-DbaLastGoodCheckDb {
         }
     }
 }
+

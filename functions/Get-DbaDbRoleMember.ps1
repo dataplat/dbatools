@@ -1,5 +1,5 @@
 function Get-DbaDbRoleMember {
-<#
+    <#
     .SYNOPSIS
         Get members of database roles for each instance(s) of SQL Server.
 
@@ -101,8 +101,7 @@ function Get-DbaDbRoleMember {
 
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message 'Failure' -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -163,3 +162,4 @@ function Get-DbaDbRoleMember {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Get-DbaRoleMember
     }
 }
+

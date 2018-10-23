@@ -1,6 +1,6 @@
 #ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Copy-DbaXESessionTemplate {
-<#
+    <#
     .SYNOPSIS
         Copies non-Microsoft templates from the dbatools template repository (\bin\xetemplates\) to $home\Documents\SQL Server Management Studio\Templates\XEventTemplates.
 
@@ -54,8 +54,7 @@ function Copy-DbaXESessionTemplate {
             if (-not (Test-Path -Path $destinstance)) {
                 try {
                     $null = New-Item -ItemType Directory -Path $destinstance -ErrorAction Stop
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Failure" -ErrorRecord $_ -Target $destinstance
                 }
             }
@@ -65,10 +64,10 @@ function Copy-DbaXESessionTemplate {
                     Write-Message -Level Output -Message "Copying $($file.Name) to $destinstance."
                     Copy-Item -Path $file -Destination $destinstance -ErrorAction Stop
                 }
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -ErrorRecord $_ -Target $path
             }
         }
     }
 }
+

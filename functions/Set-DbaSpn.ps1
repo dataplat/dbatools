@@ -1,6 +1,6 @@
 #ValidationTags#FlowControl,Pipeline#
 function Set-DbaSpn {
-<#
+    <#
     .SYNOPSIS
         Sets an SPN for a given service account in active directory (and also enables delegation to the same SPN by default)
 
@@ -95,19 +95,16 @@ function Set-DbaSpn {
         }
         try {
             $Result = Get-DbaADObject -ADObject $ServiceAccount -Type $searchfor -Credential $Credential -EnableException
-        }
-        catch {
+        } catch {
             Stop-Function -Message "AD lookup failure. This may be because the domain cannot be resolved for the SQL Server service account ($ServiceAccount). $($_.Exception.Message)" -EnableException $EnableException -InnerErrorRecord $_ -Target $ServiceAccount
         }
         if ($Result.Count -gt 0) {
             try {
                 $adentry = $Result.GetUnderlyingObject()
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "The SQL Service account ($ServiceAccount) has been found, but you don't have enough permission to inspect its properties $($_.Exception.Message)" -EnableException $EnableException -InnerErrorRecord $_ -Target $ServiceAccount
             }
-        }
-        else {
+        } else {
             Stop-Function -Message "The SQL Service account ($ServiceAccount) has not been found" -EnableException $EnableException -Target $ServiceAccount
         }
         # Cool! Add an SPN
@@ -119,8 +116,7 @@ function Set-DbaSpn {
                 $adentry.CommitChanges()
                 Write-Message -Message "Added SPN $spn to $ServiceAccount" -Level Verbose
                 $set = $true
-            }
-            catch {
+            } catch {
                 Write-Message -Message "Could not add SPN. $($_.Exception.Message)" -Level Warning -EnableException $EnableException.ToBool() -ErrorRecord $_ -Target $ServiceAccount
                 $set = $false
                 $status = "Failed to add SPN"
@@ -147,8 +143,7 @@ function Set-DbaSpn {
                         Write-Message -Message "Added kerberos delegation to $spn for $ServiceAccount" -Level Verbose
                         $set = $true
                         $status = "Successfully added constrained delegation"
-                    }
-                    catch {
+                    } catch {
                         Write-Message -Message "Could not add delegation. $($_.Exception.Message)" -Level Warning -EnableException $EnableException.ToBool() -ErrorRecord $_ -Target $ServiceAccount
                         $set = $false
                         $status = "Failed to add constrained delegation"
@@ -162,10 +157,10 @@ function Set-DbaSpn {
                         Notes          = $status
                     }
                 }
-            }
-            else {
+            } else {
                 Write-Message -Message "Skipping delegation as instructed" -Level Verbose
             }
         }
     }
 }
+

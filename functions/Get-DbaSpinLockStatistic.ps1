@@ -1,5 +1,5 @@
 function Get-DbaSpinLockStatistic {
-<#
+    <#
     .SYNOPSIS
         Displays information from sys.dm_os_spinlock_stats.  Works on SQL Server 2008 and above.
 
@@ -89,25 +89,25 @@ function Get-DbaSpinLockStatistic {
             Write-Message -Level Verbose -Message "Connecting to $instance"
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 10
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
             Write-Message -Level Verbose -Message "Connected to $instance"
 
             foreach ($row in $server.Query($sql)) {
                 [PSCustomObject]@{
-                    ComputerName           = $server.NetName
-                    InstanceName           = $server.ServiceName
-                    SqlInstance            = $server.DomainInstanceName
-                    SpinLockName           = $row.name
-                    Collisions             = $row.collisions
-                    Spins                  = $row.spins
-                    SpinsPerCollision      = $row.spins_per_collision
-                    SleepTime              = $row.sleep_time
-                    Backoffs               = $row.backoffs
+                    ComputerName      = $server.NetName
+                    InstanceName      = $server.ServiceName
+                    SqlInstance       = $server.DomainInstanceName
+                    SpinLockName      = $row.name
+                    Collisions        = $row.collisions
+                    Spins             = $row.spins
+                    SpinsPerCollision = $row.spins_per_collision
+                    SleepTime         = $row.sleep_time
+                    Backoffs          = $row.backoffs
                 }
             }
         }
     }
 }
+

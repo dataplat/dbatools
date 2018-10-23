@@ -1,5 +1,5 @@
 function Copy-DbaDbAssembly {
-<#
+    <#
     .SYNOPSIS
         Copy-DbaDbAssembly migrates assemblies from one SQL Server to another.
 
@@ -90,8 +90,7 @@ function Copy-DbaDbAssembly {
     begin {
         try {
             $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -MinimumVersion 9
-        }
-        catch {
+        } catch {
             Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Source
             return
         }
@@ -105,8 +104,7 @@ function Copy-DbaDbAssembly {
                 foreach ($assembly in $userAssemblies) {
                     $sourceAssemblies += $assembly
                 }
-            }
-            catch { }
+            } catch { }
         }
     }
     process {
@@ -114,8 +112,7 @@ function Copy-DbaDbAssembly {
         foreach ($destinstance in $Destination) {
             try {
                 $destServer = Connect-SqlInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential -MinimumVersion 9
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
             }
 
@@ -128,8 +125,7 @@ function Copy-DbaDbAssembly {
                     foreach ($assembly in $userAssemblies) {
                         $destAssemblies += $assembly
                     }
-                }
-                catch { }
+                } catch { }
             }
             foreach ($currentAssembly in $sourceAssemblies) {
                 $assemblyName = $currentAssembly.Name
@@ -137,15 +133,15 @@ function Copy-DbaDbAssembly {
                 $destDb = $destServer.Databases[$dbName]
                 Write-Message -Level VeryVerbose -Message "Processing $assemblyName on $dbname"
                 $copyDbAssemblyStatus = [pscustomobject]@{
-                    SourceServer = $sourceServer.Name
-                    SourceDatabase = $dbName
-                    DestinationServer = $destServer.Name
+                    SourceServer        = $sourceServer.Name
+                    SourceDatabase      = $dbName
+                    DestinationServer   = $destServer.Name
                     DestinationDatabase = $destDb
-                    type         = "Database Assembly"
-                    Name         = $assemblyName
-                    Status       = $null
-                    Notes        = $null
-                    DateTime     = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
+                    type                = "Database Assembly"
+                    Name                = $assemblyName
+                    Status              = $null
+                    Notes               = $null
+                    DateTime            = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
                 }
 
 
@@ -169,8 +165,7 @@ function Copy-DbaDbAssembly {
                         try {
                             Write-Message -Level Debug -Message $sql
                             $destServer.Query($sql)
-                        }
-                        catch {
+                        } catch {
                             $copyDbAssemblyStatus.Status = "Failed"
                             $copyDbAssemblyStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
@@ -187,8 +182,7 @@ function Copy-DbaDbAssembly {
 
                         Write-Message -Level Verbose -Message "Assembly $assemblyName exists at destination in the $dbName database. Use -Force to drop and migrate."
                         continue
-                    }
-                    else {
+                    } else {
                         if ($Pscmdlet.ShouldProcess($destinstance, "Dropping assembly $assemblyName and recreating")) {
                             try {
                                 Write-Message -Level Verbose -Message "Dropping assembly $assemblyName."
@@ -198,8 +192,7 @@ function Copy-DbaDbAssembly {
                                 $sql = $currentAssembly.Script()
                                 Write-Message -Level Debug -Message $sql
                                 $destServer.Query($sql, $dbName)
-                            }
-                            catch {
+                            } catch {
                                 $copyDbAssemblyStatus.Status = "Failed"
                                 $copyDbAssemblyStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
@@ -219,8 +212,7 @@ function Copy-DbaDbAssembly {
                         $copyDbAssemblyStatus.Status = "Successful"
                         $copyDbAssemblyStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
-                    }
-                    catch {
+                    } catch {
                         $copyDbAssemblyStatus.Status = "Failed"
                         $copyDbAssemblyStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
@@ -235,3 +227,4 @@ function Copy-DbaDbAssembly {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-DbaDatabaseAssembly
     }
 }
+

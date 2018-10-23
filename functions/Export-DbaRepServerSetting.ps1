@@ -1,6 +1,6 @@
 #ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Export-DbaRepServerSetting {
-<#
+    <#
     .SYNOPSIS
         Exports replication server settings to file.
 
@@ -99,16 +99,14 @@ function Export-DbaRepServerSetting {
             try {
                 if (-not $ScriptOption) {
                     $out = $repserver.Script([Microsoft.SqlServer.Replication.ScriptOptions]::Creation `
-                        -bor [Microsoft.SqlServer.Replication.ScriptOptions]::IncludeAll `
-                        -bor [Microsoft.SqlServer.Replication.ScriptOptions]::EnableReplicationDB `
-                        -bor [Microsoft.SqlServer.Replication.ScriptOptions]::IncludeInstallDistributor
+                            -bor [Microsoft.SqlServer.Replication.ScriptOptions]::IncludeAll `
+                            -bor [Microsoft.SqlServer.Replication.ScriptOptions]::EnableReplicationDB `
+                            -bor [Microsoft.SqlServer.Replication.ScriptOptions]::IncludeInstallDistributor
                     )
-                }
-                else {
+                } else {
                     $out = $repserver.Script($scriptOption)
                 }
-            }
-            catch {
+            } catch {
                 Stop-Function -ErrorRecord $_ -Message "Replication export failed. Is it setup?" -Continue
             }
             if ($Passthru) {
@@ -124,3 +122,4 @@ function Export-DbaRepServerSetting {
         }
     }
 }
+

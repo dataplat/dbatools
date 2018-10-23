@@ -1,5 +1,5 @@
 function New-DbaCredential {
-<#
+    <#
     .SYNOPSIS
         Creates a new SQL Server credential
 
@@ -108,8 +108,7 @@ function New-DbaCredential {
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -120,8 +119,7 @@ function New-DbaCredential {
                     if ($force) {
                         Write-Message -Level Verbose -Message "Dropping credential $name"
                         $currentcred.Drop()
-                    }
-                    else {
+                    } else {
                         Stop-Function -Message "Credential exists and Force was not specified" -Target $name -Continue
                     }
                 }
@@ -139,8 +137,7 @@ function New-DbaCredential {
                         Add-Member -Force -InputObject $credential -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
 
                         Select-DefaultView -InputObject $credential -Property ComputerName, InstanceName, SqlInstance, Name, Identity, CreateDate, MappedClassType, ProviderName
-                    }
-                    catch {
+                    } catch {
                         Stop-Function -Message "Failed to create credential in $cred on $instance. Exception: $($_.Exception.InnerException)" -Target $credential -InnerErrorRecord $_ -Continue
                     }
                 }
@@ -148,3 +145,4 @@ function New-DbaCredential {
         }
     }
 }
+

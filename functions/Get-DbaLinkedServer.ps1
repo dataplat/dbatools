@@ -1,5 +1,5 @@
 function Get-DbaLinkedServer {
-<#
+    <#
     .SYNOPSIS
         Gets all linked servers and summary of information from the sql servers listed
 
@@ -55,8 +55,7 @@ function Get-DbaLinkedServer {
     foreach ($Instance in $SqlInstance) {
         try {
             $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
-        }
-        catch {
+        } catch {
             Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
         }
 
@@ -80,3 +79,4 @@ function Get-DbaLinkedServer {
         }
     }
 }
+

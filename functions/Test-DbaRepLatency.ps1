@@ -1,5 +1,5 @@
 function Test-DbaRepLatency {
-<#
+    <#
     .SYNOPSIS
         Displays replication latency for all transactional publications for a server or database.
 
@@ -74,7 +74,7 @@ function Test-DbaRepLatency {
         [switch]$EnableException
     )
 
-    process{
+    process {
 
         foreach ($instance in $SqlInstance) {
 
@@ -82,19 +82,18 @@ function Test-DbaRepLatency {
             # Connect to the publisher
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             $publicationNames = Get-DbaRepPublication -SqlInstance $server -Database $Database -SqlCredential $SqlCredentials -PublicationType "Transactional"
 
-            if($PublicationName) {
+            if ($PublicationName) {
                 $publicationNames = $publicationNames | Where-Object PublicationName -in $PublicationName
             }
 
 
-            foreach($publication in $publicationNames) {
+            foreach ($publication in $publicationNames) {
 
                 # Create an instance of TransPublication
                 $transPub = New-Object Microsoft.SqlServer.Replication.TransPublication
@@ -106,7 +105,7 @@ function Test-DbaRepLatency {
                 $transPub.ConnectionContext = $server.ConnectionContext.SqlConnectionObject
 
                 # Call the LoadProperties method to get the properties of the object. If this method returns false, either the publication properties in Step 3 were defined incorrectly or the publication does not exist.
-                if(!$transPub.LoadProperties()) {
+                if (!$transPub.LoadProperties()) {
                     Stop-Function -Message "LoadProperties() failed. The publication does not exist." -Continue
                 }
 
@@ -130,12 +129,11 @@ function Test-DbaRepLatency {
 
             try {
                 $distServer = Connect-SqlInstance -SqlInstance $DistributionServer -SqlCredential $SqlCredential -MinimumVersion 9
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $DistributionServer -Continue
             }
 
-            foreach($publication in $publicationNames) {
+            foreach ($publication in $publicationNames) {
 
                 $pubMon = New-Object Microsoft.SqlServer.Replication.PublicationMonitor
 
@@ -148,18 +146,18 @@ function Test-DbaRepLatency {
 
 
                 # Call the LoadProperties method to get the properties of the object. If this method returns false, either the publication monitor properties in Step 3 were defined incorrectly or the publication does not exist.
-                if(!$pubMon.LoadProperties()) {
+                if (!$pubMon.LoadProperties()) {
                     Stop-Function -Message "LoadProperties() failed. The publication does not exist." -Continue
                 }
 
                 $tokenList = $pubMon.EnumTracerTokens()
 
-                if(!$DisplayTokenHistory) {
+                if (!$DisplayTokenHistory) {
                     $tokenList = $tokenList[0]
                 }
 
 
-                foreach($token in $tokenList) {
+                foreach ($token in $tokenList) {
 
                     $tracerTokenId = $token.TracerTokenId
 
@@ -169,8 +167,8 @@ function Test-DbaRepLatency {
 
                     $continue = $true
 
-                    while(($tokenInfo.Tables[0].Rows[0].subscriber_latency -eq [System.DBNull]::Value) -and $continue ) {
-                        if($TimeToLive -and ($timer -gt $TimeToLive)) {
+                    while (($tokenInfo.Tables[0].Rows[0].subscriber_latency -eq [System.DBNull]::Value) -and $continue ) {
+                        if ($TimeToLive -and ($timer -gt $TimeToLive)) {
                             $continue = $false
                             Stop-Function -Message "TimeToLive has been reached for token: $tracerTokenId" -Continue
                         }
@@ -181,40 +179,39 @@ function Test-DbaRepLatency {
                     }
 
 
-                    foreach($info in $tokenInfo.Tables[0].Rows) {
+                    foreach ($info in $tokenInfo.Tables[0].Rows) {
 
                         $totalLatency = if (($info.distributor_latency -eq [System.DBNull]::Value) -or ($info.subscriber_latency -eq [System.DBNull]::Value)) {
-                                                [System.DBNull]::Value
-                                            }
-                                            else {
-                                                 ($info.distributor_latency + $info.subscriber_latency)
-                                            }
+                            [System.DBNull]::Value
+                        } else {
+                            ($info.distributor_latency + $info.subscriber_latency)
+                        }
 
                         [PSCustomObject]@{
-                            ComputerName = $server.ComputerName
-                            InstanceName = $server.InstanceName
-                            SqlInstance  = $server.SqlInstance
-                            TokenID      = $tracerTokenId
-                            TokenCreateDate = $token.PublisherCommitTime
-                            PublicationServer  = $publication.Server
-                            PublicationDB  = $publication.Database
-                            PublicationName   = $publication.PublicationName
-                            PublicationType      = $publication.PublicationType
-                            DistributionServer = $distributionServer
-                            DistributionDB = $distributionDatabase
-                            SubscriberServer    = $info.subscriber
-                            SubscriberDB  = $info.subscriber_db
-                            PublisherToDistributorLatency =  $info.distributor_latency
+                            ComputerName                   = $server.ComputerName
+                            InstanceName                   = $server.InstanceName
+                            SqlInstance                    = $server.SqlInstance
+                            TokenID                        = $tracerTokenId
+                            TokenCreateDate                = $token.PublisherCommitTime
+                            PublicationServer              = $publication.Server
+                            PublicationDB                  = $publication.Database
+                            PublicationName                = $publication.PublicationName
+                            PublicationType                = $publication.PublicationType
+                            DistributionServer             = $distributionServer
+                            DistributionDB                 = $distributionDatabase
+                            SubscriberServer               = $info.subscriber
+                            SubscriberDB                   = $info.subscriber_db
+                            PublisherToDistributorLatency  = $info.distributor_latency
                             DistributorToSubscriberLatency = $info.subscriber_latency
-                            TotalLatency   = $totalLatency
+                            TotalLatency                   = $totalLatency
                         } | Select-DefaultView -ExcludeProperty PublicationType
 
 
-                    if(!$RetainToken) {
+                        if (!$RetainToken) {
 
-                        $pubMon.CleanUpTracerTokenHistory($tracerTokenId)
+                            $pubMon.CleanUpTracerTokenHistory($tracerTokenId)
 
-                    }
+                        }
 
                     }
                 }
@@ -222,3 +219,4 @@ function Test-DbaRepLatency {
         }
     }
 }
+

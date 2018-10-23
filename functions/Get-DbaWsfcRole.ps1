@@ -1,6 +1,6 @@
 #ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaWsfcRole {
-<#
+    <#
     .SYNOPSIS
         Gets information about one or more clustered roles (resource groups) in a failover cluster.
 
@@ -60,3 +60,4 @@ function Get-DbaWsfcRole {
         }
     }
 }
+

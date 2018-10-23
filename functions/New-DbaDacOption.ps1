@@ -65,13 +65,11 @@ function New-DbaDacOption {
     if ((Test-Path $dacfxPath) -eq $false) {
         Stop-Function -Message 'Dac Fx library not found.' -EnableException $EnableException
         return
-    }
-    else {
+    } else {
         try {
             Add-Type -Path $dacfxPath
             Write-Message -Level Verbose -Message "Dac Fx loaded."
-        }
-        catch {
+        } catch {
             Stop-Function -Message 'No usable version of Dac Fx found.' -ErrorRecord $_
             return
         }
@@ -80,33 +78,29 @@ function New-DbaDacOption {
     if ($Action -eq 'Export') {
         if ($Type -eq 'Dacpac') {
             New-Object -TypeName Microsoft.SqlServer.Dac.DacExtractOptions
-        }
-        elseif ($Type -eq 'Bacpac') {
+        } elseif ($Type -eq 'Bacpac') {
             New-Object -TypeName Microsoft.SqlServer.Dac.DacExportOptions
         }
-    }
-    elseif ($Action -eq 'Publish') {
+    } elseif ($Action -eq 'Publish') {
         if ($Type -eq 'Dacpac') {
             $output = New-Object -TypeName Microsoft.SqlServer.Dac.PublishOptions
             if ($PublishXml) {
                 try {
                     $dacProfile = [Microsoft.SqlServer.Dac.DacProfile]::Load($PublishXml)
                     $output.DeployOptions = $dacProfile.DeployOptions
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Could not load profile." -ErrorRecord $_
                     return
                 }
-            }
-            else {
+            } else {
                 $output.DeployOptions = New-Object -TypeName Microsoft.SqlServer.Dac.DacDeployOptions
             }
             $output.GenerateDeploymentScript = $false
             $output
-        }
-        elseif ($Type -eq 'Bacpac') {
+        } elseif ($Type -eq 'Bacpac') {
             New-Object -TypeName Microsoft.SqlServer.Dac.DacImportOptions
         }
     }
 }
+
 

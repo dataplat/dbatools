@@ -1,6 +1,6 @@
 #ValidationTags#CodeStyle,Messaging,FlowControl,Pipeline#
 function Set-DbaDbQueryStoreOption {
-<#
+    <#
     .SYNOPSIS
         Configure Query Store settings for a specific or multiple databases.
 
@@ -134,8 +134,7 @@ function Set-DbaDbQueryStoreOption {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 13
 
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Can't connect to $instance. Moving on." -Category InvalidOperation -InnerErrorRecord $_ -Target $instance -Continue
             }
 
@@ -205,8 +204,7 @@ function Set-DbaDbQueryStoreOption {
                         $db.QueryStoreOptions.Alter()
                         $db.Alter()
                         $db.Refresh()
-                    }
-                    catch {
+                    } catch {
                         Stop-Function -Message "Could not modify configuration." -Category InvalidOperation -InnerErrorRecord $_ -Target $db -Continue
                     }
                 }
@@ -222,3 +220,4 @@ function Set-DbaDbQueryStoreOption {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Set-DbaDbQueryStoreOptions
     }
 }
+

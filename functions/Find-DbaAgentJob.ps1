@@ -1,5 +1,5 @@
 function Find-DbaAgentJob {
-<#
+    <#
     .SYNOPSIS
         Find-DbaAgentJob finds agent job/s that fit certain search filters.
 
@@ -148,8 +148,7 @@ function Find-DbaAgentJob {
 
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -203,8 +202,7 @@ function Find-DbaAgentJob {
                     $OwnerMatch = $Owner -replace "-", ""
                     Write-Message -Level Verbose -Message "Checking for jobs that NOT owned by: $OwnerMatch"
                     $output += $server.JobServer.jobs | Where-Object { $OwnerMatch -notcontains $_.OwnerLoginName }
-                }
-                else {
+                } else {
                     Write-Message -Level Verbose -Message "Checking for jobs that are owned by: $owner"
                     $output += $server.JobServer.jobs | Where-Object { $Owner -contains $_.OwnerLoginName }
                 }
@@ -235,3 +233,4 @@ function Find-DbaAgentJob {
         }
     }
 }
+

@@ -1,5 +1,5 @@
 function Test-DbaBackupInformation {
-<#
+    <#
     .SYNOPSIS
         Tests a dbatools backup history object is correct for restoring
 
@@ -81,8 +81,7 @@ function Test-DbaBackupInformation {
     begin {
         try {
             $RestoreInstance = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
-        }
-        catch {
+        } catch {
             Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             return
         }
@@ -125,36 +124,31 @@ function Test-DbaBackupInformation {
                     if (($DBHistoryPhysicalPathsTest | Where-Object FilePath -eq $path).FileExists) {
                         if ($path -in $DBFileCheck) {
                             #If the Files are owned by the db we're restoring check for Continue or WithReplace. If not, then report error otherwise just carry on
-                            if  ($WithReplace -ne $True -and $Continue -ne $True) {
+                            if ($WithReplace -ne $True -and $Continue -ne $True) {
                                 Write-Message -Message "File $path already exists on $SqlInstance and WithReplace not specified, cannot restore" -Level Warning
                                 $VerificationErrors++
                             }
-                        }
-                        elseif ($path -in $OtherFileCheck) {
+                        } elseif ($path -in $OtherFileCheck) {
                             Write-Message -Message "File $path already exists on $SqlInstance and owned by another database, cannot restore" -Level Warning
                             $VerificationErrors++
+                        } elseif ($path -in $DBHistoryPhysicalPathsExists) {
+                            Write-Message -Message "File $path already exists on $($SqlInstance.ComputerName), not owned by any database in $SqlInstance, will not overwrite." -Level Warning
+                            $VerificationErrors++
                         }
-                        elseif ($path -in $DBHistoryPhysicalPathsExists) {
-                                Write-Message -Message "File $path already exists on $($SqlInstance.ComputerName), not owned by any database in $SqlInstance, will not overwrite." -Level Warning
-                                $VerificationErrors++
-                        }
-                    }
-                    else {
+                    } else {
                         $ParentPath = Split-Path $path -Parent
                         if (!(Test-DbaPath -SqlInstance $RestoreInstance -Path $ParentPath) ) {
-                            if(-not $OutputScriptOnly){
+                            if (-not $OutputScriptOnly) {
                                 $ConfirmMessage = "`n Creating Folder $ParentPath on $SqlInstance `n"
                                 if ($Pscmdlet.ShouldProcess("$Path on $SqlInstance `n `n", $ConfirmMessage)) {
                                     if (New-DbaDirectory -SqlInstance $RestoreInstance -Path $ParentPath) {
                                         Write-Message -Message "Created Folder $ParentPath on $SqlInstance" -Level Verbose
-                                    }
-                                    else {
+                                    } else {
                                         Write-Message -Message "Failed to create $ParentPath on $SqlInstance" -Level Warning
                                         $VerificationErrors++
                                     }
                                 }
-                            }
-                            else {
+                            } else {
                                 Write-Message -Message "Parth $ParentPath on $SqlInstance does not exist" -Level Verbose
                             }
                         }
@@ -181,11 +175,11 @@ function Test-DbaBackupInformation {
             if ($VerificationErrors -eq 0) {
                 Write-Message -Message "Marking $Database as verified" -Level Verbose
                 $InternalHistory | Where-Object {$_.Database -eq $Database} | foreach-Object {$_.IsVerified = $True}
-            }
-            else {
+            } else {
                 Write-Message -Message "Verification errors  = $VerificationErrors - Has not Passed" -Level Verbose
             }
         }
         $InternalHistory
     }
 }
+

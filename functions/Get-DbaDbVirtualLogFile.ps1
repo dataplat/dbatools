@@ -1,6 +1,6 @@
 #ValidationTags#CodeStyle,Messaging,FlowControl,Pipeline#
 function Get-DbaDbVirtualLogFile {
-<#
+    <#
     .SYNOPSIS
         Returns database virtual log file information for database files on a SQL instance.
 
@@ -85,8 +85,7 @@ function Get-DbaDbVirtualLogFile {
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -123,11 +122,11 @@ function Get-DbaDbVirtualLogFile {
                             CreateLsn      = $d.CreateLSN
                         }
                     }
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Unable to query $($db.name) on $instance." -ErrorRecord $_ -Target $db -Continue
                 }
             }
         }
     }
 }
+

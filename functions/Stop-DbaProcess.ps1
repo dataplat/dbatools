@@ -1,5 +1,5 @@
 function Stop-DbaProcess {
-<#
+    <#
     .SYNOPSIS
         This command finds and kills SQL Server processes.
 
@@ -145,11 +145,11 @@ function Stop-DbaProcess {
                         Program     = $session.Program
                         Status      = 'Killed'
                     }
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Couldn't kill spid $currentspid." -Target $session -ErrorRecord $_ -Continue
                 }
             }
         }
     }
 }
+

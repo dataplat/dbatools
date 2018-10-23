@@ -1,5 +1,5 @@
 function Set-DbaLogin {
-<#
+    <#
     .SYNOPSIS
         Set-DbaLogin makes it possible to make changes to one or more logins.
 
@@ -205,8 +205,7 @@ function Set-DbaLogin {
             # Try connecting to the instance
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
-            }
-            catch {
+            } catch {
                 Stop-Function -Message 'Failure' -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
             $allLogins[$instance.ToString()] = Get-DbaLogin -SqlInstance $server
@@ -215,7 +214,7 @@ function Set-DbaLogin {
 
         # Loop through all the logins
         foreach ($l in $InputObject) {
-            if ($Pscmdlet.ShouldProcess($l,"Setting Changes to Login on $($server.name)")) {
+            if ($Pscmdlet.ShouldProcess($l, "Setting Changes to Login on $($server.name)")) {
                 $server = $l.Parent
 
                 # Create the notes
@@ -227,13 +226,11 @@ function Set-DbaLogin {
                     if ($allLogins[$server.Name].Name -notcontains $NewName) {
                         try {
                             $l.Rename($NewName)
-                        }
-                        catch {
+                        } catch {
                             $notes += "Couldn't rename login"
                             Stop-Function -Message "Something went wrong changing the name for $l" -Target $l -ErrorRecord $_ -Continue
                         }
-                    }
-                    else {
+                    } else {
                         $notes += 'New login name already exists'
                         Write-Message -Message "New login name $NewName already exists on $instance" -Level Verbose
                     }
@@ -244,8 +241,7 @@ function Set-DbaLogin {
                     try {
                         $l.ChangePassword($newPassword, $Unlock, $MustChange)
                         $passwordChanged = $true
-                    }
-                    catch {
+                    } catch {
                         $notes += "Couldn't change password"
                         $passwordChanged = $false
                         Stop-Function -Message "Something went wrong changing the password for $l" -Target $l -ErrorRecord $_ -Continue
@@ -256,12 +252,10 @@ function Set-DbaLogin {
                 if (Test-Bound -ParameterName 'Disable') {
                     if ($l.IsDisabled) {
                         Write-Message -Message "Login $l is already disabled" -Level Verbose
-                    }
-                    else {
+                    } else {
                         try {
                             $l.Disable()
-                        }
-                        catch {
+                        } catch {
                             $notes += "Couldn't disable login"
                             Stop-Function -Message "Something went wrong disabling $l" -Target $l -ErrorRecord $_ -Continue
                         }
@@ -272,12 +266,10 @@ function Set-DbaLogin {
                 if (Test-Bound -ParameterName 'Enable') {
                     if (-not $l.IsDisabled) {
                         Write-Message -Message "Login $l is already enabled" -Level Verbose
-                    }
-                    else {
+                    } else {
                         try {
                             $l.Enable()
-                        }
-                        catch {
+                        } catch {
                             $notes += "Couldn't enable login"
                             Stop-Function -Message "Something went wrong enabling $l" -Target $l -ErrorRecord $_ -Continue
                         }
@@ -288,8 +280,7 @@ function Set-DbaLogin {
                 if (Test-Bound -ParameterName 'DenyLogin') {
                     if ($l.DenyWindowsLogin) {
                         Write-Message -Message "Login $l already has login access denied" -Level Verbose
-                    }
-                    else {
+                    } else {
                         $l.DenyWindowsLogin = $true
                     }
                 }
@@ -298,8 +289,7 @@ function Set-DbaLogin {
                 if (Test-Bound -ParameterName 'GrantLogin') {
                     if (-not $l.DenyWindowsLogin) {
                         Write-Message -Message "Login $l already has login access granted" -Level Verbose
-                    }
-                    else {
+                    } else {
                         $l.DenyWindowsLogin = $false
                     }
                 }
@@ -308,8 +298,7 @@ function Set-DbaLogin {
                 if (Test-Bound -ParameterName 'PasswordPolicyEnforced') {
                     if ($l.PasswordPolicyEnforced -eq $PasswordPolicyEnforced) {
                         Write-Message -Message "Login $l password policy is already set to $($l.PasswordPolicyEnforced)" -Level Verbose
-                    }
-                    else {
+                    } else {
                         $l.PasswordPolicyEnforced = $PasswordPolicyEnforced
                     }
                 }
@@ -320,8 +309,7 @@ function Set-DbaLogin {
                     foreach ($role in $AddRole) {
                         try {
                             $l.AddToRole($role)
-                        }
-                        catch {
+                        } catch {
                             $notes += "Couldn't add role $role"
                             Stop-Function -Message "Something went wrong adding role $role to $l" -Target $l -ErrorRecord $_ -Continue
                         }
@@ -334,8 +322,7 @@ function Set-DbaLogin {
                     foreach ($role in $RemoveRole) {
                         try {
                             $server.Roles[$role].DropMember($l.Name)
-                        }
-                        catch {
+                        } catch {
                             $notes += "Couldn't remove role $role"
                             Stop-Function -Message "Something went wrong removing role $role to $l" -Target $l -ErrorRecord $_ -Continue
                         }
@@ -352,8 +339,7 @@ function Set-DbaLogin {
                 if ($notes) {
                     $notes = $notes | Get-Unique
                     $notes = $notes -Join ';'
-                }
-                else {
+                } else {
                     $notes = $null
                 }
                 $rolenames = $roles.Role | Select-Object -Unique
@@ -370,10 +356,11 @@ function Set-DbaLogin {
                 Add-Member -Force -InputObject $l -MemberType NoteProperty -Name DenyLogin -Value $l.DenyWindowsLogin
 
                 $defaults = 'ComputerName', 'InstanceName', 'SqlInstance', 'LoginName', 'DenyLogin', 'IsDisabled', 'IsLocked',
-                    'PasswordPolicyEnforced', 'MustChangePassword', 'PasswordChanged', 'ServerRole', 'Notes'
+                'PasswordPolicyEnforced', 'MustChangePassword', 'PasswordChanged', 'ServerRole', 'Notes'
 
                 Select-DefaultView -InputObject $l -Property $defaults
             }
         }
     }
 }
+

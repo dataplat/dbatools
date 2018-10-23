@@ -1,6 +1,6 @@
 #ValidationTags#Messaging#
 function Get-DbaMsdtc {
-<#
+    <#
     .SYNOPSIS
         Displays information about the Distributed Transaction Coordinator (MSDTC) on a server
 
@@ -91,12 +91,10 @@ function Get-DbaMsdtc {
                     foreach ($key in $cids) {
                         $cidHash.Add($key.Data, $key.CID)
                     }
-                }
-                else {
+                } else {
                     Write-Message -Level Warning -Message "Can't connect to MSDTC CID registry on $computer"
                 }
-            }
-            else {
+            } else {
                 Write-Message -Level Verbose -Message "PSRemoting is not enabled on $computer"
                 try {
                     Write-Message -Level Verbose -Message "Failed To get DTC via WinRM. Getting DTC on $computer via DCom"
@@ -105,8 +103,7 @@ function Get-DbaMsdtc {
                     $SessionParams.SessionOption = (New-CimSessionOption -Protocol Dcom)
                     $Session = New-CimSession @SessionParams
                     $dtcservice = Get-Ciminstance -CimSession $Session -Query $query
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Can't connect to CIM on $computer via DCom" -Target $computer -ErrorRecord $_ -Continue
                 }
             }
@@ -135,3 +132,4 @@ function Get-DbaMsdtc {
         }
     }
 }
+

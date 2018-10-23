@@ -1,5 +1,5 @@
 function Get-DbaDbCompatibility {
-<#
+    <#
     .SYNOPSIS
         Displays the compatibility level for SQL Server databases.
 
@@ -80,12 +80,13 @@ function Get-DbaDbCompatibility {
             Write-Message -Level Verbose -Message "SQL Server is using Version: $ServerVersion"
             
             [PSCustomObject]@{
-                ComputerName = $server.ComputerName
-                InstanceName = $server.ServiceName
-                SqlInstance  = $server.DomainInstanceName
-                Database     = $db.Name
+                ComputerName  = $server.ComputerName
+                InstanceName  = $server.ServiceName
+                SqlInstance   = $server.DomainInstanceName
+                Database      = $db.Name
                 Compatibility = $db.CompatibilityLevel
             }
         }
     }
 }
+

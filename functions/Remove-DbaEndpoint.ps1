@@ -1,6 +1,6 @@
 #ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Remove-DbaEndpoint {
-<#
+    <#
     .SYNOPSIS
         Removes endpoints from a SQL Server instance.
         
@@ -89,11 +89,11 @@ function Remove-DbaEndpoint {
                         Endpoint     = $ep.Name
                         Status       = "Removed"
                     }
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
                 }
             }
         }
     }
 }
+

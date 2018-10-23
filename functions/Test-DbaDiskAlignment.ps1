@@ -1,5 +1,5 @@
 function Test-DbaDiskAlignment {
-<#
+    <#
     .SYNOPSIS
         Verifies that your non-dynamic disks are aligned according to physical constraints.
 
@@ -111,13 +111,11 @@ function Test-DbaDiskAlignment {
 
                 try {
                     $partitions = Get-CimInstance -CimSession $CimSession -ClassName Win32_DiskPartition -Namespace "root\cimv2" -ErrorAction Stop
-                }
-                catch {
+                } catch {
                     if ($_.Exception -match "namespace") {
                         Stop-Function -Message "Can't get disk alignment info for $ComputerName. Unsupported operating system." -InnerErrorRecord $_ -Target $ComputerName -FunctionName $FunctionName
                         return
-                    }
-                    else {
+                    } else {
                         Stop-Function -Message "Can't get disk alignment info for $ComputerName. Check logs for more details." -InnerErrorRecord $_ -Target $ComputerName -FunctionName $FunctionName
                         return
                     }
@@ -138,8 +136,7 @@ function Test-DbaDiskAlignment {
                         Select-Object BlockSize, BootPartition, Description, DiskIndex, Index, Name, NumberOfBlocks, Size, StartingOffset, Type
                 )
                 Write-Message -Level Verbose -Message "Gathered CIM information." -FunctionName $FunctionName
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Can't connect to CIM on $ComputerName." -FunctionName $FunctionName -InnerErrorRecord $_
                 return
             }
@@ -157,8 +154,7 @@ function Test-DbaDiskAlignment {
                     Write-Message -Level Verbose -Message "Found instance $instancename" -FunctionName $FunctionName
                     if ($instance -eq 'MSSQLSERVER') {
                         $SqlInstances += $ComputerName
-                    }
-                    else {
+                    } else {
                         $SqlInstances += "$ComputerName\$instance"
                     }
                 }
@@ -178,8 +174,7 @@ function Test-DbaDiskAlignment {
                             try {
                                 if ($null -ne $SqlCredential) {
                                     $smoserver = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
-                                }
-                                else {
+                                } else {
                                     $smoserver = Connect-SqlInstance -SqlInstance $SqlInstance # win auth
                                 }
                                 $sql = "Select count(*) as Count from sys.master_files where physical_name like '$diskname%'"
@@ -190,8 +185,7 @@ function Test-DbaDiskAlignment {
                                     $sqldisk = $true
                                     break
                                 }
-                            }
-                            catch {
+                            } catch {
                                 Stop-Function -Message "Can't connect to $ComputerName ($SqlInstance)." -FunctionName $FunctionName -InnerErrorRecord $_
                                 return
                             }
@@ -202,8 +196,7 @@ function Test-DbaDiskAlignment {
                         if ($sqldisk -eq $true) {
                             $offsets += $disk
                         }
-                    }
-                    else {
+                    } else {
                         $offsets += $disk
                     }
                 }
@@ -227,8 +220,7 @@ function Test-DbaDiskAlignment {
                 if ($type -eq "Logical Disk Manager") {
                     $IsDynamicDisk = $true
                     Write-Message -Level Warning -Message "Disk is dynamic, all Offset calculations should be suspect, please refer to your vendor to determine actual Offset calculations." -FunctionName $FunctionName
-                }
-                else {
+                } else {
                     $IsDynamicDisk = $false
                 }
 
@@ -236,8 +228,7 @@ function Test-DbaDiskAlignment {
 
                 if ($offset -ne 64 -and $offset -ne 128 -and $offset -ne 256 -and $offset -ne 512 -and $offset -ne 1024) {
                     $IsOffsetBestPractice = $false
-                }
-                else {
+                } else {
                     $IsOffsetBestPractice = $true
                 }
 
@@ -247,8 +238,7 @@ function Test-DbaDiskAlignment {
                         # for proper alignment we really only need to know that your offset divided by your stripe unit size has a remainder of 0
                         $OffsetModuloKB = "$($offset % $size)"
                         $isBestPractice = $true
-                    }
-                    else {
+                    } else {
                         $OffsetModuloKB = "$($offset % $size)"
                         $isBestPractice = $false
                     }
@@ -292,8 +282,7 @@ function Test-DbaDiskAlignment {
 
             if (!$Credential) {
                 $cimsession = New-CimSession -ComputerName $Computer -ErrorAction Ignore
-            }
-            else {
+            } else {
                 $cimsession = New-CimSession -ComputerName $Computer -ErrorAction Ignore -Credential $Credential
             }
 
@@ -302,8 +291,7 @@ function Test-DbaDiskAlignment {
 
                 if (!$Credential) {
                     $cimsession = New-CimSession -ComputerName $Computer -SessionOption $sessionoption -ErrorAction Ignore
-                }
-                else {
+                } else {
                     $cimsession = New-CimSession -ComputerName $Computer -SessionOption $sessionoption -ErrorAction Ignore -Credential $Credential
                 }
             }
@@ -318,8 +306,7 @@ function Test-DbaDiskAlignment {
 
             try {
                 $data = Get-DiskAlignment -CimSession $cimsession -NoSqlCheck $NoSqlCheck -ComputerName $Computer -ErrorAction Stop
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failed to process $($Computer): $($_.Exception.Message)" -Continue -InnerErrorRecord $_ -Target $Computer
             }
 
@@ -329,10 +316,10 @@ function Test-DbaDiskAlignment {
 
             if ($data.Count -gt 1) {
                 $data.GetEnumerator()
-            }
-            else {
+            } else {
                 $data
             }
         }
     }
 }
+

@@ -1,5 +1,5 @@
 function Set-DbaCmConnection {
-<#
+    <#
     .SYNOPSIS
         Configures a connection object for use in remote computer management.
 
@@ -132,7 +132,7 @@ function Set-DbaCmConnection {
         In many cases, using the default settings is desirable. For specific settings, use New-DbaCmConnection as part of the profile in order to explicitly configure a connection.
 
 #>
-    [CmdletBinding(SupportsShouldProcess,DefaultParameterSetName = 'Credential')]
+    [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = 'Credential')]
     param (
         [Parameter(ValueFromPipeline)]
         [Sqlcollaborative.Dbatools.Parameter.DbaCmConnectionParameter[]]
@@ -243,8 +243,7 @@ function Set-DbaCmConnection {
                     $connection.Credentials = $null
                     $connection.UseWindowsCredentials = $false
                     $connection.WindowsCredentialsAreBad = $false
-                }
-                else {
+                } else {
                     if ($ClearBadCredential) {
                         Write-Message -Level Verbose -Message "Clearing bad credentials"
 
@@ -287,8 +286,7 @@ function Set-DbaCmConnection {
                 if (-not $disable_cache) {
                     Write-Message -Level Verbose -Message "Writing connection to cache"
                     [Sqlcollaborative.Dbatools.Connection.ConnectionHost]::Connections[$connectionObject.Connection.ComputerName] = $connection
-                }
-                else { Write-Message -Level Verbose -Message "Skipping writing to cache, since the cache has been disabled!" }
+                } else { Write-Message -Level Verbose -Message "Skipping writing to cache, since the cache has been disabled!" }
                 $connection
             }
         }
@@ -297,3 +295,4 @@ function Set-DbaCmConnection {
         Write-Message -Level InternalComment -Message "Stopping execution"
     }
 }
+

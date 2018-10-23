@@ -1,5 +1,5 @@
 function Get-DbatoolsConfig {
-<#
+    <#
     .SYNOPSIS
         Retrieves configuration elements by name.
 
@@ -67,3 +67,4 @@ function Get-DbatoolsConfig {
     }
     Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-DbaConfig
 }
+

@@ -1,5 +1,5 @@
 function Get-DbaServerProtocol {
-<#
+    <#
     .SYNOPSIS
         Gets the SQL Server related server protocols on a computer.
 
@@ -79,18 +79,16 @@ function Get-DbaServerProtocol {
                         $prot | Add-Member -Force -MemberType ScriptMethod -Name Enable -Value { Invoke-CimMethod -MethodName SetEnable -InputObject $this }
                         $prot | Add-Member -Force -MemberType ScriptMethod -Name Disable -Value { Invoke-CimMethod -MethodName SetDisable -InputObject $this }
                         foreach ($protocol in $prot) { Select-DefaultView -InputObject $protocol -Property 'PSComputerName as ComputerName', 'InstanceName', 'ProtocolDisplayName as DisplayName', 'ProtocolName as Name', 'MultiIpconfigurationSupport as MultiIP', 'Enabled as IsEnabled' }
-                    }
-                    catch {
+                    } catch {
                         Write-Message -Level Warning -Message "No Sql ServerNetworkProtocol found on $Computer"
                     }
-                }
-                else {
+                } else {
                     Write-Message -Level Warning -Message "No ComputerManagement Namespace on $Computer. Please note that this function is available from SQL 2005 up."
                 }
-            }
-            else {
+            } else {
                 Write-Message -Level Warning -Message "Failed to connect to $Computer"
             }
         }
     }
 }
+

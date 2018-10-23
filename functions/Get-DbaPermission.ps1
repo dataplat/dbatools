@@ -1,5 +1,5 @@
 function Get-DbaPermission {
-<#
+    <#
     .SYNOPSIS
         Get a list of Server and Database level permissions
 
@@ -216,8 +216,7 @@ function Get-DbaPermission {
 
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential -MinimumVersion 9
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -250,3 +249,4 @@ function Get-DbaPermission {
         }
     }
 }
+

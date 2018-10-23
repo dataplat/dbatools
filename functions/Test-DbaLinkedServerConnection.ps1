@@ -1,5 +1,5 @@
 function Test-DbaLinkedServerConnection {
-<#
+    <#
     .SYNOPSIS
         Test all linked servers from the sql servers passed
 
@@ -70,12 +70,10 @@ function Test-DbaLinkedServerConnection {
         foreach ($instance in $SqlInstance) {
             if ($instance.LinkedLive) {
                 $linkedServerCollection = $instance.LinkedServer
-            }
-            else {
+            } else {
                 try {
                     $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
                 }
             }
@@ -88,8 +86,7 @@ function Test-DbaLinkedServerConnection {
                     $null = $ls.TestConnection()
                     $result = "Success"
                     $connectivity = $true
-                }
-                catch {
+                } catch {
                     $result = $_.Exception.InnerException.InnerException.Message
                     $connectivity = $false
                 }
@@ -99,3 +96,4 @@ function Test-DbaLinkedServerConnection {
         }
     }
 }
+

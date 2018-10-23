@@ -1,6 +1,6 @@
 #ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function New-DbaXESmartEmail {
-<#
+    <#
     .SYNOPSIS
         This response type can be used to send an email each time an event is captured.
 
@@ -114,8 +114,7 @@ function New-DbaXESmartEmail {
     begin {
         try {
             Add-Type -Path "$script:PSModuleRoot\bin\XESmartTarget\XESmartTarget.Core.dll" -ErrorAction Stop
-        }
-        catch {
+        } catch {
             Stop-Function -Message "Could not load XESmartTarget.Core.dll." -ErrorRecord $_ -Target "XESmartTarget"
             return
         }
@@ -149,10 +148,10 @@ function New-DbaXESmartEmail {
                 }
 
                 $email
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -ErrorRecord $_ -Target "XESmartTarget" -Continue
             }
         }
     }
 }
+

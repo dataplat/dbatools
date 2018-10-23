@@ -1,5 +1,5 @@
 function Get-DbaEstimatedCompletionTime {
-<#
+    <#
     .SYNOPSIS
         Gets execution and estimated completion time information for queries
 
@@ -120,8 +120,7 @@ function Get-DbaEstimatedCompletionTime {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
 
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -155,3 +154,4 @@ function Get-DbaEstimatedCompletionTime {
         }
     }
 }
+

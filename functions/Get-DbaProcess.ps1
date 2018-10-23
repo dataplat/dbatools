@@ -1,5 +1,5 @@
 function Get-DbaProcess {
-<#
+    <#
     .SYNOPSIS
         This command displays SQL Server processes.
 
@@ -97,8 +97,7 @@ function Get-DbaProcess {
 
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Could not connect to Sql Server instance $instance : $_" -Target $instance -ErrorRecord $_ -Continue
             }
 
@@ -122,8 +121,7 @@ function Get-DbaProcess {
 
             if ($server.VersionMajor -gt 8) {
                 $results = $server.Query($sql)
-            }
-            else {
+            } else {
                 $results = $null
             }
 
@@ -167,15 +165,13 @@ function Get-DbaProcess {
 
                 if ($session.Status -eq "") {
                     $status = "sleeping"
-                }
-                else {
+                } else {
                     $status = $session.Status
                 }
 
                 if ($session.Command -eq "") {
                     $command = "AWAITING COMMAND"
-                }
-                else {
+                } else {
                     $command = $session.Command
                 }
 
@@ -205,3 +201,4 @@ function Get-DbaProcess {
         }
     }
 }
+

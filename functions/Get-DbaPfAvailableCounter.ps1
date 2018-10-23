@@ -1,6 +1,6 @@
 #ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaPfAvailableCounter {
-<#
+    <#
     .SYNOPSIS
         Gathers list of all available counters on local or remote machines.
 
@@ -94,15 +94,14 @@ function Get-DbaPfAvailableCounter {
                 if ($pattern) {
                     Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $scriptblock -ArgumentList $credential -ErrorAction Stop |
                         Where-Object Name -match $pattern | Select-DefaultView -ExcludeProperty Credential
-                }
-                else {
+                } else {
                     Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $scriptblock -ArgumentList $credential -ErrorAction Stop |
                         Select-DefaultView -ExcludeProperty Credential
                 }
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -ErrorRecord $_ -Target $computer -Continue
             }
         }
     }
 }
+

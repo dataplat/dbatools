@@ -1,6 +1,6 @@
 #ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaCmsRegServerStore {
-<#
+    <#
     .SYNOPSIS
         Returns a SQL Server Registered Server Store Object
 
@@ -54,15 +54,13 @@ function Get-DbaCmsRegServerStore {
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             try {
                 $store = New-Object Microsoft.SqlServer.Management.RegisteredServers.RegisteredServersStore($server.ConnectionContext.SqlConnectionObject)
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Cannot access Central Management Server on $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -77,3 +75,4 @@ function Get-DbaCmsRegServerStore {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Get-DbaRegisteredServerStore
     }
 }
+

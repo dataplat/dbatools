@@ -1,6 +1,6 @@
 #ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Test-DbaPath {
-<#
+    <#
     .SYNOPSIS
         Tests if file or directory exists from the perspective of the SQL Server service account.
 
@@ -59,8 +59,7 @@ function Test-DbaPath {
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -ErrorRecord $_ -Target $instance -Continue
             }
             $counter = [pscustomobject] @{ Value = 0 }
@@ -79,12 +78,10 @@ function Test-DbaPath {
                 if ($Path.Count -eq 1 -and $SqlInstance.Count -eq 1 -and (-not($RawPath -is [array]))) {
                     if ($batchresult.Tables.rows[0] -eq $true -or $batchresult.Tables.rows[1] -eq $true) {
                         return $true
-                    }
-                    else {
+                    } else {
                         return $false
                     }
-                }
-                else {
+                } else {
                     $i = 0
                     foreach ($r in $batchresult.tables.rows) {
                         $DoesPass = $r[0] -eq $true -or $r[1] -eq $true
@@ -108,3 +105,4 @@ function Test-DbaPath {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Test-DbaSqlPath
     }
 }
+

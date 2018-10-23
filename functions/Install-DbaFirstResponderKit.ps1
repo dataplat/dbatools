@@ -1,6 +1,6 @@
 #ValidationTags#CodeStyle,Messaging,FlowControl,Pipeline#
 function Install-DbaFirstResponderKit {
-<#
+    <#
     .SYNOPSIS
         Installs or updates the First Responder Kit stored procedures.
 
@@ -138,16 +138,14 @@ function Install-DbaFirstResponderKit {
             if ($LocalFile) {
                 Unblock-File $LocalFile -ErrorAction SilentlyContinue
                 Expand-Archive -Path $LocalFile -DestinationPath $zipfolder -Force
-            }
-            else {
+            } else {
                 Write-Message -Level Verbose -Message "Downloading and unzipping the First Responder Kit zip file."
 
                 try {
 
                     try {
                         Invoke-TlsWebRequest $url -OutFile $zipfile -ErrorAction Stop -UseBasicParsing
-                    }
-                    catch {
+                    } catch {
                         # Try with default proxy and usersettings
                         (New-Object System.Net.WebClient).Proxy.Credentials = [System.Net.CredentialCache]::DefaultNetworkCredentials
                         Invoke-TlsWebRequest $url -OutFile $zipfile -ErrorAction Stop -UseBasicParsing
@@ -160,8 +158,7 @@ function Install-DbaFirstResponderKit {
                     Expand-Archive -Path $zipfile -DestinationPath $zipfolder -Force
 
                     Remove-Item -Path $zipfile
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Couldn't download the First Responder Kit. Download and install manually from https://github.com/BrentOzarULTD/SQL-Server-First-Responder-Kit/archive/$Branch.zip." -ErrorRecord $_
                     return
                 }
@@ -170,8 +167,7 @@ function Install-DbaFirstResponderKit {
             ## Copy it into local area
             if (Test-Path -Path $LocalCachedCopy -PathType Container) {
                 Remove-Item -Path (Join-Path $LocalCachedCopy '*') -Recurse -ErrorAction SilentlyContinue
-            }
-            else {
+            } else {
                 $null = New-Item -Path $LocalCachedCopy -ItemType Container
             }
             Copy-Item -Path $zipfolder -Destination $LocalCachedCopy -Recurse
@@ -187,8 +183,7 @@ function Install-DbaFirstResponderKit {
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure." -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -207,8 +202,7 @@ function Install-DbaFirstResponderKit {
                     if ($Pscmdlet.ShouldProcess($instance, "installing/updating $scriptname in $database.")) {
                         try {
                             Invoke-DbaQuery -SqlInstance $server -Database $Database -File $script.FullName -EnableException -Verbose:$false
-                        }
-                        catch {
+                        } catch {
                             Write-Message -Level Warning -Message "Could not execute at least one portion of $scriptname in $Database on $instance." -ErrorRecord $_
                             $scriptError = $true
                         }
@@ -221,11 +215,9 @@ function Install-DbaFirstResponderKit {
                         }
                         if ($scriptError) {
                             $baseres['Status'] = 'Error'
-                        }
-                        elseif ($script.BaseName -in $allprocedures) {
+                        } elseif ($script.BaseName -in $allprocedures) {
                             $baseres['Status'] = 'Updated'
-                        }
-                        else {
+                        } else {
                             $baseres['Status'] = 'Installed'
                         }
                         [PSCustomObject]$baseres
@@ -236,3 +228,4 @@ function Install-DbaFirstResponderKit {
         }
     }
 }
+

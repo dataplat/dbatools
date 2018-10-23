@@ -1,5 +1,5 @@
 function Find-DbaTrigger {
-<#
+    <#
     .SYNOPSIS
         Returns all triggers that contain a specific case-insensitive string or regex pattern.
 
@@ -101,8 +101,7 @@ function Find-DbaTrigger {
         foreach ($Instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $Instance -SqlCredential $SqlCredential
-            }
-            catch {
+            } catch {
                 Write-Message -Level Warning -Message "Failed to connect to: $Instance"
                 continue
             }
@@ -143,8 +142,7 @@ function Find-DbaTrigger {
 
             if ($IncludeSystemDatabases) {
                 $dbs = $server.Databases | Where-Object { $_.Status -eq "normal" }
-            }
-            else {
+            } else {
                 $dbs = $server.Databases | Where-Object { $_.Status -eq "normal" -and $_.IsSystemObject -eq $false }
             }
 
@@ -242,8 +240,7 @@ function Find-DbaTrigger {
                                 }
                             }
                         }
-                    }
-                    else {
+                    } else {
                         if ($TriggerLevel -in @('All', 'Database')) {
                             #Get Database Level triggers (DDL)
                             $triggers = $db.Triggers
@@ -322,3 +319,4 @@ function Find-DbaTrigger {
         Write-Message -Level Verbose -Message "Evaluated $everyserverstcount total triggers"
     }
 }
+

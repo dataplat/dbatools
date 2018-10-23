@@ -143,12 +143,10 @@ function ConvertTo-DbaTimeline {
             $CallerName = "Get-DbaAgentJobHistory"
             $data = $InputObject | Select-Object @{ Name = "SqlInstance"; Expression = { $_.SqlInstance } }, @{ Name = "InstanceName"; Expression = { $_.InstanceName } }, @{ Name = "vLabel"; Expression = { $_.Job -replace "\'", ''} }, @{ Name = "hLabel"; Expression = { $_.Status } }, @{ Name = "Style"; Expression = { $(Convert-DbaTimelineStatusColor($_.Status)) } }, @{ Name = "StartDate"; Expression = { $(ConvertTo-JsDate($_.StartDate)) } }, @{ Name = "EndDate"; Expression = { $(ConvertTo-JsDate($_.EndDate)) } }
 
-        }
-        elseif ($InputObject[0] -is [Sqlcollaborative.Dbatools.Database.BackupHistory]) {
+        } elseif ($InputObject[0] -is [Sqlcollaborative.Dbatools.Database.BackupHistory]) {
             $CallerName = "Get-DbaBackupHistory"
             $data = $InputObject | Select-Object @{ Name = "SqlInstance"; Expression = { $_.SqlInstance } }, @{ Name = "InstanceName"; Expression = { $_.InstanceName } }, @{ Name = "vLabel"; Expression = { $_.Database } }, @{ Name = "hLabel"; Expression = { $_.Type } }, @{ Name = "StartDate"; Expression = { $(ConvertTo-JsDate($_.Start)) } }, @{ Name = "EndDate"; Expression = { $(ConvertTo-JsDate($_.End)) } }
-        }
-        else {
+        } else {
             # sorry to be so formal, can't help it ;)
             Stop-Function -Message "Unsupported input data. To request support for additional commands, please file an issue at dbatools.io/issues and we'll take a look"
             return
@@ -217,3 +215,4 @@ function ConvertTo-DbaTimeline {
         $begin, $body, $end
     }
 }
+

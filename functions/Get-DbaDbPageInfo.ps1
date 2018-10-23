@@ -1,6 +1,6 @@
 #ValidationTags#CodeStyle,Messaging,FlowControl,Pipeline#
 function Get-DbaDbPageInfo {
-<#
+    <#
     .SYNOPSIS
         Get-DbaDbPageInfo will return page information for a database
 
@@ -97,8 +97,7 @@ function Get-DbaDbPageInfo {
         if ($Table) {
             if ($schema) {
                 $sql = "$sql AND st.name IN ('$($Table -join "','")')"
-            }
-            else {
+            } else {
                 $sql = "$sql WHERE st.name IN ('$($Table -join "','")')"
             }
         }
@@ -110,15 +109,13 @@ function Get-DbaDbPageInfo {
             # Try connecting to the instance
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 11
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             if ($Database) {
                 $InputObject += $server.Databases | Where-Object { $_.Name -in $Database }
-            }
-            else {
+            } else {
                 $InputObject += $server.Databases
             }
         }
@@ -129,15 +126,13 @@ function Get-DbaDbPageInfo {
             try {
                 if ($db.Parent.VersionMajor -ge 11) {
                     $db.Query($sql)
-                }
-                else
-                {
+                } else {
                     Stop-Function -Message "Unsupported SQL Server version" -Target $db -Continue
                 }
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Something went wrong executing the query" -ErrorRecord $_ -Target $instance -Continue
             }
         }
     }
 }
+

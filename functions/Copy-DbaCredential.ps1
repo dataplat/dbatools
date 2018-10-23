@@ -1,5 +1,5 @@
 function Copy-DbaCredential {
-<#
+    <#
     .SYNOPSIS
         Copy-DbaCredential migrates SQL Server Credentials from one SQL Server to another while maintaining Credential passwords.
 
@@ -144,8 +144,7 @@ function Copy-DbaCredential {
 
                         Write-Message -Level Verbose -Message "$credentialName exists $($destServer.Name). Skipping."
                         continue
-                    }
-                    else {
+                    } else {
                         if ($Pscmdlet.ShouldProcess($destinstance.Name, "Dropping $identity")) {
                             $destServer.Credentials[$credentialName].Drop()
                             $destServer.Credentials.Refresh()
@@ -158,7 +157,7 @@ function Copy-DbaCredential {
                     $currentCred = $sourceCredentials | Where-Object { $_.Name -eq "[$credentialName]" }
                     $sqlcredentialName = $credentialName.Replace("'", "''")
                     $identity = $currentCred.Identity.Replace("'", "''")
-                    $password = $currentCred.Password.Replace("'","''")
+                    $password = $currentCred.Password.Replace("'", "''")
                     if ($Pscmdlet.ShouldProcess($destinstance.Name, "Copying $identity")) {
                         $destServer.Query("CREATE CREDENTIAL [$sqlcredentialName] WITH IDENTITY = N'$identity', SECRET = N'$password'")
                         $destServer.Credentials.Refresh()
@@ -167,8 +166,7 @@ function Copy-DbaCredential {
 
                     $copyCredentialStatus.Status = "Successful"
                     $copyCredentialStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                }
-                catch {
+                } catch {
                     $copyCredentialStatus.Status = "Failed"
                     $copyCredentialStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
@@ -179,8 +177,7 @@ function Copy-DbaCredential {
 
         try {
             $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -MinimumVersion 9
-        }
-        catch {
+        } catch {
             Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance
             return
         }
@@ -196,8 +193,7 @@ function Copy-DbaCredential {
         Write-Message -Level Verbose -Message "Checking if Remote Registry is enabled on $source"
         try {
             Invoke-Command2 -ComputerName $sourceNetBios -Credential $credential -ScriptBlock { Get-ItemProperty -Path "HKLM:\SOFTWARE\" }
-        }
-        catch {
+        } catch {
             Stop-Function -Message "Can't connect to registry on $source" -Target $sourceNetBios -ErrorRecord $_
             return
         }
@@ -208,8 +204,7 @@ function Copy-DbaCredential {
         foreach ($destinstance in $Destination) {
             try {
                 $destServer = Connect-SqlInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential -MinimumVersion 9
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
             }
             Invoke-SmoCheck -SqlInstance $destServer
@@ -221,3 +216,4 @@ function Copy-DbaCredential {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-SqlCredential
     }
 }
+

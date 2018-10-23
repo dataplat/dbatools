@@ -1,6 +1,6 @@
 #ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Set-DbaDbMirror {
-<#
+    <#
     .SYNOPSIS
         Sets properties of database mirrors.
 
@@ -82,7 +82,7 @@ function Set-DbaDbMirror {
         [string[]]$Database,
         [string]$Partner,
         [string]$Witness,
-        [ValidateSet('Full','Off','None')]
+        [ValidateSet('Full', 'Off', 'None')]
         [string]$SafetyLevel,
         [ValidateSet('ForceFailoverAndAllowDataLoss', 'Failover', 'RemoveWitness', 'Resume', 'Suspend', 'Off')]
         [string]$State,
@@ -106,8 +106,7 @@ function Set-DbaDbMirror {
                         # use t-sql cuz $db.Alter() doesnt always work against restoring dbs
                         $db.Parent.Query("ALTER DATABASE $db SET PARTNER = N'$Partner'")
                     }
-                }
-                elseif ($Witness) {
+                } elseif ($Witness) {
                     if ($Pscmdlet.ShouldProcess($db.Parent.Name, "Setting witness on $db")) {
                         $db.Parent.Query("ALTER DATABASE $db SET WITNESS = N'$Witness'")
                     }
@@ -127,10 +126,10 @@ function Set-DbaDbMirror {
                         $db
                     }
                 }
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -ErrorRecord $_
             }
         }
     }
 }
+

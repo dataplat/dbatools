@@ -1,5 +1,5 @@
 function Get-DbatoolsLog {
-<#
+    <#
     .SYNOPSIS
         Returns log entries for dbatools
 
@@ -144,3 +144,4 @@ function Get-DbatoolsLog {
 
     }
 }
+

@@ -1,5 +1,5 @@
 function Read-DbaTransactionLog {
-<#
+    <#
     .SYNOPSIS
         Reads the live Transaction log from specified SQL Server Database
 
@@ -63,8 +63,7 @@ function Read-DbaTransactionLog {
 
     try {
         $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
-    }
-    catch {
+    } catch {
         Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
         return
     }
@@ -81,8 +80,7 @@ function Read-DbaTransactionLog {
 
     if ($IgnoreLimit) {
         Write-Message -Level Verbose -Message "Please be aware that ignoring the recommended limits may impact on the performance of the SQL Server database and the calling system"
-    }
-    else {
+    } else {
         #Warn if more than 0.5GB of live log. Dodgy conversion as SMO returns the value in an unhelpful format :(
         $SqlSizeCheck = "select
                                 sum(FileProperty(sf.name,'spaceused')*8/1024) as 'SizeMb'
@@ -101,3 +99,4 @@ function Read-DbaTransactionLog {
     $server.Query($sql, $Database)
 
 }
+

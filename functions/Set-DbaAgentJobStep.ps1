@@ -1,6 +1,6 @@
 #ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Set-DbaAgentJobStep {
-<#
+    <#
     .SYNOPSIS
         Set-DbaAgentJobStep updates a job step.
 
@@ -212,8 +212,7 @@ function Set-DbaAgentJobStep {
             # Try connecting to the instance
             try {
                 $Server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -222,13 +221,11 @@ function Set-DbaAgentJobStep {
                 # Check if the job exists
                 if ($Server.JobServer.Jobs.Name -notcontains $j) {
                     Stop-Function -Message "Job $j doesn't exists on $instance" -Target $instance -Continue
-                }
-                else {
+                } else {
                     # Check if the job step exists
                     if ($Server.JobServer.Jobs[$j].JobSteps.Name -notcontains $StepName) {
                         Stop-Function -Message "Step $StepName doesn't exists for job $j" -Target $instance -Continue
-                    }
-                    else {
+                    } else {
 
                         # Get the job step
                         $JobStep = $Server.JobServer.Jobs[$j].JobSteps[$StepName]
@@ -282,8 +279,7 @@ function Set-DbaAgentJobStep {
                             if ($Server.Databases.Name -contains $Database) {
                                 Write-Message -Message "Setting job step database name to $Database" -Level Verbose
                                 $JobStep.DatabaseName = $Database
-                            }
-                            else {
+                            } else {
                                 Stop-Function -Message "The database is not present on instance $instance." -Target $instance -Continue
                             }
                         }
@@ -293,8 +289,7 @@ function Set-DbaAgentJobStep {
                             if ($Server.Databases[$Database].Users.Name -contains $DatabaseUser) {
                                 Write-Message -Message "Setting job step database username to $DatabaseUser" -Level Verbose
                                 $JobStep.DatabaseUserName = $DatabaseUser
-                            }
-                            else {
+                            } else {
                                 Stop-Function -Message "The database user is not present in the database $Database on instance $instance." -Target $instance -Continue
                             }
                         }
@@ -319,8 +314,7 @@ function Set-DbaAgentJobStep {
                             if ($Server.JobServer.ProxyAccounts.Name -contains $ProxyName) {
                                 Write-Message -Message "Setting job step proxy name to $ProxyName" -Level Verbose
                                 $JobStep.ProxyName = $ProxyName
-                            }
-                            else {
+                            } else {
                                 Stop-Function -Message "The proxy name $ProxyName doesn't exist on instance $instance." -Target $instance -Continue
                             }
                         }
@@ -338,8 +332,7 @@ function Set-DbaAgentJobStep {
 
                                 # Change the job step
                                 $JobStep.Alter()
-                            }
-                            catch {
+                            } catch {
                                 Stop-Function -Message "Something went wrong changing the job step" -ErrorRecord $_ -Target $instance -Continue
                             }
                         }
@@ -355,3 +348,4 @@ function Set-DbaAgentJobStep {
         Write-Message -Message "Finished changing job step(s)" -Level Verbose
     }
 }
+

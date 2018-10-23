@@ -1,5 +1,5 @@
 function Get-DbaAgentSchedule {
-<#
+    <#
     .SYNOPSIS
         Returns all SQL Agent Shared Schedules on a SQL Server Agent.
 
@@ -93,8 +93,7 @@ function Get-DbaAgentSchedule {
                 {$_ -in 4, "Daily"} {
                     if ($Schedule.FrequencyInterval -eq 1) {
                         $description += "day "
-                    }
-                    elseif ($Schedule.FrequencyInterval -gt 1) {
+                    } elseif ($Schedule.FrequencyInterval -gt 1) {
                         $description += "$($Schedule.FrequencyInterval) day(s) "
                     }
                 }
@@ -104,8 +103,7 @@ function Get-DbaAgentSchedule {
                     # Check if it's for one or more weeks
                     if ($Schedule.FrequencyRecurrenceFactor -eq 1) {
                         $description += "week on "
-                    }
-                    elseif ($Schedule.FrequencyRecurrenceFactor -gt 1) {
+                    } elseif ($Schedule.FrequencyRecurrenceFactor -gt 1) {
                         $description += "$($Schedule.FrequencyRecurrenceFactor) week(s) on "
                     }
 
@@ -162,8 +160,7 @@ function Get-DbaAgentSchedule {
                     # Check if it's for one or more months
                     if ($Schedule.FrequencyRecurrenceFactor -eq 1) {
                         $description += "month "
-                    }
-                    elseif ($Schedule.FrequencyRecurrenceFactor -gt 1) {
+                    } elseif ($Schedule.FrequencyRecurrenceFactor -gt 1) {
                         $description += "$($Schedule.FrequencyRecurrenceFactor) month(s) "
                     }
 
@@ -207,8 +204,7 @@ function Get-DbaAgentSchedule {
                 # Check the subday types for minutes or hours i.e.
                 if ($schedule.FrequencySubDayInterval -in 0, 1) {
                     $description += "at $startTime. "
-                }
-                else {
+                } else {
 
                     switch ($Schedule.FrequencySubDayTypes) {
                         {$_ -in 2, "Seconds"} { $description += "every $($schedule.FrequencySubDayInterval) second(s) "}
@@ -222,8 +218,7 @@ function Get-DbaAgentSchedule {
                 # Check if an end date has been given
                 if ($Schedule.ActiveEndDate.Year -eq 9999) {
                     $description += "Schedule will be used starting on $startDate."
-                }
-                else {
+                } else {
                     $description += "Schedule will used between $startDate and $endDate."
                 }
             }
@@ -236,8 +231,7 @@ function Get-DbaAgentSchedule {
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -247,8 +241,7 @@ function Get-DbaAgentSchedule {
 
             if ($Schedule) {
                 $scheduleCollection = $server.JobServer.SharedSchedules | Where-Object { $_.Name -in $Schedule }
-            }
-            else {
+            } else {
                 $scheduleCollection = $server.JobServer.SharedSchedules
             }
 
@@ -269,3 +262,4 @@ function Get-DbaAgentSchedule {
 
     }
 }
+

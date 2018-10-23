@@ -1,5 +1,5 @@
 function Get-DbaPbmCondition {
-<#
+    <#
     .SYNOPSIS
         Returns conditions from policy based management from an instance.
 
@@ -85,3 +85,4 @@ function Get-DbaPbmCondition {
         }
     }
 }
+

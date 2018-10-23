@@ -1,5 +1,5 @@
 function Rename-DbaDatabase {
-<#
+    <#
     .SYNOPSIS
         Changes database name, logical file names, file group names and physical file names (optionally handling the move). BETA VERSION.
 
@@ -272,13 +272,11 @@ function Rename-DbaDatabase {
                 # comes from Get-DbaDatabase
                 $dbs += $InputObject
             }
-        }
-        else {
+        } else {
             foreach ($instance in $SqlInstance) {
                 try {
                     $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlCredential
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
                 }
                 $all_dbs = $server.Databases | Where-Object IsAccessible
@@ -341,13 +339,11 @@ function Rename-DbaDatabase {
                 $NewDBName = $DatabaseName.Replace('<DBN>', $Orig_DBName).Replace('<DATE>', $CurrentDate)
                 if ($Orig_DBName -eq $NewDBName) {
                     Write-Message -Level VeryVerbose -Message "Database name unchanged, skipping"
-                }
-                else {
+                } else {
                     if ($InstanceDbs[$Server_Id].ContainsKey($NewDBName)) {
                         Write-Message -Level Warning -Message "Database $NewDBName exists already, skipping this rename"
                         $failed = $true
-                    }
-                    else {
+                    } else {
                         if ($PSCmdlet.ShouldProcess($db, "Renaming Database $db to $NewDBName")) {
                             if ($Force) {
                                 $server.KillAllProcesses($Orig_DBName)
@@ -360,8 +356,7 @@ function Rename-DbaDatabase {
                                 $InstanceDbs[$Server_Id][$NewDBName] = 1
                                 $Entities_Before['DBN'][$Orig_DBName] = $NewDBName
                                 #$db.Refresh()
-                            }
-                            catch {
+                            } catch {
                                 Stop-Function -Message "Failed to rename Database : $($_.Exception.InnerException.InnerException.InnerException)" -ErrorRecord $_ -Target $server.DomainInstanceName -OverrideExceptionMessage
                                 # stop any further renames
                                 $failed = $true
@@ -400,8 +395,7 @@ function Rename-DbaDatabase {
                         if ($FinalFGName -in $New_FGNames.Keys) {
                             $FGCounter += 1
                             $FinalFGName = "$NewFGName$($FGCounter.ToString('000'))"
-                        }
-                        else {
+                        } else {
                             break
                         }
                     }
@@ -417,8 +411,7 @@ function Rename-DbaDatabase {
                             $New_FGNames.Remove($Orig_FGName)
                             $New_FGNames[$FinalFGName] = 1
                             $Entities_Before['FGN'][$Orig_FGName] = $FinalFGName
-                        }
-                        catch {
+                        } catch {
                             Stop-Function -Message "Failed to rename FileGroup : $($_.Exception.InnerException.InnerException.InnerException)" -ErrorRecord $_ -Target $server.DomainInstanceName -OverrideExceptionMessage
                             # stop any further renames
                             $failed = $true
@@ -472,8 +465,7 @@ function Rename-DbaDatabase {
                             if ($FinalLGName -in $New_LogicalNames.Keys) {
                                 $LNCounter += 1
                                 $FinalLGName = "$NewLGName$($LNCounter.ToString('000'))"
-                            }
-                            else {
+                            } else {
                                 break
                             }
                         }
@@ -489,8 +481,7 @@ function Rename-DbaDatabase {
                                 $New_LogicalNames.Remove($Orig_LGName)
                                 $New_LogicalNames[$FinalLGName] = 1
                                 $Entities_Before['LGN'][$Orig_LGName] = $FinalLGName
-                            }
-                            catch {
+                            } catch {
                                 Stop-Function -Message "Failed to Rename Logical File : $($_.Exception.InnerException.InnerException.InnerException)" -ErrorRecord $_ -Target $server.DomainInstanceName -OverrideExceptionMessage
                                 # stop any further renames
                                 $failed = $true
@@ -522,8 +513,7 @@ function Rename-DbaDatabase {
                             if ($FinalLGName -in $New_LogicalNames.Keys) {
                                 $LNCounter += 1
                                 $FinalLGName = "$NewLGName$($LNCounter.ToString('000'))"
-                            }
-                            else {
+                            } else {
                                 break
                             }
                         }
@@ -539,8 +529,7 @@ function Rename-DbaDatabase {
                                 $New_LogicalNames.Remove($Orig_LGName)
                                 $New_LogicalNames[$FinalLGName] = 1
                                 $Entities_Before['LGN'][$Orig_LGName] = $FinalLGName
-                            }
-                            catch {
+                            } catch {
                                 Stop-Function -Message "Failed to Rename Logical File : $($_.Exception.InnerException.InnerException.InnerException)" -ErrorRecord $_ -Target $server.DomainInstanceName -OverrideExceptionMessage
                                 # stop any further renames
                                 $failed = $true
@@ -582,8 +571,7 @@ function Rename-DbaDatabase {
                         $InstanceFiles[$Server_Id][$dirname] = @{}
                         try {
                             $dirfiles = Get-DbaFile -SqlInstance $server -Path $dirname -EnableException
-                        }
-                        catch {
+                        } catch {
                             Write-Message -Level Warning -Message "Failed to enumerate existing files at $dirname, move could go wrong"
                         }
                         foreach ($f in $dirfiles) {
@@ -620,8 +608,7 @@ function Rename-DbaDatabase {
                                 $FNCounter += 1
                                 $FinalFNName = [IO.Path]::Combine($FNNameDir, "$NewFNName$($FNCounter.ToString('000'))$([IO.Path]::GetExtension($FNName))"
                                 )
-                            }
-                            else {
+                            } else {
                                 break
                             }
                         }
@@ -642,8 +629,7 @@ function Rename-DbaDatabase {
                                     Source      = $FNName
                                     Destination = $FinalFNName
                                 }
-                            }
-                            catch {
+                            } catch {
                                 Stop-Function -Message "Failed to Rename FileName : $($_.Exception.InnerException.InnerException.InnerException)" -ErrorRecord $_ -Target $server.DomainInstanceName -OverrideExceptionMessage
                                 # stop any further renames
                                 $failed = $true
@@ -671,8 +657,7 @@ function Rename-DbaDatabase {
                                 if ($InstanceFiles[$Server_Id][$FNNameDir].ContainsKey($FinalFNName)) {
                                     $FNCounter += 1
                                     $FinalFNName = [IO.Path]::Combine($FNNameDir, "$NewFNName$($FNCounter.ToString('000'))$([IO.Path]::GetExtension($FNName))")
-                                }
-                                else {
+                                } else {
                                     break
                                 }
                             }
@@ -694,8 +679,7 @@ function Rename-DbaDatabase {
                                         Source      = $FNName
                                         Destination = $FinalFNName
                                     }
-                                }
-                                catch {
+                                } catch {
                                     Stop-Function -Message "Failed to Rename FileName : $($_.Exception.InnerException.InnerException.InnerException)" -ErrorRecord $_ -Target $server.DomainInstanceName -OverrideExceptionMessage
                                     # stop any further renames
                                     $failed = $true
@@ -713,15 +697,13 @@ function Rename-DbaDatabase {
                 if ([DbaValidate]::IsLocalhost($server.ComputerName)) {
                     # locally ran so we can just use rename-item
                     $ComputerName = $server.ComputerName
-                }
-                else {
+                } else {
                     # let's start checking if we can access .ComputerName
                     $testPS = $false
                     if ($SqlCredential) {
                         # why does Test-PSRemoting require a Credential param ? this is ugly...
                         $testPS = Test-PSRemoting -ComputerName $server.ComputerName -Credential $SqlCredential -ErrorAction Stop
-                    }
-                    else {
+                    } else {
                         $testPS = Test-PSRemoting -ComputerName $server.ComputerName -ErrorAction Stop
                     }
                     if (!($testPS)) {
@@ -729,15 +711,13 @@ function Rename-DbaDatabase {
                         $Resolved = (Resolve-DbaNetworkName -ComputerName $server.Name).FullComputerName
                         if ($SqlCredential) {
                             $testPS = Test-PSRemoting -ComputerName $Resolved -Credential $SqlCredential -ErrorAction Stop
-                        }
-                        else {
+                        } else {
                             $testPS = Test-PSRemoting -ComputerName $Resolved -ErrorAction Stop
                         }
                         if ($testPS) {
                             $ComputerName = $Resolved
                         }
-                    }
-                    else {
+                    } else {
                         $ComputerName = $server.ComputerName
                     }
                 }
@@ -748,8 +728,7 @@ function Rename-DbaDatabase {
                                 Destination  = $op.Destination
                                 ComputerName = $ComputerName
                             })
-                    }
-                    else {
+                    } else {
                         if ($null -eq $ComputerName) {
                             # if we don't have remote access ($ComputerName is null) we can fallback to admin shares if they're available
                             if (Test-Path (Join-AdminUnc -ServerName $server.ComputerName -filepath $op.Source)) {
@@ -758,8 +737,7 @@ function Rename-DbaDatabase {
                                         Destination  = Join-AdminUnc -ServerName $server.ComputerName -filepath $op.Destination
                                         ComputerName = $server.ComputerName
                                     })
-                            }
-                            else {
+                            } else {
                                 # flag the impossible rename ($ComputerName is $null)
                                 $null = $Final_Renames.Add([pscustomobject]@{
                                         Source       = $op.Source
@@ -767,8 +745,7 @@ function Rename-DbaDatabase {
                                         ComputerName = $ComputerName
                                     })
                             }
-                        }
-                        else {
+                        } else {
                             # we can do renames in a remote pssession
                             $null = $Final_Renames.Add([pscustomobject]@{
                                     Source       = $op.Source
@@ -784,23 +761,20 @@ function Rename-DbaDatabase {
                         Write-Message -Level VeryVerbose -Message "Setting the database offline. You are in charge of moving the files to the new location"
                         # because renames still need to be dealt with
                         $Status = 'PARTIAL'
-                    }
-                    else {
+                    } else {
                         if ($PSCmdlet.ShouldProcess($db, "File Rename required, setting db offline")) {
                             $SetState = Set-DbaDbState -SqlInstance $server -Database $db.Name -Offline -Force
                             if ($SetState.Status -ne 'OFFLINE') {
                                 Write-Message -Level Warning -Message "Setting db offline failed, You are in charge of moving the files to the new location"
                                 # because it was impossible to set the database offline
                                 $Status = 'PARTIAL'
-                            }
-                            else {
+                            } else {
                                 try {
                                     while ($Final_Renames.Count -gt 0) {
                                         $op = $Final_Renames.Item(0)
                                         if ($null -eq $op.ComputerName) {
                                             Stop-Function -Message "No access to physical files for renames"
-                                        }
-                                        else {
+                                        } else {
                                             Write-Message -Level VeryVerbose -Message "Moving file $($op.Source) to $($op.Destination)"
                                             if (!$Preview) {
                                                 $scriptblock = {
@@ -812,8 +786,7 @@ function Rename-DbaDatabase {
                                         }
                                         $null = $Final_Renames.RemoveAt(0)
                                     }
-                                }
-                                catch {
+                                } catch {
                                     $failed = $true
                                     # because a rename operation failed
                                     $Status = 'PARTIAL'
@@ -826,8 +799,7 @@ function Rename-DbaDatabase {
                                             Write-Message -Level Warning -Message "Setting db online failed"
                                             # because renames were done, but the database didn't wake up
                                             $Status = 'PARTIAL'
-                                        }
-                                        else {
+                                        } else {
                                             $Status = 'FULL'
                                         }
                                     }
@@ -835,18 +807,15 @@ function Rename-DbaDatabase {
                             }
                         }
                     }
-                }
-                else {
+                } else {
                     # because of a previous error with renames to do
                     $Status = 'PARTIAL'
                 }
-            }
-            else {
+            } else {
                 if (!$failed) {
                     # because no previous error and not filename
                     $Status = 'FULL'
-                }
-                else {
+                } else {
                     # because previous errors and not filename
                     $Status = 'PARTIAL'
                 }
@@ -879,3 +848,4 @@ function Rename-DbaDatabase {
         #endregion db loop
     }
 }
+

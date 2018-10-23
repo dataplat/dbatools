@@ -168,8 +168,7 @@ function Get-DbaFile {
             $paths = @()
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -198,8 +197,7 @@ function Get-DbaFile {
                         }
                     }
                 }
-            }
-            else {
+            } else {
                 foreach ($row in $datatable) {
                     [pscustomobject]@{
                         ComputerName   = $server.ComputerName
@@ -213,3 +211,4 @@ function Get-DbaFile {
         }
     }
 }
+

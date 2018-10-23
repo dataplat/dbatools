@@ -1,5 +1,5 @@
 function Export-DbaScript {
-<#
+    <#
     .SYNOPSIS
         Exports scripts from SQL Management Objects (SMO)
 
@@ -155,8 +155,7 @@ function Export-DbaScript {
 
             if ($typename.StartsWith('Microsoft.SqlServer.')) {
                 $shortype = $typename.Split(".")[-1]
-            }
-            else {
+            } else {
                 Stop-Function -Message "InputObject is of type $typename which is not a SQL Management Object. Only SMO objects are supported." -Category InvalidData -Target $object -Continue
             }
 
@@ -199,23 +198,20 @@ function Export-DbaScript {
                 if (!$passthru) {
                     if ($path) {
                         $actualPath = $path
-                    }
-                    else {
+                    } else {
                         $actualPath = "$serverName-$shortype-Export-$timeNow.sql"
                     }
                 }
 
                 if ($NoPrefix) {
                     $prefix = ""
-                }
-                else {
+                } else {
                     $prefix = "/*`n`tCreated by $executingUser using dbatools $commandName for objects on $serverName at $(Get-Date)`n`tSee https://dbatools.io/$commandName for more information`n*/"
                 }
 
                 if ($passthru) {
                     $prefix | Out-String
-                }
-                else {
+                } else {
                     if ($prefixArray -notcontains $actualPath) {
 
                         if ((Test-Path -Path $actualPath) -and $NoClobber) {
@@ -238,12 +234,10 @@ function Export-DbaScript {
                                 }
                                 $script | Out-String
                             }
-                        }
-                        else {
+                        } else {
                             if (Get-Member -Name ScriptCreate -InputObject $object) {
                                 $script = $object.ScriptCreate().GetScript()
-                            }
-                            else {
+                            } else {
                                 $script = $object.Script()
                             }
 
@@ -252,16 +246,14 @@ function Export-DbaScript {
                             }
                             $script  | Out-String
                         }
-                    }
-                    else {
+                    } else {
                         if ($ScriptingOptionsObject) {
                             if ($ScriptingOptionsObject.ScriptBatchTerminator) {
                                 $ScriptingOptionsObject.AppendToFile = $true
                                 $ScriptingOptionsObject.ToFileOnly = $true
                                 $ScriptingOptionsObject.FileName = $actualPath
                                 $object.Script($ScriptingOptionsObject)
-                            }
-                            else {
+                            } else {
                                 foreach ($script in $scripter.EnumScript($object)) {
                                     if ($BatchSeparator -ne "") {
                                         $script = "$script`r`n$BatchSeparator`r`n"
@@ -270,12 +262,10 @@ function Export-DbaScript {
                                 }
                             }
 
-                        }
-                        else {
+                        } else {
                             if (Get-Member -Name ScriptCreate -InputObject $object) {
                                 $script = $object.ScriptCreate().GetScript()
-                            }
-                            else {
+                            } else {
                                 $script = $object.Script()
                             }
                             if ($BatchSeparator -ne "") {
@@ -290,8 +280,7 @@ function Export-DbaScript {
                         Get-ChildItem -Path $actualPath
                     }
                 }
-            }
-            catch {
+            } catch {
                 $message = $_.Exception.InnerException.InnerException.InnerException.Message
                 if (-not $message) {
                     $message = $_.Exception
@@ -301,3 +290,4 @@ function Export-DbaScript {
         }
     }
 }
+

@@ -1,6 +1,6 @@
 #ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Write-DbaDataTable {
-<#
+    <#
     .SYNOPSIS
         Writes data to a SQL Server Table.
 
@@ -199,7 +199,7 @@ function Write-DbaDataTable {
 
         #region Utility Functions
         function Invoke-BulkCopy {
-        <#
+            <#
             .SYNOPSIS
                 Copies a datatable in bulk over to a table.
 
@@ -241,7 +241,7 @@ function Write-DbaDataTable {
         }
 
         function New-Table {
-        <#
+            <#
             .SYNOPSIS
                 Creates a table, based upon a DataTable.
 
@@ -300,8 +300,7 @@ function Write-DbaDataTable {
 
                 try {
                     $columnValue = $DataTable.Rows[0].$sqlColumnName
-                }
-                catch {
+                } catch {
                     $columnValue = $DataTable.$sqlColumnName
                 }
 
@@ -309,7 +308,7 @@ function Write-DbaDataTable {
                     $columnValue = $DataTable.$sqlColumnName
                 }
 
-            <#
+                <#
                 PS to SQL type conversion
                 If data type exists in hash table, use the corresponding SQL type
                 Else, fallback to nvarchar.
@@ -320,8 +319,7 @@ function Write-DbaDataTable {
                     if ($UseDynamicStringLength -and $column.MaxLength -gt 0 -and ($column.DataType -in ("String", "System.String"))) {
                         $sqlDataType = $sqlDataType.Replace("(MAX)", "($($column.MaxLength))")
                     }
-                }
-                else {
+                } else {
                     $sqlDataType = "nvarchar(MAX)"
                 }
 
@@ -335,8 +333,7 @@ function Write-DbaDataTable {
             if ($Pscmdlet.ShouldProcess($SqlInstance, "Creating table $Fqtn")) {
                 try {
                     $null = $Server.Databases[$DatabaseName].Query($sql)
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "The following query failed: $sql" -ErrorRecord $_
                     return
                 }
@@ -386,25 +383,21 @@ function Write-DbaDataTable {
         if (Test-Bound -ParameterName Database) {
             if ($null -eq $fqtnObj.Database) {
                 $databaseName = "$Database"
-            }
-            else {
+            } else {
                 if ($fqtnObj.Database -eq $Database) {
                     $databaseName = "$Database"
-                }
-                else {
+                } else {
                     Stop-Function -Message "The database parameter $($Database) differs from value from the fully qualified table name $($fqtnObj.Database)."
                     return
                 }
             }
-        }
-        else {
+        } else {
             $databaseName = $fqtnObj.Database
         }
 
         if ($fqtnObj.Schema) {
             $schemaName = $fqtnObj.Schema
-        }
-        else {
+        } else {
             $schemaName = $Schema
         }
 
@@ -415,8 +408,7 @@ function Write-DbaDataTable {
         [void]$quotedFQTN.Append( '[' )
         if ($databaseName.Contains(']')) {
             [void]$quotedFQTN.Append( $databaseName.Replace(']', ']]') )
-        }
-        else {
+        } else {
             [void]$quotedFQTN.Append( $databaseName )
         }
         [void]$quotedFQTN.Append( '].' )
@@ -424,8 +416,7 @@ function Write-DbaDataTable {
         [void]$quotedFQTN.Append( '[' )
         if ($schemaName.Contains(']')) {
             [void]$quotedFQTN.Append( $schemaName.Replace(']', ']]') )
-        }
-        else {
+        } else {
             [void]$quotedFQTN.Append( $schemaName )
         }
         [void]$quotedFQTN.Append( '].' )
@@ -433,8 +424,7 @@ function Write-DbaDataTable {
         [void]$quotedFQTN.Append( '[' )
         if ($tableName.Contains(']')) {
             [void]$quotedFQTN.Append( $tableName.Replace(']', ']]') )
-        }
-        else {
+        } else {
             [void]$quotedFQTN.Append( $tableName )
         }
         [void]$quotedFQTN.Append( ']' )
@@ -446,8 +436,7 @@ function Write-DbaDataTable {
         #region Connect to server and get database
         try {
             $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
-        }
-        catch {
+        } catch {
             Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $SqlInstance
             return
         }
@@ -459,8 +448,7 @@ function Write-DbaDataTable {
             #>
             try {
                 $null = $server.Databases
-            }
-            catch {
+            } catch {
                 #do nothing
             }
         }
@@ -504,8 +492,7 @@ function Write-DbaDataTable {
                 try {
                     Write-Message -Level Output -Message "Truncating $fqtn."
                     $null = $server.Databases[$databaseName].Query("TRUNCATE TABLE $fqtn")
-                }
-                catch {
+                } catch {
                     Write-Message -Level Warning -Message "Could not truncate $fqtn. Table may not exist or may have key constraints." -ErrorRecord $_
                 }
             }
@@ -519,7 +506,7 @@ function Write-DbaDataTable {
 
         $elapsed = [System.Diagnostics.Stopwatch]::StartNew()
         # Add RowCount output
-        $bulkCopy.Add_SqlRowsCopied({
+        $bulkCopy.Add_SqlRowsCopied( {
                 $script:totalRows = $args[1].RowsCopied
                 $percent = [int](($script:totalRows / $rowCount) * 100)
                 $timeTaken = [math]::Round($elapsed.Elapsed.TotalSeconds, 1)
@@ -528,43 +515,43 @@ function Write-DbaDataTable {
 
         $PStoSQLTypes = @{
             #PS datatype      = SQL data type
-            'System.Int32'     = 'int';
-            'System.UInt32'    = 'bigint';
-            'System.Int16'     = 'smallint';
-            'System.UInt16'    = 'int';
-            'System.Int64'     = 'bigint';
-            'System.UInt64'    = 'decimal(20,0)';
-            'System.Decimal'   = 'decimal(38,5)';
-            'System.Single'    = 'bigint';
-            'System.Double'    = 'float';
-            'System.Byte'      = 'tinyint';
-            'System.SByte'     = 'smallint';
-            'System.TimeSpan'  = 'nvarchar(30)';
-            'System.String'    = 'nvarchar(MAX)';
-            'System.Char'      = 'nvarchar(1)'
-            'System.DateTime'  = 'datetime2';
-            'System.Boolean'   = 'bit';
-            'System.Guid'      = 'uniqueidentifier';
-            'Int32'            = 'int';
-            'UInt32'           = 'bigint';
-            'Int16'            = 'smallint';
-            'UInt16'           = 'int';
-            'Int64'            = 'bigint';
-            'UInt64'           = 'decimal(20,0)';
-            'Decimal'          = 'decimal(38,5)';
-            'Single'           = 'bigint';
-            'Double'           = 'float';
-            'Byte'             = 'tinyint';
-            'SByte'            = 'smallint';
-            'TimeSpan'         = 'nvarchar(30)';
-            'String'           = 'nvarchar(MAX)';
-            'Char'             = 'nvarchar(1)'
-            'DateTime'         = 'datetime2';
-            'Boolean'          = 'bit';
-            'Bool'             = 'bit';
-            'Guid'             = 'uniqueidentifier';
-            'int'              = 'int';
-            'long'             = 'bigint';
+            'System.Int32'    = 'int';
+            'System.UInt32'   = 'bigint';
+            'System.Int16'    = 'smallint';
+            'System.UInt16'   = 'int';
+            'System.Int64'    = 'bigint';
+            'System.UInt64'   = 'decimal(20,0)';
+            'System.Decimal'  = 'decimal(38,5)';
+            'System.Single'   = 'bigint';
+            'System.Double'   = 'float';
+            'System.Byte'     = 'tinyint';
+            'System.SByte'    = 'smallint';
+            'System.TimeSpan' = 'nvarchar(30)';
+            'System.String'   = 'nvarchar(MAX)';
+            'System.Char'     = 'nvarchar(1)'
+            'System.DateTime' = 'datetime2';
+            'System.Boolean'  = 'bit';
+            'System.Guid'     = 'uniqueidentifier';
+            'Int32'           = 'int';
+            'UInt32'          = 'bigint';
+            'Int16'           = 'smallint';
+            'UInt16'          = 'int';
+            'Int64'           = 'bigint';
+            'UInt64'          = 'decimal(20,0)';
+            'Decimal'         = 'decimal(38,5)';
+            'Single'          = 'bigint';
+            'Double'          = 'float';
+            'Byte'            = 'tinyint';
+            'SByte'           = 'smallint';
+            'TimeSpan'        = 'nvarchar(30)';
+            'String'          = 'nvarchar(MAX)';
+            'Char'            = 'nvarchar(1)'
+            'DateTime'        = 'datetime2';
+            'Boolean'         = 'bit';
+            'Bool'            = 'bit';
+            'Guid'            = 'uniqueidentifier';
+            'int'             = 'int';
+            'long'            = 'bigint';
         }
 
         $validTypes = @([System.Data.DataSet], [System.Data.DataTable], [System.Data.DataRow], [System.Data.DataRow[]])
@@ -574,16 +561,15 @@ function Write-DbaDataTable {
         try {
             $wrappedCmd = $ExecutionContext.InvokeCommand.GetCommand('ConvertTo-DbaDataTable', [System.Management.Automation.CommandTypes]::Function)
             $splatCDDT = @{
-                TimeSpanType   = (Get-DbatoolsConfigValue -FullName 'commands.write-dbadatatable.timespantype' -Fallback 'TotalMilliseconds')
-                SizeType       = (Get-DbatoolsConfigValue -FullName 'commands.write-dbadatatable.sizetype' -Fallback 'Int64')
-                IgnoreNull     = (Get-DbatoolsConfigValue -FullName 'commands.write-dbadatatable.ignorenull' -Fallback $false)
-                Raw            = (Get-DbatoolsConfigValue -FullName 'commands.write-dbadatatable.raw' -Fallback $false)
+                TimeSpanType = (Get-DbatoolsConfigValue -FullName 'commands.write-dbadatatable.timespantype' -Fallback 'TotalMilliseconds')
+                SizeType     = (Get-DbatoolsConfigValue -FullName 'commands.write-dbadatatable.sizetype' -Fallback 'Int64')
+                IgnoreNull   = (Get-DbatoolsConfigValue -FullName 'commands.write-dbadatatable.ignorenull' -Fallback $false)
+                Raw          = (Get-DbatoolsConfigValue -FullName 'commands.write-dbadatatable.raw' -Fallback $false)
             }
             $scriptCmd = { & $wrappedCmd @splatCDDT }
             $steppablePipeline = $scriptCmd.GetSteppablePipeline()
             $steppablePipeline.Begin($true)
-        }
-        catch {
+        } catch {
             Stop-Function -Message "Failed to initialize "
         }
         #endregion ConvertTo-DbaDataTable wrapper
@@ -597,8 +583,7 @@ function Write-DbaDataTable {
         if ($inputType -eq [System.Data.DataSet]) {
             $inputData = $InputObject.Tables
             $inputType = [System.Data.DataTable[]]
-        }
-        else {
+        } else {
             $inputData = $InputObject
         }
 
@@ -608,8 +593,7 @@ function Write-DbaDataTable {
                 try {
                     New-Table -DataTable $InputObject -EnableException
                     $tableExists = $true
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Failed to create table $fqtn" -ErrorRecord $_ -Target $SqlInstance
                     return
                 }
@@ -630,8 +614,7 @@ function Write-DbaDataTable {
                     try {
                         New-Table -DataTable $object -EnableException
                         $tableExists = $true
-                    }
-                    catch {
+                    } catch {
                         Stop-Function -Message "Failed to create table $fqtn" -ErrorRecord $_ -Target $SqlInstance
                         return
                     }
@@ -662,8 +645,7 @@ function Write-DbaDataTable {
                 try {
                     New-Table -DataTable $dataTable[0] -EnableException
                     $tableExists = $true
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Failed to create table $fqtn" -ErrorRecord $_ -Target $SqlInstance
                     return
                 }
@@ -683,3 +665,4 @@ function Write-DbaDataTable {
         Test-DbaDeprecation -DeprecatedOn 1.0.0 -Parameter RegularUser
     }
 }
+

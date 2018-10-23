@@ -1,6 +1,6 @@
 #ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaDbCertificate {
-<#
+    <#
     .SYNOPSIS
         Gets database certificates
         
@@ -116,3 +116,4 @@ function Get-DbaDbCertificate {
         }
     }
 }
+

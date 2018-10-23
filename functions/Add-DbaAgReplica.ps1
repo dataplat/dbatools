@@ -1,6 +1,6 @@
 #ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Add-DbaAgReplica {
-<#
+    <#
     .SYNOPSIS
         Adds a replica to an availability group on a SQL Server instance.
 
@@ -127,8 +127,7 @@ function Add-DbaAgReplica {
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 11
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -192,8 +191,7 @@ function Add-DbaAgReplica {
                     Add-Member -Force -InputObject $agreplica -MemberType NoteProperty -Name Replica -value $agreplica.Name # backwards compat
                     
                     Select-DefaultView -InputObject $agreplica -Property $defaults
-                }
-                catch {
+                } catch {
                     $msg = $_.Exception.InnerException.InnerException.Message
                     if (-not $msg) {
                         $msg = $_
@@ -204,3 +202,4 @@ function Add-DbaAgReplica {
         }
     }
 }
+

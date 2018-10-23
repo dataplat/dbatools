@@ -97,15 +97,13 @@ function Get-DbaDbMemoryUsage {
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             try {
                 $results = $server.Query($sql)
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Issue collecting data" -Target $instance -ErrorRecord $_
             }
             foreach ($row in $results) {
@@ -121,8 +119,7 @@ function Get-DbaDbMemoryUsage {
 
                 if ($row.PercentUsed -is [System.DBNull]) {
                     $percentUsed = 0
-                }
-                else {
+                } else {
                     $percentUsed = [Math]::Round($row.PercentUsed)
                 }
 
@@ -140,3 +137,4 @@ function Get-DbaDbMemoryUsage {
         }
     }
 }
+

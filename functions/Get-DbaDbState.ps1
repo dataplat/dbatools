@@ -1,6 +1,6 @@
 #ValidationTags#Messaging,FlowControl,Pipeline#
 function Get-DbaDbState {
-<#
+    <#
     .SYNOPSIS
         Gets various options for databases, hereby called "states"
 
@@ -93,8 +93,7 @@ FROM sys.databases
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
             $dbStates = $server.Query($DbStatesQuery)
@@ -133,3 +132,4 @@ FROM sys.databases
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-DbaDatabaseState
     }
 }
+

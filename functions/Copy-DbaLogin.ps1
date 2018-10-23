@@ -1,5 +1,5 @@
 function Copy-DbaLogin {
-<#
+    <#
     .SYNOPSIS
         Migrates logins from source to destination SQL Servers. Supports SQL Server versions 2000 and newer.
 
@@ -155,15 +155,15 @@ function Copy-DbaLogin {
                 $userName = $sourceLogin.name
 
                 $copyLoginStatus = [pscustomobject]@{
-                    SourceServer = $sourceServer.Name
+                    SourceServer      = $sourceServer.Name
                     DestinationServer = $destServer.Name
-                    Type         = "Login - $($sourceLogin.LoginType)"
-                    Name         = $userName
-                    DestinationLogin = $userName
-                    SourceLogin  = $userName
-                    Status       = $null
-                    Notes        = $null
-                    DateTime     = [DbaDateTime](Get-Date)
+                    Type              = "Login - $($sourceLogin.LoginType)"
+                    Name              = $userName
+                    DestinationLogin  = $userName
+                    SourceLogin       = $userName
+                    Status            = $null
+                    Notes             = $null
+                    DateTime          = [DbaDateTime](Get-Date)
                 }
 
                 if ($Login -and $Login -notcontains $userName -or $ExcludeLogin -contains $userName) { continue }
@@ -204,8 +204,7 @@ function Copy-DbaLogin {
                             $copyLoginStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                         }
                         continue
-                    }
-                    else {
+                    } else {
                         if ($ExcludeSystemLogin) {
                             if ($Pscmdlet.ShouldProcess("console", "$userName was skipped because ExcludeSystemLogin was specified.")) {
                                 Write-Message -Level Verbose -Message "$userName was skipped because ExcludeSystemLogin was specified."
@@ -280,15 +279,13 @@ function Copy-DbaLogin {
                                 Write-Message -Level Verbose -Message "-KillActiveConnection was provided. There are $($activeConnections.Count) active connections killed."
                                 # just in case the kill didn't work, it'll leave behind a disabled account
                                 if ($disabled) { $destServer.Logins.Item($userName).Enable() }
-                            }
-                            elseif ($activeConnections) {
+                            } elseif ($activeConnections) {
                                 Write-Message -Level Verbose -Message "There are $($activeConnections.Count) active connections found for the login $userName. Utilize -KillActiveConnection with -Force to kill the connections."
                             }
                             $destServer.Logins.Item($userName).Drop()
 
                             Write-Message -Level Verbose -Message "Successfully dropped $userName on $destinstance."
-                        }
-                        catch {
+                        } catch {
                             $copyLoginStatus.Status = "Failed"
                             $copyLoginStatus.Notes = (Get-ErrorMessage -Record $_).Message
                             $copyLoginStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
@@ -320,8 +317,7 @@ function Copy-DbaLogin {
                         catch { $sourcesysadmins = $sourceServer.roles['sysadmin'].EnumServerRoleMembers() }
                         if ($sourcesysadmins -contains $userName) {
                             $defaultDb = "master"
-                        }
-                        else {
+                        } else {
                             $defaultDb = "tempdb"
                         }
                         Write-Message -Level Verbose -Message "$OrigdefaultDb does not exist on destination. Setting defaultdb to $defaultDb."
@@ -357,8 +353,7 @@ function Copy-DbaLogin {
 
                         try {
                             $hashedPass = $sourceServer.ConnectionContext.ExecuteScalar($sql)
-                        }
-                        catch {
+                        } catch {
                             $hashedPassDt = $sourceServer.Databases['master'].ExecuteWithResults($sql)
                             $hashedPass = $hashedPassDt.Tables[0].Rows[0].Item(0)
                         }
@@ -375,8 +370,7 @@ function Copy-DbaLogin {
 
                             $copyLoginStatus.Status = "Successful"
                             $copyLoginStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                        }
-                        catch {
+                        } catch {
                             try {
                                 $sid = "0x"; $sourceLogin.sid | ForEach-Object { $sid += ("{0:X}" -f $_).PadLeft(2, "0") }
                                 $sql = "CREATE LOGIN [$userName] WITH PASSWORD = $hashedPass HASHED, SID = $sid,
@@ -391,8 +385,7 @@ function Copy-DbaLogin {
                                 $copyLoginStatus.Status = "Successful"
                                 $copyLoginStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
-                            }
-                            catch {
+                            } catch {
                                 $copyLoginStatus.Status = "Failed"
                                 $copyLoginStatus.Notes = (Get-ErrorMessage -Record $_).Message
                                 $copyLoginStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
@@ -417,8 +410,7 @@ function Copy-DbaLogin {
                             $copyLoginStatus.Status = "Successful"
                             $copyLoginStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
-                        }
-                        catch {
+                        } catch {
                             $copyLoginStatus.Status = "Failed"
                             $copyLoginStatus.Notes = (Get-ErrorMessage -Record $_).Message
                             $copyLoginStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
@@ -440,8 +432,7 @@ function Copy-DbaLogin {
                     if ($sourceLogin.IsDisabled) {
                         try {
                             $destLogin.Disable()
-                        }
-                        catch {
+                        } catch {
                             $copyLoginStatus.Status = "Successful - but could not disable on destination"
                             $copyLoginStatus.Notes = (Get-ErrorMessage -Record $_).Message
                             $copyLoginStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
@@ -452,8 +443,7 @@ function Copy-DbaLogin {
                     if ($sourceLogin.DenyWindowsLogin) {
                         try {
                             $destLogin.DenyWindowsLogin = $true
-                        }
-                        catch {
+                        } catch {
                             $copyLoginStatus.Status = "Successful - but could not deny login on destination"
                             $copyLoginStatus.Notes = (Get-ErrorMessage -Record $_).Message
                             $copyLoginStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
@@ -477,8 +467,7 @@ function Copy-DbaLogin {
                             $copyLoginStatus.Status = "Successful"
                             $copyLoginStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
-                        }
-                        catch {
+                        } catch {
                             $copyLoginStatus.DestinationLogin = $NewLogin
                             $copyLoginStatus.Status = "Failed to rename"
                             $copyLoginStatus.Notes = (Get-ErrorMessage -Record $_).Message
@@ -497,12 +486,10 @@ function Copy-DbaLogin {
             $Source = $InputObject[0].Parent.Name
             $Sourceserver = $InputObject[0].Parent
             $Login = $InputObject.Name
-        }
-        else {
+        } else {
             try {
                 $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Source
                 return
             }
@@ -517,8 +504,7 @@ function Copy-DbaLogin {
         foreach ($destinstance in $Destination) {
             try {
                 $destServer = Connect-SqlInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
             }
 
@@ -559,3 +545,4 @@ function Copy-DbaLogin {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-SqlLogin
     }
 }
+

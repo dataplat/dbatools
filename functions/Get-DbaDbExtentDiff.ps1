@@ -1,5 +1,5 @@
 function Get-DbaDbExtentDiff {
-<#
+    <#
     .SYNOPSIS
         What percentage of a database has changed since the last full backup
 
@@ -72,8 +72,7 @@ function Get-DbaDbExtentDiff {
                 $extents = $rex.Matches($f)
                 if ($extents.Count -eq 1) {
                     $res += 1
-                }
-                else {
+                } else {
                     $pages = [int]$extents[1].Groups['extent'].Value - [int]$extents[0].Groups['extent'].Value
                     $res += $pages / 8 + 1
                 }
@@ -87,8 +86,7 @@ function Get-DbaDbExtentDiff {
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential -NonPooled
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -106,8 +104,7 @@ function Get-DbaDbExtentDiff {
             foreach ($db in $dbs) {
                 if ($db.IsAccessible -ne $true) {
                     Write-Message -Level Verbose -Message "$db is not accessible on $instance, skipping"
-                }
-                else {
+                } else {
                     $sourcedbs += $db
                 }
             }
@@ -133,8 +130,7 @@ function Get-DbaDbExtentDiff {
                         ChangedPerc    = [math]::Round($DBCCPageResults.ChangedPerc, 2)
                     }
                 }
-            }
-            else {
+            } else {
                 $MasterFilesQuery = "
                         SELECT [file_id], [size], database_id, db_name(database_id) as dbname FROM master.sys.master_files
                         WHERE [type_desc] = N'ROWS'
@@ -172,3 +168,4 @@ function Get-DbaDbExtentDiff {
         }
     }
 }
+

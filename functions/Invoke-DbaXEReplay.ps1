@@ -97,8 +97,7 @@ function Invoke-DbaXeReplay {
                 Add-Content -Path $filename -Value $InputObject.statement
                 Add-Content -Path $filename -Value "GO"
             }
-        }
-        else {
+        } else {
             if ($InputObject.batch_text -notmatch "ALTER EVENT SESSION") {
                 Add-Content -Path $filename -Value $InputObject.batch_text
                 Add-Content -Path $filename -Value "GO"
@@ -110,8 +109,7 @@ function Invoke-DbaXeReplay {
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -120,8 +118,7 @@ function Invoke-DbaXeReplay {
                 if (Test-Bound -ParameterName SqlCredential) {
                     . $sqlcmd -S $instance -i $filename -U $SqlCredential.Username -P $SqlCredential.GetNetworkCredential().Password
                     continue
-                }
-                else {
+                } else {
                     . $sqlcmd -S $instance -i $filename
                     continue
                 }
@@ -129,8 +126,7 @@ function Invoke-DbaXeReplay {
 
             if (Test-Bound -ParameterName SqlCredential) {
                 $output = . $sqlcmd -S $instance -i $filename -U $SqlCredential.Username -P $SqlCredential.GetNetworkCredential().Password
-            }
-            else {
+            } else {
                 $output = . $sqlcmd -S $instance -i $filename
             }
 
@@ -144,3 +140,4 @@ function Invoke-DbaXeReplay {
         Remove-Item -Path $filename -ErrorAction Ignore
     }
 }
+

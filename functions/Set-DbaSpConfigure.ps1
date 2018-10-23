@@ -1,5 +1,5 @@
 function Set-DbaSpConfigure {
-<#
+    <#
     .SYNOPSIS
         Changes the server level system configuration (sys.configuration/sp_configure) value for a given configuration
 
@@ -110,23 +110,23 @@ function Set-DbaSpConfigure {
                     $server.Configuration.Alter()
 
                     [pscustomobject]@{
-                        ComputerName           = $server.ComputerName
-                        InstanceName           = $server.ServiceName
-                        SqlInstance            = $server.DomainInstanceName
-                        ConfigName             = $configuration
-                        OldValue               = $currentRunValue
-                        NewValue               = $value
+                        ComputerName = $server.ComputerName
+                        InstanceName = $server.ServiceName
+                        SqlInstance  = $server.DomainInstanceName
+                        ConfigName   = $configuration
+                        OldValue     = $currentRunValue
+                        NewValue     = $value
                     }
 
                     #If it's a dynamic setting we're all clear, otherwise let the user know that SQL needs to be restarted for the change to take
                     if ($isDynamic -eq $false) {
                         Write-Message -Level Warning -Message "Configuration setting $configuration has been set, but restart of SQL Server is required for the new value `"$value`" to be used (old value: `"$currentRunValue`")" -Target $Instance
                     }
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Unable to change config setting" -Target $Instance -ErrorRecord $_ -Continue -ContinueLabel main
                 }
             }
         }
     }
 }
+

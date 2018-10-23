@@ -1,6 +1,6 @@
 #ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Find-DbaDbGrowthEvent {
-<#
+    <#
     .SYNOPSIS
         Finds any database AutoGrow events in the Default Trace.
 
@@ -229,8 +229,7 @@ function Find-DbaDbGrowthEvent {
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -255,10 +254,10 @@ function Find-DbaDbGrowthEvent {
 
             try {
                 Select-DefaultView -InputObject $server.Query($sql) -Property $defaults
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Issue collecting data on $server" -Target $server -ErrorRecord $_ -Exception $_.Exception.InnerException.InnerException.InnerException -Continue
             }
         }
     }
 }
+

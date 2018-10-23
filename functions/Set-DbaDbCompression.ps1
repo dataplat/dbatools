@@ -1,5 +1,5 @@
 function Set-DbaDbCompression {
-<#
+    <#
     .SYNOPSIS
         Sets tables and indexes with preferred compression setting.
 
@@ -115,8 +115,7 @@ function Set-DbaDbCompression {
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 10
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failed to process Instance $instance" -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -134,8 +133,7 @@ function Set-DbaDbCompression {
                 if ($ExcludeDatabase) {
                     $dbs = $dbs | Where-Object { $_.Name -NotIn $ExcludeDatabase }
                 }
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Unable to gather list of databases for $instance" -Target $instance -ErrorRecord $_ -Continue
             }
 
@@ -153,14 +151,12 @@ function Set-DbaDbCompression {
                         if (Test-Bound "InputObject") {
                             Write-Message -Level Verbose -Message "Using passed in compression suggestions"
                             $compressionSuggestion = $InputObject | Where-Object {$_.Database -eq $db.name}
-                        }
-                        else {
+                        } else {
                             Write-Message -Level Verbose -Message "Testing database for compression suggestions for $instance.$db"
                             $compressionSuggestion = Test-DbaDbCompression -SqlInstance $server -Database $db.Name
                         }
                     }
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Unable to query $instance - $db" -Target $db -ErrorRecord $_ -Continue
                 }
 
@@ -169,7 +165,7 @@ function Set-DbaDbCompression {
                         if ($Pscmdlet.ShouldProcess($db, "Applying suggested compression using results from Test-DbaDbCompression")) {
                             Write-Message -Level Verbose -Message "Applying suggested compression settings using Test-DbaDbCompression"
                             $results += $compressionSuggestion | Select-Object *, @{l = 'AlreadyProcessed'; e = {"False"}}
-                            foreach ($obj in ($results | Where-Object {$_.CompressionTypeRecommendation -notin @('NO_GAIN','?') -and $_.PercentCompression -ge $PercentCompression} | Sort-Object PercentCompression -Descending)) {
+                            foreach ($obj in ($results | Where-Object {$_.CompressionTypeRecommendation -notin @('NO_GAIN', '?') -and $_.PercentCompression -ge $PercentCompression} | Sort-Object PercentCompression -Descending)) {
                                 if ($MaxRunTime -ne 0 -and ($(get-date) - $starttime).TotalMinutes -ge $MaxRunTime) {
                                     Write-Message -Level Verbose -Message "Reached max run time of $MaxRunTime"
                                     break
@@ -180,8 +176,7 @@ function Set-DbaDbCompression {
                                     $($server.Databases[$obj.Database].Tables[$obj.TableName, $obj.Schema].PhysicalPartitions | Where-Object {$_.PartitionNumber -eq $obj.Partition}).DataCompression = $($obj.CompressionTypeRecommendation)
                                     $server.Databases[$obj.Database].Tables[$obj.TableName, $($obj.Schema)].Rebuild()
                                     $obj.AlreadyProcessed = "True"
-                                }
-                                else {
+                                } else {
                                     ##nonclustered indexes
                                     Write-Message -Level Verbose -Message "Applying $($obj.CompressionTypeRecommendation) compression to $($obj.Database).$($obj.Schema).$($obj.TableName).$($obj.IndexName)"
                                     $($server.Databases[$obj.Database].Tables[$obj.TableName, $obj.Schema].Indexes[$obj.IndexName].PhysicalPartitions | Where-Object {$_.PartitionNumber -eq $obj.Partition}).DataCompression = $($obj.CompressionTypeRecommendation)
@@ -191,8 +186,7 @@ function Set-DbaDbCompression {
                                 $obj
                             }
                         }
-                    }
-                    else {
+                    } else {
                         if ($Pscmdlet.ShouldProcess($db, "Applying $CompressionType compression")) {
                             Write-Message -Level Verbose -Message "Applying $CompressionType compression to all objects in $($db.name)"
                             foreach ($obj in $server.Databases[$($db.name)].Tables | Where-Object {!$_.IsMemoryOptimized}) {
@@ -200,7 +194,7 @@ function Set-DbaDbCompression {
                                     Write-Message -Level Verbose -Message "Reached max run time of $MaxRunTime"
                                     break
                                 }
-                                foreach ($p in $($obj.PhysicalPartitions | Where-Object {$_.DataCompression -notin ($CompressionType,'ColumnStore','ColumnStoreArchive')})) {
+                                foreach ($p in $($obj.PhysicalPartitions | Where-Object {$_.DataCompression -notin ($CompressionType, 'ColumnStore', 'ColumnStoreArchive')})) {
                                     Write-Message -Level Verbose -Message "Compressing table $($obj.Schema).$($obj.Name)"
                                     $($obj.PhysicalPartitions | Where-Object {$_.PartitionNumber -eq $P.PartitionNumber}).DataCompression = $CompressionType
                                     $obj.Rebuild()
@@ -223,7 +217,7 @@ function Set-DbaDbCompression {
                                         SizeCurrent                   = $null
                                         SizeRequested                 = $null
                                         PercentCompression            = $null
-                                        AlreadyProcessed             = "True"
+                                        AlreadyProcessed              = "True"
                                     }
                                 }
 
@@ -241,8 +235,7 @@ function Set-DbaDbCompression {
                                         if ($CompressionType -eq "None") {
                                             $query = "ALTER INDEX [$($index.Name)] ON $($index.Parent) REBUILD PARTITION = ALL WITH (DATA_COMPRESSION = $CompressionType)"
                                             $Server.Query($query, $db.Name)
-                                        }
-                                        else {
+                                        } else {
                                             $($Index.PhysicalPartitions | Where-Object {$_.PartitionNumber -eq $P.PartitionNumber}).DataCompression = $CompressionType
                                             $index.Rebuild()
                                         }
@@ -266,7 +259,7 @@ function Set-DbaDbCompression {
                                             SizeCurrent                   = $null
                                             SizeRequested                 = $null
                                             PercentCompression            = $null
-                                            AlreadyProcessed             = "True"
+                                            AlreadyProcessed              = "True"
                                         }
                                     }
                                 }
@@ -282,8 +275,7 @@ function Set-DbaDbCompression {
                                         $query = "ALTER INDEX [$($index.Name)] ON $($index.Parent) REBUILD PARTITION = ALL WITH (DATA_COMPRESSION = $CompressionType)"
                                         $query
                                         $Server.Query($query, $db.Name)
-                                    }
-                                    else {
+                                    } else {
                                         $($index.PhysicalPartitions | Where-Object {$_.PartitionNumber -eq $P.PartitionNumber}).DataCompression = $CompressionType
                                         $index.Rebuild()
                                     }
@@ -307,17 +299,17 @@ function Set-DbaDbCompression {
                                         SizeCurrent                   = $null
                                         SizeRequested                 = $null
                                         PercentCompression            = $null
-                                        AlreadyProcessed             = "True"
+                                        AlreadyProcessed              = "True"
                                     }
                                 }
                             }
                         }
                     }
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Compression failed for $instance - $db" -Target $db -ErrorRecord $_ -Continue
                 }
             }
         }
     }
 }
+

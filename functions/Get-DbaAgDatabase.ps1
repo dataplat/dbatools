@@ -1,6 +1,6 @@
 #ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaAgDatabase {
-<#
+    <#
     .SYNOPSIS
         Gets availability group databases from a SQL Server instance.
 
@@ -90,3 +90,4 @@ function Get-DbaAgDatabase {
         }
     }
 }
+

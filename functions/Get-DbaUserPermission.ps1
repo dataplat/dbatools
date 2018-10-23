@@ -1,5 +1,5 @@
 function Get-DbaUserPermission {
-<#
+    <#
     .SYNOPSIS
         Displays detailed permissions information for the server and database roles and securables.
 
@@ -187,8 +187,7 @@ function Get-DbaUserPermission {
 
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 10
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -287,3 +286,4 @@ function Get-DbaUserPermission {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-DbaUserLevelPermission
     }
 }
+

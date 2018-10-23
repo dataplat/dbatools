@@ -1,5 +1,5 @@
 function Get-DbaServerRole {
-<#
+    <#
     .SYNOPSIS
         Gets the list of server-level roles.
 
@@ -61,8 +61,7 @@ function Get-DbaServerRole {
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -92,3 +91,4 @@ function Get-DbaServerRole {
         }
     }
 }
+

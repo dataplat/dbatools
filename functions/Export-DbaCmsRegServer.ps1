@@ -1,6 +1,6 @@
 #ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Export-DbaCmsRegServer {
-<#
+    <#
     .SYNOPSIS
         Exports registered servers and registered server groups to file
 
@@ -83,8 +83,7 @@ function Export-DbaCmsRegServer {
             if (-not (Test-Path $directory)) {
                 New-Item -Path $directory -ItemType Directory
             }
-        }
-        else {
+        } else {
             $timeNow = (Get-Date -uformat "%m%d%Y%H%M%S")
         }
     }
@@ -106,21 +105,18 @@ function Export-DbaCmsRegServer {
                         $Path = "$serverName-regserver-$regservername-$timeNow.xml"
                     }
                     $object.Export($Path, $CredentialPersistenceType)
-                }
-                elseif ($object -is [Microsoft.SqlServer.Management.RegisteredServers.ServerGroup]) {
+                } elseif ($object -is [Microsoft.SqlServer.Management.RegisteredServers.ServerGroup]) {
                     if ((Test-Bound -ParameterName Path -Not)) {
                         $servername = $object.SqlInstance.Replace('\', '$')
                         $regservergroup = $object.Name.Replace('\', '$')
                         $Path = "$serverName-reggroup-$regservergroup-$timeNow.xml"
                     }
                     $object.Export($Path, $CredentialPersistenceType)
-                }
-                else {
+                } else {
                     Stop-Function -Message "InputObject is not a registered server or server group" -Continue
                 }
                 Get-ChildItem $Path -ErrorAction Stop
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -ErrorRecord $_
             }
         }
@@ -130,3 +126,4 @@ function Export-DbaCmsRegServer {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Export-DbaRegisteredServer
     }
 }
+

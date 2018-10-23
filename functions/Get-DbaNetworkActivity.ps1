@@ -1,5 +1,5 @@
 function Get-DbaNetworkActivity {
-<#
+    <#
     .SYNOPSIS
         Gets the Current traffic on every Network Interface on a computer.
 
@@ -89,3 +89,4 @@ function Get-DbaNetworkActivity {
         } #foreach computer
     } #PROCESS
 } #function
+

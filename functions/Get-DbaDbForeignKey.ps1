@@ -1,5 +1,5 @@
 function Get-DbaDbForeignKey {
-<#
+    <#
     .SYNOPSIS
         Gets database Foreign Keys.
 
@@ -77,8 +77,7 @@ function Get-DbaDbForeignKey {
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -97,7 +96,7 @@ function Get-DbaDbForeignKey {
                     continue
                 }
 
-                foreach($tbl in $db.Tables) {
+                foreach ($tbl in $db.Tables) {
                     if ( (Test-Bound -ParameterName ExcludeSystemTable) -and $tbl.IsSystemObject ) {
                         continue
                     }
@@ -122,3 +121,4 @@ function Get-DbaDbForeignKey {
         }
     }
 }
+

@@ -1,6 +1,6 @@
 #ValidationTags#Messaging,FlowControl,Pipeline#
 function Set-DbaDbState {
-<#
+    <#
     .SYNOPSIS
         Sets various options for databases, hereby called "states"
 
@@ -163,8 +163,7 @@ function Set-DbaDbState {
             $sql = "ALTER DATABASE [$dbname] SET $opt"
             if ($immediate) {
                 $sql += " WITH ROLLBACK IMMEDIATE"
-            }
-            else {
+            } else {
                 $sql += " WITH NO_WAIT"
             }
             try {
@@ -176,8 +175,7 @@ function Set-DbaDbState {
                     $sqlinstance.KillAllProcesses($dbname)
                 }
                 $null = $sqlinstance.Query($sql)
-            }
-            catch {
+            } catch {
                 $warn = "Failed to set '$dbname' to $opt"
                 Write-Message -Level Warning -Message $warn
             }
@@ -207,22 +205,19 @@ function Set-DbaDbState {
         $allparams = $PSBoundParameters
         try {
             Get-WrongCombo -optset $RWExclusive -allparams $allparams
-        }
-        catch {
+        } catch {
             Stop-Function -Message $_
             return
         }
         try {
             Get-WrongCombo -optset $StatusExclusive -allparams $allparams
-        }
-        catch {
+        } catch {
             Stop-Function -Message $_
             return
         }
         try {
             Get-WrongCombo -optset $AccessExclusive -allparams $allparams
-        }
-        catch {
+        } catch {
             Stop-Function -Message $_
             return
         }
@@ -239,18 +234,15 @@ function Set-DbaDbState {
             if ($InputObject.Database) {
                 # comes from Get-DbaDbState
                 $dbs += $InputObject.Database
-            }
-            elseif ($InputObject.Name) {
+            } elseif ($InputObject.Name) {
                 # comes from Get-DbaDatabase
                 $dbs += $InputObject
             }
-        }
-        else {
+        } else {
             foreach ($instance in $SqlInstance) {
                 try {
                     $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
                 }
                 $all_dbs = $server.Databases
@@ -291,8 +283,7 @@ function Set-DbaDbState {
             if ($ReadOnly -eq $true) {
                 if ($db_status.RW -eq 'READ_ONLY') {
                     Write-Message -Level VeryVerbose -Message "Database $db is already READ_ONLY"
-                }
-                else {
+                } else {
                     if ($Pscmdlet.ShouldProcess($server, "Set $db to READ_ONLY")) {
                         Write-Message -Level VeryVerbose -Message "Setting database $db to READ_ONLY"
                         $partial = Edit-DatabaseState -sqlinstance $server -dbname $db.Name -opt "READ_ONLY" -immediate $Force
@@ -307,8 +298,7 @@ function Set-DbaDbState {
             if ($ReadWrite -eq $true) {
                 if ($db_status.RW -eq 'READ_WRITE') {
                     Write-Message -Level VeryVerbose -Message "Database $db is already READ_WRITE"
-                }
-                else {
+                } else {
                     if ($Pscmdlet.ShouldProcess($server, "Set $db to READ_WRITE")) {
                         Write-Message -Level VeryVerbose -Message "Setting database $db to READ_WRITE"
                         $partial = Edit-DatabaseState -sqlinstance $server -dbname $db.Name -opt "READ_WRITE" -immediate $Force
@@ -323,8 +313,7 @@ function Set-DbaDbState {
             if ($Online -eq $true) {
                 if ($db_status.Status -eq 'ONLINE') {
                     Write-Message -Level VeryVerbose -Message "Database $db is already ONLINE"
-                }
-                else {
+                } else {
                     if ($Pscmdlet.ShouldProcess($server, "Set $db to ONLINE")) {
                         Write-Message -Level VeryVerbose -Message "Setting database $db to ONLINE"
                         $partial = Edit-DatabaseState -sqlinstance $server -dbname $db.Name -opt "ONLINE" -immediate $Force
@@ -339,8 +328,7 @@ function Set-DbaDbState {
             if ($Offline -eq $true) {
                 if ($db_status.Status -eq 'OFFLINE') {
                     Write-Message -Level VeryVerbose -Message "Database $db is already OFFLINE"
-                }
-                else {
+                } else {
                     if ($Pscmdlet.ShouldProcess($server, "Set $db to OFFLINE")) {
                         Write-Message -Level VeryVerbose -Message "Setting database $db to OFFLINE"
                         $partial = Edit-DatabaseState -sqlinstance $server -dbname $db.Name -opt "OFFLINE" -immediate $Force
@@ -355,8 +343,7 @@ function Set-DbaDbState {
             if ($Emergency -eq $true) {
                 if ($db_status.Status -eq 'EMERGENCY') {
                     Write-Message -Level VeryVerbose -Message "Database $db is already EMERGENCY"
-                }
-                else {
+                } else {
                     if ($Pscmdlet.ShouldProcess($server, "Set $db to EMERGENCY")) {
                         Write-Message -Level VeryVerbose -Message "Setting database $db to EMERGENCY"
                         $partial = Edit-DatabaseState -sqlinstance $server -dbname $db.Name -opt "EMERGENCY" -immediate $Force
@@ -370,8 +357,7 @@ function Set-DbaDbState {
             if ($SingleUser -eq $true) {
                 if ($db_status.Access -eq 'SINGLE_USER') {
                     Write-Message -Level VeryVerbose -Message "Database $db is already SINGLE_USER"
-                }
-                else {
+                } else {
                     if ($Pscmdlet.ShouldProcess($server, "Set $db to SINGLE_USER")) {
                         Write-Message -Level VeryVerbose -Message "Setting $db to SINGLE_USER"
                         $partial = Edit-DatabaseState -sqlinstance $server -dbname $db.Name -opt "SINGLE_USER" -immediate $Force
@@ -385,8 +371,7 @@ function Set-DbaDbState {
             if ($RestrictedUser -eq $true) {
                 if ($db_status.Access -eq 'RESTRICTED_USER') {
                     Write-Message -Level VeryVerbose -Message "Database $db is already RESTRICTED_USER"
-                }
-                else {
+                } else {
                     if ($Pscmdlet.ShouldProcess($server, "Set $db to RESTRICTED_USER")) {
                         Write-Message -Level VeryVerbose -Message "Setting $db to RESTRICTED_USER"
                         $partial = Edit-DatabaseState -sqlinstance $server -dbname $db.Name -opt "RESTRICTED_USER" -immediate $Force
@@ -400,8 +385,7 @@ function Set-DbaDbState {
             if ($MultiUser -eq $true) {
                 if ($db_status.Access -eq 'MULTI_USER') {
                     Write-Message -Level VeryVerbose -Message "Database $db is already MULTI_USER"
-                }
-                else {
+                } else {
                     if ($Pscmdlet.ShouldProcess($server, "Set $db to MULTI_USER")) {
                         Write-Message -Level VeryVerbose -Message "Setting $db to MULTI_USER"
                         $partial = Edit-DatabaseState -sqlinstance $server -dbname $db.Name -opt "MULTI_USER" -immediate $Force
@@ -436,8 +420,7 @@ function Set-DbaDbState {
                             $db.Alter()
                             $db.Refresh()
                             Write-Message -Level VeryVerbose -Message "Broke mirroring for $db"
-                        }
-                        catch {
+                        } catch {
                             Stop-Function -Message "Could not break mirror for $db. Skipping." -ErrorRecord $_ -Target $server -Continue
                         }
                     }
@@ -449,8 +432,7 @@ function Set-DbaDbState {
                         try {
                             $server.AvailabilityGroups[$db.AvailabilityGroupName].AvailabilityDatabases[$db.Name].Drop()
                             Write-Message -Level VeryVerbose -Message "Successfully removed $db from AG [$agname] on $server"
-                        }
-                        catch {
+                        } catch {
                             Stop-Function -Message "Could not remove $db from AG [$agname] on $server" -ErrorRecord $_ -Target $server -Continue
                         }
                     }
@@ -467,8 +449,7 @@ function Set-DbaDbState {
                         Write-Message -Level System -Message $sql
                         $null = $server.Query($sql)
                         $db_status.Status = 'DETACHED'
-                    }
-                    catch {
+                    } catch {
                         Stop-Function -Message "Failed to detach $db" -ErrorRecord $_ -Target $server -Continue
                         $warn += "Failed to detach"
                     }
@@ -479,8 +460,7 @@ function Set-DbaDbState {
             if ($warn) {
                 $warn = $warn | Get-Unique
                 $warn = $warn -Join ';'
-            }
-            else {
+            } else {
                 $warn = $null
             }
             if ($Detached -eq $true) {
@@ -495,14 +475,12 @@ function Set-DbaDbState {
                     Notes        = $warn
                     Database     = $db
                 } | Select-DefaultView -ExcludeProperty Database
-            }
-            else {
+            } else {
                 $db.Refresh()
                 if ($null -eq $warn) {
                     # we avoid reenumerating properties
                     $newstate = $db_status
-                }
-                else {
+                } else {
                     $newstate = Get-DbState -databaseName $db.Name -dbStatuses $stateCache[$server]
                 }
 
@@ -525,3 +503,4 @@ function Set-DbaDbState {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Set-DbaDatabaseState
     }
 }
+

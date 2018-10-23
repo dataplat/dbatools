@@ -1,5 +1,5 @@
 function Register-DbatoolsConfig {
-<#
+    <#
     .SYNOPSIS
         Registers an existing configuration object in registry.
 
@@ -122,8 +122,7 @@ function Register-DbatoolsConfig {
                     Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\WindowsPowerShell\dbatools\Config\Enforced" -Name $Config.FullName -Value $Config.RegistryData -ErrorAction Stop
                 }
                 #endregion System Mandatory
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failed to export $($Config.FullName), to scope $Scope" -EnableException $EnableException -Target $Config -ErrorRecord $_ -FunctionName $FunctionName #-ModuleName "PSFramework" -Tag "config", "fail"
                 return
             }
@@ -165,3 +164,4 @@ function Register-DbatoolsConfig {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Register-DbaConfig
     }
 }
+

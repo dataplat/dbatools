@@ -1,5 +1,5 @@
 function New-DbaScriptingOption {
-<#
+    <#
     .SYNOPSIS
         Creates a new Microsoft.SqlServer.Management.Smo.ScriptingOptions object
 
@@ -30,3 +30,4 @@ function New-DbaScriptingOption {
 #>
     New-Object Microsoft.SqlServer.Management.Smo.ScriptingOptions
 }
+

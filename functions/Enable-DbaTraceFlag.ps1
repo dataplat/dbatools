@@ -1,5 +1,5 @@
 function Enable-DbaTraceFlag {
-<#
+    <#
     .SYNOPSIS
         Enable Global Trace Flag(s)
 
@@ -58,8 +58,7 @@ function Enable-DbaTraceFlag {
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -88,8 +87,7 @@ function Enable-DbaTraceFlag {
                     $query = "DBCC TRACEON ($tf, -1)"
                     $server.Query($query)
                     $server.Refresh()
-                }
-                catch {
+                } catch {
                     $TraceFlagInfo.Status = "Failed"
                     $TraceFlagInfo.Notes = $_.Exception.Message
                     $TraceFlagInfo
@@ -101,3 +99,4 @@ function Enable-DbaTraceFlag {
         }
     }
 }
+
