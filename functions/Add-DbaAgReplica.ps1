@@ -164,7 +164,7 @@ function Add-DbaAgReplica {
                     }
                     catch {
                         $Name = $server.DomainInstanceName
-                    }    
+                    }
                 }
             }
 
