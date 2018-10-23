@@ -34,7 +34,7 @@ function Get-DbaSpn {
         https://dbatools.io/Get-DbaSpn
 
     .EXAMPLE
-        PS C:\> Get-DbaSpn -ServerName SQLSERVERA -Credential ad\sqldba
+        PS C:\> Get-DbaSpn -ComputerName SQLSERVERA -Credential ad\sqldba
 
         Returns a custom object with SearchTerm (ServerName) and the SPNs that were found
 
@@ -44,7 +44,7 @@ function Get-DbaSpn {
         Returns a custom object with SearchTerm (domain account) and the SPNs that were found
 
     .EXAMPLE
-        PS C:\> Get-DbaSpn -ServerName SQLSERVERA,SQLSERVERB -Credential ad\sqldba
+        PS C:\> Get-DbaSpn -ComputerName SQLSERVERA,SQLSERVERB -Credential ad\sqldba
 
         Returns a custom object with SearchTerm (ServerName) and the SPNs that were found for multiple computers
 

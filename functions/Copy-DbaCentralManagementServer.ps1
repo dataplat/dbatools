@@ -61,12 +61,12 @@
         All groups, subgroups, and server instances are copied from sqlserver2014a CMS to sqlcluster CMS.
 
     .EXAMPLE
-        PS C:\> Copy-DbaCentralManagementServer -Source sqlserver2014a -Destination sqlcluster -ServerGroup Group1,Group3
+        PS C:\> Copy-DbaCentralManagementServer -Source sqlserver2014a -Destination sqlcluster -CMSGroup Group1,Group3
 
         Top-level groups Group1 and Group3 along with their subgroups and server instances are copied from sqlserver to sqlcluster.
 
     .EXAMPLE
-        PS C:\> Copy-DbaCentralManagementServer -Source sqlserver2014a -Destination sqlcluster -ServerGroup Group1,Group3 -SwitchServerName -SourceSqlCredential $SourceSqlCredential -DestinationSqlCredential $DestinationSqlCredential
+        PS C:\> Copy-DbaCentralManagementServer -Source sqlserver2014a -Destination sqlcluster -CMSGroup Group1,Group3 -SwitchServerName -SourceSqlCredential $SourceSqlCredential -DestinationSqlCredential $DestinationSqlCredential
 
         Top-level groups Group1 and Group3 along with their subgroups and server instances are copied from sqlserver to sqlcluster. When adding sql instances to sqlcluster, if the server name of the migrating instance is "sqlcluster", it will be switched to "sqlserver".
 

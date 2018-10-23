@@ -61,7 +61,7 @@ function Get-DbaDbPageInfo {
     [CmdLetBinding()]
     param (
         [Alias("ServerInstance", "SqlServer")]
-        [DbaInstanceParameter]$SqlInstance,
+        [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string[]]$Database,
         [string[]]$Schema,

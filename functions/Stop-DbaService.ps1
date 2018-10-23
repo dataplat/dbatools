@@ -131,11 +131,13 @@
                 $processArray += @(Get-DbaService @serviceParams)
             }
         }
-        if ($processArray) {
-            Update-ServiceStatus -InputObject $processArray -Action 'stop' -Timeout $Timeout -EnableException $EnableException
-        }
-        else {
-            Stop-Function -EnableException $EnableException -Message "No SQL Server services found with current parameters." -Category ObjectNotFound
+        if($PSCmdlet.ShouldProcess("$ProcessArray","Stoping Service")){
+            if ($processArray) {
+                Update-ServiceStatus -InputObject $processArray -Action 'stop' -Timeout $Timeout -EnableException $EnableException
+            }
+            else {
+                Stop-Function -EnableException $EnableException -Message "No SQL Server services found with current parameters." -Category ObjectNotFound
+            }
         }
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Stop-DbaSqlService
     }

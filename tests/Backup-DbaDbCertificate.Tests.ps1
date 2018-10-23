@@ -25,8 +25,8 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
         }
     }
     AfterAll {
-        (Get-DbaDbCertificate -SqlInstance $script:instance1 -Database tempdb) | Remove-DbaDbCertificate -Confirm:$false
-        (Get-DbaDbMasterKey -SqlInstance $script:instance1 -Database tempdb) | Remove-DbaDbMasterKey -Confirm:$false
+        Get-DbaDbCertificate -SqlInstance $script:instance1 -Database tempdb | Remove-DbaDbCertificate -Confirm:$false
+        Get-DbaDbMasterKey -SqlInstance $script:instance1 -Database tempdb | Remove-DbaDbMasterKey -Confirm:$false
     }
 
     Context "Can create a database certificate" {

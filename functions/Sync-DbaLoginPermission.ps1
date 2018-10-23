@@ -143,8 +143,9 @@
         if (!$Login) {
             $login = $sourceServer.Logins.Name
         }
-
-        Sync-Only -SourceServer $sourceServer -DestServer $destServer -Logins $login -Exclude $ExcludeLogin
+        if($PSCmdlet.ShouldProcess("$Login","Syncing Logins")){
+            Sync-Only -SourceServer $sourceServer -DestServer $destServer -Logins $login -Exclude $ExcludeLogin
+        }
     }
     end {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Sync-SqlLoginPermissions

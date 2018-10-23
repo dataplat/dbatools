@@ -94,7 +94,7 @@
         If any active connections are found they will be killed.
 
     .EXAMPLE
-        PS C:\> Copy-DbaLogin -Source sqlserver2014a -Destination sqlcluster -Exclude realcajun -SourceSqlCredential $scred -DestinationSqlCredential $dcred
+        PS C:\> Copy-DbaLogin -Source sqlserver2014a -Destination sqlcluster -ExcludeLogin realcajun -SourceSqlCredential $scred -DestinationSqlCredential $dcred
 
         Copies all Logins from Source to Destination except for realcajun using SQL Authentication to connect to both instances.
 
@@ -113,7 +113,7 @@
         If a matching Login does not exist on Destination, the Login will be skipped.
 
     .EXAMPLE
-        PS C:\> Copy-DbaLogin -LoginRenameHashtable @{ "OldUser" ="newlogin" } -Source $Sql01 -Destination Localhost -SourceSqlCredential $sqlcred
+        PS C:\> Copy-DbaLogin -LoginRenameHashtable @{ "OldUser" = "newlogin" } -Source $Sql01 -Destination Localhost -SourceSqlCredential $sqlcred
 
         Copies OldUser and then renames it to newlogin.
 

@@ -12,7 +12,7 @@ function Enable-DbaAgHadr {
         The target SQL Server instance or instances.
 
     .PARAMETER Credential
-        Credential object used to connect to the Windows server itself as a different user
+        Credential object used to connect to the Windows server as a different user
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
@@ -40,6 +40,11 @@ function Enable-DbaAgHadr {
         https://dbatools.io/Enable-DbaAgHadr
 
     .EXAMPLE
+        PS C:\> Enable-DbaAgHadr -SqlInstance sql2016
+
+        Sets Hadr service to enabled for the instance sql2016 but changes will not be applied until the next time the server restarts.
+    
+    .EXAMPLE
         PS C:\> Enable-DbaAgHadr -SqlInstance sql2016 -Force
 
         Sets Hadr service to enabled for the instance sql2016, and restart the service to apply the change.
@@ -53,87 +58,11 @@ function Enable-DbaAgHadr {
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "High")]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$Credential,
         [switch]$Force,
-        [Alias('Silent')]
         [switch]$EnableException
     )
-    begin {
-        function GetDbaAgHadr {
-    <#
-        .SYNOPSIS
-            Gets the Hadr service setting on the specified SQL Server instance.
-
-        .DESCRIPTION
-            Gets the Hadr setting, from the service level, and returns true or false for the specified SQL Server instance.
-
-        .PARAMETER SqlInstance
-            The target SQL Server instance or instances.
-
-        .PARAMETER Credential
-            Credential object used to connect to the Windows server itself as a different user
-
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-
-        .NOTES
-            Tags: Hadr, AG, AvailabilityGroup
-            Author: Shawn Melton (@wsmelton | http://wsmelton.github.io)
-
-            Website: https://dbatools.io
-            Copyright: (c) 2018 by dbatools, licensed under MIT
-            License: MIT https://opensource.org/licenses/MIT
-
-        .LINK
-            https://dbatools.io/GetDbaAgHadr
-
-        .EXAMPLE
-            GetDbaAgHadr -SqlInstance sql2016
-
-            Returns a status of the Hadr setting for sql2016 SQL Server instance.
-    #>
-            [CmdletBinding()]
-            param (
-                [parameter(Mandatory, ValueFromPipeline)]
-                [Alias("ServerInstance", "SqlServer")]
-                [DbaInstanceParameter[]]$SqlInstance,
-                [PSCredential]$Credential,
-                [Alias('Silent')]
-                [switch]$EnableException
-            )
-            process {
-                foreach ($instance in $SqlInstance) {
-
-                    try {
-                        $computer = $computerName = $instance.ComputerName
-                        $instanceName = $instance.InstanceName
-                        $currentState = Invoke-ManagedComputerCommand -ComputerName $computerName -ScriptBlock { $wmi.Services[$args[0]] | Select-Object IsHadrEnabled } -ArgumentList $instanceName -Credential $Credential
-                    }
-                    catch {
-                        Stop-Function -Message "Failure connecting to $computer" -Category ConnectionError -ErrorRecord $_ -Target $instance
-                        return
-                    }
-
-                    if ($null -eq $currentState.IsHadrEnabled) {
-                        $isenabled = $false
-                    }
-                    else {
-                        $isenabled = $currentState.IsHadrEnabled
-                    }
-                    [PSCustomObject]@{
-                        ComputerName     = $computer
-                        InstanceName     = $instanceName
-                        SqlInstance      = $instance.FullName
-                        IsHadrEnabled    = $isenabled
-                    }
-                }
-            }
-        }
-    }
     process {
         foreach ($instance in $SqlInstance) {
             $computer = $computerFullName = $instance.ComputerName
@@ -150,7 +79,7 @@ function Enable-DbaAgHadr {
 
             try {
                 Write-Message -Level Verbose -Message "Checking current Hadr setting for $computer"
-                $currentState = GetDbaAgHadr -SqlInstance $instance -Credential $Credential
+                $currentState = Get-WmiHadr -SqlInstance $instance -Credential $Credential
             }
             catch {
                 Stop-Function -Message "Failure to pull current state of Hadr setting on $computer" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
@@ -195,7 +124,7 @@ function Enable-DbaAgHadr {
                     }
                 }
             }
-            $newState = GetDbaAgHadr -SqlInstance $instance -Credential $Credential
+            $newState = Get-WmiHadr -SqlInstance $instance -Credential $Credential
 
             if (Test-Bound -Not -ParameterName Force) {
                 Write-Message -Level Warning -Message "You must restart the SQL Server for it to take effect."

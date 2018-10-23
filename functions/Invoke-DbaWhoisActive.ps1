@@ -195,7 +195,7 @@
         Similar to running sp_WhoIsActive @get_outer_command = 1, @find_block_leaders = 1
 
 #>
-    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "High")]
+    [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
         [Alias('ServerInstance', 'SqlServer')]
@@ -291,7 +291,6 @@
             }
 
             Write-Message -Level Verbose -Message "Collecting sp_whoisactive data from server: $instance"
-
             try {
                 $sqlconnection = New-Object System.Data.SqlClient.SqlConnection
                 $sqlconnection.ConnectionString = $server.ConnectionContext.ConnectionString

@@ -123,7 +123,7 @@
         Parse the appropriate diagnostic queries by connecting to server, and instead of running them, return as [PSCustomObject[]] to work with further
 
     .EXAMPLE
-        PS C:\> $results = Invoke-DbaDiagnosticQuery -SqlInstance $script:instance2 -DatabaseSpecific -queryname 'Database-scoped Configurations' -databasename $database
+        PS C:\> $results = Invoke-DbaDiagnosticQuery -SqlInstance Sql2017 -DatabaseSpecific -queryname 'Database-scoped Configurations' -databasename TestStuff
 
         Run diagnostic queries targeted at specific database, and only run database level queries against this database.
 

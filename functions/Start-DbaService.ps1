@@ -106,11 +106,13 @@
     }
     end {
         $processArray = $processArray | Where-Object { (!$InstanceName -or $_.InstanceName -in $InstanceName) -and (!$Type -or $_.ServiceType -in $Type) }
-        if ($processArray) {
-            Update-ServiceStatus -InputObject $processArray -Action 'start' -Timeout $Timeout -EnableException $EnableException
-        }
-        else {
-            Stop-Function -EnableException $EnableException -Message "No SQL Server services found with current parameters." -Category ObjectNotFound
+        if($PSCmdlet.ShouldProcess("$ProcessArray","Starting Service")){
+            if ($processArray) {
+                Update-ServiceStatus -InputObject $processArray -Action 'start' -Timeout $Timeout -EnableException $EnableException
+            }
+            else {
+                Stop-Function -EnableException $EnableException -Message "No SQL Server services found with current parameters." -Category ObjectNotFound
+            }
         }
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Start-DbaSqlService
     }
