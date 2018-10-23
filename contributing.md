@@ -21,7 +21,7 @@ We strive to make any area doubtless. In any case, the Slack channel is pretty a
 Documentation is really the area we welcome any help possible. The documentation refers to both the CBH (Comment Based Help) and the [website documentation](https://dbatools.io/functions). The CBH documentation is included with each command and is the content you see when you run `Get-Help Function-Name`. If any of that content is not clear enough or if the examples in the functions are not working, you should say so (e.g. raise an issue on GitHub or comment in Slack). Even if you are a casual user or a PowerShell newbie, we need your angle to make it as straight forward and clear as possible.
 
 ## Contribute New Commands
-Start out reviewing the [list of functions on the website](https://dbatools.io/functions/), or pulling the list from the module with `Get-Command -Module dbatools -CommandType Function | Out-GridView`. If you find something similar already exists, open [a new issue on GitHub](https://GitHub.com/sqlcollaborative/dbatools/issues/new) to request an enhancement to that command. New ideas already accepted can be found on [New Command](https://github.com/sqlcollaborative/dbatools/labels/Type%3A%20New%20Command) tagged issues. If nothing similar pops up, either ping @cl on Slack with your idea about the new command or open a new issue on GitHub with details or requirements you need.
+Start out reviewing the [list of functions on the website](https://dbatools.io/functions/), or pulling the list from the module with `Get-Command -Module dbatools -CommandType Function | Out-GridView`. If you find something similar already exists, open [a new issue on GitHub](https://GitHub.com/sqlcollaborative/dbatools/issues/new) to request an enhancement to that command. New ideas already accepted can be found on [Feature](https://github.com/sqlcollaborative/dbatools/labels/Feature) tagged issues. If nothing similar pops up, either ping @cl on Slack with your idea about the new command or open a new issue on GitHub with details or requirements you need.
 
 ## Report Bugs
 [Open a new issue](https://dbatools.io/new-issue/) on GitHub and fill in all the details. The title should report the affected function, followed by a brief description (e.g. _Get-DbaDatabase - Add property x to default view_). The provided template holds most of the details coders need to fix the issue.
@@ -43,6 +43,14 @@ We chose to follow the standards below when creating parameters and variables fo
 When you are working with "objects" in SQL Server, say with databases, what variable name you use should be based on what operation you are doing. You can find examples of various situations in the current code of the module to see more detailed examples. As an example: in situations where you are looping over the databases for an instance, try to use a plural variable name for the collection and then single or abbreviated name in the loop for each object of that collection. e.g. `foreach ($db in $databases) {...`.
 
 [This page](https://github.com/sqlcollaborative/dbatools/wiki/Standard-Documentation) sums up what we currently use. We aim at standardizing and reducing to a set of self-documenting and reusable parameters. If you have any questions around the above do not hesitate to ask in Slack.
+
+## Standardize formatting and indentation
+If you use VSCode, you can enable 
+```
+"files.trimTrailingWhitespace": true,
+"powershell.codeFormatting.preset": "OTBS"
+```
+to have a style that is consistent with dbatools. We favour consistency throughout the project and accept PRs coming from anybody. Just know that you can reformat your new function leveraging Invoke-DbaFormatter which does the groundwork for you.
 
 ## Tests
 Remember that tests are needed to make sure dbatools code behaves properly. The ultimate goal is for any user to be able to run dbatools' tests within their environment and, depending on the result, be sure everything works as expected. Dbatools works on a matrix of environments that will hardly be fully covered by a Continuous Integration system. That being said, we have AppVeyor (see later) set up to run at each and every commit.
