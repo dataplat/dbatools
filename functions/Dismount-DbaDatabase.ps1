@@ -1,4 +1,4 @@
-﻿function Dismount-DbaDatabase {
+function Dismount-DbaDatabase {
 <#
     .SYNOPSIS
         Detach a SQL Server Database.
@@ -74,7 +74,7 @@
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [parameter(Mandatory, ParameterSetName = 'SqlInstance')]
-        [string]$Database,
+        [string[]]$Database,
         [parameter(Mandatory, ParameterSetName = 'Pipeline', ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
         [Switch]$UpdateStatistics,

@@ -49,7 +49,7 @@
         https://dbatools.io/Copy-DbaSysDbUserObject
 
     .EXAMPLE
-        PS C:\> adCopy-DbaSysDbUserObject $sourceServer $destserver
+        PS C:\> Copy-DbaSysDbUserObject -Source $sourceServer -Destination $destserver
 
         Copies user objects from source to destination
 

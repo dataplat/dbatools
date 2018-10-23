@@ -55,11 +55,6 @@ function Move-DbaCmsRegServer {
         Moves the registered server on sql2012 titled 'Web SQL Cluster' to the Prod group within the HR group
 
     .EXAMPLE
-        PS C:\> Move-DbaCmsRegServer -SqlInstance sql2012 -Group HR\Development -NewGroup HR\Prod
-
-        Moves all servers from the HR and sub-group Development to HR Prod
-
-    .EXAMPLE
         PS C:\> Get-DbaCmsRegServer -SqlInstance sql2017 -Name 'Web SQL Cluster' | Move-DbaCmsRegServer -NewGroup Web
 
         Moves the registered server 'Web SQL Cluster' on sql2017 to the Web group, also on sql2017

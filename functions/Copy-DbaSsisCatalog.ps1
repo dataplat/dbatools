@@ -83,7 +83,7 @@ function Copy-DbaSsisCatalog {
         Deploy entire SSIS catalog to an instance without a destination catalog. User prompts for creating the catalog on Destination will be bypassed.
 
 #>
-    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
+    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess)]
     param (
         [parameter(Mandatory)]
         [DbaInstanceParameter]$Source,
@@ -164,82 +164,90 @@ function Copy-DbaSsisCatalog {
             }
         }
         function New-CatalogFolder {
+            [CmdletBinding(SupportsShouldProcess)]
             param (
                 [String]$Folder,
                 [String]$Description,
                 [Switch]$Force
             )
-            if ($Force) {
-                $remove = $destinationFolders | Where-Object { $_.Name -eq $Folder }
-                $envs = $remove.Environments.Name
-                foreach ($e in $envs) {
-                    $remove.Environments[$e].Drop()
+            if ($Pscmdlet.ShouldProcess($folder, "Creating new Catalog Folder")) {
+                if ($Force) {
+                    $remove = $destinationFolders | Where-Object { $_.Name -eq $Folder }
+                    $envs = $remove.Environments.Name
+                    foreach ($e in $envs) {
+                        $remove.Environments[$e].Drop()
+                    }
+                    $projs = $remove.Projects.Name
+                    foreach ($p in $projs) {
+                        $remove.Projects[$p].Drop()
+                    }
+                    $remove.Drop()
+                    $destinationCatalog.Alter()
+                    $destinationCatalog.Refresh()
                 }
-                $projs = $remove.Projects.Name
-                foreach ($p in $projs) {
-                    $remove.Projects[$p].Drop()
-                }
-                $remove.Drop()
-                $destinationCatalog.Alter()
-                $destinationCatalog.Refresh()
+                Write-Message -Level Verbose -Message "Creating folder $Folder."
+                $destFolder = New-Object "$ISNamespace.CatalogFolder" ($destinationCatalog, $Folder, $Description)
+                $destFolder.Create()
+                $destFolder.Alter()
+                $destFolder.Refresh()
             }
-            Write-Message -Level Verbose -Message "Creating folder $Folder."
-            $destFolder = New-Object "$ISNamespace.CatalogFolder" ($destinationCatalog, $Folder, $Description)
-            $destFolder.Create()
-            $destFolder.Alter()
-            $destFolder.Refresh()
         }
         function New-FolderEnvironment {
+            [CmdletBinding(SupportsShouldProcess)]
             param (
                 [String]$Folder,
                 [String]$Environment,
                 [Switch]$Force
             )
-            $envDestFolder = $destinationFolders | Where-Object { $_.Name -eq $Folder }
-            if ($force) {
-                $envDestFolder.Environments[$Environment].Drop()
-                $envDestFolder.Alter()
-                $envDestFolder.Refresh()
-            }
-            $srcEnv = ($sourceFolders | Where-Object { $_.Name -eq $Folder }).Environments[$Environment]
-            $targetEnv = New-Object "$ISNamespace.EnvironmentInfo" ($envDestFolder, $srcEnv.Name, $srcEnv.Description)
-            foreach ($var in $srcEnv.Variables) {
-                if ($var.Value.ToString() -eq "") {
-                    $finalValue = ""
+            if ($Pscmdlet.ShouldProcess($folder, "Creating new Environment Folder")) {
+                $envDestFolder = $destinationFolders | Where-Object { $_.Name -eq $Folder }
+                if ($force) {
+                    $envDestFolder.Environments[$Environment].Drop()
+                    $envDestFolder.Alter()
+                    $envDestFolder.Refresh()
                 }
-                else {
-                    $finalValue = $var.Value
+                $srcEnv = ($sourceFolders | Where-Object { $_.Name -eq $Folder }).Environments[$Environment]
+                $targetEnv = New-Object "$ISNamespace.EnvironmentInfo" ($envDestFolder, $srcEnv.Name, $srcEnv.Description)
+                foreach ($var in $srcEnv.Variables) {
+                    if ($var.Value.ToString() -eq "") {
+                        $finalValue = ""
+                    }
+                    else {
+                        $finalValue = $var.Value
+                    }
+                    $targetEnv.Variables.Add($var.Name, $var.Type, $finalValue, $var.Sensitive, $var.Description)
                 }
-                $targetEnv.Variables.Add($var.Name, $var.Type, $finalValue, $var.Sensitive, $var.Description)
+                Write-Message -Level Verbose -Message "Creating environment $Environment."
+                $targetEnv.Create()
+                $targetEnv.Alter()
+                $targetEnv.Refresh()
             }
-            Write-Message -Level Verbose -Message "Creating environment $Environment."
-            $targetEnv.Create()
-            $targetEnv.Alter()
-            $targetEnv.Refresh()
         }
         function New-SSISDBCatalog {
+            [CmdletBinding(SupportsShouldProcess)]
             param (
                 [System.Security.SecureString]$Password
             )
-
-            if (!$Password) {
-                Write-Message -Level Verbose -Message "SSISDB Catalog requires a password."
-                $pass1 = Read-Host "Enter a password" -AsSecureString
-                $plainTextPass1 = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($pass1))
-                $pass2 = Read-Host "Re-enter password" -AsSecureString
-                $plainTextPass2 = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($pass2))
-                if ($plainTextPass1 -ne $plainTextPass2) {
-                    throw "Validation error, passwords entered do not match."
+            if ($Pscmdlet.ShouldProcess("Creating New SSISDB Catalog")) {
+                if (!$Password) {
+                    Write-Message -Level Verbose -Message "SSISDB Catalog requires a password."
+                    $pass1 = Read-Host "Enter a password" -AsSecureString
+                    $plainTextPass1 = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($pass1))
+                    $pass2 = Read-Host "Re-enter password" -AsSecureString
+                    $plainTextPass2 = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($pass2))
+                    if ($plainTextPass1 -ne $plainTextPass2) {
+                        throw "Validation error, passwords entered do not match."
+                    }
+                    $plainTextPass = $plainTextPass1
                 }
-                $plainTextPass = $plainTextPass1
-            }
-            else {
-                $plainTextPass = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($Password))
-            }
+                else {
+                    $plainTextPass = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($Password))
+                }
 
-            $catalog = New-Object "$ISNamespace.Catalog" ($destinationSSIS, "SSISDB", $plainTextPass)
-            $catalog.Create()
-            $catalog.Refresh()
+                $catalog = New-Object "$ISNamespace.Catalog" ($destinationSSIS, "SSISDB", $plainTextPass)
+                $catalog.Create()
+                $catalog.Refresh()
+            }
         }
 
         $ISNamespace = "Microsoft.SqlServer.Management.IntegrationServices"

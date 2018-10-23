@@ -44,11 +44,6 @@ function Remove-DbaAgDatabase {
         https://dbatools.io/Remove-DbaAgDatabase
         
     .EXAMPLE
-        PS C:\> Remove-DbaAgDatabase -SqlInstance sqlserver2012 -AllAvailabilityGroup
-        
-        Removes all availability groups on the sqlserver2014 instance. Prompts for confirmation.
-        
-    .EXAMPLE
         PS C:\> Remove-DbaAgDatabase -SqlInstance sqlserver2012 -AvailabilityGroup ag1, ag2 -Confirm:$false
         
         Removes the ag1 and ag2 availability groups on sqlserver2012.  Does not prompt for confirmation.

@@ -1,4 +1,4 @@
-﻿#ValidationTags#Messaging,FlowControl,CodeStyle#
+#ValidationTags#Messaging,FlowControl,CodeStyle#
 function Get-DbaCustomError {
 <#
     .SYNOPSIS
@@ -44,7 +44,7 @@ function Get-DbaCustomError {
     [CmdletBinding()]
     param (
         [parameter(Position = 0, Mandatory, ValueFromPipeline)]
-        [DbaInstanceParameter]$SqlInstance,
+        [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [Alias('Silent')]
         [switch]$EnableException

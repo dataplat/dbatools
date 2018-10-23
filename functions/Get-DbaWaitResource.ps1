@@ -41,12 +41,12 @@
         Will return an object containing; database name, data file name, schema name and the object which owns the resource
 
     .EXAMPLE
-        PS C:\> Get-DbaWaitResource -Sql Instance server2 -WaitResource 'KEY: 7:35457594073541168 (de21f92a1572)'
+        PS C:\> Get-DbaWaitResource -SqlInstance server2 -WaitResource 'KEY: 7:35457594073541168 (de21f92a1572)'
 
         Will return an object containing; database name, schema name and index name which is being waited on.
 
     .EXAMPLE
-        PS C:\> Get-DbaWaitResource -Sql Instance server2 -WaitResource 'KEY: 7:35457594073541168 (de21f92a1572)' -row
+        PS C:\> Get-DbaWaitResource -SqlInstance server2 -WaitResource 'KEY: 7:35457594073541168 (de21f92a1572)' -row
 
         Will return an object containing; database name, schema name and index name which is being waited on, and in addition the contents of the locked row at the time the command is run.
 

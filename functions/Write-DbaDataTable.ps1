@@ -24,6 +24,12 @@ function Write-DbaDataTable {
 
         If the table does not exist, you can use -AutoCreateTable to automatically create the table with inefficient data types.
 
+        If the object has special characters please wrap them in square brackets [ ].
+        Using dbo.First.Table will try to import to a table named 'Table' on schema 'First' and database 'dbo'.
+        The correct way to import to a table named 'First.Table' on schema 'dbo' is by passing dbo.[First.Table]
+        Any actual usage of the ] must be escaped by duplicating the ] character.
+        The correct way to import to a table Name] in schema Schema.Name is by passing [Schema.Name].[Name]]]
+
     .PARAMETER Schema
         Defaults to dbo if no schema is specified.
 
@@ -135,14 +141,18 @@ function Write-DbaDataTable {
 
     .EXAMPLE
         PS C:\> $process = Get-Process | ConvertTo-DbaDataTable
-        PS C:\> Write-DbaDataTable -InputObject $process -SqlInstance sql2014 -Database mydb -Table myprocesses -AutoCreateTable
+        PS C:\> Write-DbaDataTable -InputObject $process -SqlInstance sql2014 -Table "[[DbName]]].[Schema.With.Dots].[`"[Process]]`"]" -AutoCreateTable
 
-        Creates a table based on the Process object with over 60 columns, converted from PowerShell data types to SQL Server data types. After the table is created a bulk insert is performed to add process information into the table.
+        Creates a table based on the Process object with over 60 columns, converted from PowerShell data types to SQL Server data types. After the table is created a bulk insert is performed to add process information into the table
+        Writes the results of Get-Process to a table named: "[Process]" in schema named: Schema.With.Dots in database named: [DbName]
+        The Table name, Schema name and Database name must be wrapped in square brackets [ ]
+        Special charcters like " must be escaped by a ` charcter.
+        In addition any actual instance of the ] character must be escaped by being duplicated.
 
         This is an example of the type conversion in action. All process properties are converted, including special types like TimeSpan. Script properties are resolved before the type conversion starts thanks to ConvertTo-DbaDataTable.
 
 #>
-    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "High")]
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "High")]
     param (
         [Parameter(Position = 0, Mandatory)]
         [Alias("ServerInstance", "SqlServer")]
@@ -264,7 +274,7 @@ function Write-DbaDataTable {
             .PARAMETER UseDynamicStringLength
                 Automatically inherits from parent.
         #>
-            [CmdletBinding()]
+            [CmdletBinding(SupportsShouldProcess)]
             param (
                 $DataTable,
                 $PStoSQLTypes = $PStoSQLTypes,
@@ -361,44 +371,75 @@ function Write-DbaDataTable {
         #endregion Prepare type for bulk copy
 
         #region Resolve Full Qualified Table Name
-        $dotCount = ([regex]::Matches($Table, "\.")).count
+        $fqtnObj = Get-TableNameParts $Table
 
-        if ($dotCount -lt 2 -and $null -eq $Database) {
+        if ($fqtnObj.$parsed) {
+            Stop-Function -Message "Unable to parse $($fqtnObj.InputValue) as a valid tablename."
+            return
+        }
+
+        if ($null -eq $fqtnObj.Database -and $null -eq $Database) {
             Stop-Function -Message "You must specify a database or fully qualified table name."
             return
         }
 
         if (Test-Bound -ParameterName Database) {
-            $databaseName = "$Database"
+            if ($null -eq $fqtnObj.Database) {
+                $databaseName = "$Database"
+            }
+            else {
+                if ($fqtnObj.Database -eq $Database) {
+                    $databaseName = "$Database"
+                }
+                else {
+                    Stop-Function -Message "The database parameter $($Database) differs from value from the fully qualified table name $($fqtnObj.Database)."
+                    return
+                }
+            }
+        }
+        else {
+            $databaseName = $fqtnObj.Database
         }
 
-        $tableName = $Table
-        $schemaName = $Schema
-
-        if ($dotCount -eq 1) {
-            $schemaName = $Table.Split(".")[0]
-            $tableName = $Table.Split(".")[1]
+        if ($fqtnObj.Schema) {
+            $schemaName = $fqtnObj.Schema
+        }
+        else {
+            $schemaName = $Schema
         }
 
-        if ($dotCount -eq 2) {
-            $databaseName = $Table.Split(".")[0]
-            $schemaName = $Table.Split(".")[1]
-            $tableName = $Table.Split(".")[2]
-        }
+        $tableName = $fqtnObj.Table
 
-        if ($databaseName -match "\[.*\]") {
-            $databaseName = ($databaseName -replace '\[', '') -replace '\]', ''
-        }
+        $quotedFQTN = [System.Text.StringBuilder]::new()
 
-        if ($schemaName -match "\[.*\]") {
-            $schemaName = ($schemaName -replace '\[', '') -replace '\]', ''
+        [void]$quotedFQTN.Append( '[' )
+        if ($databaseName.Contains(']')) {
+            [void]$quotedFQTN.Append( $databaseName.Replace(']', ']]') )
         }
-
-        if ($tableName -match "\[.*\]") {
-            $tableName = ($tableName -replace '\[', '') -replace '\]', ''
+        else {
+            [void]$quotedFQTN.Append( $databaseName )
         }
+        [void]$quotedFQTN.Append( '].' )
 
-        $fqtn = "[$databaseName].[$schemaName].[$tableName]"
+        [void]$quotedFQTN.Append( '[' )
+        if ($schemaName.Contains(']')) {
+            [void]$quotedFQTN.Append( $schemaName.Replace(']', ']]') )
+        }
+        else {
+            [void]$quotedFQTN.Append( $schemaName )
+        }
+        [void]$quotedFQTN.Append( '].' )
+
+        [void]$quotedFQTN.Append( '[' )
+        if ($tableName.Contains(']')) {
+            [void]$quotedFQTN.Append( $tableName.Replace(']', ']]') )
+        }
+        else {
+            [void]$quotedFQTN.Append( $tableName )
+        }
+        [void]$quotedFQTN.Append( ']' )
+
+        $fqtn = $quotedFQTN.ToString()
         Write-Message -Level SomewhatVerbose -Message "FQTN processed: $fqtn"
         #endregion Resolve Full Qualified Table Name
 

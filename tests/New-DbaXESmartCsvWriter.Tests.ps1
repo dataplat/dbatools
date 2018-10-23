@@ -5,7 +5,7 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
         $paramCount = 6
-        $defaultParamCount = 11
+        $defaultParamCount = 13
         [object[]]$params = (Get-ChildItem function:\New-DbaXESmartCsvWriter).Parameters.Keys
         $knownParameters = 'OutputFile','Overwrite','Event','OutputColumn','Filter','EnableException'
         It "Should contain our specific parameters" {

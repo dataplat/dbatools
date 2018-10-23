@@ -5,7 +5,7 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
         $paramCount = 7
-        $defaultParamCount = 11
+        $defaultParamCount = 13
         [object[]]$params = (Get-ChildItem function:\Start-DbaXESession).Parameters.Keys
         $knownParameters = 'SqlInstance','SqlCredential','Session','StopAt','AllSessions','InputObject','EnableException'
         It "Should contain our specific parameters" {

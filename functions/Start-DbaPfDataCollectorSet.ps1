@@ -24,6 +24,12 @@ function Start-DbaPfDataCollectorSet {
     .PARAMETER InputObject
         Accepts the object output by Get-DbaPfDataCollectorSet via the pipeline.
 
+    .PARAMETER WhatIf
+        If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
+
+    .PARAMETER Confirm
+        If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -61,7 +67,7 @@ function Start-DbaPfDataCollectorSet {
         Starts the 'System Correlation' Collector.
 
 #>
-    [CmdletBinding()]
+    [CmdletBinding(SupportsShouldProcess)]
     param (
         [DbaInstance[]]$ComputerName=$env:COMPUTERNAME,
         [PSCredential]$Credential,
@@ -102,20 +108,22 @@ function Start-DbaPfDataCollectorSet {
             $computer = $set.ComputerName
             $status = $set.State
             Write-Message -Level Verbose -Message "$setname on $ComputerName is $status."
-            if ($status -eq "Running") {
-                Stop-Function -Message "$setname on $computer is already running." -Continue
-            }
-            if ($status -eq "Disabled") {
-                Stop-Function -Message "$setname on $computer is disabled." -Continue
-            }
-            try {
-                Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $setscript -ArgumentList $setname, $wait -ErrorAction Stop
-            }
-            catch {
-                Stop-Function -Message "Failure starting $setname on $computer." -ErrorRecord $_ -Target $computer -Continue
-            }
+            if ($Pscmdlet.ShouldProcess($computer, "Starting Performance Monitor collection set")) {
+                if ($status -eq "Running") {
+                    Stop-Function -Message "$setname on $computer is already running." -Continue
+                }
+                if ($status -eq "Disabled") {
+                    Stop-Function -Message "$setname on $computer is disabled." -Continue
+                }
+                try {
+                    Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $setscript -ArgumentList $setname, $wait -ErrorAction Stop
+                }
+                catch {
+                    Stop-Function -Message "Failure starting $setname on $computer." -ErrorRecord $_ -Target $computer -Continue
+                }
 
-            Get-DbaPfDataCollectorSet -ComputerName $computer -Credential $Credential -CollectorSet $setname
+                Get-DbaPfDataCollectorSet -ComputerName $computer -Credential $Credential -CollectorSet $setname
+            }
         }
     }
 }
