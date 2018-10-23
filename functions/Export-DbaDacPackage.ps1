@@ -215,7 +215,7 @@ function Export-DbaDacPackage {
                 #using SMO by default
                 if ($PsCmdlet.ParameterSetName -eq 'SMO') {
                     try {
-                        $dacSvc = New-Object -TypeName Microsoft.SqlServer.Dac.DacServices -ArgumentList $connstring -ErrorAction Stop
+                        $dacSvc = New-Object -TypeName Microsoft.SqlServer.Dac.DacServices -ArgumentList $connstring -ErrorAction Stop
                     } catch {
                         Stop-Function -Message "Could not connect to the connection string $connstring" -Target $instance -Continue
                     }
