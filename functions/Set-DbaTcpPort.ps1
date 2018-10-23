@@ -60,7 +60,7 @@ function Set-DbaTcpPort {
         Sets the port number 1337 for all IP Addresses on SqlInstance SQLDB2014A and SQLDB2016B
 
 #>
-    [CmdletBinding(ConfirmImpact = "High")]
+    [CmdletBinding(SupportsShouldProcess,ConfirmImpact = "High")]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
@@ -92,72 +92,73 @@ function Set-DbaTcpPort {
         if (Test-FunctionInterrupt) { return }
 
         foreach ($instance in $SqlInstance) {
-
-            try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
-            }
-            catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
-            }
-
-            $wmiinstancename = $server.ServiceName
-
-
-            if ($server.IsClustered) {
-                Write-Message -Level Verbose -Message "Instance is clustered fetching nodes..."
-                $clusternodes = (Get-DbaClusterNode -SqlInstance $server).ComputerName -join ", "
-
-                Write-Message -Level Output -Message "$instance is a clustered instance, portchanges will be reflected on all nodes ($clusternodes) after a failover"
-            }
-
-            $scriptblock = {
-                $instance = $args[0]
-                $wmiinstancename = $args[1]
-                $port = $args[2]
-                $IpAddress = $args[3]
-                $sqlinstanceName = $args[4]
-
-                $wmi = New-Object Microsoft.SqlServer.Management.Smo.Wmi.ManagedComputer $instance
-                $wmiinstance = $wmi.ServerInstances | Where-Object { $_.Name -eq $wmiinstancename }
-                $tcp = $wmiinstance.ServerProtocols | Where-Object { $_.DisplayName -eq 'TCP/IP' }
-                $IpAddress = $tcp.IpAddresses | where-object { $_.IpAddress -eq $IpAddress }
-                $tcpport = $IpAddress.IpAddressProperties | Where-Object { $_.Name -eq 'TcpPort' }
-
-                $oldport = $tcpport.Value
+            if ($Pscmdlet.ShouldProcess($instance, "Changing the default TCP port")) {
                 try {
-                    $tcpport.value = $port
-                    $tcp.Alter()
-                    [pscustomobject]@{
-                        ComputerName  = $env:COMPUTERNAME
-                        InstanceName  = $wmiinstancename
-                        SqlInstance   = $sqlinstanceName
-                        OldPortNumber = $oldport
-                        PortNumber    = $Port
-                        Status        = "Success"
-                    }
+                    $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
                 }
                 catch {
-                    [pscustomobject]@{
-                        ComputerName  = $env:COMPUTERNAME
-                        InstanceName  = $wmiinstancename
-                        SqlInstance   = $sqlinstanceName
-                        OldPortNumber = $oldport
-                        PortNumber    = $Port
-                        Status        = "Failed: $_"
+                    Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                }
+
+                $wmiinstancename = $server.ServiceName
+
+
+                if ($server.IsClustered) {
+                    Write-Message -Level Verbose -Message "Instance is clustered fetching nodes..."
+                    $clusternodes = (Get-DbaClusterNode -SqlInstance $server).ComputerName -join ", "
+
+                    Write-Message -Level Output -Message "$instance is a clustered instance, portchanges will be reflected on all nodes ($clusternodes) after a failover"
+                }
+
+                $scriptblock = {
+                    $instance = $args[0]
+                    $wmiinstancename = $args[1]
+                    $port = $args[2]
+                    $IpAddress = $args[3]
+                    $sqlinstanceName = $args[4]
+
+                    $wmi = New-Object Microsoft.SqlServer.Management.Smo.Wmi.ManagedComputer $instance
+                    $wmiinstance = $wmi.ServerInstances | Where-Object { $_.Name -eq $wmiinstancename }
+                    $tcp = $wmiinstance.ServerProtocols | Where-Object { $_.DisplayName -eq 'TCP/IP' }
+                    $IpAddress = $tcp.IpAddresses | where-object { $_.IpAddress -eq $IpAddress }
+                    $tcpport = $IpAddress.IpAddressProperties | Where-Object { $_.Name -eq 'TcpPort' }
+
+                    $oldport = $tcpport.Value
+                    try {
+                        $tcpport.value = $port
+                        $tcp.Alter()
+                        [pscustomobject]@{
+                            ComputerName  = $env:COMPUTERNAME
+                            InstanceName  = $wmiinstancename
+                            SqlInstance   = $sqlinstanceName
+                            OldPortNumber = $oldport
+                            PortNumber    = $Port
+                            Status        = "Success"
+                        }
+                    }
+                    catch {
+                        [pscustomobject]@{
+                            ComputerName  = $env:COMPUTERNAME
+                            InstanceName  = $wmiinstancename
+                            SqlInstance   = $sqlinstanceName
+                            OldPortNumber = $oldport
+                            PortNumber    = $Port
+                            Status        = "Failed: $_"
+                        }
                     }
                 }
-            }
 
-            try {
-                $computerName = $instance.ComputerName
-                $resolved = Resolve-DbaNetworkName -ComputerName $computerName
+                try {
+                    $computerName = $instance.ComputerName
+                    $resolved = Resolve-DbaNetworkName -ComputerName $computerName
 
-                Write-Message -Level Verbose -Message "Writing TCPPort $port for $instance to $($resolved.FQDN)..."
-                Invoke-ManagedComputerCommand -ComputerName $resolved.FQDN -ScriptBlock $scriptblock -ArgumentList $Server.ComputerName, $wmiinstancename, $port, $IpAddress, $server.DomainInstanceName -Credential $Credential
+                    Write-Message -Level Verbose -Message "Writing TCPPort $port for $instance to $($resolved.FQDN)..."
+                    Invoke-ManagedComputerCommand -ComputerName $resolved.FQDN -ScriptBlock $scriptblock -ArgumentList $Server.ComputerName, $wmiinstancename, $port, $IpAddress, $server.DomainInstanceName -Credential $Credential
 
-            }
-            catch {
-                Invoke-ManagedComputerCommand -ComputerName $instance.ComputerName -ScriptBlock $scriptblock -ArgumentList $Server.ComputerName, $wmiinstancename, $port, $IpAddress, $server.DomainInstanceName -Credential $Credential
+                }
+                catch {
+                    Invoke-ManagedComputerCommand -ComputerName $instance.ComputerName -ScriptBlock $scriptblock -ArgumentList $Server.ComputerName, $wmiinstancename, $port, $IpAddress, $server.DomainInstanceName -Credential $Credential
+                }
             }
         }
     }

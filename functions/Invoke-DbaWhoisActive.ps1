@@ -195,7 +195,7 @@
         Similar to running sp_WhoIsActive @get_outer_command = 1, @find_block_leaders = 1
 
 #>
-    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
+    [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
         [Alias('ServerInstance', 'SqlServer')]
@@ -291,54 +291,52 @@
             }
 
             Write-Message -Level Verbose -Message "Collecting sp_whoisactive data from server: $instance"
-            if($PSCmdlet.ShouldProcess("$instance","Collecting sp_whoisactive data")){
-                try {
-                    $sqlconnection = New-Object System.Data.SqlClient.SqlConnection
-                    $sqlconnection.ConnectionString = $server.ConnectionContext.ConnectionString
-                    $sqlconnection.Open()
+            try {
+                $sqlconnection = New-Object System.Data.SqlClient.SqlConnection
+                $sqlconnection.ConnectionString = $server.ConnectionContext.ConnectionString
+                $sqlconnection.Open()
 
-                    if ($Database) {
-                        # database is being returned as something weird. change it to string without using a method then trim.
-                        $Database = "$Database"
-                        $Database = $Database.Trim()
-                        $sqlconnection.ChangeDatabase($Database)
-                    }
-
-                    $sqlcommand = New-Object System.Data.SqlClient.SqlCommand
-                    $sqlcommand.CommandType = "StoredProcedure"
-                    $sqlcommand.CommandText = "dbo.sp_WhoIsActive"
-                    $sqlcommand.Connection = $sqlconnection
-
-                    foreach ($param in $passedparams) {
-                        Write-Message -Level Verbose -Message "Check parameter '$param'"
-
-                        $sqlparam = $paramdictionary[$param]
-
-                        if ($sqlparam) {
-
-                            $value = $localparams[$param]
-
-                            switch ($value) {
-                                $true { $value = 1 }
-                                $false { $value = 0 }
-                            }
-                            Write-Message -Level Verbose -Message "Adding parameter '$sqlparam' with value '$value'"
-                            [Void]$sqlcommand.Parameters.AddWithValue($sqlparam, $value)
-                        }
-                    }
-
-                    $datatable = New-Object system.Data.DataSet
-                    $dataadapter = New-Object system.Data.SqlClient.SqlDataAdapter($sqlcommand)
-                    $dataadapter.fill($datatable) | Out-Null
-                    $datatable.Tables.Rows
+                if ($Database) {
+                    # database is being returned as something weird. change it to string without using a method then trim.
+                    $Database = "$Database"
+                    $Database = $Database.Trim()
+                    $sqlconnection.ChangeDatabase($Database)
                 }
-                catch {
-                    if ($_.Exception.InnerException -Like "*Could not find*") {
-                        Stop-Function -Message "sp_whoisactive not found, please install using Install-DbaWhoIsActive." -Continue
+
+                $sqlcommand = New-Object System.Data.SqlClient.SqlCommand
+                $sqlcommand.CommandType = "StoredProcedure"
+                $sqlcommand.CommandText = "dbo.sp_WhoIsActive"
+                $sqlcommand.Connection = $sqlconnection
+
+                foreach ($param in $passedparams) {
+                    Write-Message -Level Verbose -Message "Check parameter '$param'"
+
+                    $sqlparam = $paramdictionary[$param]
+
+                    if ($sqlparam) {
+
+                        $value = $localparams[$param]
+
+                        switch ($value) {
+                            $true { $value = 1 }
+                            $false { $value = 0 }
+                        }
+                        Write-Message -Level Verbose -Message "Adding parameter '$sqlparam' with value '$value'"
+                        [Void]$sqlcommand.Parameters.AddWithValue($sqlparam, $value)
                     }
-                    else {
-                        Stop-Function -Message "Invalid query." -Continue
-                    }
+                }
+
+                $datatable = New-Object system.Data.DataSet
+                $dataadapter = New-Object system.Data.SqlClient.SqlDataAdapter($sqlcommand)
+                $dataadapter.fill($datatable) | Out-Null
+                $datatable.Tables.Rows
+            }
+            catch {
+                if ($_.Exception.InnerException -Like "*Could not find*") {
+                    Stop-Function -Message "sp_whoisactive not found, please install using Install-DbaWhoIsActive." -Continue
+                }
+                else {
+                    Stop-Function -Message "Invalid query." -Continue
                 }
             }
         }
