@@ -18,6 +18,12 @@ function New-DbaXESession {
     .PARAMETER Name
         The Name of the session to be created.
 
+    .PARAMETER WhatIf
+        If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
+
+    .PARAMETER Confirm
+        If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -43,7 +49,7 @@ function New-DbaXESession {
         Returns a new XE Session object from sql2017 then adds an event, an action then creates it.
 
 #>
-    [CmdletBinding()]
+    [CmdletBinding(SupportsShouldProcess)]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
@@ -62,11 +68,13 @@ function New-DbaXESession {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
-            $SqlConn = $server.ConnectionContext.SqlConnectionObject
-            $SqlStoreConnection = New-Object Microsoft.SqlServer.Management.Sdk.Sfc.SqlStoreConnection $SqlConn
-            $store = New-Object  Microsoft.SqlServer.Management.XEvent.XEStore $SqlStoreConnection
+            if ($Pscmdlet.ShouldProcess($instance, "Creating new XESession")) {
+                $SqlConn = $server.ConnectionContext.SqlConnectionObject
+                $SqlStoreConnection = New-Object Microsoft.SqlServer.Management.Sdk.Sfc.SqlStoreConnection $SqlConn
+                $store = New-Object  Microsoft.SqlServer.Management.XEvent.XEStore $SqlStoreConnection
 
-            $store.CreateSession($Name)
+                $store.CreateSession($Name)
+            }
         }
     }
 }
