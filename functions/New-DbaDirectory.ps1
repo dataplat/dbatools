@@ -1,4 +1,4 @@
-﻿function New-DbaDirectory {
+function New-DbaDirectory {
     <#
     .SYNOPSIS
         Creates new path as specified by the path variable

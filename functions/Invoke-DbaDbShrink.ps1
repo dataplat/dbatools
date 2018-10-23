@@ -1,4 +1,4 @@
-﻿function Invoke-DbaDbShrink {
+function Invoke-DbaDbShrink {
 <#
     .SYNOPSIS
         Shrinks all files in a database. This is a command that should rarely be used.

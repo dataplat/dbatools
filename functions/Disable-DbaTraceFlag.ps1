@@ -1,4 +1,4 @@
-﻿function Disable-DbaTraceFlag {
+function Disable-DbaTraceFlag {
 <#
     .SYNOPSIS
         Disable a Global Trace Flag that is currently running

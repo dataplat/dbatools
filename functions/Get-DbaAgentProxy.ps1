@@ -1,4 +1,4 @@
-﻿function Get-DbaAgentProxy {
+function Get-DbaAgentProxy {
 <#
     .SYNOPSIS
         Returns all SQL Agent proxies on a SQL Server Agent.

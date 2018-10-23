@@ -1,4 +1,4 @@
-﻿function Test-DbaDbCollation {
+function Test-DbaDbCollation {
 <#
     .SYNOPSIS
         Compares Database Collations to Server Collation

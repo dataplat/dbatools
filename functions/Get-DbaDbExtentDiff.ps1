@@ -1,4 +1,4 @@
-﻿function Get-DbaDbExtentDiff {
+function Get-DbaDbExtentDiff {
 <#
     .SYNOPSIS
         What percentage of a database has changed since the last full backup

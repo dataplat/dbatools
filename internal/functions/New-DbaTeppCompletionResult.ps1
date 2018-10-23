@@ -1,4 +1,4 @@
-﻿function global:New-DbaTeppCompletionResult {
+function global:New-DbaTeppCompletionResult {
     <#
         .SYNOPSIS
             Generates a completion result for dbatools internal tab completion.

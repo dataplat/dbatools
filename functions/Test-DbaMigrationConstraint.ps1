@@ -1,4 +1,4 @@
-﻿function Test-DbaMigrationConstraint {
+function Test-DbaMigrationConstraint {
 <#
     .SYNOPSIS
         Show if you can migrate the database(s) between the servers.

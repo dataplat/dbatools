@@ -1,4 +1,4 @@
-﻿function New-DbaAgentJobCategory {
+function New-DbaAgentJobCategory {
 <#
     .SYNOPSIS
         New-DbaAgentJobCategory creates a new job category.

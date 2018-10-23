@@ -60,3 +60,4 @@ Connects to SSAS on the local server
 
     return $server
 }
+

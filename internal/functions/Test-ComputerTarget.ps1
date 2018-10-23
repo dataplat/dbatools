@@ -1,4 +1,4 @@
-﻿function Test-ComputerTarget {
+function Test-ComputerTarget {
     <#
     .SYNOPSIS
         Validates wheher the input string can be legally used to target a computer.
@@ -39,3 +39,4 @@
         }
     }
 }
+

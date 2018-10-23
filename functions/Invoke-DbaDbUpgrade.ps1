@@ -1,4 +1,4 @@
-﻿function Invoke-DbaDbUpgrade {
+function Invoke-DbaDbUpgrade {
 <#
     .SYNOPSIS
         Take a database and upgrades it to compatibility of the SQL Instance its hosted on. Based on https://thomaslarock.com/2014/06/upgrading-to-sql-server-2014-a-dozen-things-to-check/

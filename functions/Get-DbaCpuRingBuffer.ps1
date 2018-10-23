@@ -1,4 +1,4 @@
-﻿function Get-DbaCpuRingBuffer {
+function Get-DbaCpuRingBuffer {
 <#
     .SYNOPSIS
         Collects CPU data from sys.dm_os_ring_buffers.  Works on SQL Server 2005 and above.

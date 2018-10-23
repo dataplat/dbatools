@@ -1,4 +1,4 @@
-﻿function Remove-DbaDatabaseSafely {
+function Remove-DbaDatabaseSafely {
 <#
     .SYNOPSIS
         Safely removes a SQL Database and creates an Agent Job to restore it.

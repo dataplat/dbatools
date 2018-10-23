@@ -1,4 +1,4 @@
-﻿function Get-DbaCpuUsage {
+function Get-DbaCpuUsage {
 <#
     .SYNOPSIS
         Provides detailed CPU usage information about a SQL Server's process

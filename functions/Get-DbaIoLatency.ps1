@@ -1,4 +1,4 @@
-﻿function Get-DbaIoLatency {
+function Get-DbaIoLatency {
 <#
     .SYNOPSIS
         Displays IO subsystem latency statistics from sys.dm_io_virtual_file_stats.  Works on SQL Server 2005 and above.

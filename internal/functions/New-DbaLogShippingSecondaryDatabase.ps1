@@ -238,3 +238,4 @@ function New-DbaLogShippingSecondaryDatabase {
     Write-Message -Message "Finished adding the secondary database $SecondaryDatabase to log shipping." -Level Verbose
 
 }
+

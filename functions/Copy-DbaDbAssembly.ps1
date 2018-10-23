@@ -1,4 +1,4 @@
-﻿function Copy-DbaDbAssembly {
+function Copy-DbaDbAssembly {
 <#
     .SYNOPSIS
         Copy-DbaDbAssembly migrates assemblies from one SQL Server to another.

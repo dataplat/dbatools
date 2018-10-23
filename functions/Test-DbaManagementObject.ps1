@@ -1,4 +1,4 @@
-﻿function Test-DbaManagementObject {
+function Test-DbaManagementObject {
 <#
     .SYNOPSIS
         Tests to see if the SMO version specified exists on the computer.

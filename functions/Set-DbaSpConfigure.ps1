@@ -1,4 +1,4 @@
-﻿function Set-DbaSpConfigure {
+function Set-DbaSpConfigure {
 <#
     .SYNOPSIS
         Changes the server level system configuration (sys.configuration/sp_configure) value for a given configuration

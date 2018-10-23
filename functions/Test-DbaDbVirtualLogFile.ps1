@@ -1,4 +1,4 @@
-﻿#ValidationTags#CodeStyle,Messaging,FlowControl,Pipeline#
+#ValidationTags#CodeStyle,Messaging,FlowControl,Pipeline#
 function Test-DbaDbVirtualLogFile {
 <#
     .SYNOPSIS

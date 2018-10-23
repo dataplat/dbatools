@@ -1,4 +1,4 @@
-﻿function Test-DbaOptimizeForAdHoc {
+function Test-DbaOptimizeForAdHoc {
 <#
     .SYNOPSIS
         Displays information relating to SQL Server Optimize for AdHoc Workloads setting.  Works on SQL Server 2008-2016.

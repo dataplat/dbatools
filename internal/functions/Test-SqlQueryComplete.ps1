@@ -22,3 +22,4 @@ function Test-SqlQueryComplete {
         return $true
     }
 }
+

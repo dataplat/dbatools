@@ -1,4 +1,4 @@
-﻿function Invoke-DbaAdvancedRestore {
+function Invoke-DbaAdvancedRestore {
 <#
     .SYNOPSIS
         Allows the restore of modified BackupHistory Objects

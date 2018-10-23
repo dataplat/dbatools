@@ -1,4 +1,4 @@
-﻿function Get-DbaDetachedDatabaseInfo {
+function Get-DbaDetachedDatabaseInfo {
 <#
     .SYNOPSIS
         Get detailed information about detached SQL Server database files.

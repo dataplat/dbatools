@@ -1,4 +1,4 @@
-﻿function Set-DbaLogin {
+function Set-DbaLogin {
 <#
     .SYNOPSIS
         Set-DbaLogin makes it possible to make changes to one or more logins.

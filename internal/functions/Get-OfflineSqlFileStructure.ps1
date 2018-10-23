@@ -66,3 +66,4 @@ Internal function. Returns dictionary object that contains file structures for S
 
     return $destinationfiles
 }
+

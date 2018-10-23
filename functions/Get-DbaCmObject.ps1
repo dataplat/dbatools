@@ -1,4 +1,4 @@
-﻿function Get-DbaCmObject {
+function Get-DbaCmObject {
 <#
     .SYNOPSIS
         Retrieves Wmi/Cim-Style information from computers.

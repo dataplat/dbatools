@@ -1,4 +1,4 @@
-﻿function Get-DbaDbEncryption {
+function Get-DbaDbEncryption {
 <#
     .SYNOPSIS
         Returns a summary of encryption used on databases passed to it.

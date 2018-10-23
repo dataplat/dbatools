@@ -1,4 +1,4 @@
-﻿function Invoke-DbaDbLogShipping {
+function Invoke-DbaDbLogShipping {
 <#
     .SYNOPSIS
         Invoke-DbaDbLogShipping sets up log shipping for one or more databases

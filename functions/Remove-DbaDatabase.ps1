@@ -1,4 +1,4 @@
-﻿function Remove-DbaDatabase {
+function Remove-DbaDatabase {
 <#
     .SYNOPSIS
         Drops a database, hopefully even the really stuck ones.

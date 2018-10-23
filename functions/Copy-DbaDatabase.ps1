@@ -1,4 +1,4 @@
-﻿function Copy-DbaDatabase {
+function Copy-DbaDatabase {
 <#
     .SYNOPSIS
         Migrates SQL Server databases from one SQL Server to another.

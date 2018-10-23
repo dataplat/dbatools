@@ -1,4 +1,4 @@
-﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function New-DbaAgentJob {
 <#
     .SYNOPSIS
@@ -431,3 +431,4 @@ function New-DbaAgentJob {
     }
 
 }
+

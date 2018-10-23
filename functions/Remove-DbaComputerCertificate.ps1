@@ -1,4 +1,4 @@
-﻿function Remove-DbaComputerCertificate {
+function Remove-DbaComputerCertificate {
 <#
     .SYNOPSIS
         Removes a computer certificate - useful for removing easily certs from remote computers

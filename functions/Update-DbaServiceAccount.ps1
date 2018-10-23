@@ -1,4 +1,4 @@
-﻿function Update-DbaServiceAccount {
+function Update-DbaServiceAccount {
 <#
     .SYNOPSIS
         Changes service account (or just its password) of the SQL Server service.

@@ -95,3 +95,4 @@ function Test-ElevationRequirement {
         return $testResult
     }
 }
+

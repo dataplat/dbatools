@@ -7,3 +7,4 @@ function Test-HostOSLinux {
     $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $sqlcredential
     $server.ConnectionContext.ExecuteScalar("SELECT @@VERSION") -match "Linux"
 }
+

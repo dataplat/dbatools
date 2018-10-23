@@ -1,4 +1,4 @@
-﻿function Find-DbaDuplicateIndex {
+function Find-DbaDuplicateIndex {
 <#
     .SYNOPSIS
         Find duplicate and overlapping indexes.

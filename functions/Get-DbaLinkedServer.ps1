@@ -1,4 +1,4 @@
-﻿function Get-DbaLinkedServer {
+function Get-DbaLinkedServer {
 <#
     .SYNOPSIS
         Gets all linked servers and summary of information from the sql servers listed

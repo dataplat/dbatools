@@ -1,4 +1,4 @@
-﻿function Select-DbaBackupInformation {
+function Select-DbaBackupInformation {
 <#
     .SYNOPSIS
         Select a subset of backups from a dbatools backup history object

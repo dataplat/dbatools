@@ -1,4 +1,4 @@
-﻿function Get-DbaServerAudit {
+function Get-DbaServerAudit {
 <#
     .SYNOPSIS
         Gets SQL Security Audit information for each instance(s) of SQL Server.

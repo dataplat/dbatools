@@ -37,3 +37,4 @@ function Update-SqlDbReadOnly {
         return $false
     }
 }
+

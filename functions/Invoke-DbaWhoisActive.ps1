@@ -1,4 +1,4 @@
-﻿function Invoke-DbaWhoIsActive {
+function Invoke-DbaWhoIsActive {
 <#
     .SYNOPSIS
         Outputs results of Adam Machanic's sp_WhoIsActive DataTable

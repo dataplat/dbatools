@@ -57,3 +57,4 @@ function Get-SqlDefaultPaths {
     $filepath = $filepath.TrimEnd("\")
     return $filepath
 }
+

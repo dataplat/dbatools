@@ -1,4 +1,4 @@
-﻿function Get-DbaDbMail {
+function Get-DbaDbMail {
 <#
     .SYNOPSIS
         Gets the database mail from SQL Server

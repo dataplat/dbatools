@@ -1,4 +1,4 @@
-﻿function Stop-DbaProcess {
+function Stop-DbaProcess {
 <#
     .SYNOPSIS
         This command finds and kills SQL Server processes.

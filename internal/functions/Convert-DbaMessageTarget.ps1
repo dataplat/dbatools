@@ -1,4 +1,4 @@
-﻿function Convert-DbaMessageTarget {
+function Convert-DbaMessageTarget {
 <#
     .SYNOPSIS
         Transforms the target input to the message system.

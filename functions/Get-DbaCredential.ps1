@@ -1,4 +1,4 @@
-﻿#ValidationTags#Messaging,FlowControl,CodeStyle#
+#ValidationTags#Messaging,FlowControl,CodeStyle#
 function Get-DbaCredential {
 <#
     .SYNOPSIS

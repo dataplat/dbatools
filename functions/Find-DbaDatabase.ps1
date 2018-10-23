@@ -1,4 +1,4 @@
-﻿#ValidationTags#Messaging#
+#ValidationTags#Messaging#
 function Find-DbaDatabase {
 <#
     .SYNOPSIS

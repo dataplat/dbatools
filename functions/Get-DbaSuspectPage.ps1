@@ -1,4 +1,4 @@
-﻿function Get-DbaSuspectPage {
+function Get-DbaSuspectPage {
 <#
     .SYNOPSIS
         Returns data that is stored in SQL for Suspect Pages on the specified SQL Server Instance

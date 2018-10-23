@@ -1,4 +1,4 @@
-﻿function Get-DecryptedObject {
+function Get-DecryptedObject {
             <#
             .SYNOPSIS
                 Internal function.

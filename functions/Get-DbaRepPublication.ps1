@@ -1,4 +1,4 @@
-﻿function Get-DbaRepPublication {
+function Get-DbaRepPublication {
 <#
     .SYNOPSIS
         Displays all publications for a server or database.

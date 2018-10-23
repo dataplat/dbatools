@@ -1,4 +1,4 @@
-﻿function Get-DbaDbView {
+function Get-DbaDbView {
 <#
     .SYNOPSIS
         Gets database views for each SqlInstance.

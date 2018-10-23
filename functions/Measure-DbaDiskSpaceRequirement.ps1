@@ -1,4 +1,4 @@
-﻿function Measure-DbaDiskSpaceRequirement {
+function Measure-DbaDiskSpaceRequirement {
     <#
     .SYNOPSIS
         Calculate the space needed to copy and possibly replace a database from one SQL server to another.

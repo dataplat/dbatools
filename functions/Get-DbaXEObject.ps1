@@ -1,4 +1,4 @@
-﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaXEObject {
 <#
     .SYNOPSIS
@@ -111,3 +111,4 @@ function Get-DbaXEObject {
         }
     }
 }
+

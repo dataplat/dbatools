@@ -1,4 +1,4 @@
-﻿function Get-DbaErrorLog {
+function Get-DbaErrorLog {
     <#
     .SYNOPSIS
         Gets the "SQL Error Log" of an instance

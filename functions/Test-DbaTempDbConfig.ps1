@@ -1,4 +1,4 @@
-﻿function Test-DbaTempdbConfig {
+function Test-DbaTempdbConfig {
 <#
     .SYNOPSIS
         Evaluates tempdb against several rules to match best practices.

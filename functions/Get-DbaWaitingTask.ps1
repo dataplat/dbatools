@@ -1,4 +1,4 @@
-﻿function Get-DbaWaitingTask {
+function Get-DbaWaitingTask {
 <#
     .SYNOPSIS
         Displays waiting task.

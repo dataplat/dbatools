@@ -1,4 +1,4 @@
-﻿function Read-DbaAuditFile {
+function Read-DbaAuditFile {
 <#
     .SYNOPSIS
         Read Audit details from *.sqlaudit files.

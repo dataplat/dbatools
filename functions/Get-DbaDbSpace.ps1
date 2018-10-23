@@ -1,4 +1,4 @@
-﻿function Get-DbaDbSpace {
+function Get-DbaDbSpace {
 <#
     .SYNOPSIS
         Returns database file space information for database files on a SQL instance.

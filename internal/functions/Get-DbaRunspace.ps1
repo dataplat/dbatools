@@ -28,3 +28,4 @@ function Get-DbaRunspace {
 
     [Sqlcollaborative.Dbatools.Runspace.RunspaceHost]::Runspaces.Values | Where-Object Name -Like $Name
 }
+

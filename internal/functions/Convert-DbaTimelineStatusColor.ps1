@@ -1,4 +1,4 @@
-﻿function Convert-DbaTimelineStatusColor {
+function Convert-DbaTimelineStatusColor {
     <#
         .SYNOPSIS
             Converts literal string status to a html color

@@ -1,4 +1,4 @@
-﻿function Invoke-DbaDiagnosticQueryScriptParser {
+function Invoke-DbaDiagnosticQueryScriptParser {
     [CmdletBinding(DefaultParameterSetName = "Default")]
 
     Param(
@@ -71,3 +71,4 @@
     $ParsedScript += $newscript
     $ParsedScript
 }
+

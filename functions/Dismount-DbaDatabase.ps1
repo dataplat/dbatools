@@ -210,3 +210,4 @@ function Dismount-DbaDatabase {
         }
     }
 }
+

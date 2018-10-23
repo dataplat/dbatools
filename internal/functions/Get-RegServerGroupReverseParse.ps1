@@ -1,4 +1,4 @@
-﻿function Get-RegServerGroupReverseParse ($object) {
+function Get-RegServerGroupReverseParse ($object) {
     if ($object.Name -eq 'DatabaseEngineServerGroup') {
         $object.Name
     }

@@ -1,4 +1,4 @@
-﻿#ValidationTags#Messaging#
+#ValidationTags#Messaging#
 function Copy-DbaAgentCategory {
 <#
     .SYNOPSIS

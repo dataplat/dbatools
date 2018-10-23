@@ -1,4 +1,4 @@
-﻿function Invoke-Create {
+function Invoke-Create {
     <#
         For stubborn .net objects that won't throw properly
     #>

@@ -1,4 +1,4 @@
-﻿function Rename-DbaLogin {
+function Rename-DbaLogin {
 <#
     .SYNOPSIS
         Rename-DbaLogin will rename login and database mapping for a specified login.

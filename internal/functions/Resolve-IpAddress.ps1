@@ -14,3 +14,4 @@ function Resolve-IpAddress {
         return $ipaddress = ((Test-Connection $server.Split('\')[0] -Count 1 -ErrorAction SilentlyContinue).Ipv4Address).IPAddressToString
     }
 }
+

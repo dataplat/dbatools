@@ -124,3 +124,4 @@ function Test-DbaLsnChain {
         return $true
     }
 }
+

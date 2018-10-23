@@ -1,4 +1,4 @@
-﻿function Set-DbatoolsConfig {
+function Set-DbatoolsConfig {
 <#
     .SYNOPSIS
         Sets configuration entries.

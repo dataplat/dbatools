@@ -1,4 +1,4 @@
-﻿function New-DbaCmConnection {
+function New-DbaCmConnection {
 <#
     .SYNOPSIS
         Generates a connection object for use in remote computer management.

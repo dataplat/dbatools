@@ -32,3 +32,4 @@ function Test-SqlLoginAccess {
     }
     return $true
 }
+

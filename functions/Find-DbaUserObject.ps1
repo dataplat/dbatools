@@ -1,4 +1,4 @@
-﻿#ValidationTags#Messaging#
+#ValidationTags#Messaging#
 function Find-DbaUserObject {
 <#
     .SYNOPSIS

@@ -1,4 +1,4 @@
-﻿function Clear-DbaConnectionPool {
+function Clear-DbaConnectionPool {
 <#
     .SYNOPSIS
         Resets (or empties) the connection pool.

@@ -1,4 +1,4 @@
-﻿function Write-HostColor {
+function Write-HostColor {
     <#
     .SYNOPSIS
         Function that recognizes html-style tags to insert color into printed text.

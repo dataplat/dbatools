@@ -1,4 +1,4 @@
-﻿function Get-DbaProcess {
+function Get-DbaProcess {
 <#
     .SYNOPSIS
         This command displays SQL Server processes.

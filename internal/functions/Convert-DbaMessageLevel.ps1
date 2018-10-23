@@ -1,4 +1,4 @@
-﻿function Convert-DbaMessageLevel {
+function Convert-DbaMessageLevel {
 <#
     .SYNOPSIS
         Processes the effective message level of a message

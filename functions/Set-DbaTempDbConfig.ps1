@@ -1,4 +1,4 @@
-﻿function Set-DbaTempdbConfig {
+function Set-DbaTempdbConfig {
 <#
     .SYNOPSIS
         Sets tempdb data and log files according to best practices.

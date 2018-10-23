@@ -1,4 +1,4 @@
-﻿function Get-DbaRgResourcePool {
+function Get-DbaRgResourcePool {
 <#
     .SYNOPSIS
         Gets Resource Governor Pool objects, including internal or external

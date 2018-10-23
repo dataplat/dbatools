@@ -1,4 +1,4 @@
-﻿function Get-DbaDbMemoryUsage {
+function Get-DbaDbMemoryUsage {
     <#
     .SYNOPSIS
         Determine buffer pool usage by database.

@@ -1,4 +1,4 @@
-﻿function Export-DbaLinkedServer {
+function Export-DbaLinkedServer {
 <#
     .SYNOPSIS
         Exports linked servers INCLUDING PASSWORDS, unless specified otherwise, to sql file.

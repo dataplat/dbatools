@@ -1,4 +1,4 @@
-﻿function Test-DbaJobOwner {
+function Test-DbaJobOwner {
 <#
     .SYNOPSIS
         Checks SQL Agent Job owners against a login to validate which jobs do not match that owner.

@@ -1,4 +1,4 @@
-﻿function New-DbaClientAlias {
+function New-DbaClientAlias {
 <#
     .SYNOPSIS
         Creates/updates a sql alias for the specified server - mimics cliconfg.exe

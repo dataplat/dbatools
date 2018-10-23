@@ -1,4 +1,4 @@
-﻿function Export-DbaInstance {
+function Export-DbaInstance {
 <#
     .SYNOPSIS
         Exports SQL Server *ALL* database restore scripts, logins, database mail profiles/accounts, credentials, SQL Agent objects, linked servers,

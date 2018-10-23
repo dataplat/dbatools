@@ -41,3 +41,4 @@ Takes path, checks for validity. Scans for usual backup file
     $Results = Get-ChildItem -path $Path -Recurse:$Recurse | Where-Object {$_.PsIsContainer -eq $false}
     return $Results
 }
+

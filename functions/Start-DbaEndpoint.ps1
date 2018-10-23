@@ -1,4 +1,4 @@
-﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Start-DbaEndpoint {
 <#
     .SYNOPSIS
@@ -93,3 +93,4 @@ function Start-DbaEndpoint {
         }
     }
 }
+
