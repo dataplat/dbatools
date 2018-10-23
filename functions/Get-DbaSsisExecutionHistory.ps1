@@ -79,7 +79,6 @@ function Get-DbaSsisExecutionHistory {
         [String[]]$Project,
         [String[]]$Folder,
         [String[]]$Environment,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     begin {

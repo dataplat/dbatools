@@ -141,7 +141,7 @@ function Invoke-DbaQuery {
         Write-Message -Level Debug -Message "Bound parameters: $($PSBoundParameters.Keys -join ", ")"
 
         $splatInvokeDbaSqlAsync = @{
-            As      = $As
+            As = $As
         }
 
         if (Test-Bound -ParameterName "SqlParameters") {
@@ -199,7 +199,13 @@ function Invoke-DbaQuery {
                             "http" {
                                 $tempfile = "$env:TEMP\$temporaryFilesPrefix-$temporaryFilesCount.sql"
                                 try {
-                                    Invoke-WebRequest -Uri $item -OutFile $tempfile -ErrorAction Stop
+                                    try {
+                                        Invoke-TlsWebRequest -Uri $item -OutFile $tempfile -ErrorAction Stop
+                                    }
+                                    catch {
+                                        (New-Object System.Net.WebClient).Proxy.Credentials = [System.Net.CredentialCache]::DefaultNetworkCredentials
+                                        Invoke-TlsWebRequest -Uri $item -OutFile $tempfile -ErrorAction Stop
+                                    }
                                     $files += $tempfile
                                     $temporaryFilesCount++
                                     $temporaryFiles += $tempfile
