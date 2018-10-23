@@ -554,7 +554,8 @@
         'Remove-DbaAvailabilityGroup',
         'Revoke-DbaAgPermission',
         'Get-DbaDbCompatibility',
-        'Set-DbaDbCompatibility'
+        'Set-DbaDbCompatibility',
+        'New-DbaDacOption'
     )
 
     # Cmdlets to export from this module
