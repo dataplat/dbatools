@@ -265,7 +265,7 @@ go
         }
     }
 
-    if ($env:azurepasswd1) {
+    if ($env:azurepasswd) {
         Context "Azure works" {
             BeforeAll {
                 $server = Connect-DbaInstance -SqlInstance $script:instance2
