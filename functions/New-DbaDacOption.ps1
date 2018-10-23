@@ -34,7 +34,7 @@ function New-DbaDacOption {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/New-DbaScriptingOption
+        https://dbatools.io/New-DbaDacOption
 
     .EXAMPLE
         PS C:\> $options = New-DbaDacOption -Type Dacpac -Action Export
@@ -83,7 +83,7 @@ function New-DbaDacOption {
         }
     } elseif ($Action -eq 'Publish') {
         if ($Type -eq 'Dacpac') {
-            $output = New-Object -TypeName Microsoft.SqlServer.Dac.PublishOptions
+            $output = New-Object -TypeName Microsoft.SqlServer.Dac.PublishOptions
             if ($PublishXml) {
                 try {
                     $dacProfile = [Microsoft.SqlServer.Dac.DacProfile]::Load($PublishXml)
