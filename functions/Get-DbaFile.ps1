@@ -65,7 +65,7 @@
     .EXAMPLE
         PS C:\> Get-DbaFile -SqlInstance sql2014, sql2016 -Path 'E:\Dir1' -FileType fsf, mld
 
-        Finds files in E:\Dir1 ending with ".fsf" and ".mld" for both the servers sql2014 and sql2016.    
+        Finds files in E:\Dir1 ending with ".fsf" and ".mld" for both the servers sql2014 and sql2016.
 
 #>
     [CmdletBinding()]
