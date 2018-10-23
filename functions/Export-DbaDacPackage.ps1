@@ -27,13 +27,13 @@ function Export-DbaDacPackage {
 
     .PARAMETER AllUserDatabases
         Run command against all user databases
-        
+
     .PARAMETER Type
         Selecting the type of the export: Dacpac (default) or Bacpac.
 
     .PARAMETER Table
         List of the tables to include into the export. Should be provided as an array of strings: dbo.Table1, Table2, Schema1.Table3.
-    
+
     .PARAMETER DacOption
         Export options for a corresponding export type. Can be created by New-DbaDacOption -Type Dacpac | Bacpac
 
@@ -73,7 +73,7 @@ function Export-DbaDacPackage {
         PS C:\> Export-DbaDacPackage -SqlInstance sql2016 -Database DB1 -Options
 
         Uses DacOption object to set the CommandTimeout to 0 then extracts the dacpac for DB1 on sql2016 to $home\Documents\DB1.dacpac including all table data.
-        
+
     .EXAMPLE
         PS C:\> Export-DbaDacPackage -SqlInstance sql2016 -AllUserDatabases -ExcludeDatabase "DBMaintenance","DBMonitoring" C:\temp
 
@@ -148,7 +148,7 @@ function Export-DbaDacPackage {
                 return
             }
         }
-        
+
         #check that at least one of the DB selection parameters was specified
         if (!$AllUserDatabases -and !$Database) {
             Stop-Function -Message "Either -Database or -AllUserDatabases should be specified" -Continue
@@ -165,7 +165,7 @@ function Export-DbaDacPackage {
                 return
             }
         }
-        
+
         #Create a tuple to be used as a table filter
         if ($Table) {
             $tblList = New-Object 'System.Collections.Generic.List[Tuple[String, String]]'
@@ -211,7 +211,7 @@ function Export-DbaDacPackage {
                     $currentFileName = Join-Path $parentFolder "$cleaninstance-$dbname.$ext"
                 }
                 Write-Message -Level Verbose -Message "Using connection string $connstring"
-                
+
                 #using SMO by default
                 if ($PsCmdlet.ParameterSetName -eq 'SMO') {
                     try {
@@ -297,4 +297,3 @@ function Export-DbaDacPackage {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Export-DbaDacpac
     }
 }
-
