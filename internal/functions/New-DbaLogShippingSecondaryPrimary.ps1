@@ -116,16 +116,14 @@ function New-DbaLogShippingSecondaryPrimary {
     # Try connecting to the instance
     try {
         $ServerSecondary = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
-    }
-    catch {
+    } catch {
         Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $SqlInstance -Continue
     }
 
     # Try connecting to the instance
     try {
         $ServerPrimary = Connect-SqlInstance -SqlInstance $PrimaryServer -SqlCredential $PrimarySqlCredential
-    }
-    catch {
+    } catch {
         Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $PrimaryServer -Continue
     }
 
@@ -133,8 +131,7 @@ function New-DbaLogShippingSecondaryPrimary {
     if ([bool]([uri]$BackupDestinationDirectory).IsUnc -and $BackupDestinationDirectory -notmatch '^\\(?:\\[^<>:`"/\\|?*]+)+$') {
         Stop-Function -Message "The backup destination path should be formatted in the form \\server\share." -Target $SqlInstance
         return
-    }
-    else {
+    } else {
         if (-not ((Test-Path $BackupDestinationDirectory -PathType Container -IsValid) -and ((Get-Item $BackupDestinationDirectory).PSProvider.Name -eq 'FileSystem'))) {
             Stop-Function -Message "The backup destination path is not valid or can't be reached." -Target $SqlInstance
             return
@@ -157,8 +154,7 @@ function New-DbaLogShippingSecondaryPrimary {
     if ($MonitorServerSecurityMode -eq 0 -and -not $MonitorCredential) {
         Stop-Function -Message "The MonitorServerCredential cannot be empty when using SQL Server authentication." -Target $SqlInstance -Continue
         return
-    }
-    elseif ($MonitorServerSecurityMode -eq 0 -and $MonitorCredential) {
+    } elseif ($MonitorServerSecurityMode -eq 0 -and $MonitorCredential) {
         # Get the username and password from the credential
         $MonitorLogin = $MonitorCredential.UserName
         $MonitorPassword = $MonitorCredential.GetNetworkCredential().Password
@@ -207,8 +203,7 @@ function New-DbaLogShippingSecondaryPrimary {
 
     if ($ServerSecondary.Version.Major -gt 9) {
         $Query += ",@overwrite = 1;"
-    }
-    else {
+    } else {
         $Query += ";"
     }
 
@@ -218,8 +213,7 @@ function New-DbaLogShippingSecondaryPrimary {
             Write-Message -Message "Configuring logshipping making settings for the primary database." -Level Verbose
             Write-Message -Message "Executing query:`n$Query" -Level Verbose
             $ServerSecondary.Query($Query)
-        }
-        catch {
+        } catch {
             Write-Message -Message "$($_.Exception.InnerException.InnerException.InnerException.InnerException.Message)" -Level Warning
             Stop-Function -Message "Error executing the query.`n$($_.Exception.Message)"  -ErrorRecord $_ -Target $SqlInstance -Continue
         }
@@ -227,3 +221,4 @@ function New-DbaLogShippingSecondaryPrimary {
 
     Write-Message -Message "Finished configuring of secondary database to primary database $PrimaryDatabase." -Level Verbose
 }
+

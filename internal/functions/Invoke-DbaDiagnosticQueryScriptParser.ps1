@@ -58,8 +58,7 @@ function Invoke-DbaDiagnosticQueryScriptParser {
             $querydescription = $prev_querydescription
             $querynr = $prev_querynr
             $queryname = $prev_queryname
-        }
-        else {
+        } else {
             if (!$line.startswith("--") -and ($line.trim() -ne "") -and ($null -ne $line) -and ($line -ne "\n")) {
                 $scriptpart += $line + "`n"
             }
@@ -71,4 +70,5 @@ function Invoke-DbaDiagnosticQueryScriptParser {
     $ParsedScript += $newscript
     $ParsedScript
 }
+
 

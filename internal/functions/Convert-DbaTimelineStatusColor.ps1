@@ -43,7 +43,7 @@ function Convert-DbaTimelineStatusColor {
         [string]
         $Status
     )
-   $out = switch($Status){
+    $out = switch ($Status) {
         "Failed" {"#FF3D3D"}
         "Succeeded" {"#36B300"}
         "Retry" {"#FFFF00"}
@@ -53,3 +53,4 @@ function Convert-DbaTimelineStatusColor {
     }
     return $out
 }
+

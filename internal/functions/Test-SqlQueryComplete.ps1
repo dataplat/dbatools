@@ -17,9 +17,9 @@ function Test-SqlQueryComplete {
 
     if ($server.ConnectionContext.ExecuteScalar($testsql) -ne $null) {
         return $false
-    }
-    else {
+    } else {
         return $true
     }
 }
+
 

@@ -137,3 +137,4 @@ function global:Where-DbaObject {
 }
 
 (Get-Item Function:\Where-DbaObject).Visibility = "Private"
+

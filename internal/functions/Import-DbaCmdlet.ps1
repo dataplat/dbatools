@@ -1,5 +1,5 @@
 function Import-DbaCmdlet {
-<#
+    <#
     .SYNOPSIS
         Loads a cmdlet into the current context.
     
@@ -119,3 +119,4 @@ function Import-DbaCmdlet {
         else { $Module.Invoke($scriptBlock, @($Name, $Type, $HelpFile)) }
     }
 }
+

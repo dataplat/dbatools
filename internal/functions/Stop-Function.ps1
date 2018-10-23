@@ -1,7 +1,7 @@
 #ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 
 function Stop-Function {
-<#
+    <#
     .SYNOPSIS
         Function that interrupts a function.
     
@@ -164,8 +164,7 @@ function Stop-Function {
     #region Exception Transforms
     if ($Exception) {
         $Exception = Convert-DbaMessageException -Exception $Exception -FunctionName $FunctionName -ModuleName $ModuleName
-    }
-    elseif ($ErrorRecord) {
+    } elseif ($ErrorRecord) {
         $int = 0
         while ($int -lt $ErrorRecord.Length) {
             $tempException = Convert-DbaMessageException -Exception $ErrorRecord[$int].Exception -FunctionName $FunctionName -ModuleName $ModuleName
@@ -190,16 +189,14 @@ function Stop-Function {
                 if ($record.CategoryInfo.Category) { $Category = $record.CategoryInfo.Category }
                 $records += New-Object System.Management.Automation.ErrorRecord($newException, "$($ModuleName)_$FunctionName", $Category, $Target)
             }
-        }
-        else {
+        } else {
             $records += New-Object System.Management.Automation.ErrorRecord($Exception, "$($ModuleName)_$FunctionName", $Category, $Target)
         }
         
         # Manage Debugging
         if ($EnableException) { Write-Message -Level Warning -Message $Message -EnableException $EnableException -FunctionName $FunctionName -Target $Target -ErrorRecord $records -Tag $Tag -ModuleName $ModuleName -OverrideExceptionMessage:$OverrideExceptionMessage -File $File -Line $Line 3>$null }
         else { Write-Message -Level Warning -Message $Message -EnableException $EnableException -FunctionName $FunctionName -Target $Target -ErrorRecord $records -Tag $Tag -ModuleName $ModuleName -OverrideExceptionMessage:$OverrideExceptionMessage -File $File -Line $Line }
-    }
-    else {
+    } else {
         $exception = New-Object System.Exception($Message)
         $records += New-Object System.Management.Automation.ErrorRecord($Exception, "dbatools_$FunctionName", $Category, $Target)
         
@@ -236,8 +233,7 @@ function Stop-Function {
         if ($Continue) {
             if ($ContinueLabel) { continue $ContinueLabel }
             else { Continue }
-        }
-        else {
+        } else {
             # Make sure the function knows it should be stopping
             Set-Variable -Name "__dbatools_interrupt_function_78Q9VPrM6999g6zo24Qn83m09XF56InEn4hFrA8Fwhu5xJrs6r" -Scope 1 -Value $true
 
@@ -246,3 +242,4 @@ function Stop-Function {
     }
     #endregion Non-EnableException Mode
 }
+

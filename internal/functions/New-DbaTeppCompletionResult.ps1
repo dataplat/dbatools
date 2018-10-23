@@ -77,3 +77,4 @@ function global:New-DbaTeppCompletionResult {
 }
 
 (Get-Item Function:\New-DbaTeppCompletionResult).Visibility = "Private"
+

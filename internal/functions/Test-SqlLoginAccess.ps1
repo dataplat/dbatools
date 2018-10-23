@@ -25,11 +25,11 @@ function Test-SqlLoginAccess {
             if (($rows | Measure-Object).Count -eq 0) {
                 return $false
             }
-        }
-        catch {
+        } catch {
             return $false
         }
     }
     return $true
 }
+
 

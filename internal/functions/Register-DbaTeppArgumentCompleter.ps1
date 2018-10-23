@@ -65,8 +65,7 @@ function Register-DbaTeppArgumentCompleter {
 
         if ($null -eq $lowername) {
             $lowername = $p.ToLower()
-        }
-        else {
+        } else {
             $lowername = $lowername.ToLower()
         }
 
@@ -79,10 +78,10 @@ function Register-DbaTeppArgumentCompleter {
 
         if ($script:TEPP) {
             TabExpansionPlusPlus\Register-ArgumentCompleter -CommandName $Command -ParameterName $p -ScriptBlock $scriptBlock
-        }
-        else {
+        } else {
             Register-ArgumentCompleter -CommandName $Command -ParameterName $p -ScriptBlock $scriptBlock
         }
     }
 }
+
 

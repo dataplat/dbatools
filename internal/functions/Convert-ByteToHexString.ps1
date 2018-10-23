@@ -32,3 +32,4 @@ function Convert-ByteToHexString {
     $InputObject | ForEach-Object { $outString += ("{0:X}" -f $_).PadLeft(2, "0") }
     $outString
 }
+

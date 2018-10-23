@@ -19,12 +19,10 @@ function Get-SqlDefaultPaths {
     try {
         if ($SqlInstance -isnot [Microsoft.SqlServer.Management.Smo.SqlSmoObject]) {
             $Server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
-        }
-        else {
+        } else {
             $server = $SqlInstance
         }
-    }
-    catch {
+    } catch {
         Write-Message -Lvel Warning -Message "Cannot connect to $SqlInstance"
         break
     }
@@ -40,8 +38,7 @@ function Get-SqlDefaultPaths {
             $sql = "select SERVERPROPERTY('InstanceDefaultLogPath') as physical_name"
             $filepath = $server.ConnectionContext.ExecuteScalar($sql)
         }
-    }
-    else {
+    } else {
         # First attempt
         $filepath = $server.DefaultFile
         # Second attempt
@@ -57,4 +54,5 @@ function Get-SqlDefaultPaths {
     $filepath = $filepath.TrimEnd("\")
     return $filepath
 }
+
 

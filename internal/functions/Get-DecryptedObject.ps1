@@ -1,5 +1,5 @@
 function Get-DecryptedObject {
-            <#
+    <#
             .SYNOPSIS
                 Internal function.
 
@@ -25,8 +25,7 @@ function Get-DecryptedObject {
     $sql = "SELECT substring(crypt_property,9,len(crypt_property)-8) as smk FROM sys.key_encryptions WHERE key_id=102 and (thumbprint=0x03 or thumbprint=0x0300000001)"
     try {
         $smkbytes = $server.Query($sql).smk
-    }
-    catch {
+    } catch {
         Stop-Function -Message "Can't execute query on $sourcename" -Target $server -ErrorRecord $_
         return
     }
@@ -43,8 +42,7 @@ function Get-DecryptedObject {
             $entropy = (Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Microsoft SQL Server\$serviceInstanceId\Security\" -ErrorAction Stop).Entropy
             return $entropy
         }
-    }
-    catch {
+    } catch {
         Stop-Function -Message "Can't access registry keys on $sourceName. Do you have administrative access to the Windows registry on $SqlInstance Otherwise, we're out of ideas." -Target $source
         return
     }
@@ -58,8 +56,7 @@ function Get-DecryptedObject {
             $serviceKey = [System.Security.Cryptography.ProtectedData]::Unprotect($smkbytes, $Entropy, 'LocalMachine')
             return $serviceKey
         }
-    }
-    catch {
+    } catch {
         Stop-Function -Message "Can't unprotect registry data on $sourcename. Do you have administrative access to the Windows registry on $sourcename? Otherwise, we're out of ideas." -Target $source
         return
     }
@@ -77,13 +74,12 @@ function Get-DecryptedObject {
     if ($serviceKey.Length -eq 16) {
         $decryptor = New-Object System.Security.Cryptography.TripleDESCryptoServiceProvider
         $ivlen = 8
-    }
-    elseif ($serviceKey.Length -eq 32) {
+    } elseif ($serviceKey.Length -eq 32) {
         $decryptor = New-Object System.Security.Cryptography.AESCryptoServiceProvider
         $ivlen = 16
     }
     
-            <#
+    <#
                 Query link server password information from the Db.
                 Remove header from pwdhash, extract IV (as iv) and ciphertext (as pass)
                 Ignore links with blank credentials (integrated auth ?)
@@ -94,8 +90,7 @@ function Get-DecryptedObject {
     try {
         if (-not $server.IsClustered) {
             $connString = "Server=ADMIN:$sourceNetBios\$instance;Trusted_Connection=True"
-        }
-        else {
+        } else {
             $dacEnabled = $server.Configuration.RemoteDacConnectionsEnabled.ConfigValue
             
             if ($dacEnabled -eq $false) {
@@ -108,8 +103,7 @@ function Get-DecryptedObject {
             
             $connString = "Server=ADMIN:$sourceName;Trusted_Connection=True"
         }
-    }
-    catch {
+    } catch {
         Stop-Function -Message "Failure enabling DAC on $sourcename" -Target $source -ErrorRecord $_
     }
     
@@ -147,8 +141,7 @@ function Get-DecryptedObject {
             $conn.Dispose()
             return $dt
         }
-    }
-    catch {
+    } catch {
         Stop-Function -Message "Can't establish local DAC connection on $sourcename." -Target $server -ErrorRecord $_
         return
     }
@@ -159,8 +152,7 @@ function Get-DecryptedObject {
                 Write-Message -Level Verbose -Message "Setting DAC config back to 0."
                 $server.Configuration.RemoteDacConnectionsEnabled.ConfigValue = $false
                 $server.Configuration.Alter()
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Can't establish local DAC connection on $sourcename" -Target $server -ErrorRecord $_
                 return
             }
@@ -190,15 +182,15 @@ function Get-DecryptedObject {
         if ($Type -eq "LinkedServer") {
             $name = $result.srvname
             $identity = $result.Name
-        }
-        else {
+        } else {
             $name = $result.name
             $identity = $result.credential_identity
         }
         [pscustomobject]@{
-            Name = $name
+            Name     = $name
             Identity = $identity
             Password = $encode.GetString($decrypted)
         }
     }
 }
+
