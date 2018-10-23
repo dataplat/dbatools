@@ -264,8 +264,8 @@ go
             $results.BackupPath | Should -BeLike "$DestBackupDir\master\$(($script:instance1).split('\')[1])\Full\master-Full.bak"
         }
     }
-
-    if ($env:azurepasswd) {
+    # skip for now
+    if ($env:azurepasswd1) {
         Context "Azure works" {
             BeforeAll {
                 $server = Connect-DbaInstance -SqlInstance $script:instance2
