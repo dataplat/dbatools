@@ -54,7 +54,7 @@ function Get-DbaStub {
         $temppath = Join-Path $TestDrive 'somefile.ps1'
         Set-Content -Value $content -Path $temppath
         Invoke-DbatoolsFormatter -Path $temppath
-        $newcontent = [System.IO.File]::ReadAllLines($temppath)
+        $newcontent = [System.IO.File]::ReadAllLines($temppath) -Join "`r`n"
         It "should format things according to dbatools standards" {
             $newcontent | Should -Be $wantedContent
         }
