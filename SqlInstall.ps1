@@ -64,7 +64,7 @@
         [string]$LogVolume, 
         [string]$TempVolume, 
         [string]$BackupVolume,
-        [ValidateSet("Yes", "No")][string]$PerformVolumeMaintenance,
+        [ValidateSet("Yes", "No")][string]$PerformVolumeMaintenance
     )
 
     $configini = Get-Content "$script:PSModuleRoot\bin\installtemplate\$version.ini"
@@ -210,7 +210,7 @@
         $SetupFile = $SetupFile -replace "\\$"
         $SetupFile = $SetupFile -replace ":$"
     }
-    
+
     IF ($SetupFile.Length -eq 1) {
         $SetupFile = $SetupFile + ':\SQLEXPR_x64_ENU\SETUP.EXE'
         Write-Message -Level Verbose -Message 'Setup will start from ' + $SetupFile
