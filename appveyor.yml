@@ -22,7 +22,7 @@ cache:
   - C:\Program Files\WindowsPowerShell\Modules\PSScriptAnalyzer -> appveyor.yml
   - C:\Program Files\WindowsPowerShell\Modules\Pester -> appveyor.yml
 
-clone_depth: 50
+shallow_clone: true
 
 # Set build info
 environment:

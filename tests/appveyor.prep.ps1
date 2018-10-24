@@ -9,11 +9,16 @@ choco install codecov | Out-Null
 
 #Get PSScriptAnalyzer (to check warnings)
 Write-Host -Object "appveyor.prep: Install PSScriptAnalyzer" -ForegroundColor DarkGreen
-#Install-Module -Name PSScriptAnalyzer -Force -SkipPublisherCheck | Out-Null
+if (-not(Test-Path 'C:\Program Files\WindowsPowerShell\Modules\PSScriptAnalyzer\1.17.1')) {
+    Install-Module -Name PSScriptAnalyzer -Force -SkipPublisherCheck | Out-Null
+}
 
 #Get Pester (to run tests) - choco isn't working onall scenarios, weird
 Write-Host -Object "appveyor.prep: Install Pester" -ForegroundColor DarkGreen
-#Install-Module -Name Pester -Force -SkipPublisherCheck | Out-Null
+if (-not(Test-Path 'C:\Program Files\WindowsPowerShell\Modules\Pester\4.4.2')) {
+    Install-Module -Name Pester -Force -SkipPublisherCheck | Out-Null
+}
+
 
 #Get opencover.portable (to run DLL tests)
 Write-Host -Object "appveyor.prep: Install opencover.portable" -ForegroundColor DarkGreen
