@@ -24,8 +24,11 @@ $TestsRunGroups = @{
         'Export-DbaAvailabilityGroup',
         'Get-DbaCpuRingBuffer',
         'Get-DbaLatchStatistic',
+        # these work but fail too often on appveyor
         'Remove-DbaAvailabilityGroup',
-        'Remove-DbaAgDatabase'
+        'Remove-DbaAgDatabase',
+        'New-DbaAvailabilityGroup',
+        'Export-DbaDacPackage'
     )
     # do not run everywhere
     "disabled"                  = @()
