@@ -102,6 +102,7 @@ function New-DbaXESmartReplay {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
             if ($Pscmdlet.ShouldProcess($instance, "Creating new XESmartReply")) {
+                Write-Message -Message "Making a New XE SmartReplay for $Event against $instance running on $($server.name)" -Level Verbose
                 try {
                     $replay = New-Object -TypeName XESmartTarget.Core.Responses.ReplayResponse
                     $replay.ServerName = $instance

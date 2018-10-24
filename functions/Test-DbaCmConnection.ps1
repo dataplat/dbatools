@@ -85,7 +85,8 @@ function Test-DbaCmConnection {
     begin {
         #region Configuration Values
         $disable_cache = Get-DbatoolsConfigValue -Name "ComputerManagement.Cache.Disable.All" -Fallback $false
-        $disable_badcredentialcache = Get-DbatoolsConfigValue -Name "ComputerManagement.Cache.Disable.BadCredentialList" -Fallback $false
+        #Variable marked as unused by PSScriptAnalyzer
+        #$disable_badcredentialcache = Get-DbatoolsConfigValue -Name "ComputerManagement.Cache.Disable.BadCredentialList" -Fallback $false
         #endregion Configuration Values
 
         #region Helper Functions
@@ -100,7 +101,8 @@ function Test-DbaCmConnection {
             )
 
             try {
-                $os = $ComputerName.Connection.GetCimRMInstance($Credential, "Win32_OperatingSystem", "root\cimv2")
+                #Variable $os marked as unused by PSScriptAnalyzer replace with $null to catch output
+                $null = $ComputerName.Connection.GetCimRMInstance($Credential, "Win32_OperatingSystem", "root\cimv2")
 
                 New-Object PSObject -Property @{
                     Success       = "Success"
@@ -135,7 +137,8 @@ function Test-DbaCmConnection {
             )
 
             try {
-                $os = $ComputerName.Connection.GetCimDComInstance($Credential, "Win32_OperatingSystem", "root\cimv2")
+                #Variable $os marked as unused by PSScriptAnalyzer replace with $null to catch output
+                $null = $ComputerName.Connection.GetCimDComInstance($Credential, "Win32_OperatingSystem", "root\cimv2")
 
                 New-Object PSObject -Property @{
                     Success       = "Success"
@@ -170,7 +173,8 @@ function Test-DbaCmConnection {
             )
 
             try {
-                $os = Get-WmiObject -ComputerName $ComputerName -Credential $Credential -Class Win32_OperatingSystem -ErrorAction Stop
+                #Variable $os marked as unused by PSScriptAnalyzer replace with $null to catch output
+                $null = Get-WmiObject -ComputerName $ComputerName -Credential $Credential -Class Win32_OperatingSystem -ErrorAction Stop
                 New-Object PSObject -Property @{
                     Success       = "Success"
                     Timestamp     = Get-Date
@@ -208,7 +212,8 @@ function Test-DbaCmConnection {
                     ErrorAction  = 'Stop'
                 }
                 if ($Credential) { $parameters["Credential"] = $Credential }
-                $os = Invoke-Command @parameters
+                #Variable $os marked as unused by PSScriptAnalyzer replace with $null to catch output
+                $null = Invoke-Command @parameters
 
                 New-Object PSObject -Property @{
                     Success       = "Success"
@@ -239,7 +244,8 @@ function Test-DbaCmConnection {
             #endregion Setup connection object
 
             #region Handle credentials
-            $BadCredentialsFound = $false
+            #Variable marked as unused by PSScriptAnalyzer
+            #$BadCredentialsFound = $false
             if ($con.DisableBadCredentialCache) { $con.KnownBadCredentials.Clear() }
             elseif ($con.IsBadCredential($Credential) -and (-not $Force)) {
                 Stop-Function -Message "[$Computer] The credentials supplied are on the list of known bad credentials, skipping. Use -Force to override this." -Continue -Category InvalidArgument -Target $Computer

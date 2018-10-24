@@ -111,7 +111,8 @@ function Enable-DbaForceNetworkEncryption {
             $scriptblock = {
                 $regpath = "Registry::HKEY_LOCAL_MACHINE\$($args[0])\MSSQLServer\SuperSocketNetLib"
                 $cert = (Get-ItemProperty -Path $regpath -Name Certificate).Certificate
-                $oldvalue = (Get-ItemProperty -Path $regpath -Name ForceEncryption).ForceEncryption
+                #Variable marked as unused by PSScriptAnalyzer
+                #$oldvalue = (Get-ItemProperty -Path $regpath -Name ForceEncryption).ForceEncryption
                 Set-ItemProperty -Path $regpath -Name ForceEncryption -Value $true
                 $forceencryption = (Get-ItemProperty -Path $regpath -Name ForceEncryption).ForceEncryption
 

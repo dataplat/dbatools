@@ -78,7 +78,8 @@ function Invoke-DbaXeReplay {
     )
 
     begin {
-        $querycolumns = 'statement', 'batch_text'
+        #Variable marked as unused by PSScriptAnalyzer
+        #$querycolumns = 'statement', 'batch_text'
         $timestamp = (Get-Date -Format yyyyMMddHHmm)
         $temp = ([System.IO.Path]::GetTempPath()).TrimEnd("\")
         $filename = "$temp\dbatools-replay-$timestamp.sql"
@@ -115,6 +116,7 @@ function Invoke-DbaXeReplay {
 
 
             if ($Raw) {
+                Write-Message -Message "Invoking XEReplay against $instance running on $($server.name) with raw output" -Level Verbose
                 if (Test-Bound -ParameterName SqlCredential) {
                     . $sqlcmd -S $instance -i $filename -U $SqlCredential.Username -P $SqlCredential.GetNetworkCredential().Password
                     continue
@@ -124,6 +126,7 @@ function Invoke-DbaXeReplay {
                 }
             }
 
+            Write-Message -Message "Invoking XEReplay against $instance running on $($server.name)" -Level Verbose
             if (Test-Bound -ParameterName SqlCredential) {
                 $output = . $sqlcmd -S $instance -i $filename -U $SqlCredential.Username -P $SqlCredential.GetNetworkCredential().Password
             } else {

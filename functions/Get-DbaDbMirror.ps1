@@ -69,7 +69,7 @@ function Get-DbaDbMirror {
                     4 { "PendingFailover" }
                     5 { "Synchronized" }
                 }
-                
+
                 foreach ($db in $witnessdb) {
                     Add-Member -InputObject $db -Force -MemberType NoteProperty -Name MirroringPartner -Value $witness.principal_server_name
                     Add-Member -InputObject $db -Force -MemberType NoteProperty -Name MirroringSafetyLevel -Value $witness.safety_level_desc
