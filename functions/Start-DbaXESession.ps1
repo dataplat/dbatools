@@ -1,6 +1,6 @@
-﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Start-DbaXESession {
-<#
+    <#
     .SYNOPSIS
         Starts Extended Events sessions.
 
@@ -68,7 +68,7 @@ function Start-DbaXESession {
         Starts the sessions returned from the Get-DbaXESession function.
 
 #>
-    [CmdletBinding(SupportsShouldProcess,DefaultParameterSetName = 'Session')]
+    [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = 'Session')]
     param (
         [parameter(Position = 1, Mandatory, ParameterSetName = 'Session')]
         [parameter(Position = 1, Mandatory, ParameterSetName = 'All')]
@@ -103,13 +103,11 @@ function Start-DbaXESession {
                     if ($Pscmdlet.ShouldProcess("$instance", "Starting XEvent Session $session")) {
                         try {
                             $xe.Start()
-                        }
-                        catch {
+                        } catch {
                             Stop-Function -Message "Could not start XEvent Session on $instance." -Target $session -ErrorRecord $_ -Continue
                         }
                     }
-                }
-                else {
+                } else {
                     Write-Message -Level Warning -Message "$session on $instance is already running."
                 }
                 Get-DbaXESession -SqlInstance $xe.Parent -Session $session
@@ -147,16 +145,14 @@ function Start-DbaXESession {
     process {
         if ($InputObject) {
             Start-XESessions $InputObject
-        }
-        else {
+        } else {
             foreach ($instance in $SqlInstance) {
                 $xeSessions = Get-DbaXESession -SqlInstance $instance -SqlCredential $SqlCredential
 
                 # Filter xeSessions based on parameters
                 if ($Session) {
                     $xeSessions = $xeSessions | Where-Object { $_.Name -in $Session }
-                }
-                elseif ($AllSessions) {
+                } elseif ($AllSessions) {
                     $systemSessions = @('AlwaysOn_health', 'system_health', 'telemetry_xevents')
                     $xeSessions = $xeSessions | Where-Object { $_.Name -notin $systemSessions }
                 }
@@ -172,3 +168,4 @@ function Start-DbaXESession {
         }
     }
 }
+

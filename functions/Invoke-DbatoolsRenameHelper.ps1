@@ -1,4 +1,4 @@
-﻿function Invoke-DbatoolsRenameHelper {
+function Invoke-DbatoolsRenameHelper {
     <#
     .SYNOPSIS
         Older dbatools command names have been changed. This script helps keep up.
@@ -83,3 +83,4 @@
         }
     }
 }
+

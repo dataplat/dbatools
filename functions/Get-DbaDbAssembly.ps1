@@ -1,6 +1,6 @@
 #ValidationTags#Messaging,FlowControl,CodeStyle#
 function Get-DbaDbAssembly {
-<#
+    <#
     .SYNOPSIS
         Gets SQL Database Assembly information for each instance(s) of SQL Server.
 
@@ -54,8 +54,7 @@ function Get-DbaDbAssembly {
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -69,8 +68,7 @@ function Get-DbaDbAssembly {
 
                         Select-DefaultView -InputObject $assembly -Property ComputerName, InstanceName, SqlInstance, ID, Name, Owner, 'AssemblySecurityLevel as SecurityLevel', CreateDate, IsSystemObject, Version
                     }
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Issue pulling assembly information" -Target $assembly -ErrorRecord $_ -Continue
                 }
             }
@@ -80,3 +78,5 @@ function Get-DbaDbAssembly {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-DbaDatabaseAssembly
     }
 }
+
+

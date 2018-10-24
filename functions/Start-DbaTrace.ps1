@@ -1,6 +1,6 @@
-﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Start-DbaTrace {
-<#
+    <#
     .SYNOPSIS
         Starts SQL Server traces
 
@@ -88,8 +88,7 @@ function Start-DbaTrace {
                 try {
                     $server.Query($sql)
                     Get-DbaTrace -SqlInstance $server -Id $traceid
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Failure" -ErrorRecord $_ -Target $server -Continue
                     return
                 }
@@ -97,3 +96,4 @@ function Start-DbaTrace {
         }
     }
 }
+

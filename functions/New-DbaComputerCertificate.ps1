@@ -1,6 +1,6 @@
-﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function New-DbaComputerCertificate {
-<#
+    <#
     .SYNOPSIS
         Creates a new computer certificate useful for Forcing Encryption
 
@@ -205,8 +205,7 @@ function New-DbaComputerCertificate {
                         Computer = $ca | ForEach-Object { $_.DNSHostName }
                     }
                 }
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Cannot access Active Directory or find the Certificate Authority" -ErrorRecord $_
                 return
             }
@@ -236,19 +235,16 @@ function New-DbaComputerCertificate {
                 if ($ClusterInstanceName) {
                     if ($ClusterInstanceName -notmatch "\.") {
                         $fqdn = "$ClusterInstanceName.$env:USERDNSDOMAIN"
-                    }
-                    else {
+                    } else {
                         $fqdn = $ClusterInstanceName
                     }
-                }
-                else {
+                } else {
                     $resolved = Resolve-DbaNetworkName -ComputerName $computer.ComputerName -WarningAction SilentlyContinue
 
                     if (!$resolved) {
                         $fqdn = "$ComputerName.$env:USERDNSDOMAIN"
                         Write-Message -Level Warning -Message "Server name cannot be resolved. Guessing it's $fqdn"
-                    }
-                    else {
+                    } else {
                         $fqdn = $resolved.fqdn
                     }
                 }
@@ -263,8 +259,7 @@ function New-DbaComputerCertificate {
                 if (Test-Path($certDir)) {
                     Write-Message -Level Output -Message "Deleting files from $certDir"
                     $null = Remove-Item "$certDir\*.*"
-                }
-                else {
+                } else {
                     Write-Message -Level Output -Message "Creating $certDir"
                     $null = New-Item -Path $certDir -ItemType Directory -Force
                 }
@@ -295,8 +290,7 @@ function New-DbaComputerCertificate {
                 Add-Content $certCfg "ProviderType = 12"
                 if ($SelfSigned) {
                     Add-Content $certCfg "RequestType = Cert"
-                }
-                else {
+                } else {
                     Add-Content $certCfg "RequestType = PKCS10"
                 }
                 Add-Content $certCfg "KeyUsage = 0xa0"
@@ -319,8 +313,7 @@ function New-DbaComputerCertificate {
                     if ($computer.IsLocalHost) {
                         $storedCert | Select-Object * | Select-DefaultView -Property FriendlyName, DnsNameList, Thumbprint, NotBefore, NotAfter, Subject, Issuer
                     }
-                }
-                else {
+                } else {
                     if ($PScmdlet.ShouldProcess("local", "Submitting certificate request for $computer to $CaServer\$CaName")) {
                         Write-Message -Level Output -Message "certreq -submit -config `"$CaServer\$CaName`" -attrib $certTemplate $certCsr $certCrt $certPfx"
                         $submit = certreq -submit -config ""$CaServer\$CaName"" -attrib $certTemplate $certCsr $certCrt $certPfx
@@ -332,8 +325,7 @@ function New-DbaComputerCertificate {
                         $cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2
                         $cert.Import($certCrt, $null, [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::DefaultKeySet)
                         $storedCert = Get-ChildItem "Cert:\$store\$folder" -Recurse | Where-Object { $_.Thumbprint -eq $cert.Thumbprint }
-                    }
-                    elseif ($submit) {
+                    } elseif ($submit) {
                         Write-Message -Level Warning -Message "Something went wrong"
                         Write-Message -Level Warning -Message "$create"
                         Write-Message -Level Warning -Message "$submit"
@@ -376,8 +368,7 @@ function New-DbaComputerCertificate {
                     try {
                         Invoke-Command2 -ComputerName $computer -Credential $Credential -ArgumentList $certdata, $Password, $Store, $Folder -ScriptBlock $scriptblock -ErrorAction Stop |
                             Select-DefaultView -Property DnsNameList, Thumbprint, NotBefore, NotAfter, Subject, Issuer
-                    }
-                    catch {
+                    } catch {
                         Stop-Function -Message "Issue importing new cert on $computer" -ErrorRecord $_ -Target $computer -Continue
                     }
                 }
@@ -385,11 +376,11 @@ function New-DbaComputerCertificate {
             if ($PScmdlet.ShouldProcess("local", "Removing all files from $certDir")) {
                 try {
                     Remove-Item -Force -Recurse $certDir -ErrorAction SilentlyContinue
-                }
-                catch {
+                } catch {
                     Stop-Function "Isue removing files from $certDir" -Target $certDir -ErrorRecord $_
                 }
             }
         }
     }
 }
+

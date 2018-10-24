@@ -1,6 +1,6 @@
-﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaPfDataCollectorSetTemplate {
-<#
+    <#
     .SYNOPSIS
         Parses Perf Monitor templates. Defaults to parsing templates in the dbatools template repository (\bin\perfmontemplates\).
 
@@ -71,8 +71,7 @@ function Get-DbaPfDataCollectorSetTemplate {
             foreach ($file in $files) {
                 try {
                     $xml = [xml](Get-Content $file)
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Failure" -ErrorRecord $_ -Target $file -Continue
                 }
 
@@ -92,8 +91,7 @@ function Get-DbaPfDataCollectorSetTemplate {
                                 File        = $file.Name
                             } | Select-DefaultView -ExcludeProperty File, Path
                         }
-                    }
-                    else {
+                    } else {
                         [pscustomobject]@{
                             Name        = $dataset.name
                             Source      = $meta.Source
@@ -108,3 +106,4 @@ function Get-DbaPfDataCollectorSetTemplate {
         }
     }
 }
+

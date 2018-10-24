@@ -1,6 +1,6 @@
-﻿#ValidationTags#Messaging#
+#ValidationTags#Messaging#
 function Copy-DbaSsisCatalog {
-<#
+    <#
     .SYNOPSIS
         Copy-DbaSsisCatalog migrates Folders, SSIS projects, and environments from one SQL Server to another.
 
@@ -112,14 +112,12 @@ function Copy-DbaSsisCatalog {
                 foreach ($service in $result) {
                     if (!$service.State -eq "Running") {
                         Write-Message -Level Warning -Message "Service $($service.DisplayName) was found on the destination, but is currently not running."
-                    }
-                    else {
+                    } else {
                         Write-Message -Level Verbose -Message "Service $($service.DisplayName) was found running on the destination."
                         $running = $true
                     }
                 }
-            }
-            else {
+            } else {
                 throw "No Integration Services service was found on the destination, please ensure the feature is installed and running."
             }
         }
@@ -149,15 +147,12 @@ function Copy-DbaSsisCatalog {
                     if ($deployedProject.Status -ne "Success") {
                         Stop-Function -Message "An error occurred deploying project $Project." -Target $Project -Continue
                     }
-                }
-                else {
+                } else {
                     Stop-Function -Message "Failed deploying $Project from folder $Folder." -Target $Project -Continue
                 }
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failed to deploy project." -Target $Project -ErrorRecord $_
-            }
-            finally {
+            } finally {
                 if ($sqlConn.State -eq "Open") {
                     $sqlConn.Close()
                 }
@@ -211,8 +206,7 @@ function Copy-DbaSsisCatalog {
                 foreach ($var in $srcEnv.Variables) {
                     if ($var.Value.ToString() -eq "") {
                         $finalValue = ""
-                    }
-                    else {
+                    } else {
                         $finalValue = $var.Value
                     }
                     $targetEnv.Variables.Add($var.Name, $var.Type, $finalValue, $var.Sensitive, $var.Description)
@@ -239,8 +233,7 @@ function Copy-DbaSsisCatalog {
                         throw "Validation error, passwords entered do not match."
                     }
                     $plainTextPass = $plainTextPass1
-                }
-                else {
+                } else {
                     $plainTextPass = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($Password))
                 }
 
@@ -254,16 +247,14 @@ function Copy-DbaSsisCatalog {
 
         try {
             $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -MinimumVersion 11
-        }
-        catch {
+        } catch {
             Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Source
             return
         }
 
         try {
             $sourceSSIS = New-Object "$ISNamespace.IntegrationServices" $sourceServer
-        }
-        catch {
+        } catch {
             Stop-Function -Message "There was an error connecting to the source integration services." -Target $sourceServer -ErrorRecord $_
             return
         }
@@ -280,22 +271,19 @@ function Copy-DbaSsisCatalog {
         foreach ($destinstance in $Destination) {
             try {
                 $destinationConnection = Connect-SqlInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential -MinimumVersion 1
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
             }
 
             try {
                 Get-RemoteIntegrationService -Computer $destinstance
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "An error occurred when checking the destination for Integration Services. Is Integration Services installed?" -Target $destinstance -ErrorRecord $_
             }
 
             try {
                 $destinationSSIS = New-Object "$ISNamespace.IntegrationServices" $destinationConnection
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "There was an error connecting to the destination integration services." -Target $destinationCon -ErrorRecord $_
             }
 
@@ -333,8 +321,7 @@ function Copy-DbaSsisCatalog {
                         }
                         $destinationConnection.Configuration.Alter()
                     }
-                }
-                else {
+                } else {
                     Write-Message -Level Verbose -Message "SQL CLR configuration option is already enabled at the destination."
                 }
                 if ($Pscmdlet.ShouldProcess($destinstance, "Create destination SSISDB Catalog")) {
@@ -352,16 +339,14 @@ function Copy-DbaSsisCatalog {
                                 return
                             }
                         }
-                    }
-                    else {
+                    } else {
                         New-SSISDBCatalog -Password $CreateCatalogPassword
                     }
 
                     $destinationSSIS.Refresh()
                     $destinationCatalog = $destinationSSIS.Catalogs | Where-Object { $_.Name -eq "SSISDB" }
                     $destinationFolders = $destinationCatalog.Folders
-                }
-                else {
+                } else {
                     throw "The destination SSISDB catalog does not exist."
                 }
             }
@@ -371,57 +356,47 @@ function Copy-DbaSsisCatalog {
                     if ($destinationFolders.Name -contains $folder) {
                         if (!$force) {
                             Write-Message -Level Warning -Message "Integration services catalog folder $folder exists at destination. Use -Force to drop and recreate."
-                        }
-                        else {
+                        } else {
                             if ($Pscmdlet.ShouldProcess($destinstance, "Dropping folder $folder and recreating")) {
                                 try {
                                     New-CatalogFolder -Folder $srcFolder.Name -Description $srcFolder.Description -Force
-                                }
-                                catch {
+                                } catch {
                                     Stop-Function -Message "Issue dropping folder" -Target $folder -ErrorRecord $_
                                 }
 
                             }
                         }
-                    }
-                    else {
+                    } else {
                         if ($Pscmdlet.ShouldProcess($destinstance, "Creating folder $folder")) {
                             try {
                                 New-CatalogFolder -Folder $srcFolder.Name -Description $srcFolder.Description
-                            }
-                            catch {
+                            } catch {
                                 Stop-Function -Message "Issue creating folder" -Target $folder -ErrorRecord $_
                             }
                         }
                     }
-                }
-                else {
+                } else {
                     throw "The source folder provided does not exist in the source Integration Services catalog."
                 }
-            }
-            else {
+            } else {
                 foreach ($srcFolder in $sourceFolders) {
                     if ($destinationFolders.Name -notcontains $srcFolder.Name) {
                         if ($Pscmdlet.ShouldProcess($destinstance, "Creating folder $($srcFolder.Name)")) {
                             try {
                                 New-CatalogFolder -Folder $srcFolder.Name -Description $srcFolder.Description
-                            }
-                            catch {
+                            } catch {
                                 Stop-Function -Message "Issue creating folder" -Target $srcFolder -ErrorRecord $_ -Continue
                             }
                         }
-                    }
-                    else {
+                    } else {
                         if (!$force) {
                             Write-Message -Level Warning -Message "Integration services catalog folder $($srcFolder.Name) exists at destination. Use -Force to drop and recreate."
                             continue
-                        }
-                        else {
+                        } else {
                             if ($Pscmdlet.ShouldProcess($destinstance, "Dropping folder $($srcFolder.Name) and recreating")) {
                                 try {
                                     New-CatalogFolder -Folder $srcFolder.Name -Description $srcFolder.Description -Force
-                                }
-                                catch {
+                                } catch {
                                     Stop-Function -Message "Issue dropping folder" -Target $srcFolder -ErrorRecord $_
                                 }
                             }
@@ -434,8 +409,7 @@ function Copy-DbaSsisCatalog {
             if ($Pscmdlet.ShouldProcess($destinstance, "Refresh folders for project deployment")) {
                 try {
                     $destinationFolders.Alter()
-                }
-                catch {
+                } catch {
                     # Sometimes it says Alter() doesn't exist
                 }
                 $destinationFolders.Refresh()
@@ -451,28 +425,24 @@ function Copy-DbaSsisCatalog {
                 $folderDeploy = $sourceFolders | Where-Object { $_.Projects.Name -eq $project }
                 if (!$folderDeploy) {
                     throw "The project $project cannot be found in the source Integration Services catalog."
-                }
-                else {
+                } else {
                     foreach ($f in $folderDeploy) {
                         if ($Pscmdlet.ShouldProcess($destinstance, "Deploying project $project from folder $($f.Name)")) {
                             try {
                                 Invoke-ProjectDeployment -Folder $f.Name -Project $project
-                            }
-                            catch {
+                            } catch {
                                 Stop-Function -Message "Issue deploying project" -Target $project -ErrorRecord $_
                             }
                         }
                     }
                 }
-            }
-            else {
+            } else {
                 foreach ($curFolder in $sourceFolders) {
                     foreach ($proj in $curFolder.Projects) {
                         if ($Pscmdlet.ShouldProcess($destinstance, "Deploying project $($proj.Name) from folder $($curFolder.Name)")) {
                             try {
                                 Invoke-ProjectDeployment -Project $proj.Name -Folder $curFolder.Name
-                            }
-                            catch {
+                            } catch {
                                 Stop-Function -Message "Issue deploying project" -Target $proj -ErrorRecord $_
                             }
                         }
@@ -484,29 +454,24 @@ function Copy-DbaSsisCatalog {
                 $folderDeploy = $sourceFolders | Where-Object { $_.Environments.Name -eq $environment }
                 if (!$folderDeploy) {
                     throw "The environment $environment cannot be found in the source Integration Services catalog."
-                }
-                else {
+                } else {
                     foreach ($f in $folderDeploy) {
                         if ($destinationFolders[$f.Name].Environments.Name -notcontains $environment) {
                             if ($Pscmdlet.ShouldProcess($destinstance, "Deploying environment $environment from folder $($f.Name)")) {
                                 try {
                                     New-FolderEnvironment -Folder $f.Name -Environment $environment
-                                }
-                                catch {
+                                } catch {
                                     Stop-Function -Message "Issue deploying environment" -Target $environment -ErrorRecord $_
                                 }
                             }
-                        }
-                        else {
+                        } else {
                             if (!$force) {
                                 Write-Message -Level Warning -Message "Integration services catalog environment $environment exists in folder $($f.Name) at destination. Use -Force to drop and recreate."
-                            }
-                            else {
+                            } else {
                                 If ($Pscmdlet.ShouldProcess($destinstance, "Dropping existing environment $environment and deploying environment $environment from folder $($f.Name)")) {
                                     try {
                                         New-FolderEnvironment -Folder $f.Name -Environment $environment -Force
-                                    }
-                                    catch {
+                                    } catch {
                                         Stop-Function -Message "Issue dropping existing environment" -Target $environment -ErrorRecord $_
                                     }
                                 }
@@ -514,31 +479,26 @@ function Copy-DbaSsisCatalog {
                         }
                     }
                 }
-            }
-            else {
+            } else {
                 foreach ($curFolder in $sourceFolders) {
                     foreach ($env in $curFolder.Environments) {
                         if ($destinationFolders[$curFolder.Name].Environments.Name -notcontains $env.Name) {
                             if ($Pscmdlet.ShouldProcess($destinstance, "Deploying environment $($env.Name) from folder $($curFolder.Name)")) {
                                 try {
                                     New-FolderEnvironment -Environment $env.Name -Folder $curFolder.Name
-                                }
-                                catch {
+                                } catch {
                                     Stop-Function -Message "Issue deploying environment" -Target $env -ErrorRecord $_
                                 }
                             }
-                        }
-                        else {
+                        } else {
                             if (!$force) {
                                 Write-Message -Level Warning -Message "Integration services catalog environment $($env.Name) exists in folder $($curFolder.Name) at destination. Use -Force to drop and recreate."
                                 continue
-                            }
-                            else {
+                            } else {
                                 if ($Pscmdlet.ShouldProcess($destinstance, "Deploying environment $($env.Name) from folder $($curFolder.Name)")) {
                                     try {
                                         New-FolderEnvironment -Environment $env.Name -Folder $curFolder.Name -Force
-                                    }
-                                    catch {
+                                    } catch {
                                         Stop-Function -Message "Issue deploying environment" -Target $env -ErrorRecord $_
                                     }
                                 }
@@ -553,3 +513,5 @@ function Copy-DbaSsisCatalog {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-SqlSsisCatalog
     }
 }
+
+

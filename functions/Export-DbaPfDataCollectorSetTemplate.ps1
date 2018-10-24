@@ -1,6 +1,6 @@
-﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Export-DbaPfDataCollectorSetTemplate {
-<#
+    <#
     .SYNOPSIS
         Exports a new Data Collector Set XML Template.
 
@@ -83,8 +83,7 @@ function Export-DbaPfDataCollectorSetTemplate {
 
             if ($path.EndsWith(".xml")) {
                 $filename = $path
-            }
-            else {
+            } else {
                 $filename = "$path\$csname.xml"
                 if (-not (Test-Path -Path $path)) {
                     $null = New-Item -Type Directory -Path $path
@@ -96,3 +95,4 @@ function Export-DbaPfDataCollectorSetTemplate {
         }
     }
 }
+

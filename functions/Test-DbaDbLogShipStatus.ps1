@@ -1,5 +1,5 @@
-﻿function Test-DbaDbLogShipStatus {
-<#
+function Test-DbaDbLogShipStatus {
+    <#
     .SYNOPSIS
         Test-DbaDbLogShipStatus returns the status of your log shipping databases
 
@@ -145,8 +145,7 @@ EXEC master.sys.sp_help_log_shipping_monitor"
 
             if ($database) {
                 $where += "DatabaseName IN ('$($Database -join ''',''')')"
-            }
-            elseif ($ExcludeDatabase) {
+            } elseif ($ExcludeDatabase) {
                 $where += "DatabaseName NOT IN ('$($ExcludeDatabase -join ''',''')')"
             }
 
@@ -164,8 +163,7 @@ EXEC master.sys.sp_help_log_shipping_monitor"
             # Try connecting to the instance
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -205,8 +203,7 @@ EXEC master.sys.sp_help_log_shipping_monitor"
                 # Check if there are any results that need to be returned
                 if ($result.Status -notin 0, 1) {
                     $statusDetails += "N/A"
-                }
-                else {
+                } else {
                     # Check the status of the row is true which indicates that something is wrong
                     if ($result.Status) {
                         # Check if the row is part of the primary or secondary instance
@@ -214,22 +211,18 @@ EXEC master.sys.sp_help_log_shipping_monitor"
                             # Check the backup
                             if (-not $result.TimeSinceLastBackup) {
                                 $statusDetails += "The backup has never been executed."
-                            }
-                            elseif ($result.TimeSinceLastBackup -ge $result.BackupThreshold) {
+                            } elseif ($result.TimeSinceLastBackup -ge $result.BackupThreshold) {
                                 $statusDetails += "The backup has not been executed in the last $($result.BackupThreshold) minutes"
                             }
-                        }
-                        elseif (-not $result.IsPrimary) {
+                        } elseif (-not $result.IsPrimary) {
                             # Check the restore
                             if ($null -eq $result.TimeSinceLastRestore) {
                                 $statusDetails += "The restore has never been executed."
-                            }
-                            elseif ($result.TimeSinceLastRestore -ge $result.RestoreThreshold) {
+                            } elseif ($result.TimeSinceLastRestore -ge $result.RestoreThreshold) {
                                 $statusDetails += "The restore has not been executed in the last $($result.RestoreThreshold) minutes"
                             }
                         }
-                    }
-                    else {
+                    } else {
                         $statusDetails += "All OK"
                     }
 
@@ -237,51 +230,47 @@ EXEC master.sys.sp_help_log_shipping_monitor"
                     # Check the time for the backup, copy and restore
                     if ($result.TimeSinceLastBackup -eq [DBNull]::Value) {
                         $lastBackup = "N/A"
-                    }
-                    else {
+                    } else {
                         $lastBackup = (Get-Date).AddMinutes(- $result.TimeSinceLastBackup)
                     }
 
                     if ($result.TimeSinceLastCopy -eq [DBNull]::Value) {
                         $lastCopy = "N/A"
-                    }
-                    else {
+                    } else {
                         $lastCopy = (Get-Date).AddMinutes(- $result.TimeSinceLastCopy)
                     }
 
                     if ($result.TimeSinceLastRestore -eq [DBNull]::Value) {
                         $lastRestore = "N/A"
-                    }
-                    else {
+                    } else {
                         $lastRestore = (Get-Date).AddMinutes(- $result.TimeSinceLastRestore)
                     }
                 }
 
                 # Set up the custom object
                 $object = [PSCustomObject]@{
-                    ComputerName = $server.ComputerName
-                    InstanceName = $server.ServiceName
-                    SqlInstance  = $server.DomainInstanceName
-                    Database     = $result.DatabaseName
-                    InstanceType = switch ($result.IsPrimary) { $true { "Primary Instance" } $false { "Secondary Instance" } }
-                    TimeSinceLastBackup = $lastBackup
-                    LastBackupFile = $result.LastBackupFile
-                    BackupThreshold = $result.BackupThreshold
-                    IsBackupAlertEnabled = $result.IsBackupAlertEnabled
-                    TimeSinceLastCopy = $lastCopy
-                    LastCopiedFile = $result.LastCopiedFile
-                    TimeSinceLastRestore = $lastRestore
-                    LastRestoredFile = $result.LastRestoredFile
-                    LastRestoredLatency = $result.LastRestoredLatency
-                    RestoreThreshold = $result.RestoreThreshold
+                    ComputerName          = $server.ComputerName
+                    InstanceName          = $server.ServiceName
+                    SqlInstance           = $server.DomainInstanceName
+                    Database              = $result.DatabaseName
+                    InstanceType          = switch ($result.IsPrimary) { $true { "Primary Instance" } $false { "Secondary Instance" } }
+                    TimeSinceLastBackup   = $lastBackup
+                    LastBackupFile        = $result.LastBackupFile
+                    BackupThreshold       = $result.BackupThreshold
+                    IsBackupAlertEnabled  = $result.IsBackupAlertEnabled
+                    TimeSinceLastCopy     = $lastCopy
+                    LastCopiedFile        = $result.LastCopiedFile
+                    TimeSinceLastRestore  = $lastRestore
+                    LastRestoredFile      = $result.LastRestoredFile
+                    LastRestoredLatency   = $result.LastRestoredLatency
+                    RestoreThreshold      = $result.RestoreThreshold
                     IsRestoreAlertEnabled = $result.IsRestoreAlertEnabled
-                    Status       = $statusDetails -join ","
+                    Status                = $statusDetails -join ","
                 }
 
                 if ($Simple) {
                     $object | Select-DefaultView -Property SqlInstance, Database, InstanceType, Status
-                }
-                else {
+                } else {
                     $object
                 }
             }
@@ -291,3 +280,4 @@ EXEC master.sys.sp_help_log_shipping_monitor"
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Test-DbaLogShippingStatus
     }
 }
+

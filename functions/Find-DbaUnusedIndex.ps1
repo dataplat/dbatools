@@ -1,5 +1,5 @@
-﻿function Find-DbaUnusedIndex {
-<#
+function Find-DbaUnusedIndex {
+    <#
     .SYNOPSIS
         Find Unused indexes
 
@@ -181,8 +181,7 @@
             if ($IgnoreUptime -ne $true) {
                 Stop-Function -Message "The SQL Service was restarted on $lastRestart, which is not long enough for a solid evaluation."
                 return
-            }
-            else {
+            } else {
                 Write-Message -Level Warning -Message "The SQL Service was restarted on $lastRestart, which is not long enough for a solid evaluation."
             }
         }
@@ -195,7 +194,7 @@
         #>
         if (
             ($server.VersionMajor -eq 11 -and $server.BuildNumber -lt 6537) `
-            -or ($server.VersionMajor -eq 12 -and $server.BuildNumber -lt 5000)
+                -or ($server.VersionMajor -eq 12 -and $server.BuildNumber -lt 5000)
         ) {
             Stop-Function -Message "This SQL version has a known issue. Rebuilding an index clears any existing row entry from sys.dm_db_index_usage_stats for that index.`r`nPlease refer to connect item: https://support.microsoft.com/en-us/help/3160407/fix-sys-dm-db-index-usage-stats-missing-information-after-index-rebuil"
             return
@@ -250,19 +249,16 @@
 
                             if ($Path.Length -gt 0) {
                                 $sqlout | Out-File -FilePath $Path -Append:$Append -NoClobber:$NoClobber
-                            }
-                            else {
+                            } else {
                                 $indexesToDrop
                             }
 
                             $scriptGenerated = $true
                         }
-                    }
-                    else {
+                    } else {
                         Write-Message -Level Output -Message "No Unused indexes found!"
                     }
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Issue gathering indexes" -Category InvalidOperation -ErrorRecord $_ -Target $db
                 }
             }
@@ -273,8 +269,7 @@
             if ($Path.Length -gt 0) {
                 Write-Message -Level Output -Message "Script generated to $Path"
             }
-        }
-        else {
+        } else {
             Write-Message -Level Output -Message "There are no databases to analyse."
         }
     }
@@ -285,3 +280,4 @@
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Get-SqlUnusedIndex
     }
 }
+

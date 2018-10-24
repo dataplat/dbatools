@@ -1,6 +1,6 @@
-﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function New-DbaAgentSchedule {
-<#
+    <#
     .SYNOPSIS
         New-DbaAgentSchedule creates a new schedule in the msdb database.
 
@@ -210,8 +210,7 @@ function New-DbaAgentSchedule {
             if ($Force) {
                 $FrequencyRecurrenceFactor = 1
                 Write-Message -Message "Recurrence factor not set for weekly or monthly interval. Setting it to $FrequencyRecurrenceFactor." -Level Verbose
-            }
-            else {
+            } else {
                 Stop-Function -Message "The recurrence factor $FrequencyRecurrenceFactor (parameter FrequencyRecurrenceFactor) needs to be at least one when using a weekly or monthly interval." -Target $SqlInstance
                 return
             }
@@ -221,8 +220,7 @@ function New-DbaAgentSchedule {
         if (($FrequencySubdayType -in 2, "Seconds", 4, "Minutes") -and (-not ($FrequencySubdayInterval -ge 1 -or $FrequencySubdayInterval -le 59))) {
             Stop-Function -Message "Subday interval $FrequencySubdayInterval must be between 1 and 59 when subday type is 'Seconds' or 'Minutes'" -Target $SqlInstance
             return
-        }
-        elseif (($FrequencySubdayType -eq 8, "Hours") -and (-not ($FrequencySubdayInterval -ge 1 -and $FrequencySubdayInterval -le 23))) {
+        } elseif (($FrequencySubdayType -eq 8, "Hours") -and (-not ($FrequencySubdayInterval -ge 1 -and $FrequencySubdayInterval -le 23))) {
             Stop-Function -Message "Subday interval $FrequencySubdayInterval must be between 1 and 23 when subday type is 'Hours'" -Target $SqlInstance
             return
         }
@@ -327,8 +325,7 @@ function New-DbaAgentSchedule {
             if ($Force) {
                 Write-Message -Message "Parameter FrequencyType must be set to at least [Once]. Setting it to 'Once'." -Level Warning
                 $FrequencyType = 1
-            }
-            else {
+            } else {
                 Stop-Function -Message "Parameter FrequencyType must be set to at least [Once]" -Target $SqlInstance
                 return
             }
@@ -339,8 +336,7 @@ function New-DbaAgentSchedule {
             if ($Force) {
                 Write-Message -Message "Parameter FrequencyInterval must be provided for a recurring schedule. Setting it to first day of the week." -Level Warning
                 $Interval = 1
-            }
-            else {
+            } else {
                 Stop-Function -Message "Parameter FrequencyInterval must be provided for a recurring schedule." -Target $SqlInstance
                 return
             }
@@ -354,12 +350,10 @@ function New-DbaAgentSchedule {
         if (-not $StartDate -and $Force) {
             $StartDate = Get-Date -Format 'yyyyMMdd'
             Write-Message -Message "Start date was not set. Force is being used. Setting it to $StartDate" -Level Verbose
-        }
-        elseif (-not $StartDate) {
+        } elseif (-not $StartDate) {
             Stop-Function -Message "Please enter a start date or use -Force to use defaults." -Target $SqlInstance
             return
-        }
-        elseif ($StartDate -notmatch $RegexDate) {
+        } elseif ($StartDate -notmatch $RegexDate) {
             Stop-Function -Message "Start date $StartDate needs to be a valid date with format yyyyMMdd" -Target $SqlInstance
             return
         }
@@ -368,8 +362,7 @@ function New-DbaAgentSchedule {
         if (-not $EndDate -and $Force) {
             $EndDate = '99991231'
             Write-Message -Message "End date was not set. Force is being used. Setting it to $EndDate" -Level Verbose
-        }
-        elseif (-not $EndDate) {
+        } elseif (-not $EndDate) {
             Stop-Function -Message "Please enter an end date or use -Force to use defaults." -Target $SqlInstance
             return
         }
@@ -377,8 +370,7 @@ function New-DbaAgentSchedule {
         elseif ($EndDate -notmatch $RegexDate) {
             Stop-Function -Message "End date $EndDate needs to be a valid date with format yyyyMMdd" -Target $SqlInstance
             return
-        }
-        elseif ($EndDate -lt $StartDate) {
+        } elseif ($EndDate -lt $StartDate) {
             Stop-Function -Message "End date $EndDate cannot be before start date $StartDate" -Target $SqlInstance
             return
         }
@@ -387,12 +379,10 @@ function New-DbaAgentSchedule {
         if (-not $StartTime -and $Force) {
             $StartTime = '000000'
             Write-Message -Message "Start time was not set. Force is being used. Setting it to $StartTime" -Level Verbose
-        }
-        elseif (-not $StartTime) {
+        } elseif (-not $StartTime) {
             Stop-Function -Message "Please enter a start time or use -Force to use defaults." -Target $SqlInstance
             return
-        }
-        elseif ($StartTime -notmatch $RegexTime) {
+        } elseif ($StartTime -notmatch $RegexTime) {
             Stop-Function -Message "Start time $StartTime needs to match between '000000' and '235959'" -Target $SqlInstance
             return
         }
@@ -401,12 +391,10 @@ function New-DbaAgentSchedule {
         if (-not $EndTime -and $Force) {
             $EndTime = '235959'
             Write-Message -Message "End time was not set. Force is being used. Setting it to $EndTime" -Level Verbose
-        }
-        elseif (-not $EndTime) {
+        } elseif (-not $EndTime) {
             Stop-Function -Message "Please enter an end time or use -Force to use defaults." -Target $SqlInstance
             return
-        }
-        elseif ($EndTime -notmatch $RegexTime) {
+        } elseif ($EndTime -notmatch $RegexTime) {
             Stop-Function -Message "End time $EndTime needs to match between '000000' and '235959'" -Target $SqlInstance
             return
         }
@@ -419,8 +407,7 @@ function New-DbaAgentSchedule {
             # Try connecting to the instance
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -432,8 +419,7 @@ function New-DbaAgentSchedule {
                     # Check if the job exists
                     if ($Server.JobServer.Jobs.Name -notcontains $j) {
                         Write-Message -Message "Job $j doesn't exists on $instance" -Level Warning
-                    }
-                    else {
+                    } else {
                         # Create the job schedule object
                         try {
                             # Get the job
@@ -447,8 +433,7 @@ function New-DbaAgentSchedule {
                                         # Removing schedule
                                         Remove-DbaAgentSchedule -SqlInstance $instance -SqlCredential $SqlCredential -Schedule $Schedule -Force:$Force
                                     }
-                                }
-                                else {
+                                } else {
                                     Stop-Function -Message "Schedule $Schedule already exists for job $j on instance $instance" -Target $instance -ErrorRecord $_ -Continue
                                 }
                             }
@@ -456,8 +441,7 @@ function New-DbaAgentSchedule {
                             # Create the job schedule
                             $JobSchedule = New-Object Microsoft.SqlServer.Management.Smo.Agent.JobSchedule($smoJob, $Schedule)
 
-                        }
-                        catch {
+                        } catch {
                             Stop-Function -Message "Something went wrong creating the job schedule $Schedule for job $j." -Target $instance -ErrorRecord $_ -Continue
                         }
 
@@ -465,8 +449,7 @@ function New-DbaAgentSchedule {
                         if ($Disabled) {
                             Write-Message -Message "Setting job schedule to disabled" -Level Verbose
                             $JobSchedule.IsEnabled = $false
-                        }
-                        else {
+                        } else {
                             Write-Message -Message "Setting job schedule to enabled" -Level Verbose
                             $JobSchedule.IsEnabled = $true
                         }
@@ -534,8 +517,7 @@ function New-DbaAgentSchedule {
                                 $JobSchedule.Create()
 
                                 Write-Message -Message "Job schedule created with UID $($JobSchedule.ScheduleUid)" -Level Verbose
-                            }
-                            catch {
+                            } catch {
                                 Stop-Function -Message "Something went wrong adding the schedule" -Target $instance -ErrorRecord $_ -Continue
 
                             }
@@ -554,8 +536,7 @@ function New-DbaAgentSchedule {
                 if ($Disabled) {
                     Write-Message -Message "Setting job schedule to disabled" -Level Verbose
                     $JobSchedule.IsEnabled = $false
-                }
-                else {
+                } else {
                     Write-Message -Message "Setting job schedule to enabled" -Level Verbose
                     $JobSchedule.IsEnabled = $true
                 }
@@ -622,8 +603,7 @@ function New-DbaAgentSchedule {
                         $JobSchedule.Create()
 
                         Write-Message -Message "Job schedule created with UID $($JobSchedule.ScheduleUid)" -Level Verbose
-                    }
-                    catch {
+                    } catch {
                         Stop-Function -Message "Something went wrong adding the schedule." -Target $instance -ErrorRecord $_ -Continue
                     }
 
@@ -639,3 +619,4 @@ function New-DbaAgentSchedule {
         Write-Message -Message "Finished creating job schedule(s)." -Level Verbose
     }
 }
+

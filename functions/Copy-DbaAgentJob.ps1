@@ -1,5 +1,5 @@
-﻿function Copy-DbaAgentJob {
-<#
+function Copy-DbaAgentJob {
+    <#
     .SYNOPSIS
         Copy-DbaAgentJob migrates jobs from one SQL Server to another.
 
@@ -92,8 +92,7 @@
     begin {
         try {
             $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
-        }
-        catch {
+        } catch {
             Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Source
             return
         }
@@ -105,8 +104,7 @@
         foreach ($destinstance in $Destination) {
             try {
                 $destServer = Connect-SqlInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
             }
             $destJobs = $destServer.JobServer.Jobs
@@ -116,13 +114,13 @@
                 $jobId = $serverJob.JobId
 
                 $copyJobStatus = [pscustomobject]@{
-                    SourceServer = $sourceServer.Name
+                    SourceServer      = $sourceServer.Name
                     DestinationServer = $destServer.Name
-                    Name         = $jobName
-                    Type         = "Agent Job"
-                    Status       = $null
-                    Notes        = $null
-                    DateTime     = [DbaDateTime](Get-Date)
+                    Name              = $jobName
+                    Type              = "Agent Job"
+                    Status            = $null
+                    Notes             = $null
+                    DateTime          = [DbaDateTime](Get-Date)
                 }
 
                 if ($Job -and $jobName -notin $Job -or $jobName -in $ExcludeJob) {
@@ -216,14 +214,12 @@
                             Write-Message -Level Verbose -Message "Job $jobName exists at destination. Use -Force to drop and migrate."
                         }
                         continue
-                    }
-                    else {
+                    } else {
                         if ($Pscmdlet.ShouldProcess($destinstance, "Dropping job $jobName and recreating")) {
                             try {
                                 Write-Message -Message "Dropping Job $jobName" -Level Verbose
                                 $destServer.JobServer.Jobs[$jobName].Drop()
-                            }
-                            catch {
+                            } catch {
                                 $copyJobStatus.Status = "Failed"
                                 $copyJobStatus.Notes = (Get-ErrorMessage -Record $_).Message
                                 $copyJobStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
@@ -249,8 +245,7 @@
                         $destServer.JobServer.Jobs.Refresh()
                         $destServer.JobServer.Jobs[$serverJob.name].IsEnabled = $sourceServer.JobServer.Jobs[$serverJob.name].IsEnabled
                         $destServer.JobServer.Jobs[$serverJob.name].Alter()
-                    }
-                    catch {
+                    } catch {
                         $copyJobStatus.Status = "Failed"
                         $copyJobStatus.Notes = (Get-ErrorMessage -Record $_)
                         $copyJobStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
@@ -284,3 +279,4 @@
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-SqlJob
     }
 }
+

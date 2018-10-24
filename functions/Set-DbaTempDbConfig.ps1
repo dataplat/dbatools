@@ -1,5 +1,5 @@
-﻿function Set-DbaTempdbConfig {
-<#
+function Set-DbaTempdbConfig {
+    <#
     .SYNOPSIS
         Sets tempdb data and log files according to best practices.
 
@@ -137,8 +137,7 @@
         if (-not $DataFileCount) {
             $DataFileCount = $cores
             Write-Message -Message "Data file count set to number of cores: $DataFileCount" -Level Verbose
-        }
-        else {
+        } else {
             if ($DataFileCount -gt $cores) {
                 Write-Message -Message "Data File Count of $DataFileCount exceeds the Logical Core Count of $cores. This is outside of best practices." -Level Warning
             }
@@ -153,8 +152,7 @@
                 Stop-Function -Message "$datapath is an invalid path."
                 return
             }
-        }
-        else {
+        } else {
             $Filepath = $server.Databases['tempdb'].ExecuteWithResults('SELECT physical_name as FileName FROM sys.database_files WHERE file_id = 1').Tables[0].Rows[0].FileName
             $DataPath = Split-Path $Filepath
         }
@@ -166,8 +164,7 @@
                 Stop-Function -Message "$LogPath is an invalid path."
                 return
             }
-        }
-        else {
+        } else {
             $Filepath = $server.Databases['tempdb'].ExecuteWithResults('SELECT physical_name as FileName FROM sys.database_files WHERE file_id = 2').Tables[0].Rows[0].FileName
             $LogPath = Split-Path $Filepath
         }
@@ -212,8 +209,7 @@
                 $LogicalName = $File.Name
                 $NewPath = "$datapath\$Filename"
                 $sql += "ALTER DATABASE tempdb MODIFY FILE(name=$LogicalName,filename='$NewPath',size=$DataFilesizeSingleMB MB,filegrowth=$DataFileGrowthMB);"
-            }
-            else {
+            } else {
                 $NewName = "tempdev$i.ndf"
                 $NewPath = "$datapath\$NewName"
                 $sql += "ALTER DATABASE tempdb ADD FILE(name=tempdev$i,filename='$NewPath',size=$DataFilesizeSingleMB MB,filegrowth=$DataFileGrowthMB);"
@@ -235,11 +231,9 @@
 
         if ($OutputScriptOnly) {
             return $sql
-        }
-        elseif ($OutFile) {
+        } elseif ($OutFile) {
             $sql | Set-Content -Path $OutFile
-        }
-        else {
+        } else {
             if ($Pscmdlet.ShouldProcess($SqlInstance, "Executing query and informing that a restart is required.")) {
                 try {
                     $server.Databases['master'].ExecuteNonQuery($sql)
@@ -260,8 +254,7 @@
                     }
 
                     Write-Message -Level Output -Message "tempdb reconfigured. You must restart the SQL Service for settings to take effect."
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Unable to reconfigure tempdb. Exception: $_" -Target $sql -InnerErrorRecord $_
                     return
                 }
@@ -273,3 +266,4 @@
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Set-DbaTempDbConfiguration
     }
 }
+

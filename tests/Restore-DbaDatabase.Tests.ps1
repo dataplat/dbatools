@@ -1,4 +1,4 @@
-﻿$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 
@@ -823,7 +823,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         }
     }
 
-    if ($env:azurepasswd1) {
+    if ($env:azurepasswd) {
         Context "Restores to Azure" {
             BeforeAll {
                 $server = Connect-DbaInstance -SqlInstance $script:instance2
@@ -841,7 +841,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             }
         }
     }
-    if ($env:azurelegacypasswd1) {
+    if ($env:azurelegacypasswd) {
         Context "Restores to Azure" {
             BeforeAll {
                 $server = Connect-DbaInstance -SqlInstance $script:instance2

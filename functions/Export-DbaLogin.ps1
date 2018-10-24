@@ -1,5 +1,5 @@
-﻿function Export-DbaLogin {
-<#
+function Export-DbaLogin {
+    <#
     .SYNOPSIS
         Exports Windows and SQL Logins to a T-SQL file. Export includes login, SID, password, default database, default language, server permissions, server roles, db permissions, db roles.
 
@@ -205,15 +205,13 @@
 
                 if ($sourceLogin.PasswordPolicyEnforced -eq $false) {
                     $checkPolicy = "OFF"
-                }
-                else {
+                } else {
                     $checkPolicy = "ON"
                 }
 
                 if (!$sourceLogin.PasswordExpirationEnabled) {
                     $checkExpiration = "OFF"
-                }
-                else {
+                } else {
                     $checkExpiration = "ON"
                 }
 
@@ -238,8 +236,7 @@
 
                     try {
                         $hashedPass = $server.ConnectionContext.ExecuteScalar($sql)
-                    }
-                    catch {
+                    } catch {
                         $hashedPassDt = $server.Databases['master'].ExecuteWithResults($sql)
                         $hashedPass = $hashedPassDt.Tables[0].Rows[0].Item(0)
                     }
@@ -282,16 +279,14 @@
                 # SMO changed over time
                 try {
                     $roleMembers = $role.EnumMemberNames()
-                }
-                catch {
+                } catch {
                     $roleMembers = $role.EnumServerRoleMembers()
                 }
 
                 if ($roleMembers -contains $userName) {
                     if (($server.VersionMajor -lt 11 -and [string]::IsNullOrEmpty($destinationVersion)) -or ($DestinationVersion -in "SQLServer2000", "SQLServer2005", "SQLServer2008/2008R2")) {
                         $outsql += "EXEC sys.sp_addsrvrolemember @rolename=N'$roleName', @loginame=N'$userName'"
-                    }
-                    else {
+                    } else {
                         $outsql += "ALTER SERVER ROLE [$roleName] ADD MEMBER [$userName]"
                     }
                 }
@@ -320,8 +315,7 @@
                     if ($permState -eq "GrantWithGrant") {
                         $grantWithGrant = "WITH GRANT OPTION"
                         $permState = "GRANT"
-                    }
-                    else {
+                    } else {
                         $grantWithGrant = $null
                     }
 
@@ -353,8 +347,7 @@
                     try {
                         $sql = $server.Databases[$dbName].Users[$dbUserName].Script()
                         $outsql += $sql
-                    }
-                    catch {
+                    } catch {
                         Write-Message -Level Warning -Message "User cannot be found in selected database"
                     }
 
@@ -366,8 +359,7 @@
                             $roleName = $role.Name
                             if (($server.VersionMajor -lt 11 -and [string]::IsNullOrEmpty($destinationVersion)) -or ($DestinationVersion -in "SQLServer2000", "SQLServer2005", "SQLServer2008/2008R2")) {
                                 $outsql += "EXEC sys.sp_addrolemember @rolename=N'$roleName', @membername=N'$dbUserName'"
-                            }
-                            else {
+                            } else {
                                 $outsql += "ALTER ROLE [$roleName] ADD MEMBER [$dbUserName]"
                             }
                         }
@@ -383,8 +375,7 @@
                         if ($permState -eq "GrantWithGrant") {
                             $grantWithGrant = "WITH GRANT OPTION"
                             $permState = "GRANT"
-                        }
-                        else {
+                        } else {
                             $grantWithGrant = $null
                         }
 
@@ -399,8 +390,7 @@
 
         if ($ExcludeGoBatchSeparator) {
             $sql = $outsql
-        }
-        else {
+        } else {
             $sql = $outsql -join "`r`nGO`r`n"
             #add the final GO
             $sql += "`r`nGO"
@@ -409,10 +399,10 @@
         if ($Path) {
             $sql | Out-File -Encoding UTF8 -FilePath $Path -Append:$Append -NoClobber:$NoClobber
             Get-ChildItem $Path
-        }
-        else {
+        } else {
             $sql
         }
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Export-SqlLogin
     }
 }
+

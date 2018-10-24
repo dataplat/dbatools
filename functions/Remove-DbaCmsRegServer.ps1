@@ -1,6 +1,6 @@
-﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Remove-DbaCmsRegServer {
-<#
+    <#
     .SYNOPSIS
         Removes registered servers found in SQL Server Central Management Server (CMS).
 
@@ -100,8 +100,7 @@ function Remove-DbaCmsRegServer {
                         ServerName   = $regserver.ServerName
                         Status       = "Dropped"
                     }
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Failed to drop $regserver on $server" -ErrorRecord $_ -Continue
                 }
             }
@@ -111,3 +110,4 @@ function Remove-DbaCmsRegServer {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Remove-DbaRegisteredServer
     }
 }
+

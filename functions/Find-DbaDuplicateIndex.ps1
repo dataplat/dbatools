@@ -1,5 +1,5 @@
-﻿function Find-DbaDuplicateIndex {
-<#
+function Find-DbaDuplicateIndex {
+    <#
     .SYNOPSIS
         Find duplicate and overlapping indexes.
 
@@ -450,15 +450,13 @@
         foreach ($instance in $sqlinstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential -MinimumVersion 9
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             if ($database) {
                 $databases = $server.Databases | Where-Object Name -in $database
-            }
-            else {
+            } else {
                 $databases = $server.Databases | Where-Object IsAccessible -eq $true
             }
 
@@ -469,16 +467,14 @@
                     $query = if ($server.versionMajor -eq 9) {
                         if ($IncludeOverlapping) { $overlappingQuery2005 }
                         else { $exactDuplicateQuery2005 }
-                    }
-                    else {
+                    } else {
                         if ($IncludeOverlapping) { $overlappingQuery }
                         else { $exactDuplicateQuery }
                     }
 
                     $db.Query($query)
 
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Query failure" -Target $db
                 }
             }
@@ -488,3 +484,4 @@
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-SqlDuplicateIndex
     }
 }
+

@@ -1,5 +1,5 @@
-﻿function Test-DbaMigrationConstraint {
-<#
+function Test-DbaMigrationConstraint {
+    <#
     .SYNOPSIS
         Show if you can migrate the database(s) between the servers.
 
@@ -112,15 +112,13 @@
     process {
         try {
             $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
-        }
-        catch {
+        } catch {
             Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Source -Continue
         }
 
         try {
             $destServer = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
-        }
-        catch {
+        } catch {
             Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Destination -Continue
         }
 
@@ -164,8 +162,7 @@
                     if ([string]::IsNullOrEmpty($db.Status)) {
                         $dbstatus = ($sourceServer.Databases | Where-Object Name -eq $db).Status.ToString()
                         $dbName = $db
-                    }
-                    else {
+                    } else {
                         $dbstatus = $db.Status.ToString()
                         $dbName = $db.Name
                     }
@@ -215,8 +212,7 @@
 
                                 $dbFeatures = $dbFeatures.TrimStart(",")
                             }
-                        }
-                        catch {
+                        } catch {
                             Stop-Function -Message "Issue collecting sku features." -ErrorRecord $_ -Target $sourceServer -Continue
                         }
 
@@ -237,8 +233,7 @@
                                     IsMigratable        = $false
                                     Notes               = "$notesCannotMigrate. Destination server edition is EXPRESS which does not support 'ChangeCapture' feature that is in use."
                                 }
-                            }
-                            else {
+                            } else {
                                 [pscustomobject]@{
                                     SourceInstance      = $sourceServer.Name
                                     DestinationInstance = $destServer.Name
@@ -283,20 +278,17 @@
                                 }
                             }
                         }
-                    }
-                    else {
+                    } else {
                         Write-Message -Level Warning -Message "Database '$dbName' is offline or not accessible. Bring database online and re-run the command."
                     }
                 }
-            }
-            else {
+            } else {
                 #SQL Server 2005 or under
                 Write-Message -Level Warning -Message "This validation will not be made on versions lower than SQL Server 2008 (v10)."
                 Write-Message -Level Verbose -Message "Source server version: $($sourceServer.VersionMajor)."
                 Write-Message -Level Verbose -Message "Destination server version: $($destServer.VersionMajor)."
             }
-        }
-        else {
+        } else {
             Write-Message -Level Output -Message "There are no databases to validate."
         }
     }
@@ -304,3 +296,4 @@
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Test-SqlMigrationConstraint
     }
 }
+

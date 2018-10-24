@@ -1,5 +1,5 @@
-﻿function Invoke-DbaBalanceDataFiles {
-<#
+function Invoke-DbaBalanceDataFiles {
+    <#
     .SYNOPSIS
         Re-balance data between data files
 
@@ -108,8 +108,7 @@
             # Try connecting to the instance
             try {
                 $Server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -120,8 +119,7 @@
                 }
 
                 $DatabaseCollection = $server.Databases | Where-Object { $_.Name -in $Database }
-            }
-            else {
+            } else {
                 Stop-Function -Message "Please supply a database to balance out" -Target $instance -Continue
             }
 
@@ -131,8 +129,7 @@
             # Check edition of the sql instance
             if ($RebuildOffline) {
                 Write-Message -Message "Continuing with offline rebuild." -Level Verbose
-            }
-            elseif (-not $RebuildOffline -and ($serverVersion -lt 9 -or (([string]$Server.Edition -notmatch "Developer") -and ($Server.Edition -notmatch "Enterprise")))) {
+            } elseif (-not $RebuildOffline -and ($serverVersion -lt 9 -or (([string]$Server.Edition -notmatch "Developer") -and ($Server.Edition -notmatch "Enterprise")))) {
                 # Set up the confirm part
                 $message = "The server does not support online rebuilds of indexes. `nDo you want to rebuild the indexes offline?"
                 $choiceYes = New-Object System.Management.Automation.Host.ChoiceDescription "&Yes", "Answer Yes."
@@ -154,8 +151,7 @@
                         return
                     }
                 } # switch
-            }
-            elseif ($serverVersion -ge 9 -and (([string]$Server.Edition -like "Developer*") -or ($Server.Edition -like "Enterprise*"))) {
+            } elseif ($serverVersion -ge 9 -and (([string]$Server.Edition -like "Developer*") -or ($Server.Edition -like "Enterprise*"))) {
                 [bool]$supportOnlineRebuild = $true
             }
 
@@ -221,8 +217,7 @@
                         }
 
                         $TableCollection = $db.Tables | Where-Object { $_.Name -in $Table }
-                    }
-                    else {
+                    } else {
                         $TableCollection = $db.Tables
                     }
 
@@ -259,8 +254,7 @@
                                 $success = $false
 
                                 Stop-Function -Message "Table $tbl does not contain any indexes" -Target $instance -Continue
-                            }
-                            else {
+                            } else {
 
                                 # Get all the clustered indexes for the table
                                 $clusteredIndexes = $TableCollection.Indexes | Where-Object { $_.IndexType -eq 'ClusteredIndex' }
@@ -286,8 +280,7 @@
                                     # Set the rebuild option to be either offline or online
                                     if ($RebuildOffline) {
                                         $ci.OnlineIndexOperation = $false
-                                    }
-                                    elseif ($serverVersion -ge 9 -and $supportOnlineRebuild -and -not $RebuildOffline) {
+                                    } elseif ($serverVersion -ge 9 -and $supportOnlineRebuild -and -not $RebuildOffline) {
                                         Write-Message -Message "Setting the index operation for index $($ci.Name) to online" -Level Verbose
                                         $ci.OnlineIndexOperation = $true
                                     }
@@ -299,8 +292,7 @@
 
                                         # Set the success flag
                                         $success = $true
-                                    }
-                                    catch {
+                                    } catch {
                                         # Set the original index operation back for the index
                                         $ci.OnlineIndexOperation = $originalIndexOperation
 
@@ -363,3 +355,4 @@
         } # end process
     }
 }
+

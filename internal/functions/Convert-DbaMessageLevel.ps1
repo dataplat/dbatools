@@ -1,5 +1,5 @@
-﻿function Convert-DbaMessageLevel {
-<#
+function Convert-DbaMessageLevel {
+    <#
     .SYNOPSIS
         Processes the effective message level of a message
     
@@ -73,3 +73,4 @@
     if ($number -gt 9) { $number = 9 }
     return ([Sqlcollaborative.Dbatools.Message.MessageLevel]$number)
 }
+

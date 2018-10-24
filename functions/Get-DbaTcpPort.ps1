@@ -1,5 +1,5 @@
-﻿function Get-DbaTcpPort {
-<#
+function Get-DbaTcpPort {
+    <#
     .SYNOPSIS
         Returns the TCP port used by the specified SQL Server.
 
@@ -116,8 +116,7 @@
                                     Static       = $false
                                     Type         = "DAC"
                                 }
-                            }
-                            catch {
+                            } catch {
                                 # Shouldn't have an empty catch block
                                 # Use write-verbose becaues it's remote and write-message may note exist
                                 Write-Verbose -Message "it's just not our day"
@@ -136,8 +135,7 @@
                                         $port = $prop.value
                                         if ($prop.name -eq 'TcpPort') {
                                             $static = $true
-                                        }
-                                        else {
+                                        } else {
                                             $static = $false
                                         }
                                     }
@@ -163,13 +161,11 @@
                     try {
                         Write-Message -Level Verbose -Message "Trying with ComputerName ($computer)."
                         $someIps = Invoke-ManagedComputerCommand -ComputerName $computer -Credential $Credential -ArgumentList $computer -ScriptBlock $scriptblock
-                    }
-                    catch {
+                    } catch {
                         Write-Message -Level Verbose -Message "Trying with FullComputerName because ComputerName failed."
                         $someIps = Invoke-ManagedComputerCommand -ComputerName $computername -Credential $Credential -ArgumentList $fqdn -ScriptBlock $scriptblock
                     }
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Could not get all information." -Target $instance -ErrorRecord $_
                 }
 
@@ -187,8 +183,7 @@
             if (-not $All -or ($All -and ($null -eq $someIps))) {
                 try {
                     $server = Connect-SqlInstance -SqlInstance "TCP:$instance" -SqlCredential $SqlCredential -MinimumVersion 9
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target "TCP:$instance" -Continue
                 }
 
@@ -209,3 +204,4 @@
         }
     }
 }
+

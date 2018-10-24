@@ -1,6 +1,6 @@
-﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Remove-DbaPfDataCollectorSet {
-<#
+    <#
     .SYNOPSIS
         Removes a Performance Monitor Data Collector Set
 
@@ -71,7 +71,7 @@ function Remove-DbaPfDataCollectorSet {
 #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "High")]
     param (
-        [DbaInstance[]]$ComputerName=$env:COMPUTERNAME,
+        [DbaInstance[]]$ComputerName = $env:COMPUTERNAME,
         [PSCredential]$Credential,
         [Alias("DataCollectorSet")]
         [string[]]$CollectorSet,
@@ -86,8 +86,7 @@ function Remove-DbaPfDataCollectorSet {
             $collectorset.Query($setname, $null)
             if ($collectorset.name -eq $setname) {
                 $null = $collectorset.Delete()
-            }
-            else {
+            } else {
                 Write-Warning "Data Collector Set $setname does not exist on $env:COMPUTERNAME."
             }
         }
@@ -128,11 +127,11 @@ function Remove-DbaPfDataCollectorSet {
                         Name         = $setname
                         Status       = "Removed"
                     }
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Failure Removing $setname on $computer." -ErrorRecord $_ -Target $computer -Continue
                 }
             }
         }
     }
 }
+

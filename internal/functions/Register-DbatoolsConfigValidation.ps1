@@ -1,4 +1,4 @@
-﻿function Register-DbatoolsConfigValidation {
+function Register-DbatoolsConfigValidation {
     <#
         .SYNOPSIS
             Registers a validation scriptblock for use with the configuration system.
@@ -38,3 +38,4 @@
 
     [Sqlcollaborative.Dbatools.Configuration.ConfigurationHost]::Validation[$Name.ToLower()] = $ScriptBlock
 }
+

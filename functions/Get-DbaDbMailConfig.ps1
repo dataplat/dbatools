@@ -1,5 +1,5 @@
-﻿function Get-DbaDbMailConfig {
-<#
+function Get-DbaDbMailConfig {
+    <#
     .SYNOPSIS
         Gets database mail configs from SQL Server
 
@@ -90,10 +90,10 @@
                 $configs | Add-Member -Force -MemberType NoteProperty -Name InstanceName -value $mailserver.InstanceName
                 $configs | Add-Member -Force -MemberType NoteProperty -Name SqlInstance -value $mailserver.SqlInstance
                 $configs | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, Name, Value, Description
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
             }
         }
     }
 }
+

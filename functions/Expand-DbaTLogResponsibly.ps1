@@ -1,5 +1,5 @@
-﻿function Expand-DbaTLogResponsibly {
-<#
+function Expand-DbaTLogResponsibly {
+    <#
     .SYNOPSIS
         This command will help you to automatically grow your transaction log  file in a responsible way (preventing the generation of too many VLFs).
 
@@ -170,8 +170,7 @@
         [int]$SuggestLogIncrementSize = 0
         [bool]$LogByFileID = if ($LogFileId -eq -1) {
             $false
-        }
-        else {
+        } else {
             $true
         }
 
@@ -233,8 +232,7 @@
                     #Validate which file will grow
                     if ($LogByFileID) {
                         $logfile = $server.Databases[$db].LogFiles.ItemById($LogFileId)
-                    }
-                    else {
+                    } else {
                         $logfile = $server.Databases[$db].LogFiles[0]
                     }
 
@@ -265,8 +263,7 @@
                             $TotalTLogFreeDiskSpaceKB = ($AllDrivesFreeDiskSpace | Where-Object { $DrivePath -eq $_.Name }).SizeInKB
                             $match = $true
                             break
-                        }
-                        else {
+                        } else {
                             $match = $false
                             $DrivePath = Split-Path $DrivePath -parent
                             $DrivePath = if (!($DrivePath.EndsWith("\"))) { "$DrivePath\" }
@@ -297,12 +294,10 @@
                             "Available space: $([System.Math]::Round($($TotalTLogFreeDiskSpaceKB / 1024.0), 2))MB;`r`n" `
                             "Required space: $([System.Math]::Round($($requiredSpace / 1024.0), 2))MB;"
                         return
-                    }
-                    else {
+                    } else {
                         if ($currentSize -ige $TargetLogSizeKB -and ($ShrinkLogFile -eq $false)) {
                             Write-Message -Level Verbose -Message "$step - [INFO] The T-Log file '$logfile' size is already equal or greater than target size - No action required."
-                        }
-                        else {
+                        } else {
                             Write-Message -Level Verbose -Message "$step - [OK] There is sufficient free space to perform this task."
 
                             # If SQL Server version is greater or equal to 2012
@@ -352,8 +347,7 @@
                                         Write-Message -Level Warning -Message "First, you need to make a full backup before you can do Tlog backup on database '$db' (last_log_backup_lsn is null)."
                                         Continue
                                     }
-                                }
-                                catch {
+                                } catch {
                                     Stop-Function -Message "Can't execute SQL on $server. `r`n $($_)" -Continue
                                 }
 
@@ -378,8 +372,7 @@
                                                 $null = $backup.Devices.AddDevice($backupdirectory + "\" + $db + "_db_" + $dt + ".trn", 'File')
                                                 if ($DefaultCompression = $true) {
                                                     $backup.CompressionOption = 1
-                                                }
-                                                else {
+                                                } else {
                                                     $backup.CompressionOption = 0
                                                 }
                                                 $null = [Microsoft.SqlServer.Management.Smo.PercentCompleteEventHandler] {
@@ -393,8 +386,7 @@
                                                 Write-Progress -id 2 -ParentId 1 -activity "Backing up $db to $server" -status "Complete" -Completed
                                                 $logfile.Shrink($ShrinkSizeMB, [Microsoft.SqlServer.Management.SMO.ShrinkMethod]::TruncateOnly)
                                                 $logfile.Refresh()
-                                            }
-                                            catch {
+                                            } catch {
                                                 Write-Progress -id 1 -activity "Backup" -status "Failed" -completed
                                                 Stop-Function -Message "Backup failed for database" -ErrorRecord $_ -Target $db -Continue
                                                 Continue
@@ -415,8 +407,7 @@
                             # If default, use $SuggestedLogIncrementSize
                             if ($IncrementSizeMB -eq -1) {
                                 $LogIncrementSize = $SuggestLogIncrementSize
-                            }
-                            else {
+                            } else {
                                 $title = "Choose increment value for database '$db':"
                                 $message = "The input value for increment size was $([System.Math]::Round($LogIncrementSize/1024, 0))MB. However the suggested value for increment is $($SuggestLogIncrementSize/1024)MB.`r`nDo you want to use the suggested value of $([System.Math]::Round($SuggestLogIncrementSize/1024, 0))MB insted of $([System.Math]::Round($LogIncrementSize/1024, 0))MB"
                                 $yes = New-Object System.Management.Automation.Host.ChoiceDescription "&Yes", "Uses recomended size."
@@ -448,8 +439,7 @@
                                     if (($TargetLogSizeKB - $currentSize) -lt $LogIncrementSize) {
                                         Write-Message -Level Verbose -Message "$step - Log size is lower than the increment size. Setting current size equals $TargetLogSizeKB."
                                         $currentSize = $TargetLogSizeKB
-                                    }
-                                    else {
+                                    } else {
                                         Write-Message -Level Verbose -Message "$step - Grow the $logfile file in $([System.Math]::Round($($LogIncrementSize / 1024.0), 2)) MB"
                                         $currentSize += $LogIncrementSize
                                     }
@@ -497,8 +487,7 @@
                     CurrentVLFCount = $currentVLFCount.Total
                 } | Select-DefaultView -ExcludeProperty LogFileCount
             } #foreach database
-        }
-        catch {
+        } catch {
             Stop-Function -Message "Logfile $logfile on database $db not processed. Error: $($_.Exception.Message). Line Number:  $($_InvocationInfo.ScriptLineNumber)" -Continue
         }
     }
@@ -508,3 +497,4 @@
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Expand-SqlTLogResponsibly
     }
 }
+

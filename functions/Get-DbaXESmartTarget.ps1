@@ -1,6 +1,6 @@
-﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaXESmartTarget {
-<#
+    <#
     .SYNOPSIS
         Gets an XESmartTarget PowerShell job created by Start-DbaXESmartTarget.
 
@@ -36,9 +36,9 @@ function Get-DbaXESmartTarget {
     process {
         try {
             Get-Job | Where-Object Name -Match SmartTarget | Select-Object -Property ID, Name, State
-        }
-        catch {
+        } catch {
             Stop-Function -Message "Failure" -ErrorRecord $_
         }
     }
 }
+

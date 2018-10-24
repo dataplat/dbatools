@@ -1,6 +1,6 @@
-﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Remove-DbaAgentSchedule {
-<#
+    <#
     .SYNOPSIS
         Remove-DbaAgentJobSchedule removes a job schedule.
 
@@ -97,8 +97,7 @@ function Remove-DbaAgentSchedule {
             # Try connecting to the instance
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -160,8 +159,7 @@ function Remove-DbaAgentSchedule {
                                         Write-Message -Message "Removing the schedule $jobSchedule for job $smoJob" -Level Verbose
 
                                         $jobSchedule.Drop()
-                                    }
-                                    catch {
+                                    } catch {
                                         Stop-Function -Message "Failure" -Target $instance -ErrorRecord $_ -Continue
                                     }
                                 }
@@ -179,8 +177,7 @@ function Remove-DbaAgentSchedule {
                 foreach ($smoSchedule in $smoSchedules) {
                     try {
                         $smoSchedule.Drop()
-                    }
-                    catch {
+                    } catch {
                         Stop-Function -Message "Something went wrong removing the schedule" -Target $instance -ErrorRecord $_ -Continue
                     }
                 }
@@ -191,3 +188,4 @@ function Remove-DbaAgentSchedule {
         Write-Message -Message "Finished removing jobs schedule(s)." -Level Verbose
     }
 }
+

@@ -1,6 +1,6 @@
-﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Set-DbaTcpPort {
-<#
+    <#
     .SYNOPSIS
         Changes the TCP port used by the specified SQL Server.
 
@@ -60,7 +60,7 @@ function Set-DbaTcpPort {
         Sets the port number 1337 for all IP Addresses on SqlInstance SQLDB2014A and SQLDB2016B
 
 #>
-    [CmdletBinding(SupportsShouldProcess,ConfirmImpact = "High")]
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "High")]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
@@ -79,8 +79,7 @@ function Set-DbaTcpPort {
 
         if ($IpAddress.Length -eq 0) {
             $IpAddress = '0.0.0.0'
-        }
-        else {
+        } else {
             if ($SqlInstance.count -gt 1) {
                 Stop-Function -Message "-IpAddress switch cannot be used with a collection of serveraddresses" -Target $SqlInstance
                 return
@@ -95,8 +94,7 @@ function Set-DbaTcpPort {
             if ($Pscmdlet.ShouldProcess($instance, "Changing the default TCP port")) {
                 try {
                     $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
                 }
 
@@ -135,8 +133,7 @@ function Set-DbaTcpPort {
                             PortNumber    = $Port
                             Status        = "Success"
                         }
-                    }
-                    catch {
+                    } catch {
                         [pscustomobject]@{
                             ComputerName  = $env:COMPUTERNAME
                             InstanceName  = $wmiinstancename
@@ -155,11 +152,11 @@ function Set-DbaTcpPort {
                     Write-Message -Level Verbose -Message "Writing TCPPort $port for $instance to $($resolved.FQDN)..."
                     Invoke-ManagedComputerCommand -ComputerName $resolved.FQDN -ScriptBlock $scriptblock -ArgumentList $Server.ComputerName, $wmiinstancename, $port, $IpAddress, $server.DomainInstanceName -Credential $Credential
 
-                }
-                catch {
+                } catch {
                     Invoke-ManagedComputerCommand -ComputerName $instance.ComputerName -ScriptBlock $scriptblock -ArgumentList $Server.ComputerName, $wmiinstancename, $port, $IpAddress, $server.DomainInstanceName -Credential $Credential
                 }
             }
         }
     }
 }
+

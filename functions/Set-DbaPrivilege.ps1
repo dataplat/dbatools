@@ -1,5 +1,5 @@
-﻿function Set-DbaPrivilege {
-<#
+function Set-DbaPrivilege {
+    <#
     .SYNOPSIS
         Adds the SQL Service account to local privileges on one or more computers.
 
@@ -104,10 +104,9 @@ function Convert-UserNameToSID ([string] `$Acc ) {
                                         $SID = Convert-UserNameToSID -Acc $acc;
                                         if ($BLline -notmatch $SID) {
                                             (Get-Content $tempfile) -replace "SeBatchLogonRight = ", "SeBatchLogonRight = *$SID," |
-                                            Set-Content $tempfile
+                                                Set-Content $tempfile
                                             Write-Verbose "Added $acc to Batch Logon Privileges on $env:ComputerName"
-                                        }
-                                        else {
+                                        } else {
                                             Write-Warning "$acc already has Batch Logon Privilege on $env:ComputerName"
                                         }
                                     }
@@ -118,10 +117,9 @@ function Convert-UserNameToSID ([string] `$Acc ) {
                                         $SID = Convert-UserNameToSID -Acc $acc;
                                         if ($IFIline -notmatch $SID) {
                                             (Get-Content $tempfile) -replace "SeManageVolumePrivilege = ", "SeManageVolumePrivilege = *$SID," |
-                                            Set-Content $tempfile
+                                                Set-Content $tempfile
                                             Write-Verbose "Added $acc to Instant File Initialization Privileges on $env:ComputerName"
-                                        }
-                                        else {
+                                        } else {
                                             Write-Warning "$acc already has Instant File Initialization Privilege on $env:ComputerName"
                                         }
                                     }
@@ -132,10 +130,9 @@ function Convert-UserNameToSID ([string] `$Acc ) {
                                         $SID = Convert-UserNameToSID -Acc $acc;
                                         if ($LPIMline -notmatch $SID) {
                                             (Get-Content $tempfile) -replace "SeLockMemoryPrivilege = ", "SeLockMemoryPrivilege = *$SID," |
-                                            Set-Content $tempfile
+                                                Set-Content $tempfile
                                             Write-Verbose "Added $acc to Lock Pages in Memory Privileges on $env:ComputerName"
-                                        }
-                                        else {
+                                        } else {
                                             Write-Warning "$acc already has Lock Pages in Memory Privilege on $env:ComputerName"
                                         }
                                     }
@@ -144,19 +141,17 @@ function Convert-UserNameToSID ([string] `$Acc ) {
                             } -ErrorAction SilentlyContinue
                             Write-Message -Level Verbose -Message "Removing secpol file on $computer"
                             Invoke-Command2 -Raw -ComputerName $computer -Credential $Credential -ScriptBlock { $temp = ([System.IO.Path]::GetTempPath()).TrimEnd(""); Remove-Item $temp\secpolByDbatools.cfg -Force > $NULL }
-                        }
-                        else {
+                        } else {
                             Write-Message -Level Warning -Message "No SQL Service Accounts found on $Computer"
                         }
-                    }
-                    else {
+                    } else {
                         Write-Message -Level Warning -Message "Failed to connect to $Computer"
                     }
-                }
-                catch {
+                } catch {
                     Stop-Function -Continue -Message "Failure" -ErrorRecord $_ -Target $computer -Continue
                 }
             }
         }
     }
 }
+

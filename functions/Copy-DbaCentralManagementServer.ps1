@@ -1,5 +1,5 @@
-﻿function Copy-DbaCentralManagementServer {
-<#
+function Copy-DbaCentralManagementServer {
+    <#
     .SYNOPSIS
         Migrates SQL Server Central Management groups and server instances from one SQL Server to another.
 
@@ -101,13 +101,13 @@
                 $destinationGroup = $destinationGroup.ServerGroups[$groupName]
 
                 $copyDestinationGroupStatus = [pscustomobject]@{
-                    SourceServer = $sourceServer.Name
+                    SourceServer      = $sourceServer.Name
                     DestinationServer = $destServer.Name
-                    Name         = $groupName
-                    Type         = "CMS Destination Group"
-                    Status       = $null
-                    Notes        = $null
-                    DateTime     = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
+                    Name              = $groupName
+                    Type              = "CMS Destination Group"
+                    Status            = $null
+                    Notes             = $null
+                    DateTime          = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
                 }
 
                 if ($null -ne $destinationGroup) {
@@ -125,8 +125,7 @@
                         try {
                             Write-Message -Level Verbose -Message "Dropping group $groupName"
                             $destinationGroup.Drop()
-                        }
-                        catch {
+                        } catch {
                             $copyDestinationGroupStatus.Status = "Failed"
                             $copyDestinationGroupStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
@@ -151,13 +150,13 @@
                 $serverName = $instance.ServerName
 
                 $copyInstanceStatus = [pscustomobject]@{
-                    SourceServer = $sourceServer.Name
+                    SourceServer      = $sourceServer.Name
                     DestinationServer = $destServer.Name
-                    Name         = $instanceName
-                    Type         = "CMS Instance"
-                    Status       = $null
-                    Notes        = $null
-                    DateTime     = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
+                    Name              = $instanceName
+                    Type              = "CMS Instance"
+                    Status            = $null
+                    Notes             = $null
+                    DateTime          = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
                 }
 
                 if ($serverName.ToLower() -eq $toCmStore.DomainInstanceName.ToLower()) {
@@ -166,8 +165,7 @@
                             $serverName = $fromCmStore.DomainInstanceName
                             $instanceName = $fromCmStore.DomainInstanceName
                             Write-Message -Level Verbose -Message "SwitchServerName was used and new CMS equals current server name. $($toCmStore.DomainInstanceName.ToLower()) changed to $serverName."
-                        }
-                        else {
+                        } else {
                             $copyInstanceStatus.Status = "Skipped"
                             $copyInstanceStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
@@ -194,8 +192,7 @@
                         try {
                             Write-Message -Level Verbose -Message "Dropping instance $instance from $groupName"
                             $destinationGroup.RegisteredServers[$instanceName].Drop()
-                        }
-                        catch {
+                        } catch {
                             $copyInstanceStatus.Status = "Failed"
                             $copyInstanceStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
@@ -219,14 +216,12 @@
 
                         $copyInstanceStatus.Status = "Successful"
                         $copyInstanceStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                    }
-                    catch {
+                    } catch {
                         $copyInstanceStatus.Status = "Failed"
                         $copyInstanceStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                         if ($_.Exception -match "same name") {
                             Stop-Function -Message "Could not add Switched Server instance name." -Target $instanceName -ErrorRecord $_ -Continue
-                        }
-                        else {
+                        } else {
                             Stop-Function -Message "Failed to add $serverName" -Target $instanceName -ErrorRecord $_ -Continue
                         }
                     }
@@ -240,13 +235,13 @@
                 $toSubGroup = $destinationGroup.ServerGroups[$fromSubGroupName]
 
                 $copyGroupStatus = [pscustomobject]@{
-                    SourceServer = $sourceServer.Name
+                    SourceServer      = $sourceServer.Name
                     DestinationServer = $destServer.Name
-                    Name         = $fromSubGroupName
-                    Type         = "CMS Group"
-                    Status       = $null
-                    Notes        = $null
-                    DateTime     = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
+                    Name              = $fromSubGroupName
+                    Type              = "CMS Group"
+                    Status            = $null
+                    Notes             = $null
+                    DateTime          = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
                 }
 
                 if ($null -ne $toSubGroup) {
@@ -265,8 +260,7 @@
                         try {
                             Write-Message -Level Verbose -Message "Dropping subgroup $fromSubGroupName"
                             $toSubGroup.Drop()
-                        }
-                        catch {
+                        } catch {
                             $copyGroupStatus.Status = "Failed"
                             $copyGroupStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
@@ -291,8 +285,7 @@
         try {
             $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -MinimumVersion 10
             $fromCmStore = Get-DbaCmsRegServerStore -SqlInstance $sourceServer
-        }
-        catch {
+        } catch {
             Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Source
             return
         }
@@ -303,8 +296,7 @@
         foreach ($destinstance in $Destination) {
             try {
                 $destServer = Connect-SqlInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential -MinimumVersion 10
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
             }
             $toCmStore = Get-DbaCmsRegServerStore -SqlInstance $destServer
@@ -326,3 +318,4 @@
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-SqlCentralManagementServer
     }
 }
+

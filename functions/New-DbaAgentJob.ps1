@@ -1,6 +1,6 @@
-﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function New-DbaAgentJob {
-<#
+    <#
     .SYNOPSIS
         New-DbaAgentJob creates a new job
 
@@ -237,23 +237,20 @@ function New-DbaAgentJob {
             # Try connecting to the instance
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             # Check if the job already exists
             if (-not $Force -and ($server.JobServer.Jobs.Name -contains $Job)) {
                 Stop-Function -Message "Job $Job already exists on $instance" -Target $instance -Continue
-            }
-            elseif ($Force -and ($server.JobServer.Jobs.Name -contains $Job)) {
+            } elseif ($Force -and ($server.JobServer.Jobs.Name -contains $Job)) {
                 Write-Message -Message "Job $Job already exists on $instance. Removing.." -Level Verbose
 
                 if ($PSCmdlet.ShouldProcess($instance, "Removing the job $Job on $instance")) {
                     try {
                         Remove-DbaAgentJob -SqlInstance $instance -Job $Job -EnableException
-                    }
-                    catch {
+                    } catch {
                         Stop-Function -Message "Couldn't remove job $Job from $instance" -Target $instance -Continue -ErrorRecord $_
                     }
                 }
@@ -264,8 +261,7 @@ function New-DbaAgentJob {
                 # Create the job object
                 try {
                     $currentjob = New-Object Microsoft.SqlServer.Management.Smo.Agent.Job($server.JobServer, $Job)
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Something went wrong creating the job. `n" -Target $Job -Continue -ErrorRecord $_
                 }
 
@@ -274,8 +270,7 @@ function New-DbaAgentJob {
                 if ($Disabled) {
                     Write-Message -Message "Setting job to disabled" -Level Verbose
                     $currentjob.IsEnabled = $false
-                }
-                else {
+                } else {
                     Write-Message -Message "Setting job to enabled" -Level Verbose
                     $currentjob.IsEnabled = $true
                 }
@@ -298,18 +293,15 @@ function New-DbaAgentJob {
                                 try {
                                     # Create the category
                                     New-DbaAgentJobCategory -SqlInstance $instance -Category $Category
-                                }
-                                catch {
+                                } catch {
                                     Stop-Function -Message "Couldn't create job category $Category from $instance" -Target $instance -Continue -ErrorRecord $_
                                 }
                             }
-                        }
-                        else {
+                        } else {
                             Stop-Function -Message "Job category $Category doesn't exist on $instance. Use -Force to create it." -Target $instance
                             return
                         }
-                    }
-                    else {
+                    } else {
                         Write-Message -Message "Setting job category" -Level Verbose
                         $currentjob.Category = $Category
                     }
@@ -320,8 +312,7 @@ function New-DbaAgentJob {
                     if ($server.Logins.Name -contains $OwnerLogin) {
                         Write-Message -Message "Setting job owner login name to $OwnerLogin" -Level Verbose
                         $currentjob.OwnerLoginName = $OwnerLogin
-                    }
-                    else {
+                    } else {
                         Stop-Function -Message "The owner $OwnerLogin does not exist on instance $instance" -Target $Job -Continue
                     }
                 }
@@ -340,12 +331,10 @@ function New-DbaAgentJob {
 
                             Write-Message -Message "Setting job e-mail operator" -Level Verbose
                             $currentjob.OperatorToEmail = $EmailOperator
-                        }
-                        else {
+                        } else {
                             Stop-Function -Message "The e-mail operator name $EmailOperator does not exist on instance $instance. Exiting.." -Target $Job -Continue
                         }
-                    }
-                    else {
+                    } else {
                         Stop-Function -Message "Invalid combination of e-mail operator name $EmailOperator and email level $EmailLevel. Not setting the notification." -Target $Job -Continue
                     }
                 }
@@ -359,12 +348,10 @@ function New-DbaAgentJob {
 
                             Write-Message -Message "Setting job netsend operator" -Level Verbose
                             $currentjob.OperatorToNetSend = $NetsendOperator
-                        }
-                        else {
+                        } else {
                             Stop-Function -Message "The netsend operator name $NetsendOperator does not exist on instance $instance. Exiting.." -Target $Job -Continue
                         }
-                    }
-                    else {
+                    } else {
                         Write-Message -Message "Invalid combination of netsend operator name $NetsendOperator and netsend level $NetsendLevel. Not setting the notification."
                     }
                 }
@@ -378,12 +365,10 @@ function New-DbaAgentJob {
 
                             Write-Message -Message "Setting job pager operator" -Level Verbose
                             $currentjob.OperatorToPage = $PageOperator
-                        }
-                        else {
+                        } else {
                             Stop-Function -Message "The page operator name $PageOperator does not exist on instance $instance. Exiting.." -Target $Job -Continue
                         }
-                    }
-                    else {
+                    } else {
                         Write-Message -Message "Invalid combination of page operator name $PageOperator and page level $PageLevel. Not setting the notification." -Level Warning
                     }
                 }
@@ -414,8 +399,7 @@ function New-DbaAgentJob {
                     if ($ScheduleId) {
                         Set-DbaAgentJob -SqlInstance $instance -Job $currentjob -ScheduleId $ScheduleId -SqlCredential $SqlCredential
                     }
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Something went wrong creating the job" -Target $currentjob -ErrorRecord $_ -Continue
                 }
             }
@@ -431,3 +415,5 @@ function New-DbaAgentJob {
     }
 
 }
+
+

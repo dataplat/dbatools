@@ -1,5 +1,5 @@
-﻿function Get-DbaPbmCategory {
-<#
+function Get-DbaPbmCategory {
+    <#
     .SYNOPSIS
         Returns policy categories from policy based management from an instance.
 
@@ -85,3 +85,4 @@
         }
     }
 }
+

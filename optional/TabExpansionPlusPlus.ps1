@@ -1051,3 +1051,4 @@ public class NativeCommandTreeNode
     # And private data for the above completions cached in this hashtable
     $completionPrivateData = @{ }
 }
+

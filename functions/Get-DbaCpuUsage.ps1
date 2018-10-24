@@ -1,5 +1,5 @@
-﻿function Get-DbaCpuUsage {
-<#
+function Get-DbaCpuUsage {
+    <#
     .SYNOPSIS
         Provides detailed CPU usage information about a SQL Server's process
 
@@ -85,16 +85,16 @@
         }
 
         $threadwaitreasons = [pscustomobject]@{
-            0 = 'Executive'
-            1 = 'FreePage'
-            2 = 'PageIn'
-            3 = 'PoolAllocation'
-            4 = 'ExecutionDelay'
-            5 = 'FreePage'
-            6 = 'PageIn'
-            7 = 'Executive'
-            8 = 'FreePage'
-            9 = 'PageIn'
+            0  = 'Executive'
+            1  = 'FreePage'
+            2  = 'PageIn'
+            3  = 'PoolAllocation'
+            4  = 'ExecutionDelay'
+            5  = 'FreePage'
+            6  = 'PageIn'
+            7  = 'Executive'
+            8  = 'FreePage'
+            9  = 'PageIn'
             10 = 'PoolAllocation'
             11 = 'ExecutionDelay'
             12 = 'FreePage'
@@ -112,8 +112,7 @@
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -122,8 +121,7 @@
 
             if ($server.VersionMajor -eq 8) {
                 $spidcollection = $server.Query("select spid, kpid from sysprocesses")
-            }
-            else {
+            } else {
                 $spidcollection = $server.Query("select t.os_thread_id as kpid, s.session_id as spid
             from sys.dm_exec_sessions s
             join sys.dm_exec_requests er on s.session_id = er.session_id
@@ -154,3 +152,4 @@
         }
     }
 }
+

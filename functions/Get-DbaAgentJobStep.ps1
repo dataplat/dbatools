@@ -1,5 +1,5 @@
-﻿function Get-DbaAgentJobStep {
-<#
+function Get-DbaAgentJobStep {
+    <#
     .SYNOPSIS
         Gets SQL Agent Job Step information for each instance(s) of SQL Server.
 
@@ -87,8 +87,7 @@
 
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
             Write-Message -Level Verbose -Message "Collecting jobs on $instance"
@@ -115,3 +114,4 @@
         }
     }
 }
+

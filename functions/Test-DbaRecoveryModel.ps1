@@ -1,5 +1,5 @@
-﻿function Test-DbaRecoveryModel {
-<#
+function Test-DbaRecoveryModel {
+    <#
     .SYNOPSIS
         Find if database is really a specific recovery model or not.
 
@@ -75,7 +75,7 @@
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
         [PSCredential]$SqlCredential,
-        [validateSet("Full","Simple","Bulk_Logged")]
+        [validateSet("Full", "Simple", "Bulk_Logged")]
         [object]$RecoveryModel,
         [switch]$Detailed,
         [Alias('Silent')]
@@ -85,14 +85,14 @@
         Test-DbaDeprecation -DeprecatedOn 1.0.0 -Parameter Detailed
         Test-DbaDeprecation -DeprecatedOn 1.0.0 -Alias Test-DbaFullRecoveryModel
 
-        if(Test-Bound -ParameterName RecoveryModel -Not){
+        if (Test-Bound -ParameterName RecoveryModel -Not) {
             $RecoveryModel = "Full"
         }
 
-        switch($RecoveryModel){
-            "Full"          {$recoveryCode = 1}
-            "Bulk_Logged"   {$recoveryCode = 2}
-            "Simple"        {$recoveryCode = 3}
+        switch ($RecoveryModel) {
+            "Full" {$recoveryCode = 1}
+            "Bulk_Logged" {$recoveryCode = 2}
+            "Simple" {$recoveryCode = 3}
         }
 
         $sqlRecoveryModel = "SELECT  SERVERPROPERTY('MachineName') AS ComputerName,
@@ -127,8 +127,7 @@
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential -MinimumVersion 9
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -142,24 +141,23 @@
                 foreach ($row in $results) {
                     if (!([bool]$row.IsReallyInFullRecoveryModel) -and $RecoveryModel -eq 'Full') {
                         $ActualRecoveryModel = "SIMPLE"
-                    }
-                    else{
+                    } else {
                         $ActualRecoveryModel = "$($RecoveryModel.ToString().ToUpper())"
                     }
 
                     [PSCustomObject]@{
-                        ComputerName   = $row.ComputerName
-                        InstanceName   = $row.InstanceName
-                        SqlInstance    = $row.SqlInstance
-                        Database       = $row.Database
+                        ComputerName            = $row.ComputerName
+                        InstanceName            = $row.InstanceName
+                        SqlInstance             = $row.SqlInstance
+                        Database                = $row.Database
                         ConfiguredRecoveryModel = $row.RecoveryModelDesc
-                        ActualRecoveryModel = $ActualRecoveryModel
-                    } | Select-DefaultView -Property ComputerName,InstanceName,SqlInstance,Database,ConfiguredRecoveryModel,ActualRecoveryModel
+                        ActualRecoveryModel     = $ActualRecoveryModel
+                    } | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, Database, ConfiguredRecoveryModel, ActualRecoveryModel
                 }
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
         }
     }
 }
+

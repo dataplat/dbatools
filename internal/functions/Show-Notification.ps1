@@ -36,3 +36,4 @@ function Show-Notification {
     $notify = [Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier($appId)
     $notify.Show($toastXml)
 }
+

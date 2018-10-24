@@ -1,6 +1,6 @@
-﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaInstanceProperty {
-<#
+    <#
     .SYNOPSIS
         Gets SQL Server instance properties of one or more instance(s) of SQL Server.
 
@@ -83,8 +83,7 @@ function Get-DbaInstanceProperty {
 
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -104,8 +103,7 @@ function Get-DbaInstanceProperty {
                     Add-Member -Force -InputObject $prop -MemberType NoteProperty -Name PropertyType -Value 'Information'
                     Select-DefaultView -InputObject $prop -Property ComputerName, InstanceName, SqlInstance, Name, Value, PropertyType
                 }
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Issue gathering information properties for $instance." -Target $instance -ErrorRecord $_ -Continue
             }
 
@@ -125,8 +123,7 @@ function Get-DbaInstanceProperty {
                     Add-Member -Force -InputObject $prop -MemberType NoteProperty -Name PropertyType -Value 'UserOption'
                     Select-DefaultView -InputObject $prop -Property ComputerName, InstanceName, SqlInstance, Name, Value, PropertyType
                 }
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Issue gathering user options for $instance." -Target $instance -ErrorRecord $_ -Continue
             }
 
@@ -146,8 +143,7 @@ function Get-DbaInstanceProperty {
                     Add-Member -Force -InputObject $prop -MemberType NoteProperty -Name PropertyType -Value 'Setting'
                     Select-DefaultView -InputObject $prop -Property ComputerName, InstanceName, SqlInstance, Name, Value, PropertyType
                 }
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Issue gathering settings for $instance." -Target $instance -ErrorRecord $_ -Continue
             }
         }
@@ -156,3 +152,4 @@ function Get-DbaInstanceProperty {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-DbaSqlInstanceProperty
     }
 }
+

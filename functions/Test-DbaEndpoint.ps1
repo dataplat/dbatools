@@ -1,6 +1,6 @@
 #ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Test-DbaEndpoint {
-<#
+    <#
     .SYNOPSIS
         Performs a simple connectivity test for TCP and SSL enabled endpoints.
         
@@ -82,8 +82,7 @@ function Test-DbaEndpoint {
         foreach ($end in $InputObject) {
             if (-not $end.Protocol.Tcp.ListenerPort) {
                 Write-Message -Level Verbose -Message "$end on $($end.Parent) does not have a tcp listener port"
-            }
-            else {
+            } else {
                 Write-Message "Connecting to port $($end.Protocol.Tcp.ListenerPort) on $($end.ComputerName) for endpoint $($end.Name)"
                 
                 try {
@@ -92,8 +91,7 @@ function Test-DbaEndpoint {
                     $tcp.Close()
                     $tcp.Dispose()
                     $connect = "Success"
-                }
-                catch {
+                } catch {
                     $connect = $_
                 }
                 
@@ -105,25 +103,24 @@ function Test-DbaEndpoint {
                         $tcp.Close()
                         $tcp.Dispose()
                         $sslconnect = "Success"
-                    }
-                    else {
+                    } else {
                         $sslconnect = "None"
                     }
-                }
-                catch {
+                } catch {
                     $sslconnect = $_
                 }
                 
                 [pscustomobject]@{
-                    ComputerName = $end.ComputerName
-                    InstanceName = $end.InstanceName
-                    SqlInstance  = $end.SqlInstance
-                    Endpoint     = $end.Name
-                    Port         = $end.Protocol.Tcp.ListenerPort
-                    Connection   = $connect
+                    ComputerName  = $end.ComputerName
+                    InstanceName  = $end.InstanceName
+                    SqlInstance   = $end.SqlInstance
+                    Endpoint      = $end.Name
+                    Port          = $end.Protocol.Tcp.ListenerPort
+                    Connection    = $connect
                     SslConnection = $sslconnect
                 }
             }
         }
     }
 }
+

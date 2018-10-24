@@ -1,6 +1,6 @@
-﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Invoke-DbaDbMirroring {
-<#
+    <#
     .SYNOPSIS
         Automates the creation of database mirrors.
 
@@ -183,8 +183,7 @@ function Invoke-DbaDbMirroring {
                 if ($Witness) {
                     $witserver = Connect-SqlInstance -SqlInstance $Witness -SqlCredential $WitnessSqlCredential
                 }
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -216,8 +215,7 @@ function Invoke-DbaDbMirroring {
             if ($primarydb.RecoveryModel -ne "Full") {
                 if ((Test-Bound -ParameterName UseLastBackups)) {
                     Stop-Function -Continue -Message "$dbName not set to full recovery. UseLastBackups cannot be used."
-                }
-                else {
+                } else {
                     Set-DbaDbRecoveryModel -SqlInstance $source -Database $primarydb.Name -RecoveryModel Full
                 }
             }
@@ -227,8 +225,7 @@ function Invoke-DbaDbMirroring {
             if (-not $validation.DatabaseExistsOnMirror -or $Force) {
                 if ($UseLastBackups) {
                     $allbackups = Get-DbaBackupHistory -SqlInstance $primarydb.Parent -Database $primarydb.Name -IncludeCopyOnly -Last
-                }
-                else {
+                } else {
                     $fullbackup = $primarydb | Backup-DbaDatabase -BackupDirectory $NetworkShare -Type Full
                     $logbackup = $primarydb | Backup-DbaDatabase -BackupDirectory $NetworkShare -Type Log
                     $allbackups = $fullbackup, $logbackup
@@ -237,8 +234,7 @@ function Invoke-DbaDbMirroring {
                 if ($Pscmdlet.ShouldProcess("$Mirror", "restoring full and log backups of $primarydb from $Primary")) {
                     try {
                         $null = $allbackups | Restore-DbaDatabase -SqlInstance $Mirror -SqlCredential $MirrorSqlCredential -WithReplace -NoRecovery -TrustDbBackupHistory -EnableException
-                    }
-                    catch {
+                    } catch {
                         $msg = $_.Exception.InnerException.InnerException.InnerException.InnerException.Message
                         if (-not $msg) {
                             $msg = $_.Exception.InnerException.InnerException.InnerException.Message
@@ -259,8 +255,7 @@ function Invoke-DbaDbMirroring {
                 if (-not $allbackups) {
                     if ($UseLastBackups) {
                         $allbackups = Get-DbaBackupHistory -SqlInstance $primarydb.Parent -Database $primarydb.Name -IncludeCopyOnly -Last
-                    }
-                    else {
+                    } else {
                         $fullbackup = $primarydb | Backup-DbaDatabase -BackupDirectory $NetworkShare -Type Full
                         $logbackup = $primarydb | Backup-DbaDatabase -BackupDirectory $NetworkShare -Type Log
                         $allbackups = $fullbackup, $logbackup
@@ -269,8 +264,7 @@ function Invoke-DbaDbMirroring {
                 if ($Pscmdlet.ShouldProcess("$Witness", "restoring full and log backups of $primarydb from $Primary")) {
                     try {
                         $null = $allbackups | Restore-DbaDatabase -SqlInstance $Witness -SqlCredential $WitnessSqlCredential -WithReplace -NoRecovery -TrustDbBackupHistory -EnableException
-                    }
-                    catch {
+                    } catch {
                         $msg = $_.Exception.InnerException.InnerException.InnerException.InnerException.Message
                         Stop-Function -Message $msg -ErrorRecord $_ -Target $witserver -Continue
                     }
@@ -323,8 +317,7 @@ function Invoke-DbaDbMirroring {
                             $null = New-DbaLogin -SqlInstance $witserver -Login $account -WarningAction SilentlyContinue
                             $witserver.Query("GRANT CONNECT ON ENDPOINT::$witnessendpoint TO [$account]")
                         }
-                    }
-                    catch {
+                    } catch {
                         Stop-Function -Continue -Message "Failure" -ErrorRecord $_
                     }
                 }
@@ -333,24 +326,21 @@ function Invoke-DbaDbMirroring {
             Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Starting endpoints if necessary"
             try {
                 $null = $primaryendpoint, $mirrorendpoint, $witnessendpoint | Start-DbaEndpoint -EnableException
-            }
-            catch {
+            } catch {
                 Stop-Function -Continue -Message "Failure" -ErrorRecord $_
             }
 
             try {
                 Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Setting up partner for mirror"
                 $null = $mirrordb | Set-DbaDbMirror -Partner $primaryendpoint.Fqdn -EnableException
-            }
-            catch {
+            } catch {
                 Stop-Function -Continue -Message "Failure on mirror" -ErrorRecord $_
             }
 
             try {
                 Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Setting up partner for primary"
                 $null = $primarydb | Set-DbaDbMirror -Partner $mirrorendpoint.Fqdn -EnableException
-            }
-            catch {
+            } catch {
                 Stop-Function -Continue -Message "Failure on primary" -ErrorRecord $_
             }
 
@@ -358,8 +348,7 @@ function Invoke-DbaDbMirroring {
                 if ($witnessendpoint) {
                     $null = $primarydb | Set-DbaDbMirror -Witness $witnessendpoint.Fqdn -EnableException
                 }
-            }
-            catch {
+            } catch {
                 Stop-Function -Continue -Message "Failure with the new last part" -ErrorRecord $_
             }
 
@@ -373,11 +362,11 @@ function Invoke-DbaDbMirroring {
                 }
                 if ($Witness) {
                     $results | Select-DefaultView -Property Primary, Mirror, Witness, Database, Status
-                }
-                else {
+                } else {
                     $results | Select-DefaultView -Property Primary, Mirror, Database, Status
                 }
             }
         }
     }
 }
+

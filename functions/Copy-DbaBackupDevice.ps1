@@ -1,5 +1,5 @@
-﻿function Copy-DbaBackupDevice {
-<#
+function Copy-DbaBackupDevice {
+    <#
     .SYNOPSIS
         Copies backup devices one by one. Copies both SQL code and the backup file itself.
 
@@ -82,8 +82,7 @@
     begin {
         try {
             $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
-        }
-        catch {
+        } catch {
             Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Source
             return
         }
@@ -95,8 +94,7 @@
         foreach ($destinstance in $Destination) {
             try {
                 $destServer = Connect-SqlInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
             }
             $destBackupDevices = $destServer.BackupDevices
@@ -106,13 +104,13 @@
                 $deviceName = $currentBackupDevice.Name
 
                 $copyBackupDeviceStatus = [pscustomobject]@{
-                    SourceServer = $sourceServer.Name
+                    SourceServer      = $sourceServer.Name
                     DestinationServer = $destServer.Name
-                    Name         = $deviceName
-                    Type         = "Backup Device"
-                    Status       = $null
-                    Notes        = $null
-                    DateTime     = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
+                    Name              = $deviceName
+                    Type              = "Backup Device"
+                    Status            = $null
+                    Notes             = $null
+                    DateTime          = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
                 }
 
                 if ($BackupDevice -and $BackupDevice -notcontains $deviceName) {
@@ -127,14 +125,12 @@
 
                         Write-Message -Level Verbose -Message "backup device $deviceName exists at destination. Use -Force to drop and migrate."
                         continue
-                    }
-                    else {
+                    } else {
                         if ($Pscmdlet.ShouldProcess($destinstance, "Dropping backup device $deviceName")) {
                             try {
                                 Write-Message -Level Verbose -Message "Dropping backup device $deviceName"
                                 $destServer.BackupDevices[$deviceName].Drop()
-                            }
-                            catch {
+                            } catch {
                                 $copyBackupDeviceStatus.Status = "Failed"
                                 $copyBackupDeviceStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
@@ -149,8 +145,7 @@
                     try {
                         $sql = $currentBackupDevice.Script() | Out-String
                         $sql = $sql -replace [Regex]::Escape("'$source'"), "'$destinstance'"
-                    }
-                    catch {
+                    } catch {
                         $copyBackupDeviceStatus.Status = "Failed"
                         $copyBackupDeviceStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
@@ -179,8 +174,7 @@
                         try {
                             Write-Message -Level Verbose -Message "Updating $deviceName to use $backupDirectory"
                             $sql = $sql -replace [Regex]::Escape($path), $backupDirectory
-                        }
-                        catch {
+                        } catch {
                             $copyBackupDeviceStatus.Status = "Failed"
                             $copyBackupDeviceStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
@@ -193,8 +187,7 @@
                     try {
                         Start-BitsTransfer -Source $sourcepath -Destination $destPath -ErrorAction Stop
                         Write-Message -Level Verbose -Message "Backup device $deviceName successfully copied"
-                    }
-                    catch {
+                    } catch {
                         $copyBackupDeviceStatus.Status = "Failed"
                         $copyBackupDeviceStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
@@ -210,8 +203,7 @@
 
                         $copyBackupDeviceStatus.Status = "Successful"
                         $copyBackupDeviceStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                    }
-                    catch {
+                    } catch {
                         $copyBackupDeviceStatus.Status = "Failed"
                         $copyBackupDeviceStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
@@ -225,3 +217,4 @@
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-SqlBackupDevice
     }
 }
+

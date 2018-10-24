@@ -1,5 +1,5 @@
-﻿function Get-DbaDbSpace {
-<#
+function Get-DbaDbSpace {
+    <#
     .SYNOPSIS
         Returns database file space information for database files on a SQL instance.
 
@@ -132,8 +132,7 @@
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failed to process Instance $Instance." -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -147,19 +146,16 @@
             try {
                 if (Test-Bound "Database") {
                     $dbs = $server.Databases | Where-Object Name -In $Database
-                }
-                elseif ($IncludeSystemDBs) {
+                } elseif ($IncludeSystemDBs) {
                     $dbs = $server.Databases | Where-Object IsAccessible
-                }
-                else {
+                } else {
                     $dbs = $server.Databases | Where-Object { $_.IsAccessible -and $_.IsSystemObject -eq 0 }
                 }
 
                 if (Test-Bound "ExcludeDatabase") {
                     $dbs = $dbs | Where-Object Name -NotIn $ExcludeDatabase
                 }
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Unable to gather databases for $instance." -ErrorRecord $_ -Continue
             }
 
@@ -174,32 +170,27 @@
                     foreach ($row in ($db.ExecuteWithResults($sql)).Tables.Rows) {
                         if ($row.UsedSpaceMB -is [System.DBNull]) {
                             $UsedMB = 0
-                        }
-                        else {
+                        } else {
                             $UsedMB = [Math]::Round($row.UsedSpaceMB)
                         }
                         if ($row.FreeSpaceMB -is [System.DBNull]) {
                             $FreeMB = 0
-                        }
-                        else {
+                        } else {
                             $FreeMB = [Math]::Round($row.FreeSpaceMB)
                         }
                         if ($row.PercentUsed -is [System.DBNull]) {
                             $PercentUsed = 0
-                        }
-                        else {
+                        } else {
                             $PercentUsed = [Math]::Round($row.PercentUsed)
                         }
                         if ($row.SpaceBeforeMax -is [System.DBNull]) {
                             $SpaceUntilMax = 0
-                        }
-                        else {
+                        } else {
                             $SpaceUntilMax = [Math]::Round($row.SpaceBeforeMax)
                         }
                         if ($row.UnusableSpaceMB -is [System.DBNull]) {
                             $UnusableSpace = 0
-                        }
-                        else {
+                        } else {
                             $UnusableSpace = [Math]::Round($row.UnusableSpaceMB)
                         }
 
@@ -223,8 +214,7 @@
                             UnusableSpaceMB      = $UnusableSpace
                         }
                     }
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Unable to query $instance - $db." -Target $db -ErrorRecord $_ -Continue
                 }
             }
@@ -235,3 +225,4 @@
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Get-DbaDatabaseSpace
     }
 }
+
