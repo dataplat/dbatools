@@ -1,7 +1,9 @@
 ﻿# See http://www.appveyor.com/docs/appveyor-yml for many more options
 
-configuration: "Debug"
+init:
+  - git config --global core.autocrlf true
 
+configuration: "Debug"
 
 before_build:
   - nuget restore bin\projects\dbatools\dbatools.sln
