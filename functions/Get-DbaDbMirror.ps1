@@ -61,17 +61,16 @@ function Get-DbaDbMirror {
 
             foreach ($witness in $witnesses) {
                 $witnessdb = $dbs | Where-Object Name -eq $witness.database_name
-
+                $status = switch ($witness.partner_sync_state) {
+                    0 { "None" }
+                    1 { "Suspended" }
+                    2 { "Disconnected" }
+                    3 { "Synchronizing" }
+                    4 { "PendingFailover" }
+                    5 { "Synchronized" }
+                }
+                
                 foreach ($db in $witnessdb) {
-                    $state = switch ($witness.partner_sync_state) {
-                        0 { "None" }
-                        1 { "Suspended" }
-                        2 { "Disconnected" }
-                        3 { "Synchronizing" }
-                        4 { "PendingFailover" }
-                        5 { "Synchronized" }
-                    }
-
                     Add-Member -InputObject $db -Force -MemberType NoteProperty -Name MirroringPartner -Value $witness.principal_server_name
                     Add-Member -InputObject $db -Force -MemberType NoteProperty -Name MirroringSafetyLevel -Value $witness.safety_level_desc
                     Add-Member -InputObject $db -Force -MemberType NoteProperty -Name MirroringWitnessStatus -Value $status
