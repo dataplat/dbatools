@@ -6,7 +6,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
         $paramCount = 2
         $defaultParamCount = 11
-        [object[]]$params = (Get-ChildItem function:\Invoke-DbaFormatter).Parameters.Keys
+        [object[]]$params = (Get-ChildItem function:\Invoke-DbatoolsFormatter).Parameters.Keys
         $knownParameters = 'Path','EnableException'
         It "Should contain our specific parameters" {
             ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
@@ -54,7 +54,7 @@ function Get-DbaStub {
     Context "formatting actually works" {
         $temppath = Join-Path $TestDrive 'somefile.ps1'
         Set-Content -Value $content -Path $temppath
-        Invoke-DbaFormatter -Path $temppath
+        Invoke-DbatoolsFormatter -Path $temppath
         $newcontent = Get-Content -Path $temppath -Raw
         It -Skip "should format things according to dbatools standards" {
             $newcontent | Should -Be $wantedContent

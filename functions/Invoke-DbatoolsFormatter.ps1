@@ -1,4 +1,4 @@
-function Invoke-DbaFormatter {
+function Invoke-DbatoolsFormatter {
     <#
     .SYNOPSIS
         Helps formatting function files to dbatools' standards
@@ -23,10 +23,10 @@ function Invoke-DbaFormatter {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Invoke-DbaFormatter
+        https://dbatools.io/Invoke-DbatoolsFormatter
 
     .EXAMPLE
-        PS C:\> Invoke-DbaFormatter -Path C:\dbatools\functions\Get-DbaDatabase.ps1
+        PS C:\> Invoke-DbatoolsFormatter -Path C:\dbatools\functions\Get-DbaDatabase.ps1
 
         Reformats C:\dbatools\functions\Get-DbaDatabase.ps1 to dbatools' standards
 
