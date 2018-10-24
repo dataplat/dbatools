@@ -13,6 +13,8 @@
     The perform volume maintenance right can be granted to the SQL Server account. If you happen to activate this in an environment where you are not allowed to do this,
     please revert that operation by removing the right from the local security policy (secpol.msc).
 
+    You will see a screen with the user of your machine. There you can choose the user that will act as Service Account for your SQL Server Install.
+
     Note that the dowloaded installation file must be unzipped, an ISO has to be mounted. This will not be executed from this script.
 
     .PARAMETER Version will hold the SQL Server version you wish to install. The variable will support autocomplete
@@ -28,8 +30,6 @@
     .PARAMETER BackupVolume will hold the volume letter of the Backup disc. If left empty, it will default to C, unless there is a drive named like Backup
 
     .PARAMETER PerformVolumeMaintenance will set the policy for grant or deny this right to the SQL Server service account.
-
-    .PARAMETER SqlServiceAccount will hold the name of the SQL Server service account
 
     .Inputs
     None
@@ -65,10 +65,11 @@
         [string]$TempVolume, 
         [string]$BackupVolume,
         [ValidateSet("Yes", "No")][string]$PerformVolumeMaintenance,
-        [string]$SqlServerAccount
     )
 
     $configini = Get-Content "$script:PSModuleRoot\bin\installtemplate\$version.ini"
+
+    $SqlServerAccount = Get-CimInstance -ClassName Win32_UserAccount  | Out-GridView -title 'Please select the Service Account for your Sql Server instance.' -PassThru | Select-Object -ExpandProperty Name
     
 
     # Check if there are designated drives for Data, Log, TempDB, Back-up and Application.
