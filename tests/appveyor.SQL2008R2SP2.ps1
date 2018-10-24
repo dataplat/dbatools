@@ -1,6 +1,7 @@
 $indent = '...'
 Write-Host -Object "$indent Running $PSCommandpath" -ForegroundColor DarkGreen
-$dbatools_serialimport = $true
+#$dbatools_serialimport = $true
+Start-Sleep 5
 Import-Module C:\github\dbatools\dbatools.psd1
 Start-Sleep 5
 
