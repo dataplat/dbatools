@@ -114,7 +114,7 @@ function Remove-DbaNetworkCertificate {
                 $instancename = $args[2]
                 $vsname = $args[3]
 
-                $regpath = "Registry::HKEY_LOCAL_MACHINE\$($args[0])\MSSQLServer\SuperSocketNetLib"
+                $regpath = "Registry::HKEY_LOCAL_MACHINE\$($regroot)\MSSQLServer\SuperSocketNetLib"
                 $cert = (Get-ItemProperty -Path $regpath -Name Certificate).Certificate
                 Set-ItemProperty -Path $regpath -Name Certificate -Value $null
 

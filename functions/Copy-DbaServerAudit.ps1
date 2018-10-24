@@ -168,7 +168,8 @@ function Copy-DbaServerAudit {
                         Write-Message -Level Verbose -Message "Force specified. Creating directory."
 
                         $destNetBios = Resolve-NetBiosName $destServer
-                        $path = Join-AdminUnc $destNetBios $currentAudit.Filepath
+                        #Variable marked as unused by PSScriptAnalyzer
+                        #$path = Join-AdminUnc $destNetBios $currentAudit.Filepath
                         $root = $currentAudit.Filepath.Substring(0, 3)
                         $rootUnc = Join-AdminUnc $destNetBios $root
 

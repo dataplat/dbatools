@@ -151,7 +151,7 @@ function New-DbaAgentProxy {
 
                 if ($Pscmdlet.ShouldProcess($instance, "Adding $proxyname with the $Credential credential")) {
                     # the new-object is stubborn and $true/$false has to be forced in
-                    $enabled = switch ($disabled) {
+                    switch (Test-Bound $disabled) {
                         $false {
                             $proxy = New-Object Microsoft.SqlServer.Management.Smo.Agent.ProxyAccount -ArgumentList $jobServer, $ProxyName, $Credential, $true, $Description
                         }
