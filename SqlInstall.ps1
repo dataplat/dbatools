@@ -13,7 +13,7 @@
     The perform volume maintenance right can be granted to the SQL Server account. If you happen to activate this in an environment where you are not allowed to do this,
     please revert that operation by removing the right from the local security policy (secpol.msc).
 
-    You will see a screen with the user of your machine. There you can choose the user that will act as Service Account for your SQL Server Install.
+    You will see a screen with the users available on your machine. There you can choose the user that will act as Service Account for your SQL Server Install.
 
     Note that the dowloaded installation file must be unzipped, an ISO has to be mounted. This will not be executed from this script.
 
@@ -99,14 +99,10 @@
             Select-Object -ExpandProperty DriveLetter
     }
     #Check the number of cores available on the server. Summed because every processor can contain multiple cores
-    $NumberOfCores = Get-WmiObject -Class Win32_processor |  
-        Measure-Object NumberOfLogicalProcessors -Sum | 
-        Select-Object -ExpandProperty sum
+    $NumberOfCores =  Get-CimInstance -ClassName Win32_processor | Measure-Object NumberOfCores -Sum | Select-Object -ExpandProperty sum
 
     IF ($NumberOfCores -gt 8)
     { $NumberOfCores = 8 }
-
-    #Get the amount of available memory. If it's more than 40 GB, give the server 10% of the memory, else reserve 4 GB.
 
     IF ($null -eq $DataVolume -or $DataVolume -eq '') {
         $DataVolume = 'C'
@@ -139,132 +135,82 @@
     Write-Message -Level Verbose -Message  'Do you agree on the drives?'
     $AlterDir = Read-Host " ( Y / N )"
 
-    $CheckLastTwoChar = ":\"
-    $CheckLastChar = "\"
-
     Switch ($AlterDir) {
         Y {Write-Message -Level Verbose -Message "Yes, drives agreed, continuing"; }
         N {
             Write-Message -Level Verbose -Message "Datadrive: " $DataVolume
-            $NewDataVolume = Read-Host "Your datavolume: "
-            If ($NewDataVolume.Substring($NewDataVolume.Length - 2 -eq $CheckLastTwoChar) -and $NewDataVolume.Length -gt 2) {
-                $NewDataVolume = $NewDataVolume.Substring(0, $NewDataVolume.Length - 2)
+                $NewDataVolume = Read-Host "Your datavolume: "
+                If ([string]::IsNullOrEmpty($NewDataVolume)) {
+                    Write-Message -Level Verbose -Message "Datavolume remains on " $DataVolume
+                }
+                else {
+                $NewDataVolume = $NewDataVolume -replace "\\$"
+                $NewDataVolume = $NewDataVolume -replace ":$"
                 $DataVolume = $NewDataVolume
-                Write-Message -Level Verbose -Message "DataVolume moved to " $DataVolume
-            }
-            elseif ($NewDataVolume.Substring($NewDataVolume.Length - 1 -eq $CheckLastChar) -and $NewDataVolume.Length -gt 1) {
-                $NewDataVolume = $NewDataVolume.Substring(0, $NewDataVolume.Length - 1)
-                $DataVolume = $NewDataVolume
-                Write-Message -Level Verbose -Message "DataVolume moved to " $DataVolume
-            }
-            else {
-                $DataVolume = $NewDataVolume
-                Write-Message -Level Verbose -Message "DataVolume moved to " $DataVolume
-            }
-            If ([string]::IsNullOrEmpty($NewDataVolume)) {
-                Write-Message -Level Verbose -Message "Datavolume remains on " $DataVolume
-            }
+            Write-Message -Level Verbose -Message "DataVolume moved to " $DataVolume
+                }
+            
             Write-Message -Level Verbose -Message "logvolume: " $LogVolume
-            $NewLogVolume = Read-Host "Your logvolume: "
-            If ($NewLogVolume.Substring($NewLogVolume.Length - 2 -eq $CheckLastTwoChar) -and $NewLogVolume.Length -gt 2) {
-                $NewLogVolume = $NewLogVolume.Substring(0, $NewLogVolume.Length - 2)
+                $NewLogVolume = Read-Host "Your logvolume: "
+                If ([string]::IsNullOrEmpty($NewLogVolume)) {
+                    Write-Message -Level Verbose -Message "Logvolume remains on " $LogVolume
+                }
+                else {
+                $NewLogVolume = $NewLogVolume -replace "\\$"
+                $NewLogVolume = $NewLogVolume -replace ":$"
                 $LogVolume = $NewLogVolume
                 Write-Message -Level Verbose -Message "LogVolume moved to " $LogVolume
-            }
-            elseif ($NewLogVolume.Substring($NewLogVolume.Length - 1 -eq $CheckLastChar) -and $NewLogVolume.Length -gt 1) {
-                $NewLogVolume = $NewLogVolume.Substring(0, $NewLogVolume.Length - 1)
-                $LogVolume = $NewLogVolume
-                Write-Message -Level Verbose -Message "LogVolume moved to " $LogVolume
-            }
-            else {
-                $LogVolume = $NewLogVolume
-                Write-Message -Level Verbose -Message "LogVolume moved to " $LogVolume
-            }
-            If ([string]::IsNullOrEmpty($NewLogVolume)) {
-                Write-Message -Level Verbose -Message "Logvolume remains on " $LogVolume
-            }
+                }
+
 
             Write-Message -Level Verbose -Message "TempVolume: " $TempVolume
             $NewTempVolume = Read-Host "Your TempVolume: "
-            If ($NewTempVolume.Substring($NewTempVolume.Length - 2 -eq $CheckLastTwoChar) -and $NewTempVolume.Length -gt 2) {
-                $NewTempVolume = $NewTempVolume.Substring(0, $NewTempVolume.Length - 2)
-                $TempVolume = $NewTempVolume
-                Write-Message -Level Verbose -Message "TempVolume moved to " $TempVolume
-            }
-            elseif ($NewTempVolume.Substring($NewTempVolume.Length - 1 -eq $CheckLastChar) -and $NewTempVolume.Length -gt 1) {
-                $NewTempVolume = $NewTempVolume.Substring(0, $NewTempVolume.Length - 1)
-                $TempVolume = $NewTempVolume
-                Write-Message -Level Verbose -Message "TempVolume moved to " $TempVolume
-            }
-            else {
-                $TempVolume = $NewTempVolume
-                Write-Message -Level Verbose -Message "TempVolume moved to " $TempVolume
-            }
             If ([string]::IsNullOrEmpty($NewTempVolume)) {
                 Write-Message -Level Verbose -Message "TempVolume remains on " $TempVolume
+            }
+            else {
+                $NewTempVolume = $NewTempVolume -replace "\\$"
+                $NewTempVolume = $NewTempVolume -replace ":$"
+                $TempVolume = $NewTempVolume
+                Write-Message -Level Verbose -Message "TempVolume moved to " $TempVolume
             }
 
             Write-Message -Level Verbose -Message "AppVolume: " $AppVolume
             $NewAppVolume = Read-Host "Your AppVolume: "
-            If ($NewAppVolume.Substring($NewAppVolume.Length - 2 -eq $CheckLastTwoChar) -and $NewAppVolume.Length -gt 2) {
-                $NewAppVolume = $NewAppVolume.Substring(0, $NewAppVolume.Length - 2)
-                $AppVolume = $NewAppVolume
-                Write-Message -Level Verbose -Message "AppVolume moved to " $AppVolume
-            }
-            elseif ($NewAppVolume.Substring($NewAppVolume.Length - 1 -eq $CheckLastChar) -and $NewAppVolume.Length -gt 1) {
-                $NewAppVolume = $NewAppVolume.Substring(0, $NewAppVolume.Length - 1)
-                $AppVolume = $NewAppVolume
-                Write-Message -Level Verbose -Message "AppVolume moved to " $AppVolume
-            }
-            else {
-                $AppVolume = $NewAppVolume
-                Write-Message -Level Verbose -Message "AppVolume moved to " $AppVolume
-            }
             If ([string]::IsNullOrEmpty($NewAppVolume)) {
                 Write-Message -Level Verbose -Message "AppVolume remains on " $AppVolume
+            }
+            else {
+                $NewAppVolume = $NewAppVolume -replace "\\$"
+                $NewAppVolume = $NewAppVolume -replace ":$"
+                $AppVolume = $NewAppVolume
+                Write-Message -Level Verbose -Message "AppVolume moved to " $AppVolume
             }
 
             Write-Message -Level Verbose -Message "BackupVolume: " $BackupVolume
             $NewBackupVolume = Read-Host "Your BackupVolume: "
-            If ($NewBackupVolume.Substring($NewBackupVolume.Length - 2 -eq $CheckLastTwoChar) -and $NewBackupVolume.Length -gt 2) {
-                $NewBackupVolume = $NewBackupVolume.Substring(0, $NewBackupVolume.Length - 2)
-                $BackupVolume = $NewBackupVolume
-                Write-Message -Level Verbose -Message "BackupVolume moved to " $BackupVolume
-            }
-            elseif ($NewBackupVolume.Substring($NewBackupVolume.Length - 1 -eq $CheckLastChar) -and $NewBackupVolume.Length -gt -1) {
-                $NewBackupVolume = $NewBackupVolume.Substring(0, $NewBackupVolume.Length - 1)
-                $BackupVolume = $NewBackupVolume
-                Write-Message -Level Verbose -Message "BackupVolume moved to " $BackupVolume
-            }
-            else {
-                $BackupVolume = $NewBackupVolume
-                Write-Message -Level Verbose -Message "BackupVolume moved to " $BackupVolume
-            }
             If ([string]::IsNullOrEmpty($NewBackupVolume)) {
                 Write-Message -Level Verbose -Message "BackupVolume remains on " $BackupVolume
+            }
+            else{
+                $NewBackupVolume = $NewBackupVolume -replace "\\$"
+                $NewBackupVolume = $NewBackupVolume -replace ":$"
+                $BackupVolume = $NewBackupVolume
+                Write-Message -Level Verbose -Message "BackupVolume moved to " $BackupVolume
             }
         }
         Default {Write-Message -Level Verbose -Message "Drives agreed, continuing"; }
     }
 
-    $CheckLastTwoChar = ":\"
-    $CheckLastChar = "\"
-
     $SetupFile = Read-Host -Prompt 'Please enter the root location for Setup.exe'
-    IF ($SetupFile.Length -gt 1) {
-        $C2 = $SetupFile.Substring($SetupFile.Length - 2)
-        $C1 = $SetupFile.Substring($SetupFile.Length - 1)
-        If ($C2 -eq $CheckLastTwoChar) {
-            $debug = $SetupFile.Substring($SetupFile.Length - 2)
-            Write-Message -Level Verbose -Message $debug '/' $CheckLastTwoChar
-            $SetupFile = $SetupFile.Substring(0, $SetupFile.Length - 2)
-            Write-Message -Level Verbose -Message $SetupFile
-        }
-        elseif ($C1 -eq $CheckLastChar) {
-            $SetupFile = $SetupFile.Substring(0, $SetupFile.Length - 1)
-            Write-Message -Level Verbose -Message $SetupFile
-        }
+    IF ([string]::IsNullOrEmpty()) {
+        Write-Message -level Verbose -Message "No Setup directory found. Switching to autosearch"
     }
+    else {
+        $SetupFile = $SetupFile -replace "\\$"
+        $SetupFile = $SetupFile -replace ":$"
+    }
+    
     IF ($SetupFile.Length -eq 1) {
         $SetupFile = $SetupFile + ':\SQLEXPR_x64_ENU\SETUP.EXE'
         Write-Message -Level Verbose -Message 'Setup will start from ' + $SetupFile
