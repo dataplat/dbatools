@@ -107,19 +107,6 @@
 
     #Get the amount of available memory. If it's more than 40 GB, give the server 10% of the memory, else reserve 4 GB.
 
-    $ServerMemory = Get-WmiObject -Class win32_physicalmemory | 
-        Measure-Object Capacity -sum | 
-        Select-Object -ExpandProperty sum
-    $ServerMemoryMB = ($ServerMemory / 1024) / 1024
-
-    If ($ServerMemoryMB -gt 40960) {
-        $ServerWinMemory = $ServerMemoryMB * 0.1
-        $ServerMemoryMB = $ServerMemoryMB - $ServerWinMemory
-    }
-    else {
-        $ServerMemoryMB = $ServerMemoryMB - 4096
-    }
-
     IF ($null -eq $DataVolume -or $DataVolume -eq '') {
         $DataVolume = 'C'
     }
