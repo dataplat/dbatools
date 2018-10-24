@@ -22546,6 +22546,36 @@
         "Syntax":  "Invoke-DbaQuery [-SqlInstance \u003cDbaInstanceParameter[]\u003e] [-SqlCredential \u003cPSCredential\u003e] [-Database \u003cObject\u003e] [-Query] \u003cString\u003e [-QueryTimeout \u003cInt32\u003e] [-As \u003cString\u003e] [-SqlParameters \u003cIDictionary\u003e] [-AppendServerInstance] [-MessagesToOutput] [-InputObject \u003cDatabase[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]\nInvoke-DbaQuery [-SqlInstance \u003cDbaInstanceParameter[]\u003e] [-SqlCredential \u003cPSCredential\u003e] [-Database \u003cObject\u003e] [-QueryTimeout \u003cInt32\u003e] -File \u003cObject[]\u003e [-As \u003cString\u003e] [-SqlParameters \u003cIDictionary\u003e] [-AppendServerInstance] [-MessagesToOutput] [-InputObject \u003cDatabase[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]\nInvoke-DbaQuery [-SqlInstance \u003cDbaInstanceParameter[]\u003e] [-SqlCredential \u003cPSCredential\u003e] [-Database \u003cObject\u003e] [-QueryTimeout \u003cInt32\u003e] -SqlObject \u003cSqlSmoObject[]\u003e [-As \u003cString\u003e] [-SqlParameters \u003cIDictionary\u003e] [-AppendServerInstance] [-MessagesToOutput] [-InputObject \u003cDatabase[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
+        "CommandName":  "Invoke-DbatoolsFormatter",
+        "Description":  "Uses PSSA\u0027s Invoke-Formatter to format the target files and saves it without the BOM.",
+        "Tags":  "Formatting",
+        "Params":  [
+                       [
+                           "Path",
+                           "The path to the ps1 file that needs to be formatted",
+                           "",
+                           true,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ]
+                   ],
+        "Alias":  "",
+        "Author":  "Simone Bizzotto",
+        "Synopsis":  "Helps formatting function files to dbatools\u0027 standards",
+        "Name":  "Invoke-DbatoolsFormatter",
+        "Links":  "https://dbatools.io/Invoke-DbatoolsFormatter",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eInvoke-DbatoolsFormatter -Path C:\\dbatools\\functions\\Get-DbaDatabase.ps1\nReformats C:\\dbatools\\functions\\Get-DbaDatabase.ps1 to dbatools\u0027 standards",
+        "Syntax":  "Invoke-DbatoolsFormatter [-Path] \u003cObject[]\u003e [-EnableException] [\u003cCommonParameters\u003e]"
+    },
+    {
         "CommandName":  "Invoke-DbatoolsRenameHelper",
         "Description":  "Older dbatools command names have been changed. This script helps keep up.",
         "Tags":  "Module",
@@ -25441,7 +25471,7 @@
         "Author":  "Kirill Kravtsov (@nvarscar), nvarscar.wordpress.com",
         "Synopsis":  "Creates a new Microsoft.SqlServer.Dac.DacExtractOptions/DacExportOptions object depending on the chosen Type",
         "Name":  "New-DbaDacOption",
-        "Links":  "https://dbatools.io/New-DbaScriptingOption",
+        "Links":  "https://dbatools.io/New-DbaDacOption",
         "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003e$options = New-DbaDacOption -Type Dacpac -Action Export\nPS C:\\\u003e $options.ExtractAllTableData = $true\r\nPS C:\\\u003e $options.CommandTimeout = 0\r\nPS C:\\\u003e Export-DbaDacPackage -SqlInstance sql2016 -Database DB1 -Options $options\nUses DacOption object to set the CommandTimeout to 0 then extracts the dacpac for SharePoint_Config on sql2016 to C:\\temp\\SharePoint_Config.dacpac including all table data.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003e$options = New-DbaDacOption -Type Dacpac -Action Publish\nPS C:\\\u003e $options.DeployOptions.DropObjectsNotInSource = $true\r\nPS C:\\\u003e Publish-DbaDacPackage -SqlInstance sql2016 -Database DB1 -Options $options -Path c:\\temp\\db.dacpac\nUses DacOption object to set Deployment Options and publish the db.dacpac dacpac file as DB1 on sql2016",
         "Syntax":  "New-DbaDacOption [[-Type] \u003cString\u003e] [-Action] \u003cString\u003e [[-PublishXml] \u003cString\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
