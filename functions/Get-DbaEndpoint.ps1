@@ -94,7 +94,7 @@ function Get-DbaEndpoint {
                             }
                         }
                     }
-                    
+
                     $fqdn = "TCP://" + $dns + ":" + $end.Protocol.Tcp.ListenerPort
                 } else {
                     $fqdn = $null

@@ -6,7 +6,7 @@ function Get-DbaAvailabilityGroup {
 
     .DESCRIPTION
         Returns availability group objects from a SQL Server instance.
-    
+
         Default view provides most common set of properties for information on the Availability Group(s).
 
     .PARAMETER SqlInstance
@@ -84,9 +84,9 @@ function Get-DbaAvailabilityGroup {
             if (-not $server.IsHadrEnabled) {
                 Stop-Function -Message "Availability Group (HADR) is not configured for the instance: $instance." -Target $instance -Continue
             }
-            
+
             $ags = $server.AvailabilityGroups
-            
+
             if ($AvailabilityGroup) {
                 $ags = $ags | Where-Object Name -in $AvailabilityGroup
             }

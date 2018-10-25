@@ -36,7 +36,7 @@ function New-DbaDbCertificate {
 
     .PARAMETER InputObject
         Enables piping from Get-DbaDatabase
-    
+
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
 
@@ -89,25 +89,25 @@ function New-DbaDbCertificate {
         if ($SqlInstance) {
             $InputObject += Get-DbaDatabase -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database
         }
-        
+
         foreach ($db in $InputObject) {
             if ((Test-Bound -Not -ParameterName Name)) {
                 Write-Message -Level Verbose -Message "Name of certificate not specified, setting it to '$db'"
                 $Name = $db.Name
             }
-            
+
             if ((Test-Bound -Not -ParameterName Subject)) {
                 Write-Message -Level Verbose -Message "Subject not specified, setting it to '$Name Database Certificate'"
                 $subject = "$Name Database Certificate"
             }
-            
+
             foreach ($cert in $Name) {
                 if ($null -ne $db.Certificates[$cert]) {
                     Stop-Function -Message "Certificate '$cert' already exists in $($db.Name) on $($db.Parent.Name)" -Target $db -Continue
                 }
-                
+
                 if ($Pscmdlet.ShouldProcess($db.Parent.Name, "Creating certificate for database '$($db.Name)'")) {
-                    
+
                     # something is up with .net, force a stop
                     $eap = $ErrorActionPreference
                     $ErrorActionPreference = 'Stop'
@@ -117,18 +117,18 @@ function New-DbaDbCertificate {
                         $smocert.Subject = $Subject
                         $smocert.ExpirationDate = $ExpirationDate
                         $smocert.ActiveForServiceBrokerDialog = $ActiveForServiceBrokerDialog
-                        
+
                         if ($Password) {
                             $smocert.Create(([System.Runtime.InteropServices.marshal]::PtrToStringAuto([System.Runtime.InteropServices.marshal]::SecureStringToBSTR($password))))
                         } else {
                             $smocert.Create()
                         }
-                        
+
                         Add-Member -Force -InputObject $smocert -MemberType NoteProperty -Name ComputerName -value $db.Parent.ComputerName
                         Add-Member -Force -InputObject $smocert -MemberType NoteProperty -Name InstanceName -value $db.Parent.ServiceName
                         Add-Member -Force -InputObject $smocert -MemberType NoteProperty -Name SqlInstance -value $db.Parent.DomainInstanceName
                         Add-Member -Force -InputObject $smocert -MemberType NoteProperty -Name Database -value $db.Name
-                        
+
                         Select-DefaultView -InputObject $smocert -Property ComputerName, InstanceName, SqlInstance, Database, Name, Subject, StartDate, ActiveForServiceBrokerDialog, ExpirationDate, Issuer, LastBackupDate, Owner, PrivateKeyEncryptionType, Serial
                     } catch {
                         $ErrorActionPreference = $eap

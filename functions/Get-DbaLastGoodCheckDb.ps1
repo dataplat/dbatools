@@ -70,7 +70,7 @@ function Get-DbaLastGoodCheckDb {
         PS C:\> Get-DbaLastGoodCheckDb -SqlInstance sql2016 -ExcludeDatabase "TempDB" | Format-Table -AutoSize
 
         Returns a formatted table displaying Server, Database, DatabaseCreated, LastGoodCheckDb, DaysSinceDbCreated, DaysSinceLastGoodCheckDb, Status and DataPurityEnabled. All databases except for "TempDB" will be displayed in the output.
-        
+
 #>
     [CmdletBinding()]
     param (

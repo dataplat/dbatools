@@ -42,7 +42,7 @@ function Get-DbaClientAlias {
         PS C:\> Get-DbaClientAlias -ComputerName workstationx -Credential ad\sqldba
 
         Logs into workstationx as ad\sqldba then retrieves all SQL Server client aliases on Workstationx
-        
+
     .EXAMPLE
         PS C:\> 'Server1', 'Server2' | Get-DbaClientAlias
 
