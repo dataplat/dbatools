@@ -277,7 +277,7 @@ function Get-DbaBackupInformation {
                 Stop-Function -Message "Failure reading backup header" -ErrorRecord $_ -Target $server -Continue
             }
 
-            $groupdetails = $FileDetails | group-object -Property BackupSetGUID
+            $groupdetails = $FileDetails | Group-Object -Property BackupSetGUID
             
             foreach ($Group in $GroupDetails) {
                 $dblsn = $group.Group[0].DatabaseBackupLSN
@@ -303,7 +303,7 @@ function Get-DbaBackupInformation {
                 $historyObject.End = [DateTime]$group.Group[0].BackupFinishDate
                 $historyObject.Duration = ([DateTime]$group.Group[0].BackupFinishDate - [DateTime]$group.Group[0].BackupStartDate)
                 $historyObject.Path = [string[]]$Group.Group.BackupPath
-                $historyObject.FileList = ($group.Group.FileList | select-object Type, LogicalName, PhysicalName)
+                $historyObject.FileList = ($group.Group.FileList | Select-Object Type, LogicalName, PhysicalName)
                 $historyObject.TotalSize = ($Group.Group.BackupSize | Measure-Object -Sum).Sum
                 $HistoryObject.CompressedBackupSize = ($Group.Group.CompressedBackupSize | Measure-Object -Sum).Sum
                 $historyObject.Type = $description
