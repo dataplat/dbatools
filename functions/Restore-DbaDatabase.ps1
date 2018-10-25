@@ -422,8 +422,13 @@ This will use a SQL Server instance > 2000 to read the headers, and then pass th
 $BackupHistory = Get-DbaBackupInformation -SqlInstance sql2005 -Path \\backups\sql2000\ProdDb
 $BackupHistory | Restore-Dbadatabase -SqlInstance sql2000 -TrustDbBackupHistory
 '@
-            Stop-Function -Message "$sql2000txt" -Target $RestoreInstance
-            return
+            #Stop-Function -Message "$sql2000txt" -Target $RestoreInstance
+            $bh = Get-DbaBackupInformation -SqlInstance $RestoreInstance -Path $Path
+            $bound = $PSBoundParameters
+            $bound['TrustDbBackupHistory'] = $true
+            $bound['Path'] = $bh
+            Restore-Dbadatabase @bound
+            break
         }
         if ($PSCmdlet.ParameterSetName -eq "Restore") {
             $UseDestinationDefaultDirectories = $true
@@ -568,6 +573,9 @@ $BackupHistory | Restore-Dbadatabase -SqlInstance sql2000 -TrustDbBackupHistory
                     }
                 }
                 Write-Message -Level Verbose -Message "Unverified input, full scans - $($files -join ';')"
+                if ($BackupHistory.GetType().ToString() -eq 'Sqlcollaborative.Dbatools.Database.BackupHistory') {
+                    $BackupHistory = @($BackupHistory)
+                }
                 $BackupHistory += Get-DbaBackupInformation -SqlInstance $RestoreInstance -SqlCredential $SqlCredential -Path $files -DirectoryRecurse:$DirectoryRecurse -MaintenanceSolution:$MaintenanceSolutionBackup -IgnoreLogBackup:$IgnoreLogBackup -AzureCredential $AzureCredential
             }
             if ($PSCmdlet.ParameterSetName -eq "RestorePage") {
