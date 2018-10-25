@@ -57,7 +57,7 @@ function Invoke-DbaQuery {
 
     .NOTES
         Tags: Database, Query
-        Author: Friedrich Weinmann (@FredWeinmann‏)
+        Author: Friedrich Weinmann (@FredWeinmann)
 
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
