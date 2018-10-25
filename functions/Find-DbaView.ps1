@@ -36,7 +36,7 @@ function Find-DbaView {
 
     .NOTES
         Tags: View
-        Author: ClÃ¡udio Silva (@ClaudioESSilva)
+        Author: Claudio Silva  (@ClaudioESSilva)
 
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
