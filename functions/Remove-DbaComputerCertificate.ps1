@@ -7,7 +7,7 @@ function Remove-DbaComputerCertificate {
         Removes a computer certificate from a local or remote compuer
 
     .PARAMETER ComputerName
-        The target computer - defaults to localhost
+        The target computer. Defaults to localhost.
 
     .PARAMETER Credential
         Allows you to login to $ComputerName using alternative credentials
@@ -32,27 +32,31 @@ function Remove-DbaComputerCertificate {
     .PARAMETER Confirm
         Prompts you for confirmation before executing any changing operations within the command.
 
+    .NOTES
+        Tags: Certificate
+        Author: Chrissy LeMaire (@cl), netnerds.net
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
+
+    .LINK
+        https://dbatools.io/Remove-DbaComputerCertificate
+
     .EXAMPLE
-        Remove-DbaComputerCertificate -ComputerName Server1 -Thumbprint C2BBE81A94FEE7A26FFF86C2DFDAF6BFD28C6C94
+        PS C:\> Remove-DbaComputerCertificate -ComputerName Server1 -Thumbprint C2BBE81A94FEE7A26FFF86C2DFDAF6BFD28C6C94
 
         Removes certificate with thumbprint C2BBE81A94FEE7A26FFF86C2DFDAF6BFD28C6C94 in the LocalMachine store on Server1
 
     .EXAMPLE
-        Get-DbaComputerCertificate | Where-Object Thumbprint -eq E0A071E387396723C45E92D42B2D497C6A182340 | Remove-DbaComputerCertificate
+        PS C:\> Get-DbaComputerCertificate | Where-Object Thumbprint -eq E0A071E387396723C45E92D42B2D497C6A182340 | Remove-DbaComputerCertificate
 
         Removes certificate using the pipeline
 
     .EXAMPLE
-        Remove-DbaComputerCertificate -ComputerName Server1 -Thumbprint C2BBE81A94FEE7A26FFF86C2DFDAF6BFD28C6C94 -Store User -Folder My
+        PS C:\> Remove-DbaComputerCertificate -ComputerName Server1 -Thumbprint C2BBE81A94FEE7A26FFF86C2DFDAF6BFD28C6C94 -Store User -Folder My
 
         Removes certificate with thumbprint C2BBE81A94FEE7A26FFF86C2DFDAF6BFD28C6C94 in the User\My (Personal) store on Server1
 
-    .NOTES
-        Tags: Certificate
-
-        Website: https://dbatools.io
-        Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-        License: MIT https://opensource.org/licenses/MIT
 #>
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "High")]
     param (
@@ -83,8 +87,7 @@ function Remove-DbaComputerCertificate {
             if ($cert) {
                 $null = $cert | Remove-Item
                 $status = "Removed"
-            }
-            else {
+            } else {
                 $status = "Certificate not found in Cert:\$Store\$Folder"
             }
 
@@ -105,8 +108,7 @@ function Remove-DbaComputerCertificate {
                 if ($PScmdlet.ShouldProcess("local", "Connecting to $computer to remove cert from Cert:\$Store\$Folder")) {
                     try {
                         Invoke-Command2 -ComputerName $computer -Credential $Credential -ArgumentList $thumb, $Store, $Folder -ScriptBlock $scriptblock -ErrorAction Stop
-                    }
-                    catch {
+                    } catch {
                         Stop-Function -Message $_ -ErrorRecord $_ -Target $computer -Continue
                     }
                 }
@@ -114,3 +116,4 @@ function Remove-DbaComputerCertificate {
         }
     }
 }
+

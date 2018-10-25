@@ -17,7 +17,7 @@ function Connect-DbaInstance {
         To execute SQL commands, you can use $server.ConnectionContext.ExecuteReader($sql) or $server.Databases['master'].ExecuteNonQuery($sql)
 
     .PARAMETER SqlInstance
-        SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
+        The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
 
     .PARAMETER Credential
         Credential object used to connect to the SQL Server Instance as a different user. This can be a Windows or SQL Server account. Windows users are determined by the existence of a backslash, so if you are intending to use an alternative Windows connection instead of a SQL login, ensure it contains a backslash.
@@ -66,7 +66,6 @@ function Connect-DbaInstance {
         If you specify a failover partner but the failover partner server is not configured for database mirroring and the primary server (specified with the Server keyword) is not available, then the connection will fail.
 
         If you specify a failover partner and the primary server is not configured for database mirroring, the connection to the primary server (specified with the Server keyword) will succeed if the primary server is available.
-
 
     .PARAMETER IsActiveDirectoryUniversalAuth
         If this switch is enabled, the connection will be configured to use Azure Active Directory authentication.
@@ -122,54 +121,57 @@ function Connect-DbaInstance {
         Instead of returning a rich SMO server object, this command will only return a SqlConnection object when setting this switch.
 
     .NOTES
-        dbatools PowerShell module (https://dbatools.io)
+        Tags: Connect, Connection
+        Author: Chrissy LeMaire (@cl), netnerds.net
+
         Website: https://dbatools.io
-        Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+        Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
         https://dbatools.io/Connect-DbaInstance
 
     .EXAMPLE
-        Connect-DbaInstance -SqlInstance sql2014
+        PS C:\> Connect-DbaInstance -SqlInstance sql2014
 
         Creates an SMO Server object that connects using Windows Authentication
 
     .EXAMPLE
-        $wincred = Get-Credential ad\sqladmin
-        Connect-DbaInstance -SqlInstance sql2014 -Credential $wincred
+        PS C:\> $wincred = Get-Credential ad\sqladmin
+        PS C:\> Connect-DbaInstance -SqlInstance sql2014 -Credential $wincred
 
         Creates an SMO Server object that connects using alternative Windows credentials
 
     .EXAMPLE
-        $sqlcred = Get-Credential sqladmin
-        $server = Connect-DbaInstance -SqlInstance sql2014 -Credential $sqlcred
+        PS C:\> $sqlcred = Get-Credential sqladmin
+        PS C:\> $server = Connect-DbaInstance -SqlInstance sql2014 -Credential $sqlcred
 
         Login to sql2014 as SQL login sqladmin.
 
     .EXAMPLE
-        $server = Connect-DbaInstance -SqlInstance sql2014 -ClientName "my connection"
+        PS C:\> $server = Connect-DbaInstance -SqlInstance sql2014 -ClientName "my connection"
 
         Creates an SMO Server object that connects using Windows Authentication and uses the client name "my connection". So when you open up profiler or use extended events, you can search for "my connection".
 
     .EXAMPLE
-        $server = Connect-DbaInstance -SqlInstance sql2014 -AppendConnectionString "Packet Size=4096;AttachDbFilename=C:\MyFolder\MyDataFile.mdf;User Instance=true;"
+        PS C:\> $server = Connect-DbaInstance -SqlInstance sql2014 -AppendConnectionString "Packet Size=4096;AttachDbFilename=C:\MyFolder\MyDataFile.mdf;User Instance=true;"
 
         Creates an SMO Server object that connects to sql2014 using Windows Authentication, then it sets the packet size (this can also be done via -PacketSize) and other connection attributes.
 
     .EXAMPLE
-        $server = Connect-DbaInstance -SqlInstance sql2014 -NetworkProtocol TcpIp -MultiSubnetFailover
+        PS C:\> $server = Connect-DbaInstance -SqlInstance sql2014 -NetworkProtocol TcpIp -MultiSubnetFailover
 
         Creates an SMO Server object that connects using Windows Authentication that uses TCP/IP and has MultiSubnetFailover enabled.
 
     .EXAMPLE
-        $server = Connect-DbaInstance sql2016 -ApplicationIntent ReadOnly
+        PS C:\> $server = Connect-DbaInstance sql2016 -ApplicationIntent ReadOnly
 
         Connects with ReadOnly ApplicationIntent.
+
 #>
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [Parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [Alias("SqlCredential")]
@@ -203,7 +205,7 @@ function Connect-DbaInstance {
         [switch]$SqlConnectionOnly
     )
     begin {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Connect-DbaSqlServer
+        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Connect-DbaServer
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-DbaInstance
 
         $loadedSmoVersion = [AppDomain]::CurrentDomain.GetAssemblies() | Where-Object { $_.Fullname -like "Microsoft.SqlServer.SMO,*" }
@@ -212,12 +214,21 @@ function Connect-DbaInstance {
             $loadedSmoVersion = $loadedSmoVersion | ForEach-Object {
                 if ($_.Location -match "__") {
                     ((Split-Path (Split-Path $_.Location) -Leaf) -split "__")[0]
-                }
-                else {
+                } else {
                     ((Get-ChildItem -Path $_.Location).VersionInfo.ProductVersion)
                 }
             }
         }
+        #'PrimaryFilePath' seems the culprit for slow SMO on databases
+        $Fields2000_Db = 'Collation', 'CompatibilityLevel', 'CreateDate', 'ID', 'IsAccessible', 'IsFullTextEnabled', 'IsSystemObject', 'IsUpdateable', 'LastBackupDate', 'LastDifferentialBackupDate', 'LastLogBackupDate', 'Name', 'Owner', 'ReadOnly', 'RecoveryModel', 'ReplicationOptions', 'Status', 'Version'
+        $Fields200x_Db = $Fields2000_Db + @('BrokerEnabled', 'DatabaseSnapshotBaseName', 'IsMirroringEnabled', 'Trustworthy')
+        $Fields201x_Db = $Fields200x_Db + @('ActiveConnections', 'AvailabilityDatabaseSynchronizationState', 'AvailabilityGroupName', 'ContainmentType', 'EncryptionEnabled')
+
+        $Fields2000_Login = 'CreateDate' , 'DateLastModified' , 'DefaultDatabase' , 'DenyWindowsLogin' , 'IsSystemObject' , 'Language' , 'LanguageAlias' , 'LoginType' , 'Name' , 'Sid' , 'WindowsLoginAccessType'
+        $Fields200x_Login = $Fields2000_Login + @('AsymmetricKey', 'Certificate', 'Credential', 'ID', 'IsDisabled', 'IsLocked', 'IsPasswordExpired', 'MustChangePassword', 'PasswordExpirationEnabled', 'PasswordPolicyEnforced')
+        $Fields201x_Login = $Fields200x_Login + @('PasswordHashAlgorithm')
+
+
     }
     process {
         foreach ($instance in $SqlInstance) {
@@ -235,7 +246,16 @@ function Connect-DbaInstance {
                     $server.ConnectionContext.Connect()
                 }
                 if ($SqlConnectionOnly) { return $server.ConnectionContext.SqlConnectionObject }
-                else { return $server }
+                else {
+                    if (-not $server.ComputerName) {
+                        $parsedcomputername = $server.NetName
+                        if (-not $parsedcomputername) {
+                            $parsedcomputername = ([dbainstance]$instance).ComputerName
+                        }
+                        Add-Member -InputObject $server -NotePropertyName ComputerName -NotePropertyValue $parsedcomputername -Force
+                    }
+                    return $server
+                }
             }
 
             if ($instance.IsConnectionString) { $server = New-Object Microsoft.SqlServer.Management.Smo.Server($instance.InputObject) }
@@ -245,8 +265,7 @@ function Connect-DbaInstance {
                 $connstring = $server.ConnectionContext.ConnectionString
                 $server.ConnectionContext.ConnectionString = "$connstring;$appendconnectionstring"
                 $server.ConnectionContext.Connect()
-            }
-            else {
+            } else {
 
                 $server.ConnectionContext.ApplicationName = $ClientName
 
@@ -289,8 +308,7 @@ function Connect-DbaInstance {
                             $server.ConnectionContext.ConnectAsUser = $true
                             $server.ConnectionContext.ConnectAsUserName = $username
                             $server.ConnectionContext.ConnectAsUserPassword = ($Credential).GetNetworkCredential().Password
-                        }
-                        else {
+                        } else {
                             $authtype = "SQL Authentication"
                             $server.ConnectionContext.LoginSecure = $false
                             $server.ConnectionContext.set_Login($username)
@@ -298,9 +316,15 @@ function Connect-DbaInstance {
                         }
                     }
 
-                    $server.ConnectionContext.Connect()
-                }
-                catch {
+                    if ($NonPooled) {
+                        $server.ConnectionContext.Connect()
+                    } elseif ($authtype -eq "Windows Authentication with Credential") {
+                        # Make it connect in a natural way, hard to explain.
+                        $null = $server.IsMemberOfWsfcCluster
+                    } else {
+                        $server.ConnectionContext.SqlConnectionObject.Open()
+                    }
+                } catch {
                     $message = $_.Exception.InnerException.InnerException
                     $message = $message.ToString()
                     $message = ($message -Split '-->')[0]
@@ -314,25 +338,48 @@ function Connect-DbaInstance {
             if ($loadedSmoVersion -ge 11) {
                 if ($server.VersionMajor -eq 8) {
                     # 2000
-                    $server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Database], 'ReplicationOptions', 'Collation', 'CompatibilityLevel', 'CreateDate', 'ID', 'IsAccessible', 'IsFullTextEnabled', 'IsUpdateable', 'LastBackupDate', 'LastDifferentialBackupDate', 'LastLogBackupDate', 'Name', 'Owner', 'PrimaryFilePath', 'ReadOnly', 'RecoveryModel', 'Status', 'Version')
-                    $server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Login], 'CreateDate', 'DateLastModified', 'DefaultDatabase', 'DenyWindowsLogin', 'IsSystemObject', 'Language', 'LanguageAlias', 'LoginType', 'Name', 'Sid', 'WindowsLoginAccessType')
+                    $initFieldsDb = New-Object System.Collections.Specialized.StringCollection
+                    [void]$initFieldsDb.AddRange($Fields2000_Db)
+                    $initFieldsLogin = New-Object System.Collections.Specialized.StringCollection
+                    [void]$initFieldsLogin.AddRange($Fields2000_Login)
+                    $server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Database], $initFieldsDb)
+                    $server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Login], $initFieldsLogin)
                 }
 
                 elseif ($server.VersionMajor -eq 9 -or $server.VersionMajor -eq 10) {
                     # 2005 and 2008
-                    $server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Database], 'ReplicationOptions', 'BrokerEnabled', 'Collation', 'CompatibilityLevel', 'CreateDate', 'ID', 'IsAccessible', 'IsFullTextEnabled', 'IsMirroringEnabled', 'IsUpdateable', 'LastBackupDate', 'LastDifferentialBackupDate', 'LastLogBackupDate', 'Name', 'Owner', 'PrimaryFilePath', 'ReadOnly', 'RecoveryModel', 'Status', 'Trustworthy', 'Version')
-                    $server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Login], 'AsymmetricKey', 'Certificate', 'CreateDate', 'Credential', 'DateLastModified', 'DefaultDatabase', 'DenyWindowsLogin', 'ID', 'IsDisabled', 'IsLocked', 'IsPasswordExpired', 'IsSystemObject', 'Language', 'LanguageAlias', 'LoginType', 'MustChangePassword', 'Name', 'PasswordExpirationEnabled', 'PasswordPolicyEnforced', 'Sid', 'WindowsLoginAccessType')
+                    $initFieldsDb = New-Object System.Collections.Specialized.StringCollection
+                    [void]$initFieldsDb.AddRange($Fields200x_Db)
+                    $initFieldsLogin = New-Object System.Collections.Specialized.StringCollection
+                    [void]$initFieldsLogin.AddRange($Fields200x_Login)
+                    $server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Database], $initFieldsDb)
+                    $server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Login], $initFieldsLogin)
                 }
 
                 else {
                     # 2012 and above
-                    $server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Database], 'ReplicationOptions', 'ActiveConnections', 'AvailabilityDatabaseSynchronizationState', 'AvailabilityGroupName', 'BrokerEnabled', 'Collation', 'CompatibilityLevel', 'ContainmentType', 'CreateDate', 'ID', 'IsAccessible', 'IsFullTextEnabled', 'IsMirroringEnabled', 'IsUpdateable', 'LastBackupDate', 'LastDifferentialBackupDate', 'LastLogBackupDate', 'Name', 'Owner', 'PrimaryFilePath', 'ReadOnly', 'RecoveryModel', 'Status', 'Trustworthy', 'Version')
-                    $server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Login], 'AsymmetricKey', 'Certificate', 'CreateDate', 'Credential', 'DateLastModified', 'DefaultDatabase', 'DenyWindowsLogin', 'ID', 'IsDisabled', 'IsLocked', 'IsPasswordExpired', 'IsSystemObject', 'Language', 'LanguageAlias', 'LoginType', 'MustChangePassword', 'Name', 'PasswordExpirationEnabled', 'PasswordHashAlgorithm', 'PasswordPolicyEnforced', 'Sid', 'WindowsLoginAccessType')
+                    $initFieldsDb = New-Object System.Collections.Specialized.StringCollection
+                    [void]$initFieldsDb.AddRange($Fields201x_Db)
+                    $initFieldsLogin = New-Object System.Collections.Specialized.StringCollection
+                    [void]$initFieldsLogin.AddRange($Fields201x_Login)
+                    $server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Database], $initFieldsDb)
+                    $server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Login], $initFieldsLogin)
                 }
             }
 
-            if ($SqlConnectionOnly) { return $server.ConnectionContext.SqlConnectionObject }
-            else { return $server }
+            if ($SqlConnectionOnly) {
+                return $server.ConnectionContext.SqlConnectionObject
+            } else {
+                if (-not $server.ComputerName) {
+                    $parsedcomputername = $server.NetName
+                    if (-not $parsedcomputername) {
+                        $parsedcomputername = ([dbainstance]$instance).ComputerName
+                    }
+                    Add-Member -InputObject $server -NotePropertyName ComputerName -NotePropertyValue $parsedcomputername -Force
+                }
+            }
+            $server
         }
     }
 }
+

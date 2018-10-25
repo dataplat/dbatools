@@ -5,7 +5,7 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 Describe "$commandname Unit Tests" -Tag 'UnitTests' {
     InModuleScope dbatools {
         Context "Empty TLog Backup Issues" {
-               $Header = ConvertFrom-Json -InputObject (Get-Content $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\EmptyTlogData.json -raw)
+            $Header = ConvertFrom-Json -InputObject (Get-Content $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\EmptyTlogData.json -raw)
             $header | Add-Member -Type NoteProperty -Name FullName -Value 1
             $Output = Select-DbaBackupInformation -BackupHistory $header #-EnableException:$true
 
@@ -98,7 +98,7 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
         }
         Context "Server/database names and file paths have commas and spaces" {
             $Header = ConvertFrom-Json -InputObject (Get-Content $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\RestoreCommaIssues.json -raw)
-            $header | Add-Member -Type NoteProperty -Name FullName -Value $_.BackupPath
+            $header | Add-Member -Type NoteProperty -Name FullName -Value 'test'
 
             $Output = Select-DbaBackupInformation -BackupHistory $header
 
@@ -208,7 +208,7 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
             $Header = ConvertFrom-Json -InputObject (Get-Content $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\broken_chain.json -raw)
             $header | Add-Member -Type NoteProperty -Name FullName -Value 1
 
-            $RestoreDate = Get-date "7/16/2017 5:51:30 PM"
+            $RestoreDate = Get-date "2017-07-16 17:51:30"
             $Output = Select-DbaBackupInformation -BackupHistory $Header -RestoreTime $RestoreDate
 
             It "Should return an array of 3 items" {

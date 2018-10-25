@@ -76,18 +76,18 @@ namespace Sqlcollaborative.Dbatools.Utility
         /// <summary>
         /// How the size object should be displayed.
         /// </summary>
-        public Nullable<SizeStyle> Style
+        public SizeStyle? Style
         {
             get
             {
-                return _Style ?? UtilityHost.SizeStyle;
+                return _style ?? UtilityHost.SizeStyle;
             }
             set
             {
-                _Style = value;
+                _style = value;
             }
         }
-        private Nullable<SizeStyle> _Style;
+        private SizeStyle? _style;
 
         /// <summary>
         /// Shows the default string representation of size
@@ -144,15 +144,15 @@ namespace Sqlcollaborative.Dbatools.Utility
         /// <returns>True if equal, false elsewise</returns>
         public override bool Equals(object obj)
         {
-            return (obj is Size && (Byte == ((Size)obj).Byte));
+            var size = obj as Size;
+            return (size != null  && (Byte == size.Byte));
         }
 
-        /// <summary>
-        /// Meaningless, but required
-        /// </summary>
-        /// <returns>Some meaningless output</returns>
+        /// <inheritdoc cref="Int64.GetHashCode"/>
+        /// <remarks>The hashcode of the underlying size</remarks>
         public override int GetHashCode()
         {
+            // ReSharper disable once NonReadonlyMemberInGetHashCode
             return Byte.GetHashCode();
         }
 
@@ -183,16 +183,17 @@ namespace Sqlcollaborative.Dbatools.Utility
         /// <inheritdoc cref="IComparable.CompareTo"/>
         /// <remarks>For sorting</remarks>
         /// <exception cref="ArgumentException">If you compare with something invalid.</exception>
-        public int CompareTo(Object obj)
+        public int CompareTo(object obj)
         {
-            if (obj is Size)
+            var size = obj as Size;
+            if (size != null)
             {
-                return CompareTo((Size) obj);
+                return CompareTo(size);
             }
             throw new ArgumentException(String.Format("Cannot compare a {0} to a {1}", typeof(Size).FullName, obj.GetType().FullName));
         }
 
-        #region Operators
+        #region MathOperators
         /// <summary>
         /// Adds two sizes
         /// </summary>
@@ -227,7 +228,7 @@ namespace Sqlcollaborative.Dbatools.Utility
         }
 
         /// <summary>
-        /// Divides one size by another.
+        /// Divides one size by another. 
         /// </summary>
         /// <param name="a">The size to divide</param>
         /// <param name="b">The size to divide with</param>
@@ -258,6 +259,9 @@ namespace Sqlcollaborative.Dbatools.Utility
         {
             return new Size((long)((double)a.Byte / (double)b.Byte));
         }
+
+        #endregion
+        #region ImplicitCasts
 
         /// <summary>
         /// Implicitly converts int to size

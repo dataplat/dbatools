@@ -1,54 +1,56 @@
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaXESession {
     <#
-        .SYNOPSIS
-            Gets a list of Extended Events Sessions from the specified SQL Server instance(s).
+    .SYNOPSIS
+        Gets a list of Extended Events Sessions from the specified SQL Server instance(s).
 
-        .DESCRIPTION
-            Retrieves a list of Extended Events Sessions present on the specified SQL Server instance(s).
+    .DESCRIPTION
+        Retrieves a list of Extended Events Sessions present on the specified SQL Server instance(s).
 
-        .PARAMETER SqlInstance
-            Target SQL Server. You must have sysadmin access and server version must be SQL Server version 2008 or higher.
+    .PARAMETER SqlInstance
+        The target SQL Server instance or instances. You must have sysadmin access and server version must be SQL Server version 2008 or higher.
 
-        .PARAMETER SqlCredential
-            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+    .PARAMETER SqlCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-        .PARAMETER Session
-            Only return specific sessions. Options for this parameter are auto-populated from the server.
+    .PARAMETER Session
+        Only return specific sessions. Options for this parameter are auto-populated from the server.
 
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-        .NOTES
-            Tags: ExtendedEvent, XE, Xevent
-            Author: Klaas Vandenberghe ( @PowerDBAKlaas )
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: MIT https://opensource.org/licenses/MIT
+    .NOTES
+        Tags: ExtendedEvent, XE, XEvent
+        Author: Klaas Vandenberghe (@PowerDBAKlaas)
 
-        .LINK
-            https://dbatools.io/Get-DbaXESession
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-        .EXAMPLE
-            Get-DbaXESession -SqlInstance ServerA\sql987
+    .LINK
+        https://dbatools.io/Get-DbaXESession
 
-            Returns a custom object with ComputerName, SQLInstance, Session, StartTime, Status and other properties.
+    .EXAMPLE
+        PS C:\> Get-DbaXESession -SqlInstance ServerA\sql987
 
-        .EXAMPLE
-            Get-DbaXESession -SqlInstance ServerA\sql987 | Format-Table ComputerName, SqlInstance, Session, Status -AutoSize
+        Returns a custom object with ComputerName, SQLInstance, Session, StartTime, Status and other properties.
 
-            Returns a formatted table displaying ComputerName, SqlInstance, Session, and Status.
+    .EXAMPLE
+        PS C:\> Get-DbaXESession -SqlInstance ServerA\sql987 | Format-Table ComputerName, SqlInstance, Session, Status -AutoSize
 
-        .EXAMPLE
-            'ServerA\sql987','ServerB' | Get-DbaXESession
+        Returns a formatted table displaying ComputerName, SqlInstance, Session, and Status.
 
-            Returns a custom object with ComputerName, SqlInstance, Session, StartTime, Status and other properties, from multiple SQL instances.
+    .EXAMPLE
+        PS C:\> 'ServerA\sql987','ServerB' | Get-DbaXESession
 
-    #>
+        Returns a custom object with ComputerName, SqlInstance, Session, StartTime, Status and other properties, from multiple SQL instances.
+
+#>
     [CmdletBinding()]
     param (
-        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
@@ -66,18 +68,15 @@ function Get-DbaXESession {
 
         foreach ($instance in $SqlInstance) {
             try {
-                Write-Message -Level Verbose -Message "Connecting to $instance."
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 11 -AzureUnsupported
-            }
-            catch {
+                $SqlConn = $server.ConnectionContext.SqlConnectionObject
+                $SqlStoreConnection = New-Object Microsoft.SqlServer.Management.Sdk.Sfc.SqlStoreConnection $SqlConn
+                $XEStore = New-Object  Microsoft.SqlServer.Management.XEvent.XEStore $SqlStoreConnection
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
-            $SqlConn = $server.ConnectionContext.SqlConnectionObject
-            $SqlStoreConnection = New-Object Microsoft.SqlServer.Management.Sdk.Sfc.SqlStoreConnection $SqlConn
-            $XEStore = New-Object  Microsoft.SqlServer.Management.XEvent.XEStore $SqlStoreConnection
             Write-Message -Level Verbose -Message "Getting XEvents Sessions on $instance."
-
             $xesessions = $XEStore.sessions
 
             if ($Session) {
@@ -97,11 +96,11 @@ function Get-DbaXESession {
                             $file = "$directory\$file"
                         }
                         $filecollection += $file
-                        $remotefile += Join-AdminUnc -servername $server.netName -filepath $file
+                        $remotefile += Join-AdminUnc -servername $server.ComputerName -filepath $file
                     }
                 }
 
-                Add-Member -Force -InputObject $x -MemberType NoteProperty -Name ComputerName -Value $server.NetName
+                Add-Member -Force -InputObject $x -MemberType NoteProperty -Name ComputerName -Value $server.ComputerName
                 Add-Member -Force -InputObject $x -MemberType NoteProperty -Name InstanceName -Value $server.ServiceName
                 Add-Member -Force -InputObject $x -MemberType NoteProperty -Name SqlInstance -Value $server.DomainInstanceName
                 Add-Member -Force -InputObject $x -MemberType NoteProperty -Name Status -Value $status
@@ -115,3 +114,4 @@ function Get-DbaXESession {
         }
     }
 }
+

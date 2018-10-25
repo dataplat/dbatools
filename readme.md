@@ -2,11 +2,11 @@
 
 > PowerShell Core (aka PowerShell 6+) went GA (generally available) and supported in January of 2018. Please be aware at this time we do not support this version of PowerShell. It is on the roadmap but at this time there is no estimated time we will be supporting it.
 
-<img align="left" src=https://blog.netnerds.net/wp-content/uploads/2016/05/dbatools.png alt="dbatools logo">  dbatools is sort of like a command-line SQL Server Management Studio. The project initially started out as Start-SqlMigration.ps1, but has now grown into a collection of [over 300 commands](https://dbatools.io/commands) that help automate SQL Server tasks and encourage best practices.
+<img align="left" src=https://blog.netnerds.net/wp-content/uploads/2016/05/dbatools.png alt="dbatools logo">  dbatools is sort of like a command-line SQL Server Management Studio. The project initially started out as Start-SqlMigration.ps1, but has now grown into a collection of [over 400 commands](https://dbatools.io/commands) that help automate SQL Server tasks and encourage best practices.
 
 Got ideas for new commands? Please propose them as [issues](https://dbatools.io/issues) and let us know what you'd like to see. Bug reports should also be filed under this repository's [issues](https://github.com/sqlcollaborative/dbatools/issues) section.
 
-There's also over 1000 of us on the [SQL Server Community Slack](https://sqlcommunity.slack.com) in the #dbatools channel. Need an invite? Check out the [self-invite page](https://dbatools.io/slack/). Drop by if you'd like to chat about dbatools or even [join the team](https://dbatools.io/team)!
+There's also over 1500 of us on the [SQL Server Community Slack](https://sqlcommunity.slack.com) in the #dbatools channel. Need an invite? Check out the [self-invite page](https://dbatools.io/slack/). Drop by if you'd like to chat about dbatools or even [join the team](https://dbatools.io/team)!
 
 ## Installer
 This module is now in the PowerShell Gallery. Run the following from an administrative prompt to install:
@@ -32,7 +32,7 @@ In addition to the simple things you can do in SSMS (like starting a job), we've
 
 ## Usage examples
 
-As previously mentioned, dbatools now offers [over 300 commands](https://dbatools.io/commands)! [Here are some of the ones we highlight at conferences](https://gist.github.com/potatoqualitee/e8932b64aeb6ef404e252d656b6318a2) - PowerShell v3 and above required. (See below for important information about alternative logins and specifying SQL Server ports).
+As previously mentioned, dbatools now offers [over 400 commands](https://dbatools.io/commands)! [Here are some of the ones we highlight at conferences](https://gist.github.com/potatoqualitee/e8932b64aeb6ef404e252d656b6318a2) - PowerShell v3 and above required. (See below for important information about alternative logins and specifying SQL Server ports).
 
 ```powershell
 # Set some vars
@@ -50,7 +50,7 @@ Restore-DbaDatabase -SqlInstance $instance -Path "C:\temp\AdventureWorks2012-Ful
 Get-ChildItem -Directory \\workstation\backups\sql2012 | Restore-DbaDatabase -SqlInstance $new
 
 # What about if you need to make a backup? And you are logging in with alternative credentials?
-Get-DbaDatabase -SqlInstance $new -SqlCredential (Get-Credential sa) | Backup-DbaDatabase
+Get-DbaDatabase -SqlInstance $new -SqlCredential sqladmin | Backup-DbaDatabase
 
 # Testing your backups is crazy easy! 
 Start-Process https://dbatools.io/Test-DbaLastBackup
@@ -130,7 +130,7 @@ Get-DbaXEventSession -SqlInstance $new -Session system_health | Read-DbaXEventFi
 
 # Reset-DbaAdmin
 Reset-DbaAdmin -SqlInstance $instance -Login sqladmin -Verbose
-Get-DbaDatabase -SqlInstance $instance -SqlCredential (Get-Credential sqladmin)
+Get-DbaDatabase -SqlInstance $instance -SqlCredential sqladmin
 
 # sp_whoisactive
 Install-DbaWhoIsActive -SqlInstance $instance -Database master
@@ -199,7 +199,7 @@ Get-DbaDbVirtualLogFile -SqlInstance $new -Database db1 | Measure-Object
 By default, all SQL-based commands will login to SQL Server using Trusted/Windows Authentication. To use alternative credentials, including SQL Logins or alternative Windows credentials, use the `-SqlCredential`. This parameter accepts the results of `Get-Credential` which generates a [PSCredential](https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.security/get-credential?view=powershell-5.1) object.
 
 ```powershell
-Get-DbaDatabase -SqlInstance sql2017 -SqlCredential (Get-Credential sqladmin)
+Get-DbaDatabase -SqlInstance sql2017 -SqlCredential sqladmin
 ```
 
 <a href="https://dbatools.io/wp-content/uploads/2016/05/cred.jpg"><img class="aligncenter size-full wp-image-6897" src="https://dbatools.io/wp-content/uploads/2016/05/cred.jpg" alt="" width="322" height="261" /></a>

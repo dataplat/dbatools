@@ -1,6 +1,21 @@
-﻿$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
+$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
+
+Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+    Context "Validate parameters" {
+        $paramCount = 15
+        $defaultParamCount = 13
+        [object[]]$params = (Get-ChildItem function:\Copy-DbaLogin).Parameters.Keys
+        $knownParameters = 'Source','SourceSqlCredential','Destination','DestinationSqlCredential','Login','ExcludeLogin','ExcludeSystemLogin','SyncOnly','SyncSaName','OutFile','InputObject','LoginRenameHashtable','KillActiveConnection','Force','EnableException'
+        It "Should contain our specific parameters" {
+            ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
+        }
+        It "Should only contain $paramCount parameters" {
+            $params.Count - $defaultParamCount | Should Be $paramCount
+        }
+    }
+}
 
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     $logins = "claudio", "port", "tester"
@@ -66,7 +81,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $results.Notes.Contains('System login') | Should Be $true
         }
     }
-    
+
     Context "Supports pipe" {
         $results = Get-DbaLogin -SqlInstance $script:instance1 -Login tester | Copy-DbaLogin -Destination $script:instance2 -Force
         It "migrates the one tester login" {

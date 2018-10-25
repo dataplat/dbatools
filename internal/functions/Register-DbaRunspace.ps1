@@ -41,24 +41,26 @@ function Register-DbaRunspace {
     [CmdletBinding(PositionalBinding = $false)]
     param
     (
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory)]
         [Scriptblock]
         $ScriptBlock,
 
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory)]
         [String]
         $Name,
 
         [switch]
-        [Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        $EnableException
     )
 
     if ([Sqlcollaborative.Dbatools.Runspace.RunspaceHost]::Runspaces.ContainsKey($Name.ToLower())) {
-        Write-Message -Level Verbose -Message "Updating runspace: $($Name.ToLower())" -Target $Name.ToLower() -EnableException $EnableException
+        Write-Message -Level Verbose -Message "Updating runspace: $($Name.ToLower())" -Target $Name.ToLower()
         [Sqlcollaborative.Dbatools.Runspace.RunspaceHost]::Runspaces[$Name.ToLower()].SetScript($ScriptBlock)
-    }
-    else {
-        Write-Message -Level Verbose -Message "Registering runspace: $($Name.ToLower())" -Target $Name.ToLower() -EnableException $EnableException
+    } else {
+        Write-Message -Level Verbose -Message "Registering runspace: $($Name.ToLower())" -Target $Name.ToLower()
         [Sqlcollaborative.Dbatools.Runspace.RunspaceHost]::Runspaces[$Name.ToLower()] = New-Object Sqlcollaborative.Dbatools.Runspace.RunspaceContainer($Name.ToLower(), $ScriptBlock)
     }
 }
+
+

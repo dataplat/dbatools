@@ -55,24 +55,21 @@ function Invoke-TagCommand ([string]$Tag, [string]$Keyword) {
                 foreach ($line in $content) {
                     if ($line.trim().startsWith('Tags:')) {
                         $out += "$line, $tag"
-                    }
-                    else {
+                    } else {
                         $out += $line
                     }
                 }
                 Write-Message -Level Warning -Message "replacing content into $($f.fullname)"
                 $out -join "`r`n" | Set-Content $f.fullname -Encoding UTF8
 
-            }
-            else {
+            } else {
                 Write-Message -Level Warning -Message "need to add tags"
                 $out = @()
                 foreach ($line in $content) {
                     if ($line.startsWith('.NOTES')) {
                         $out += '.NOTES'
                         $out += "Tags: $tag"
-                    }
-                    else {
+                    } else {
                         $out += $line
                     }
                 }
@@ -82,3 +79,5 @@ function Invoke-TagCommand ([string]$Tag, [string]$Keyword) {
         }
     }
 }
+
+

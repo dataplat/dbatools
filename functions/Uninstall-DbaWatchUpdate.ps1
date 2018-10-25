@@ -1,25 +1,28 @@
 function Uninstall-DbaWatchUpdate {
     <#
-        .SYNOPSIS
-            Removes the scheduled task created for Watch-DbaUpdate by Install-DbaWatchUpdate so that notifications no longer pop up.
+    .SYNOPSIS
+        Removes the scheduled task created for Watch-DbaUpdate by Install-DbaWatchUpdate so that notifications no longer pop up.
 
-        .DESCRIPTION
-            Removes the scheduled task created for Watch-DbaUpdate by Install-DbaWatchUpdate so that notifications no longer pop up.
+    .DESCRIPTION
+        Removes the scheduled task created for Watch-DbaUpdate by Install-DbaWatchUpdate so that notifications no longer pop up.
 
-        .NOTES
-            Tags: JustForFun, Module
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: MIT https://opensource.org/licenses/MIT
+    .NOTES
+        Tags: JustForFun, Module
+        Author: Chrissy LeMaire (@cl), netnerds.net
 
-        .LINK
-            https://dbatools.io/Uninstall-DbaWatchUpdate
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-        .EXAMPLE
-            Uninstall-DbaWatchUpdate
+    .LINK
+        https://dbatools.io/Uninstall-DbaWatchUpdate
 
-            Removes the scheduled task created by Install-DbaWatchUpdate.
-    #>
+    .EXAMPLE
+        PS C:\> Uninstall-DbaWatchUpdate
+
+        Removes the scheduled task created by Install-DbaWatchUpdate.
+
+#>
     process {
         if (([Environment]::OSVersion).Version.Major -lt 10) {
             Write-Warning "This command only supports Windows 10 and higher."
@@ -33,8 +36,7 @@ function Uninstall-DbaWatchUpdate {
 
                 if ($null -eq $task) {
                     Write-Warning "Task doesn't exist. Skipping removal."
-                }
-                else {
+                } else {
                     Write-Output "Removing watchupdate.xml."
                     $file = "$env:LOCALAPPDATA\dbatools\watchupdate.xml"
                     Remove-Item $file -ErrorAction SilentlyContinue
@@ -46,8 +48,7 @@ function Uninstall-DbaWatchUpdate {
 
                     Start-Sleep -Seconds 2
                 }
-            }
-            catch {
+            } catch {
                 Write-Warning "Task could not be deleted. Please remove 'dbatools version check' manually."
             }
         }
@@ -63,11 +64,11 @@ function Uninstall-DbaWatchUpdate {
         if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
             Write-Warning "Removal of this scheduled task requires elevated permissions."
             Start-Process powershell -Verb runAs -ArgumentList Uninstall-DbaWatchUpdate -Wait
-        }
-        else {
+        } else {
             Invoke-Command -ScriptBlock $script
         }
 
         Write-Output "All done!"
     }
 }
+

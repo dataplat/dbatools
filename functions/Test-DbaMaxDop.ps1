@@ -1,67 +1,69 @@
 function Test-DbaMaxDop {
     <#
-        .SYNOPSIS
-            Displays information relating to SQL Server Max Degree of Parallelism setting. Works on SQL Server 2005-2016.
+    .SYNOPSIS
+        Displays information relating to SQL Server Max Degree of Parallelism setting. Works on SQL Server 2005-2016.
 
-        .DESCRIPTION
-            Inspired by Sakthivel Chidambaram's post about SQL Server MAXDOP Calculator (https://blogs.msdn.microsoft.com/sqlsakthi/p/maxdop-calculator-SqlInstance/),
-            this script displays a SQL Server's: max dop configured, and the calculated recommendation.
+    .DESCRIPTION
+        Inspired by Sakthivel Chidambaram's post about SQL Server MAXDOP Calculator (https://blogs.msdn.microsoft.com/sqlsakthi/p/maxdop-calculator-SqlInstance/),
+        this script displays a SQL Server's: max dop configured, and the calculated recommendation.
 
-            For SQL Server 2016 shows:
-                - Instance max dop configured and the calculated recommendation
-                - max dop configured per database (new feature)
+        For SQL Server 2016 shows:
+        - Instance max dop configured and the calculated recommendation
+        - max dop configured per database (new feature)
 
-            More info:
-                https://support.microsoft.com/en-us/kb/2806535
-                https://blogs.msdn.microsoft.com/sqlsakthi/2012/05/23/wow-we-have-maxdop-calculator-for-sql-server-it-makes-my-job-easier/
+        More info:
+        https://support.microsoft.com/en-us/kb/2806535
+        https://blogs.msdn.microsoft.com/sqlsakthi/2012/05/23/wow-we-have-maxdop-calculator-for-sql-server-it-makes-my-job-easier/
 
-            These are just general recommendations for SQL Server and are a good starting point for setting the "max degree of parallelism" option.
+        These are just general recommendations for SQL Server and are a good starting point for setting the "max degree of parallelism" option.
 
-        .PARAMETER SqlInstance
-            The SQL Server instance(s) to connect to.
+    .PARAMETER SqlInstance
+        The target SQL Server instance or instances.
 
-        .PARAMETER SqlCredential
-            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+    .PARAMETER SqlCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-        .PARAMETER Detailed
-            Output all properties, will be deprecated in 1.0.0 release.
+    .PARAMETER Detailed
+        Output all properties, will be deprecated in 1.0.0 release.
 
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-        .NOTES
-            Tags: MaxDop, SPConfigure
-            Author  : Claudio Silva (@claudioessilva)
-            Requires: sysadmin access on SQL Servers
+    .NOTES
+        Tags: MaxDop, SpConfigure
+        Author: Claudio Silva (@claudioessilva)
 
-            dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-            Copyright (C) 2016 Chrissy LeMaire
-            License: MIT https://opensource.org/licenses/MIT
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-        .LINK
-            https://dbatools.io/Test-DbaMaxDop
+        Requires: sysadmin access on SQL Servers
 
-        .EXAMPLE
-            Test-DbaMaxDop -SqlInstance sql2008, sqlserver2012
+    .LINK
+        https://dbatools.io/Test-DbaMaxDop
 
-            Get Max DOP setting for servers sql2008 and sqlserver2012 and also the recommended one.
+    .EXAMPLE
+        PS C:\> Test-DbaMaxDop -SqlInstance sql2008, sqlserver2012
 
-        .EXAMPLE
-            Test-DbaMaxDop -SqlInstance sql2014 | Select-Object *
+        Get Max DOP setting for servers sql2008 and sqlserver2012 and also the recommended one.
 
-            Shows Max DOP setting for server sql2014 with the recommended value. Piping the output to Select-Object * will also show the 'NUMANodes' and 'NumberOfCores' of each instance
+    .EXAMPLE
+        PS C:\> Test-DbaMaxDop -SqlInstance sql2014 | Select-Object *
 
-        .EXAMPLE
-            Test-DbaMaxDop -SqlInstance sqlserver2016 | Select-Object *
+        Shows Max DOP setting for server sql2014 with the recommended value. Piping the output to Select-Object * will also show the 'NUMANodes' and 'NumberOfCores' of each instance
 
-            Get Max DOP setting for servers sql2016 with the recommended value. Piping the output to Select-Object * will also show the 'NUMANodes' and 'NumberOfCores' of each instance. Because it is an 2016 instance will be shown 'InstanceVersion', 'Database' and 'DatabaseMaxDop' columns.
-    #>
+    .EXAMPLE
+        PS C:\> Test-DbaMaxDop -SqlInstance sqlserver2016 | Select-Object *
+
+        Get Max DOP setting for servers sql2016 with the recommended value. Piping the output to Select-Object * will also show the 'NUMANodes' and 'NumberOfCores' of each instance. Because it is an 2016 instance will be shown 'InstanceVersion', 'Database' and 'DatabaseMaxDop' columns.
+
+#>
     [CmdletBinding()]
     [OutputType([System.Collections.ArrayList])]
     param (
-        [parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
+        [parameter(Position = 0, Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer", "SqlServers")]
         [DbaInstance[]]$SqlInstance,
         [PSCredential]$SqlCredential,
@@ -81,14 +83,13 @@ function Test-DbaMaxDop {
     }
 
     process {
-        $hasScopedConfig = $false
+        #Variable marked as unused by PSScriptAnalyzer
+        #$hasScopedConfig = $false
 
         foreach ($instance in $SqlInstance) {
             try {
-                Write-Message -Level Verbose -Message "Connecting to $instance"
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -99,8 +100,7 @@ function Test-DbaMaxDop {
                 #represents the Number of NUMA nodes
                 $sql = "SELECT COUNT(DISTINCT memory_node_id) AS NUMA_Nodes FROM sys.dm_os_memory_clerks WHERE memory_node_id!=64"
                 $numaNodes = $server.ConnectionContext.ExecuteScalar($sql)
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failed to get Numa node count." -ErrorRecord $_ -Target $server -Continue
             }
 
@@ -108,8 +108,7 @@ function Test-DbaMaxDop {
                 #represents the Number of Processor Cores
                 $sql = "SELECT COUNT(scheduler_id) FROM sys.dm_os_schedulers WHERE status = 'VISIBLE ONLINE'"
                 $numberOfCores = $server.ConnectionContext.ExecuteScalar($sql)
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failed to get number of cores." -ErrorRecord $_ -Target $server -Continue
             }
 
@@ -119,19 +118,16 @@ function Test-DbaMaxDop {
                 if ($numberOfCores -lt 8) {
                     #Less than 8 logical processors - Keep MAXDOP at or below # of logical processors
                     $recommendedMaxDop = $numberOfCores
-                }
-                else {
+                } else {
                     #Equal or greater than 8 logical processors - Keep MAXDOP at 8
                     $recommendedMaxDop = 8
                 }
-            }
-            else {
+            } else {
                 #Server with multiple NUMA nodes
                 if (($numberOfCores / $numaNodes) -lt 8) {
                     # Less than 8 logical processors per NUMA node - Keep MAXDOP at or below # of logical processors per NUMA node
                     $recommendedMaxDop = [int]($numberOfCores / $numaNodes)
-                }
-                else {
+                } else {
                     # Greater than 8 logical processors per NUMA node - Keep MAXDOP at 8
                     $recommendedMaxDop = 8
                 }
@@ -141,20 +137,16 @@ function Test-DbaMaxDop {
             $notes = $null
             if ($maxDop -eq 1) {
                 $notes = $notesDopOne
-            }
-            else {
+            } else {
                 if ($maxDop -ne 0 -and $maxDop -lt $recommendedMaxDop) {
                     $notes = $notesDopLT
-                }
-                else {
+                } else {
                     if ($maxDop -ne 0 -and $maxDop -gt $recommendedMaxDop) {
                         $notes = $notesDopGT
-                    }
-                    else {
+                    } else {
                         if ($maxDop -eq 0) {
                             $notes = $notesDopZero
-                        }
-                        else {
+                        } else {
                             $notes = $notesAsRecommended
                         }
                     }
@@ -162,7 +154,7 @@ function Test-DbaMaxDop {
             }
 
             [pscustomobject]@{
-                ComputerName          = $server.NetName
+                ComputerName          = $server.ComputerName
                 InstanceName          = $server.ServiceName
                 SqlInstance           = $server.DomainInstanceName
                 InstanceVersion       = $server.Version
@@ -177,7 +169,8 @@ function Test-DbaMaxDop {
 
             # On SQL Server 2016 and higher, MaxDop can be set on a per-database level
             if ($server.VersionMajor -ge 13) {
-                $hasScopedConfig = $true
+                #Variable marked as unused by PSScriptAnalyzer
+                #$hasScopedConfig = $true
                 Write-Message -Level Verbose -Message "SQL Server 2016 or higher detected, checking each database's MaxDop."
 
                 $databases = $server.Databases | where-object {$_.IsSystemObject -eq $false}
@@ -192,7 +185,7 @@ function Test-DbaMaxDop {
                     $dbmaxdop = $database.MaxDop
 
                     [pscustomobject]@{
-                        ComputerName          = $server.NetName
+                        ComputerName          = $server.ComputerName
                         InstanceName          = $server.ServiceName
                         SqlInstance           = $server.DomainInstanceName
                         InstanceVersion       = $server.Version
@@ -209,3 +202,4 @@ function Test-DbaMaxDop {
         }
     }
 }
+

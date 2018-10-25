@@ -1,4 +1,4 @@
-﻿$scriptBlock = {
+$scriptBlock = {
     param (
         $commandName,
 
@@ -34,3 +34,4 @@
 }
 
 Register-DbaTeppScriptblock -ScriptBlock $scriptBlock -Name processhostname
+

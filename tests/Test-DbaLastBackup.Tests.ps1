@@ -1,9 +1,23 @@
-﻿$commandname = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
+$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 
+Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+    Context "Validate parameters" {
+        $paramCount = 19
+        $defaultParamCount = 13
+        [object[]]$params = (Get-ChildItem function:\Test-DbaLastBackup).Parameters.Keys
+        $knownParameters = 'SqlInstance','SqlCredential','Database','ExcludeDatabase','Destination','DestinationCredential','DataDirectory','LogDirectory','Prefix','VerifyOnly','NoCheck','NoDrop','CopyFile','CopyPath','MaxMB','IncludeCopyOnly','IgnoreLogBackup','AzureCredential','EnableException'
+        It "Should contain our specific parameters" {
+            ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
+        }
+        It "Should only contain $paramCount parameters" {
+            $params.Count - $defaultParamCount | Should Be $paramCount
+        }
+    }
+}
 
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
+Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
         $dbs = $testlastbackup, "dbatoolsci_lildb", "dbatoolsci_testrestore", "dbatoolsci_singlerestore"
         $null = Get-DbaDatabase -SqlInstance $script:instance2 -Database $dbs | Remove-DbaDatabase -Confirm:$false
@@ -60,10 +74,32 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     Context "Restores using a specific path" {
         $null = Get-DbaDatabase -SqlInstance $script:instance2 -Database "dbatoolsci_singlerestore" | Backup-DbaDatabase
         $null = Test-DbaLastBackup -SqlInstance $script:instance2 -Database "dbatoolsci_singlerestore" -DataDirectory C:\Temp -LogDirectory C:\Temp -NoDrop
-        $results = Get-DbaDatabaseFile -SqlInstance $script:instance2 -Database "dbatools-testrestore-dbatoolsci_singlerestore"
+        $results = Get-DbaDbFile -SqlInstance $script:instance2 -Database "dbatools-testrestore-dbatoolsci_singlerestore"
         It "Should match C:\Temp" {
             ('C:\Temp\dbatools-testrestore-dbatoolsci_singlerestore.mdf' -in $results.PhysicalName) | Should Be $true
             ('C:\Temp\dbatools-testrestore-dbatoolsci_singlerestore_log.ldf' -in $results.PhysicalName) | Should Be $true
         }
+    }
+
+    Context "Test dbsize skip and cleanup (Issue 3968)" {
+        $results1 = Restore-DbaDatabase -SqlInstance $script:instance2 -Database bigtestrest -Path $script:appveyorlabrepo\sql2008-backups\db1\FULL -ReplaceDbNameInFile
+        Backup-DbaDatabase -SqlInstance $script:instance2 -Database bigtestrest
+        $results1 = Restore-DbaDatabase -SqlInstance $script:instance2 -Database smalltestrest -Path $script:appveyorlabrepo\sql2008-backups\db2\FULL\SQL2008_db2_FULL_20170518_041738.bak -ReplaceDbNameInFile
+        Backup-DbaDatabase -SqlInstance $script:instance2 -Database smalltestrest
+
+        $results = Test-DbaLastBackup -SqlInstance $script:instance2 -Databases bigtestrest,smalltestrest -CopyFile -CopyPath c:\temp -MaxMB 3 -Prefix testlast
+        $fileresult = Get-ChildItem c:\temp | Where-Object {$_.name -like '*bigtestrest'}
+        It "Should have skipped bigtestrest and tested smalltestrest"{
+            $results[0].RestoreResult | Should -BeLike '*exceeds the specified maximum*'
+            $results[0].DbccResult | Should -Be 'Skipped'
+            $results[1].RestoreResult | Should -Be 'Success'
+            $results[1].DbccResult | Should -Be 'Success'
+        }
+
+        It "Should have removed the temp backup copy even if skipped" {
+            ($null -eq $fileresult) | Should -Be $true
+        }
+
+        Get-DbaDatabase -SqlInstance $script:instance2 -Databases  bigtestrest,smalltestrest | Remove-DbaDatabase -confirm:$false
     }
 }

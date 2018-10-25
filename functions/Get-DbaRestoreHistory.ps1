@@ -1,78 +1,81 @@
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaRestoreHistory {
     <#
-        .SYNOPSIS
-            Returns restore history details for databases on a SQL Server.
+    .SYNOPSIS
+        Returns restore history details for databases on a SQL Server.
 
-        .DESCRIPTION
-            By default, this command will return the server name, database, username, restore type, date, from file and to files.
+    .DESCRIPTION
+        By default, this command will return the server name, database, username, restore type, date, from file and to files.
 
-            Thanks to https://www.mssqltips.com/SqlInstancetip/1724/when-was-the-last-time-your-sql-server-database-was-restored/ for the query and https://sqlstudies.com/2016/07/27/when-was-this-database-restored/ for the idea.
+        Thanks to https://www.mssqltips.com/SqlInstancetip/1724/when-was-the-last-time-your-sql-server-database-was-restored/ for the query and https://sqlstudies.com/2016/07/27/when-was-this-database-restored/ for the idea.
 
-        .PARAMETER SqlInstance
-            Specifies the SQL Server instance(s) to operate on. Requires SQL Server 2005 or higher.
+    .PARAMETER SqlInstance
+        Specifies the SQL Server instance(s) to operate on. Requires SQL Server 2005 or higher.
 
-        .PARAMETER SqlCredential
-            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+    .PARAMETER SqlCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-        .PARAMETER Database
-            Specifies the database(s) to process. Options for this list are auto-populated from the server. If unspecified, all databases will be processed.
+    .PARAMETER Database
+        Specifies the database(s) to process. Options for this list are auto-populated from the server. If unspecified, all databases will be processed.
 
-        .PARAMETER ExcludeDatabase
-            Specifies the database(s) to exclude from processing. Options for this list are auto-populated from the server.
+    .PARAMETER ExcludeDatabase
+        Specifies the database(s) to exclude from processing. Options for this list are auto-populated from the server.
 
-        .PARAMETER Since
-            Specifies a datetime to use as the starting point for searching backup history.
+    .PARAMETER Since
+        Specifies a datetime to use as the starting point for searching backup history.
 
-        .PARAMETER Force
-            Deprecated.
+    .PARAMETER Force
+        Deprecated.
 
-        .PARAMETER Last
-            If this switch is enabled, the last restore action performed on each database is returned.
-        
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+    .PARAMETER Last
+        If this switch is enabled, the last restore action performed on each database is returned.
 
-        .NOTES
-            Tags: DisasterRecovery, Backup, Restore, Databases
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: MIT https://opensource.org/licenses/MIT
+    .NOTES
+        Tags: DisasterRecovery, Backup, Restore
+        Author: Chrissy LeMaire (@cl), netnerds.net
 
-        .LINK
-            https://dbatools.io/Get-DbaRestoreHistory
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-        .EXAMPLE
-            Get-DbaRestoreHistory -SqlInstance sql2016
+    .LINK
+        https://dbatools.io/Get-DbaRestoreHistory
 
-            Returns server name, database, username, restore type, date for all restored databases on sql2016.
+    .EXAMPLE
+        PS C:\> Get-DbaRestoreHistory -SqlInstance sql2016
 
-        .EXAMPLE
-            Get-DbaRestoreHistory -SqlInstance sql2016 -Database db1, db2 -Since '7/1/2016 10:47:00'
+        Returns server name, database, username, restore type, date for all restored databases on sql2016.
 
-            Returns restore information only for databases db1 and db2 on sql2016 since July 1, 2016 at 10:47 AM.
+    .EXAMPLE
+        PS C:\> Get-DbaRestoreHistory -SqlInstance sql2016 -Database db1, db2 -Since '2016-07-01 10:47:00'
 
-        .EXAMPLE
-            Get-DbaRestoreHistory -SqlInstance sql2014, sql2016 -Exclude db1
+        Returns restore information only for databases db1 and db2 on sql2016 since July 1, 2016 at 10:47 AM.
 
-            Lots of detailed information for all databases except db1 on sql2014 and sql2016.
+    .EXAMPLE
+        PS C:\> Get-DbaRestoreHistory -SqlInstance sql2014, sql2016 -Exclude db1
 
-        .EXAMPLE
-            Get-DbaRestoreHistory -SqlInstance sql2014 -Database AdventureWorks2014, pubs | Format-Table
+        Returns restore information for all databases except db1 on sql2014 and sql2016.
 
-            Adds From and To file information to output, returns information only for AdventureWorks2014 and pubs, and formats the data as a table.
+    .EXAMPLE
+        PS C:\> $cred = Get-Credential sqladmin
+        PS C:\> Get-DbaRestoreHistory -SqlInstance sql2014 -Database AdventureWorks2014, pubs -SqlCredential $cred | Format-Table
 
-        .EXAMPLE
-            Get-DbaRegisteredServer -SqlInstance sql2016 | Get-DbaRestoreHistory
+        Returns database restore information for AdventureWorks2014 and pubs database on sql2014, connects using SQL Authentication via sqladmin account. Formats the data as a table.
 
-            Returns database restore information for every database on every server listed in the Central Management Server on sql2016.
+    .EXAMPLE
+        PS C:\> Get-DbaCmsRegServer -SqlInstance sql2016 | Get-DbaRestoreHistory
 
-    #>
+        Returns database restore information for every database on every server listed in the Central Management Server on sql2016.
+
+#>
     [CmdletBinding()]
-    Param (
-        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
+    param (
+        [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [Alias("Credential")]
@@ -83,15 +86,15 @@ function Get-DbaRestoreHistory {
         [datetime]$Since,
         [switch]$Force,
         [switch]$Last,
-        [switch][Alias('Silent')]
-        $EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
 
     begin {
         Test-DbaDeprecation -DeprecatedOn "1.0.0.0" -EnableException:$false -Parameter 'Force'
 
         if ($Since -ne $null) {
-            $Since = $Since.ToString("yyyy-MM-dd HH:mm:ss")
+            $Since = $Since.ToString("yyyy-MM-ddTHH:mm:ss")
         }
     }
 
@@ -99,7 +102,7 @@ function Get-DbaRestoreHistory {
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
-                $computername = $server.NetName
+                $computername = $server.ComputerName
                 $instancename = $server.ServiceName
                 $servername = $server.DomainInstanceName
 
@@ -107,8 +110,7 @@ function Get-DbaRestoreHistory {
                     $select = "SELECT '$computername' AS [ComputerName],
                     '$instancename' AS [InstanceName],
                     '$servername' AS [SqlInstance], * "
-                }
-                else {
+                } else {
                     $select = "SELECT
                     '$computername' AS [ComputerName],
                     '$instancename' AS [InstanceName],
@@ -139,7 +141,8 @@ function Get-DbaRestoreHistory {
                     bs.last_lsn,
                     bs.checkpoint_lsn,
                     bs.database_backup_lsn,
-                    bs.backup_finish_date
+                    bs.backup_finish_date,
+                    bs.backup_finish_date AS BackupFinishDate
                     "
                 }
 
@@ -184,20 +187,19 @@ function Get-DbaRestoreHistory {
                 Write-Message -Level Debug -Message $sql
 
                 $results = $server.ConnectionContext.ExecuteWithResults($sql).Tables.Rows
-
                 if ($last) {
-                    $ga = $results | group-Object database
+                    $ga = $results | Group-Object Database
                     $tmpres = @()
-                    $ga | foreach-Object {
-                        $tmpres += $_.Group | Sort-Object -Property RESTORE_DATE -Descending | Select-Object -first 1
+                    foreach ($g in $ga) {
+                        $tmpres += $g.Group | Sort-Object -Property Date -Descending | Select-Object -First 1
                     }
                     $results = $tmpres
                 }
-                Select-DefaultView -InputObject $results -Exclude first_lsn, last_lsn, checkpoint_lsn, database_backup_lsn, RowError, RowState, Table, ItemArray, HasErrors
-            }
-            catch {
+                $results | Select-DefaultView -ExcludeProperty first_lsn, last_lsn, checkpoint_lsn, database_backup_lsn, backup_finish_date
+            } catch {
                 Stop-Function -Message "Failure" -Target $SqlInstance -Error $_ -Exception $_.Exception.InnerException -Continue
             }
         }
     }
 }
+

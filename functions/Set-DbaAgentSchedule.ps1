@@ -1,137 +1,140 @@
 #ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Set-DbaAgentSchedule {
     <#
-.SYNOPSIS
-Set-DbaAgentSchedule updates a schedule in the msdb database.
+    .SYNOPSIS
+        Set-DbaAgentSchedule updates a schedule in the msdb database.
 
-.DESCRIPTION
-Set-DbaAgentSchedule will help update a schedule for a job. It does not attach the schedule to a job.
+    .DESCRIPTION
+        Set-DbaAgentSchedule will help update a schedule for a job. It does not attach the schedule to a job.
 
-.PARAMETER SqlInstance
-SQL Server instance. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
+    .PARAMETER SqlInstance
+        The target SQL Server instance or instances. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
 
-.PARAMETER SqlCredential
-Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+    .PARAMETER SqlCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-.PARAMETER Job
-The name of the job that has the schedule.
+    .PARAMETER Job
+        The name of the job that has the schedule.
 
-.PARAMETER ScheduleName
-The name of the schedule.
+    .PARAMETER ScheduleName
+        The name of the schedule.
 
-.PARAMETER NewName
-The new name for the schedule.
+    .PARAMETER NewName
+        The new name for the schedule.
 
-.PARAMETER Enabled
-Set the schedule to enabled.
+    .PARAMETER Enabled
+        Set the schedule to enabled.
 
-.PARAMETER Disabled
-Set the schedule to disabled.
+    .PARAMETER Disabled
+        Set the schedule to disabled.
 
-.PARAMETER FrequencyType
-A value indicating when a job is to be executed.
-Allowed values are 1, "Once", 4, "Daily", 8, "Weekly", 16, "Monthly", 32, "MonthlyRelative", 64, "AgentStart", 128 or "IdleComputer"
+    .PARAMETER FrequencyType
+        A value indicating when a job is to be executed.
+        Allowed values are 1, "Once", 4, "Daily", 8, "Weekly", 16, "Monthly", 32, "MonthlyRelative", 64, "AgentStart", 128 or "IdleComputer"
 
-.PARAMETER FrequencyInterval
-The days that a job is executed
-Allowed values are 1, "Sunday", 2, "Monday", 4, "Tuesday", 8, "Wednesday", 16, "Thursday", 32, "Friday", 64, "Saturday", 62, "Weekdays", 65, "Weekend", 127, "EveryDay".
-If 62, "Weekdays", 65, "Weekend", 127, "EveryDay" is used it overwwrites any other value that has been passed before.
+    .PARAMETER FrequencyInterval
+        The days that a job is executed
+        Allowed values are 1, "Sunday", 2, "Monday", 4, "Tuesday", 8, "Wednesday", 16, "Thursday", 32, "Friday", 64, "Saturday", 62, "Weekdays", 65, "Weekend", 127, "EveryDay".
+        If 62, "Weekdays", 65, "Weekend", 127, "EveryDay" is used it overwwrites any other value that has been passed before.
 
-.PARAMETER FrequencySubdayType
-Specifies the units for the subday FrequencyInterval.
-Allowed values are 1, "Time", 2, "Seconds", 4, "Minutes", 8 or "Hours"
+    .PARAMETER FrequencySubdayType
+        Specifies the units for the subday FrequencyInterval.
+        Allowed values are 1, "Time", 2, "Seconds", 4, "Minutes", 8 or "Hours"
 
-.PARAMETER FrequencySubdayInterval
-The number of subday type periods to occur between each execution of a job.
+    .PARAMETER FrequencySubdayInterval
+        The number of subday type periods to occur between each execution of a job.
 
-.PARAMETER FrequencySubdayInterval
-The number of subday type periods to occur between each execution of a job.
+    .PARAMETER FrequencySubdayInterval
+        The number of subday type periods to occur between each execution of a job.
 
-.PARAMETER FrequencyRelativeInterval
-A job's occurrence of FrequencyInterval in each month, if FrequencyInterval is 32 (monthlyrelative).
+    .PARAMETER FrequencyRelativeInterval
+        A job's occurrence of FrequencyInterval in each month, if FrequencyInterval is 32 (monthlyrelative).
 
-.PARAMETER FrequencyRecurrenceFactor
-The number of weeks or months between the scheduled execution of a job. FrequencyRecurrenceFactor is used only if FrequencyType is 8, "Weekly", 16, "Monthly", 32 or "MonthlyRelative".
+    .PARAMETER FrequencyRecurrenceFactor
+        The number of weeks or months between the scheduled execution of a job. FrequencyRecurrenceFactor is used only if FrequencyType is 8, "Weekly", 16, "Monthly", 32 or "MonthlyRelative".
 
-.PARAMETER StartDate
-The date on which execution of a job can begin.
+    .PARAMETER StartDate
+        The date on which execution of a job can begin.
 
-.PARAMETER EndDate
-The date on which execution of a job can stop.
+    .PARAMETER EndDate
+        The date on which execution of a job can stop.
 
-.PARAMETER StartTime
-The time on any day to begin execution of a job. Format HHMMSS / 24 hour clock.
-Example: '010000' for 01:00:00 AM.
-Example: '140000' for 02:00:00 PM.
+    .PARAMETER StartTime
+        The time on any day to begin execution of a job. Format HHMMSS / 24 hour clock.
+        Example: '010000' for 01:00:00 AM.
+        Example: '140000' for 02:00:00 PM.
 
-.PARAMETER EndTime
-The time on any day to end execution of a job. Format HHMMSS / 24 hour clock.
-Example: '010000' for 01:00:00 AM.
-Example: '140000' for 02:00:00 PM.
+    .PARAMETER EndTime
+        The time on any day to end execution of a job. Format HHMMSS / 24 hour clock.
+        Example: '010000' for 01:00:00 AM.
+        Example: '140000' for 02:00:00 PM.
 
-.PARAMETER Owner
-The name of the server principal that owns the schedule. If no value is given the schedule is owned by the creator.
+    .PARAMETER Owner
+        The name of the server principal that owns the schedule. If no value is given the schedule is owned by the creator.
 
-.PARAMETER WhatIf
-Shows what would happen if the command were to run. No actions are actually performed.
+    .PARAMETER WhatIf
+        Shows what would happen if the command were to run. No actions are actually performed.
 
-.PARAMETER Confirm
-Prompts you for confirmation before executing any changing operations within the command.
+    .PARAMETER Confirm
+        Prompts you for confirmation before executing any changing operations within the command.
 
-.PARAMETER EnableException
+    .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-.PARAMETER Force
-The force parameter will ignore some errors in the parameters and assume defaults.
-It will also remove the any present schedules with the same name for the specific job.
+    .PARAMETER Force
+        The force parameter will ignore some errors in the parameters and assume defaults.
+        It will also remove the any present schedules with the same name for the specific job.
 
-.NOTES
-Author: Sander Stad (@sqlstad, sqlstad.nl)
-Tags: Agent, Job, Job Step
+    .NOTES
+        Tags: Agent, Job, JobStep
+        Author: Sander Stad (@sqlstad, sqlstad.nl)
 
-Website: https://dbatools.io
-Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-License: MIT https://opensource.org/licenses/MIT
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-.LINK
-https://dbatools.io/Set-DbaAgentSchedule
+    .LINK
+        https://dbatools.io/Set-DbaAgentSchedule
 
-.EXAMPLE
-Set-DbaAgentSchedule -SqlInstance sql1 -Job Job1 -ScheduleName daily -Enabled
-Changes the schedule for Job1 with the name 'daily' to enabled
+    .EXAMPLE
+        PS C:\> Set-DbaAgentSchedule -SqlInstance sql1 -Job Job1 -ScheduleName daily -Enabled
 
-.EXAMPLE
-Set-DbaAgentSchedule -SqlInstance sql1 -Job Job1 -ScheduleName daily -NewName weekly -FrequencyType Weekly -FrequencyInterval Monday, Wednesday, Friday
-Changes the schedule for Job1 with the name daily to have a new name weekly
+        Changes the schedule for Job1 with the name 'daily' to enabled
 
-.EXAMPLE
-Set-DbaAgentSchedule -SqlInstance sql1 -Job Job1, Job2, Job3 -ScheduleName daily -StartTime '230000'
-Changes the start time of the schedule for Job1 to 11 PM for multiple jobs
+    .EXAMPLE
+        PS C:\> Set-DbaAgentSchedule -SqlInstance sql1 -Job Job1 -ScheduleName daily -NewName weekly -FrequencyType Weekly -FrequencyInterval Monday, Wednesday, Friday
 
-.EXAMPLE
-Set-DbaAgentSchedule -SqlInstance sql1, sql2, sql3 -Job Job1 -ScheduleName daily -Enabled
-Changes the schedule for Job1 with the name daily to enabled on multiple servers
+        Changes the schedule for Job1 with the name daily to have a new name weekly
 
-.EXAMPLE
-sql1, sql2, sql3 | Set-DbaAgentSchedule -Job Job1 -ScheduleName 'daily' -Enabled
-Changes the schedule for Job1 with the name 'daily' to enabled on multiple servers using pipe line
+    .EXAMPLE
+        PS C:\> Set-DbaAgentSchedule -SqlInstance sql1 -Job Job1, Job2, Job3 -ScheduleName daily -StartTime '230000'
+
+        Changes the start time of the schedule for Job1 to 11 PM for multiple jobs
+
+    .EXAMPLE
+        PS C:\> Set-DbaAgentSchedule -SqlInstance sql1, sql2, sql3 -Job Job1 -ScheduleName daily -Enabled
+
+        Changes the schedule for Job1 with the name daily to enabled on multiple servers
+
+    .EXAMPLE
+        PS C:\> sql1, sql2, sql3 | Set-DbaAgentSchedule -Job Job1 -ScheduleName 'daily' -Enabled
+
+        Changes the schedule for Job1 with the name 'daily' to enabled on multiple servers using pipe line
 
 #>
-
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "Low")]
-
     param (
-        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [Parameter(Mandatory = $false)]
-        [PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential,
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [PSCredential]$SqlCredential,
+        [Parameter(Mandatory, ValueFromPipeline)]
         [ValidateNotNullOrEmpty()]
         [object[]]$Job,
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [Parameter(Mandatory, ValueFromPipeline)]
         [ValidateNotNullOrEmpty()]
         [string]$ScheduleName,
         [Parameter(Mandatory = $false)]
@@ -192,8 +195,7 @@ Changes the schedule for Job1 with the name 'daily' to enabled on multiple serve
             if ($Force) {
                 $FrequencyRecurrenceFactor = 1
                 Write-Message -Message "Recurrence factor not set for weekly or monthly interval. Setting it to $FrequencyRecurrenceFactor." -Level Verbose
-            }
-            else {
+            } else {
                 Stop-Function -Message "The recurrence factor $FrequencyRecurrenceFactor needs to be at least on when using a weekly or monthly interval." -Target $SqlInstance
                 return
             }
@@ -203,8 +205,7 @@ Changes the schedule for Job1 with the name 'daily' to enabled on multiple serve
         if (($FrequencySubdayType -in 2, 4) -and (-not ($FrequencySubdayInterval -ge 1 -or $FrequencySubdayInterval -le 59))) {
             Stop-Function -Message "Subday interval $FrequencySubdayInterval must be between 1 and 59 when subday type is 2, 'Seconds', 4 or 'Minutes'" -Target $SqlInstance
             return
-        }
-        elseif (($FrequencySubdayType -eq 8) -and (-not ($FrequencySubdayInterval -ge 1 -and $FrequencySubdayInterval -le 23))) {
+        } elseif (($FrequencySubdayType -eq 8) -and (-not ($FrequencySubdayInterval -ge 1 -and $FrequencySubdayInterval -le 23))) {
             Stop-Function -Message "Subday interval $FrequencySubdayInterval must be between 1 and 23 when subday type is 8 or 'Hours" -Target $SqlInstance
             return
         }
@@ -298,8 +299,7 @@ Changes the schedule for Job1 with the name 'daily' to enabled on multiple serve
         if ($EndDate -and ($EndDate -notmatch $RegexDate)) {
             Stop-Function -Message "End date $EndDate needs to be a valid date with format yyyyMMdd" -Target $SqlInstance
             return
-        }
-        elseif ($EndDate -lt $StartDate) {
+        } elseif ($EndDate -lt $StartDate) {
             Stop-Function -Message "End date $EndDate cannot be before start date $StartDate" -Target $SqlInstance
             return
         }
@@ -326,24 +326,20 @@ Changes the schedule for Job1 with the name 'daily' to enabled on multiple serve
             foreach ($j in $Job) {
 
                 # Try connecting to the instance
-                Write-Message -Message "Attempting to connect to $instance" -Level Verbose
                 try {
                     $Server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
                 }
 
                 # Check if the job exists
                 if ($Server.JobServer.Jobs.Name -notcontains $j) {
                     Write-Message -Message "Job $j doesn't exists on $instance" -Level Warning
-                }
-                else {
+                } else {
                     # Check if the job schedule exists
                     if ($Server.JobServer.Jobs[$j].JobSchedules.Name -notcontains $ScheduleName) {
                         Stop-Function -Message "Schedule $ScheduleName doesn't exists for job $j on $instance" -Target $instance -Continue
-                    }
-                    else {
+                    } else {
                         # Get the job schedule
                         # If for some reason the there are multiple schedules with the same name, the first on is chosen
                         $JobSchedule = $Server.JobServer.Jobs[$j].JobSchedules[$ScheduleName][0]
@@ -428,8 +424,7 @@ Changes the schedule for Job1 with the name 'daily' to enabled on multiple serve
 
                                 $JobSchedule.Alter()
 
-                            }
-                            catch {
+                            } catch {
                                 Stop-Function -Message "Something went wrong changing the schedule" -Target $instance -ErrorRecord $_ -Continue
                                 return
                             }
@@ -445,3 +440,4 @@ Changes the schedule for Job1 with the name 'daily' to enabled on multiple serve
         Write-Message -Message "Finished changing the job schedule(s)" -Level Verbose
     }
 }
+

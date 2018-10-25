@@ -5,7 +5,7 @@ function Invoke-DbaAdvancedRestore {
         For 90% of users Restore-DbaDatabase should be your point of access to this function. The other 10% use it at their own risk
 
     .DESCRIPTION
-        This is the final piece in the Restore-DbaDatabase Stack. Usually a BackupHistory object will arrive here from Restore-DbaDatabse via the following pipeline:
+        This is the final piece in the Restore-DbaDatabase Stack. Usually a BackupHistory object will arrive here from Restore-Dbadatabase via the following pipeline:
         Get-DbaBackupInformation  | Select-DbaBackupInformation | Format-DbaBackupInformation | Test-DbaBackupInformation | Invoke-DbaAdvancedRestore
 
         We have exposed these functions publicly to allow advanced users to perform operations that we don't support, or won't add as they would make things too complex for the majority of our users
@@ -36,7 +36,7 @@ function Invoke-DbaAdvancedRestore {
         This should be the same value or earlier, as used in the previous pipeline stages
 
     .PARAMETER StandbyDirectory
-        A folder path where a standby file should be created to put the recoverd databases in a standby mode
+        A folder path where a standby file should be created to put the recovered databases in a standby mode
 
     .PARAMETER NoRecovery
         Leave the database in a restoring state so that further restore may be made
@@ -78,20 +78,32 @@ function Invoke-DbaAdvancedRestore {
         Replaces user friendly yellow warnings with bloody red exceptions of doom!
         Use this if you want the function to throw terminating errors you want to catch.
 
+    .NOTES
+        Tags: Restore, Backup
+        Author: Chrissy LeMaire (@cl), netnerds.net
+
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
+
+    .LINK
+        https://dbatools.io/Invoke-DbaAdvancedRestore
+
     .EXAMPLE
-        $BackupHistory | Invoke-DbaAdvancedRestore -SqlInstance MyInstance
+        PS C:\> $BackupHistory | Invoke-DbaAdvancedRestore -SqlInstance MyInstance
 
         Will restore all the backups in the BackupHistory object according to the transformations it contains
 
     .EXAMPLE
-        $BackupHistory | Invoke-DbaAdvancedRestore -SqlInstance MyInstance -OutputScriptOnly
-        $BackupHistory | Invoke-DbaAdvancedRestore -SqlInstance MyInstance
+        PS C:\> $BackupHistory | Invoke-DbaAdvancedRestore -SqlInstance MyInstance -OutputScriptOnly
+        PS C:\> $BackupHistory | Invoke-DbaAdvancedRestore -SqlInstance MyInstance
 
         First generates just the T-SQL restore scripts so they can be sanity checked, and then if they are good perform the full restore. By reusing the BackupHistory object there is no need to rescan all the backup files again
-    #>
+
+#>
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "Low")]
     param (
-        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [parameter(Mandatory, ValueFromPipeline)]
         [Object[]]$BackupHistory,
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter]$SqlInstance,
@@ -105,7 +117,7 @@ function Invoke-DbaAdvancedRestore {
         [int]$BlockSize,
         [int]$BufferCount,
         [switch]$Continue,
-        [PSCredential]$AzureCredential,
+        [string]$AzureCredential,
         [switch]$WithReplace,
         [switch]$KeepCDC,
         [object[]]$PageRestore,
@@ -114,8 +126,7 @@ function Invoke-DbaAdvancedRestore {
     begin {
         try {
             $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
-        }
-        catch {
+        } catch {
             Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             return
         }
@@ -145,6 +156,7 @@ function Invoke-DbaAdvancedRestore {
         if (Test-FunctionInterrupt) { return }
         $Databases = $InternalHistory.Database | Select-Object -Unique
         foreach ($Database in $Databases) {
+            $DatabaseRestoreStartTime = Get-Date
             if ($Database -in $Server.Databases.Name) {
                 if (-not $OutputScriptOnly -and -not $VerifyOnly) {
                     if ($Pscmdlet.ShouldProcess("Killing processes in $Database on $SqlInstance as it exists and WithReplace specified  `n", "Cannot proceed if processes exist, ", "Database Exists and WithReplace specified, need to kill processes to restore")) {
@@ -153,13 +165,11 @@ function Invoke-DbaAdvancedRestore {
                             $null = Stop-DbaProcess -SqlInstance $Server -Database $Database -WarningAction Silentlycontinue
                             $null = $server.Query("Alter database $Database set offline with rollback immediate; alter database $Database set restricted_user; Alter database $Database set online with rollback immediate", 'master')
                             $server.ConnectionContext.Connect()
-                        }
-                        catch {
+                        } catch {
                             Write-Message -Level Verbose -Message "No processes to kill in $Database"
                         }
                     }
-                }
-                elseif (-not $WithReplace -and (-not $VerifyOnly)) {
+                } elseif (-not $WithReplace -and (-not $VerifyOnly)) {
                     Stop-Function -Message "$Database exists and WithReplace not specified, stopping" -EnableException $EnableException
                     return
                 }
@@ -168,25 +178,22 @@ function Invoke-DbaAdvancedRestore {
             $backups = @($InternalHistory | Where-Object {$_.Database -eq $Database} | Sort-Object -Property Type, FirstLsn)
             $BackupCnt = 1
             foreach ($backup in $backups) {
+                $FileRestoreStartTime = Get-Date
                 $Restore = New-Object Microsoft.SqlServer.Management.Smo.Restore
                 if (($backup -ne $backups[-1]) -or $true -eq $NoRecovery) {
                     $Restore.NoRecovery = $True
-                }
-                elseif ($backup -eq $backups[-1] -and '' -ne $StandbyDirectory) {
+                } elseif ($backup -eq $backups[-1] -and '' -ne $StandbyDirectory) {
                     $Restore.StandbyFile = $StandByDirectory + "\" + $Database + (get-date -Format yyyMMddHHmmss) + ".bak"
                     Write-Message -Level Verbose -Message "Setting standby on last file $($Restore.StandbyFile)"
-                }
-                else {
+                } else {
                     $Restore.NoRecovery = $False
                 }
                 if ($restoretime -gt (Get-Date) -or $Restore.RestoreTime -gt (Get-Date) -or $backup.RecoveryModel -eq 'Simple') {
                     $Restore.ToPointInTime = $null
-                }
-                else {
+                } else {
                     if ($RestoreTime -ne $Restore.RestoreTime) {
                         $Restore.ToPointInTime = $backup.RestoreTime
-                    }
-                    else {
+                    } else {
                         $Restore.ToPointInTime = $RestoreTime
                     }
                 }
@@ -223,13 +230,16 @@ function Invoke-DbaAdvancedRestore {
                     Write-Message -Message "Adding device $file" -Level Debug
                     $Device = New-Object -TypeName Microsoft.SqlServer.Management.Smo.BackupDeviceItem
                     $Device.Name = $file
-                    if ($file -like "http*") {
+                    if ($file.StartsWith("http")) {
                         $Device.devicetype = "URL"
-                        $Restore.CredentialName = $AzureCredential
-                    }
-                    else {
+                    } else {
                         $Device.devicetype = "File"
                     }
+
+                    if ($AzureCredential) {
+                        $Restore.CredentialName = $AzureCredential
+                    }
+
                     $Restore.FileNumber = $backup.Position
                     $Restore.Devices.Add($Device)
                 }
@@ -242,8 +252,7 @@ function Invoke-DbaAdvancedRestore {
                             $script = $Restore.Script($server)
                             if ($script -like '*WITH*') {
                                 $script = $script.TrimEnd() + ' , KEEP_CDC'
-                            }
-                            else {
+                            } else {
                                 $script = $script.TrimEnd() + ' WITH KEEP_CDC'
                             }
                             if ($true -ne $OutputScriptOnly) {
@@ -251,8 +260,7 @@ function Invoke-DbaAdvancedRestore {
                                 $null = $server.ConnectionContext.ExecuteNonQuery($script)
                                 Write-Progress -id 2 -activity "Restoring $Database to $sqlinstance - Backup $BackupCnt of $($Backups.count)" -status "Complete" -Completed
                             }
-                        }
-                        elseif ($null -ne $Pages -and $Action -eq 'Database') {
+                        } elseif ($null -ne $Pages -and $Action -eq 'Database') {
                             $script = $Restore.Script($server)
                             $script = $script -replace "] FROM", "] PAGE='$pages' FROM"
                             if ($true -ne $OutputScriptOnly) {
@@ -260,11 +268,9 @@ function Invoke-DbaAdvancedRestore {
                                 $null = $server.ConnectionContext.ExecuteNonQuery($script)
                                 Write-Progress -id 2 -activity "Restoring $Database to $sqlinstance - Backup $BackupCnt of $($Backups.count)" -status "Complete" -Completed
                             }
-                        }
-                        elseif ($OutputScriptOnly) {
+                        } elseif ($OutputScriptOnly) {
                             $script = $Restore.Script($server)
-                        }
-                        elseif ($VerifyOnly) {
+                        } elseif ($VerifyOnly) {
                             Write-Message -Message "VerifyOnly restore" -Level Verbose
                             Write-Progress -id 2 -activity "Verifying $Database backup file on $sqlinstance - Backup $BackupCnt of $($Backups.count)" -percentcomplete 0 -status ([System.String]::Format("Progress: {0} %", 0))
                             $Verify = $Restore.SqlVerify($server)
@@ -272,14 +278,12 @@ function Invoke-DbaAdvancedRestore {
                             if ($verify -eq $true) {
                                 Write-Message -Message "VerifyOnly restore Succeeded" -Level Verbose
                                 return "Verify successful"
-                            }
-                            else {
+                            } else {
                                 Write-Message -Message "VerifyOnly restore Failed" -Level Verbose
                                 return "Verify failed"
                             }
-                        }
-                        else {
-                            $outerProgress = $BackupCnt/$Backups.Count*100
+                        } else {
+                            $outerProgress = $BackupCnt / $Backups.Count * 100
                             if ($BackupCnt -eq 1) {
                                 Write-Progress -id 2 -ParentId 1 -Activity "Restoring $Database to $sqlinstance - Backup $BackupCnt of $($Backups.count)" -percentcomplete 0
                             }
@@ -294,15 +298,13 @@ function Invoke-DbaAdvancedRestore {
                             Write-Progress -id 3 -ParentId 2 -Activity "Restore $($backup.FullName -Join ',')" -Completed
                             Write-Progress -id 2 -ParentId 1 -Activity "Restoring $Database to $sqlinstance - Backup $BackupCnt of $($Backups.count)" -percentcomplete $outerProgress -status ([System.String]::Format("Progress: {0:N2} %", $outerProgress))
                         }
-                    }
-                    catch {
+                    } catch {
                         Write-Message -Level Verbose -Message "Failed, Closing Server connection"
                         $RestoreComplete = $False
                         $ExitError = $_.Exception.InnerException
                         Stop-Function -Message "Failed to restore db $Database, stopping" -ErrorRecord $_
                         return
-                    }
-                    finally {
+                    } finally {
 
                         if ($OutputScriptOnly -eq $false) {
                             [PSCustomObject]@{
@@ -324,10 +326,11 @@ function Invoke-DbaAdvancedRestore {
                                 CompressedBackupSize   = if ([bool]($backup.psobject.Properties.Name -contains 'CompressedBackupSize')) { ($backup | Measure-Object -Property CompressedBackupSize -Sum).Sum } else { $null }
                                 Script                 = $script
                                 BackupFileRaw          = ($backups.Fullname)
+                                FileRestoreTime        = New-TimeSpan -Seconds ((Get-Date) - $FileRestoreStartTime).TotalSeconds
+                                DatabaseRestoreTime    = New-TimeSpan -Seconds ((Get-Date) - $DatabaseRestoreStartTime).TotalSeconds
                                 ExitError              = $ExitError
                             } | Select-DefaultView -ExcludeProperty BackupSize, CompressedBackupSize, ExitError, BackupFileRaw, RestoredFileFull
-                        }
-                        else {
+                        } else {
                             $script
                         }
                         if ($Restore.Devices.Count -gt 0) {
@@ -347,3 +350,4 @@ function Invoke-DbaAdvancedRestore {
         }
     }
 }
+

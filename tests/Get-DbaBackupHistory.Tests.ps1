@@ -1,13 +1,27 @@
-﻿$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
+$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
+Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+    Context "Validate parameters" {
+        $paramCount = 16
+        $defaultParamCount = 11
+        [object[]]$params = (Get-ChildItem function:\Get-DbaBackupHistory).Parameters.Keys
+        $knownParameters = 'SqlInstance','SqlCredential','Database','ExcludeDatabase','IncludeCopyOnly','Force','Since','Last','LastFull','LastDiff','LastLog','DeviceType','Raw','LastLsn','Type','EnableException'
+        It "Should contain our specific parameters" {
+            ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
+        }
+        It "Should only contain $paramCount parameters" {
+            $params.Count - $defaultParamCount | Should Be $paramCount
+        }
+    }
+}
 
+Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
         $DestBackupDir = 'C:\Temp\backups'
-        if (-Not(Test-Path $DestBackupDir)) {
-            New-Item -Type Container -Path $DestBackupDir
+        if (-Not (Test-Path $DestBackupDir)) {
+            New-Item -ItemType Container -Path $DestBackupDir
         }
         $random = Get-Random
         $dbname = "dbatoolsci_history_$random"
@@ -68,6 +82,16 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         $resultsCo = Get-DbaBackupHistory -SqlInstance $script:instance1 -Last -IncludeCopyOnly -Database $dbname
         It "Should return just the CopyOnly Full Backup" {
             ($resultsCo | Measure-Object).count | Should Be 1
+        }
+    }
+
+    Context "Testing TotalSize regression test for #3517" {
+        It "supports large numbers" {
+            $historyObject = New-Object Sqlcollaborative.Dbatools.Database.BackupHistory
+            $server = connect-dbainstance $script:instance1
+            $cast = $server.Query('select cast(1000000000000000 as numeric(20,0)) AS TotalSize')
+            $historyObject.TotalSize = $cast.TotalSize
+            ($historyObject.TotalSize.Byte)| Should -Be 1000000000000000
         }
     }
 }

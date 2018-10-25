@@ -1,86 +1,86 @@
 function Copy-DbaCentralManagementServer {
     <#
-        .SYNOPSIS
-            Migrates SQL Server Central Management groups and server instances from one SQL Server to another.
+    .SYNOPSIS
+        Migrates SQL Server Central Management groups and server instances from one SQL Server to another.
 
-        .DESCRIPTION
-            Copy-DbaCentralManagementServer copies all groups, subgroups, and server instances from one SQL Server to another.
+    .DESCRIPTION
+        Copy-DbaCentralManagementServer copies all groups, subgroups, and server instances from one SQL Server to another.
 
-        .PARAMETER Source
-            Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
+    .PARAMETER Source
+        Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
 
-        .PARAMETER SourceSqlCredential
-            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+    .PARAMETER SourceSqlCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-        .PARAMETER Destination
-            Destination SQL Server. You must have sysadmin access and the server must be SQL Server 2000 or higher.
+    .PARAMETER Destination
+        Destination SQL Server. You must have sysadmin access and the server must be SQL Server 2000 or higher.
 
-        .PARAMETER DestinationSqlCredential
-            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+    .PARAMETER DestinationSqlCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-        .PARAMETER CMSGroup
-            This is an auto-populated array that contains your Central Management Server top-level groups on Source. You can specify one, many or none.
+    .PARAMETER CMSGroup
+        This is an auto-populated array that contains your Central Management Server top-level groups on Source. You can specify one, many or none.
 
-            If CMSGroup is not specified, all groups in your Central Management Server will be copied.
+        If CMSGroup is not specified, all groups in your Central Management Server will be copied.
 
-        .PARAMETER SwitchServerName
-            If this switch is enabled, all instance names will be changed from Source to Destination.
+    .PARAMETER SwitchServerName
+        If this switch is enabled, all instance names will be changed from Source to Destination.
 
-            Central Management Server does not allow you to add a shared registered server with the same name as the Configuration Server.
+        Central Management Server does not allow you to add a shared registered server with the same name as the Configuration Server.
 
-        .PARAMETER Force
-            If this switch is enabled, group(s) will be dropped and recreated if they already exists on destination.
+    .PARAMETER Force
+        If this switch is enabled, group(s) will be dropped and recreated if they already exists on destination.
 
-        .PARAMETER WhatIf
-            If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
+    .PARAMETER WhatIf
+        If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
-        .PARAMETER Confirm
-            If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
+    .PARAMETER Confirm
+        If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-        .NOTES
-            Tags: Migration
-            Author: Chrissy LeMaire (@cl), netnerds.net
-            Requires: sysadmin access on SQL Servers
+    .NOTES
+        Tags: Migration
+        Author: Chrissy LeMaire (@cl), netnerds.net
 
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: MIT https://opensource.org/licenses/MIT
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-        .LINK
-            https://dbatools.io/Copy-DbaCentralManagementServer
+        Requires: sysadmin access on SQL Servers
 
-        .EXAMPLE
-            Copy-DbaCentralManagementServer -Source sqlserver2014a -Destination sqlcluster
+    .LINK
+        https://dbatools.io/Copy-DbaCentralManagementServer
 
-            All groups, subgroups, and server instances are copied from sqlserver's Central Management Server to sqlcluster's Central Management Server.
+    .EXAMPLE
+        PS C:\> Copy-DbaCentralManagementServer -Source sqlserver2014a -Destination sqlcluster
 
-        .EXAMPLE
-            Copy-DbaCentralManagementServer -Source sqlserver2014a -Destination sqlcluster -ServerGroup Group1,Group3
+        All groups, subgroups, and server instances are copied from sqlserver2014a CMS to sqlcluster CMS.
 
-            Top-level groups Group1 and Group3 along with their subgroups and server instances are copied from sqlserver to sqlcluster.
+    .EXAMPLE
+        PS C:\> Copy-DbaCentralManagementServer -Source sqlserver2014a -Destination sqlcluster -CMSGroup Group1,Group3
 
-        .EXAMPLE
-            Copy-DbaCentralManagementServer -Source sqlserver2014a -Destination sqlcluster -ServerGroup Group1,Group3 -SwitchServerName -SourceSqlCredential $SourceSqlCredential -DestinationSqlCredential $DestinationSqlCredential
+        Top-level groups Group1 and Group3 along with their subgroups and server instances are copied from sqlserver to sqlcluster.
 
-            Top-level groups Group1 and Group3 along with their subgroups and server instances are copied from sqlserver to sqlcluster. When adding sql instances to sqlcluster, if the server name of the migrating instance is "sqlcluster", it will be switched to "sqlserver".
+    .EXAMPLE
+        PS C:\> Copy-DbaCentralManagementServer -Source sqlserver2014a -Destination sqlcluster -CMSGroup Group1,Group3 -SwitchServerName -SourceSqlCredential $SourceSqlCredential -DestinationSqlCredential $DestinationSqlCredential
 
-            If SwitchServerName is not specified, "sqlcluster" will be skipped.
-    #>
+        Top-level groups Group1 and Group3 along with their subgroups and server instances are copied from sqlserver to sqlcluster. When adding sql instances to sqlcluster, if the server name of the migrating instance is "sqlcluster", it will be switched to "sqlserver".
+
+        If SwitchServerName is not specified, "sqlcluster" will be skipped.
+
+#>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
-    Param (
-        [parameter(Mandatory = $true)]
+    param (
+        [parameter(Mandatory)]
         [DbaInstanceParameter]$Source,
-        [PSCredential]
-        $SourceSqlCredential,
-        [parameter(Mandatory = $true)]
-        [DbaInstanceParameter]$Destination,
-        [PSCredential]
-        $DestinationSqlCredential,
+        [PSCredential]$SourceSqlCredential,
+        [parameter(Mandatory)]
+        [DbaInstanceParameter[]]$Destination,
+        [PSCredential]$DestinationSqlCredential,
         [object[]]$CMSGroup,
         [switch]$SwitchServerName,
         [switch]$Force,
@@ -111,28 +111,30 @@ function Copy-DbaCentralManagementServer {
                 }
 
                 if ($null -ne $destinationGroup) {
+
                     if ($force -eq $false) {
-                        $copyDestinationGroupStatus.Status = "Skipped"
-                        $copyDestinationGroupStatus.Notes = "Already exists"
-                        $copyDestinationGroupStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                        Write-Message -Level Verbose -Message "Destination group $groupName exists at destination. Use -Force to drop and migrate."
+                        if ($Pscmdlet.ShouldProcess($destinstance, "Checking to see if $groupName exists")) {
+                            $copyDestinationGroupStatus.Status = "Skipped"
+                            $copyDestinationGroupStatus.Notes = "Already exists"
+                            $copyDestinationGroupStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                            Write-Message -Level Verbose -Message "Destination group $groupName exists at destination. Use -Force to drop and migrate."
+                        }
                         continue
                     }
-                    if ($Pscmdlet.ShouldProcess($destination, "Dropping group $groupName")) {
+                    if ($Pscmdlet.ShouldProcess($destinstance, "Dropping group $groupName")) {
                         try {
                             Write-Message -Level Verbose -Message "Dropping group $groupName"
                             $destinationGroup.Drop()
-                        }
-                        catch {
+                        } catch {
                             $copyDestinationGroupStatus.Status = "Failed"
                             $copyDestinationGroupStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
-                            Stop-Function -Message "Issue dropping group" -Target $groupName -InnerErrorRecord $_ -Continue
+                            Stop-Function -Message "Issue dropping group" -Target $groupName -ErrorRecord $_ -Continue
                         }
                     }
                 }
 
-                if ($Pscmdlet.ShouldProcess($destination, "Creating group $groupName")) {
+                if ($Pscmdlet.ShouldProcess($destinstance, "Creating group $groupName")) {
                     Write-Message -Level Verbose -Message "Creating group $($sourceGroup.Name)"
                     $destinationGroup = New-Object Microsoft.SqlServer.Management.RegisteredServers.ServerGroup($currentServerGroup, $sourceGroup.Name)
                     $destinationGroup.Create()
@@ -158,45 +160,48 @@ function Copy-DbaCentralManagementServer {
                 }
 
                 if ($serverName.ToLower() -eq $toCmStore.DomainInstanceName.ToLower()) {
-                    if ($SwitchServerName) {
-                        $serverName = $fromCmStore.DomainInstanceName
-                        $instanceName = $fromCmStore.DomainInstanceName
-                        Write-Message -Level Verbose -Message "SwitchServerName was used and new CMS equals current server name. $($toCmStore.DomainInstanceName.ToLower()) changed to $serverName."
-                    }
-                    else {
-                        $copyInstanceStatus.Status = "Skipped"
-                        $copyInstanceStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                    if ($Pscmdlet.ShouldProcess($destinstance, "Checking to see if server is the CMS equals current server name")) {
+                        if ($SwitchServerName) {
+                            $serverName = $fromCmStore.DomainInstanceName
+                            $instanceName = $fromCmStore.DomainInstanceName
+                            Write-Message -Level Verbose -Message "SwitchServerName was used and new CMS equals current server name. $($toCmStore.DomainInstanceName.ToLower()) changed to $serverName."
+                        } else {
+                            $copyInstanceStatus.Status = "Skipped"
+                            $copyInstanceStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
-                        Write-Message -Level Verbose -Message "$serverName is Central Management Server. Add prohibited. Skipping."
-                        continue
+                            Write-Message -Level Verbose -Message "$serverName is Central Management Server. Add prohibited. Skipping."
+                            continue
+                        }
                     }
                 }
 
                 if ($destinationGroup.RegisteredServers.Name -contains $instanceName) {
-                    if ($force -eq $false) {
-                        $copyInstanceStatus.Status = "Skipped"
-                        $copyInstanceStatus.Notes = "Already exists"
-                        $copyInstanceStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
-                        Write-Message -Level Verbose -Message "Instance $instanceName exists in group $groupName at destination. Use -Force to drop and migrate."
+                    if ($force -eq $false) {
+                        if ($Pscmdlet.ShouldProcess($destinstance, "Checking to see if $instanceName in $groupName exists")) {
+                            $copyInstanceStatus.Status = "Skipped"
+                            $copyInstanceStatus.Notes = "Already exists"
+                            $copyInstanceStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+
+                            Write-Message -Level Verbose -Message "Instance $instanceName exists in group $groupName at destination. Use -Force to drop and migrate."
+                        }
                         continue
                     }
 
-                    if ($Pscmdlet.ShouldProcess($destination, "Dropping instance $instanceName from $groupName and recreating")) {
+                    if ($Pscmdlet.ShouldProcess($destinstance, "Dropping instance $instanceName from $groupName and recreating")) {
                         try {
                             Write-Message -Level Verbose -Message "Dropping instance $instance from $groupName"
                             $destinationGroup.RegisteredServers[$instanceName].Drop()
-                        }
-                        catch {
+                        } catch {
                             $copyInstanceStatus.Status = "Failed"
                             $copyInstanceStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
-                            Stop-Function -Message "Issue dropping instance from group" -Target $instanceName -InnerErrorRecord $_ -Continue
+                            Stop-Function -Message "Issue dropping instance from group" -Target $instanceName -ErrorRecord $_ -Continue
                         }
                     }
                 }
 
-                if ($Pscmdlet.ShouldProcess($destination, "Copying $instanceName")) {
+                if ($Pscmdlet.ShouldProcess($destinstance, "Copying $instanceName")) {
                     $newServer = New-Object Microsoft.SqlServer.Management.RegisteredServers.RegisteredServer($destinationGroup, $instanceName)
                     $newServer.ServerName = $serverName
                     $newServer.Description = $instance.Description
@@ -211,15 +216,13 @@ function Copy-DbaCentralManagementServer {
 
                         $copyInstanceStatus.Status = "Successful"
                         $copyInstanceStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                    }
-                    catch {
+                    } catch {
                         $copyInstanceStatus.Status = "Failed"
                         $copyInstanceStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                         if ($_.Exception -match "same name") {
-                            Stop-Function -Message "Could not add Switched Server instance name." -Target $instanceName -InnerErrorRecord $_ -Continue
-                        }
-                        else {
-                            Stop-Function -Message "Failed to add $serverName" -Target $instanceName -InnerErrorRecord $_ -Continue
+                            Stop-Function -Message "Could not add Switched Server instance name." -Target $instanceName -ErrorRecord $_ -Continue
+                        } else {
+                            Stop-Function -Message "Failed to add $serverName" -Target $instanceName -ErrorRecord $_ -Continue
                         }
                     }
                     Write-Message -Level Verbose -Message "Added Server $serverName as $instanceName to $($destinationGroup.Name)"
@@ -243,29 +246,30 @@ function Copy-DbaCentralManagementServer {
 
                 if ($null -ne $toSubGroup) {
                     if ($force -eq $false) {
-                        $copyGroupStatus.Status = "Skipped"
-                        $copyGroupStatus.Notes = "Already exists"
-                        $copyGroupStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                        if ($Pscmdlet.ShouldProcess($destinstance, "Checking to see if subgroup $fromSubGroupName exists")) {
+                            $copyGroupStatus.Status = "Skipped"
+                            $copyGroupStatus.Notes = "Already exists"
+                            $copyGroupStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
-                        Write-Message -Level Verbose -Message "Subgroup $fromSubGroupName exists at destination. Use -Force to drop and migrate."
+                            Write-Message -Level Verbose -Message "Subgroup $fromSubGroupName exists at destination. Use -Force to drop and migrate."
+                        }
                         continue
                     }
 
-                    if ($Pscmdlet.ShouldProcess($destination, "Dropping subgroup $fromSubGroupName recreating")) {
+                    if ($Pscmdlet.ShouldProcess($destinstance, "Dropping subgroup $fromSubGroupName recreating")) {
                         try {
                             Write-Message -Level Verbose -Message "Dropping subgroup $fromSubGroupName"
                             $toSubGroup.Drop()
-                        }
-                        catch {
+                        } catch {
                             $copyGroupStatus.Status = "Failed"
                             $copyGroupStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
-                            Stop-Function -Message "Issue dropping subgroup" -Target $toSubGroup -InnerErrorRecord $_ -Continue
+                            Stop-Function -Message "Issue dropping subgroup" -Target $toSubGroup -ErrorRecord $_ -Continue
                         }
                     }
                 }
 
-                if ($Pscmdlet.ShouldProcess($destination, "Creating group $($fromSubGroup.Name)")) {
+                if ($Pscmdlet.ShouldProcess($destinstance, "Creating group $($fromSubGroup.Name)")) {
                     Write-Message -Level Verbose -Message "Creating group $($fromSubGroup.Name)"
                     $toSubGroup = New-Object Microsoft.SqlServer.Management.RegisteredServers.ServerGroup($destinationGroup, $fromSubGroup.Name)
                     $toSubGroup.create()
@@ -278,41 +282,40 @@ function Copy-DbaCentralManagementServer {
             }
         }
 
-        $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
-        $destServer = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
-
-        $source = $sourceServer.DomainInstanceName
-        $destination = $destServer.DomainInstanceName
-
-        if ($sourceServer.VersionMajor -lt 10 -or $destServer.VersionMajor -lt 10) {
-            throw "Central Management Server is only supported in SQL Server 2008 and newer. Quitting."
+        try {
+            $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -MinimumVersion 10
+            $fromCmStore = Get-DbaCmsRegServerStore -SqlInstance $sourceServer
+        } catch {
+            Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Source
+            return
         }
     }
 
     process {
-        Write-Message -Level Verbose -Message "Connecting to Central Management Servers"
-
-        try {
-            $fromCmStore = New-Object Microsoft.SqlServer.Management.RegisteredServers.RegisteredServersStore($sourceServer.ConnectionContext.SqlConnectionObject)
-            $toCmStore = New-Object Microsoft.SqlServer.Management.RegisteredServers.RegisteredServersStore($destServer.ConnectionContext.SqlConnectionObject)
-        }
-        catch {
-            throw "Cannot access Central Management Servers"
-        }
-
-        $stores = $fromCmStore.DatabaseEngineServerGroup
-        if ($CMSGroup) {
-            $stores = @();
-            foreach ($groupName in $CMSGroup) {
-                $stores += $fromCmStore.DatabaseEngineServerGroup.ServerGroups[$groupName]
+        if (Test-FunctionInterrupt) { return }
+        foreach ($destinstance in $Destination) {
+            try {
+                $destServer = Connect-SqlInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential -MinimumVersion 10
+            } catch {
+                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
             }
-        }
+            $toCmStore = Get-DbaCmsRegServerStore -SqlInstance $destServer
 
-        foreach ($store in $stores) {
-            Invoke-ParseServerGroup -sourceGroup $store -destinationgroup $toCmStore.DatabaseEngineServerGroup -SwitchServerName $SwitchServerName
+            $stores = $fromCmStore.DatabaseEngineServerGroup
+            if ($CMSGroup) {
+                $stores = @();
+                foreach ($groupName in $CMSGroup) {
+                    $stores += $fromCmStore.DatabaseEngineServerGroup.ServerGroups[$groupName]
+                }
+            }
+
+            foreach ($store in $stores) {
+                Invoke-ParseServerGroup -sourceGroup $store -destinationgroup $toCmStore.DatabaseEngineServerGroup -SwitchServerName $SwitchServerName
+            }
         }
     }
     end {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-SqlCentralManagementServer
     }
 }
+

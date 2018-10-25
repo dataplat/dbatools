@@ -27,9 +27,9 @@ function Get-XpDirTreeRestoreFile {
 #>
     [CmdletBinding()]
     param (
-        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [parameter(Mandatory, ValueFromPipeline)]
         [string]$Path,
-        [parameter(Mandatory = $true)]
+        [parameter(Mandatory)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter]$SqlInstance,
         [System.Management.Automation.PSCredential]$SqlCredential,
@@ -39,23 +39,20 @@ function Get-XpDirTreeRestoreFile {
 
     Write-Message -Level InternalComment -Message "Starting"
 
-    Write-Message -Level Verbose -Message "Connecting to $SqlInstance"
     $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
 
-    if (($path -like '*.bak') -or ($path -like '*trn')) {
-
-    }
-    elseif ($Path[-1] -ne "\") {
+    if (($path -like '*.bak') -or ($path -like '*.trn')) {
+        # For a future person who knows what's up, please replace this comment with the reason this is empty
+    } elseif ($Path[-1] -ne "\") {
         $Path = $Path + "\"
     }
 
-    if (!(Test-DbaSqlPath -SqlInstance $server -path $path)) {
+    if (!(Test-DbaPath -SqlInstance $server -path $path)) {
         Stop-Function -Message "SqlInstance $SqlInstance cannot access $path" -EnableException $true
     }
     if ($server.VersionMajor -lt 9) {
         $sql = "EXEC master..xp_dirtree '$Path',1,1;"
-    }
-    else {
+    } else {
         $sql = "EXEC master.sys.xp_dirtree '$Path',1,1;"
     }
     #$queryResult = Invoke-Sqlcmd2 -ServerInstance $SqlInstance -Credential $SqlCredential -Database tempdb -Query $query
@@ -74,3 +71,5 @@ function Get-XpDirTreeRestoreFile {
     }
     return $Results
 }
+
+

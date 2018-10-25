@@ -5,7 +5,7 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
         $paramCount = 9
-        $defaultParamCount = 11
+        $defaultParamCount = 13
         [object[]]$params = (Get-ChildItem function:\Set-DbaDbCompression).Parameters.Keys
         $knownParameters = 'SqlInstance', 'SqlCredential','Database','ExcludeDatabase','CompressionType','MaxRunTime','PercentCompression','InputObject','EnableException'
         It "Should contain our specific parameters" {
@@ -42,14 +42,14 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     Context "Command handles heaps and clustered indexes" {
         foreach ($row in $results | Where-Object {$_.IndexId -le 1}){
             It "Should process object $($row.TableName)" {
-                $row.AlreadyProcesssed | Should Be $True
+                $row.AlreadyProcessed | Should Be $True
             }
         }
     }
     Context "Command handles nonclustered indexes" {
         foreach ($row in $results | Where-Object {$_.IndexId -gt 1}){
             It "Should process nonclustered index $($row.IndexName)" {
-                $row.AlreadyProcesssed | Should Be $True
+                $row.AlreadyProcessed | Should Be $True
             }
         }
     }
@@ -67,8 +67,36 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
         foreach ($row in $results) {
             It "Should process object $($row.TableName) from InputObject" {
-                $row.AlreadyProcesssed | Should Be $True
+                $row.AlreadyProcessed | Should Be $True
+            }
+        }
+    }
+    Context "Command sets compression to Row all objects" {
+        $null = Set-DbaDbCompression -SqlInstance $script:instance2 -Database $dbname -CompressionType Row
+        $results = Get-DbaDbCompression -SqlInstance $script:instance2 -Database $dbname
+        foreach ($row in $results) {
+            It "The $($row.IndexType) for $($row.schema).$($row.TableName) is row compressed" {
+                $row.DataCompression | Should Be "Row"
+            }
+        }
+    }
+    Context "Command sets compression to Page for all objects" {
+        $null = Set-DbaDbCompression -SqlInstance $script:instance2 -Database $dbname -CompressionType Page
+        $results = Get-DbaDbCompression -SqlInstance $script:instance2 -Database $dbname
+        foreach ($row in $results) {
+            It "The $($row.IndexType) for $($row.schema).$($row.TableName) is page compressed" {
+                $row.DataCompression | Should Be "Page"
+            }
+        }
+    }
+    Context "Command sets compression to None for all objects" {
+        $null = Set-DbaDbCompression -SqlInstance $script:instance2 -Database $dbname -CompressionType None
+        $results = Get-DbaDbCompression -SqlInstance $script:instance2 -Database $dbname
+        foreach ($row in $results) {
+            It "The $($row.IndexType) for $($row.schema).$($row.TableName) is not compressed" {
+                $row.DataCompression | Should Be "None"
             }
         }
     }
 }
+

@@ -19,13 +19,13 @@ function Get-BackupAncientHistory {
         Author: Stuart Moore (@napalmgram), stuart-moore.com
 
         dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-        Copyright (C) 2016 Chrissy LeMaire
+       Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
     #>
     [CmdletBinding(DefaultParameterSetName = "Default")]
-    Param (
-        [parameter(Mandatory = $true)]
+    param (
+        [parameter(Mandatory)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter]$SqlInstance,
         [Alias("Credential")]
@@ -36,12 +36,10 @@ function Get-BackupAncientHistory {
         [Alias('Silent')]
         [switch]$EnableException
     )
-    BEGIN {
+    begin {
         try {
-            Write-Message -Level VeryVerbose -Message "Connecting to $SqlInstance." -Target $SqlInstance
             $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
-        }
-        catch {
+        } catch {
             Stop-Function -Message "Failed to process Instance $SqlInstance." -InnerErrorRecord $_ -Target $SqlInstance -Continue
         }
         if ($server.SoftwareVersionMajor -gt 8) {
@@ -53,13 +51,12 @@ function Get-BackupAncientHistory {
             ForEach ($db in $Database) {
                 $databases += [PScustomObject]@{name = $db}
             }
-        }
-        else {
+        } else {
             $databases = $server.Databases
         }
     }
 
-    PROCESS {
+    process {
         foreach ($db in $Database) {
             Write-Message -Level Verbose -Message "Processing database $db"
             $sql = "
@@ -150,7 +147,7 @@ function Get-BackupAncientHistory {
                 Write-Message -Level Debug -Message "FileSQL: $fileSql"
 
                 $historyObject = New-Object Sqlcollaborative.Dbatools.Database.BackupHistory
-                $historyObject.ComputerName = $server.NetName
+                $historyObject.ComputerName = $server.ComputerName
                 $historyObject.InstanceName = $server.ServiceName
                 $historyObject.SqlInstance = $server.DomainInstanceName
                 $historyObject.Database = $group.Group[0].Database
@@ -174,8 +171,7 @@ function Get-BackupAncientHistory {
                 $historyObject.SoftwareVersionMajor = $group.Group[0].Software_Major_Version
                 $historyObject.IsCopyOnly = if ($group.Group[0].is_copy_only -eq 1) {
                     $true
-                }
-                else {
+                } else {
                     $false
                 }
                 $groupResults += $historyObject
@@ -187,3 +183,4 @@ function Get-BackupAncientHistory {
 
     END {}
 }
+

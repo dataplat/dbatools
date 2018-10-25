@@ -5,7 +5,7 @@ function Test-SqlAgent {
 #>
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [Alias("ServerInstance", "SqlServer")]
         [object]$SqlInstance,
@@ -20,3 +20,5 @@ function Test-SqlAgent {
     try { $null = $SqlInstance.JobServer.script(); return $true }
     catch { return $false }
 }
+
+

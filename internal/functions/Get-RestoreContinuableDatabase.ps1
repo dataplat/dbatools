@@ -10,7 +10,7 @@ function Get-RestoreContinuableDatabase {
 #>
     [CmdletBinding()]
     param (
-        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [parameter(Mandatory, ValueFromPipeline)]
         [object]$SqlInstance,
         [PSCredential]$SqlCredential,
         [Alias('Silent')]
@@ -19,15 +19,13 @@ function Get-RestoreContinuableDatabase {
 
     try {
         $Server = Connect-SqlInstance -Sqlinstance $SqlInstance -SqlCredential $SqlCredential
-    }
-    catch {
+    } catch {
         Write-Message -Level Warning -Message "Cannot connect to $SqlInstance"
         break
     }
     if ($Server.VersionMajor -ge 9) {
-        $sql = "select distinct db_name(database_id) as 'Database', redo_start_lsn, redo_start_fork_guid as 'FirstRecoveryForkID' from master.sys.master_files where redo_start_lsn is not NULL"
-    }
-    else {
+        $sql = "select distinct db_name(database_id) as 'Database', differential_base_lsn, redo_start_lsn, redo_start_fork_guid as 'FirstRecoveryForkID' from master.sys.master_files where redo_start_lsn is not NULL"
+    } else {
         $sql = "
               CREATE TABLE #db_info
                 (
@@ -39,3 +37,5 @@ function Get-RestoreContinuableDatabase {
     }
     $server.ConnectionContext.ExecuteWithResults($sql).Tables.Rows
 }
+
+

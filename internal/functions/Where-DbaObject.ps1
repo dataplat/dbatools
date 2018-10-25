@@ -1,4 +1,4 @@
-﻿function global:Where-DbaObject {
+function global:Where-DbaObject {
     <#
         .SYNOPSIS
             A slightly more efficient filter function than Where-Object.
@@ -49,7 +49,7 @@
     #>
     [CmdletBinding()]
     param (
-        [Parameter(ValueFromPipeline = $true, Mandatory = $true)]
+        [Parameter(ValueFromPipeline, Mandatory)]
         [object]
         $InputObject,
 
@@ -137,3 +137,4 @@
 }
 
 (Get-Item Function:\Where-DbaObject).Visibility = "Private"
+

@@ -1,4 +1,22 @@
-Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
+$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
+. "$PSScriptRoot\constants.ps1"
+
+Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+    Context "Validate parameters" {
+        $paramCount = 6
+        $defaultParamCount = 11
+        [object[]]$params = (Get-ChildItem function:\ConvertTo-DbaDataTable).Parameters.Keys
+        $knownParameters = 'InputObject','TimeSpanType','SizeType','IgnoreNull','Raw','EnableException'
+        It "Should contain our specific parameters" {
+            ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
+        }
+        It "Should only contain $paramCount parameters" {
+            $params.Count - $defaultParamCount | Should Be $paramCount
+        }
+    }
+}
+
 Describe "Testing data table output when using a complex object" {
     $obj = New-Object -TypeName psobject -Property @{
         guid     = [system.guid]'32ccd4c4-282a-4c0d-997c-7b5deb97f9e0'
@@ -235,6 +253,21 @@ Describe "Testing input parameters" {
             $r = ConvertTo-DbaDataTable -InputObject $myobj
             ($r.Columns | Where-Object ColumnName -eq ScriptNothing | Select-Object -ExpandProperty DataType).ToString() | Should Be 'System.String'
 
+        }
+    }
+
+    Context "Verifying a datatable gets cloned when passed in" {
+        $obj = New-Object -TypeName psobject -Property @{
+            col1 = 'col1'
+            col2 = 'col2'
+        }
+        $first = $obj | ConvertTo-DbaDataTable
+        $second = $first | ConvertTo-DbaDataTable
+        It "Should have the same columns" {
+            # does not add ugly RowError,RowState Table, ItemArray, HasErrors
+            $firstColumns = ($first.Columns.ColumnName | Sort-Object) -Join ','
+            $secondColumns = ($second.Columns.ColumnName | Sort-Object) -Join ','
+            $firstColumns | Should -Be $secondColumns
         }
     }
 }

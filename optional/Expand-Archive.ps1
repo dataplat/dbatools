@@ -1,4 +1,4 @@
-﻿if ($PSVersionTable.PSVersion.Major -lt 5)
+if ($PSVersionTable.PSVersion.Major -lt 5)
 {
 
 
@@ -57,17 +57,17 @@ Which ships with PowerShell Version 5 but will run under v3.
         param
         (
             [parameter (
-                        mandatory = $true,
+                        Mandatory,
                         Position = 0,
                         ParameterSetName = "Path",
-                        ValueFromPipeline = $true,
+                        ValueFromPipeline,
                         ValueFromPipelineByPropertyName = $true)]
             [ValidateNotNullOrEmpty()]
             [string]
             $Path,
 
             [parameter (
-                        mandatory = $true,
+                        Mandatory,
                         ParameterSetName = "LiteralPath",
                         ValueFromPipelineByPropertyName = $true)]
             [ValidateNotNullOrEmpty()]
