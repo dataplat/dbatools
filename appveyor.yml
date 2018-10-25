@@ -1,9 +1,7 @@
 ﻿# See http://www.appveyor.com/docs/appveyor-yml for many more options
 
-init:
-  - git config --global core.autocrlf true
-
 configuration: "Debug"
+
 
 before_build:
   - nuget restore bin\projects\dbatools\dbatools.sln
@@ -24,7 +22,7 @@ cache:
   - C:\Program Files\WindowsPowerShell\Modules\PSScriptAnalyzer -> appveyor.yml
   - C:\Program Files\WindowsPowerShell\Modules\Pester -> appveyor.yml
 
-clone_depth: 50
+shallow_clone: true
 
 # Set build info
 environment:
@@ -82,6 +80,8 @@ environment:
 clone_folder: c:\github\dbatools
 
 before_test:
+  # turn tests\ (at least) to CRLF, as it's faster to do this on the zipball rather than checking out the repo
+  - cmd: pushd C:\github\dbatools\tests & unix2dos -q  *.ps1 & popd
   # grab appveyor lab files and needed requirements for tests in CI
   - ps: .\Tests\appveyor.prep.ps1
 
