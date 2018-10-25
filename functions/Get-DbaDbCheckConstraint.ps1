@@ -28,7 +28,7 @@ function Get-DbaDbCheckConstraint {
 
     .NOTES
         Tags: Database
-        Author: ClÃ¡udio Silva (@ClaudioESSilva), https://claudioessilva.eu
+        Author: Claudio Silva (@ClaudioESSilva), https://claudioessilva.eu
 
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT

@@ -38,7 +38,7 @@ function Get-DbaWindowsLog {
 
     .NOTES
         Tags: Logging
-        Author: Drew Furgiuele | Friedrich Weinmann (@FredWeinmann‏)
+        Author: Drew Furgiuele | Friedrich Weinmann (@FredWeinmann)
 
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
