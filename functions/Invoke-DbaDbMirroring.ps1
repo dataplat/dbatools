@@ -271,9 +271,12 @@ function Invoke-DbaDbMirroring {
                 }
             }
 
+            <#
             if ($Witness) {
+                #Variable marked as unused by PSScriptAnalyzer
                 $witnessdb = Get-DbaDatabase -SqlInstance $witserver -Database $dbName
             }
+            #>
 
             $primaryendpoint = Get-DbaEndpoint -SqlInstance $source | Where-Object EndpointType -eq DatabaseMirroring
             $mirrorendpoint = Get-DbaEndpoint -SqlInstance $dest | Where-Object EndpointType -eq DatabaseMirroring

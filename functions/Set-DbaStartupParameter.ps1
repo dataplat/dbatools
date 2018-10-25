@@ -381,7 +381,8 @@ function Set-DbaStartupParameter {
         }
 
         $Scriptblock = {
-            $instance = $args[0]
+            #Variable marked as unused by PSScriptAnalyzer
+            #$instance = $args[0]
             $displayname = $args[1]
             $ParameterString = $args[2]
 
@@ -399,11 +400,13 @@ function Set-DbaStartupParameter {
         if ($pscmdlet.ShouldProcess("Setting Sql Server start parameters on $SqlInstance to $ParameterString")) {
             try {
                 if ($Credential) {
-                    $response = Invoke-ManagedComputerCommand -ComputerName $instance -Credential $Credential -ScriptBlock $Scriptblock -ArgumentList $instance, $displayname, $ParameterString -EnableException
+                    #Variable $response marked as unused by PSScriptAnalyzer replace with $null to catch output
+                    $null = Invoke-ManagedComputerCommand -ComputerName $instance -Credential $Credential -ScriptBlock $Scriptblock -ArgumentList $instance, $displayname, $ParameterString -EnableException
                     $output = Get-DbaStartupParameter -SqlInstance $server -Credential $Credential -EnableException
                     Add-Member -Force -InputObject $output -MemberType NoteProperty -Name OriginalStartupParameters -Value $originalparamstring
                 } else {
-                    $response = Invoke-ManagedComputerCommand -ComputerName $instance -ScriptBlock $Scriptblock -ArgumentList $instance, $displayname, $ParameterString -EnableException
+                    #Variable $response marked as unused by PSScriptAnalyzer replace with $null to catch output
+                    $null = Invoke-ManagedComputerCommand -ComputerName $instance -ScriptBlock $Scriptblock -ArgumentList $instance, $displayname, $ParameterString -EnableException
                     $output = Get-DbaStartupParameter -SqlInstance $server -EnableException
                     Add-Member -Force -InputObject $output -MemberType NoteProperty -Name OriginalStartupParameters -Value $originalparamstring
                 }
@@ -418,4 +421,3 @@ function Set-DbaStartupParameter {
         }
     }
 }
-

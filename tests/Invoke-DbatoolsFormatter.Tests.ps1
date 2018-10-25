@@ -55,8 +55,13 @@ function Get-DbaStub {
         $temppath = Join-Path $TestDrive 'somefile.ps1'
         Set-Content -Value $content -Path $temppath
         Invoke-DbatoolsFormatter -Path $temppath
-        $newcontent = Get-Content -Path $temppath -Raw
-        It -Skip "should format things according to dbatools standards" {
+        $newcontent = Get-Content -Path $temppath | Out-String
+        <#
+        write-host -fore cyan "w $($wantedContent | convertto-json)"
+        write-host -fore cyan "n $($newcontent | convertto-json)"
+        write-host -fore cyan "t $($newcontent -eq $wantedContent)"
+        #>
+        It "should format things according to dbatools standards" {
             $newcontent | Should -Be $wantedContent
         }
     }

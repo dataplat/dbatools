@@ -15,7 +15,7 @@ function Revoke-DbaAgPermission {
 
     .PARAMETER Login
         The login or logins to modify.
-    
+
     .PARAMETER AvailabilityGroup
         Only modify specific availability groups.
 
@@ -103,12 +103,12 @@ function Revoke-DbaAgPermission {
             Stop-Function -Message "You must specify one or more logins when using the SqlInstance parameter."
             return
         }
-        
+
         if ($Type -contains "AvailabilityGroup" -and -not $AvailabilityGroup) {
             Stop-Function -Message "You must specify at least one availability group when using the AvailabilityGroup type."
             return
         }
-        
+
         foreach ($instance in $SqlInstance) {
             $InputObject += Get-DbaLogin -SqlInstance $instance -SqlCredential $SqlCredential -Login $Login
             foreach ($account in $Login) {
@@ -117,7 +117,7 @@ function Revoke-DbaAgPermission {
                 }
             }
         }
-        
+
         foreach ($account in $InputObject) {
             $server = $account.Parent
             if ($Type -contains "Endpoint") {
@@ -125,7 +125,7 @@ function Revoke-DbaAgPermission {
                 if (-not $endpoint) {
                     Stop-Function -Message "DatabaseMirroring endpoint does not exist on $server" -Target $server -Continue
                 }
-                
+
                 foreach ($perm in $Permission) {
                     if ($Pscmdlet.ShouldProcess($server.Name, "Revoking $perm on $endpoint")) {
                         if ($perm -eq "CreateAnyDatabase") {
@@ -150,7 +150,7 @@ function Revoke-DbaAgPermission {
                     }
                 }
             }
-            
+
             if ($Type -contains "AvailabilityGroup") {
                 $ags = Get-DbaAvailabilityGroup -SqlInstance $account.Parent -AvailabilityGroup $AvailabilityGroup
                 foreach ($ag in $ags) {

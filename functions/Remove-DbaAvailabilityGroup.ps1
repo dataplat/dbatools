@@ -16,7 +16,7 @@ function Remove-DbaAvailabilityGroup {
         After the cluster regains quorum, you will need to drop the availability group again to remove it from the WSFC cluster.
 
         For more information: https://docs.microsoft.com/en-us/sql/t-sql/statements/drop-availability-group-transact-sql
-   
+
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. Server version must be SQL Server version 2012 or higher.
 

@@ -116,7 +116,8 @@ function Test-DbaConnection {
 
             # SQL Server connection
             if ($instance.InstanceName -ne "MSSQLSERVER") {
-                $sqlport = "N/A"
+                #Variable marked as unused by PSScriptAnalyzer, need to be in PSCustomObject?
+                #$sqlport = "N/A"
             } else {
                 Write-Message -Level Verbose -Message "Testing raw socket connection to default SQL port"
                 $tcp = New-Object System.Net.Sockets.TcpClient
@@ -124,9 +125,11 @@ function Test-DbaConnection {
                     $tcp.Connect($baseaddress, 1433)
                     $tcp.Close()
                     $tcp.Dispose()
-                    $sqlport = $true
+                    #Variable marked as unused by PSScriptAnalyzer, need to be in PSCustomObject?
+                    #$sqlport = $true
                 } catch {
-                    $sqlport = $false
+                    #Variable marked as unused by PSScriptAnalyzer, need to be in PSCustomObject?
+                    #$sqlport = $false
                 }
             }
 

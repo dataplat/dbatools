@@ -298,7 +298,8 @@ function New-DbaDbSnapshot {
                             $Notes += 'SMO is probably trying to set a property on a read-only snapshot, run with -Debug to find out and report back'
                         }
                         if ($has_FSD) {
-                            $Status = 'Partial'
+                            #Variable marked as unused by PSScriptAnalyzer
+                            #$Status = 'Partial'
                             $Notes += 'Filestream groups are not viable for snapshot'
                         }
                         $Notes = $Notes -Join ';'

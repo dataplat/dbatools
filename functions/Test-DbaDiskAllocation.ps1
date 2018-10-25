@@ -201,9 +201,9 @@ function Test-DbaDiskAllocation {
                 Write-Message -Level Verbose -Message "Creating CimSession on $computer over WSMan failed. Creating CimSession on $computer over DCOM."
 
                 if (!$Credential) {
-                    $cimsession = New-CimSession -ComputerName $Computer -SessionOption $sessionoption -ErrorAction SilentlyContinue
+                    $cimsession = New-CimSession -ComputerName $Computer -SessionOption $sessionoptions -ErrorAction SilentlyContinue
                 } else {
-                    $cimsession = New-CimSession -ComputerName $Computer -SessionOption $sessionoption -ErrorAction SilentlyContinue -Credential $Credential
+                    $cimsession = New-CimSession -ComputerName $Computer -SessionOption $sessionoptions -ErrorAction SilentlyContinue -Credential $Credential
                 }
             }
 

@@ -129,7 +129,7 @@ function Get-DbaWaitStatistic {
         }
 
         # Thanks Brent Ozar via https://gist.github.com/BrentOzar/42e82ee0603a1917c17d74c3fca26d34
-        # Thanks Marcin Gminski‏ via https://www.dropbox.com/s/x3zr7u18tc1ojey/WaitStats.sql?dl=0
+        # Thanks Marcin Gminski via https://www.dropbox.com/s/x3zr7u18tc1ojey/WaitStats.sql?dl=0
 
         $category = [pscustomobject]@{
             ASYNC_IO_COMPLETION                             = 'Other Disk IO'

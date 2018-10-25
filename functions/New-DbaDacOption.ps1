@@ -10,10 +10,10 @@ function New-DbaDacOption {
         https://msdn.microsoft.com/en-us/library/microsoft.sqlserver.dac.dacexportoptions.aspx
         https://msdn.microsoft.com/en-us/library/microsoft.sqlserver.dac.dacextractoptions.aspx
         for more information
-        
+
     .PARAMETER Type
         Selecting the type of the export: Dacpac (default) or Bacpac.
-        
+
     .PARAMETER Action
         Choosing an intended action: Publish or Export.
 

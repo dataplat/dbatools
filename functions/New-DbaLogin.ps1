@@ -107,7 +107,7 @@ function New-DbaLogin {
         PS C:\> New-DbaLogin -SqlInstance sql1 -Login domain\user
 
         Creates a new Windows Authentication backed login on sql1. The login will be part of the public server role.
-        
+
 #>
     [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = "Password", ConfirmImpact = "Low")]
     param (

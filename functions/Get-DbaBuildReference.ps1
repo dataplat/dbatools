@@ -27,7 +27,7 @@ function Get-DbaBuildReference {
 
     .NOTES
         Tags: SqlBuild
-        Author: Simone Bizzotto (@niphold) | Friedrich Weinmann (@FredWeinmann‏)
+        Author: Simone Bizzotto (@niphold) | Friedrich Weinmann (@FredWeinmann)
 
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT

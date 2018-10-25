@@ -89,7 +89,8 @@ function Find-DbaUserObject {
                 $endPoints = $server.Endpoints | Where-Object { $_.Owner -ne $saname }
 
                 Write-Message -Level Verbose -Message "Gather data on Agent Jobs ownership"
-                $jobs = $server.JobServer.Jobs | Where-Object { $_.OwnerLoginName -ne $saname }
+                #Variable marked as unused by PSScriptAnalyzer
+                #$jobs = $server.JobServer.Jobs | Where-Object { $_.OwnerLoginName -ne $saname }
             } else {
                 Write-Message -Level Verbose -Message "Gathering data on instance objects"
                 $creds = $server.Credentials | Where-Object { $_.Identity -match $pattern }
@@ -97,7 +98,8 @@ function Find-DbaUserObject {
                 $endPoints = $server.Endpoints | Where-Object { $_.Owner -match $pattern }
 
                 Write-Message -Level Verbose -Message "Gather data on Agent Jobs ownership"
-                $jobs = $server.JobServer.Jobs | Where-Object { $_.OwnerLoginName -match $pattern }
+                #Variable marked as unused by PSScriptAnalyzer
+                #$jobs = $server.JobServer.Jobs | Where-Object { $_.OwnerLoginName -match $pattern }
             }
 
             ## dbs

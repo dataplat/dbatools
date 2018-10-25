@@ -60,7 +60,8 @@ function Install-DbaWatchUpdate {
                 $trigger = New-ScheduledTaskTrigger -Once -At (Get-Date).Date -RepetitionInterval (New-TimeSpan -Hours 1)
                 $principal = New-ScheduledTaskPrincipal -LogonType S4U -UserId (whoami)
                 $settings = New-ScheduledTaskSettingsSet -ExecutionTimeLimit ([timespan]::Zero) -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -StartWhenAvailable -RunOnlyIfNetworkAvailable -DontStopOnIdleEnd
-                $task = Register-ScheduledTask -Principal $principal -TaskName 'dbatools version check' -Action $action -Trigger $trigger -Settings $settings -ErrorAction Stop
+                #Variable $Task marked as unused by PSScriptAnalyzer replaced with $null for catching output
+                $null = Register-ScheduledTask -Principal $principal -TaskName 'dbatools version check' -Action $action -Trigger $trigger -Settings $settings -ErrorAction Stop
             } catch {
                 # keep moving
             }
