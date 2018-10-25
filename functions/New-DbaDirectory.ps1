@@ -85,7 +85,7 @@ function New-DbaDirectory {
         Write-Message -Level Debug -Message $sql
         if ($Pscmdlet.ShouldProcess($path, "Creating a new path on $($server.name)")) {
             try {
-                $query = $server.Query($sql)
+                $null = $server.Query($sql)
                 $Created = $true
             } catch {
                 $Created = $false

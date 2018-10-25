@@ -417,7 +417,8 @@ function Test-DbaLastBackup {
 
                                     ## Drop the database
                                     try {
-                                        $removeresult = Remove-DbaDatabase -SqlInstance $destserver -Database $dbname -Confirm:$false
+                                        #Variable $removeresult marked as unused by PSScriptAnalyzer replace with $null to catch output
+                                        $null = Remove-DbaDatabase -SqlInstance $destserver -Database $dbname -Confirm:$false
                                         Write-Message -Level Verbose -Message "Dropped $dbname Database on $destination."
                                     } catch {
                                         $destserver.Databases.Refresh()

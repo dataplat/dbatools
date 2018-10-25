@@ -15,7 +15,7 @@ function Grant-DbaAgPermission {
 
     .PARAMETER Login
         The login or logins to modify.
-    
+
     .PARAMETER AvailabilityGroup
         Only modify specific availability groups.
 
@@ -130,7 +130,7 @@ function Grant-DbaAgPermission {
             if ($Type -contains "Endpoint") {
                 $server.Endpoints.Refresh()
                 $endpoint = $server.Endpoints | Where-Object EndpointType -eq DatabaseMirroring
-                
+
                 if (-not $endpoint) {
                     Stop-Function -Message "DatabaseMirroring endpoint does not exist on $server" -Target $server -Continue
                 }
@@ -158,7 +158,7 @@ function Grant-DbaAgPermission {
                     }
                 }
             }
-            
+
             if ($Type -contains "AvailabilityGroup") {
                 $ags = Get-DbaAvailabilityGroup -SqlInstance $account.Parent -AvailabilityGroup $AvailabilityGroup
                 foreach ($ag in $ags) {

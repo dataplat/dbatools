@@ -83,7 +83,8 @@ function Test-DbaMaxDop {
     }
 
     process {
-        $hasScopedConfig = $false
+        #Variable marked as unused by PSScriptAnalyzer
+        #$hasScopedConfig = $false
 
         foreach ($instance in $SqlInstance) {
             try {
@@ -168,7 +169,8 @@ function Test-DbaMaxDop {
 
             # On SQL Server 2016 and higher, MaxDop can be set on a per-database level
             if ($server.VersionMajor -ge 13) {
-                $hasScopedConfig = $true
+                #Variable marked as unused by PSScriptAnalyzer
+                #$hasScopedConfig = $true
                 Write-Message -Level Verbose -Message "SQL Server 2016 or higher detected, checking each database's MaxDop."
 
                 $databases = $server.Databases | where-object {$_.IsSystemObject -eq $false}

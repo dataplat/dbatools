@@ -43,7 +43,7 @@ function Disable-DbaAgHadr {
         PS C:\> Disable-DbaAgHadr -SqlInstance sql2016
 
         Sets Hadr service to disabled for the instance sql2016 but changes will not be applied until the next time the server restarts.
-    
+
     .EXAMPLE
         PS C:\> Disable-DbaAgHadr -SqlInstance sql2016 -Force
 
@@ -72,10 +72,13 @@ function Disable-DbaAgHadr {
             }
             $noChange = $false
 
+            <#
+            #Variable marked as unused by PSScriptAnalyzer
             switch ($instance.InstanceName) {
                 'MSSQLSERVER' { $agentName = 'SQLSERVERAGENT' }
                 default { $agentName = "SQLAgent`$$instanceName" }
             }
+            #>
 
             try {
                 Write-Message -Level Verbose -Message "Checking current Hadr setting for $computer"

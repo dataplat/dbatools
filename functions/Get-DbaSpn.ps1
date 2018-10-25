@@ -95,9 +95,10 @@ function Get-DbaSpn {
                         } catch {
                             $port = $null
                         }
-                        if ($spn -match "\/") {
-                            $serviceclass = ($spn -Split "\/")[0]
-                        }
+                        #Variable marked as unused by PSScriptAnalyzer
+                        # if ($spn -match "\/") {
+                        #     $serviceclass = ($spn -Split "\/")[0]
+                        # }
                     }
                     [pscustomobject] @{
                         Input        = $Account

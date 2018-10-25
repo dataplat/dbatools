@@ -60,7 +60,7 @@ function Remove-DbaDbMasterKey {
         PS C:\> Get-DbaDbMasterKey -SqlInstance sql2017 -Database db1 | Remove-DbaDbMasterKey -Confirm:$false
 
         Suppresses all prompts to remove the master key in the 'db1' database and drops the key.
-    
+
 #>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess, ConfirmImpact = "High")]
     param (
@@ -74,7 +74,7 @@ function Remove-DbaDbMasterKey {
         [Microsoft.SqlServer.Management.Smo.MasterKey[]]$InputObject,
         [switch]$EnableException
     )
-    
+
     process {
         if ($SqlInstance) {
             if (-not $Database -and -not $ExcludeDatabase -and -not $All) {
@@ -89,7 +89,7 @@ function Remove-DbaDbMasterKey {
                 }
             }
         }
-        
+
         foreach ($masterkey in $InputObject) {
             $server = $masterkey.Parent.Parent
             $db = $masterkey.Parent

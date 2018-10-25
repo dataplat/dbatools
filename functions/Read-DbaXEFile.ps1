@@ -66,10 +66,12 @@ function Read-DbaXEFile {
 
             if ($file -is [System.String]) {
                 $currentfile = $file
-                $manualadd = $true
+                #Variable marked as unused by PSScriptAnalyzer
+                #$manualadd = $true
             } elseif ($file -is [System.IO.FileInfo]) {
                 $currentfile = $file.FullName
-                $manualadd = $true
+                #Variable marked as unused by PSScriptAnalyzer
+                #$manualadd = $true
             } else {
                 if ($file -isnot [Microsoft.SqlServer.Management.XEvent.Session]) {
                     Stop-Function -Message "Unsupported file type."

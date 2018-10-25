@@ -41,7 +41,7 @@ function Show-DbaDbList {
         PS C:\> Show-DbaDbList -SqlInstance sqlserver2014a -SqlCredential $cred
 
         Shows a GUI list of databases using SQL credentials to connect to the SQL Server. Returns a string of the selected database.
-    
+
     .EXAMPLE
         PS C:\> Show-DbaDbList -SqlInstance sqlserver2014a -DefaultDb master
 
@@ -156,7 +156,8 @@ function Show-DbaDbList {
         [void]$stackpanel.Children.Add($image)
         [void]$stackpanel.Children.Add($textblock)
         $childitem.Header = $stackpanel
-        $databaseParent = $treeview.Items.Add($childitem)
+        #Variable marked as unused by PSScriptAnalyzer
+        #$databaseParent = $treeview.Items.Add($childitem)
 
         try {
             $databases = $sourceserver.databases.name

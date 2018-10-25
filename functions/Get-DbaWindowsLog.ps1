@@ -283,7 +283,8 @@ function Get-DbaWindowsLog {
         $RunspacePool.Open()
 
         $countStarted = 0
-        $countReceived = 0
+        #Variable marked as unused by PSScriptAnalyzer
+        #$countReceived = 0
         #endregion Setup Runspace
     }
 
