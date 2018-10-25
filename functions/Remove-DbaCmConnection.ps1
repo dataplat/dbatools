@@ -22,7 +22,7 @@ function Remove-DbaCmConnection {
 
     .NOTES
         Tags: ComputerManagement, CIM
-        Author: Friedrich Weinmann (@FredWeinmann‏)
+        Author: Friedrich Weinmann (@FredWeinmann)
 
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT

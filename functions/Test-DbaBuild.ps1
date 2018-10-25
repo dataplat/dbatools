@@ -38,7 +38,7 @@ function Test-DbaBuild {
 
     .NOTES
         Tags: SqlBuild, Version
-        Author: Simone Bizzotto (@niphold) | Friedrich Weinmann (@FredWeinmann‏)
+        Author: Simone Bizzotto (@niphold) | Friedrich Weinmann (@FredWeinmann)
 
         dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
         Copyright: (c) 2018 by dbatools, licensed under MIT

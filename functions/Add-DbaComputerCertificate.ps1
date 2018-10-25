@@ -82,7 +82,7 @@ function Add-DbaComputerCertificate {
             }
 
             try {
-                # This may be too much, but Â¯\_(ãƒ„)_/Â¯
+                # This may be too much, but oh well
                 $bytes = [System.IO.File]::ReadAllBytes($Path)
                 $Certificate = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2
                 $Certificate.Import($bytes, $Password, [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::DefaultKeySet)

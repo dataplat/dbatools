@@ -137,7 +137,7 @@ function Find-DbaInstance {
 
     .NOTES
         Tags: Instance, Connect, SqlServer
-        Author: Scott Sutherland, 2018 NetSPI | Friedrich Weinmann (@FredWeinmann‏)
+        Author: Scott Sutherland, 2018 NetSPI | Friedrich Weinmann (@FredWeinmann)
 
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
