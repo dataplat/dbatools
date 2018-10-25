@@ -511,7 +511,8 @@ $BackupHistory | Restore-Dbadatabase -SqlInstance sql2000 -TrustDbBackupHistory
         $RestoreInstance.ConnectionContext.StatementTimeout = ($StatementTimeout * 60)
         #endregion Validation
 
-        $isLocal = [dbavalidate]::IsLocalHost($SqlInstance.ComputerName)
+        #Variable marked as unused by PSScriptAnalyzer
+        #$isLocal = [dbavalidate]::IsLocalHost($SqlInstance.ComputerName)
 
         if ($UseDestinationDefaultDirectories) {
             $DefaultPath = (Get-DbaDefaultPath -SqlInstance $RestoreInstance)
@@ -689,7 +690,8 @@ $BackupHistory | Restore-Dbadatabase -SqlInstance sql2000 -TrustDbBackupHistory
                     return
                 } else {
                     $WithReplace = $false
-                    $PageDb = ($FilteredBackupHistory.Database | select-Object -unique).Database
+                    #Variable marked as unused by PSScriptAnalyzer
+                    #$PageDb = ($FilteredBackupHistory.Database | select-Object -unique).Database
                 }
             }
             Write-Message -Message "Passing in to restore" -Level Verbose

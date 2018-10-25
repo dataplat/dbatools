@@ -15,7 +15,7 @@ function Join-DbaAvailabilityGroup {
 
     .PARAMETER AvailabilityGroup
         The availability group to join.
-    
+
     .PARAMETER InputObject
         Enables piped input from Get-DbaAvailabilityGroup.
 
@@ -74,19 +74,19 @@ function Join-DbaAvailabilityGroup {
         if ($InputObject) {
             $AvailabilityGroup += $InputObject.Name
         }
-        
+
         if (-not $AvailabilityGroup) {
             Stop-Function -Message "No availability group to add"
             return
         }
-        
+
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
             } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-            
+
             foreach ($ag in $AvailabilityGroup) {
                 if ($Pscmdlet.ShouldProcess($server.Name, "Joining $ag")) {
                     try {

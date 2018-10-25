@@ -74,7 +74,7 @@ function Remove-DbaDbCertificate {
         foreach ($cert in $InputObject) {
             $db = $cert.Parent
             $server = $db.Parent
-            
+
             if ($Pscmdlet.ShouldProcess($server.Name, "Dropping the certificate named $cert for database $db")) {
                 try {
                     # erroractionprefs are not invoked for .net methods suddenly (??), so use Invoke-DbaQuery

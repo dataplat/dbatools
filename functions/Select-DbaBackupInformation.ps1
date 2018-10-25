@@ -199,11 +199,13 @@ function Select-DbaBackupInformation {
                 #We have history so use this
                 [bigint]$LogBaseLsn = ($dbHistory | Sort-Object -Property LastLsn -Descending | select-object -First 1).lastLsn.ToString()
                 $FirstRecoveryForkID = $Full.FirstRecoveryForkID
+                Write-Message -Level Verbose -Message "Found LogBaseLsn: $LogBaseLsn and FirstRecoveryForkID: $FirstRecoveryForkID"
             } else {
                 Write-Message -Message "No full or diff, so attempting to pull from Continue informmation" -Level Verbose
                 try {
                     [bigint]$LogBaseLsn = ($ContinuePoints | Where-Object {$_.Database -eq $DatabaseFilter}).redo_start_lsn
                     $FirstRecoveryForkID = ($ContinuePoints | Where-Object {$_.Database -eq $DatabaseFilter}).FirstRecoveryForkID
+                    Write-Message -Level Verbose -Message "Found LogBaseLsn: $LogBaseLsn and FirstRecoveryForkID: $FirstRecoveryForkID from Continue information"
                 } catch {
                     Stop-Function -Message "Failed to find LSN or RecoveryForkID for $DatabaseFilter" -Category InvalidOperation -Target $DatabaseFilter
                 }

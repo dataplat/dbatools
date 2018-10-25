@@ -165,7 +165,8 @@ function Get-DbaFile {
     process {
         foreach ($instance in $SqlInstance) {
 
-            $paths = @()
+            #Variable marked as unused by PSScriptAnalyzer
+            #$paths = @()
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
             } catch {

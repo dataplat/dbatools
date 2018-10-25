@@ -29,10 +29,10 @@ function Publish-DbaDacPackage {
 
     .PARAMETER GenerateDeploymentReport
         If this switch is enabled, the publish XML report  will be generated.
-        
+
     .PARAMETER Type
         Selecting the type of the export: Dacpac (default) or Bacpac.
-        
+
     .PARAMETER DacOption
         Export options for a corresponding export type. Can be created by New-DbaDacOption -Type Dacpac | Bacpac
 
@@ -272,7 +272,7 @@ function Publish-DbaDacPackage {
                 if ($connstring -notmatch 'Database=') {
                     $connstring = "$connstring;Database=$dbname"
                 }
-                
+
                 #Create services object
                 try {
                     $dacServices = New-Object Microsoft.SqlServer.Dac.DacServices $connstring

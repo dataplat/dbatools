@@ -99,7 +99,8 @@ function Set-DbaMaxDop {
     )
 
     begin {
-        $processed = New-Object System.Collections.ArrayList
+        #Variable marked as unused by PSScriptAnalyzer, maybe future improvement to replace $results = @()
+        #$processed = New-Object System.Collections.ArrayList
         $results = @()
     }
     process {
