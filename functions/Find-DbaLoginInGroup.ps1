@@ -49,6 +49,7 @@ function Find-DbaLoginInGroup {
 
 #>
     [CmdletBinding()]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseSingularNouns", "", Justification = "Internal functions are ignored")]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
@@ -149,4 +150,3 @@ function Find-DbaLoginInGroup {
         }
     }
 }
-
