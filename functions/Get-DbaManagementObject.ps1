@@ -63,7 +63,7 @@ function Get-DbaManagementObject {
         $scriptblock = {
             $VersionNumber = [int]$args[0]
             <# DO NOT use Write-Message as this is inside of a script block #>
-            Write-Verbose -Message  "Checking currently loaded SMO version"
+            Write-Verbose -Message "Checking currently loaded SMO version"
             $loadedversion = [AppDomain]::CurrentDomain.GetAssemblies() | Where-Object { $_.Fullname -like "Microsoft.SqlServer.SMO,*" }
             if ($loadedversion) {
                 $loadedversion = $loadedversion | ForEach-Object {
@@ -75,13 +75,13 @@ function Get-DbaManagementObject {
                 }
             }
             <# DO NOT use Write-Message as this is inside of a script block #>
-            Write-Verbose -Message  "Looking for included smo library"
+            Write-Verbose -Message "Looking for included smo library"
             $localversion = [version](Get-ChildItem -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Smo.dll").VersionInfo.ProductVersion
 
             foreach ($version in $localversion) {
                 if ($VersionNumber -eq 0) {
                     <# DO NOT use Write-Message as this is inside of a script block #>
-                    Write-Verbose -Message  "Did not pass a version"
+                    Write-Verbose -Message "Did not pass a version"
                     [PSCustomObject]@{
                         ComputerName = $env:COMPUTERNAME
                         Version      = $localversion
@@ -90,10 +90,10 @@ function Get-DbaManagementObject {
                     }
                 } else {
                     <# DO NOT use Write-Message as this is inside of a script block #>
-                    Write-Verbose -Message  "Passed version $VersionNumber, looking for that specific version"
+                    Write-Verbose -Message "Passed version $VersionNumber, looking for that specific version"
                     if ($localversion.ToString().StartsWith("$VersionNumber.")) {
                         <# DO NOT use Write-Message as this is inside of a script block #>
-                        Write-Verbose -Message  "Found the Version $VersionNumber"
+                        Write-Verbose -Message "Found the Version $VersionNumber"
                         [PSCustomObject]@{
                             ComputerName = $env:COMPUTERNAME
                             Version      = $localversion
@@ -104,14 +104,14 @@ function Get-DbaManagementObject {
                 }
             }
             <# DO NOT use Write-Message as this is inside of a script block #>
-            Write-Verbose -Message  "Looking for SMO in the Global Assembly Cache"
+            Write-Verbose -Message "Looking for SMO in the Global Assembly Cache"
             $smolist = (Get-ChildItem -Path "$env:SystemRoot\assembly\GAC_MSIL\Microsoft.SqlServer.Smo" | Sort-Object Name -Descending).Name
 
             foreach ($version in $smolist) {
                 $array = $version.Split("__")
                 if ($VersionNumber -eq 0) {
                     <# DO NOT use Write-Message as this is inside of a script block #>
-                    Write-Verbose -Message  "Did not pass a version, looking for all versions"
+                    Write-Verbose -Message "Did not pass a version, looking for all versions"
                     $currentversion = $array[0]
                     [PSCustomObject]@{
                         ComputerName = $env:COMPUTERNAME
@@ -121,10 +121,10 @@ function Get-DbaManagementObject {
                     }
                 } else {
                     <# DO NOT use Write-Message as this is inside of a script block #>
-                    Write-Verbose -Message  "Passed version $VersionNumber, looking for that specific version"
+                    Write-Verbose -Message "Passed version $VersionNumber, looking for that specific version"
                     if ($array[0].StartsWith("$VersionNumber.")) {
                         <# DO NOT use Write-Message as this is inside of a script block #>
-                        Write-Verbose -Message  "Found the Version $VersionNumber"
+                        Write-Verbose -Message "Found the Version $VersionNumber"
                         $currentversion = $array[0]
                         [PSCustomObject]@{
                             ComputerName = $env:COMPUTERNAME
