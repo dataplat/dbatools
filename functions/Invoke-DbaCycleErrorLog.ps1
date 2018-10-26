@@ -1,5 +1,5 @@
-﻿function Invoke-DbaCycleErrorLog {
-<#
+function Invoke-DbaCycleErrorLog {
+    <#
     .SYNOPSIS
         Cycles the current instance or agent log.
 
@@ -99,8 +99,7 @@
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -117,8 +116,7 @@
                         Notes        = $null
                     }
                 }
-            }
-            catch {
+            } catch {
                 [pscustomobject]@{
                     ComputerName = $server.ComputerName
                     InstanceName = $server.ServiceName
@@ -132,3 +130,4 @@
         }
     }
 }
+

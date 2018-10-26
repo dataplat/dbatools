@@ -1,4 +1,4 @@
-﻿function Publish-DbaDacPackage {
+function Publish-DbaDacPackage {
     <#
     .SYNOPSIS
         The Publish-DbaDacPackage command takes a dacpac which is the output from an SSDT project and publishes it to a database. Changing the schema to match the dacpac and also to run any scripts in the dacpac (pre/post deploy scripts).
@@ -29,10 +29,10 @@
 
     .PARAMETER GenerateDeploymentReport
         If this switch is enabled, the publish XML report  will be generated.
-        
+
     .PARAMETER Type
         Selecting the type of the export: Dacpac (default) or Bacpac.
-        
+
     .PARAMETER DacOption
         Export options for a corresponding export type. Can be created by New-DbaDacOption -Type Dacpac | Bacpac
 
@@ -133,12 +133,10 @@
         if ($Type -eq 'Dacpac') {
             if ((Test-Bound -ParameterName GenerateDeploymentScript) -or (Test-Bound -ParameterName GenerateDeploymentReport)) {
                 $defaultcolumns = 'ComputerName', 'InstanceName', 'SqlInstance', 'Database', 'Dacpac', 'PublishXml', 'Result', 'DatabaseScriptPath', 'MasterDbScriptPath', 'DeploymentReport', 'DeployOptions', 'SqlCmdVariableValues'
-            }
-            else {
+            } else {
                 $defaultcolumns = 'ComputerName', 'InstanceName', 'SqlInstance', 'Database', 'Dacpac', 'PublishXml', 'Result', 'DeployOptions', 'SqlCmdVariableValues'
             }
-        }
-        elseif ($Type -eq 'Bacpac') {
+        } elseif ($Type -eq 'Bacpac') {
             if ($ScriptOnly -or $GenerateDeploymentReport -or $GenerateDeploymentScript) {
                 Stop-Function -Message "ScriptOnly, GenerateDeploymentScript, and GenerateDeploymentReport cannot be used in a Bacpac scenario." -ErrorRecord $_
                 return
@@ -169,13 +167,11 @@
         if ((Test-Path $dacfxPath) -eq $false) {
             Stop-Function -Message 'No usable version of Dac Fx found.' -EnableException $EnableException
             return
-        }
-        else {
+        } else {
             try {
                 Add-Type -Path $dacfxPath
                 Write-Message -Level Verbose -Message "Dac Fx loaded."
-            }
-            catch {
+            } catch {
                 Stop-Function -Message 'No usable version of Dac Fx found.' -EnableException $EnableException -ErrorRecord $_
             }
         }
@@ -185,8 +181,7 @@
                 Stop-Function -Message "Microsoft.SqlServer.Dac.PublishOptions object type is expected - got $($DacOption.GetType())."
                 return
             }
-        }
-        elseif ($Type -eq 'Bacpac') {
+        } elseif ($Type -eq 'Bacpac') {
             if ($DacOption -and $DacOption -isnot [Microsoft.SqlServer.Dac.DacImportOptions]) {
                 Stop-Function -Message "Microsoft.SqlServer.Dac.DacImportOptions object type is expected - got $($DacOption.GetType())."
                 return
@@ -212,8 +207,7 @@
         foreach ($instance in $sqlinstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure." -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
             $ConnectionString += $server.ConnectionContext.ConnectionString.Replace('"', "'")
@@ -223,17 +217,14 @@
         if ($Type -eq 'Dacpac') {
             try {
                 $dacPackage = [Microsoft.SqlServer.Dac.DacPackage]::Load($Path)
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Could not load Dacpac." -ErrorRecord $_
                 return
             }
-        }
-        elseif ($Type -eq 'Bacpac') {
+        } elseif ($Type -eq 'Bacpac') {
             try {
                 $bacPackage = [Microsoft.SqlServer.Dac.BacPackage]::Load($Path)
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Could not load Bacpac." -ErrorRecord $_
                 return
             }
@@ -242,8 +233,7 @@
         if ($PsCmdlet.ParameterSetName -eq 'Xml') {
             try {
                 $options = New-DbaDacOption -Type $Type -Action Publish -PublishXml $PublishXml -EnableException
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Could not load profile." -ErrorRecord $_
                 return
             }
@@ -252,8 +242,7 @@
         elseif ($PsCmdlet.ParameterSetName -eq 'Obj') {
             if (!$DacOption) {
                 $options = New-DbaDacOption -Type $Type -Action Publish
-            }
-            else {
+            } else {
                 $options = $DacOption
             }
         }
@@ -283,12 +272,11 @@
                 if ($connstring -notmatch 'Database=') {
                     $connstring = "$connstring;Database=$dbname"
                 }
-                
+
                 #Create services object
                 try {
                     $dacServices = New-Object Microsoft.SqlServer.Dac.DacServices $connstring
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $server -Continue
                 }
                 try {
@@ -305,21 +293,17 @@
                             }
                             Write-Message -Level Verbose -Message "Generating script."
                             $result = $dacServices.Script($dacPackage, $dbname, $options)
-                        }
-                        else {
+                        } else {
                             Write-Message -Level Verbose -Message "Executing Dacpac publish."
                             $result = $dacServices.Publish($dacPackage, $dbname, $options)
                         }
-                    }
-                    elseif ($Type -eq 'Bacpac') {
+                    } elseif ($Type -eq 'Bacpac') {
                         Write-Message -Level Verbose -Message "Executing Bacpac import."
                         $dacServices.ImportBacpac($bacPackage, $dbname, $options, $null)
                     }
-                }
-                catch [Microsoft.SqlServer.Dac.DacServicesException] {
+                } catch [Microsoft.SqlServer.Dac.DacServicesException] {
                     Stop-Function -Message "Deployment failed" -ErrorRecord $_ -Continue
-                }
-                finally {
+                } finally {
                     Unregister-Event -SourceIdentifier "msg"
                     if ($options.GenerateDeploymentReport) {
                         $deploymentReport = Join-Path $OutputPath "$cleaninstance-$dbname`_Result.DeploymentReport_$timeStamp.xml"
@@ -353,8 +337,7 @@
                             DeployOptions        = $options.DeployOptions | Select-Object -Property * -ExcludeProperty "SqlCommandVariableValues"
                             SqlCmdVariableValues = $options.DeployOptions.SqlCommandVariableValues.Keys
                         }
-                    }
-                    elseif ($Type -eq 'Bacpac') {
+                    } elseif ($Type -eq 'Bacpac') {
                         $output = [pscustomobject]@{
                             ComputerName     = $server.ComputerName
                             InstanceName     = $server.InstanceName
@@ -375,3 +358,4 @@
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Publish-DbaDacpac
     }
 }
+

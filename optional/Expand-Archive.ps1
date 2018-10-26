@@ -1,4 +1,4 @@
-﻿if ($PSVersionTable.PSVersion.Major -lt 5)
+if ($PSVersionTable.PSVersion.Major -lt 5)
 {
 
 

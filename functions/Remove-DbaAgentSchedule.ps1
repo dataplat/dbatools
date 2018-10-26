@@ -1,6 +1,6 @@
-﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Remove-DbaAgentSchedule {
-<#
+    <#
     .SYNOPSIS
         Remove-DbaAgentJobSchedule removes a job schedule.
 
@@ -97,8 +97,7 @@ function Remove-DbaAgentSchedule {
             # Try connecting to the instance
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -118,26 +117,25 @@ function Remove-DbaAgentSchedule {
             }
 
             $server.JobServer.SharedSchedules.Refresh()
-
             $schedulename = $currentschedule.Name
             $jobCount = $server.JobServer.SharedSchedules[$currentschedule].JobCount
 
             # Check if the schedule is shared among other jobs
             if ($jobCount -ge 1 -and -not $Force) {
-                Stop-Function -Message "The schedule $currentschedule is shared connected to one or more jobs. If removal is neccesary use -Force." -Target $instance -Continue
+                Stop-Function -Message "The schedule $schedulename is shared connected to one or more jobs. If removal is neccesary use -Force." -Target $instance -Continue
             }
 
             # Remove the job schedule
             if ($PSCmdlet.ShouldProcess($instance, "Removing schedule $currentschedule on $instance")) {
                 # Loop through each of the schedules and drop them
-                Write-Message -Message "Removing schedule $currentschedule on $instance" -Level Verbose
+                Write-Message -Message "Removing schedule $schedulename on $instance" -Level Verbose
 
                 #Check if jobs use the schedule
                 if ($jobCount -ge 1) {
                     # Get the job object
                     $smoSchedules = $server.JobServer.SharedSchedules | Where-Object { ($_.Name -eq $currentschedule.Name) }
 
-                    Write-Message -Message "Schedule $currentschedule is used in one or more jobs. Removing it for each job." -Level Verbose
+                    Write-Message -Message "Schedule $schedulename is used in one or more jobs. Removing it for each job." -Level Verbose
 
                     # Loop through each if the schedules
                     foreach ($smoSchedule in ($smoSchedules)) {
@@ -160,8 +158,7 @@ function Remove-DbaAgentSchedule {
                                         Write-Message -Message "Removing the schedule $jobSchedule for job $smoJob" -Level Verbose
 
                                         $jobSchedule.Drop()
-                                    }
-                                    catch {
+                                    } catch {
                                         Stop-Function -Message "Failure" -Target $instance -ErrorRecord $_ -Continue
                                     }
                                 }
@@ -179,8 +176,7 @@ function Remove-DbaAgentSchedule {
                 foreach ($smoSchedule in $smoSchedules) {
                     try {
                         $smoSchedule.Drop()
-                    }
-                    catch {
+                    } catch {
                         Stop-Function -Message "Something went wrong removing the schedule" -Target $instance -ErrorRecord $_ -Continue
                     }
                 }
@@ -191,3 +187,4 @@ function Remove-DbaAgentSchedule {
         Write-Message -Message "Finished removing jobs schedule(s)." -Level Verbose
     }
 }
+

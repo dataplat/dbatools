@@ -1,5 +1,5 @@
-﻿function Test-DbaDbOwner {
-<#
+function Test-DbaDbOwner {
+    <#
     .SYNOPSIS
         Checks database owners against a login to validate which databases do not match that owner.
 
@@ -77,8 +77,7 @@
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -129,3 +128,4 @@
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Test-DbaDatabaseOwner
     }
 }
+

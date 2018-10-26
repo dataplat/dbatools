@@ -1,5 +1,5 @@
-﻿function Get-DbaPlanCache {
-<#
+function Get-DbaPlanCache {
+    <#
     .SYNOPSIS
         Provides information about adhoc and prepared plan cache usage
 
@@ -63,16 +63,17 @@
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $sqlcredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             $results = $server.Query($sql)
-            $size = [dbasize]($results.MB*1024*1024)
+            $size = [dbasize]($results.MB * 1024 * 1024)
             Add-Member -Force -InputObject $results -MemberType NoteProperty -Name Size -Value $size
 
             Select-DefaultView -InputObject $results -Property ComputerName, InstanceName, SqlInstance, Size, UseCount
         }
     }
 }
+
+

@@ -1,5 +1,5 @@
-﻿function Get-DbaCmConnection {
-<#
+function Get-DbaCmConnection {
+    <#
     .SYNOPSIS
         Retrieves windows management connections from the cache
 
@@ -19,7 +19,7 @@
 
     .NOTES
         Tags: ComputerManagement, CIM
-        Author: Friedrich Weinmann (@FredWeinmann‏)
+        Author: Friedrich Weinmann (@FredWeinmann)
 
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
@@ -73,3 +73,4 @@
         Write-Message -Level InternalComment -Message "Ending"
     }
 }
+

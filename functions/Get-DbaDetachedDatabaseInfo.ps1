@@ -1,5 +1,5 @@
-﻿function Get-DbaDetachedDatabaseInfo {
-<#
+function Get-DbaDetachedDatabaseInfo {
+    <#
     .SYNOPSIS
         Get detailed information about detached SQL Server database files.
 
@@ -69,8 +69,7 @@
                 $dbname = ($detachedDatabaseInfo | Where-Object { $_.Property -eq "Database name" }).Value
                 $exactdbversion = ($detachedDatabaseInfo | Where-Object { $_.Property -eq "Database version" }).Value
                 $collationid = ($detachedDatabaseInfo | Where-Object { $_.Property -eq "Collation" }).Value
-            }
-            catch {
+            } catch {
                 throw "$servername cannot read the file $path. Is the database detached?"
             }
 
@@ -96,8 +95,7 @@
             try {
                 $dataset = $server.databases['master'].ExecuteWithResults($collationsql)
                 $collation = "$($dataset.Tables[0].Rows[0].Item(0))"
-            }
-            catch {
+            } catch {
                 $collation = $collationid
             }
 
@@ -111,8 +109,7 @@
                 foreach ($file in $server.EnumDetachedLogFiles($path)) {
                     $logfiles += $file
                 }
-            }
-            catch {
+            } catch {
                 throw "$servername unable to enumerate database or log structure information for $path"
             }
 
@@ -141,3 +138,4 @@
         return $mdfinfo
     }
 }
+

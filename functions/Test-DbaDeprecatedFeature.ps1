@@ -1,5 +1,5 @@
-﻿function Test-DbaDeprecatedFeature {
-<#
+function Test-DbaDeprecatedFeature {
+    <#
     .SYNOPSIS
         Displays information relating to deprecated features for SQL Server 2005 and above.
 
@@ -96,13 +96,13 @@
                     $matchedep = $results | Where-Object Definition -match $escaped
                     if ($matchedep) {
                         $matchedep | Add-Member -NotePropertyName DeprecatedFeature -NotePropertyValue $dep.dep.ToString().Trim() -PassThru -Force |
-                        Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, DeprecatedFeature, ID, Name, Type
+                            Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, DeprecatedFeature, ID, Name, Type
                     }
                 }
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
             }
         }
     }
 }
+

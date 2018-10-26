@@ -1,6 +1,6 @@
-﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Remove-DbaXESession {
-<#
+    <#
     .SYNOPSIS
         Removes Extended Events sessions.
 
@@ -66,6 +66,7 @@ function Remove-DbaXESession {
 
 #>
     [CmdletBinding(DefaultParameterSetName = 'Session', SupportsShouldProcess, ConfirmImpact = 'High')]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseSingularNouns", "", Justification = "Internal functions are ignored")]
     param (
         [parameter(Position = 1, Mandatory, ParameterSetName = 'Session')]
         [parameter(Position = 1, Mandatory, ParameterSetName = 'All')]
@@ -104,8 +105,7 @@ function Remove-DbaXESession {
                             Session      = $session
                             Status       = "Removed"
                         }
-                    }
-                    catch {
+                    } catch {
                         Stop-Function -Message "Could not remove XEvent Session on $instance" -Target $session -ErrorRecord $_ -Continue
                     }
                 }
@@ -120,16 +120,14 @@ function Remove-DbaXESession {
             foreach ($item in $sessions) {
                 Remove-XESessions $item
             }
-        }
-        else {
+        } else {
             foreach ($instance in $SqlInstance) {
                 $xeSessions = Get-DbaXESession -SqlInstance $instance -SqlCredential $SqlCredential
 
                 # Filter xeSessions based on parameters
                 if ($Session) {
                     $xeSessions = $xeSessions | Where-Object { $_.Name -in $Session }
-                }
-                elseif ($AllSessions) {
+                } elseif ($AllSessions) {
                     $systemSessions = @('AlwaysOn_health', 'system_health', 'telemetry_xevents')
                     $xeSessions = $xeSessions | Where-Object { $_.Name -notin $systemSessions }
                 }

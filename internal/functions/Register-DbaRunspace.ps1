@@ -57,9 +57,10 @@ function Register-DbaRunspace {
     if ([Sqlcollaborative.Dbatools.Runspace.RunspaceHost]::Runspaces.ContainsKey($Name.ToLower())) {
         Write-Message -Level Verbose -Message "Updating runspace: $($Name.ToLower())" -Target $Name.ToLower()
         [Sqlcollaborative.Dbatools.Runspace.RunspaceHost]::Runspaces[$Name.ToLower()].SetScript($ScriptBlock)
-    }
-    else {
+    } else {
         Write-Message -Level Verbose -Message "Registering runspace: $($Name.ToLower())" -Target $Name.ToLower()
         [Sqlcollaborative.Dbatools.Runspace.RunspaceHost]::Runspaces[$Name.ToLower()] = New-Object Sqlcollaborative.Dbatools.Runspace.RunspaceContainer($Name.ToLower(), $ScriptBlock)
     }
 }
+
+

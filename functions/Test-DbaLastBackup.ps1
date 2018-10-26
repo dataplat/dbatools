@@ -1,5 +1,5 @@
-﻿function Test-DbaLastBackup {
-<#
+function Test-DbaLastBackup {
+    <#
     .SYNOPSIS
         Quickly and easily tests the last set of full backups for a server.
 
@@ -166,15 +166,13 @@
 
             try {
                 $sourceserver = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlCredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             try {
                 $destserver = Connect-SqlInstance -SqlInstance $destination -SqlCredential $DestinationCredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failed to connect to: $destination." -Target $destination -Continue
             }
 
@@ -191,8 +189,7 @@
                 if (!$testpath) {
                     Stop-Function -Message "$destserver cannot access $CopyPath." -Continue
                 }
-            }
-            else {
+            } else {
                 # If not CopyPath is specified, use the destination server default backup directory
                 $copyPath = $destserver.BackupDirectory
             }
@@ -216,8 +213,7 @@
                     $serviceaccount = $destserver.ServiceAccount
                     Stop-Function -Message "Can't access $datadirectory Please check if $serviceaccount has permissions." -Continue
                 }
-            }
-            else {
+            } else {
                 $datadirectory = Get-SqlDefaultPaths -SqlInstance $destserver -FileType mdf
             }
 
@@ -226,8 +222,7 @@
                     $serviceaccount = $destserver.ServiceAccount
                     Stop-Function -Message "$Destination can't access its local directory $logdirectory. Please check if $serviceaccount has permissions." -Continue
                 }
-            }
-            else {
+            } else {
                 $logdirectory = Get-SqlDefaultPaths -SqlInstance $destserver -FileType ldf
             }
 
@@ -273,8 +268,7 @@
                         if ($full.start -le $diff.start) {
                             $lastbackup += $diff
                         }
-                    }
-                    else {
+                    } else {
                         $lastbackup = Get-DbaBackupHistory -SqlInstance $sourceserver -Database $dbname -IncludeCopyOnly:$IncludeCopyOnly -Last #-raw
                     }
 
@@ -300,8 +294,7 @@
 
                                     if ($instance.IsLocalHost) {
                                         $remotedestdirectory = Join-AdminUnc -servername $instance.ComputerName -filepath $copyPath
-                                    }
-                                    else {
+                                    } else {
                                         $remotedestdirectory = $copyPath
                                     }
 
@@ -316,16 +309,14 @@
                                         $backup.Path = $localdestfile
                                         $backup.FullName = $localdestfile
                                         $removearray += $remotedestfile
-                                    }
-                                    catch {
+                                    } catch {
                                         $backup.Path = $sourcefile
                                         $backup.FullName = $sourcefile
                                     }
                                 }
                             }
                             $copysuccess = $true
-                        }
-                        catch {
+                        } catch {
                             Write-Message -Level Warning -Message "Failed to copy backups for $dbname on $instance to $destdirectory - $_."
                             $copysuccess = $false
                         }
@@ -335,19 +326,16 @@
                         $lastbackup = @{ Path = "Failed to copy backups" }
                         $fileexists = $false
                         $success = $restoreresult = $dbccresult = "Skipped"
-                    }
-                    elseif (!($lastbackup | Where-Object { $_.type -eq 'Full' })) {
+                    } elseif (!($lastbackup | Where-Object { $_.type -eq 'Full' })) {
                         Write-Message -Level Verbose -Message "No full backup returned from lastbackup."
                         $lastbackup = @{ Path = "Not found" }
                         $fileexists = $false
                         $success = $restoreresult = $dbccresult = "Skipped"
-                    }
-                    elseif ($source -ne $destination -and $lastbackup[0].Path.StartsWith('\\') -eq $false -and !$CopyFile) {
+                    } elseif ($source -ne $destination -and $lastbackup[0].Path.StartsWith('\\') -eq $false -and !$CopyFile) {
                         Write-Message -Level Verbose -Message "Path not UNC and source does not match destination. Use -CopyFile to move the backup file."
                         $fileexists = $dbccresult = "Skipped"
                         $success = $restoreresult = "Restore not located on shared location"
-                    }
-                    elseif (($lastbackup[0].Path | ForEach-Object { Test-DbaPath -SqlInstance $destserver -Path $_ }) -eq $false) {
+                    } elseif (($lastbackup[0].Path | ForEach-Object { Test-DbaPath -SqlInstance $destserver -Path $_ }) -eq $false) {
                         Write-Message -Level Verbose -Message "SQL Server cannot find backup."
                         $fileexists = $false
                         $success = $restoreresult = $dbccresult = "Skipped"
@@ -363,8 +351,7 @@
                         if ($MaxMB -gt 0 -and $MaxMB -lt $mb) {
                             $success = "The backup size for $dbname ($mb MB) exceeds the specified maximum size ($MaxMB MB)."
                             $dbccresult = "Skipped"
-                        }
-                        else {
+                        } else {
                             $dbccElapsed = $restoreElapsed = $startRestore = $endRestore = $startDbcc = $endDbcc = $null
 
                             $dbname = "$prefix$dbname"
@@ -379,8 +366,7 @@
                                 $startRestore = Get-Date
                                 if ($verifyonly) {
                                     $restoreresult = $lastbackup | Restore-DbaDatabase -SqlInstance $destserver -RestoredDatabaseNamePrefix $prefix -DestinationFilePrefix $Prefix -DestinationDataDirectory $datadirectory -DestinationLogDirectory $logdirectory -VerifyOnly:$VerifyOnly -IgnoreLogBackup:$IgnoreLogBackup -AzureCredential $AzureCredential -TrustDbBackupHistory
-                                }
-                                else {
+                                } else {
                                     $restoreresult = $lastbackup | Restore-DbaDatabase -SqlInstance $destserver -RestoredDatabaseNamePrefix $prefix -DestinationFilePrefix $Prefix -DestinationDataDirectory $datadirectory -DestinationLogDirectory $logdirectory -IgnoreLogBackup:$IgnoreLogBackup -AzureCredential $AzureCredential -TrustDbBackupHistory
                                     Write-verbose " Restore-DbaDatabase -SqlInstance $destserver -RestoredDatabaseNamePrefix $prefix -DestinationFilePrefix $Prefix -DestinationDataDirectory $datadirectory -DestinationLogDirectory $logdirectory -IgnoreLogBackup:$IgnoreLogBackup -AzureCredential $AzureCredential -TrustDbBackupHistory"
 
@@ -393,8 +379,7 @@
 
                                 if ($restoreresult.RestoreComplete -eq $true) {
                                     $success = "Success"
-                                }
-                                else {
+                                } else {
                                     $success = "Failure"
                                 }
                             }
@@ -405,8 +390,7 @@
                                 # shouldprocess is taken care of in Start-DbccCheck
                                 if ($ogdbname -eq "master") {
                                     $dbccresult = "DBCC CHECKDB skipped for restored master ($dbname) database."
-                                }
-                                else {
+                                } else {
                                     if ($success -eq "Success") {
                                         Write-Message -Level Verbose -Message "Starting DBCC."
 
@@ -417,8 +401,7 @@
                                         $dbccts = New-TimeSpan -Start $startDbcc -End $endDbcc
                                         $ts = [timespan]::fromseconds($dbccts.TotalSeconds)
                                         $dbccElapsed = "{0:HH:mm:ss}" -f ([datetime]$ts.Ticks)
-                                    }
-                                    else {
+                                    } else {
                                         $dbccresult = "Skipped"
                                     }
                                 }
@@ -434,10 +417,10 @@
 
                                     ## Drop the database
                                     try {
-                                        $removeresult = Remove-DbaDatabase -SqlInstance $destserver -Database $dbname -Confirm:$false
+                                        #Variable $removeresult marked as unused by PSScriptAnalyzer replace with $null to catch output
+                                        $null = Remove-DbaDatabase -SqlInstance $destserver -Database $dbname -Confirm:$false
                                         Write-Message -Level Verbose -Message "Dropped $dbname Database on $destination."
-                                    }
-                                    catch {
+                                    } catch {
                                         $destserver.Databases.Refresh()
                                         if ($destserver.databases[$dbname]) {
                                             Write-Message -Level Warning -Message "Failed to Drop database $dbname on $destination."
@@ -457,8 +440,7 @@
                             Write-Message -Level Verbose -Message "Removing copied backup file from $destination."
                             try {
                                 $removearray | Remove-item -ErrorAction Stop
-                            }
-                            catch {
+                            } catch {
                                 Write-Message -Level Warning -Message $_ -ErrorRecord $_ -Target $instance
                             }
                         }
@@ -488,3 +470,4 @@
         }
     }
 }
+

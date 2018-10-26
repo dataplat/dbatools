@@ -1,6 +1,6 @@
-﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaEndpoint {
-<#
+    <#
     .SYNOPSIS
         Returns endpoint objects from a SQL Server instance.
 
@@ -60,8 +60,7 @@ function Get-DbaEndpoint {
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -84,24 +83,20 @@ function Get-DbaEndpoint {
                 if ($end.Protocol.Tcp.ListenerPort) {
                     if ($instance.ComputerName -match '\.') {
                         $dns = $instance.ComputerName
-                    }
-                    else {
+                    } else {
                         try {
                             $dns = [System.Net.Dns]::GetHostEntry($instance.ComputerName).HostName
-                        }
-                        catch {
+                        } catch {
                             try {
                                 $dns = [System.Net.Dns]::GetHostAddresses($instance.ComputerName)
-                            }
-                            catch {
+                            } catch {
                                 $dns = $instance.ComputerName
                             }
                         }
                     }
-                    
+
                     $fqdn = "TCP://" + $dns + ":" + $end.Protocol.Tcp.ListenerPort
-                }
-                else {
+                } else {
                     $fqdn = $null
                 }
 
@@ -112,11 +107,11 @@ function Get-DbaEndpoint {
                 Add-Member -Force -InputObject $end -MemberType NoteProperty -Name Port -Value $end.Protocol.Tcp.ListenerPort
                 if ($end.Protocol.Tcp.ListenerPort) {
                     Select-DefaultView -InputObject $end -Property ComputerName, InstanceName, SqlInstance, ID, Name, Port, EndpointState, EndpointType, Owner, IsAdminEndpoint, Fqdn, IsSystemObject
-                }
-                else {
+                } else {
                     Select-DefaultView -InputObject $end -Property ComputerName, InstanceName, SqlInstance, ID, Name, EndpointState, EndpointType, Owner, IsAdminEndpoint, Fqdn, IsSystemObject
                 }
             }
         }
     }
 }
+

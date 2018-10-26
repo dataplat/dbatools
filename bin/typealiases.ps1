@@ -33,3 +33,4 @@ foreach ($TypeAlias in $TypeAliasTable.Keys) {
     catch {
     }
 }
+

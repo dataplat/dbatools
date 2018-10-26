@@ -1,5 +1,5 @@
-﻿function Invoke-DbaAdvancedRestore {
-<#
+function Invoke-DbaAdvancedRestore {
+    <#
     .SYNOPSIS
         Allows the restore of modified BackupHistory Objects
         For 90% of users Restore-DbaDatabase should be your point of access to this function. The other 10% use it at their own risk
@@ -126,8 +126,7 @@
     begin {
         try {
             $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
-        }
-        catch {
+        } catch {
             Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             return
         }
@@ -166,13 +165,11 @@
                             $null = Stop-DbaProcess -SqlInstance $Server -Database $Database -WarningAction Silentlycontinue
                             $null = $server.Query("Alter database $Database set offline with rollback immediate; alter database $Database set restricted_user; Alter database $Database set online with rollback immediate", 'master')
                             $server.ConnectionContext.Connect()
-                        }
-                        catch {
+                        } catch {
                             Write-Message -Level Verbose -Message "No processes to kill in $Database"
                         }
                     }
-                }
-                elseif (-not $WithReplace -and (-not $VerifyOnly)) {
+                } elseif (-not $WithReplace -and (-not $VerifyOnly)) {
                     Stop-Function -Message "$Database exists and WithReplace not specified, stopping" -EnableException $EnableException
                     return
                 }
@@ -185,22 +182,18 @@
                 $Restore = New-Object Microsoft.SqlServer.Management.Smo.Restore
                 if (($backup -ne $backups[-1]) -or $true -eq $NoRecovery) {
                     $Restore.NoRecovery = $True
-                }
-                elseif ($backup -eq $backups[-1] -and '' -ne $StandbyDirectory) {
+                } elseif ($backup -eq $backups[-1] -and '' -ne $StandbyDirectory) {
                     $Restore.StandbyFile = $StandByDirectory + "\" + $Database + (get-date -Format yyyMMddHHmmss) + ".bak"
                     Write-Message -Level Verbose -Message "Setting standby on last file $($Restore.StandbyFile)"
-                }
-                else {
+                } else {
                     $Restore.NoRecovery = $False
                 }
                 if ($restoretime -gt (Get-Date) -or $Restore.RestoreTime -gt (Get-Date) -or $backup.RecoveryModel -eq 'Simple') {
                     $Restore.ToPointInTime = $null
-                }
-                else {
+                } else {
                     if ($RestoreTime -ne $Restore.RestoreTime) {
                         $Restore.ToPointInTime = $backup.RestoreTime
-                    }
-                    else {
+                    } else {
                         $Restore.ToPointInTime = $RestoreTime
                     }
                 }
@@ -239,8 +232,7 @@
                     $Device.Name = $file
                     if ($file.StartsWith("http")) {
                         $Device.devicetype = "URL"
-                    }
-                    else {
+                    } else {
                         $Device.devicetype = "File"
                     }
 
@@ -260,8 +252,7 @@
                             $script = $Restore.Script($server)
                             if ($script -like '*WITH*') {
                                 $script = $script.TrimEnd() + ' , KEEP_CDC'
-                            }
-                            else {
+                            } else {
                                 $script = $script.TrimEnd() + ' WITH KEEP_CDC'
                             }
                             if ($true -ne $OutputScriptOnly) {
@@ -269,8 +260,7 @@
                                 $null = $server.ConnectionContext.ExecuteNonQuery($script)
                                 Write-Progress -id 2 -activity "Restoring $Database to $sqlinstance - Backup $BackupCnt of $($Backups.count)" -status "Complete" -Completed
                             }
-                        }
-                        elseif ($null -ne $Pages -and $Action -eq 'Database') {
+                        } elseif ($null -ne $Pages -and $Action -eq 'Database') {
                             $script = $Restore.Script($server)
                             $script = $script -replace "] FROM", "] PAGE='$pages' FROM"
                             if ($true -ne $OutputScriptOnly) {
@@ -278,11 +268,9 @@
                                 $null = $server.ConnectionContext.ExecuteNonQuery($script)
                                 Write-Progress -id 2 -activity "Restoring $Database to $sqlinstance - Backup $BackupCnt of $($Backups.count)" -status "Complete" -Completed
                             }
-                        }
-                        elseif ($OutputScriptOnly) {
+                        } elseif ($OutputScriptOnly) {
                             $script = $Restore.Script($server)
-                        }
-                        elseif ($VerifyOnly) {
+                        } elseif ($VerifyOnly) {
                             Write-Message -Message "VerifyOnly restore" -Level Verbose
                             Write-Progress -id 2 -activity "Verifying $Database backup file on $sqlinstance - Backup $BackupCnt of $($Backups.count)" -percentcomplete 0 -status ([System.String]::Format("Progress: {0} %", 0))
                             $Verify = $Restore.SqlVerify($server)
@@ -290,14 +278,12 @@
                             if ($verify -eq $true) {
                                 Write-Message -Message "VerifyOnly restore Succeeded" -Level Verbose
                                 return "Verify successful"
-                            }
-                            else {
+                            } else {
                                 Write-Message -Message "VerifyOnly restore Failed" -Level Verbose
                                 return "Verify failed"
                             }
-                        }
-                        else {
-                            $outerProgress = $BackupCnt/$Backups.Count*100
+                        } else {
+                            $outerProgress = $BackupCnt / $Backups.Count * 100
                             if ($BackupCnt -eq 1) {
                                 Write-Progress -id 2 -ParentId 1 -Activity "Restoring $Database to $sqlinstance - Backup $BackupCnt of $($Backups.count)" -percentcomplete 0
                             }
@@ -312,15 +298,13 @@
                             Write-Progress -id 3 -ParentId 2 -Activity "Restore $($backup.FullName -Join ',')" -Completed
                             Write-Progress -id 2 -ParentId 1 -Activity "Restoring $Database to $sqlinstance - Backup $BackupCnt of $($Backups.count)" -percentcomplete $outerProgress -status ([System.String]::Format("Progress: {0:N2} %", $outerProgress))
                         }
-                    }
-                    catch {
+                    } catch {
                         Write-Message -Level Verbose -Message "Failed, Closing Server connection"
                         $RestoreComplete = $False
                         $ExitError = $_.Exception.InnerException
                         Stop-Function -Message "Failed to restore db $Database, stopping" -ErrorRecord $_
                         return
-                    }
-                    finally {
+                    } finally {
 
                         if ($OutputScriptOnly -eq $false) {
                             [PSCustomObject]@{
@@ -342,12 +326,11 @@
                                 CompressedBackupSize   = if ([bool]($backup.psobject.Properties.Name -contains 'CompressedBackupSize')) { ($backup | Measure-Object -Property CompressedBackupSize -Sum).Sum } else { $null }
                                 Script                 = $script
                                 BackupFileRaw          = ($backups.Fullname)
-                                FileRestoreTime        = New-TimeSpan -Seconds ((Get-Date)-$FileRestoreStartTime).TotalSeconds
-                                DatabaseRestoreTime    = New-TimeSpan -Seconds ((Get-Date)-$DatabaseRestoreStartTime).TotalSeconds
+                                FileRestoreTime        = New-TimeSpan -Seconds ((Get-Date) - $FileRestoreStartTime).TotalSeconds
+                                DatabaseRestoreTime    = New-TimeSpan -Seconds ((Get-Date) - $DatabaseRestoreStartTime).TotalSeconds
                                 ExitError              = $ExitError
                             } | Select-DefaultView -ExcludeProperty BackupSize, CompressedBackupSize, ExitError, BackupFileRaw, RestoredFileFull
-                        }
-                        else {
+                        } else {
                             $script
                         }
                         if ($Restore.Devices.Count -gt 0) {
@@ -367,3 +350,4 @@
         }
     }
 }
+

@@ -1,6 +1,6 @@
-﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Set-DbaMaxMemory {
-<#
+    <#
     .SYNOPSIS
         Sets SQL Server 'Max Server Memory' configuration setting to a new value then displays information this setting.
 
@@ -89,8 +89,7 @@ function Set-DbaMaxMemory {
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -102,8 +101,7 @@ function Set-DbaMaxMemory {
                 $currentServer = Test-DbaMaxMemory -SqlInstance $server
                 Add-Member -Force -InputObject $currentServer -NotePropertyName OldMaxValue -NotePropertyValue 0
                 $currentServer.OldMaxValue = $currentServer.SqlMaxMB
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Issue collecting memory information on $server" -Target $server -ErrorRecord $_ -InnerException $_.Exception -Continue
             }
 
@@ -115,12 +113,10 @@ function Set-DbaMaxMemory {
                         $maxMem = (Test-DbaMaxMemory -SqlInstance $server).RecommendedMB
                         Write-Message -Level VeryVerbose -Message "Max memory recommended: $maxMem"
                         $server.Configuration.MaxServerMemory.ConfigValue = $maxMem
-                    }
-                    else {
+                    } else {
                         $server.Configuration.MaxServerMemory.ConfigValue = $currentServer.RecommendedMB
                     }
-                }
-                else {
+                } else {
                     Write-Message -Level Verbose -Message "Change $server SQL Server Max Memory from $($currentServer.SqlMaxMB) to $MaxMB MB"
                     $server.Configuration.MaxServerMemory.ConfigValue = $MaxMB
                 }
@@ -128,13 +124,11 @@ function Set-DbaMaxMemory {
                     try {
                         $server.Configuration.Alter()
                         $currentServer.SqlMaxMB = $server.Configuration.MaxServerMemory.ConfigValue
-                    }
-                    catch {
+                    } catch {
                         Stop-Function -Message "Failed to apply configuration change for $server" -ErrorRecord $_ -Target $server -Continue
                     }
                 }
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Could not modify Max Server Memory for $server" -ErrorRecord $_ -Target $server -Continue
             }
 
@@ -143,3 +137,4 @@ function Set-DbaMaxMemory {
         }
     }
 }
+

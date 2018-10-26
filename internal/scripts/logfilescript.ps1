@@ -1,4 +1,4 @@
-﻿$scriptBlock = {
+$scriptBlock = {
     $script:___ScriptName = 'dbatools-logging'
 
     #region Helper Functions

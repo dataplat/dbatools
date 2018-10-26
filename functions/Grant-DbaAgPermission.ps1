@@ -1,6 +1,6 @@
-﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Grant-DbaAgPermission {
-<#
+    <#
     .SYNOPSIS
         Grants endpoint and availability group permissions to a login.
 
@@ -15,7 +15,7 @@ function Grant-DbaAgPermission {
 
     .PARAMETER Login
         The login or logins to modify.
-    
+
     .PARAMETER AvailabilityGroup
         Only modify specific availability groups.
 
@@ -117,8 +117,7 @@ function Grant-DbaAgPermission {
                 if ($account -notin $InputObject.Name) {
                     if ($account -match '\\') {
                         $InputObject += New-DbaLogin -SqlInstance $server -Login $account
-                    }
-                    else {
+                    } else {
                         Stop-Function -Message "$account does not exist and cannot be created automatically" -Target $instance
                         return
                     }
@@ -131,7 +130,7 @@ function Grant-DbaAgPermission {
             if ($Type -contains "Endpoint") {
                 $server.Endpoints.Refresh()
                 $endpoint = $server.Endpoints | Where-Object EndpointType -eq DatabaseMirroring
-                
+
                 if (-not $endpoint) {
                     Stop-Function -Message "DatabaseMirroring endpoint does not exist on $server" -Target $server -Continue
                 }
@@ -153,27 +152,25 @@ function Grant-DbaAgPermission {
                                 Type         = "Grant"
                                 Status       = "Success"
                             }
-                        }
-                        catch {
+                        } catch {
                             Stop-Function -Message "Failure" -ErrorRecord $_ -Target $ag -Continue
                         }
                     }
                 }
             }
-            
+
             if ($Type -contains "AvailabilityGroup") {
                 $ags = Get-DbaAvailabilityGroup -SqlInstance $account.Parent -AvailabilityGroup $AvailabilityGroup
                 foreach ($ag in $ags) {
                     foreach ($perm in $Permission) {
-                        if ($perm -notin 'Alter', 'Control', 'TakeOwnership', 'ViewDefinition','CreateAnyDatabase') {
+                        if ($perm -notin 'Alter', 'Control', 'TakeOwnership', 'ViewDefinition', 'CreateAnyDatabase') {
                             Stop-Function -Message "$perm not supported by availability groups" -Continue
                         }
                         if ($Pscmdlet.ShouldProcess($server.Name, "Granting $perm on $ags")) {
                             try {
                                 if ($perm -eq "CreateAnyDatabase") {
                                     $ag.Parent.Query("ALTER AVAILABILITY GROUP $ag GRANT CREATE ANY DATABASE")
-                                }
-                                else {
+                                } else {
                                     $bigperms = New-Object Microsoft.SqlServer.Management.Smo.ObjectPermissionSet([Microsoft.SqlServer.Management.Smo.ObjectPermission]::$perm)
                                     $ag.Grant($bigperms, $account.Name)
                                     [pscustomobject]@{
@@ -186,8 +183,7 @@ function Grant-DbaAgPermission {
                                         Status       = "Success"
                                     }
                                 }
-                            }
-                            catch {
+                            } catch {
                                 Stop-Function -Message "Failure" -ErrorRecord $_ -Target $ag -Continue
                             }
                         }
@@ -197,3 +193,4 @@ function Grant-DbaAgPermission {
         }
     }
 }
+

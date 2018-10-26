@@ -1,5 +1,5 @@
-﻿function Remove-DbaClientAlias {
-<#
+function Remove-DbaClientAlias {
+    <#
     .SYNOPSIS
         Removes a sql alias for the specified server - mimics cliconfg.exe
 
@@ -75,8 +75,7 @@
 
                 if ($basekey -like "*WOW64*") {
                     $architecture = "32-bit"
-                }
-                else {
+                } else {
                     $architecture = "64-bit"
                 }
 
@@ -107,11 +106,11 @@
             if ($PSCmdlet.ShouldProcess("$($Alias -join ', ') on $computer", "Remove aliases")) {
                 try {
                     Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $scriptblock -ErrorAction Stop -Verbose:$false -ArgumentList $Alias
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Failure" -ErrorRecord $_ -Target $computer -Continue
                 }
             }
         }
     }
 }
+

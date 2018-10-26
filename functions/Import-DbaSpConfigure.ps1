@@ -1,5 +1,5 @@
-﻿function Import-DbaSpConfigure {
-<#
+function Import-DbaSpConfigure {
+    <#
     .SYNOPSIS
         Updates sp_configure settings on destination server.
 
@@ -108,8 +108,7 @@
         if ($Path.length -eq 0) {
             try {
                 $sourceserver = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failed to process Instance $Source" -ErrorRecord $_ -Target $Source
                 return
             }
@@ -120,8 +119,7 @@
 
             try {
                 $destserver = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failed to process Instance $Destination" -ErrorRecord $_ -Target $Destination
                 return
             }
@@ -132,12 +130,10 @@
 
             $source = $sourceserver.DomainInstanceName
             $destination = $destserver.DomainInstanceName
-        }
-        else {
+        } else {
             try {
                 $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failed to process Instance $SqlInstance" -ErrorRecord $_ -Target $SqlInstance -Continue
             }
 
@@ -179,16 +175,14 @@
                             $destprop.configvalue = $sourceprop.configvalue
                             $null = $destserver.Query("RECONFIGURE WITH OVERRIDE")
                             Write-Message -Level Output -Message "updated $($destprop.displayname) to $($sourceprop.configvalue)."
-                        }
-                        catch {
+                        } catch {
                             Stop-Function -Message "Could not set $($destprop.displayname) to $($sourceprop.configvalue). Feature may not be supported." -ErrorRecord $_ -Continue
                         }
                     }
                 }
                 try {
                     $destserver.Configuration.Alter()
-                }
-                catch {
+                } catch {
                     $needsrestart = $true
                 }
 
@@ -199,8 +193,7 @@
 
                 if ($needsrestart -eq $true) {
                     Write-Message -Level Warning -Message "Some configuration options will be updated once SQL Server is restarted."
-                }
-                else {
+                } else {
                     Write-Message -Level Output -Message "Configuration option has been updated."
                 }
             }
@@ -209,8 +202,7 @@
                 Remove-Item $sqlfilename -ErrorAction SilentlyContinue
             }
 
-        }
-        else {
+        } else {
             if ($Pscmdlet.ShouldProcess($destination, "Importing sp_configure from $Path")) {
                 $server.Configuration.ShowAdvancedOptions.ConfigValue = $true
                 $sql = Get-Content $Path
@@ -218,8 +210,7 @@
                     try {
                         $null = $server.Query($line)
                         Write-Message -Level Output -Message "Successfully executed $line."
-                    }
-                    catch {
+                    } catch {
                         Stop-Function -Message "$line failed. Feature may not be supported." -ErrorRecord $_ -Continue
                     }
                 }
@@ -231,8 +222,7 @@
     end {
         if ($Path.length -gt 0) {
             $server.ConnectionContext.Disconnect()
-        }
-        else {
+        } else {
             $sourceserver.ConnectionContext.Disconnect()
             $destserver.ConnectionContext.Disconnect()
         }
@@ -244,3 +234,4 @@
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Import-SqlSpConfigure
     }
 }
+

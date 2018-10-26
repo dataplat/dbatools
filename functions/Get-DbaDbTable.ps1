@@ -1,5 +1,5 @@
-﻿function Get-DbaDbTable {
-<#
+function Get-DbaDbTable {
+    <#
     .SYNOPSIS
         Returns a summary of information on the tables
 
@@ -122,8 +122,7 @@
         foreach ($instance in $sqlinstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -143,8 +142,7 @@
                 if ($ExcludeDatabase) {
                     $dbs = $dbs | Where-Object { $ExcludeDatabase -notcontains $_.Name }
                 }
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Unable to gather dbs for $instance" -Target $instance -Continue -ErrorRecord $_
             }
 
@@ -169,8 +167,7 @@
                         }
                         $tables += $tbl
                     }
-                }
-                else {
+                } else {
                     $tables = $db.Tables
                 }
 
@@ -191,3 +188,4 @@
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-DbaTable
     }
 }
+

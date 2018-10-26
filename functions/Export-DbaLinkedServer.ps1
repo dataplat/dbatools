@@ -1,5 +1,5 @@
-﻿function Export-DbaLinkedServer {
-<#
+function Export-DbaLinkedServer {
+    <#
     .SYNOPSIS
         Exports linked servers INCLUDING PASSWORDS, unless specified otherwise, to sql file.
 
@@ -75,8 +75,7 @@
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential -MinimumVersion 9
                 $InputObject += $server.LinkedServers
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -99,8 +98,7 @@
             Write-Message -Level Verbose -Message "Checking if Remote Registry is enabled on $instance."
             try {
                 Invoke-Command2 -Raw -Credential $Credential -ComputerName $sourceNetBios -ScriptBlock { Get-ItemProperty -Path "HKLM:\SOFTWARE\" } -ErrorAction Stop
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Can't connect to registry on $instance." -Target $sourceNetBios -ErrorRecord $_
                 return
             }
@@ -115,12 +113,10 @@
 
             if ($ExcludePassword) {
                 $sql += $InputObject.Script()
-            }
-            else {
+            } else {
                 try {
                     $decrypted = Get-DecryptedObject -SqlInstance $server -Type LinkedServer
-                }
-                catch {
+                } catch {
                     Stop-Function -Continue -Message "Failure" -ErrorRecord $_
                 }
 
@@ -134,8 +130,7 @@
                         $tempsql = $tempsql.Replace(' /* For security reasons the linked server remote logins password is changed with ######## */', '')
                         $tempsql = $tempsql.Replace("rmtpassword='########'", "rmtpassword='$password'")
                         $sql += $tempsql
-                    }
-                    else {
+                    } else {
                         $sql += $ls.Script()
                     }
                 }
@@ -144,15 +139,14 @@
             try {
                 if ($Append) {
                     Add-Content -Path $path -Value $sql
-                }
-                else {
+                } else {
                     Set-Content -Path $path -Value $sql
                 }
                 Get-ChildItem -Path $path
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Can't write to $path" -ErrorRecord $_ -Continue
             }
         }
     }
 }
+

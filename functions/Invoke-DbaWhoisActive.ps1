@@ -1,5 +1,5 @@
-﻿function Invoke-DbaWhoIsActive {
-<#
+function Invoke-DbaWhoIsActive {
+    <#
     .SYNOPSIS
         Outputs results of Adam Machanic's sp_WhoIsActive DataTable
 
@@ -254,8 +254,7 @@
         foreach ($instance in $sqlinstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential -MinimumVersion 9
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -330,12 +329,10 @@
                 $dataadapter = New-Object system.Data.SqlClient.SqlDataAdapter($sqlcommand)
                 $dataadapter.fill($datatable) | Out-Null
                 $datatable.Tables.Rows
-            }
-            catch {
+            } catch {
                 if ($_.Exception.InnerException -Like "*Could not find*") {
                     Stop-Function -Message "sp_whoisactive not found, please install using Install-DbaWhoIsActive." -Continue
-                }
-                else {
+                } else {
                     Stop-Function -Message "Invalid query." -Continue
                 }
             }
@@ -345,3 +342,4 @@
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Show-SqlWhoIsActive -CustomMessage "Show-SqlWhoIsActive is no longer supported. Use Invoke-DbaWhoIsActive | Out-GridView for similar results."
     }
 }
+

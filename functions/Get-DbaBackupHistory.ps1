@@ -1,6 +1,6 @@
-﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaBackupHistory {
-<#
+    <#
     .SYNOPSIS
         Returns backup history details for databases on a SQL Server.
 
@@ -182,8 +182,7 @@ function Get-DbaBackupHistory {
         foreach ($devType in $DeviceType) {
             if ($devType -in $deviceTypeMapping.Keys) {
                 $deviceTypeFilter += $deviceTypeMapping[$devType]
-            }
-            else {
+            } else {
                 $deviceTypeFilter += $devType
             }
         }
@@ -208,8 +207,7 @@ function Get-DbaBackupHistory {
 
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -219,8 +217,7 @@ function Get-DbaBackupHistory {
                 $backupCols = "
                 backupset.backup_size AS TotalSize,
                 backupset.compressed_backup_size as CompressedBackupSize"
-            }
-            else {
+            } else {
                 $compressedFlag = $false
                 $backupCols = "
                 backupset.backup_size AS TotalSize,
@@ -232,8 +229,7 @@ function Get-DbaBackupHistory {
                 foreach ($db in $Database) {
                     $databases += [PSCustomObject]@{name = $db}
                 }
-            }
-            else {
+            } else {
                 $databases = $server.Databases
             }
             if ($ExcludeDatabase) {
@@ -258,13 +254,11 @@ function Get-DbaBackupHistory {
                         Write-Message -Level Verbose -Message "Valid Differential backup "
                         $allBackups += $diffDb
                         $tlogStartDsn = ($diffDb.FirstLsn -as [bigint])
-                    }
-                    else {
+                    } else {
                         Write-Message -Level Verbose -Message "No Diff found"
                         try {
                             [bigint]$tlogStartDsn = $fullDb.FirstLsn.ToString()
-                        }
-                        catch {
+                        } catch {
                             continue
                         }
                     }
@@ -411,12 +405,10 @@ function Get-DbaBackupHistory {
                                 "
                 }
                 $sql = $sql -join "; "
-            }
-            else {
+            } else {
                 if ($Force -eq $true) {
                     $select = "SELECT * "
-                }
-                else {
+                } else {
                     $select = "
                             SELECT
                               backupset.database_name AS [Database],
@@ -520,8 +512,7 @@ function Get-DbaBackupHistory {
                 Write-Message -Level SomewhatVerbose -Message "Processing as Raw Output."
                 $results | Select-Object *, @{ Name = "FullName"; Expression = { $_.Path } }
                 Write-Message -Level SomewhatVerbose -Message "$($results.Count) result sets found."
-            }
-            else {
+            } else {
                 Write-Message -Level SomewhatVerbose -Message "Processing as grouped output."
                 $groupedResults = $results | Group-Object -Property BackupsetId
                 Write-Message -Level SomewhatVerbose -Message "$($groupedResults.Count) result-groups found."
@@ -534,8 +525,7 @@ function Get-DbaBackupHistory {
                                    FROM msdb..backupfile WHERE $backupSetIdsWhere"
                     Write-Message -Level Debug -Message "FileSQL: $fileAllSql"
                     $fileListResults = $server.Query($fileAllSql)
-                }
-                else {
+                } else {
                     $fileListResults = @()
                 }
                 $fileListHash = @{}
@@ -552,8 +542,7 @@ function Get-DbaBackupHistory {
                         $start = $commonFields.Start
                         $end = $commonFields.End
                         $duration = New-TimeSpan -Seconds $commonFields.Duration
-                    }
-                    else {
+                    } else {
                         $start = ($group.Group.Start | Measure-Object -Minimum).Minimum
                         $end = ($group.Group.End | Measure-Object -Maximum).Maximum
                         $duration = New-TimeSpan -Seconds ($group.Group.Duration | Measure-Object -Maximum).Maximum
@@ -561,8 +550,7 @@ function Get-DbaBackupHistory {
                     $compressedBackupSize = $commonFields.CompressedBackupSize
                     if ($compressedFlag -eq $true) {
                         $ratio = [Math]::Round(($commonFields.TotalSize) / ($compressedBackupSize), 2)
-                    }
-                    else {
+                    } else {
                         $compressedBackupSize = $null
                         $ratio = 1
                     }
@@ -601,3 +589,4 @@ function Get-DbaBackupHistory {
         }
     }
 }
+

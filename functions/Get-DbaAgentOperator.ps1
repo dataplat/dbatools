@@ -1,5 +1,5 @@
-﻿function Get-DbaAgentOperator {
-<#
+function Get-DbaAgentOperator {
+    <#
     .SYNOPSIS
         Returns all SQL Agent operators on a SQL Server Agent.
 
@@ -71,8 +71,7 @@
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -87,11 +86,9 @@
 
             if ($Operator) {
                 $operators = $server.JobServer.Operators | Where-Object Name -In $Operator
-            }
-            elseif ($ExcludeOperator) {
+            } elseif ($ExcludeOperator) {
                 $operators = $server.JobServer.Operators | Where-Object Name -NotIn $ExcludeOperator
-            }
-            else {
+            } else {
                 $operators = $server.JobServer.Operators
             }
 
@@ -103,7 +100,7 @@
                 $lastemail = [dbadatetime]$operat.LastEmailDate
 
                 $operatAlerts = @()
-                foreach($alert in $alerts){
+                foreach ($alert in $alerts) {
                     $dtAlert = $alert.EnumNotifications($operat.Name)
                     if ($dtAlert.Rows.Count -gt 0) {
                         $operatAlerts += $alert.Name
@@ -123,3 +120,4 @@
         }
     }
 }
+

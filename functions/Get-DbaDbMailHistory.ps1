@@ -1,5 +1,5 @@
-﻿function Get-DbaDbMailHistory {
-<#
+function Get-DbaDbMailHistory {
+    <#
     .SYNOPSIS
         Gets the history of mail sent from a SQL instance
 
@@ -70,8 +70,7 @@
 
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category Connectiondbmail -dbmailRecord $_ -Target $instance -Continue
             }
 
@@ -136,10 +135,10 @@
 
             try {
                 $server.Query($sql) | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, Profile, Recipients, CopyRecipients, BlindCopyRecipients, Subject, Importance, Sensitivity, FileAttachments, AttachmentEncoding, SendRequestDate, SendRequestUser, SentStatus, SentDate
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Query failure" -ErrorRecord $_ -Continue
             }
         }
     }
 }
+

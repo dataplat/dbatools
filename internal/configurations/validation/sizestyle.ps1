@@ -21,3 +21,4 @@ Register-DbatoolsConfigValidation -Name "sizestyle" -ScriptBlock {
 
     return $Result
 }
+

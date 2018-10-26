@@ -1,6 +1,6 @@
-﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Start-DbaXESession {
-<#
+    <#
     .SYNOPSIS
         Starts Extended Events sessions.
 
@@ -68,7 +68,8 @@ function Start-DbaXESession {
         Starts the sessions returned from the Get-DbaXESession function.
 
 #>
-    [CmdletBinding(SupportsShouldProcess,DefaultParameterSetName = 'Session')]
+    [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = 'Session')]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseSingularNouns", "", Justification = "Internal functions are ignored")]
     param (
         [parameter(Position = 1, Mandatory, ParameterSetName = 'Session')]
         [parameter(Position = 1, Mandatory, ParameterSetName = 'All')]
@@ -103,13 +104,11 @@ function Start-DbaXESession {
                     if ($Pscmdlet.ShouldProcess("$instance", "Starting XEvent Session $session")) {
                         try {
                             $xe.Start()
-                        }
-                        catch {
+                        } catch {
                             Stop-Function -Message "Could not start XEvent Session on $instance." -Target $session -ErrorRecord $_ -Continue
                         }
                     }
-                }
-                else {
+                } else {
                     Write-Message -Level Warning -Message "$session on $instance is already running."
                 }
                 Get-DbaXESession -SqlInstance $xe.Parent -Session $session
@@ -129,17 +128,18 @@ function Start-DbaXESession {
                 $name = "XE Session Stop - $session"
                 if ($Pscmdlet.ShouldProcess("$Server", "Making New XEvent StopJob for $session")) {
                     # Setup the schedule time
-                    $time = ($StopAt).ToString("HHmmss")
+                    $time = $(($StopAt).ToString("HHmmss"))
 
                     # Create the schedule
-                    $schedule = New-DbaAgentSchedule -SqlInstance $server -Schedule $name -FrequencyType Once -StartTime ($StopAt).ToString("HHmmss") -Force
+                    $schedule = New-DbaAgentSchedule -SqlInstance $server -Schedule $name -FrequencyType Once -StartTime $time -Force
 
                     # Create the job and attach the schedule
                     $job = New-DbaAgentJob -SqlInstance $server -Job $name -Schedule $schedule -DeleteLevel Always -Force
 
                     # Create the job step
                     $sql = "ALTER EVENT SESSION [$session] ON SERVER STATE = stop;"
-                    $jobstep = New-DbaAgentJobStep -SqlInstance $server -Job $job -StepName 'T-SQL Stop' -Subsystem TransactSql -Command $sql -Force
+                    #Variable $jobstep marked as unused by PSScriptAnalyzer replace with $null to catch output
+                    $null = New-DbaAgentJobStep -SqlInstance $server -Job $job -StepName 'T-SQL Stop' -Subsystem TransactSql -Command $sql -Force
                 }
             }
         }
@@ -147,16 +147,14 @@ function Start-DbaXESession {
     process {
         if ($InputObject) {
             Start-XESessions $InputObject
-        }
-        else {
+        } else {
             foreach ($instance in $SqlInstance) {
                 $xeSessions = Get-DbaXESession -SqlInstance $instance -SqlCredential $SqlCredential
 
                 # Filter xeSessions based on parameters
                 if ($Session) {
                     $xeSessions = $xeSessions | Where-Object { $_.Name -in $Session }
-                }
-                elseif ($AllSessions) {
+                } elseif ($AllSessions) {
                     $systemSessions = @('AlwaysOn_health', 'system_health', 'telemetry_xevents')
                     $xeSessions = $xeSessions | Where-Object { $_.Name -notin $systemSessions }
                 }

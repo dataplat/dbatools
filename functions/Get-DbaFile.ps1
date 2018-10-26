@@ -1,4 +1,4 @@
-﻿function Get-DbaFile {
+function Get-DbaFile {
     <#
     .SYNOPSIS
         Get-DbaFile finds files in any directory specified on a remote SQL Server
@@ -165,11 +165,11 @@
     process {
         foreach ($instance in $SqlInstance) {
 
-            $paths = @()
+            #Variable marked as unused by PSScriptAnalyzer
+            #$paths = @()
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -198,8 +198,7 @@
                         }
                     }
                 }
-            }
-            else {
+            } else {
                 foreach ($row in $datatable) {
                     [pscustomobject]@{
                         ComputerName   = $server.ComputerName
@@ -213,3 +212,4 @@
         }
     }
 }
+

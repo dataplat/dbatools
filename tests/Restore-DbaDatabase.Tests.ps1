@@ -1,4 +1,4 @@
-﻿$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 
@@ -797,22 +797,6 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         $results = Restore-DbaDatabase -SqlInstance $script:instance2 -Path $script:appveyorlabrepo\sql2008-backups\RestoreTimeStripe -DatabaseName StripeTest -DestinationFilePrefix StripeTest
         It "Should backup and restore cleanly" {
             ($results | Where-Object { $_.RestoreComplete -eq $True }).count | Should Be $Results.count
-        }
-    }
-
-    Context "Warn if trying to restore to sql2000" {
-        InModuleScope dbatools {
-            It "Should return advice"{
-                Mock Connect-SQLInstance -MockWith {
-                    return [object]@{
-                        Name      = 'SQLServerName'
-                        ComputerName   = 'SQLServerName'
-                        VersionMajor = 8
-                    } #object
-                } #mock connect-sqlserver
-                $null = Restore-DbaDatabase -SqlInstance SQLServerName -path c:\temp -WarningVariable warnvar
-                $warnvar | Should BeLike '*Due to SQL Server 2000 not returning all the backup headers we cannot restore directly*'
-            }
         }
     }
 

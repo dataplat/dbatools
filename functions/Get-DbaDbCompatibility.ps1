@@ -1,5 +1,5 @@
-﻿function Get-DbaDbCompatibility {
-<#
+function Get-DbaDbCompatibility {
+    <#
     .SYNOPSIS
         Displays the compatibility level for SQL Server databases.
 
@@ -69,23 +69,24 @@
             Write-Message -Level Warning -Message "You must specify either a SQL instance or pipe a database collection"
             continue
         }
-        
+
         if ($SqlInstance) {
             $InputObject += Get-DbaDatabase -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database
         }
-        
+
         foreach ($db in $InputObject) {
             $server = $db.Parent
             $ServerVersion = $server.VersionMajor
             Write-Message -Level Verbose -Message "SQL Server is using Version: $ServerVersion"
-            
+
             [PSCustomObject]@{
-                ComputerName = $server.ComputerName
-                InstanceName = $server.ServiceName
-                SqlInstance  = $server.DomainInstanceName
-                Database     = $db.Name
+                ComputerName  = $server.ComputerName
+                InstanceName  = $server.ServiceName
+                SqlInstance   = $server.DomainInstanceName
+                Database      = $db.Name
                 Compatibility = $db.CompatibilityLevel
             }
         }
     }
 }
+

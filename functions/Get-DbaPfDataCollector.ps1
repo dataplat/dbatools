@@ -1,6 +1,6 @@
-﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaPfDataCollector {
-<#
+    <#
     .SYNOPSIS
         Gets Performance Monitor Data Collectors.
 
@@ -105,8 +105,7 @@ function Get-DbaPfDataCollector {
                 if ($outputlocation) {
                     $dir = ($outputlocation).Replace(':', '$')
                     $remote = "\\$($set.ComputerName)\$dir"
-                }
-                else {
+                } else {
                     $remote = $null
                 }
 
@@ -138,3 +137,4 @@ function Get-DbaPfDataCollector {
         }
     }
 }
+

@@ -1,6 +1,6 @@
-﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Start-DbaPfDataCollectorSet {
-<#
+    <#
     .SYNOPSIS
         Starts Performance Monitor Data Collector Set.
 
@@ -69,7 +69,7 @@ function Start-DbaPfDataCollectorSet {
 #>
     [CmdletBinding(SupportsShouldProcess)]
     param (
-        [DbaInstance[]]$ComputerName=$env:COMPUTERNAME,
+        [DbaInstance[]]$ComputerName = $env:COMPUTERNAME,
         [PSCredential]$Credential,
         [Alias("DataCollectorSet")]
         [string[]]$CollectorSet,
@@ -117,8 +117,7 @@ function Start-DbaPfDataCollectorSet {
                 }
                 try {
                     Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $setscript -ArgumentList $setname, $wait -ErrorAction Stop
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Failure starting $setname on $computer." -ErrorRecord $_ -Target $computer -Continue
                 }
 
@@ -127,3 +126,4 @@ function Start-DbaPfDataCollectorSet {
         }
     }
 }
+

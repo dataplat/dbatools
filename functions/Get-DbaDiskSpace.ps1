@@ -1,6 +1,6 @@
-﻿#ValidationTags#CodeStyle,Messaging,FlowControl,Pipeline#
+#ValidationTags#CodeStyle,Messaging,FlowControl,Pipeline#
 function Get-DbaDiskSpace {
-<#
+    <#
     .SYNOPSIS
         Displays disk information for all local disk on a server.
 
@@ -129,23 +129,20 @@ function Get-DbaDiskSpace {
         foreach ($computer in $ComputerName) {
             if ($computer.ComputerName -notin $processed) {
                 $null = $processed.Add($computer.ComputerName)
-            }
-            else {
+            } else {
                 continue
             }
 
             try {
                 $disks = Get-DbaCmObject -ComputerName $computer.ComputerName -Query "SELECT * FROM Win32_Volume$condition" -Credential $Credential -Namespace root\CIMv2 -ErrorAction Stop -WarningAction SilentlyContinue -EnableException
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failed to connect to $computer." -EnableException $EnableException -ErrorRecord $_ -Target $computer.ComputerName -Continue
             }
 
             if ($CheckForSql) {
                 try {
                     $sqlServices = Get-DbaService -ComputerName $computer -Type Engine
-                }
-                catch {
+                } catch {
                     Write-Message -Level Warning -Message "Failed to connect to $computer to gather SQL Server instances, will not be reporting SQL Information." -ErrorRecord $_ -OverrideExceptionMessage -Target $computer.ComputerName
                 }
 
@@ -154,8 +151,7 @@ function Get-DbaDiskSpace {
                     foreach ($sqlService in $sqlServices) {
                         if ($sqlService.InstanceName -eq "MSSQLSERVER") {
                             $instanceName = $sqlService.ComputerName
-                        }
-                        else {
+                        } else {
                             $instanceName = "$($sqlService.ComputerName)\$($sqlService.InstanceName)"
                         }
                         Write-Message -Level VeryVerbose -Message "Processing instance $($instanceName)"
@@ -163,8 +159,7 @@ function Get-DbaDiskSpace {
                             $server = Connect-SqlInstance -SqlInstance $instanceName -SqlCredential $SqlCredential
                             if ($server.Version.Major -lt 9) {
                                 $sql = "SELECT DISTINCT SUBSTRING(physical_name, 1, LEN(physical_name) - CHARINDEX('\', REVERSE(physical_name)) + 1) AS SqlDisk FROM sysaltfiles"
-                            }
-                            else {
+                            } else {
                                 $sql = "SELECT DISTINCT SUBSTRING(physical_name, 1, LEN(physical_name) - CHARINDEX('\', REVERSE(physical_name)) + 1) AS SqlDisk FROM sys.master_files"
                             }
                             $results = $server.Query($sql)
@@ -175,8 +170,7 @@ function Get-DbaDiskSpace {
                                     }
                                 }
                             }
-                        }
-                        catch {
+                        } catch {
                             Write-Message -Level Warning -Message "Failed to connect to $instanceName on $computer. SQL information may not be accurate or services have been stopped." -ErrorRecord $_ -OverrideExceptionMessage -Target $computer.ComputerName
                         }
                     }
@@ -219,3 +213,4 @@ function Get-DbaDiskSpace {
         }
     }
 }
+

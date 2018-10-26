@@ -1,5 +1,5 @@
-﻿function Get-DbaOpenTransaction {
-<#
+function Get-DbaOpenTransaction {
+    <#
     .SYNOPSIS
         Displays all open transactions.
 
@@ -91,8 +91,7 @@
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -100,3 +99,4 @@
         }
     }
 }
+

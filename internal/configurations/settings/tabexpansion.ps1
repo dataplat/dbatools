@@ -1,4 +1,4 @@
-﻿# Sets the default interval and timeout for TEPP updates
+# Sets the default interval and timeout for TEPP updates
 Set-DbatoolsConfig -FullName 'TabExpansion.UpdateInterval' -Value (New-TimeSpan -Minutes 3) -Initialize -Validation timespan -Handler { [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::TeppUpdateInterval = $args[0] } -Description 'The frequency in which TEPP tries to update each cache for autocompletion'
 Set-DbatoolsConfig -FullName 'TabExpansion.UpdateTimeout' -Value (New-TimeSpan -Seconds 30) -Initialize -Validation timespan -Handler { [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::TeppUpdateTimeout = $args[0] } -Description 'After this timespan has passed without connections to a server, the TEPP updater will no longer update the cache.'
 

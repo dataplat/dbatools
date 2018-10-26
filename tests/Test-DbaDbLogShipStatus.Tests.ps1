@@ -13,3 +13,4 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         $doesntexist -match "No information available" | Should Be $true
     }
 }
+

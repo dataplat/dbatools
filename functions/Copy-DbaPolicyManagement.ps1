@@ -1,5 +1,5 @@
-﻿function Copy-DbaPolicyManagement {
-<#
+function Copy-DbaPolicyManagement {
+    <#
     .SYNOPSIS
         Migrates SQL Policy Based Management Objects, including both policies and conditions.
 
@@ -102,8 +102,7 @@
     begin {
         try {
             $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -MinimumVersion 10
-        }
-        catch {
+        } catch {
             Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Source
             return
         }
@@ -118,8 +117,7 @@
         foreach ($destinstance in $Destination) {
             try {
                 $destServer = Connect-SqlInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential -MinimumVersion 10
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
             }
             $destSqlConn = $destServer.ConnectionContext.SqlConnectionObject
@@ -144,7 +142,7 @@
                 $storePolicies = $null
             }
 
-        <#
+            <#
                         Conditions
         #>
 
@@ -153,13 +151,13 @@
                 $conditionName = $condition.Name
 
                 $copyConditionStatus = [pscustomobject]@{
-                    SourceServer = $sourceServer.Name
+                    SourceServer      = $sourceServer.Name
                     DestinationServer = $destServer.Name
-                    Name         = $conditionName
-                    Type         = "Policy Condition"
-                    Status       = $null
-                    Notes        = $null
-                    DateTime     = [DbaDateTime](Get-Date)
+                    Name              = $conditionName
+                    Type              = "Policy Condition"
+                    Status            = $null
+                    Notes             = $null
+                    DateTime          = [DbaDateTime](Get-Date)
                 }
 
                 if ($null -ne $destStore.Conditions[$conditionName]) {
@@ -170,8 +168,7 @@
                         $copyConditionStatus.Notes = "Already exists"
                         $copyConditionStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                         continue
-                    }
-                    else {
+                    } else {
                         if ($Pscmdlet.ShouldProcess($destinstance, "Attempting to drop $conditionName")) {
                             Write-Message -Level Verbose -Message "Condition '$conditionName' exists on $destinstance. Force specified. Dropping $conditionName."
 
@@ -182,8 +179,7 @@
                                     $destStore.Conditions.Refresh()
                                 }
                                 $destStore.Conditions[$conditionName].Drop()
-                            }
-                            catch {
+                            } catch {
                                 $copyConditionStatus.Status = "Failed"
                                 $copyConditionStatus.Notes = (Get-ErrorMessage -Record $_).Message
                                 $copyConditionStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
@@ -203,8 +199,7 @@
 
                         $copyConditionStatus.Status = "Successful"
                         $copyConditionStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                    }
-                    catch {
+                    } catch {
                         $copyConditionStatus.Status = "Failed"
                         $copyConditionStatus.Notes = (Get-ErrorMessage -Record $_).Message
                         $copyConditionStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
@@ -214,7 +209,7 @@
                 }
             }
 
-        <#
+            <#
                         Policies
         #>
 
@@ -223,13 +218,13 @@
                 $policyName = $policy.Name
 
                 $copyPolicyStatus = [pscustomobject]@{
-                    SourceServer = $sourceServer.Name
+                    SourceServer      = $sourceServer.Name
                     DestinationServer = $destServer.Name
-                    Name         = $policyName
-                    Type         = "Policy"
-                    Status       = $null
-                    Notes        = $null
-                    DateTime     = [DbaDateTime](Get-Date)
+                    Name              = $policyName
+                    Type              = "Policy"
+                    Status            = $null
+                    Notes             = $null
+                    DateTime          = [DbaDateTime](Get-Date)
                 }
 
                 if ($null -ne $destStore.Policies[$policyName]) {
@@ -240,16 +235,14 @@
                         $copyPolicyStatus.Notes = "Already exists"
                         $copyPolicyStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                         continue
-                    }
-                    else {
+                    } else {
                         if ($Pscmdlet.ShouldProcess($destinstance, "Attempting to drop $policyName")) {
                             Write-Message -Level Verbose -Message "Policy '$policyName' exists on $destinstance. Force specified. Dropping $policyName."
 
                             try {
                                 $destStore.Policies[$policyName].Drop()
                                 $destStore.Policies.refresh()
-                            }
-                            catch {
+                            } catch {
                                 $copyPolicyStatus.Status = "Failed"
                                 $copyPolicyStatus.Notes = (Get-ErrorMessage -Record $_).Message
                                 $copyPolicyStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
@@ -271,8 +264,7 @@
 
                         $copyPolicyStatus.Status = "Successful"
                         $copyPolicyStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                    }
-                    catch {
+                    } catch {
                         $copyPolicyStatus.Status = "Failed"
                         $copyPolicyStatus.Notes = (Get-ErrorMessage -Record $_).Message
                         $copyPolicyStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
@@ -289,3 +281,4 @@
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-DbaSqlPolicyManagement
     }
 }
+

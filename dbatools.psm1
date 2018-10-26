@@ -1,4 +1,4 @@
-﻿$start = Get-Date
+$start = Get-Date
 
 #region Import helper functions
 function Import-ModuleFile {

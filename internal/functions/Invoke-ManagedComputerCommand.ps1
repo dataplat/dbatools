@@ -63,8 +63,7 @@ function Invoke-ManagedComputerCommand {
 
     try {
         Invoke-Command2 -ScriptBlock $ScriptBlock -ArgumentList $ArgumentList -Credential $Credential -ErrorAction Stop
-    }
-    catch {
+    } catch {
         Write-Message -Level Verbose -Message "Local connection attempt to $computer failed. Connecting remotely."
         
         # For surely resolve stuff, and going by default with kerberos, this needs to match FullComputerName
@@ -73,3 +72,4 @@ function Invoke-ManagedComputerCommand {
         Invoke-Command2 -ScriptBlock $ScriptBlock -ArgumentList $ArgumentList -ComputerName $hostname -ErrorAction Stop
     }
 }
+

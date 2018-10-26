@@ -1,5 +1,5 @@
-﻿function Set-DbaDbCompatibility {
-<#
+function Set-DbaDbCompatibility {
+    <#
     .SYNOPSIS
         Sets the compatibility level for SQL Server databases.
 
@@ -17,7 +17,7 @@
 
     .PARAMETER TargetCompatibility
         The target compatibility level version. This is an int and follows Microsoft's versioning:
-    
+
         9 = SQL Server 2005
         10 = SQL Server 2008
         11 = SQL Server 2012
@@ -75,30 +75,30 @@
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string[]]$Database,
-        [ValidateSet(9,10,11,12,13,14,15)]
+        [ValidateSet(9, 10, 11, 12, 13, 14, 15)]
         [int]$TargetCompatibility,
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
         [switch]$EnableException
     )
     process {
-        
+
         if (Test-Bound -not 'SqlInstance', 'InputObject') {
             Write-Message -Level Warning -Message "You must specify either a SQL instance or pipe a database collection"
             continue
         }
-        
+
         if ($SqlInstance) {
             $InputObject += Get-DbaDatabase -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database
         }
-        
+
         foreach ($db in $InputObject) {
             $server = $db.Parent
             $ServerVersion = $server.VersionMajor
             Write-Message -Level Verbose -Message "SQL Server is using Version: $ServerVersion"
-            
+
             $ogcompat = $db.CompatibilityLevel
-            $dbversion = switch ($db.CompatibilityLevel) {
+            $dbversion = switch ($ogcompat) {
                 "Version100" { 10 } # SQL Server 2008
                 "Version110" { 11 } # SQL Server 2012
                 "Version120" { 12 } # SQL Server 2014
@@ -107,7 +107,7 @@
                 "Version150" { 15 } # SQL Server 2019
                 default { 9 } # SQL Server 2005
             }
-            
+
             if (-not $TargetCompatibility) {
                 if ($dbversion -lt $ServerVersion) {
                     If ($Pscmdlet.ShouldProcess($server.Name, "Updating $db version from $dbversion to $ServerVersion")) {
@@ -117,14 +117,12 @@
                             $db.ExecuteNonQuery($sql)
                             $db.Refresh()
                             Get-DbaDbCompatibility -SqlInstance $server -Database $db.Name
-                        }
-                        catch {
+                        } catch {
                             Stop-Function -Message "Failed to change Compatibility Level" -ErrorRecord $_ -Target $instance -Continue
                         }
                     }
                 }
-            }
-            else {
+            } else {
                 if ($Pscmdlet.ShouldProcess($server.Name, "Updating $db version from $dbversion to $TargetCompatibility")) {
                     $comp = $TargetCompatibility * 10
                     $sql = "ALTER DATABASE $db SET COMPATIBILITY_LEVEL = $comp"
@@ -132,8 +130,7 @@
                         $db.ExecuteNonQuery($sql)
                         $db.Refresh()
                         Get-DbaDbCompatibility -SqlInstance $server -Database $db.Name
-                    }
-                    catch {
+                    } catch {
                         Stop-Function -Message "Failed to change Compatibility Level" -ErrorRecord $_ -Target $instance -Continue
                     }
                 }
@@ -141,3 +138,4 @@
         }
     }
 }
+

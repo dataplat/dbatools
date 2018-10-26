@@ -1,5 +1,5 @@
-﻿function Set-DbaJobOwner {
-<#
+function Set-DbaJobOwner {
+    <#
     .SYNOPSIS
         Sets SQL Agent job owners with a desired login if jobs do not match that owner.
 
@@ -96,8 +96,7 @@
             if (($server.Logins.Name) -notcontains $Login) {
                 if ($SqlInstance.count -eq 1) {
                     throw -Message "Invalid login: $Login."
-                }
-                else {
+                } else {
                     Write-Message -Level Warning -Message "$Login is not a valid login on $instance. Moving on."
                     Continue
                 }
@@ -113,8 +112,7 @@
 
             if ($Job) {
                 $jobcollection = $server.JobServer.Jobs | Where-Object { $_.OwnerLoginName -ne $Login -and $Job -contains $_.Name }
-            }
-            else {
+            } else {
                 $jobcollection = $server.JobServer.Jobs | Where-Object { $_.OwnerLoginName -ne $Login }
             }
 
@@ -132,8 +130,7 @@
                         #Set job owner to $TargetLogin (default 'sa')
                         $j.OwnerLoginName = $Login
                         $j.Alter()
-                    }
-                    catch {
+                    } catch {
                         Stop-Function -Message "Issue setting job owner on $jobName." -Target $jobName -InnerErrorRecord $_ -Category InvalidOperation
                     }
                 }
@@ -141,3 +138,4 @@
         }
     }
 }
+

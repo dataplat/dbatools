@@ -1,5 +1,5 @@
-﻿function Stop-DbaService {
-<#
+function Stop-DbaService {
+    <#
     .SYNOPSIS
         Stops SQL Server services on a computer.
 
@@ -131,14 +131,14 @@
                 $processArray += @(Get-DbaService @serviceParams)
             }
         }
-        if($PSCmdlet.ShouldProcess("$ProcessArray","Stoping Service")){
+        if ($PSCmdlet.ShouldProcess("$ProcessArray", "Stoping Service")) {
             if ($processArray) {
                 Update-ServiceStatus -InputObject $processArray -Action 'stop' -Timeout $Timeout -EnableException $EnableException
-            }
-            else {
+            } else {
                 Stop-Function -EnableException $EnableException -Message "No SQL Server services found with current parameters." -Category ObjectNotFound
             }
         }
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Stop-DbaSqlService
     }
 }
+

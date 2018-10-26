@@ -1,6 +1,6 @@
-﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Restore-DbaDbSnapshot {
-<#
+    <#
     .SYNOPSIS
         Restores databases from snapshots
 
@@ -106,8 +106,7 @@ function Restore-DbaDbSnapshot {
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -153,8 +152,7 @@ function Restore-DbaDbSnapshot {
                 if ($Pscmdlet.ShouldProcess($server, "Remove other db snapshots for $db")) {
                     try {
                         $null = $othersnaps | Remove-DbaDatabase -Confirm:$false -EnableException
-                    }
-                    catch {
+                    } catch {
                         Stop-Function -Message "Failed to remove other snapshots for $db on $server" -ErrorRecord $_ -Continue
                     }
                 }
@@ -167,8 +165,7 @@ function Restore-DbaDbSnapshot {
                         }
 
                         $null = $server.Query("USE master; RESTORE DATABASE [$($db.Name)] FROM DATABASE_SNAPSHOT='$($snap.Name)'")
-                    }
-                    catch {
+                    } catch {
                         Stop-Function -Message "Failiure attempting to restore $db on $server" -ErrorRecord $_ -Continue
                     }
                 }
@@ -202,3 +199,4 @@ function Restore-DbaDbSnapshot {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Restore-DbaFromDatabaseSnapshot
     }
 }
+

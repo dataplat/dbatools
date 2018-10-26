@@ -1,4 +1,4 @@
-﻿function New-DbaDirectory {
+function New-DbaDirectory {
     <#
     .SYNOPSIS
         Creates new path as specified by the path variable
@@ -69,8 +69,7 @@
     foreach ($instance in $SqlInstance) {
         try {
             $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
-        }
-        catch {
+        } catch {
             Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
         }
 
@@ -84,12 +83,11 @@
 
         $sql = "EXEC master.dbo.xp_create_subdir'$path'"
         Write-Message -Level Debug -Message $sql
-        if ($Pscmdlet.ShouldProcess($path,"Creating a new path on $($server.name)")) {
+        if ($Pscmdlet.ShouldProcess($path, "Creating a new path on $($server.name)")) {
             try {
-                $query = $server.Query($sql)
+                $null = $server.Query($sql)
                 $Created = $true
-            }
-            catch {
+            } catch {
                 $Created = $false
                 Stop-Function -Message "Failure" -ErrorRecord $_
             }
@@ -102,3 +100,4 @@
         }
     }
 }
+

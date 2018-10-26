@@ -1,6 +1,6 @@
-﻿#ValidationTags#Messaging#
+#ValidationTags#Messaging#
 function Find-DbaUserObject {
-<#
+    <#
     .SYNOPSIS
         Searches SQL Server to find user-owned objects (ie. not dbo or sa) or for any object owned by a specific user specified by the Pattern parameter.
 
@@ -75,8 +75,7 @@ function Find-DbaUserObject {
 
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -90,16 +89,17 @@ function Find-DbaUserObject {
                 $endPoints = $server.Endpoints | Where-Object { $_.Owner -ne $saname }
 
                 Write-Message -Level Verbose -Message "Gather data on Agent Jobs ownership"
-                $jobs = $server.JobServer.Jobs | Where-Object { $_.OwnerLoginName -ne $saname }
-            }
-            else {
+                #Variable marked as unused by PSScriptAnalyzer
+                #$jobs = $server.JobServer.Jobs | Where-Object { $_.OwnerLoginName -ne $saname }
+            } else {
                 Write-Message -Level Verbose -Message "Gathering data on instance objects"
                 $creds = $server.Credentials | Where-Object { $_.Identity -match $pattern }
                 $proxies = $server.JobServer.ProxyAccounts | Where-Object { $_.CredentialIdentity -match $pattern }
                 $endPoints = $server.Endpoints | Where-Object { $_.Owner -match $pattern }
 
                 Write-Message -Level Verbose -Message "Gather data on Agent Jobs ownership"
-                $jobs = $server.JobServer.Jobs | Where-Object { $_.OwnerLoginName -match $pattern }
+                #Variable marked as unused by PSScriptAnalyzer
+                #$jobs = $server.JobServer.Jobs | Where-Object { $_.OwnerLoginName -match $pattern }
             }
 
             ## dbs
@@ -117,8 +117,7 @@ function Find-DbaUserObject {
                         Parent       = $db.Parent.Name
                     }
                 }
-            }
-            else {
+            } else {
                 foreach ($db in $server.Databases | Where-Object { $_.Owner -match $pattern }) {
                     [PSCustomObject]@{
                         ComputerName = $server.ComputerName
@@ -145,8 +144,7 @@ function Find-DbaUserObject {
                         Parent       = $job.Parent.Name
                     }
                 }
-            }
-            else {
+            } else {
                 foreach ($job in $server.JobServer.Jobs | Where-Object { $_.OwnerLoginName -match $pattern }) {
                     [PSCustomObject]@{
                         ComputerName = $server.ComputerName
@@ -231,8 +229,7 @@ function Find-DbaUserObject {
                         Parent       = $role.Parent.Name
                     }
                 }
-            }
-            else {
+            } else {
                 foreach ($role in $server.Roles | Where-Object { $_.Owner -match $pattern }) {
                     [PSCustomObject]@{
                         ComputerName = $server.ComputerName
@@ -254,8 +251,7 @@ function Find-DbaUserObject {
 
                 if (-not $pattern) {
                     $schemas = $db.Schemas | Where-Object { $_.IsSystemObject -eq 0 -and $_.Owner -ne "dbo" -and $sysSchemas -notcontains $_.Owner }
-                }
-                else {
+                } else {
                     $schemas = $db.Schemas | Where-Object { $_.IsSystemObject -eq 0 -and $_.Owner -match $pattern -and $sysSchemas -notcontains $_.Owner }
                 }
                 foreach ($schema in $schemas) {
@@ -273,8 +269,7 @@ function Find-DbaUserObject {
                 ## database roles
                 if (-not $pattern) {
                     $roles = $db.Roles | Where-Object { $_.IsSystemObject -eq 0 -and $_.Owner -ne "dbo" }
-                }
-                else {
+                } else {
                     $roles = $db.Roles | Where-Object { $_.IsSystemObject -eq 0 -and $_.Owner -match $pattern }
                 }
                 foreach ($role in $roles) {
@@ -292,8 +287,7 @@ function Find-DbaUserObject {
                 ## assembly
                 if (-not $pattern) {
                     $assemblies = $db.Assemblies | Where-Object { $_.IsSystemObject -eq 0 -and $_.Owner -ne "dbo" }
-                }
-                else {
+                } else {
                     $assemblies = $db.Assemblies | Where-Object { $_.IsSystemObject -eq 0 -and $_.Owner -match $pattern }
                 }
 
@@ -312,8 +306,7 @@ function Find-DbaUserObject {
                 ## synonyms
                 if (-not $pattern) {
                     $synonyms = $db.Synonyms | Where-Object { $_.IsSystemObject -eq 0 -and $_.Owner -ne "dbo" }
-                }
-                else {
+                } else {
                     $synonyms = $db.Synonyms | Where-Object { $_.IsSystemObject -eq 0 -and $_.Owner -match $pattern }
                 }
 
@@ -332,3 +325,4 @@ function Find-DbaUserObject {
         }
     }
 }
+

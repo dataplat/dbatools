@@ -18,3 +18,5 @@ function Get-SqlSaLogin {
     $sa = $server.Logins | Where-Object Id -eq 1
     return $sa.Name
 }
+
+

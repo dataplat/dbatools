@@ -4085,7 +4085,7 @@
                        ],
                        [
                            "OutFile",
-                           "Calls Export-SqlLogin and exports all logins to a T-SQL formatted file. This does not perform a copy, so no destination is required.",
+                           "Calls Export-DbaLogin and exports all logins to a T-SQL formatted file. This does not perform a copy, so no destination is required.",
                            "",
                            true,
                            "false",
@@ -7685,7 +7685,7 @@
                        ]
                    ],
         "Alias":  "",
-        "Author":  "Scott Sutherland, 2018 NetSPI | Friedrich Weinmann (@FredWeinmann‏)",
+        "Author":  "Scott Sutherland, 2018 NetSPI | Friedrich Weinmann (@FredWeinmann)",
         "Synopsis":  "Search for SQL Server Instances.",
         "Name":  "Find-DbaInstance",
         "Links":  "https://dbatools.io/Find-DbaInstance",
@@ -8296,7 +8296,7 @@
                        ]
                    ],
         "Alias":  "",
-        "Author":  "ClÃ¡udio Silva (@ClaudioESSilva)",
+        "Author":  "Claudio Silva  (@ClaudioESSilva)",
         "Synopsis":  "Returns all views that contain a specific case-insensitive string or regex pattern.",
         "Name":  "Find-DbaView",
         "Links":  "https://dbatools.io/Find-DbaView",
@@ -9738,7 +9738,7 @@
                        ]
                    ],
         "Alias":  "Get-DbaSqlBuildReference",
-        "Author":  "Simone Bizzotto (@niphold) | Friedrich Weinmann (@FredWeinmann‏)",
+        "Author":  "Simone Bizzotto (@niphold) | Friedrich Weinmann (@FredWeinmann)",
         "Synopsis":  "Returns SQL Server Build infos on a SQL instance",
         "Name":  "Get-DbaBuildReference",
         "Links":  "https://dbatools.io/Get-DbaBuildReference",
@@ -9855,7 +9855,7 @@
                        ]
                    ],
         "Alias":  "",
-        "Author":  "Friedrich Weinmann (@FredWeinmann‏)",
+        "Author":  "Friedrich Weinmann (@FredWeinmann)",
         "Synopsis":  "Retrieves windows management connections from the cache",
         "Name":  "Get-DbaCmConnection",
         "Links":  "https://dbatools.io/Get-DbaCmConnection",
@@ -9944,7 +9944,7 @@
                        ]
                    ],
         "Alias":  "",
-        "Author":  "Friedrich Weinmann (@FredWeinmann‏)",
+        "Author":  "Friedrich Weinmann (@FredWeinmann)",
         "Synopsis":  "Retrieves Wmi/Cim-Style information from computers.",
         "Name":  "Get-DbaCmObject",
         "Links":  "https://dbatools.io/Get-DbaCmObject",
@@ -10859,7 +10859,7 @@
                        ]
                    ],
         "Alias":  "",
-        "Author":  "ClÃ¡udio Silva (@ClaudioESSilva), https://claudioessilva.eu",
+        "Author":  "Claudio Silva (@ClaudioESSilva), https://claudioessilva.eu",
         "Synopsis":  "Gets database Check constraints.",
         "Name":  "Get-DbaDbCheckConstraint",
         "Links":  null,
@@ -17800,7 +17800,7 @@
                        ]
                    ],
         "Alias":  "Get-DbaConfig",
-        "Author":  "Friedrich Weinmann (@FredWeinmann‏)",
+        "Author":  "Friedrich Weinmann (@FredWeinmann)",
         "Synopsis":  "Retrieves configuration elements by name.",
         "Name":  "Get-DbatoolsConfig",
         "Links":  null,
@@ -17841,7 +17841,7 @@
                        ]
                    ],
         "Alias":  "Get-DbaConfigValue",
-        "Author":  "Friedrich Weinmann (@FredWeinmann‏)",
+        "Author":  "Friedrich Weinmann (@FredWeinmann)",
         "Synopsis":  "Returns the configuration value stored under the specified name.",
         "Name":  "Get-DbatoolsConfigValue",
         "Links":  null,
@@ -17927,7 +17927,7 @@
                        ]
                    ],
         "Alias":  "",
-        "Author":  "Friedrich Weinmann (@FredWeinmann‏)",
+        "Author":  "Friedrich Weinmann (@FredWeinmann)",
         "Synopsis":  "Returns log entries for dbatools",
         "Name":  "Get-DbatoolsLog",
         "Links":  "https://dbatools.io/Get-DbatoolsLog",
@@ -18478,7 +18478,7 @@
                        ]
                    ],
         "Alias":  "",
-        "Author":  "Drew Furgiuele | Friedrich Weinmann (@FredWeinmann‏)",
+        "Author":  "Drew Furgiuele | Friedrich Weinmann (@FredWeinmann)",
         "Synopsis":  "Gets Windows Application events associated with an instance",
         "Name":  "Get-DbaWindowsLog",
         "Links":  "https://dbatools.io/Get-DbaWindowsLog",
@@ -19083,7 +19083,7 @@
     },
     {
         "CommandName":  "Get-DbaXESessionTemplate",
-        "Description":  "Parses Extended Event XML templates. Defaults to parsing templates in the dbatools template repository (\\bin\\xetemplates\\).\n\nThe default repository contains templates from:\nMicrosoft\u0027s Templates that come with SSMS\nJes Borland\u0027s \"Everyday Extended Events\" presentation and GitHub repository (https://github.com/grrlgeek/extended-events)\nChristian Gräfe\u0027s XE Repo: https://github.com/chrgraefe/sqlscripts/blob/master/XE-Events/\nErin Stellato\u0027s Blog: https://www.sqlskills.com/blogs/erin/\n\nSome profile templates converted using:\nsp_SQLskills_ConvertTraceToExtendedEvents.sql\nJonathan M. Kehayias, SQLskills.com\nhttp://sqlskills.com/blogs/jonathan",
+        "Description":  "Parses Extended Event XML templates. Defaults to parsing templates in the dbatools template repository (\\bin\\xetemplates\\).\n\nThe default repository contains templates from:\nMicrosoft\u0027s Templates that come with SSMS\nJes Borland\u0027s \"Everyday Extended Events\" presentation and GitHub repository (https://github.com/grrlgeek/extended-events)\nChristian Grafe (@ChrGraefe) XE Repo: https://github.com/chrgraefe/sqlscripts/blob/master/XE-Events/\nErin Stellato\u0027s Blog: https://www.sqlskills.com/blogs/erin/\n\nSome profile templates converted using:\nsp_SQLskills_ConvertTraceToExtendedEvents.sql\nJonathan M. Kehayias, SQLskills.com\nhttp://sqlskills.com/blogs/jonathan",
         "Tags":  [
                      "ExtendedEvent",
                      "XE",
@@ -22538,12 +22538,42 @@
                        ]
                    ],
         "Alias":  "Invoke-DbaCmd,Invoke-DbaSqlQuery",
-        "Author":  "Friedrich Weinmann (@FredWeinmann‏)",
+        "Author":  "Friedrich Weinmann (@FredWeinmann)",
         "Synopsis":  "A command to run explicit T-SQL commands or files.",
         "Name":  "Invoke-DbaQuery",
         "Links":  "https://dbatools.io/Invoke-DbaQuery",
         "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eInvoke-DbaQuery -SqlInstance server\\instance -Query \u0027SELECT foo FROM bar\u0027\nRuns the sql query \u0027SELECT foo FROM bar\u0027 against the instance \u0027server\\instance\u0027\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaCmsRegServer -SqlInstance [SERVERNAME] -Group [GROUPNAME] | Invoke-DbaQuery -Query \u0027SELECT foo FROM bar\u0027\nRuns the sql query \u0027SELECT foo FROM bar\u0027 against all instances in the group [GROUPNAME] on the CMS [SERVERNAME]\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003e\"server1\", \"server1\\nordwind\", \"server2\" | Invoke-DbaQuery -File \"C:\\scripts\\sql\\rebuild.sql\"\nRuns the sql commands stored in rebuild.sql against the instances \"server1\", \"server1\\nordwind\" and \"server2\"\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaDatabase -SqlInstance \"server1\", \"server1\\nordwind\", \"server2\" | Invoke-DbaQuery -File \"C:\\scripts\\sql\\rebuild.sql\"\nRuns the sql commands stored in rebuild.sql against all accessible databases of the instances \"server1\", \"server1\\nordwind\" and \"server2\"",
         "Syntax":  "Invoke-DbaQuery [-SqlInstance \u003cDbaInstanceParameter[]\u003e] [-SqlCredential \u003cPSCredential\u003e] [-Database \u003cObject\u003e] [-Query] \u003cString\u003e [-QueryTimeout \u003cInt32\u003e] [-As \u003cString\u003e] [-SqlParameters \u003cIDictionary\u003e] [-AppendServerInstance] [-MessagesToOutput] [-InputObject \u003cDatabase[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]\nInvoke-DbaQuery [-SqlInstance \u003cDbaInstanceParameter[]\u003e] [-SqlCredential \u003cPSCredential\u003e] [-Database \u003cObject\u003e] [-QueryTimeout \u003cInt32\u003e] -File \u003cObject[]\u003e [-As \u003cString\u003e] [-SqlParameters \u003cIDictionary\u003e] [-AppendServerInstance] [-MessagesToOutput] [-InputObject \u003cDatabase[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]\nInvoke-DbaQuery [-SqlInstance \u003cDbaInstanceParameter[]\u003e] [-SqlCredential \u003cPSCredential\u003e] [-Database \u003cObject\u003e] [-QueryTimeout \u003cInt32\u003e] -SqlObject \u003cSqlSmoObject[]\u003e [-As \u003cString\u003e] [-SqlParameters \u003cIDictionary\u003e] [-AppendServerInstance] [-MessagesToOutput] [-InputObject \u003cDatabase[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
+    },
+    {
+        "CommandName":  "Invoke-DbatoolsFormatter",
+        "Description":  "Uses PSSA\u0027s Invoke-Formatter to format the target files and saves it without the BOM.",
+        "Tags":  "Formatting",
+        "Params":  [
+                       [
+                           "Path",
+                           "The path to the ps1 file that needs to be formatted",
+                           "",
+                           true,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ]
+                   ],
+        "Alias":  "",
+        "Author":  "Simone Bizzotto",
+        "Synopsis":  "Helps formatting function files to dbatools\u0027 standards",
+        "Name":  "Invoke-DbatoolsFormatter",
+        "Links":  "https://dbatools.io/Invoke-DbatoolsFormatter",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eInvoke-DbatoolsFormatter -Path C:\\dbatools\\functions\\Get-DbaDatabase.ps1\nReformats C:\\dbatools\\functions\\Get-DbaDatabase.ps1 to dbatools\u0027 standards",
+        "Syntax":  "Invoke-DbatoolsFormatter [-Path] \u003cObject[]\u003e [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
         "CommandName":  "Invoke-DbatoolsRenameHelper",
@@ -25441,7 +25471,7 @@
         "Author":  "Kirill Kravtsov (@nvarscar), nvarscar.wordpress.com",
         "Synopsis":  "Creates a new Microsoft.SqlServer.Dac.DacExtractOptions/DacExportOptions object depending on the chosen Type",
         "Name":  "New-DbaDacOption",
-        "Links":  "https://dbatools.io/New-DbaScriptingOption",
+        "Links":  "https://dbatools.io/New-DbaDacOption",
         "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003e$options = New-DbaDacOption -Type Dacpac -Action Export\nPS C:\\\u003e $options.ExtractAllTableData = $true\r\nPS C:\\\u003e $options.CommandTimeout = 0\r\nPS C:\\\u003e Export-DbaDacPackage -SqlInstance sql2016 -Database DB1 -Options $options\nUses DacOption object to set the CommandTimeout to 0 then extracts the dacpac for SharePoint_Config on sql2016 to C:\\temp\\SharePoint_Config.dacpac including all table data.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003e$options = New-DbaDacOption -Type Dacpac -Action Publish\nPS C:\\\u003e $options.DeployOptions.DropObjectsNotInSource = $true\r\nPS C:\\\u003e Publish-DbaDacPackage -SqlInstance sql2016 -Database DB1 -Options $options -Path c:\\temp\\db.dacpac\nUses DacOption object to set Deployment Options and publish the db.dacpac dacpac file as DB1 on sql2016",
         "Syntax":  "New-DbaDacOption [[-Type] \u003cString\u003e] [-Action] \u003cString\u003e [[-PublishXml] \u003cString\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
@@ -26541,7 +26571,7 @@
                        ]
                    ],
         "Alias":  "",
-        "Author":  "Friedrich Weinmann (@FredWeinmann‏)",
+        "Author":  "Friedrich Weinmann (@FredWeinmann)",
         "Synopsis":  "Creates a package of troubleshooting information that can be used by dbatools to help debug issues.",
         "Name":  "New-DbatoolsSupportPackage",
         "Links":  "https://dbatools.io/New-DbatoolsSupportPackage",
@@ -27716,7 +27746,7 @@
                        ]
                    ],
         "Alias":  "Register-DbaConfig",
-        "Author":  "Friedrich Weinmann (@FredWeinmann‏)",
+        "Author":  "Friedrich Weinmann (@FredWeinmann)",
         "Synopsis":  "Registers an existing configuration object in registry.",
         "Name":  "Register-DbatoolsConfig",
         "Links":  null,
@@ -28490,7 +28520,7 @@
                        ]
                    ],
         "Alias":  "",
-        "Author":  "Friedrich Weinmann (@FredWeinmann‏)",
+        "Author":  "Friedrich Weinmann (@FredWeinmann)",
         "Synopsis":  "Removes connection objects from the connection cache used for remote computer management.",
         "Name":  "Remove-DbaCmConnection",
         "Links":  "https://dbatools.io/Remove-DbaCmConnection",
@@ -32814,7 +32844,7 @@
                        ]
                    ],
         "Alias":  "",
-        "Author":  "Friedrich Weinmann (@FredWeinmann‏)",
+        "Author":  "Friedrich Weinmann (@FredWeinmann)",
         "Synopsis":  "Configures a connection object for use in remote computer management.",
         "Name":  "Set-DbaCmConnection",
         "Links":  "https://dbatools.io/set-DbaCmConnection",
@@ -36955,7 +36985,7 @@
                        ]
                    ],
         "Alias":  "Test-DbaSqlBuild",
-        "Author":  "Simone Bizzotto (@niphold) | Friedrich Weinmann (@FredWeinmann‏)",
+        "Author":  "Simone Bizzotto (@niphold) | Friedrich Weinmann (@FredWeinmann)",
         "Synopsis":  "Returns SQL Server Build \"compliance\" level on a build",
         "Name":  "Test-DbaBuild",
         "Links":  "https://dbatools.io/Test-DbaBuild",
@@ -37012,7 +37042,7 @@
                        ]
                    ],
         "Alias":  "",
-        "Author":  "Friedrich Weinmann (@FredWeinmann‏)",
+        "Author":  "Friedrich Weinmann (@FredWeinmann)",
         "Synopsis":  "Tests over which paths a computer can be managed.",
         "Name":  "Test-DbaCmConnection",
         "Links":  "https://dbatools.io/Test-DbaCmConnection",

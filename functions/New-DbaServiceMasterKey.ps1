@@ -1,6 +1,6 @@
-﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function New-DbaServiceMasterKey {
-<#
+    <#
     .SYNOPSIS
         Creates a new service master key.
 
@@ -56,9 +56,10 @@ function New-DbaServiceMasterKey {
 
     process {
         foreach ($instance in $SqlInstance) {
-            if($PSCmdlet.ShouldProcess("$instance","Creating New MasterKey")){
+            if ($PSCmdlet.ShouldProcess("$instance", "Creating New MasterKey")) {
                 New-DbaDbMasterKey -SqlInstance $instance -Database master -Password $password -Credential $Credential
             }
         }
     }
 }
+

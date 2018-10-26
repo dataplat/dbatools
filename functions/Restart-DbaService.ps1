@@ -1,5 +1,5 @@
-﻿function Restart-DbaService {
-<#
+function Restart-DbaService {
+    <#
     .SYNOPSIS
         Restarts SQL Server services on a computer.
 
@@ -130,7 +130,7 @@
             }
         }
         if ($processArray) {
-            if($PSCmdlet.ShouldProcess("$ProcessArray","Restarting Service")){
+            if ($PSCmdlet.ShouldProcess("$ProcessArray", "Restarting Service")) {
                 $services = Update-ServiceStatus -InputObject $processArray -Action 'stop' -Timeout $Timeout -EnableException $EnableException
                 foreach ($service in ($services | Where-Object { $_.Status -eq 'Failed'})) {
                     $service
@@ -140,11 +140,11 @@
                     Update-ServiceStatus -InputObject $services -Action 'restart' -Timeout $Timeout -EnableException $EnableException
                 }
             }
-        }
-        else {
+        } else {
             Stop-Function -EnableException $EnableException -Message "No SQL Server services found with current parameters."
         }
 
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Restart-DbaSqlService
     }
 }
+

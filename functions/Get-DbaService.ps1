@@ -1,5 +1,5 @@
-﻿function Get-DbaService {
-<#
+function Get-DbaService {
+    <#
     .SYNOPSIS
         Gets the SQL Server related services on a computer.
 
@@ -129,20 +129,17 @@
                         $searchClause += "SQLServiceType = $id"
                     }
                 }
-            }
-            else {
+            } else {
                 $searchClause = "SQLServiceType > 0"
             }
-        }
-        elseif ($PsCmdlet.ParameterSetName -match 'ServiceName') {
+        } elseif ($PsCmdlet.ParameterSetName -match 'ServiceName') {
             if ($ServiceName) {
                 $searchClause = ""
                 foreach ($sn in $ServiceName) {
                     if ($searchClause) { $searchClause += ' OR ' }
                     $searchClause += "ServiceName = '$sn'"
                 }
-            }
-            else {
+            } else {
                 $searchClause = "SQLServiceType > 0"
             }
         }
@@ -168,8 +165,7 @@
                                     Service   = $service
                                 }
                             }
-                        }
-                        catch {
+                        } catch {
                             Write-Message -Level Verbose -EnableException $EnableException.ToBool() -Message "Failed to acquire services from namespace $($namespace.Name)." -Target $Computer -ErrorRecord $_
                         }
                     }
@@ -186,17 +182,14 @@
 
                             if ($service.ServiceName -in ("MSSQLSERVER", "SQLSERVERAGENT", "ReportServer", "MSSQLServerOLAPService")) {
                                 $instance = "MSSQLSERVER"
-                            }
-                            else {
+                            } else {
                                 if ($service.ServiceType -in @("Agent", "Engine", "SSRS", "SSAS")) {
                                     if ($service.ServiceName.indexof('$') -ge 0) {
                                         $instance = $service.ServiceName.split('$')[1]
-                                    }
-                                    else {
+                                    } else {
                                         $instance = "Unknown"
                                     }
-                                }
-                                else {
+                                } else {
                                     $instance = ""
                                 }
                             }
@@ -233,40 +226,35 @@
                                 }
 
                                 if ($AdvancedProperties) {
-                                    $namespaceValue = $service.CimClass.ToString().ToUpper().Replace(":SQLSERVICE", "").Replace("ROOT/MICROSOFT/SQLSERVER/","")
+                                    $namespaceValue = $service.CimClass.ToString().ToUpper().Replace(":SQLSERVICE", "").Replace("ROOT/MICROSOFT/SQLSERVER/", "")
                                     $serviceAdvancedProperties = Get-DbaCmObject -ComputerName $Computer -Namespace "root\Microsoft\SQLServer\$($namespaceValue)" -Query "SELECT * FROM SqlServiceAdvancedProperty WHERE ServiceName = '$($service.ServiceName)'"
 
                                     Add-Member -Force -InputObject $service -MemberType NoteProperty -Name Version -Value ($serviceAdvancedProperties | Where-Object PropertyName -eq 'VERSION' ).PropertyStrValue
                                     Add-Member -Force -InputObject $service -MemberType NoteProperty -Name SPLevel -Value ($serviceAdvancedProperties | Where-Object PropertyName -eq 'SPLEVEL' ).PropertyNumValue
                                     Add-Member -Force -InputObject $service -MemberType NoteProperty -Name SkuName -Value ($serviceAdvancedProperties | Where-Object PropertyName -eq 'SKUNAME' ).PropertyStrValue
 
-                                    $ClusterServiceTypeList = @(1,2,5,7)
+                                    $ClusterServiceTypeList = @(1, 2, 5, 7)
                                     if ($ClusterServiceTypeList -contains $service.SQLServiceType) {
                                         Add-Member -Force -InputObject $service -MemberType NoteProperty -Name Clustered -Value ($serviceAdvancedProperties | Where-Object PropertyName -eq 'CLUSTERED' ).PropertyNumValue
                                         Add-Member -Force -InputObject $service -MemberType NoteProperty -Name VSName -Value ($serviceAdvancedProperties | Where-Object PropertyName -eq 'VSNAME' ).PropertyStrValue
-                                    }
-                                    else {
+                                    } else {
                                         Add-Member -Force -InputObject $service -MemberType NoteProperty -Name Clustered -Value ''
                                         Add-Member -Force -InputObject $service -MemberType NoteProperty -Name VSName -Value ''
                                     }
                                     $defaults = "ComputerName", "ServiceName", "ServiceType", "InstanceName", "DisplayName", "StartName", "State", "StartMode", "Version", "SPLevel", "SkuName", "Clustered", "VSName"
-                                }
-                                else {
+                                } else {
                                     $defaults = "ComputerName", "ServiceName", "ServiceType", "InstanceName", "DisplayName", "StartName", "State", "StartMode"
                                 }
                                 Select-DefaultView -InputObject $service -Property $defaults -TypeName DbaSqlService
                             }
                         }
-                    }
-                    else {
+                    } else {
                         Stop-Function -EnableException $EnableException -Message "No Sql Services found on $Computer" -Continue
                     }
-                }
-                else {
+                } else {
                     Stop-Function -EnableException $EnableException -Message "No ComputerManagement Namespace on $Computer. Please note that this function is available from SQL 2005 up." -Continue
                 }
-            }
-            else {
+            } else {
                 Stop-Function -EnableException $EnableException -Message "Failed to connect to $Computer" -Continue
             }
         }
@@ -275,3 +263,4 @@
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-DbaSqlService
     }
 }
+

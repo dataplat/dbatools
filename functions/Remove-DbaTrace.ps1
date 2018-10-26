@@ -1,6 +1,6 @@
-﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Remove-DbaTrace {
-<#
+    <#
     .SYNOPSIS
         Stops and closes the specified trace and deletes its definition from the server.
 
@@ -93,14 +93,13 @@ function Remove-DbaTrace {
                         $server.Query($removesql)
                     }
                     [pscustomobject]@{
-                        ComputerName      = $server.ComputerName
-                        InstanceName      = $server.ServiceName
-                        SqlInstance       = $server.DomainInstanceName
-                        Id                = $traceid
-                        Status            = "Stopped, closed and deleted"
+                        ComputerName = $server.ComputerName
+                        InstanceName = $server.ServiceName
+                        SqlInstance  = $server.DomainInstanceName
+                        Id           = $traceid
+                        Status       = "Stopped, closed and deleted"
                     }
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Failure" -ErrorRecord $_ -Target $server -Continue
                     return
                 }
@@ -108,3 +107,4 @@ function Remove-DbaTrace {
         }
     }
 }
+

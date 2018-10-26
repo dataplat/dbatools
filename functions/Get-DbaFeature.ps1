@@ -1,6 +1,6 @@
-﻿#ValidationTags#CodeStyle,Messaging,FlowControl,Pipeline#
+#ValidationTags#CodeStyle,Messaging,FlowControl,Pipeline#
 function Get-DbaFeature {
-<#
+    <#
     .SYNOPSIS
         Runs the SQL Server feature discovery report (setup.exe /Action=RunDiscovery)
 
@@ -109,8 +109,7 @@ function Get-DbaFeature {
                         Configured   = $result.Configured
                     }
                 }
-            }
-            catch {
+            } catch {
                 Stop-Function -Continue -ErrorRecord $_ -Message "Failure"
             }
         }
@@ -119,3 +118,4 @@ function Get-DbaFeature {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-DbaSqlFeature
     }
 }
+

@@ -126,8 +126,7 @@ function New-DbaLogShippingPrimaryDatabase {
     # Try connecting to the instance
     try {
         $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
-    }
-    catch {
+    } catch {
         Stop-Function -Message "Could not connect to Sql Server instance" -Target $SqlInstance -Continue
     }
 
@@ -135,8 +134,7 @@ function New-DbaLogShippingPrimaryDatabase {
     if ([bool]([uri]$BackupShare).IsUnc -and $BackupShare -notmatch '^\\(?:\\[^<>:`"/\\|?*]+)+$') {
         Stop-Function -Message "The backup share path $BackupShare should be formatted in the form \\server\share." -Target $SqlInstance
         return
-    }
-    else {
+    } else {
         if (-not ((Test-Path $BackupShare -PathType Container -IsValid) -and ((Get-Item $BackupShare).PSProvider.Name -eq 'FileSystem'))) {
             Stop-Function -Message "The backup share path $BackupShare is not valid or can't be reached." -Target $SqlInstance
             return
@@ -147,12 +145,10 @@ function New-DbaLogShippingPrimaryDatabase {
     if ($CompressBackup -eq $true) {
         Write-Message -Message "Setting backup compression to 1." -Level Verbose
         $BackupCompression = 1
-    }
-    elseif ($CompressBackup -eq $false) {
+    } elseif ($CompressBackup -eq $false) {
         Write-Message -Message "Setting backup compression to 0." -Level Verbose
         $BackupCompression = 0
-    }
-    elseif (-not $CompressBackup) {
+    } elseif (-not $CompressBackup) {
         $defaultCompression = (Get-DbaSpConfigure -SqlInstance $SqlInstance -ConfigName DefaultBackupCompression).ConfiguredValue
         Write-Message -Message "Setting backup compression to default value $defaultCompression." -Level Verbose
         $BackupCompression = $defaultCompression
@@ -175,8 +171,7 @@ function New-DbaLogShippingPrimaryDatabase {
     if ($MonitorServerSecurityMode -eq 0 -and -not $MonitorCredential) {
         Stop-Function -Message "The MonitorServerCredential cannot be empty when using SQL Server authentication." -Target $SqlInstance
         return
-    }
-    elseif ($MonitorServerSecurityMode -eq 0 -and $MonitorCredential) {
+    } elseif ($MonitorServerSecurityMode -eq 0 -and $MonitorCredential) {
         # Get the username and password from the credential
         $MonitorLogin = $MonitorCredential.UserName
         $MonitorPassword = $MonitorCredential.GetNetworkCredential().Password
@@ -198,8 +193,7 @@ function New-DbaLogShippingPrimaryDatabase {
     if ($ThresholdAlertEnabled) {
         [int]$ThresholdAlertEnabled = 1
         Write-Message -Message "Setting Threshold alert to $ThresholdAlertEnabled." -Level Verbose
-    }
-    else {
+    } else {
         [int]$ThresholdAlertEnabled = 0
         Write-Message -Message "Setting Threshold alert to $ThresholdAlertEnabled." -Level Verbose
     }
@@ -239,8 +233,7 @@ function New-DbaLogShippingPrimaryDatabase {
 
     if ($server.Version.Major -gt 9) {
         $Query += ",@overwrite = 1;"
-    }
-    else {
+    } else {
         $Query += ";"
     }
 
@@ -250,8 +243,7 @@ function New-DbaLogShippingPrimaryDatabase {
             Write-Message -Message "Configuring logshipping for primary database $Database." -Level Verbose
             Write-Message -Message "Executing query:`n$Query" -Level Verbose
             $server.Query($Query)
-        }
-        catch {
+        } catch {
             Write-Message -Message "$($_.Exception.InnerException.InnerException.InnerException.InnerException.Message)" -Level Warning
             Stop-Function -Message "Error executing the query.`n$($_.Exception.Message)`n$($Query)" -ErrorRecord $_ -Target $SqlInstance -Continue
         }
@@ -260,3 +252,4 @@ function New-DbaLogShippingPrimaryDatabase {
     Write-Message -Message "Finished adding the primary database $Database to log shipping." -Level Verbose
 
 }
+

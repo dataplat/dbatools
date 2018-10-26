@@ -1,4 +1,4 @@
-﻿function New-DbaConnectionString {
+function New-DbaConnectionString {
     <#
     .SYNOPSIS
         Builds or extracts a SQL Server Connection String
@@ -196,11 +196,10 @@
 
     process {
         foreach ($instance in $sqlinstance) {
-            if ($Pscmdlet.ShouldProcess($instance,"Making a new Connection String")) {
+            if ($Pscmdlet.ShouldProcess($instance, "Making a new Connection String")) {
                 if ($instance.GetType() -eq [Microsoft.SqlServer.Management.Smo.Server]) {
                     return $instance.ConnectionContext.ConnectionString
-                }
-                else {
+                } else {
                     $guid = [System.Guid]::NewGuid()
                     $server = New-Object Microsoft.SqlServer.Management.Smo.Server $guid
 
@@ -208,8 +207,7 @@
                         $connstring = $server.ConnectionContext.ConnectionString
                         $server.ConnectionContext.ConnectionString = "$connstring;$appendconnectionstring"
                         $server.ConnectionContext.ConnectionString
-                    }
-                    else {
+                    } else {
 
                         $server.ConnectionContext.ApplicationName = $clientname
 
@@ -245,14 +243,15 @@
 
                             if ($username -like "*\*") {
                                 $username = $username.Split("\")[1]
-                                $authtype = "Windows Authentication with Credential"
+                                #Variable marked as unused by PSScriptAnalyzer
+                                #$authtype = "Windows Authentication with Credential"
                                 $server.ConnectionContext.LoginSecure = $true
                                 $server.ConnectionContext.ConnectAsUser = $true
                                 $server.ConnectionContext.ConnectAsUserName = $username
                                 $server.ConnectionContext.ConnectAsUserPassword = ($Credential).GetNetworkCredential().Password
-                            }
-                            else {
-                                $authtype = "SQL Authentication"
+                            } else {
+                                #Variable marked as unused by PSScriptAnalyzer
+                                #$authtype = "SQL Authentication"
                                 $server.ConnectionContext.LoginSecure = $false
                                 $server.ConnectionContext.set_Login($username)
                                 $server.ConnectionContext.set_SecurePassword($Credential.Password)
@@ -269,3 +268,4 @@
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias New-DbaSqlConnectionString
     }
 }
+
