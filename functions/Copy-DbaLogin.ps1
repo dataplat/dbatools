@@ -39,7 +39,7 @@ function Copy-DbaLogin {
         If this switch is enabled, the name of the sa account will be synced between Source and Destination
 
     .PARAMETER OutFile
-        Calls Export-SqlLogin and exports all logins to a T-SQL formatted file. This does not perform a copy, so no destination is required.
+        Calls Export-DbaLogin and exports all logins to a T-SQL formatted file. This does not perform a copy, so no destination is required.
 
     .PARAMETER InputObject
         Takes the parameters required from a Login object that has been piped into the command
