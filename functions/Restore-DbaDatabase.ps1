@@ -415,14 +415,6 @@ function Restore-DbaDatabase {
             return
         }
         if ($RestoreInstance.VersionMajor -eq 8 -and $true -ne $TrustDbBackupHistory) {
-            $sql2000txt = @'
-Due to SQL Server 2000 not returning all the backup headers we cannot restore directly. As this is an issues with the SQL engine all we can offer is the following workaround
-This will use a SQL Server instance > 2000 to read the headers, and then pass them in to Restore-DbaDatabase as a BacukupHistory object:
-
-$BackupHistory = Get-DbaBackupInformation -SqlInstance sql2005 -Path \\backups\sql2000\ProdDb
-$BackupHistory | Restore-Dbadatabase -SqlInstance sql2000 -TrustDbBackupHistory
-'@
-            #Stop-Function -Message "$sql2000txt" -Target $RestoreInstance
             $bh = Get-DbaBackupInformation -SqlInstance $RestoreInstance -Path $Path
             $bound = $PSBoundParameters
             $bound['TrustDbBackupHistory'] = $true
