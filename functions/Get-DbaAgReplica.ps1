@@ -1,6 +1,6 @@
-﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaAgReplica {
-<#
+    <#
     .SYNOPSIS
         Returns the availability group replica object found on the server.
 
@@ -18,10 +18,10 @@ function Get-DbaAgReplica {
 
     .PARAMETER Replica
         Return only specific replicas.
-    
+
     .PARAMETER InputObject
         Enables piped input from Get-DbaAvailabilityGroup.
-    
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -68,22 +68,24 @@ function Get-DbaAgReplica {
         if ($SqlInstance) {
             $InputObject += Get-DbaAvailabilityGroup -SqlInstance $SqlInstance -SqlCredential $SqlCredential -AvailabilityGroup $AvailabilityGroup
         }
-        
+
         if ($Replica) {
             $InputObject = $InputObject | Where-Object { $_.AvailabilityReplicas.Name -contains $Replica }
         }
-        
+
         $defaults = 'ComputerName', 'InstanceName', 'SqlInstance', 'AvailabilityGroup', 'Name', 'Role', 'ConnectionState', 'RollupSynchronizationState', 'AvailabilityMode', 'BackupPriority', 'EndpointUrl', 'SessionTimeout', 'FailoverMode', 'ReadonlyRoutingList'
-        
+
         foreach ($agreplica in $InputObject.AvailabilityReplicas) {
-            $sever = $agreplica.Parent.Parent
+            #Variable marked as unused by PSScriptAnalyzer
+            #$sever = $agreplica.Parent.Parent
             Add-Member -Force -InputObject $agreplica -MemberType NoteProperty -Name ComputerName -value $agreplica.Parent.ComputerName
             Add-Member -Force -InputObject $agreplica -MemberType NoteProperty -Name InstanceName -value $agreplica.Parent.InstanceName
             Add-Member -Force -InputObject $agreplica -MemberType NoteProperty -Name SqlInstance -value $agreplica.Parent.SqlInstance
             Add-Member -Force -InputObject $agreplica -MemberType NoteProperty -Name AvailabilityGroup -value $agreplica.Parent.Name
             Add-Member -Force -InputObject $agreplica -MemberType NoteProperty -Name Replica -value $agreplica.Name # backwards compat
-            
+
             Select-DefaultView -InputObject $agreplica -Property $defaults
         }
     }
 }
+

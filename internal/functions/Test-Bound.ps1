@@ -1,4 +1,4 @@
-﻿function Test-Bound {
+function Test-Bound {
     <#
         .SYNOPSIS
             Helperfunction that tests, whether a parameter was bound.
@@ -56,19 +56,18 @@
 
     if ($And) {
         $test = $true
-    }
-    else {
+    } else {
         $test = $false
     }
 
     foreach ($name in $ParameterName) {
         if ($And) {
             if (-not $BoundParameters.ContainsKey($name)) { $test = $false }
-        }
-        else {
+        } else {
             if ($BoundParameters.ContainsKey($name)) { $test = $true }
         }
     }
 
     return ((-not $Not) -eq $test)
 }
+

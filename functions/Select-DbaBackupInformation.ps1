@@ -1,5 +1,5 @@
-﻿function Select-DbaBackupInformation {
-<#
+function Select-DbaBackupInformation {
+    <#
     .SYNOPSIS
         Select a subset of backups from a dbatools backup history object
 
@@ -100,8 +100,7 @@
                 if ($null -ne $DroppedDatabases) {
                     Write-Message -Message "$($DroppedDatabases.join(',')) filtered out as not in ContinuePoints" -Level Verbose
                 }
-            }
-            else {
+            } else {
                 $DatabaseName = ($ContinuePoints | Select-Object -Property Database).Database
             }
         }
@@ -118,7 +117,7 @@
         }
         if ((Test-Bound -ParameterName DatabaseName) -and '' -ne $DatabaseName) {
             Write-Message -Message "Filtering by DatabaseName" -Level Verbose
-          #  $InternalHistory = $InternalHistory | Where-Object {$_.Database -in $DatabaseName}
+            #  $InternalHistory = $InternalHistory | Where-Object {$_.Database -in $DatabaseName}
         }
 
         if (Test-Bound -ParameterName ServerName) {
@@ -127,7 +126,7 @@
         }
 
         $Databases = ($InternalHistory | Select-Object -Property Database -unique).Database
-        if ($continue -and $Databases.count -gt 1 -and $DatabaseName.count -gt 1){
+        if ($continue -and $Databases.count -gt 1 -and $DatabaseName.count -gt 1) {
             Stop-Function -Message "Cannot perform continuing restores on multiple databases with renames, exiting"
             return
         }
@@ -139,12 +138,11 @@
             # $databasefilter = the name of the database the backups are being restore to/against
             if ($null -ne $DatabaseName) {
                 $databasefilter = $DatabaseName
-            }
-            else {
+            } else {
                 $databasefilter = $database
             }
 
-            if ($true -eq $Continue){
+            if ($true -eq $Continue) {
                 #Test if Database is in a continuing state and the LSN to continue from:
                 if ($Databasefilter -in ($ContinuePoints | Select-Object -Property Database).Database) {
                     Write-Message -Message "$Database in ContinuePoints, will attmept to continue" -Level verbose
@@ -153,13 +151,11 @@
                     if (($LastRestoreType | Where-Object {$_.Database -eq $Databasefilter}).RestoreType -eq 'log') {
                         #log Backup last restored, so diffs cannot be used
                         $IgnoreDiffs = $true
-                    }
-                    else {
+                    } else {
                         #Last restore was a diff or full, so can restore diffs or logs
                         $IgnoreDiffs = $false
                     }
-                }
-                else {
+                } else {
                     Write-Message -Message "$Database not in ContinuePoints, will attmept normal restore" -Level Warning
                 }
             }
@@ -167,33 +163,30 @@
             $dbhistory = @()
             $DatabaseHistory = $internalhistory | Where-Object {$_.Database -eq $Database}
             #For a standard restore, work out the full backup
-            if ($false -eq $IgnoreFull){
+            if ($false -eq $IgnoreFull) {
                 $Full = $DatabaseHistory | Where-Object {$_.Type -in ('Full', 'Database') -and $_.Start -le $RestoreTime} | Sort-Object -Property LastLsn -Descending | Select-Object -First 1
                 if ($full.Fullname) {
                     $full.Fullname = ($DatabaseHistory | Where-Object { $_.Type -in ('Full', 'Database') -and $_.BackupSetID -eq $Full.BackupSetID }).Fullname
-                }
-                else {
+                } else {
                     Stop-Function -Message "Fullname property not found. This could mean that a full backup could not be found or the command must be re-run with the -Continue switch."
                     return
                 }
                 $dbHistory += $full
-            }
-            elseif ($true -eq $IgnoreFull -and $false -eq $IgnoreDiffs) {
+            } elseif ($true -eq $IgnoreFull -and $false -eq $IgnoreDiffs) {
                 #Fake the Full backup
                 Write-Message -Message "Continuing, so setting a fake full backup from the existing database"
                 $Full = [PsCustomObject]@{
-                        CheckpointLSN = ($ContinuePoints | Where-Object {$_.Database -eq $DatabaseFilter}).differential_base_lsn
-                    }
+                    CheckpointLSN = ($ContinuePoints | Where-Object {$_.Database -eq $DatabaseFilter}).differential_base_lsn
+                }
             }
 
-            if ($false -eq $IgnoreDiffs){
+            if ($false -eq $IgnoreDiffs) {
                 Write-Message -Message "processing diffs" -Level Verbose
                 $Diff = $DatabaseHistory | Where-Object {$_.Type -in ('Differential', 'Database Differential') -and $_.Start -le $RestoreTime -and $_.DatabaseBackupLSN -eq $Full.CheckpointLSN} | Sort-Object -Property LastLsn -Descending | Select-Object -First 1
                 if ($null -ne $Diff) {
                     if ($Diff.FullName) {
                         $Diff.FullName = ($DatabaseHistory | Where-Object { $_.Type -in ('Differential', 'Database Differential') -and $_.BackupSetID -eq $diff.BackupSetID }).Fullname
-                    }
-                    else {
+                    } else {
                         Stop-Function -Message "Fullname property not found. This could mean that a full backup could not be found or the command must be re-run with the -Continue switch."
                         return
                     }
@@ -206,31 +199,30 @@
                 #We have history so use this
                 [bigint]$LogBaseLsn = ($dbHistory | Sort-Object -Property LastLsn -Descending | select-object -First 1).lastLsn.ToString()
                 $FirstRecoveryForkID = $Full.FirstRecoveryForkID
-            }
-            else {
+                Write-Message -Level Verbose -Message "Found LogBaseLsn: $LogBaseLsn and FirstRecoveryForkID: $FirstRecoveryForkID"
+            } else {
                 Write-Message -Message "No full or diff, so attempting to pull from Continue informmation" -Level Verbose
                 try {
                     [bigint]$LogBaseLsn = ($ContinuePoints | Where-Object {$_.Database -eq $DatabaseFilter}).redo_start_lsn
                     $FirstRecoveryForkID = ($ContinuePoints | Where-Object {$_.Database -eq $DatabaseFilter}).FirstRecoveryForkID
-                }
-                catch{
+                    Write-Message -Level Verbose -Message "Found LogBaseLsn: $LogBaseLsn and FirstRecoveryForkID: $FirstRecoveryForkID from Continue information"
+                } catch {
                     Stop-Function -Message "Failed to find LSN or RecoveryForkID for $DatabaseFilter" -Category InvalidOperation -Target $DatabaseFilter
                 }
             }
 
-            if ($true -eq $IgnoreFull -and $true -eq $IgnoreDiffs){
+            if ($true -eq $IgnoreFull -and $true -eq $IgnoreDiffs) {
                 #Set a Fake starting LSN
             }
 
-            if ($false -eq $IgnoreLogs){
+            if ($false -eq $IgnoreLogs) {
                 $FilteredLogs = $DatabaseHistory | Where-Object {$_.Type -in ('Log', 'Transaction Log') -and $_.Start -le $RestoreTime -and $_.LastLSN.ToString() -ge $LogBaseLsn -and $_.FirstLSN -ne $_.LastLSN}  | Sort-Object -Property LastLsn, FirstLsn
                 $GroupedLogs = $FilteredLogs | Group-Object -Property LastLSN, FirstLSN
                 ForEach ($Group in $GroupedLogs) {
                     $Log = $DatabaseHistory | Where-Object { $_.BackupSetID -eq $Group.group[0].BackupSetID } | select-object -First 1
                     if ($Log.FullName) {
                         $Log.FullName = ($DatabaseHistory | Where-Object { $_.BackupSetID -eq $Group.group[0].BackupSetID }).Fullname
-                    }
-                    else {
+                    } else {
                         Stop-Function -Message "Fullname property not found. This could mean that a full backup could not be found or the command must be re-run with the -Continue switch."
                         return
                     }
@@ -244,3 +236,4 @@
         }
     }
 }
+

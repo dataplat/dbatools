@@ -1,5 +1,5 @@
-﻿function Copy-DbaEndpoint {
-<#
+function Copy-DbaEndpoint {
+    <#
     .SYNOPSIS
         Copy-DbaEndpoint migrates server endpoints from one SQL Server to another.
 
@@ -89,8 +89,7 @@
     begin {
         try {
             $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -MinimumVersion 9
-        }
-        catch {
+        } catch {
             Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Source
             return
         }
@@ -101,8 +100,7 @@
         foreach ($destinstance in $Destination) {
             try {
                 $destServer = Connect-SqlInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential -MinimumVersion 9
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
             }
             $destEndpoints = $destServer.Endpoints
@@ -111,13 +109,13 @@
                 $endpointName = $currentEndpoint.Name
 
                 $copyEndpointStatus = [pscustomobject]@{
-                    SourceServer = $sourceServer.Name
+                    SourceServer      = $sourceServer.Name
                     DestinationServer = $destServer.Name
-                    Name         = $endpointName
-                    Type         = "Endpoint"
-                    Status       = $null
-                    Notes        = $null
-                    DateTime     = [DbaDateTime](Get-Date)
+                    Name              = $endpointName
+                    Type              = "Endpoint"
+                    Status            = $null
+                    Notes             = $null
+                    DateTime          = [DbaDateTime](Get-Date)
                 }
 
                 if ($Endpoint -and $Endpoint -notcontains $endpointName -or $ExcludeEndpoint -contains $endpointName) {
@@ -132,14 +130,12 @@
 
                         Write-Message -Level Verbose -Message "Server endpoint $endpointName exists at destination. Use -Force to drop and migrate."
                         continue
-                    }
-                    else {
+                    } else {
                         if ($Pscmdlet.ShouldProcess($destinstance, "Dropping server endpoint $endpointName and recreating.")) {
                             try {
                                 Write-Message -Level Verbose -Message "Dropping server endpoint $endpointName."
                                 $destServer.Endpoints[$endpointName].Drop()
-                            }
-                            catch {
+                            } catch {
                                 $copyEndpointStatus.Status = "Failed"
                                 $copyEndpointStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
@@ -156,8 +152,7 @@
 
                         $copyEndpointStatus.Status = "Successful"
                         $copyEndpointStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                    }
-                    catch {
+                    } catch {
                         $copyEndpointStatus.Status = "Failed"
                         $copyEndpointStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
@@ -171,3 +166,4 @@
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-SqlEndpoint
     }
 }
+

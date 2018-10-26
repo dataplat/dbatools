@@ -1,5 +1,5 @@
-﻿function Invoke-DbaDbClone {
-<#
+function Invoke-DbaDbClone {
+    <#
     .SYNOPSIS
         Clones a database schema and statistics
 
@@ -146,8 +146,7 @@
 
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 12
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -199,8 +198,7 @@
                 try {
                     Write-Message -Level Verbose -Message "Updating statistics"
                     $null = $database.Query($sqlStats)
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Failure" -ErrorRecord $_ -Target $server -Continue
                 }
             }
@@ -211,15 +209,13 @@
                 Write-Message -Level Verbose -Message "Cloning $db from $database"
                 if ($server.Databases[$db]) {
                     Stop-Function -Message "Destination clone database $db already exists" -Target $instance -Continue
-                }
-                else {
+                } else {
                     try {
                         $sql = "DBCC CLONEDATABASE('$dbName','$db') $sqlWith"
                         Write-Message -Level Debug -Message "Sql Statement: $sql"
                         $null = $database.Query($sql)
                         Get-DbaDatabase -SqlInstance $server -Database $db
-                    }
-                    catch {
+                    } catch {
                         Stop-Function -Message "Failure" -ErrorRecord $_ -Target $server -Continue
                     }
                 }
@@ -230,3 +226,4 @@
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Invoke-DbaDatabaseClone
     }
 }
+

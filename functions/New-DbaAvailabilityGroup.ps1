@@ -1,6 +1,6 @@
-﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function New-DbaAvailabilityGroup {
-<#
+    <#
     .SYNOPSIS
         Automates the creation of availaibility groups.
 
@@ -226,33 +226,32 @@ function New-DbaAvailabilityGroup {
         $stepCounter = 0
         $totalSteps = 9
         $activity = "Adding new availability group $name"
-        
+
         if ($Force -and $Secondary -and (-not $NetworkShare -and -not $UseLastBackups) -and ($SeedingMode -ne 'Automatic')) {
             Stop-Function -Message "NetworkShare or UseLastBackups is required when Force is used"
             return
         }
-        
+
         try {
             $server = Connect-SqlInstance -SqlInstance $Primary -SqlCredential $PrimarySqlCredential
-        }
-        catch {
+        } catch {
             Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Primary
             return
         }
-        
+
         if ($SeedingMode -eq 'Automatic' -and $server.VersionMajor -lt 13) {
             Stop-Function -Message "Automatic seeding mode only supported in SQL Server 2016 and above" -Target $Primary
             return
         }
-        
+
         Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Checking perquisites"
-        
+
         # Don't reuse $server here, it fails
         if (Get-DbaAvailabilityGroup -SqlInstance $Primary -SqlCredential $PrimarySqlCredential -AvailabilityGroup $Name) {
             Stop-Function -Message "Availability group named $Name already exists on $Primary"
             return
         }
-        
+
         if ($Certificate) {
             $cert = Get-DbaDbCertificate -SqlInstance $Primary -SqlCredential $PrimarySqlCredential -Certificate $Certificate
             if (-not $cert) {
@@ -260,19 +259,19 @@ function New-DbaAvailabilityGroup {
                 return
             }
         }
-        
+
         if (($NetworkShare)) {
             if (-not (Test-DbaPath -SqlInstance $Primary -SqlCredential $PrimarySqlCredential -Path $NetworkShare)) {
                 Stop-Function -Continue -Message "Cannot access $NetworkShare from $Primary"
                 return
             }
         }
-        
+
         if ($Database -and -not $UseLastBackups -and -not $NetworkShare -and $Secondary -and $SeedingMode -ne 'Automatic') {
             Stop-Function -Continue -Message "You must specify a NetworkShare when adding databases to a manually seeded availability group"
             return
         }
-        
+
         if ($server.HostPlatform -eq "Linux") {
             # New to SQL Server 2017 (14.x) is the introduction of a cluster type for AGs. For Linux, there are two valid values: External and None.
             if ($ClusterType -notin "External", "None") {
@@ -285,7 +284,7 @@ function New-DbaAvailabilityGroup {
                 return
             }
         }
-        
+
         if ((Test-Bound -ParameterName ClusterType) -and $server.VersionMajor -lt 14) {
             Stop-Function -Message "ClusterType only supported in SQL Server 2017 and above"
             return
@@ -296,13 +295,12 @@ function New-DbaAvailabilityGroup {
             foreach ($computer in $Secondary) {
                 try {
                     $secondaries += Connect-SqlInstance -SqlInstance $computer -SqlCredential $SecondarySqlCredential
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Primary
                     return
                 }
             }
-            
+
             if ($SeedingMode -eq "Automatic") {
                 $primarypath = Get-DbaDefaultPath -SqlInstance $server
                 foreach ($second in $secondaries) {
@@ -316,36 +314,35 @@ function New-DbaAvailabilityGroup {
                 }
             }
         }
-        
+
         # database checks
         if ($Database) {
             $dbs += Get-DbaDatabase -SqlInstance $Primary -SqlCredential $PrimarySqlCredential -Database $Database
         }
-        
+
         foreach ($primarydb in $dbs) {
             if ($primarydb.MirroringStatus -ne "None") {
                 Stop-Function -Message "Cannot setup mirroring on database ($dbname) due to its current mirroring state: $($primarydb.MirroringStatus)"
                 return
             }
-            
+
             if ($primarydb.Status -ne "Normal") {
                 Stop-Function -Message "Cannot setup mirroring on database ($dbname) due to its current state: $($primarydb.Status)"
                 return
             }
-            
+
             if ($primarydb.RecoveryModel -ne "Full") {
                 if ((Test-Bound -ParameterName UseLastBackups)) {
                     Stop-Function -Message "$dbName not set to full recovery. UseLastBackups cannot be used."
                     return
-                }
-                else {
+                } else {
                     Set-DbaDbRecoveryModel -SqlInstance $Primary -SqlCredential $PrimarySqlCredential -Database $primarydb.Name -RecoveryModel Full
                 }
             }
         }
-        
+
         Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Creating availability group named $Name on $Primary"
-        
+
         # Start work
         if ($Pscmdlet.ShouldProcess($Primary, "Setting up availability group named $Name and adding primary replica")) {
             try {
@@ -355,16 +352,16 @@ function New-DbaAvailabilityGroup {
                 $ag.HealthCheckTimeout = $HealthCheckTimeout
                 $ag.BasicAvailabilityGroup = $Basic
                 $ag.DatabaseHealthTrigger = $DatabaseHealthTrigger
-                
+
                 if ($server.VersionMajor -ge 14) {
                     $ag.ClusterType = $ClusterType
                 }
-                
+
                 if ($PassThru) {
                     $defaults = 'LocalReplicaRole', 'Name as AvailabilityGroup', 'PrimaryReplicaServerName as PrimaryReplica', 'AutomatedBackupPreference', 'AvailabilityReplicas', 'AvailabilityDatabases', 'AvailabilityGroupListeners'
                     return (Select-DefaultView -InputObject $ag -Property $defaults)
                 }
-                
+
                 $replicaparams = @{
                     InputObject                   = $ag
                     AvailabilityMode              = $AvailabilityMode
@@ -377,10 +374,9 @@ function New-DbaAvailabilityGroup {
                     ReadonlyRoutingConnectionUrl  = $ReadonlyRoutingConnectionUrl
                     Certificate                   = $Certificate
                 }
-                
+
                 $null = Add-DbaAgReplica @replicaparams -EnableException -SqlInstance $server
-            }
-            catch {
+            } catch {
                 $msg = $_.Exception.InnerException.InnerException.Message
                 if (-not $msg) {
                     $msg = $_
@@ -389,11 +385,11 @@ function New-DbaAvailabilityGroup {
                 return
             }
         }
-        
+
         # Add cluster permissions
         if ($ClusterType -eq 'Wsfc') {
             Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Adding endpoint connect permissions"
-            
+
             foreach ($second in $secondaries) {
                 if ($Pscmdlet.ShouldProcess($Primary, "Adding cluster permissions for availability group named $Name")) {
                     Write-Message -Level Verbose -Message "WSFC Cluster requires granting [NT AUTHORITY\SYSTEM] a few things. Setting now."
@@ -405,34 +401,31 @@ function New-DbaAvailabilityGroup {
                         foreach ($second in $secondaries) {
                             $null = $second.Query($sql)
                         }
-                    }
-                    catch {
+                    } catch {
                         Stop-Function -Message "Failure adding cluster service account permissions" -ErrorRecord $_
                     }
                 }
             }
         }
-        
+
         # Add replicas
         Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Adding secondary replicas"
-        
+
         foreach ($second in $secondaries) {
             if ($Pscmdlet.ShouldProcess($second.Name, "Adding replica to availability group named $Name")) {
                 try {
                     # Add replicas
                     $null = Add-DbaAgReplica @replicaparams -EnableException -SqlInstance $second
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Failure" -ErrorRecord $_ -Target $second -Continue
                 }
             }
         }
-        
+
         try {
             # something is up with .net create(), force a stop
             Invoke-Create -Object $ag
-        }
-        catch {
+        } catch {
             $msg = $_.Exception.InnerException.InnerException.Message
             if (-not $msg) {
                 $msg = $_
@@ -440,35 +433,34 @@ function New-DbaAvailabilityGroup {
             Stop-Function -Message $msg -ErrorRecord $_ -Target $Primary
             return
         }
-        
+
         # Add databases
         Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Adding databases"
-        
+
         $allbackups = @{ }
-        
+
         foreach ($db in $Database) {
             if ($SeedingMode -eq "Automatic") {
                 if ($Pscmdlet.ShouldProcess($Primary, "Backing up $db to NUL")) {
                     $null = $primarydb | Backup-DbaDatabase -BackupFileName NUL
                 }
             }
-            
+
             if ($Pscmdlet.ShouldProcess($Primary, "Adding $db to $Name")) {
                 $null = Add-DbaAgDatabase -SqlInstance $Primary -SqlCredential $PrimarySqlCredential -AvailabilityGroup $Name -Database $db
             }
-            
+
             foreach ($second in $secondaries) {
                 if ($Pscmdlet.ShouldProcess($second.Name, "Adding $db to $Name")) {
                     $primarydb = Get-DbaDatabase -SqlInstance $Primary -SqlCredential $PrimarySqlCredential -Database $db
-                    $secondb = Get-DbaDatabase -SqlInstance $second -Database $db
-                    
+                    $seconddb = Get-DbaDatabase -SqlInstance $second -Database $db
+
                     if ((-not $seconddb -or $Force) -and $SeedingMode -ne 'Automatic') {
                         try {
                             if (-not $allbackups[$db]) {
                                 if ($UseLastBackups) {
                                     $allbackups[$db] = Get-DbaBackupHistory -SqlInstance $primarydb.Parent -Database $primarydb.Name -IncludeCopyOnly -Last -EnableException
-                                }
-                                else {
+                                } else {
                                     $fullbackup = $primarydb | Backup-DbaDatabase -BackupDirectory $NetworkShare -Type Full -EnableException
                                     $logbackup = $primarydb | Backup-DbaDatabase -BackupDirectory $NetworkShare -Type Log -EnableException
                                     $allbackups[$db] = $fullbackup, $logbackup
@@ -479,8 +471,7 @@ function New-DbaAvailabilityGroup {
                                 # keep going to ensure output is shown even if dbs aren't added well.
                                 $null = $allbackups[$db] | Restore-DbaDatabase -SqlInstance $second -WithReplace -NoRecovery -TrustDbBackupHistory -EnableException
                             }
-                        }
-                        catch {
+                        } catch {
                             Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
                         }
                     }
@@ -488,16 +479,15 @@ function New-DbaAvailabilityGroup {
                 }
             }
         }
-        
+
         # Add listener
         Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Adding endpoint connect permissions"
-        
+
         if ($IPAddress) {
             if ($Pscmdlet.ShouldProcess($Primary, "Adding static IP listener for $Name to the Primary replica")) {
                 $null = Add-DbaAgListener -InputObject $ag -IPAddress $IPAddress -SubnetMask $SubnetMask -Port $Port -Dhcp:$Dhcp
             }
-        }
-        elseif ($Dhcp) {
+        } elseif ($Dhcp) {
             if ($Pscmdlet.ShouldProcess($Primary, "Adding DHCP listener for $Name to all replicas")) {
                 $null = Add-DbaAgListener -InputObject $ag -Port $Port -Dhcp:$Dhcp
                 foreach ($second in $secondaries) {
@@ -506,25 +496,24 @@ function New-DbaAvailabilityGroup {
                 }
             }
         }
-        
+
         Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Joining availability groups"
-        
+
         foreach ($second in $secondaries) {
             if ($Pscmdlet.ShouldProcess("Joining $($second.Name) to $Name")) {
                 try {
                     # join replicas to ag
                     Join-DbaAvailabilityGroup -SqlInstance $second -InputObject $ag -EnableException
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Failure" -ErrorRecord $_ -Target $second -Continue
                 }
             }
         }
-        
+
         # Grant permissions, but first, get all necessary service accounts
         $primaryserviceaccount = $server.ServiceAccount.Trim()
         $saname = ([DbaInstanceParameter]($server.DomainInstanceName)).ComputerName
-        
+
         if ($primaryserviceaccount) {
             if ($primaryserviceaccount.StartsWith("NT ")) {
                 $primaryserviceaccount = "$saname`$"
@@ -536,14 +525,14 @@ function New-DbaAvailabilityGroup {
                 $primaryserviceaccount = "$saname`$"
             }
         }
-        
+
         $serviceaccounts = @($primaryserviceaccount)
-        
+
         foreach ($second in $secondaries) {
             # If service account is empty, add the computer account instead
             $secondaryserviceaccount = $second.ServiceAccount.Trim()
             $saname = ([DbaInstanceParameter]($second.DomainInstanceName)).ComputerName
-            
+
             if ($secondaryserviceaccount) {
                 if ($secondaryserviceaccount.StartsWith("NT ")) {
                     $secondaryserviceaccount = "$saname`$"
@@ -555,16 +544,16 @@ function New-DbaAvailabilityGroup {
                     $secondaryserviceaccount = "$saname`$"
                 }
             }
-            
+
             if (-not $secondaryserviceaccount) {
                 $secondaryserviceaccount = "$saname`$"
             }
-            
+
             $serviceaccounts += $secondaryserviceaccount
         }
-        
+
         $serviceaccounts = $serviceaccounts | Select-Object -Unique
-        
+
         foreach ($second in $secondaries) {
             if ($Pscmdlet.ShouldProcess($second.Name, "Granting Connect permissions to service accounts: $serviceaccounts")) {
                 $null = Grant-DbaAgPermission -SqlInstance $server, $second -Login $serviceaccounts -Type Endpoint -Permission Connect
@@ -575,8 +564,9 @@ function New-DbaAvailabilityGroup {
                 }
             }
         }
-        
+
         # Get results
         Get-DbaAvailabilityGroup -SqlInstance $Primary -SqlCredential $PrimarySqlCredential -AvailabilityGroup $Name
     }
 }
+

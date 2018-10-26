@@ -1,6 +1,6 @@
-﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaCmsRegServer {
-<#
+    <#
     .SYNOPSIS
         Gets list of SQL Server objects stored in SQL Server Central Management Server (CMS).
 
@@ -113,12 +113,10 @@ function Get-DbaCmsRegServer {
                 if ($groupservers) {
                     $servers += $groupservers.GetDescendantRegisteredServers()
                 }
-            }
-            else {
+            } else {
                 try {
                     $serverstore = Get-DbaCmsRegServerStore -SqlInstance $instance -SqlCredential $SqlCredential -EnableException
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Cannot access Central Management Server '$instance'." -ErrorRecord $_ -Continue
                 }
                 $servers += ($serverstore.DatabaseEngineServerGroup.GetDescendantRegisteredServers())
@@ -151,8 +149,7 @@ function Get-DbaCmsRegServer {
             $groupname = Get-RegServerGroupReverseParse $server
             if ($groupname -eq $server.Name) {
                 $groupname = $null
-            }
-            else {
+            } else {
                 $groupname = ($groupname).Split("\")
                 $groupname = $groupname[0 .. ($groupname.Count - 2)]
                 $groupname = ($groupname -join "\")
@@ -172,15 +169,13 @@ function Get-DbaCmsRegServer {
                     $server.ComputerName = $lookup.ComputerName
                     $server.FQDN = $lookup.FQDN
                     $server.IPAddress = $lookup.IPAddress
-                }
-                catch {
+                } catch {
                     try {
                         $lookup = Resolve-DbaNetworkName $server.ServerName
                         $server.ComputerName = $lookup.ComputerName
                         $server.FQDN = $lookup.FQDN
                         $server.IPAddress = $lookup.IPAddress
-                    }
-                    catch { }
+                    } catch { }
                 }
             }
             Add-Member -Force -InputObject $server -MemberType ScriptMethod -Name ToString -Value { $this.ServerName }
@@ -204,3 +199,4 @@ function Get-DbaCmsRegServer {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Get-DbaRegisteredServer
     }
 }
+

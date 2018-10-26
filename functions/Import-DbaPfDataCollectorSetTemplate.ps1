@@ -1,6 +1,6 @@
-﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Import-DbaPfDataCollectorSetTemplate {
-<#
+    <#
     .SYNOPSIS
         Imports a new Performance Monitor Data Collector Set Template either from the dbatools repository or a file you specify.
 
@@ -152,7 +152,8 @@ function Import-DbaPfDataCollectorSetTemplate {
         [switch]$EnableException
     )
     begin {
-        $metadata = Import-Clixml "$script:PSModuleRoot\bin\perfmontemplates\collectorsets.xml"
+        #Variable marked as unused by PSScriptAnalyzer
+        #$metadata = Import-Clixml "$script:PSModuleRoot\bin\perfmontemplates\collectorsets.xml"
 
         $setscript = {
             $setname = $args[0]; $templatexml = $args[1]
@@ -183,8 +184,7 @@ function Import-DbaPfDataCollectorSetTemplate {
                 $templatepath = "$script:PSModuleRoot\bin\perfmontemplates\collectorsets\$file.xml"
                 if ((Test-Path $templatepath)) {
                     $Path += $templatepath
-                }
-                else {
+                } else {
                     Stop-Function -Message "Invalid template ($templatepath does not exist)" -Continue
                 }
             }
@@ -195,7 +195,7 @@ function Import-DbaPfDataCollectorSetTemplate {
                     Set-Variable -Name DisplayName -Value (Get-ChildItem -Path $file).BaseName
                 }
 
-                $Name = $DisplayNameUnresolved = $DisplayName
+                $Name = $DisplayName
 
                 Write-Message -Level Verbose -Message "Processing $file for $computer"
 
@@ -232,8 +232,7 @@ function Import-DbaPfDataCollectorSetTemplate {
                     $xml = [xml](Get-Content $tempfile -ErrorAction Stop)
                     $plainxml = Get-Content $tempfile -ErrorAction Stop -Raw
                     $file = $tempfile
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Failure" -ErrorRecord $_ -Target $file -Continue
                 }
                 if (-not $xml.DataCollectorSet) {
@@ -245,8 +244,7 @@ function Import-DbaPfDataCollectorSetTemplate {
 
                     if ($instance) {
                         $instances = $instance
-                    }
-                    else {
+                    } else {
                         $instances = Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $instancescript -ErrorAction Stop -Raw
                     }
 
@@ -254,8 +252,7 @@ function Import-DbaPfDataCollectorSetTemplate {
                         try {
                             $results = Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $setscript -ArgumentList $Name, $plainxml -ErrorAction Stop
                             Write-Message -Level Verbose -Message " $results"
-                        }
-                        catch {
+                        } catch {
                             Stop-Function -Message "Failure starting $setname on $computer" -ErrorRecord $_ -Target $computer -Continue
                         }
                     }
@@ -265,8 +262,7 @@ function Import-DbaPfDataCollectorSetTemplate {
                             Invoke-Command -Scriptblock $scriptblock
                             $output = Get-DbaPfDataCollectorSet -ComputerName $computer -CollectorSet $Name
                         }
-                    }
-                    else {
+                    } else {
                         if ($Pscmdlet.ShouldProcess($computer, "Importing collector set $Name")) {
                             Invoke-Command -Scriptblock $scriptblock
                             $output = Get-DbaPfDataCollectorSet -ComputerName $computer -CollectorSet $Name
@@ -299,11 +295,11 @@ function Import-DbaPfDataCollectorSetTemplate {
 
                     Remove-Item $tempfile -ErrorAction SilentlyContinue
                     $output
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Failure" -ErrorRecord $_ -Target $store -Continue
                 }
             }
         }
     }
 }
+

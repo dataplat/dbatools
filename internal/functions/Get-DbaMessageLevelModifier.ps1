@@ -1,5 +1,5 @@
-﻿function Get-DbaMessageLevelModifier {
-<#
+function Get-DbaMessageLevelModifier {
+    <#
     .SYNOPSIS
         Returns all registered message level modifiers with similar name.
     
@@ -30,3 +30,4 @@
     
     ([Sqlcollaborative.Dbatools.Message.MessageHost]::MessageLevelModifiers.Values) | Where-Object Name -Like $Name
 }
+

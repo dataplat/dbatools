@@ -1,5 +1,5 @@
-﻿function Get-DbaWaitingTask {
-<#
+function Get-DbaWaitingTask {
+    <#
     .SYNOPSIS
         Displays waiting task.
 
@@ -102,8 +102,7 @@
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -135,3 +134,4 @@
         }
     }
 }
+

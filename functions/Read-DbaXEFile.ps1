@@ -1,6 +1,6 @@
-﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Read-DbaXEFile {
-<#
+    <#
     .SYNOPSIS
         Read XEvents from a *.xel or *.xem file.
 
@@ -66,13 +66,13 @@ function Read-DbaXEFile {
 
             if ($file -is [System.String]) {
                 $currentfile = $file
-                $manualadd = $true
-            }
-            elseif ($file -is [System.IO.FileInfo]) {
+                #Variable marked as unused by PSScriptAnalyzer
+                #$manualadd = $true
+            } elseif ($file -is [System.IO.FileInfo]) {
                 $currentfile = $file.FullName
-                $manualadd = $true
-            }
-            else {
+                #Variable marked as unused by PSScriptAnalyzer
+                #$manualadd = $true
+            } else {
                 if ($file -isnot [Microsoft.SqlServer.Management.XEvent.Session]) {
                     Stop-Function -Message "Unsupported file type."
                     return
@@ -87,8 +87,7 @@ function Read-DbaXEFile {
 
                 if ($instance.IsLocalHost) {
                     $currentfile = $file.TargetFile
-                }
-                else {
+                } else {
                     $currentfile = $file.RemoteTargetFile
                 }
             }
@@ -98,7 +97,7 @@ function Read-DbaXEFile {
                 $currentfile = $currentfile.Replace('.xem', '*.xem')
 
                 if ($currentfile -notmatch "xel" -and $currentfile -notmatch "xem") {
-                    $currentfile =  "$currentfile*.xel"
+                    $currentfile = "$currentfile*.xel"
                 }
             }
 
@@ -147,3 +146,4 @@ function Read-DbaXEFile {
         }
     }
 }
+

@@ -1,6 +1,6 @@
-﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Export-DbaXECsv {
-<#
+    <#
     .SYNOPSIS
         Exports Extended Events to a CSV file.
 
@@ -52,8 +52,7 @@ function Export-DbaXECsv {
     begin {
         try {
             Add-Type -Path "$script:PSModuleRoot\bin\XESmartTarget\XESmartTarget.Core.dll" -ErrorAction Stop
-        }
-        catch {
+        } catch {
             Stop-Function -Message "Could not load XESmartTarget.Core.dll" -ErrorRecord $_ -Target "XESmartTarget"
             return
         }
@@ -69,8 +68,7 @@ function Export-DbaXECsv {
 
                 if ($instance.IsLocalHost) {
                     $xelpath = $InputObject.TargetFile
-                }
-                else {
+                } else {
                     $xelpath = $InputObject.RemoteTargetFile
                 }
 
@@ -80,8 +78,7 @@ function Export-DbaXECsv {
 
                 try {
                     Get-ChildItem -Path $xelpath -ErrorAction Stop
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Failure" -ErrorRecord $_
                 }
             }
@@ -99,15 +96,12 @@ function Export-DbaXECsv {
         foreach ($file in $InputObject) {
             if ($file -is [System.String]) {
                 $currentfile = $file
-            }
-            elseif ($file -is [System.IO.FileInfo]) {
+            } elseif ($file -is [System.IO.FileInfo]) {
                 $currentfile = $file.FullName
-            }
-            elseif ($file -is [Microsoft.SqlServer.Management.XEvent.Session]) {
+            } elseif ($file -is [Microsoft.SqlServer.Management.XEvent.Session]) {
                 # it was taken care of above
                 continue
-            }
-            else {
+            } else {
                 Stop-Function -Message "Unsupported file type."
                 return
             }
@@ -125,18 +119,15 @@ function Export-DbaXECsv {
                     New-Item $Path -ItemType directory | Out-Null
                     $outDir = $Path
                     $outFile = [IO.Path]::GetFileNameWithoutExtension($currentfile) + ".csv"
-                }
-                else {
+                } else {
                     $outDir = [IO.Path]::GetDirectoryName($Path)
                     $outFile = [IO.Path]::GetFileName($Path)
                 }
-            }
-            else {
+            } else {
                 if ((Get-Item $Path) -is [System.IO.DirectoryInfo]) {
                     $outDir = $Path
                     $outFile = [IO.Path]::GetFileNameWithoutExtension($currentfile) + ".csv"
-                }
-                else {
+                } else {
                     $outDir = [IO.Path]::GetDirectoryName($Path)
                     $outFile = [IO.Path]::GetFileName($Path)
                 }
@@ -152,14 +143,13 @@ function Export-DbaXECsv {
 
                 if ($file.Length -eq 0) {
                     Remove-Item -Path $adapter.OutputFile
-                }
-                else {
+                } else {
                     $file
                 }
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -ErrorRecord $_ -Target "XESmartTarget" -Continue
             }
         }
     }
 }
+

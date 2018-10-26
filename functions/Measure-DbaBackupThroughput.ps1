@@ -1,5 +1,5 @@
-﻿function Measure-DbaBackupThroughput {
-<#
+function Measure-DbaBackupThroughput {
+    <#
     .SYNOPSIS
         Determines how quickly SQL Server is backing up databases to media.
 
@@ -112,15 +112,13 @@
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             if ($Database) {
                 $DatabaseCollection = $server.Databases | Where-Object Name -in $Database
-            }
-            else {
+            } else {
                 $DatabaseCollection = $server.Databases
             }
 
@@ -135,8 +133,7 @@
                 # Splatting didn't work
                 if ($since) {
                     $histories = Get-DbaBackupHistory -SqlInstance $server -Database $db.name -Since $since -DeviceType $DeviceType -Type $Type
-                }
-                else {
+                } else {
                     $histories = Get-DbaBackupHistory -SqlInstance $server -Database $db.name -Last:$last -DeviceType $DeviceType -Type $Type
                 }
 
@@ -145,8 +142,7 @@
 
                     if ($timetaken.TotalMilliseconds -eq 0) {
                         $throughput = $history.TotalSize.Megabyte
-                    }
-                    else {
+                    } else {
                         $throughput = $history.TotalSize.Megabyte / $timetaken.TotalSeconds
                     }
 
@@ -183,3 +179,4 @@
         }
     }
 }
+

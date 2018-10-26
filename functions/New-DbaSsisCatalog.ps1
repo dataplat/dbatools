@@ -1,4 +1,4 @@
-﻿function New-DbaSsisCatalog {
+function New-DbaSsisCatalog {
     <#
     .SYNOPSIS
         Enables the SSIS Catalog on a SQL Server 2012+
@@ -70,8 +70,7 @@
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 10
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -93,16 +92,14 @@
 
             try {
                 $ssis = New-Object Microsoft.SqlServer.Management.IntegrationServices.IntegrationServices $server
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Can't load server" -Target $instance -ErrorRecord $_
                 return
             }
 
             if ($ssis.Catalogs[$SsisCatalog]) {
                 Stop-Function -Message "SSIS Catalog already exists" -Continue -Target $ssis.Catalogs[$SsisCatalog]
-            }
-            else {
+            } else {
                 if ($Pscmdlet.ShouldProcess($server, "Creating SSIS catalog: $SsisCatalog")) {
                     try {
                         $ssisdb = New-Object Microsoft.SqlServer.Management.IntegrationServices.Catalog ($ssis, $SsisCatalog, $(([System.Runtime.InteropServices.marshal]::PtrToStringAuto([System.Runtime.InteropServices.marshal]::SecureStringToBSTR($password)))))
@@ -115,8 +112,7 @@
                             SsisCatalog  = $SsisCatalog
                             Created      = $true
                         }
-                    }
-                    catch {
+                    } catch {
                         Stop-Function -Message "Failed to create SSIS Catalog: $_" -Target $_ -Continue
                     }
                 }
@@ -124,3 +120,4 @@
         }
     }
 }
+

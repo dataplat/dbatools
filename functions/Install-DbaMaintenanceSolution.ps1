@@ -1,6 +1,6 @@
-﻿#ValidationTags#CodeStyle,Messaging,FlowControl,Pipeline#
+#ValidationTags#CodeStyle,Messaging,FlowControl,Pipeline#
 function Install-DbaMaintenanceSolution {
-<#
+    <#
     .SYNOPSIS
         Download and Install SQL Server Maintenance Solution created by Ola Hallengren (https://ola.hallengren.com)
 
@@ -104,6 +104,7 @@ function Install-DbaMaintenanceSolution {
 
 #>
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "High")]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseSingularNouns", "", Justification = "Internal functions are ignored")]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
         [Alias('ServerInstance', 'SqlServer')]
@@ -158,15 +159,13 @@ function Install-DbaMaintenanceSolution {
             if ($LocalFile) {
                 Unblock-File $LocalFile -ErrorAction SilentlyContinue
                 Expand-Archive -Path $LocalFile -DestinationPath $zipfolder -Force
-            }
-            else {
+            } else {
                 Write-Message -Level Verbose -Message "Downloading and unzipping Ola's maintenance solution zip file."
 
                 try {
                     try {
                         Invoke-TlsWebRequest $url -OutFile $zipfile -ErrorAction Stop -UseBasicParsing
-                    }
-                    catch {
+                    } catch {
                         # Try with default proxy and usersettings
                         (New-Object System.Net.WebClient).Proxy.Credentials = [System.Net.CredentialCache]::DefaultNetworkCredentials
                         Invoke-TlsWebRequest $url -OutFile $zipfile -ErrorAction Stop -UseBasicParsing
@@ -178,8 +177,7 @@ function Install-DbaMaintenanceSolution {
                     Expand-Archive -Path $zipfile -DestinationPath $zipfolder -Force
 
                     Remove-Item -Path $zipfile
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Couldn't download Ola's maintenance solution. Download and install manually from https://github.com/olahallengren/sql-server-maintenance-solution/archive/master.zip." -ErrorRecord $_
                     return
                 }
@@ -188,8 +186,7 @@ function Install-DbaMaintenanceSolution {
             ## Copy it into local area
             if (Test-Path -Path $LocalCachedCopy -PathType Container) {
                 Remove-Item -Path (Join-Path $LocalCachedCopy '*') -Recurse -ErrorAction SilentlyContinue
-            }
-            else {
+            } else {
                 $null = New-Item -Path $LocalCachedCopy -ItemType Container
             }
             Copy-Item -Path $zipfolder -Destination $LocalCachedCopy -Recurse
@@ -254,8 +251,7 @@ function Install-DbaMaintenanceSolution {
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -NonPooled
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -361,14 +357,12 @@ function Install-DbaMaintenanceSolution {
                             foreach ($query in ($sql -Split "\nGO\b")) {
                                 $null = $db.Query($query)
                             }
-                        }
-                        catch {
+                        } catch {
                             Stop-Function -Message "Could not execute $shortFileName in $Database on $instance." -ErrorRecord $_ -Target $db -Continue
                         }
                     }
                 }
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Could not execute $shortFileName in $Database on $instance." -ErrorRecord $_ -Target $db -Continue
             }
         }
@@ -378,8 +372,7 @@ function Install-DbaMaintenanceSolution {
         # Only here due to need for non-pooled connection in this command
         try {
             $server.ConnectionContext.Disconnect()
-        }
-        catch {
+        } catch {
         }
 
         Write-Message -Level Output -Message "Installation complete."

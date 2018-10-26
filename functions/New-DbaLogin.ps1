@@ -1,5 +1,5 @@
-﻿function New-DbaLogin {
-<#
+function New-DbaLogin {
+    <#
     .SYNOPSIS
         Creates a new SQL Server login
 
@@ -107,7 +107,7 @@
         PS C:\> New-DbaLogin -SqlInstance sql1 -Login domain\user
 
         Creates a new Windows Authentication backed login on sql1. The login will be part of the public server role.
-        
+
 #>
     [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = "Password", ConfirmImpact = "Low")]
     param (
@@ -197,15 +197,13 @@
                 Stop-Function -Message "Parameter -Login is not supported when processing objects from -InputObject. If you need to rename the logins, please use -LoginRenameHashtable." -Category InvalidArgument -EnableException $EnableException
                 Return
             }
-        }
-        else {
+        } else {
             $loginCollection += $Login
         }
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -239,8 +237,7 @@
 
                         try {
                             $hashedPass = $sourceServer.ConnectionContext.ExecuteScalar($sql)
-                        }
-                        catch {
+                        } catch {
                             $hashedPassDt = $sourceServer.Databases['master'].ExecuteWithResults($sql)
                             $hashedPass = $hashedPassDt.Tables[0].Rows[0].Item(0)
                         }
@@ -264,8 +261,7 @@
                             $currentCredential = $loginItem.EnumCredentials()
                         }
                     }
-                }
-                else {
+                } else {
                     $loginName = $loginItem
                     $currentSid = $currentDefaultDatabase = $currentLanguage = $currentPasswordExpiration = $currentAsymmetricKey = $currentCertificate = $currentCredential = $currentDisabled = $currentPasswordPolicyEnforced = $null
 
@@ -323,13 +319,11 @@
                         if ($Pscmdlet.ShouldProcess($existingLogin, "Dropping existing login $loginName on $instance because -Force was used")) {
                             try {
                                 $existingLogin.Drop()
-                            }
-                            catch {
+                            } catch {
                                 Stop-Function -Message "Could not remove existing login $loginName on $instance, skipping." -Target $loginName -Continue
                             }
                         }
-                    }
-                    else {
+                    } else {
                         Stop-Function -Message "Login $loginName already exists on $instance and -Force was not specified" -Target $loginName -Continue
                     }
                 }
@@ -365,8 +359,7 @@
                             if ($currentPasswordExpiration) {
                                 $withParams += ", CHECK_EXPIRATION = ON"
                                 $newLogin.PasswordExpirationEnabled = $true
-                            }
-                            else {
+                            } else {
                                 $withParams += ", CHECK_EXPIRATION = OFF"
                                 $newLogin.PasswordExpirationEnabled = $false
                             }
@@ -375,8 +368,7 @@
                             if ($currentPasswordPolicyEnforced) {
                                 $withParams += ", CHECK_POLICY = ON"
                                 $newLogin.PasswordPolicyEnforced = $true
-                            }
-                            else {
+                            } else {
                                 $withParams += ", CHECK_POLICY = OFF"
                                 $newLogin.PasswordPolicyEnforced = $false
                             }
@@ -384,15 +376,12 @@
                             #Generate hashed password if necessary
                             if ($Password) {
                                 $currentHashedPassword = Get-PasswordHash $Password $server.versionMajor
-                            }
-                            elseif ($HashedPassword) {
+                            } elseif ($HashedPassword) {
                                 $currentHashedPassword = $HashedPassword
                             }
-                        }
-                        elseif ($loginType -eq 'AsymmetricKey') {
+                        } elseif ($loginType -eq 'AsymmetricKey') {
                             $newLogin.AsymmetricKey = $currentAsymmetricKey
-                        }
-                        elseif ($loginType -eq 'Certificate') {
+                        } elseif ($loginType -eq 'Certificate') {
                             $newLogin.Certificate = $currentCertificate
                         }
 
@@ -408,8 +397,7 @@
                             if ($loginType -in ("WindowsUser", "WindowsGroup", "AsymmetricKey", "Certificate")) {
                                 if ($withParams) { $withParams = " WITH " + $withParams.TrimStart(',') }
                                 $newLogin.Create()
-                            }
-                            elseif ($loginType -eq "SqlLogin") {
+                            } elseif ($loginType -eq "SqlLogin") {
                                 $newLogin.Create($currentHashedPassword, [Microsoft.SqlServer.Management.Smo.LoginCreateOptions]::IsHashed)
                             }
                             $newLogin.Refresh()
@@ -418,15 +406,13 @@
                             if ($currentCredential) {
                                 try {
                                     $newLogin.AddCredential($currentCredential)
-                                }
-                                catch {
+                                } catch {
                                     $newLogin.Drop()
                                     Stop-Function -Message "Failed to add $loginName to $instance." -Category InvalidOperation -ErrorRecord $_ -Target $instance -Continue
                                 }
                             }
                             Write-Message -Level Verbose -Message "Successfully added $loginName to $instance."
-                        }
-                        catch {
+                        } catch {
                             Write-Message -Level Verbose -Message "Failed to create $loginName on $instance using SMO, trying T-SQL."
                             try {
                                 if ($loginType -eq 'AsymmetricKey') { $sql = "CREATE LOGIN [$loginName] FROM ASYMMETRIC KEY [$currentAsymmetricKey]" }
@@ -437,8 +423,7 @@
                                 $null = $server.Query($sql)
                                 $newLogin = $server.logins[$loginName]
                                 Write-Message -Level Verbose -Message "Successfully added $loginName to $instance."
-                            }
-                            catch {
+                            } catch {
                                 Stop-Function -Message "Failed to add $loginName to $instance." -Category InvalidOperation -ErrorRecord $_ -Target $instance -Continue
                             }
                         }
@@ -448,23 +433,20 @@
                             try {
                                 $newLogin.Disable()
                                 Write-Message -Level Verbose -Message "Login $loginName has been disabled on $instance."
-                            }
-                            catch {
+                            } catch {
                                 Write-Message -Level Verbose -Message "Failed to disable $loginName on $instance using SMO, trying T-SQL."
                                 try {
                                     $sql = "ALTER LOGIN [$loginName] DISABLE"
                                     $null = $server.Query($sql)
                                     Write-Message -Level Verbose -Message "Login $loginName has been disabled on $instance."
-                                }
-                                catch {
+                                } catch {
                                     Stop-Function -Message "Failed to disable $loginName on $instance." -Category InvalidOperation -ErrorRecord $_ -Target $instance -Continue
                                 }
                             }
                         }
                         #Display results
                         Get-DbaLogin -SqlInstance $server -Login $loginName
-                    }
-                    catch {
+                    } catch {
                         Stop-Function -Message "Failed to create login $loginName on $instance." -Target $credential -InnerErrorRecord $_ -Continue
                     }
                 }
@@ -472,3 +454,4 @@
         }
     }
 }
+

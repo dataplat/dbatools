@@ -1,5 +1,5 @@
-﻿function Stop-DbaAgentJob {
-<#
+function Stop-DbaAgentJob {
+    <#
     .SYNOPSIS
         Stops a running SQL Server Agent Job.
 
@@ -81,8 +81,7 @@
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -123,11 +122,11 @@
                         $currentjob.Refresh()
                     }
                     $currentjob
-                }
-                else {
+                } else {
                     $currentjob
                 }
             }
         }
     }
 }
+

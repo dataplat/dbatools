@@ -1,5 +1,5 @@
-﻿function Test-DbaDiskAllocation {
-<#
+function Test-DbaDiskAllocation {
+    <#
     .SYNOPSIS
         Checks all disks on a computer to see if they are formatted with allocation units of 64KB.
 
@@ -93,8 +93,7 @@
                 # $query = "Select Label, BlockSize, Name from Win32_Volume WHERE FileSystem='NTFS'"
                 # $disks = Get-WmiObject -ComputerName $ipaddr -Query $query | Sort-Object -Property Name
                 $disks = Get-CimInstance -CimSession $CIMsession -ClassName win32_volume -Filter "FileSystem='NTFS'" -ErrorAction Stop | Sort-Object -Property Name
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Can't connect to WMI on $computer."
                 return
             }
@@ -111,8 +110,7 @@
 
                     if ($instance -eq 'MSSQLSERVER') {
                         $SqlInstances += $ipaddr
-                    }
-                    else {
+                    } else {
                         $SqlInstances += "$ipaddr\$instance"
                     }
                 }
@@ -137,8 +135,7 @@
                                     $sqldisk = $true
                                     break
                                 }
-                            }
-                            catch {
+                            } catch {
                                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
                                 continue
                             }
@@ -147,8 +144,7 @@
 
                     if ($disk.BlockSize -eq 65536) {
                         $IsBestPractice = $true
-                    }
-                    else {
+                    } else {
                         $IsBestPractice = $false
                     }
 
@@ -167,8 +163,7 @@
                             IsSqlDisk      = $sqldisk
                             IsBestPractice = $IsBestPractice
                         }
-                    }
-                    else {
+                    } else {
                         $alldisks += [PSCustomObject]@{
                             Server         = $computer
                             Name           = $diskname
@@ -198,8 +193,7 @@
 
             if (!$Credential) {
                 $cimsession = New-CimSession -ComputerName $Computer -ErrorAction SilentlyContinue
-            }
-            else {
+            } else {
                 $cimsession = New-CimSession -ComputerName $Computer -ErrorAction SilentlyContinue -Credential $Credential
             }
 
@@ -207,10 +201,9 @@
                 Write-Message -Level Verbose -Message "Creating CimSession on $computer over WSMan failed. Creating CimSession on $computer over DCOM."
 
                 if (!$Credential) {
-                    $cimsession = New-CimSession -ComputerName $Computer -SessionOption $sessionoption -ErrorAction SilentlyContinue
-                }
-                else {
-                    $cimsession = New-CimSession -ComputerName $Computer -SessionOption $sessionoption -ErrorAction SilentlyContinue -Credential $Credential
+                    $cimsession = New-CimSession -ComputerName $Computer -SessionOption $sessionoptions -ErrorAction SilentlyContinue
+                } else {
+                    $cimsession = New-CimSession -ComputerName $Computer -SessionOption $sessionoptions -ErrorAction SilentlyContinue -Credential $Credential
                 }
             }
 
@@ -224,10 +217,10 @@
 
             if ($data.Count -gt 1) {
                 $data.GetEnumerator()
-            }
-            else {
+            } else {
                 $data
             }
         }
     }
 }
+

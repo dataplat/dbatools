@@ -1,4 +1,4 @@
-﻿<#
+<#
 Write-Host "Current Path : $((Get-Location).Path)"
 
 Write-Host @"

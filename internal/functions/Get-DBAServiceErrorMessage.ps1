@@ -36,8 +36,8 @@ function Get-DbaServiceErrorMessage {
     if ($ErrorNumber) {
         if ($ErrorNumber -in 0..($returnCodes.Length - 1)) { Return $returnCodes[$ErrorNumber] }
         else { Return "Unknown error." }
-    }
-    else {
+    } else {
         $returnCodes
     }
 }
+

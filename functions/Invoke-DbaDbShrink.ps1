@@ -1,5 +1,5 @@
-﻿function Invoke-DbaDbShrink {
-<#
+function Invoke-DbaDbShrink {
+    <#
     .SYNOPSIS
         Shrinks all files in a database. This is a command that should rarely be used.
 
@@ -173,8 +173,7 @@
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -201,39 +200,37 @@
                 }
 
                 $files = @()
-                if ($FileType -in ('Log','All')) {
+                if ($FileType -in ('Log', 'All')) {
                     $files += $db.LogFiles
                 }
-                if ($FileType -in ('Data','All')) {
+                if ($FileType -in ('Data', 'All')) {
                     $files += $db.FileGroups.Files
                 }
 
-                foreach($file in $files) {
-                        $startingSize = $file.Size
-                        $spaceUsed = $file.UsedSpace
-                        $spaceAvailable = ($file.Size - $file.UsedSpace)
-                        $desiredSpaceAvailable = [math]::ceiling((($PercentFreeSpace/100)) * $spaceUsed)
-                        $desiredFileSize = $spaceUsed + $desiredSpaceAvailable
+                foreach ($file in $files) {
+                    $startingSize = $file.Size
+                    $spaceUsed = $file.UsedSpace
+                    $spaceAvailable = ($file.Size - $file.UsedSpace)
+                    $desiredSpaceAvailable = [math]::ceiling((($PercentFreeSpace / 100)) * $spaceUsed)
+                    $desiredFileSize = $spaceUsed + $desiredSpaceAvailable
 
-                        Write-Message -Level Verbose -Message "File: $($file.Name)"
-                        Write-Message -Level Verbose -Message "Starting Size (KB): $([int]$startingSize)"
-                        Write-Message -Level Verbose -Message "Space Used (KB): $([int]$spaceUsed)"
-                        Write-Message -Level Verbose -Message "Starting Freespace (KB): $([int]$spaceAvailable)"
-                        Write-Message -Level Verbose -Message "Desired Freespace (KB): $([int]$desiredSpaceAvailable)"
-                        Write-Message -Level Verbose -Message "Desired FileSize (KB): $([int]$desiredFileSize)"
+                    Write-Message -Level Verbose -Message "File: $($file.Name)"
+                    Write-Message -Level Verbose -Message "Starting Size (KB): $([int]$startingSize)"
+                    Write-Message -Level Verbose -Message "Space Used (KB): $([int]$spaceUsed)"
+                    Write-Message -Level Verbose -Message "Starting Freespace (KB): $([int]$spaceAvailable)"
+                    Write-Message -Level Verbose -Message "Desired Freespace (KB): $([int]$desiredSpaceAvailable)"
+                    Write-Message -Level Verbose -Message "Desired FileSize (KB): $([int]$desiredFileSize)"
 
                     if ($spaceAvailable -le $desiredSpaceAvailable) {
                         Write-Message -Level Warning -Message "File size of ($startingSize) is less than or equal to the desired outcome ($desiredFileSize) for $($file.Name)"
-                    }
-                    else {
+                    } else {
                         if ($Pscmdlet.ShouldProcess("$db on $instance", "Shrinking from $([int]$startingSize)KB to $([int]$desiredFileSize)KB")) {
                             if ($server.VersionMajor -gt 8 -and $ExcludeIndexStats -eq $false) {
                                 Write-Message -Level Verbose -Message "Getting starting average fragmentation"
                                 $dataRow = $server.Query($sql, $db.name)
                                 $startingFrag = $dataRow.avg_fragmentation_in_percent
                                 $startingTopFrag = $dataRow.max_fragmentation_in_percent
-                            }
-                            else {
+                            } else {
                                 $startingTopFrag = $startingFrag = $null
                             }
 
@@ -245,18 +242,18 @@
                                 Write-Message -Level Verbose -Message "ShrinkGap: $([int]$shrinkGap) KB"
                                 Write-Message -Level Verbose -Message "Step Size: $([int]$StepSizeMB) MB"
 
-                                if($StepSizeKB -and ($shrinkGap -gt $stepSizeKB)) {
-                                    for($i=1; $i -le [int](($shrinkGap)/$stepSizeKB); $i++) {
+                                if ($StepSizeKB -and ($shrinkGap -gt $stepSizeKB)) {
+                                    for ($i = 1; $i -le [int](($shrinkGap) / $stepSizeKB); $i++) {
                                         Write-Message -Level Verbose -Message "Step: $i"
-                                        $shrinkSize = $startingSize - (($stepSizeMB*1024) * $i)
-                                        if($shrinkSize -lt $desiredFileSize) {
+                                        $shrinkSize = $startingSize - (($stepSizeMB * 1024) * $i)
+                                        if ($shrinkSize -lt $desiredFileSize) {
                                             $shrinkSize = $desiredFileSize
                                         }
                                         Write-Message -Level Verbose -Message ("Shrinking {0} to {1}" -f $file.Name, $shrinkSize)
                                         $file.Shrink(($shrinkSize / 1024), $ShrinkMethod)
                                         $file.Refresh()
 
-                                        if($startingSize -eq $file.Size) {
+                                        if ($startingSize -eq $file.Size) {
                                             Write-Message -Level Verbose -Message ("Unable to shrink further")
                                             break
                                         }
@@ -267,8 +264,7 @@
                                 }
                                 $success = $true
                                 $notes = "Database shrinks can cause massive index fragmentation and negatively impact performance. You should now run DBCC INDEXDEFRAG or ALTER INDEX ... REORGANIZE"
-                            }
-                            catch {
+                            } catch {
                                 $success = $false
                                 Stop-Function -message "Shrink Failed:  $($_.Exception.InnerException)"  -EnableException $EnableException -ErrorRecord $_ -Continue
                                 continue
@@ -281,11 +277,10 @@
 
                             if ($server.VersionMajor -gt 8 -and $ExcludeIndexStats -eq $false -and $success -and $FileType -ne 'Log') {
                                 Write-Message -Level Verbose -Message "Getting ending average fragmentation"
-                            $dataRow = $server.Query($sql, $db.name)
-                            $endingDefrag = $dataRow.avg_fragmentation_in_percent
-                            $endingTopDefrag = $dataRow.max_fragmentation_in_percent
-                            }
-                            else {
+                                $dataRow = $server.Query($sql, $db.name)
+                                $endingDefrag = $dataRow.avg_fragmentation_in_percent
+                                $endingTopDefrag = $dataRow.max_fragmentation_in_percent
+                            } else {
                                 $endingTopDefrag = $endingDefrag = $null
                             }
 
@@ -317,8 +312,7 @@
                             }
                             if ($ExcludeIndexStats) {
                                 Select-DefaultView -InputObject $object -ExcludeProperty StartingAvgIndexFragmentation, EndingAvgIndexFragmentation, StartingTopIndexFragmentation, EndingTopIndexFragmentation
-                            }
-                            else {
+                            } else {
                                 $object
                             }
                         }
@@ -331,3 +325,4 @@
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Invoke-DbaDatabaseShrink
     }
 }
+

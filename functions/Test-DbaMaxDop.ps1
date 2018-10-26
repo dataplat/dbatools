@@ -1,5 +1,5 @@
-﻿function Test-DbaMaxDop {
-<#
+function Test-DbaMaxDop {
+    <#
     .SYNOPSIS
         Displays information relating to SQL Server Max Degree of Parallelism setting. Works on SQL Server 2005-2016.
 
@@ -83,13 +83,13 @@
     }
 
     process {
-        $hasScopedConfig = $false
+        #Variable marked as unused by PSScriptAnalyzer
+        #$hasScopedConfig = $false
 
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -100,8 +100,7 @@
                 #represents the Number of NUMA nodes
                 $sql = "SELECT COUNT(DISTINCT memory_node_id) AS NUMA_Nodes FROM sys.dm_os_memory_clerks WHERE memory_node_id!=64"
                 $numaNodes = $server.ConnectionContext.ExecuteScalar($sql)
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failed to get Numa node count." -ErrorRecord $_ -Target $server -Continue
             }
 
@@ -109,8 +108,7 @@
                 #represents the Number of Processor Cores
                 $sql = "SELECT COUNT(scheduler_id) FROM sys.dm_os_schedulers WHERE status = 'VISIBLE ONLINE'"
                 $numberOfCores = $server.ConnectionContext.ExecuteScalar($sql)
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failed to get number of cores." -ErrorRecord $_ -Target $server -Continue
             }
 
@@ -120,19 +118,16 @@
                 if ($numberOfCores -lt 8) {
                     #Less than 8 logical processors - Keep MAXDOP at or below # of logical processors
                     $recommendedMaxDop = $numberOfCores
-                }
-                else {
+                } else {
                     #Equal or greater than 8 logical processors - Keep MAXDOP at 8
                     $recommendedMaxDop = 8
                 }
-            }
-            else {
+            } else {
                 #Server with multiple NUMA nodes
                 if (($numberOfCores / $numaNodes) -lt 8) {
                     # Less than 8 logical processors per NUMA node - Keep MAXDOP at or below # of logical processors per NUMA node
                     $recommendedMaxDop = [int]($numberOfCores / $numaNodes)
-                }
-                else {
+                } else {
                     # Greater than 8 logical processors per NUMA node - Keep MAXDOP at 8
                     $recommendedMaxDop = 8
                 }
@@ -142,20 +137,16 @@
             $notes = $null
             if ($maxDop -eq 1) {
                 $notes = $notesDopOne
-            }
-            else {
+            } else {
                 if ($maxDop -ne 0 -and $maxDop -lt $recommendedMaxDop) {
                     $notes = $notesDopLT
-                }
-                else {
+                } else {
                     if ($maxDop -ne 0 -and $maxDop -gt $recommendedMaxDop) {
                         $notes = $notesDopGT
-                    }
-                    else {
+                    } else {
                         if ($maxDop -eq 0) {
                             $notes = $notesDopZero
-                        }
-                        else {
+                        } else {
                             $notes = $notesAsRecommended
                         }
                     }
@@ -178,7 +169,8 @@
 
             # On SQL Server 2016 and higher, MaxDop can be set on a per-database level
             if ($server.VersionMajor -ge 13) {
-                $hasScopedConfig = $true
+                #Variable marked as unused by PSScriptAnalyzer
+                #$hasScopedConfig = $true
                 Write-Message -Level Verbose -Message "SQL Server 2016 or higher detected, checking each database's MaxDop."
 
                 $databases = $server.Databases | where-object {$_.IsSystemObject -eq $false}
@@ -210,3 +202,4 @@
         }
     }
 }
+

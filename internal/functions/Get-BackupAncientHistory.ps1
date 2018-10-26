@@ -39,8 +39,7 @@ function Get-BackupAncientHistory {
     begin {
         try {
             $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
-        }
-        catch {
+        } catch {
             Stop-Function -Message "Failed to process Instance $SqlInstance." -InnerErrorRecord $_ -Target $SqlInstance -Continue
         }
         if ($server.SoftwareVersionMajor -gt 8) {
@@ -52,8 +51,7 @@ function Get-BackupAncientHistory {
             ForEach ($db in $Database) {
                 $databases += [PScustomObject]@{name = $db}
             }
-        }
-        else {
+        } else {
             $databases = $server.Databases
         }
     }
@@ -173,8 +171,7 @@ function Get-BackupAncientHistory {
                 $historyObject.SoftwareVersionMajor = $group.Group[0].Software_Major_Version
                 $historyObject.IsCopyOnly = if ($group.Group[0].is_copy_only -eq 1) {
                     $true
-                }
-                else {
+                } else {
                     $false
                 }
                 $groupResults += $historyObject
@@ -186,3 +183,4 @@ function Get-BackupAncientHistory {
 
     END {}
 }
+

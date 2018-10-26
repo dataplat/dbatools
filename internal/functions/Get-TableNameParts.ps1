@@ -1,5 +1,5 @@
 function Get-TableNameParts {
-<#
+    <#
     .SYNOPSIS
         Parse a one, two, or three part table name into seperate paths
 
@@ -39,17 +39,16 @@ function Get-TableNameParts {
         #These need to be temporarily replaced to allow name to be parsed.
         $t = $Table
         if ($t.Contains(']]')) {
-            for ($i=0; $i -le 65535; $i++) {
+            for ($i = 0; $i -le 65535; $i++) {
                 $hexStr = '{0:X4}' -f $i
-                $char= [regex]::Unescape("\u$($HexStr)")
+                $char = [regex]::Unescape("\u$($HexStr)")
                 if (!$Table.Contains($Char)) {
                     $fixChar = $Char
                     $t = $t.Replace(']]', $fixChar)
                     Break
                 }
             }
-        }
-        else {
+        } else {
             $fixChar = $null
         }
         $splitName = [regex]::Matches($t, "(\[.+?\])|([^\.]+)").Value
@@ -80,21 +79,21 @@ function Get-TableNameParts {
         if ($splitDb -like "[[]*[]]") {
             $splitDb = $splitDb.Substring(1, ($splitDb.Length - 2))
             if ($fixChar) {
-                $splitDb = $splitDb.Replace($fixChar,']')
+                $splitDb = $splitDb.Replace($fixChar, ']')
             }
         }
 
         if ($schema -like "[[]*[]]") {
             $schema = $schema.Substring(1, ($schema.Length - 2))
             if ($fixChar) {
-                $schema = $schema.Replace($fixChar,']')
+                $schema = $schema.Replace($fixChar, ']')
             }
         }
 
         if ($tbl -like "[[]*[]]") {
             $tbl = $tbl.Substring(1, ($tbl.Length - 2))
             if ($fixChar) {
-                $tbl = $tbl.Replace($fixChar,']')
+                $tbl = $tbl.Replace($fixChar, ']')
             }
         }
         $fqtns = [PSCustomObject] @{
@@ -107,3 +106,4 @@ function Get-TableNameParts {
         return $fqtns
     }
 }
+

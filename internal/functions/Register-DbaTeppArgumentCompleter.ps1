@@ -1,4 +1,4 @@
-﻿function Register-DbaTeppArgumentCompleter {
+function Register-DbaTeppArgumentCompleter {
     <#
         .SYNOPSIS
             Registers a parameter for a prestored Tepp.
@@ -65,8 +65,7 @@
 
         if ($null -eq $lowername) {
             $lowername = $p.ToLower()
-        }
-        else {
+        } else {
             $lowername = $lowername.ToLower()
         }
 
@@ -79,9 +78,10 @@
 
         if ($script:TEPP) {
             TabExpansionPlusPlus\Register-ArgumentCompleter -CommandName $Command -ParameterName $p -ScriptBlock $scriptBlock
-        }
-        else {
+        } else {
             Register-ArgumentCompleter -CommandName $Command -ParameterName $p -ScriptBlock $scriptBlock
         }
     }
 }
+
+

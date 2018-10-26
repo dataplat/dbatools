@@ -1,4 +1,4 @@
-﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 
 function Test-FunctionInterrupt {
     <#
@@ -31,3 +31,4 @@ function Test-FunctionInterrupt {
 
     return $false
 }
+

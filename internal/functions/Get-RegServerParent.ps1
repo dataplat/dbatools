@@ -1,4 +1,4 @@
-﻿function Get-RegServerParent {
+function Get-RegServerParent {
     [cmdletbinding()]
     param (
         [object]$InputObject
@@ -18,3 +18,4 @@
         }
     }
 }
+

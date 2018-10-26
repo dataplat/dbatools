@@ -1,6 +1,6 @@
-﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function New-DbaDbMasterKey {
-<#
+    <#
     .SYNOPSIS
         Creates a new database master key
 
@@ -15,16 +15,16 @@ function New-DbaDbMasterKey {
 
     .PARAMETER Credential
         Enables easy creation of a secure password.
-    
+
     .PARAMETER Database
         The database where the master key will be created. Defaults to master.
 
     .PARAMETER Password
         Secure string used to create the key.
-    
+
     .PARAMETER InputObject
         Database object piped in from Get-DbaDatabase.
-    
+
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
 
@@ -49,12 +49,12 @@ function New-DbaDbMasterKey {
 
         You will be prompted to securely enter your password, then a master key will be created in the master database on server1 if it does not exist.
 
-    
+
     .EXAMPLE
         PS C:\> New-DbaDbMasterKey -SqlInstance Server1 -Credential usernamedoesntmatter
 
         You will be prompted by a credential interface to securely enter your password, then a master key will be created in the master database on server1 if it does not exist.
-    
+
     .EXAMPLE
         PS C:\> New-DbaDbMasterKey -SqlInstance Server1 -Database db1 -Confirm:$false
 
@@ -75,8 +75,7 @@ function New-DbaDbMasterKey {
     begin {
         if ($Credential) {
             $Password = $Credential.Password
-        }
-        else {
+        } else {
             if (-not $Password) {
                 $Password = Read-Host "Password" -AsSecureString
             }
@@ -86,25 +85,24 @@ function New-DbaDbMasterKey {
         if ($SqlInstance) {
             $InputObject += Get-DbaDatabase -SqlInstance $SqlInstance -Database $Database -ExcludeDatabase $ExcludeDatabase
         }
-        
+
         foreach ($db in $InputObject) {
             if ($null -ne $db.MasterKey) {
                 Stop-Function -Message "Master key already exists in the $db database on $($db.Parent.Name)" -Target $db -Continue
             }
-            
+
             if ($Pscmdlet.ShouldProcess($db.Parent.Name, "Creating master key for database '$($db.Name)'")) {
                 try {
                     $masterkey = New-Object Microsoft.SqlServer.Management.Smo.MasterKey $db
                     $masterkey.Create(([System.Runtime.InteropServices.marshal]::PtrToStringAuto([System.Runtime.InteropServices.marshal]::SecureStringToBSTR($password))))
-                    
+
                     Add-Member -Force -InputObject $masterkey -MemberType NoteProperty -Name ComputerName -value $db.Parent.ComputerName
                     Add-Member -Force -InputObject $masterkey -MemberType NoteProperty -Name InstanceName -value $db.Parent.ServiceName
                     Add-Member -Force -InputObject $masterkey -MemberType NoteProperty -Name SqlInstance -value $db.Parent.DomainInstanceName
                     Add-Member -Force -InputObject $masterkey -MemberType NoteProperty -Name Database -value $db.Name
-                    
+
                     Select-DefaultView -InputObject $masterkey -Property ComputerName, InstanceName, SqlInstance, Database, CreateDate, DateLastModified, IsEncryptedByServer
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Failed to create master key in $db on $instance. Exception: $($_.Exception.InnerException)" -Target $masterkey -ErrorRecord $_ -Continue
                 }
             }
@@ -114,3 +112,4 @@ function New-DbaDbMasterKey {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias New-DbaDatabaseMasterKey
     }
 }
+

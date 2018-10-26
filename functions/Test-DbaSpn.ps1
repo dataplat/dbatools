@@ -1,4 +1,4 @@
-﻿#ValidationTags#FlowControl,Pipeline#
+#ValidationTags#FlowControl,Pipeline#
 function Test-DbaSpn {
     <#
     .SYNOPSIS
@@ -71,8 +71,7 @@ function Test-DbaSpn {
         foreach ($computer in $ComputerName) {
             try {
                 $resolved = Resolve-DbaNetworkName -ComputerName $computer.ComputerName -Credential $Credential -ErrorAction Stop
-            }
-            catch {
+            } catch {
                 $resolved = Resolve-DbaNetworkName -ComputerName $computer.ComputerName -Turbo
             }
 
@@ -98,8 +97,7 @@ function Test-DbaSpn {
                         10 {
                             if ($version.Minor -eq 0) {
                                 "SQL Server 2008"
-                            }
-                            else {
+                            } else {
                                 "SQL Server 2008 R2"
                             }
                         }
@@ -172,8 +170,7 @@ function Test-DbaSpn {
                         #Each instance has a default SPN of MSSQLSvc\<fqdn> or MSSSQLSvc\<fqdn>:Instance
                         if ($instance.Name -eq "MSSQLSERVER") {
                             $spn.RequiredSPN = "MSSQLSvc/$hostEntry"
-                        }
-                        else {
+                        } else {
                             $spn.RequiredSPN = "MSSQLSvc/" + $hostEntry + ":" + $instance.Name
                         }
                     }
@@ -192,15 +189,13 @@ function Test-DbaSpn {
                             if (($ip.IpAddressProperties | Where-Object { $_.Name -eq "TcpDynamicPorts" }).Value -ne "") {
                                 $ipAllPort = ($ip.IPAddressProperties | Where-Object { $_.Name -eq "TcpDynamicPorts" }).Value + "d"
                             }
-                        }
-                        else {
+                        } else {
                             $enabled = ($ip.IPAddressProperties | Where-Object { $_.Name -eq "Enabled" }).Value
                             $active = ($ip.IPAddressProperties | Where-Object { $_.Name -eq "Active" }).Value
                             $tcpDynamicPorts = ($ip.IPAddressProperties | Where-Object { $_.Name -eq "TcpDynamicPorts" }).Value
                             if ($enabled -and $active -and $tcpDynamicPorts -eq "") {
                                 $ports += ($ip.IPAddressProperties | Where-Object { $_.Name -eq "TCPPort" }).Value
-                            }
-                            elseif ($enabled -and $active -and $tcpDynamicPorts -ne "") {
+                            } elseif ($enabled -and $active -and $tcpDynamicPorts -ne "") {
                                 $ports += $ipAllPort + "d"
                             }
                         }
@@ -218,16 +213,14 @@ function Test-DbaSpn {
                             $newspn.RequiredSPN = $newspn.RequiredSPN.Replace($newSPN.InstanceName, $newspn.Port)
                             $newspn.DynamicPort = $true
                             $newspn.Warning = "Dynamic port is enabled"
-                        }
-                        else {
+                        } else {
                             #If this is a named instance, replace the instance name with a port number (for non-dynamic ported named instances)
                             $newspn.Port = $port
                             $newspn.DynamicPort = $false
 
                             if ($newspn.InstanceName -eq "MSSQLSERVER") {
                                 $newspn.RequiredSPN = $newspn.RequiredSPN + ":" + $port
-                            }
-                            else {
+                            } else {
                                 $newspn.RequiredSPN = $newspn.RequiredSPN.Replace($newSPN.InstanceName, $newspn.Port)
                             }
                         }
@@ -240,8 +233,7 @@ function Test-DbaSpn {
 
             try {
                 $spns = Invoke-ManagedComputerCommand -ComputerName $hostEntry -ScriptBlock $Scriptblock -ArgumentList $resolved.FullComputerName, $hostEntry, $computer.InstanceName -Credential $Credential -ErrorAction Stop
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Couldn't connect to $computer" -ErrorRecord $_ -Continue
             }
 
@@ -252,8 +244,7 @@ function Test-DbaSpn {
                     Write-Message -Level Verbose -Message "Virtual account detected, changing target registration to computername"
                     $spn.InstanceServiceAccount = "$($resolved.Domain)\$($resolved.ComputerName)$"
                     $searchfor = 'Computer'
-                }
-                elseif ($spn.InstanceServiceAccount -like '*\*$') {
+                } elseif ($spn.InstanceServiceAccount -like '*\*$') {
                     Write-Message -Level Verbose -Message "Managed Service Account detected"
                     $searchfor = 'Computer'
                 }
@@ -265,14 +256,12 @@ function Test-DbaSpn {
                     try {
                         $result = Get-DbaADObject -ADObject $serviceAccount -Type $searchfor -Credential $Credential -EnableException
                         $resultCache[$spn.InstanceServiceAccount] = $result
-                    }
-                    catch {
+                    } catch {
                         if (![System.String]::IsNullOrEmpty($spn.InstanceServiceAccount)) {
                             Write-Message -Message "AD lookup failure. This may be because the domain cannot be resolved for the SQL Server service account ($serviceAccount)." -Level Warning
                         }
                     }
-                }
-                else {
+                } else {
                     $result = $resultCache[$spn.InstanceServiceAccount]
                 }
                 if ($result.Count -gt 0) {
@@ -281,13 +270,11 @@ function Test-DbaSpn {
                         if ($results.Properties.servicePrincipalName -contains $spn.RequiredSPN) {
                             $spn.IsSet = $true
                         }
-                    }
-                    catch {
+                    } catch {
                         Write-Message -Message "The SQL Service account ($serviceAccount) has been found, but you don't have enough permission to inspect its SPNs" -Level Warning
                         continue
                     }
-                }
-                else {
+                } else {
                     Write-Message -Level Warning -Message "SQL Service account not found. Results may not be accurate."
                     $spn
                     continue
@@ -301,3 +288,4 @@ function Test-DbaSpn {
         }
     }
 }
+

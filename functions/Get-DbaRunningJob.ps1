@@ -1,5 +1,5 @@
-﻿function Get-DbaRunningJob {
-<#
+function Get-DbaRunningJob {
+    <#
     .SYNOPSIS
         Returns all non-idle Agent jobs running on the server.
 
@@ -58,8 +58,7 @@
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failed to connect to: $Server." -Target $server -ErrorRecord $_ -Continue
             }
 
@@ -67,8 +66,7 @@
 
             if (!$jobs) {
                 Write-Message -Level Verbose -Message "No Jobs are currently running on: $Server."
-            }
-            else {
+            } else {
                 foreach ($job in $jobs) {
                     [PSCustomObject]@{
                         ComputerName     = $server.ComputerName
@@ -88,3 +86,4 @@
         }
     }
 }
+

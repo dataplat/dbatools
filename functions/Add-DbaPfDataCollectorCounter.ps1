@@ -1,6 +1,6 @@
-﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Add-DbaPfDataCollectorCounter {
-<#
+    <#
     .SYNOPSIS
         Adds a Performance Data Collector Counter.
 
@@ -132,11 +132,11 @@ function Add-DbaPfDataCollectorCounter {
                     $results = Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $setscript -ArgumentList $setname, $plainxml -ErrorAction Stop
                     Write-Message -Level Verbose -Message " $results"
                     Get-DbaPfDataCollectorCounter -ComputerName $computer -Credential $Credential -CollectorSet $setname -Collector $collectorname -Counter $counter
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Failure importing $Countername to $computer." -ErrorRecord $_ -Target $computer -Continue
                 }
             }
         }
     }
 }
+

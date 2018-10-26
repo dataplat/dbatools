@@ -1,6 +1,6 @@
-﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Export-DbaExecutionPlan {
-<#
+    <#
     .SYNOPSIS
         Exports execution plans to disk.
 
@@ -123,8 +123,7 @@ function Export-DbaExecutionPlan {
                     if ($Pscmdlet.ShouldProcess("localhost", "Writing XML file to $fileName")) {
                         $queryPlan.Save($fileName)
                     }
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Skipped query plan for $fileName because it is null." -Target $fileName -ErrorRecord $_ -Continue
                 }
             }
@@ -136,8 +135,7 @@ function Export-DbaExecutionPlan {
                     if ($Pscmdlet.ShouldProcess("localhost", "Writing XML file to $fileName")) {
                         $statementPlan.Save($fileName)
                     }
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Skipped statement plan for $fileName because it is null." -Target $fileName -ErrorRecord $_ -Continue
                 }
             }
@@ -164,8 +162,7 @@ function Export-DbaExecutionPlan {
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -224,8 +221,7 @@ function Export-DbaExecutionPlan {
             Write-Message -Level Debug -Message "SQL Statement: $sql"
             try {
                 $dataTable = $server.ConnectionContext.ExecuteWithResults($sql).Tables
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Issue collecting execution plans" -Target $instance -ErroRecord $_ -Continue
             }
 
@@ -253,3 +249,4 @@ function Export-DbaExecutionPlan {
         }
     }
 }
+

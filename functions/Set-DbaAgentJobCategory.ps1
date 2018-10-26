@@ -1,5 +1,5 @@
-﻿function Set-DbaAgentJobCategory {
-<#
+function Set-DbaAgentJobCategory {
+    <#
     .SYNOPSIS
         Set-DbaAgentJobCategory changes a job category.
 
@@ -85,8 +85,7 @@
             # Try connecting to the instance
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -128,8 +127,7 @@
                                 NewCategoryName = $newCategoryName
                             })
 
-                    }
-                    catch {
+                    } catch {
                         Stop-Function -Message "Something went wrong changing the job category $cat on $instance" -Target $cat -Continue -ErrorRecord $_
                     }
 
@@ -150,3 +148,4 @@
     }
 
 }
+

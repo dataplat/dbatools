@@ -1,6 +1,6 @@
-﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Repair-DbaOrphanUser {
-<#
+    <#
     .SYNOPSIS
         Finds orphan users with existing login and remaps them.
 
@@ -112,8 +112,7 @@ function Repair-DbaOrphanUser {
 
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-            }
-            catch {
+            } catch {
                 Write-Message -Level Warning -Message "Failed to connect to: $SqlInstance."
                 continue
             }
@@ -143,8 +142,7 @@ function Repair-DbaOrphanUser {
                         if ($Users.Count -eq 0) {
                             #the third validation will remove from list sql users without login. The rule here is Sid with length higher than 16
                             $UsersToWork = $db.Users | Where-Object { $_.Login -eq "" -and ($_.ID -gt 4) -and ($_.Sid.Length -gt 16 -and $_.LoginType -eq [Microsoft.SqlServer.Management.Smo.LoginType]::SqlLogin) -eq $false }
-                        }
-                        else {
+                        } else {
 
                             #the fourth validation will remove from list sql users without login. The rule here is Sid with length higher than 16
                             $UsersToWork = $db.Users | Where-Object { $_.Login -eq "" -and ($_.ID -gt 4) -and ($Users -contains $_.Name) -and (($_.Sid.Length -gt 16 -and $_.LoginType -eq [Microsoft.SqlServer.Management.Smo.LoginType]::SqlLogin) -eq $false) }
@@ -165,8 +163,7 @@ function Repair-DbaOrphanUser {
                                 if ($ExistLogin) {
                                     if ($server.versionMajor -gt 8) {
                                         $query = "ALTER USER " + $User + " WITH LOGIN = " + $User
-                                    }
-                                    else {
+                                    } else {
                                         $query = "exec sp_change_users_login 'update_one', '$User'"
                                     }
 
@@ -183,13 +180,11 @@ function Repair-DbaOrphanUser {
                                             Status       = "Success"
                                         }
                                     }
-                                }
-                                else {
+                                } else {
                                     if ($RemoveNotExisting) {
                                         #add user to collection
                                         $UsersToRemove += $User
-                                    }
-                                    else {
+                                    } else {
                                         Write-Message -Level Verbose -Message "Orphan user $($User.Name) does not have matching login."
                                         [PSCustomObject]@{
                                             ComputerName = $server.ComputerName
@@ -210,27 +205,23 @@ function Repair-DbaOrphanUser {
                                         Write-Message -Level Verbose -Message "Calling 'Remove-DbaOrphanUser' with -Force."
                                         Remove-DbaOrphanUser -SqlInstance $server -Database $db.Name -User $UsersToRemove -Force
                                     }
-                                }
-                                else {
+                                } else {
                                     if ($Pscmdlet.ShouldProcess($db.Name, "Remove-DbaOrphanUser")) {
                                         Write-Message -Level Verbose -Message "Calling 'Remove-DbaOrphanUser'."
                                         Remove-DbaOrphanUser -SqlInstance $server -Database $db.Name -User $UsersToRemove
                                     }
                                 }
                             }
-                        }
-                        else {
+                        } else {
                             Write-Message -Level Verbose -Message "No orphan users found on database '$db'."
                         }
                         #reset collection
                         $UsersToWork = $null
-                    }
-                    catch {
+                    } catch {
                         Stop-Function -Message $_ -Continue
                     }
                 }
-            }
-            else {
+            } else {
                 Write-Message -Level Verbose -Message "There are no databases to analyse."
             }
         }
@@ -239,3 +230,4 @@ function Repair-DbaOrphanUser {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Repair-SqlOrphanUser
     }
 }
+

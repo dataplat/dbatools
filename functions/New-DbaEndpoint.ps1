@@ -1,6 +1,6 @@
 #ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function New-DbaEndpoint {
-<#
+    <#
     .SYNOPSIS
         Creates endpoints on a SQL Server instance.
 
@@ -9,7 +9,7 @@ function New-DbaEndpoint {
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
-    
+
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
@@ -33,7 +33,7 @@ function New-DbaEndpoint {
 
     .PARAMETER Certificate
         Database certificate used for authentication.
-    
+
     .PARAMETER EndpointEncryption
         Used to specify the state of encryption on the endpoint. Defaults to required.
         Disabled
@@ -111,8 +111,7 @@ function New-DbaEndpoint {
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -126,20 +125,17 @@ function New-DbaEndpoint {
             # Thanks to https://github.com/mmessano/PowerShell/blob/master/SQL-ConfigureDatabaseMirroring.ps1
             if ($Port) {
                 $tcpPort = $port
-            }
-            else {
+            } else {
                 $thisport = (Get-DbaEndPoint -SqlInstance $server).Protocol.Tcp
                 $measure = $thisport | Measure-Object ListenerPort -Maximum
 
                 if ($thisport.ListenerPort -eq 0) {
                     $tcpPort = 5022
-                }
-                elseif ($measure.Maximum) {
+                } elseif ($measure.Maximum) {
                     $maxPort = $measure.Maximum
                     #choose a random port that is greater than the current max port
                     $tcpPort = $maxPort + (New-Object Random).Next(1, 500)
-                }
-                else {
+                } else {
                     $maxPort = 5000
                     #choose a random port that is greater than the current max port
                     $tcpPort = $maxPort + (New-Object Random).Next(1, 500)
@@ -166,18 +162,17 @@ function New-DbaEndpoint {
                         $outscript = $endpoint.Script()
                         $outscript = $outscript.Replace("ROLE = ALL,", "ROLE = ALL, AUTHENTICATION = CERTIFICATE $cert,")
                         $server.Query($outscript)
-                    }
-                    else {
+                    } else {
                         $null = $endpoint.Create()
                     }
 
                     $server.Endpoints.Refresh()
                     Get-DbaEndpoint -SqlInstance $server -Endpoint $name
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
                 }
             }
         }
     }
 }
+

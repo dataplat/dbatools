@@ -1,5 +1,5 @@
-﻿function Update-DbaServiceAccount {
-<#
+function Update-DbaServiceAccount {
+    <#
     .SYNOPSIS
         Changes service account (or just its password) of the SQL Server service.
 
@@ -133,12 +133,10 @@
                 }
             }
             $currentCredential = New-Object System.Management.Automation.PSCredential ($Username, $NewPassword)
-        }
-        elseif ($ServiceCredential) {
+        } elseif ($ServiceCredential) {
             $actionType = 'Account'
             $currentCredential = $ServiceCredential
-        }
-        else {
+        } else {
             $actionType = 'Password'
         }
         if ($actionType -eq 'Account') {
@@ -161,13 +159,11 @@
                             ServiceName  = $service
                         }
                     }
-                }
-                else {
+                } else {
                     Stop-Function -EnableException $EnableException -Message "Failed to connect to $Computer" -Continue
                 }
             }
-        }
-        elseif ($PsCmdlet.ParameterSetName -match 'InputObject') {
+        } elseif ($PsCmdlet.ParameterSetName -match 'InputObject') {
             foreach ($service in $InputObject) {
                 $Server = Resolve-DbaNetworkName -ComputerName $service.ComputerName -Credential $credential
                 if ($Server.ComputerName) {
@@ -175,8 +171,7 @@
                         ComputerName = $Server.ComputerName
                         ServiceName  = $service.ServiceName
                     }
-                }
-                else {
+                } else {
                     Stop-Function -EnableException $EnableException -Message "Failed to connect to $($service.ComputerName)" -Continue
                 }
             }
@@ -196,8 +191,7 @@
                         (New-Object System.Management.Automation.PSCredential ("user", $currentPassword2)).GetNetworkCredential().Password) {
                         Stop-Function -Message "Passwords do not match. This service will not be updated" -Category InvalidArgument -EnableException $EnableException -Continue
                     }
-                }
-                else {
+                } else {
                     $currentPassword = $NewPassword
                 }
                 if ($serviceObject.ServiceType -eq 'Engine') {
@@ -210,21 +204,18 @@
                             Write-Message -Level Verbose -Message "Attempting an account change for service $($svc.ServiceName) on $($svc.ComputerName)"
                             $null = Invoke-ManagedComputerCommand -ComputerName $svc.ComputerName -Credential $Credential -ScriptBlock $scriptAccountChange -ArgumentList @($svc.ServiceName, $currentCredential.UserName, $currentCredential.GetNetworkCredential().Password) -EnableException:$EnableException
                             $outMessage = "The login account for the service has been successfully set."
-                        }
-                        elseif ($actionType -eq 'Password') {
+                        } elseif ($actionType -eq 'Password') {
                             Write-Message -Level Verbose -Message "Attempting a password change for service $($svc.ServiceName) on $($svc.ComputerName)"
                             $null = Invoke-ManagedComputerCommand -ComputerName $svc.ComputerName -Credential $Credential -ScriptBlock $scriptPasswordChange -ArgumentList @($svc.ServiceName, (New-Object System.Management.Automation.PSCredential ("user", $OldPassword)).GetNetworkCredential().Password, (New-Object System.Management.Automation.PSCredential ("user", $currentPassword)).GetNetworkCredential().Password) -EnableException:$EnableException
                             $outMessage = "The password has been successfully changed."
                         }
                         $outStatus = 'Successful'
-                    }
-                    catch {
+                    } catch {
                         $outStatus = 'Failed'
                         $outMessage = $_.Exception.Message
                         Write-Message -Level Warning -Message $_.Exception.Message -EnableException $EnableException.ToBool()
                     }
-                }
-                else {
+                } else {
                     $outStatus = 'Successful'
                     $outMessage = 'No changes made - running in -WhatIf mode.'
                 }
@@ -241,10 +232,10 @@
                 Add-Member -Force -InputObject $serviceObject -NotePropertyName Message -NotePropertyValue $outMessage
                 Add-Member -Force -InputObject $serviceObject -NotePropertyName Status -NotePropertyValue $outStatus
                 Select-DefaultView -InputObject $serviceObject -Property ComputerName, ServiceName, State, StartName, Status, Message
-            }
-            Else {
+            } Else {
                 Stop-Function -Message "The service $($svc.ServiceName) has not been found on $($svc.ComputerName)" -EnableException $EnableException -Continue
             }
         }
     }
 }
+

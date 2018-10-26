@@ -32,22 +32,20 @@ function Get-DbaDbPhysicalFile {
     )
     try {
         $Server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
-    }
-    catch {
+    } catch {
         Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $SqlInstance
         return
     }
     if ($Server.versionMajor -le 8) {
-        $sql = "SELECT DB_NAME(db_id) AS Name, filename AS PhysicalName FROM sysaltfiles"
-    }
-    else {
+        $sql = "SELECT DB_NAME(dbid) AS Name, filename AS PhysicalName FROM sysaltfiles"
+    } else {
         $sql = "SELECT DB_NAME(database_id) AS Name, physical_name AS PhysicalName FROM sys.master_files"
     }
     Write-Message -Level Debug -Message "$sql"
     try {
         $Server.Query($sql)
-    }
- catch {
+    } catch {
         throw "Error enumerating files"
     }
 }
+

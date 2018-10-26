@@ -1,4 +1,4 @@
-﻿if (Get-Command TabExpansionPlusPlus\Register-ArgumentCompleter -ErrorAction Ignore) {
+if (Get-Command TabExpansionPlusPlus\Register-ArgumentCompleter -ErrorAction Ignore) {
     $script:TEPP = $true
 }
 else {
@@ -80,3 +80,4 @@ Register-DbaTeppArgumentCompleter -Command "Get-DbaProcess", "Stop-DbaProcess" -
 Register-DbaTeppArgumentCompleter -Command "Import-DbaXESessionTemplate", "Get-DbaXESessionTemplate", "Export-DbaXESessionTemplate" -Parameter Template -Name xesessiontemplate
 Register-DbaTeppArgumentCompleter -Command "Import-DbaPfDataCollectorSetTemplate", "Get-DbaPfDataCollectorSetTemplate", "Export-DbaPfDataCollectorSetTemplate"  -Parameter Template -Name perfmontemplate
 #endregion Explicit TEPP
+

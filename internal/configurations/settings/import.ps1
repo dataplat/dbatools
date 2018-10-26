@@ -1,4 +1,4 @@
-﻿# Handle dotsourcing on import
+# Handle dotsourcing on import
 Set-DbatoolsConfig -Name 'Import.DoDotSource' -Value $false -Initialize -Validation bool -Handler {
     try {
         if (-not (Test-Path "HKCU:\SOFTWARE\Microsoft\WindowsPowerShell\dbatools\System")) { $null = New-Item "HKCU:\SOFTWARE\Microsoft\WindowsPowerShell\dbatools\System" -ItemType Container -Force -ErrorAction Stop }

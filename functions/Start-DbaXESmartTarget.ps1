@@ -1,6 +1,6 @@
-﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Start-DbaXESmartTarget {
-<#
+    <#
     .SYNOPSIS
         XESmartTarget runs as a client application for an Extended Events session running on a SQL Server instance.
 
@@ -122,8 +122,7 @@ function Start-DbaXESmartTarget {
             begin {
                 try {
                     Add-Type -Path "$script:PSModuleRoot\bin\XESmartTarget\XESmartTarget.Core.dll" -ErrorAction Stop
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Could not load XESmartTarget.Core.dll" -ErrorRecord $_ -Target "XESmartTarget"
                     return
                 }
@@ -134,8 +133,7 @@ function Start-DbaXESmartTarget {
                 foreach ($instance in $SqlInstance) {
                     try {
                         $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 11
-                    }
-                    catch {
+                    } catch {
                         Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
                     }
 
@@ -156,14 +154,12 @@ function Start-DbaXESmartTarget {
                     if ($Pscmdlet.ShouldProcess("$instance", "Starting SmartTarget on $($server.name)")) {
                         try {
                             $target.Start()
-                        }
-                        catch {
+                        } catch {
                             $message = $_.Exception.InnerException.InnerException | Out-String
 
                             if ($message) {
                                 Stop-Function -Message $message -Target "XESmartTarget" -Continue
-                            }
-                            else {
+                            } else {
                                 Stop-Function -Message "Failure" -Target "XESmartTarget" -ErrorRecord $_ -Continue
                             }
                         }
@@ -186,8 +182,7 @@ function Start-DbaXESmartTarget {
         if ($Pscmdlet.ShouldProcess("$instance", "Configuring SmartTarget to start")) {
             if ($NotAsJob) {
                 Start-SmartFunction @PSBoundParameters
-            }
-            else {
+            } else {
                 $date = (Get-Date -UFormat "%H%M%S") #"%m%d%Y%H%M%S"
                 Start-Job -Name "XESmartTarget-$session-$date" -ArgumentList $PSBoundParameters, $script:PSModuleRoot -ScriptBlock {
                     param (
@@ -197,10 +192,10 @@ function Start-DbaXESmartTarget {
                     Import-Module "$ModulePath\dbatools.psd1"
                     Add-Type -Path "$ModulePath\bin\XESmartTarget\XESmartTarget.Core.dll" -ErrorAction Stop
                     $params = @{
-                        SqlInstance    = $Parameters.SqlInstance.InputObject
-                        Database       = $Parameters.Database
-                        Session        = $Parameters.Session
-                        Responder      = @()
+                        SqlInstance = $Parameters.SqlInstance.InputObject
+                        Database    = $Parameters.Database
+                        Session     = $Parameters.Session
+                        Responder   = @()
                     }
                     if ($Parameters.SqlCredential) {
                         $params["SqlCredential"] = $Parameters.SqlCredential
@@ -210,11 +205,10 @@ function Start-DbaXESmartTarget {
                         $newResponder = New-Object -TypeName $typename
                         foreach ($property in $responder.PSObject.Properties) {
                             if ($property.Value) {
-                                if($property.Value -is [Array]) {
+                                if ($property.Value -is [Array]) {
                                     $name = $property.Name
                                     $newResponder.$name = [object[]]$property.Value
-                                }
-                                else {
+                                } else {
                                     $name = $property.Name
                                     $newResponder.$name = $property.Value
                                 }
@@ -230,3 +224,4 @@ function Start-DbaXESmartTarget {
         }
     }
 }
+

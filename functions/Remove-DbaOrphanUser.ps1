@@ -1,6 +1,6 @@
-﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Remove-DbaOrphanUser {
-<#
+    <#
     .SYNOPSIS
         Drop orphan users with no existing login to map
 
@@ -109,8 +109,7 @@ function Remove-DbaOrphanUser {
         foreach ($Instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $Instance -SqlCredential $SqlCredential
-            }
-            catch {
+            } catch {
                 Write-Message -Level Warning -Message "Can't connect to $Instance or access denied. Skipping."
                 continue
             }
@@ -127,8 +126,7 @@ function Remove-DbaOrphanUser {
             $CallStack = Get-PSCallStack | Select-Object -Property *
             if ($CallStack.Count -eq 1) {
                 $StackSource = $CallStack[0].Command
-            }
-            else {
+            } else {
                 #-2 because index base is 0 and we want the one before the last (the last is the actual command)
                 $StackSource = $CallStack[($CallStack.Count - 2)].Command
             }
@@ -147,15 +145,13 @@ function Remove-DbaOrphanUser {
                         if ($StackSource -eq "Repair-DbaOrphanUser") {
                             Write-Message -Level Verbose -Message "Call origin: Repair-DbaOrphanUser."
                             #Will use collection from parameter ($User)
-                        }
-                        else {
+                        } else {
                             Write-Message -Level Verbose -Message "Validating users on database $db."
 
                             if ($User.Count -eq 0) {
                                 #the third validation will remove from list sql users without login. The rule here is Sid with length higher than 16
                                 $User = $db.Users | Where-Object { $_.Login -eq "" -and ($_.ID -gt 4) -and (($_.Sid.Length -gt 16 -and $_.LoginType -eq [Microsoft.SqlServer.Management.Smo.LoginType]::SqlLogin) -eq $false) }
-                            }
-                            else {
+                            } else {
 
                                 #the fourth validation will remove from list sql users without login. The rule here is Sid with length higher than 16
                                 $User = $db.Users | Where-Object { $_.Login -eq "" -and ($_.ID -gt 4) -and ($User -contains $_.Name) -and (($_.Sid.Length -gt 16 -and $_.LoginType -eq [Microsoft.SqlServer.Management.Smo.LoginType]::SqlLogin) -eq $false) }
@@ -203,8 +199,7 @@ function Remove-DbaOrphanUser {
                                             #>
                                             if ($server.versionMajor -lt 11) {
                                                 $NumberObjects = ($db.EnumObjects(0x1FFFFFFF) | Where-Object { $_.Schema -eq $sch.Name } | Measure-Object).Count
-                                            }
-                                            else {
+                                            } else {
                                                 $NumberObjects = ($db.EnumObjects() | Where-Object { $_.Schema -eq $sch.Name } | Measure-Object).Count
                                             }
 
@@ -226,14 +221,12 @@ function Remove-DbaOrphanUser {
                                                             SchemaOwnerAfter  = "dbo"
                                                         }
                                                     }
-                                                }
-                                                else {
+                                                } else {
                                                     Write-Message -Level Warning -Message "Schema '$($sch.Name)' owned by user $($dbuser.Name) have $NumberObjects underlying objects. If you want to change the schemas' owner to 'dbo' and drop the user anyway, use -Force parameter. Skipping user '$dbuser'."
                                                     $SkipUser = $true
                                                     break
                                                 }
-                                            }
-                                            else {
+                                            } else {
                                                 if ($sch.Name -eq $dbuser.Name) {
                                                     Write-Message -Level Verbose -Message "The schema '$($sch.Name)' have the same name as user $dbuser. Schema will be dropped."
 
@@ -251,8 +244,7 @@ function Remove-DbaOrphanUser {
                                                             SchemaOwnerAfter  = "N/A"
                                                         }
                                                     }
-                                                }
-                                                else {
+                                                } else {
                                                     Write-Message -Level Warning -Message "Schema '$($sch.Name)' does not have any underlying object. Ownership will be changed to 'dbo' so the user can be dropped. Remember to re-check permissions on this schema!"
 
                                                     if ($Pscmdlet.ShouldProcess($db.Name, "Changing schema '$($sch.Name)' owner to 'dbo'.")) {
@@ -273,16 +265,14 @@ function Remove-DbaOrphanUser {
                                             }
                                         }
 
-                                    }
-                                    else {
+                                    } else {
                                         Write-Message -Level Verbose -Message "User $dbuser does not own any schema. Will be dropped."
                                     }
 
                                     $query = "$AlterSchemaOwner `r`n$DropSchema `r`nDROP USER " + $dbuser
 
                                     Write-Message -Level Debug -Message $query
-                                }
-                                else {
+                                } else {
                                     $query = "EXEC master.dbo.sp_droplogin @loginame = N'$($dbuser.name)'"
                                 }
 
@@ -293,14 +283,12 @@ function Remove-DbaOrphanUser {
                                                 $server.Databases[$db.Name].ExecuteNonQuery($query) | Out-Null
                                                 Write-Message -Level Verbose -Message "User $dbuser was dropped from $($db.Name). -Force parameter was used!"
                                             }
-                                        }
-                                        else {
+                                        } else {
                                             Write-Message -Level Warning -Message "Orphan user $($dbuser.Name) has a matching login. The user will not be dropped. If you want to drop anyway, use -Force parameter."
                                             Continue
                                         }
                                     }
-                                }
-                                else {
+                                } else {
                                     if (-not $SkipUser) {
                                         if ($Pscmdlet.ShouldProcess($db.Name, "Dropping user $dbuser")) {
                                             $server.Databases[$db.Name].ExecuteNonQuery($query) | Out-Null
@@ -309,19 +297,16 @@ function Remove-DbaOrphanUser {
                                     }
                                 }
                             }
-                        }
-                        else {
+                        } else {
                             Write-Message -Level Verbose -Message "No orphan users found on database $db."
                         }
                         #reset collection
                         $User = $null
-                    }
-                    catch {
+                    } catch {
                         Stop-Function -Message "Failure" -ErrorRecord $_ -Target $db -Continue
                     }
                 }
-            }
-            else {
+            } else {
                 Write-Message -Level Verbose -Message "There are no databases to analyse."
             }
         }
@@ -330,3 +315,4 @@ function Remove-DbaOrphanUser {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Remove-SqlOrphanUser
     }
 }
+

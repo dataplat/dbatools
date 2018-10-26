@@ -1,4 +1,4 @@
-﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Invoke-DbMirrorValidation {
     <#
         .SYNOPSIS
@@ -108,14 +108,12 @@ function Invoke-DbMirrorValidation {
                     
                     if ($witdb) {
                         $witexists = $true
-                    }
-                    else {
+                    } else {
                         Write-Message -Level Verbose -Message "Database ($dbname) exists on witness server"
                         $canmirror = $false
                         $witexists = $false
                     }
-                }
-                catch {
+                } catch {
                     $wexists = $false
                     $canmirror = $false
                 }
@@ -148,8 +146,7 @@ function Invoke-DbMirrorValidation {
             
             if ($destdb) {
                 $destdbexists = $true
-            }
-            else {
+            } else {
                 Write-Message -Level Verbose -Message "Database ($dbname) does not exist on mirror server"
                 $canmirror = $false
                 $destdbexists = $false
@@ -159,8 +156,7 @@ function Invoke-DbMirrorValidation {
                 Write-Message -Level Verbose -Message "Cannot access $NetworkShare from $($destdb.Parent.Name)"
                 $canmirror = $false
                 $nexists = $false
-            }
-            else {
+            } else {
                 $nexists = $true
             }
             
@@ -168,8 +164,7 @@ function Invoke-DbMirrorValidation {
                 Write-Message -Level Verbose -Message "This mirroring configuration is not supported. Because the principal server instance, $server, is $($server.EngineEdition) Edition, the mirror server instance must also be $($server.EngineEdition) Edition."
                 $canmirror = $false
                 $edition = $false
-            }
-            else {
+            } else {
                 $edition = $true
             }
             
@@ -177,45 +172,42 @@ function Invoke-DbMirrorValidation {
             if ((Test-Bound -ParameterName Witness)) {
                 if ($endpoints.Count -eq 3) {
                     $endpointpass = $true
-                }
-                else {
+                } else {
                     $endpointpass = $false
                 }
-            }
-            else {
+            } else {
                 if ($endpoints.Count -eq 2) {
                     $endpointpass = $true
-                }
-                else {
+                } else {
                     $endpointpass = $false
                 }
             }
             
             $results = [pscustomobject]@{
-                Primary  = $Primary
-                Mirror   = $Mirror
-                Witness  = $Witness
-                Database = $db.Name
-                RecoveryModel = $db.RecoveryModel
-                MirroringStatus = $db.MirroringStatus
-                State    = $db.Status
-                EndPoints = $endpointpass
-                DatabaseExistsOnMirror = $destdbexists
+                Primary                 = $Primary
+                Mirror                  = $Mirror
+                Witness                 = $Witness
+                Database                = $db.Name
+                RecoveryModel           = $db.RecoveryModel
+                MirroringStatus         = $db.MirroringStatus
+                State                   = $db.Status
+                EndPoints               = $endpointpass
+                DatabaseExistsOnMirror  = $destdbexists
                 DatabaseExistsOnWitness = $witexists
-                OnlineWitness = $wexists
-                EditionMatch = $edition
-                AccessibleShare = $nexists
-                DestinationDbStatus = $destdb.Status
-                WitnessDbStatus = $witdb.Status
-                ValidationPassed = $canmirror
+                OnlineWitness           = $wexists
+                EditionMatch            = $edition
+                AccessibleShare         = $nexists
+                DestinationDbStatus     = $destdb.Status
+                WitnessDbStatus         = $witdb.Status
+                ValidationPassed        = $canmirror
             }
             
             if ((Test-Bound -ParameterName Witness)) {
                 $results | Select-DefaultView -Property Primary, Mirror, Witness, Database, RecoveryModel, MirroringStatus, State, EndPoints, DatabaseExistsOnMirror, OnlineWitness, DatabaseExistsOnWitness, EditionMatch, AccessibleShare, DestinationDbStatus, WitnessDbStatus, ValidationPassed
-            }
-            else {
+            } else {
                 $results | Select-DefaultView -Property Primary, Mirror, Database, RecoveryModel, MirroringStatus, State, EndPoints, DatabaseExistsOnMirror, EditionMatch, AccessibleShare, DestinationDbStatus, ValidationPassed
             }
         }
     }
 }
+

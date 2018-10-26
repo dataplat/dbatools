@@ -1,6 +1,6 @@
-﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaAgListener {
-<#
+    <#
     .SYNOPSIS
         Returns availability group listeners.
 
@@ -12,7 +12,7 @@ function Get-DbaAgListener {
 
     .PARAMETER SqlCredential
         Login to the SqlInstance instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
-        
+
     .PARAMETER AvailabilityGroup
         Specify the availability groups to query.
 
@@ -48,12 +48,12 @@ function Get-DbaAgListener {
 
         Returns all listeners found on sql2017a on sql2017a for the availability group AG-a
 
-    
+
     .EXAMPLE
         PS C:\> Get-DbaAvailabilityGroup -SqlInstance sql2017a -AvailabilityGroup OPP | Get-DbaAgListener
 
         Returns all listeners found on sql2017a on sql2017a for the availability group OPP
-    
+
 #>
     [CmdletBinding()]
     param (
@@ -69,13 +69,13 @@ function Get-DbaAgListener {
         if ($SqlInstance) {
             $InputObject += Get-DbaAvailabilityGroup -SqlInstance $SqlInstance -SqlCredential $SqlCredential -AvailabilityGroup $AvailabilityGroup
         }
-        
+
         if (Test-Bound -ParameterName Listener) {
             $InputObject = $InputObject | Where-Object { $_.AvailabilityGroupListeners.Name -contains $Listener }
         }
-        
+
         $defaults = 'ComputerName', 'InstanceName', 'SqlInstance', 'AvailabilityGroup', 'Name', 'PortNumber', 'ClusterIPConfiguration'
-        
+
         foreach ($aglistener in $InputObject.AvailabilityGroupListeners) {
             $server = $aglistener.Parent.Parent
             Add-Member -Force -InputObject $aglistener -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
@@ -86,3 +86,4 @@ function Get-DbaAgListener {
         }
     }
 }
+

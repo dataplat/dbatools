@@ -1,4 +1,4 @@
-﻿Register-DbaMessageTransform -TargetType 'Sqlcollaborative.Dbatools.Parameter.DbaInstanceParameter' -ScriptBlock {
+Register-DbaMessageTransform -TargetType 'Sqlcollaborative.Dbatools.Parameter.DbaInstanceParameter' -ScriptBlock {
     $args[0].FullSmoName
 }
 Register-DbaMessageTransform -TargetType 'Microsoft.SqlServer.Management.Smo.Server' -ScriptBlock {

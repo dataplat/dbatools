@@ -1,5 +1,5 @@
-﻿function Copy-DbaServerAudit {
-<#
+function Copy-DbaServerAudit {
+    <#
     .SYNOPSIS
         Copy-DbaServerAudit migrates server audits from one SQL Server to another.
 
@@ -90,8 +90,7 @@
 
         try {
             $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -MinimumVersion 10
-        }
-        catch {
+        } catch {
             Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Source
             return
         }
@@ -103,8 +102,7 @@
 
             try {
                 $destServer = Connect-SqlInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential -MinimumVersion 10
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
             }
             $destAudits = $destServer.Audits
@@ -112,13 +110,13 @@
                 $auditName = $currentAudit.Name
 
                 $copyAuditStatus = [pscustomobject]@{
-                    SourceServer = $sourceServer.Name
+                    SourceServer      = $sourceServer.Name
                     DestinationServer = $destServer.Name
-                    Name         = $auditName
-                    Type         = "Server Audit"
-                    Status       = $null
-                    Notes        = $null
-                    DateTime     = [DbaDateTime](Get-Date)
+                    Name              = $auditName
+                    Type              = "Server Audit"
+                    Status            = $null
+                    Notes             = $null
+                    DateTime          = [DbaDateTime](Get-Date)
                 }
 
                 if ($Audit -and $auditName -notin $Audit -or $auditName -in $ExcludeAudit) {
@@ -135,8 +133,7 @@
                             Write-Message -Level Verbose -Message "Server audit $auditName exists at destination. Use -Force to drop and migrate."
                         }
                         continue
-                    }
-                    else {
+                    } else {
                         if ($Pscmdlet.ShouldProcess($destinstance, "Dropping server audit $auditName")) {
                             try {
                                 Write-Message -Level Verbose -Message "Dropping server audit $auditName."
@@ -149,8 +146,7 @@
                                 $destServer.audits[$auditName].Disable()
                                 $destServer.audits[$auditName].Alter()
                                 $destServer.audits[$auditName].Drop()
-                            }
-                            catch {
+                            } catch {
                                 $copyAuditStatus.Status = "Failed"
                                 $copyAuditStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
@@ -168,12 +164,12 @@
                             $copyAuditStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                         }
                         continue
-                    }
-                    else {
+                    } else {
                         Write-Message -Level Verbose -Message "Force specified. Creating directory."
 
                         $destNetBios = Resolve-NetBiosName $destServer
-                        $path = Join-AdminUnc $destNetBios $currentAudit.Filepath
+                        #Variable marked as unused by PSScriptAnalyzer
+                        #$path = Join-AdminUnc $destNetBios $currentAudit.Filepath
                         $root = $currentAudit.Filepath.Substring(0, 3)
                         $rootUnc = Join-AdminUnc $destNetBios $root
 
@@ -181,15 +177,13 @@
                             if ($Pscmdlet.ShouldProcess($destinstance, "Creating directory $($currentAudit.Filepath)")) {
                                 try {
                                     $null = New-DbaDirectory -SqlInstance $destServer -Path $currentAudit.Filepath -EnableException
-                                }
-                                catch {
+                                } catch {
                                     Write-Message -Level Warning -Message "Couldn't create directory $($currentAudit.Filepath). Using default data directory."
                                     $datadir = Get-SqlDefaultPaths $destServer data
                                     $sql = $sql.Replace($currentAudit.FilePath, $datadir)
                                 }
                             }
-                        }
-                        else {
+                        } else {
                             $datadir = Get-SqlDefaultPaths $destServer data
                             $sql = $sql.Replace($currentAudit.FilePath, $datadir)
                         }
@@ -203,8 +197,7 @@
 
                         $copyAuditStatus.Status = "Successful"
                         $copyAuditStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                    }
-                    catch {
+                    } catch {
                         $copyAuditStatus.Status = "Failed"
                         $copyAuditStatus.Notes = (Get-ErrorMessage -Record $_)
                         $copyAuditStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
@@ -219,3 +212,4 @@
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-SqlAudit
     }
 }
+

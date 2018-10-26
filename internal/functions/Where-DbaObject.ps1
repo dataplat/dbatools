@@ -1,4 +1,4 @@
-﻿function global:Where-DbaObject {
+function global:Where-DbaObject {
     <#
         .SYNOPSIS
             A slightly more efficient filter function than Where-Object.
@@ -137,3 +137,4 @@
 }
 
 (Get-Item Function:\Where-DbaObject).Visibility = "Private"
+

@@ -1,6 +1,6 @@
-﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaSchemaChangeHistory {
-<#
+    <#
     .SYNOPSIS
         Gets DDL changes logged in the system trace.
 
@@ -85,8 +85,7 @@ function Get-DbaSchemaChangeHistory {
 
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
             if ($Server.Version.Major -le 8) {
@@ -147,3 +146,4 @@ function Get-DbaSchemaChangeHistory {
         }
     }
 }
+

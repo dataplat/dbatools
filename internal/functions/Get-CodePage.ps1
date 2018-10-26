@@ -1,4 +1,4 @@
-﻿function Get-CodePage {
+function Get-CodePage {
     <#
         .SYNOPSIS
             Converts Microsoft's code page ID to human readable format
@@ -24,3 +24,5 @@
         Select-DefaultView -InputObject $encoding -Property $IncludeProps
     }
 }
+
+

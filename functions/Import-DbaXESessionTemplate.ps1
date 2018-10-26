@@ -1,6 +1,6 @@
-﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Import-DbaXESessionTemplate {
-<#
+    <#
     .SYNOPSIS
         Imports a new XESession XML Template
 
@@ -102,8 +102,7 @@ function Import-DbaXESessionTemplate {
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 11
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -115,8 +114,7 @@ function Import-DbaXESessionTemplate {
                 $templatepath = "$script:PSModuleRoot\bin\xetemplates\$file.xml"
                 if ((Test-Path $templatepath)) {
                     $Path += $templatepath
-                }
-                else {
+                } else {
                     Stop-Function -Message "Invalid template ($templatepath does not exist)." -Continue
                 }
             }
@@ -127,12 +125,10 @@ function Import-DbaXESessionTemplate {
                     Write-Message -Level Verbose -Message "Importing $file to $instance"
                     try {
                         $xml = [xml](Get-Content $file -ErrorAction Stop)
-                    }
-                    catch {
+                    } catch {
                         Stop-Function -Message "Failure" -ErrorRecord $_ -Target $file -Continue
                     }
-                }
-                else {
+                } else {
                     Write-Message -Level Verbose -Message "TargetFilePath specified, changing all file locations in $file for $instance."
                     Write-Message -Level Verbose -Message "TargetFileMetadataPath specified, changing all metadata file locations in $file for $instance."
 
@@ -156,8 +152,7 @@ function Import-DbaXESessionTemplate {
                         $null = Set-Content -Path $tempfile -Value $contents -Encoding UTF8
                         $xml = [xml](Get-Content $tempfile -ErrorAction Stop)
                         $file = $tempfile
-                    }
-                    catch {
+                    } catch {
                         Stop-Function -Message "Failure" -ErrorRecord $_ -Target $file -Continue
                     }
 
@@ -166,8 +161,7 @@ function Import-DbaXESessionTemplate {
                         if (-not (Test-DbaPath -SqlInstance $server -Path $TargetFilePath)) {
                             $null = New-DbaDirectory -SqlInstance $server -Path $TargetFilePath
                         }
-                    }
-                    catch {
+                    } catch {
                         Stop-Function -Message "Failure" -ErrorRecord $_ -Target $file -Continue
                     }
                 }
@@ -204,11 +198,11 @@ function Import-DbaXESessionTemplate {
                         Remove-Item $tempfile -ErrorAction SilentlyContinue
                     }
                     Get-DbaXESession -SqlInstance $server -Session $session.Name
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Failure" -ErrorRecord $_ -Target $store -Continue
                 }
             }
         }
     }
 }
+

@@ -1,12 +1,12 @@
-﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Remove-DbaBackup {
-<#
+    <#
     .SYNOPSIS
         Removes SQL Server backups from disk.
 
     .DESCRIPTION
         Removes SQL Server backups from disk.
-    
+
         Provides all of the same functionality for removing SQL backups from disk as a standard maintenance plan would.
 
         As an addition you have the ability to check the Archive bit on files before deletion. This will allow you to ensure backups have been archived to your archive location before removal.
@@ -116,8 +116,7 @@ function Remove-DbaBackup {
             if ($PSCmdlet.ShouldProcess($file.Directory.FullName, "Removing backup file $($file.Name)")) {
                 try {
                     $file | Remove-Item -Force -EA Stop
-                }
-                catch {
+                } catch {
                     Write-Message -Message "Failed to remove $file." -Level Warning -ErrorRecord $_
                 }
             }
@@ -132,8 +131,7 @@ function Remove-DbaBackup {
                 $OrigPath = $_
                 try {
                     $Contents = @(Get-ChildItem -Force $OrigPath -ErrorAction Stop)
-                }
-                catch {
+                } catch {
                     Write-Message -Message "Can't enumerate $OrigPath." -Level Warning -ErrorRecord $_
                 }
                 if ($Contents.Count -eq 0) {
@@ -145,8 +143,7 @@ function Remove-DbaBackup {
                 if ($PSCmdlet.ShouldProcess($Path, "Removing empty folder .$($FolderPath.Replace($Path, ''))")) {
                     try {
                         $FolderPath | Remove-Item -ErrorAction Stop
-                    }
-                    catch {
+                    } catch {
                         Write-Message -Message "Failed to remove $FolderPath." -Level Warning -ErrorRecord $_
                     }
                 }
@@ -158,3 +155,4 @@ function Remove-DbaBackup {
         }
     }
 }
+

@@ -1,5 +1,5 @@
-﻿function Get-DbaDbMailLog {
-<#
+function Get-DbaDbMailLog {
+    <#
     .SYNOPSIS
         Gets the DBMail log from a SQL instance
 
@@ -70,8 +70,7 @@
 
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category Connectiondbmail -dbmailRecord $_ -Target $instance -Continue
             }
 
@@ -118,10 +117,10 @@
 
             try {
                 $server.Query($sql) | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, LogDate, EventType, Description, Login
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -InnerErrorRecord $_ -Continue
             }
         }
     }
 }
+

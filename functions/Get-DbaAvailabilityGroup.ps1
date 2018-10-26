@@ -1,12 +1,12 @@
-﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaAvailabilityGroup {
-<#
+    <#
     .SYNOPSIS
         Returns availability group objects from a SQL Server instance.
 
     .DESCRIPTION
         Returns availability group objects from a SQL Server instance.
-    
+
         Default view provides most common set of properties for information on the Availability Group(s).
 
     .PARAMETER SqlInstance
@@ -77,17 +77,16 @@ function Get-DbaAvailabilityGroup {
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 11
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure." -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             if (-not $server.IsHadrEnabled) {
                 Stop-Function -Message "Availability Group (HADR) is not configured for the instance: $instance." -Target $instance -Continue
             }
-            
+
             $ags = $server.AvailabilityGroups
-            
+
             if ($AvailabilityGroup) {
                 $ags = $ags | Where-Object Name -in $AvailabilityGroup
             }
@@ -101,8 +100,7 @@ function Get-DbaAvailabilityGroup {
                     $defaults = 'ComputerName', 'InstanceName', 'SqlInstance', 'Name as AvailabilityGroup', 'IsPrimary'
                     Add-Member -Force -InputObject $ag -MemberType NoteProperty -Name IsPrimary -Value ($ag.PrimaryReplicaServerName -eq $server.Name)
                     Select-DefaultView -InputObject $ag -Property $defaults
-                }
-                else {
+                } else {
                     $defaults = 'ComputerName', 'InstanceName', 'SqlInstance', 'LocalReplicaRole', 'Name as AvailabilityGroup', 'PrimaryReplicaServerName as PrimaryReplica', 'AutomatedBackupPreference', 'AvailabilityReplicas', 'AvailabilityDatabases', 'AvailabilityGroupListeners'
                     Select-DefaultView -InputObject $ag -Property $defaults
                 }
@@ -110,3 +108,5 @@ function Get-DbaAvailabilityGroup {
         }
     }
 }
+
+

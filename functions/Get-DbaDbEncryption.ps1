@@ -1,5 +1,5 @@
-﻿function Get-DbaDbEncryption {
-<#
+function Get-DbaDbEncryption {
+    <#
     .SYNOPSIS
         Returns a summary of encryption used on databases passed to it.
 
@@ -78,8 +78,7 @@
 
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -88,19 +87,16 @@
             try {
                 if ($Database) {
                     $dbs = $server.Databases | Where-Object Name -In $Database
-                }
-                elseif ($IncludeSystemDBs) {
+                } elseif ($IncludeSystemDBs) {
                     $dbs = $server.Databases | Where-Object IsAccessible
-                }
-                else {
+                } else {
                     $dbs = $server.Databases | Where-Object { $_.IsAccessible -and $_.IsSystemObject -eq 0 }
                 }
 
                 if ($ExcludeDatabase) {
                     $dbs = $dbs | Where-Object Name -NotIn $ExcludeDatabase
                 }
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Unable to gather dbs for $instance" -Target $instance -Continue
             }
 
@@ -186,3 +182,4 @@
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-DbaDatabaseEncryption
     }
 }
+

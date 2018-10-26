@@ -1,5 +1,5 @@
-﻿function Test-DbaTempdbConfig {
-<#
+function Test-DbaTempdbConfig {
+    <#
     .SYNOPSIS
         Evaluates tempdb against several rules to match best practices.
 
@@ -71,8 +71,7 @@
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -88,8 +87,7 @@
                     Recommended    = $true
                     CurrentSetting = $true
                 }
-            }
-            else {
+            } else {
                 $sql = "DBCC TRACEON (3604);DBCC TRACESTATUS(-1)"
                 $tfCheck = $server.Databases['tempdb'].Query($sql)
                 $notes = 'KB328551 describes how TF 1118 can benefit performance.'
@@ -106,8 +104,7 @@
 
             if ($value.Recommended -ne $value.CurrentSetting -and $null -ne $value.Recommended) {
                 $isBestPractice = $false
-            }
-            else {
+            } else {
                 $isBestPractice = $true
             }
 
@@ -133,8 +130,7 @@
 
             if ($value.Recommended -ne $value.CurrentSetting -and $null -ne $value.Recommended) {
                 $isBestPractice = $false
-            }
-            else {
+            } else {
                 $isBestPractice = $true
             }
 
@@ -151,8 +147,7 @@
             $totalCount = $percData.Count + $percLog.Count
             if ($totalCount -gt 0) {
                 $totalCount = $true
-            }
-            else {
+            } else {
                 $totalCount = $false
             }
 
@@ -167,8 +162,7 @@
 
             if ($value.Recommended -ne $value.CurrentSetting -and $null -ne $value.Recommended) {
                 $isBestPractice = $false
-            }
-            else {
+            } else {
                 $isBestPractice = $true
             }
 
@@ -182,8 +176,7 @@
             $cdata = ($dataFiles | Where-Object PhysicalName -like 'C:*' | Measure-Object).Count + ($logFiles | Where-Object PhysicalName -like 'C:*' | Measure-Object).Count
             if ($cdata -gt 0) {
                 $cdata = $true
-            }
-            else {
+            } else {
                 $cdata = $false
             }
 
@@ -198,8 +191,7 @@
 
             if ($value.Recommended -ne $value.CurrentSetting -and $null -ne $value.Recommended) {
                 $isBestPractice = $false
-            }
-            else {
+            } else {
                 $isBestPractice = $true
             }
 
@@ -213,8 +205,7 @@
             $growthLimits = ($dataFiles | Where-Object MaxSize -gt 0 | Measure-Object).Count + ($logFiles | Where-Object MaxSize -gt 0 | Measure-Object).Count
             if ($growthLimits -gt 0) {
                 $growthLimits = $true
-            }
-            else {
+            } else {
                 $growthLimits = $false
             }
 
@@ -229,8 +220,7 @@
 
             if ($value.Recommended -ne $value.CurrentSetting -and $null -ne $value.Recommended) {
                 $isBestPractice = $false
-            }
-            else {
+            } else {
                 $isBestPractice = $true
             }
 
@@ -248,3 +238,4 @@
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Test-DbaTempDbConfiguration
     }
 }
+

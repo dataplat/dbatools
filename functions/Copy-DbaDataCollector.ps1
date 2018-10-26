@@ -1,5 +1,5 @@
-﻿function Copy-DbaDataCollector {
-<#
+function Copy-DbaDataCollector {
+    <#
     .SYNOPSIS
         Migrates user SQL Data Collector collection sets. SQL Data Collector configuration is on the agenda, but it's hard.
 
@@ -97,8 +97,7 @@
     begin {
         try {
             $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -MinimumVersion 10
-        }
-        catch {
+        } catch {
             Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Source
             return
         }
@@ -114,8 +113,7 @@
 
             try {
                 $destServer = Connect-SqlInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential -MinimumVersion 10
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
             }
             if ($NoServerReconfig -eq $false) {
@@ -123,15 +121,15 @@
                     Write-Message -Level Verbose -Message "Server reconfiguration not yet supported. Only Collection Set migration will be migrated at this time."
                     $NoServerReconfig = $true
 
-            <# for future use when this support is added #>
+                    <# for future use when this support is added #>
                     $copyServerConfigStatus = [pscustomobject]@{
-                        SourceServer = $sourceServer.Name
+                        SourceServer      = $sourceServer.Name
                         DestinationServer = $destServer.Name
-                        Name         = $userName
-                        Type         = "Data Collection Server Config"
-                        Status       = "Skipped"
-                        Notes        = "Not supported at this time"
-                        DateTime     = [DbaDateTime](Get-Date)
+                        Name              = $userName
+                        Type              = "Data Collection Server Config"
+                        Status            = "Skipped"
+                        Notes             = "Not supported at this time"
+                        DateTime          = [DbaDateTime](Get-Date)
                     }
                     $copyServerConfigStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                 }
@@ -146,8 +144,7 @@
                         $sql = "Unknown at this time"
                         $destServer.Query($sql)
                         $destStore.Alter()
-                    }
-                    catch {
+                    } catch {
                         $copyServerConfigStatus.Status = "Failed"
                         $copyServerConfigStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                         Stop-Function -Message "Issue modifying Data Collector configuration" -Target $destServer -ErrorRecord $_
@@ -173,13 +170,13 @@
                 $collectionName = $set.Name
 
                 $copyCollectionSetStatus = [pscustomobject]@{
-                    SourceServer = $sourceServer.Name
+                    SourceServer      = $sourceServer.Name
                     DestinationServer = $destServer.Name
-                    Name         = $collectionName
-                    Type         = "Collection Set"
-                    Status       = $null
-                    Notes        = $null
-                    DateTime     = [DbaDateTime](Get-Date)
+                    Name              = $collectionName
+                    Type              = "Collection Set"
+                    Status            = $null
+                    Notes             = $null
+                    DateTime          = [DbaDateTime](Get-Date)
                 }
 
                 if ($null -ne $destStore.CollectionSets[$collectionName]) {
@@ -192,16 +189,14 @@
                             $copyCollectionSetStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                         }
                         continue
-                    }
-                    else {
+                    } else {
                         if ($Pscmdlet.ShouldProcess($destinstance, "Attempting to drop $collectionName")) {
                             Write-Message -Level Verbose -Message "Collection Set '$collectionName' exists on $destinstance"
                             Write-Message -Level Verbose -Message "Force specified. Dropping $collectionName."
 
                             try {
                                 $destStore.CollectionSets[$collectionName].Drop()
-                            }
-                            catch {
+                            } catch {
                                 $copyCollectionSetStatus.Status = "Failed to drop on destination"
                                 $copyCollectionSetStatus.Notes = (Get-ErrorMessage -Record $_)
                                 $copyCollectionSetStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
@@ -221,8 +216,7 @@
 
                         $copyCollectionSetStatus.Status = "Successful"
                         $copyCollectionSetStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                    }
-                    catch {
+                    } catch {
                         $copyCollectionSetStatus.Status = "Failed to create collection"
                         $copyCollectionSetStatus.Notes = (Get-ErrorMessage -Record $_)
 
@@ -238,8 +232,7 @@
 
                         $copyCollectionSetStatus.Status = "Successful started Collection"
                         $copyCollectionSetStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                    }
-                    catch {
+                    } catch {
                         $copyCollectionSetStatus.Status = "Failed to start collection"
                         $copyCollectionSetStatus.Notes = (Get-ErrorMessage -Record $_)
                         $copyCollectionSetStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
@@ -256,3 +249,4 @@
         if (Test-FunctionInterrupt) { return }
     }
 }
+

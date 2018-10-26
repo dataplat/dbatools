@@ -1,6 +1,6 @@
-﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaPfDataCollectorCounter {
-<#
+    <#
     .SYNOPSIS
         Gets Performance Counters.
 
@@ -83,7 +83,8 @@ function Get-DbaPfDataCollectorCounter {
         [switch]$EnableException
     )
     begin {
-        $columns = 'ComputerName', 'Name', 'DataCollectorSet', 'Counters', 'DataCollectorType', 'DataSourceName', 'FileName', 'FileNameFormat', 'FileNameFormatPattern', 'LatestOutputLocation', 'LogAppend', 'LogCircular', 'LogFileFormat', 'LogOverwrite', 'SampleInterval', 'SegmentMaxRecords'
+        #Variable marked as unused by PSScriptAnalyzer
+        #$columns = 'ComputerName', 'Name', 'DataCollectorSet', 'Counters', 'DataCollectorType', 'DataSourceName', 'FileName', 'FileNameFormat', 'FileNameFormatPattern', 'LatestOutputLocation', 'LogAppend', 'LogCircular', 'LogFileFormat', 'LogOverwrite', 'SampleInterval', 'SegmentMaxRecords'
     }
     process {
         if ($InputObject.Credential -and (Test-Bound -ParameterName Credential -Not)) {
@@ -120,3 +121,4 @@ function Get-DbaPfDataCollectorCounter {
         }
     }
 }
+
