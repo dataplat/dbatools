@@ -115,7 +115,7 @@ function New-DbaClientAlias {
                     $architecture = "64-bit"
                 }
                 #>
-
+                <# DO NOT use Write-Message as this is inside of a script block #>
                 # Write-Verbose "Creating/updating alias for $ComputerName for $architecture"
                 $null = New-ItemProperty -Path $connect -Name $Alias -Value $serverstring -PropertyType String -Force
             }

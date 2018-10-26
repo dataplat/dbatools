@@ -590,7 +590,7 @@ $BackupHistory | Restore-Dbadatabase -SqlInstance sql2000 -TrustDbBackupHistory
                         [string]$DataBase = $database.name
                     }
                 }
-                Write-Verbose "existence - $($RestoreInstance.Databases[$DataBase].State)"
+                Write-Message -Level Verbose -Message "existence - $($RestoreInstance.Databases[$DataBase].State)"
                 if ($RestoreInstance.Databases[$DataBase].State -ne 'Existing') {
                     Write-Message -Message "$Database does not exist on $RestoreInstance" -level Warning
                     Continue

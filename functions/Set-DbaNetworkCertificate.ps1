@@ -159,6 +159,7 @@ function Set-DbaNetworkCertificate {
                 $cert = Get-ChildItem Cert:\LocalMachine -Recurse -ErrorAction Stop | Where-Object { $_.Thumbprint -eq $Thumbprint }
 
                 if ($null -eq $cert) {
+                    <# DO NOT use Write-Message as this is inside of a script block #>
                     Write-Warning "Certificate does not exist on $env:COMPUTERNAME"
                     return
                 }
@@ -177,6 +178,7 @@ function Set-DbaNetworkCertificate {
                 if ($acl) {
                     Set-ItemProperty -Path $regpath -Name Certificate -Value $Thumbprint.ToString().ToLower() # to make it compat with SQL config
                 } else {
+                    <# DO NOT use Write-Message as this is inside of a script block #>
                     Write-Warning "Read-only permissions could not be granted to certificate"
                     return
                 }

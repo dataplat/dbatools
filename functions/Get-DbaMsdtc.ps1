@@ -77,7 +77,7 @@ function Get-DbaMsdtc {
                 Write-Message -Level Verbose -Message "Getting DTC on $computer via WSMan"
                 $dtcservice = Get-Ciminstance -ComputerName $computer -Query $query
                 if ( $null -eq $dtcservice ) {
-                    Write-Warning "Can't connect to CIM on $computer via WSMan"
+                    Write-Message -Level Warning -Message "Can't connect to CIM on $computer via WSMan"
                 }
 
                 Write-Message -Level Verbose -Message "Getting MSDTC Security Registry Values on $computer"
