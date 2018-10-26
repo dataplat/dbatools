@@ -104,7 +104,7 @@ function Install-DbaMaintenanceSolution {
 
 #>
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "High")]
-    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseSingularNouns","",Justification="Internal functions are ignored")]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseSingularNouns", "", Justification = "Internal functions are ignored")]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
         [Alias('ServerInstance', 'SqlServer')]
@@ -378,4 +378,3 @@ function Install-DbaMaintenanceSolution {
         Write-Message -Level Output -Message "Installation complete."
     }
 }
-

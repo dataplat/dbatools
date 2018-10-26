@@ -44,7 +44,7 @@ function Update-Dbatools {
 
 #>
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "Low")]
-    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseSingularNouns","",Justification="It is the proper noun of the cmdlet")]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseSingularNouns", "", Justification = "It is the proper noun of the cmdlet")]
     param(
         [parameter(Mandatory = $false)]
         [Alias("dev", "devbranch")]
@@ -66,4 +66,3 @@ function Update-Dbatools {
         }
     }
 }
-

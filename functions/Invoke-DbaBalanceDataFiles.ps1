@@ -84,7 +84,7 @@ function Invoke-DbaBalanceDataFiles {
 
 #>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
-    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseSingularNouns","",Justification="Singular Noun doesn't make sense")]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseSingularNouns", "", Justification = "Singular Noun doesn't make sense")]
     param (
         [parameter(ParameterSetName = "Pipe", Mandatory)]
         [DbaInstanceParameter[]]$SqlInstance,
@@ -356,4 +356,3 @@ function Invoke-DbaBalanceDataFiles {
         } # end process
     }
 }
-

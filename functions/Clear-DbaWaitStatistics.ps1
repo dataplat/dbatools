@@ -46,7 +46,7 @@ function Clear-DbaWaitStatistics {
 
 #>
     [CmdletBinding(ConfirmImpact = 'High', SupportsShouldProcess)]
-    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseSingularNouns","",Justification="Singular Noun doesn't make sense")]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseSingularNouns", "", Justification = "Singular Noun doesn't make sense")]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer", "SqlServers")]
@@ -82,4 +82,3 @@ function Clear-DbaWaitStatistics {
         }
     }
 }
-

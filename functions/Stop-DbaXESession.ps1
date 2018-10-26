@@ -61,7 +61,7 @@ function Stop-DbaXESession {
 
 #>
     [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = 'Session')]
-    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseSingularNouns","",Justification="Internal functions are ignored")]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseSingularNouns", "", Justification = "Internal functions are ignored")]
     param (
         [parameter(Position = 1, Mandatory, ParameterSetName = 'Session')]
         [parameter(Position = 1, Mandatory, ParameterSetName = 'All')]
@@ -134,4 +134,3 @@ function Stop-DbaXESession {
         }
     }
 }
-

@@ -143,7 +143,7 @@ function Get-DbaDatabase {
 
 #>
     [CmdletBinding(DefaultParameterSetName = "Default")]
-    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseSingularNouns","",Justification="Internal functions are ignored")]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseSingularNouns", "", Justification = "Internal functions are ignored")]
     param (
         [parameter(Position = 0, Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
@@ -352,4 +352,3 @@ function Get-DbaDatabase {
         }
     }
 }
-
