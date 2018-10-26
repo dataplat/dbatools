@@ -1,0 +1,34 @@
+dbatools-startmigration-transcript.txt
+dbatools-exceptions.txt
+*TempPoint*
+*.pssproj
+
+# ignore the settings folder and files for VSCode
+.vscode/*
+*.psproj
+dbatools.psprojs
+
+# ignore the settings folder and files for Visual Studio
+.vs/*
+
+# VIM backup files
+*~
+
+# msbuild log file and structured binary log file
+msbuild.log
+msbuild.binlog
+
+# Local constant file
+tests/constants.local.ps1
+
+# For those that want to use Docker images for testing
+# Integration with Docker requires the docker compose file to exist within the project folder
+docker-compose.yml
+
+### NCrunch ###
+# NCrunch
+*.ncrunch*
+_NCrunch_*
+*.crunch.xml
+*.ncrunchsolution*
+nCrunchTemp_*
