@@ -27,11 +27,11 @@ function Invoke-ManagedComputerCommand {
     #>
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory)]
         [Alias("Server")]
         [dbainstanceparameter]$ComputerName,
         [PSCredential]$Credential,
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory)]
         [scriptblock]$ScriptBlock,
         [string[]]$ArgumentList,
         [switch][Alias('Silent')]
@@ -59,11 +59,11 @@ function Invoke-ManagedComputerCommand {
     $postscriptblock = $ScriptBlock.ToString()
     
     $scriptblock = [ScriptBlock]::Create("$prescriptblock  $postscriptblock")
-    
+    Write-Message -Level Verbose -Message "Connecting to SQL WMI on $computer."
+
     try {
         Invoke-Command2 -ScriptBlock $ScriptBlock -ArgumentList $ArgumentList -Credential $Credential -ErrorAction Stop
-    }
-    catch {
+    } catch {
         Write-Message -Level Verbose -Message "Local connection attempt to $computer failed. Connecting remotely."
         
         # For surely resolve stuff, and going by default with kerberos, this needs to match FullComputerName
@@ -72,3 +72,4 @@ function Invoke-ManagedComputerCommand {
         Invoke-Command2 -ScriptBlock $ScriptBlock -ArgumentList $ArgumentList -ComputerName $hostname -ErrorAction Stop
     }
 }
+

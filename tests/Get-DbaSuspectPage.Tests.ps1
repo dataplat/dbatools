@@ -1,8 +1,23 @@
-﻿$commandname = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
+$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
+Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+    Context "Validate parameters" {
+        $paramCount = 4
+        $defaultParamCount = 11
+        [object[]]$params = (Get-ChildItem function:\Get-DbaSuspectPage).Parameters.Keys
+        $knownParameters = 'SqlInstance','Database','SqlCredential','EnableException'
+        It "Should contain our specific parameters" {
+            ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
+        }
+        It "Should only contain $paramCount parameters" {
+            $params.Count - $defaultParamCount | Should Be $paramCount
+        }
+    }
+}
+
+Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Testing if suspect pages are present" {
         BeforeAll {
             $dbname = "dbatoolsci_GetSuspectPage"
@@ -22,7 +37,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 
         # make darn sure suspect pages show up, run twice
         try {
-            $null = Invoke-DbaDatabaseCorruption -SqlInstance $script:instance2 -Database $dbname -Confirm:$false
+            $null = Invoke-DbaDbCorruption -SqlInstance $script:instance2 -Database $dbname -Confirm:$false
             $null = $db.Query("select top 100 from example")
             $null = $server.Query("ALTER DATABASE $dbname SET PAGE_VERIFY CHECKSUM  WITH NO_WAIT")
             $null = Start-DbccCheck -Server $Server -dbname $dbname -WarningAction SilentlyContinue
@@ -30,7 +45,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         catch {} # should fail
 
         try {
-            $null = Invoke-DbaDatabaseCorruption -SqlInstance $script:instance2 -Database $dbname -Confirm:$false
+            $null = Invoke-DbaDbCorruption -SqlInstance $script:instance2 -Database $dbname -Confirm:$false
             $null = $db.Query("select top 100 from example")
             $null = $server.Query("ALTER DATABASE $dbname SET PAGE_VERIFY CHECKSUM  WITH NO_WAIT")
             $null = Start-DbccCheck -Server $Server -dbname $dbname -WarningAction SilentlyContinue

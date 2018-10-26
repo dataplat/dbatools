@@ -1,5 +1,5 @@
-﻿function Get-DecryptedObject {
-            <#
+function Get-DecryptedObject {
+    <#
             .SYNOPSIS
                 Internal function.
 
@@ -21,11 +21,11 @@
     
     # Query Service Master Key from the database - remove padding from the key
     # key_id 102 eq service master key, thumbprint 3 means encrypted with machinekey
+    Write-Message -Level Verbose -Message "Querying service master key"
     $sql = "SELECT substring(crypt_property,9,len(crypt_property)-8) as smk FROM sys.key_encryptions WHERE key_id=102 and (thumbprint=0x03 or thumbprint=0x0300000001)"
     try {
         $smkbytes = $server.Query($sql).smk
-    }
-    catch {
+    } catch {
         Stop-Function -Message "Can't execute query on $sourcename" -Target $server -ErrorRecord $_
         return
     }
@@ -34,20 +34,20 @@
     $instance = $server.InstanceName
     $serviceInstanceId = $server.ServiceInstanceId
     
-    # Get entropy from the registry - hopefully finds the right SQL server instance
+    Write-Message -Level Verbose -Message "Get entropy from the registry - hopefully finds the right SQL server instance"
+    
     try {
         [byte[]]$entropy = Invoke-Command2 -Raw -Credential $Credential -ComputerName $sourceNetBios -argumentlist $serviceInstanceId {
             $serviceInstanceId = $args[0]
-            $entropy = (Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Microsoft SQL Server\$serviceInstanceId\Security\").Entropy
+            $entropy = (Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Microsoft SQL Server\$serviceInstanceId\Security\" -ErrorAction Stop).Entropy
             return $entropy
         }
-    }
-    catch {
-       Stop-Function -Message "Can't access registry keys on $sourceName. Do you have administrative access to the Windows registry on $sourcename? Otherwise, we're out of ideas." -Target $source
+    } catch {
+        Stop-Function -Message "Can't access registry keys on $sourceName. Do you have administrative access to the Windows registry on $SqlInstance Otherwise, we're out of ideas." -Target $source
         return
     }
     
-    # Decrypt the service master key
+    Write-Message -Level Verbose -Message "Decrypt the service master key"
     try {
         $serviceKey = Invoke-Command2 -Raw -Credential $Credential -ComputerName $sourceNetBios -ArgumentList $smkbytes, $Entropy {
             Add-Type -AssemblyName System.Security
@@ -56,14 +56,15 @@
             $serviceKey = [System.Security.Cryptography.ProtectedData]::Unprotect($smkbytes, $Entropy, 'LocalMachine')
             return $serviceKey
         }
-    }
-    catch {
+    } catch {
         Stop-Function -Message "Can't unprotect registry data on $sourcename. Do you have administrative access to the Windows registry on $sourcename? Otherwise, we're out of ideas." -Target $source
         return
     }
     
     # Choose the encryption algorithm based on the SMK length - 3DES for 2008, AES for 2012
     # Choose IV length based on the algorithm
+    Write-Message -Level Verbose -Message "Choose the encryption algorithm based on the SMK length - 3DES for 2008, AES for 2012"
+    
     if (($serviceKey.Length -ne 16) -and ($serviceKey.Length -ne 32)) {
         Write-Message -Level Verbose -Message "ServiceKey found: $serviceKey.Length"
         Stop-Function -Message "Unknown key size. Do you have administrative access to the Windows registry on $sourcename? Otherwise, we're out of ideas." -Target $source
@@ -73,22 +74,23 @@
     if ($serviceKey.Length -eq 16) {
         $decryptor = New-Object System.Security.Cryptography.TripleDESCryptoServiceProvider
         $ivlen = 8
-    }
-    elseif ($serviceKey.Length -eq 32) {
+    } elseif ($serviceKey.Length -eq 32) {
         $decryptor = New-Object System.Security.Cryptography.AESCryptoServiceProvider
         $ivlen = 16
     }
     
-            <#
+    <#
                 Query link server password information from the Db.
                 Remove header from pwdhash, extract IV (as iv) and ciphertext (as pass)
                 Ignore links with blank credentials (integrated auth ?)
             #>
+    
+    Write-Message -Level Verbose -Message "Query link server password information from the Db."
+    
     try {
         if (-not $server.IsClustered) {
             $connString = "Server=ADMIN:$sourceNetBios\$instance;Trusted_Connection=True"
-        }
-        else {
+        } else {
             $dacEnabled = $server.Configuration.RemoteDacConnectionsEnabled.ConfigValue
             
             if ($dacEnabled -eq $false) {
@@ -101,8 +103,7 @@
             
             $connString = "Server=ADMIN:$sourceName;Trusted_Connection=True"
         }
-    }
-    catch {
+    } catch {
         Stop-Function -Message "Failure enabling DAC on $sourcename" -Target $source -ErrorRecord $_
     }
     
@@ -126,9 +127,10 @@
     }
     
     Write-Message -Level Debug -Message $sql
-    # Get entropy from the registry
+    Write-Message -Level Verbose -Message "Get entropy from the registry"
+    
     try {
-        $results = Invoke-Command2 -Raw -Credential $Credential -ComputerName $sourceNetBios -ArgumentList $connString, $sql {
+        $results = Invoke-Command2 -ErrorAction Stop -Raw -Credential $Credential -ComputerName $sourceNetBios -ArgumentList $connString, $sql {
             $connString = $args[0]; $sql = $args[1]
             $conn = New-Object System.Data.SqlClient.SQLConnection($connString)
             $conn.open()
@@ -139,8 +141,7 @@
             $conn.Dispose()
             return $dt
         }
-    }
-    catch {
+    } catch {
         Stop-Function -Message "Can't establish local DAC connection on $sourcename." -Target $server -ErrorRecord $_
         return
     }
@@ -151,15 +152,14 @@
                 Write-Message -Level Verbose -Message "Setting DAC config back to 0."
                 $server.Configuration.RemoteDacConnectionsEnabled.ConfigValue = $false
                 $server.Configuration.Alter()
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Can't establish local DAC connection on $sourcename" -Target $server -ErrorRecord $_
                 return
             }
         }
     }
     
-    # Go through each row in results
+    Write-Message -Level Verbose -Message "Go through each row in results"
     foreach ($result in $results) {
         # decrypt the password using the service master key and the extracted IV
         $decryptor.Padding = "None"
@@ -182,15 +182,15 @@
         if ($Type -eq "LinkedServer") {
             $name = $result.srvname
             $identity = $result.Name
-        }
-        else {
+        } else {
             $name = $result.name
             $identity = $result.credential_identity
         }
         [pscustomobject]@{
-            Name = $name
+            Name     = $name
             Identity = $identity
             Password = $encode.GetString($decrypted)
         }
     }
 }
+

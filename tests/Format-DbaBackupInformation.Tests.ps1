@@ -1,8 +1,23 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
+Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 
-Describe "$commandname Integration Tests" -Tags "UnitTests" {
+Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+    Context "Validate parameters" {
+        $paramCount = 13
+        $defaultParamCount = 11
+        [object[]]$params = (Get-ChildItem function:\Format-DbaBackupInformation).Parameters.Keys
+        $knownParameters = 'BackupHistory','ReplaceDatabaseName','ReplaceDbNameInFile','DataFileDirectory','LogFileDirectory','DestinationFileStreamDirectory','DatabaseNamePrefix','DatabaseFilePrefix','DatabaseFileSuffix','RebaseBackupFolder','Continue','FileMapping','EnableException'
+        It "Should contain our specific parameters" {
+            ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
+        }
+        It "Should only contain $paramCount parameters" {
+            $params.Count - $defaultParamCount | Should Be $paramCount
+        }
+    }
+}
+
+Describe "$CommandName Integration Tests" -Tags 'IntegrationTests' {
 
     Context "Rename a Database" {
         $History = Get-DbaBackupInformation -Import -Path $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\ContinuePointTest.xml
@@ -122,7 +137,7 @@ Describe "$commandname Integration Tests" -Tags "UnitTests" {
         $Output = Format-DbaBackupInformation -BackupHistory $History -RebaseBackupFolder c:\backups\
 
         It "Should not have moved all backup files to c:\backups" {
-            ($Output | Select-Object -ExpandProperty FullName | split-path | Where-Object {$_ -eq 'c:\backups'}).count | Should Be 0
+            ($Output | Select-Object -ExpandProperty FullName | split-path | Where-Object {$_ -eq 'c:\backups'}).count | Should Be $History.count
         }
 
     }
@@ -143,7 +158,7 @@ Describe "$commandname Integration Tests" -Tags "UnitTests" {
             (($Output | Select-Object -ExpandProperty Filelist | Where-Object {$_.Type -eq 'L'}).PhysicalName | split-path | Where-Object {$_ -ne 'c:\logs'}).count | Should Be 0
         }
         It "Should not have moved all backup files to c:\backups" {
-            ($Output | Select-Object -ExpandProperty FullName | split-path | Where-Object {$_ -eq 'c:\backups'}).count | Should Be 0
+            ($Output | Select-Object -ExpandProperty FullName | split-path | Where-Object {$_ -eq 'c:\backups'}).count | Should Be $History.count
         }
 
     }

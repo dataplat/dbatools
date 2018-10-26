@@ -1,4 +1,4 @@
-﻿$commandname = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+$commandname = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 
@@ -9,8 +9,8 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
         $dbs = "dbatoolsci_lildb", "dbatoolsci_testMaxDop", $singledb
         $null = Get-DbaDatabase -SqlInstance $script:instance2 -Database $dbs | Remove-DbaDatabase -Confirm:$false
         foreach ($db in $dbs) {
-            Invoke-DbaSqlQuery -SqlInstance $script:instance1 -Query "CREATE DATABASE $db"
-            Invoke-DbaSqlQuery -SqlInstance $script:instance2 -Query "CREATE DATABASE $db"
+            Invoke-DbaQuery -SqlInstance $script:instance1 -Query "CREATE DATABASE $db"
+            Invoke-DbaQuery -SqlInstance $script:instance2 -Query "CREATE DATABASE $db"
         }
     }
     AfterAll {

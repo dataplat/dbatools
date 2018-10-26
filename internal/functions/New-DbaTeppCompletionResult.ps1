@@ -1,4 +1,4 @@
-﻿function global:New-DbaTeppCompletionResult {
+function global:New-DbaTeppCompletionResult {
     <#
         .SYNOPSIS
             Generates a completion result for dbatools internal tab completion.
@@ -28,7 +28,7 @@
             Returns a CompletionResult with the text and tooltip 'master'
     #>
     param (
-        [Parameter(Position = 0, ValueFromPipelineByPropertyName = $true, Mandatory = $true, ValueFromPipeline = $true)]
+        [Parameter(Position = 0, ValueFromPipelineByPropertyName = $true, Mandatory, ValueFromPipeline)]
         [ValidateNotNullOrEmpty()]
         [string]
         $CompletionText,
@@ -77,3 +77,4 @@
 }
 
 (Get-Item Function:\New-DbaTeppCompletionResult).Visibility = "Private"
+

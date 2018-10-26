@@ -6,12 +6,12 @@ Internal function. Returns dictionary object that contains file structures for S
 #>
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory = $true, Position = 0)]
+        [Parameter(Mandatory, Position = 0)]
         [ValidateNotNullOrEmpty()]
         [object]$SqlInstance,
-        [Parameter(Mandatory = $true, Position = 1)]
+        [Parameter(Mandatory, Position = 1)]
         [string]$dbname,
-        [Parameter(Mandatory = $true, Position = 2)]
+        [Parameter(Mandatory, Position = 2)]
         [object]$filelist,
         [Parameter(Mandatory = $false, Position = 3)]
         [bool]$ReuseSourceFolderStructure,
@@ -37,8 +37,7 @@ Internal function. Returns dictionary object that contains file structures for S
         $d = @{ }
         if ($ReuseSourceFolderStructure -eq $true) {
             $d.physical = $file.PhysicalName
-        }
-        else {
+        } else {
             $directory = Get-SqlDefaultPaths $server data
             $filename = Split-Path $($file.PhysicalName) -leaf
             $d.physical = "$directory\$filename"
@@ -53,8 +52,7 @@ Internal function. Returns dictionary object that contains file structures for S
         $d = @{ }
         if ($ReuseSourceFolderStructure) {
             $d.physical = $file.PhysicalName
-        }
-        else {
+        } else {
             $directory = Get-SqlDefaultPaths $server log
             $filename = Split-Path $($file.PhysicalName) -leaf
             $d.physical = "$directory\$filename"
@@ -66,3 +64,5 @@ Internal function. Returns dictionary object that contains file structures for S
 
     return $destinationfiles
 }
+
+

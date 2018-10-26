@@ -1,5 +1,5 @@
-﻿function Convert-DbaMessageLevel {
-<#
+function Convert-DbaMessageLevel {
+    <#
     .SYNOPSIS
         Processes the effective message level of a message
     
@@ -32,24 +32,24 @@
 #>
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory)]
         [Sqlcollaborative.Dbatools.Message.MessageLevel]
         $OriginalLevel,
         
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory)]
         [bool]
         $FromStopFunction,
         
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory)]
         [AllowNull()]
         [string[]]
         $Tags,
         
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory)]
         [string]
         $FunctionName,
         
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory)]
         [string]
         $ModuleName
     )
@@ -73,3 +73,4 @@
     if ($number -gt 9) { $number = 9 }
     return ([Sqlcollaborative.Dbatools.Message.MessageLevel]$number)
 }
+

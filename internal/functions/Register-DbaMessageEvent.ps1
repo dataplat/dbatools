@@ -1,5 +1,5 @@
-﻿function Register-DbaMessageEvent {
-<#
+function Register-DbaMessageEvent {
+    <#
     .SYNOPSIS
         Registers an event to when a message is written.
     
@@ -60,11 +60,11 @@
 #>
     [CmdletBinding(PositionalBinding = $false)]
     param (
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory)]
         [string]
         $Name,
         
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory)]
         [System.Management.Automation.ScriptBlock]
         $ScriptBlock,
         
@@ -124,3 +124,4 @@
     
     [Sqlcollaborative.Dbatools.Message.MessageHost]::Events[$newName] = $eventSubscription
 }
+

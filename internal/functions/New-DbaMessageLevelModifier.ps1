@@ -1,5 +1,5 @@
-﻿function New-DbaMessageLevelModifier {
-<#
+function New-DbaMessageLevelModifier {
+    <#
     .SYNOPSIS
         Allows modifying message levels by powerful filters.
     
@@ -62,11 +62,11 @@
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "")]
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory)]
         [string]
         $Name,
         
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory)]
         [int]
         $Modifier,
         
@@ -129,3 +129,5 @@
     
     $levelModifier
 }
+
+

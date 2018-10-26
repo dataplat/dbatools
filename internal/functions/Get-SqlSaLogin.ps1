@@ -9,7 +9,7 @@ function Get-SqlSaLogin {
     #>
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory)]
         [Alias("ServerInstance", "SqlServer")]
         [object]$SqlInstance,
         [PSCredential]$SqlCredential
@@ -18,3 +18,5 @@ function Get-SqlSaLogin {
     $sa = $server.Logins | Where-Object Id -eq 1
     return $sa.Name
 }
+
+

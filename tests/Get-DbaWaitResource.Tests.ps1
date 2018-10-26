@@ -1,12 +1,23 @@
-<#
-    The below statement stays in for every test you build.
-#>
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
+Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+    Context "Validate parameters" {
+        $paramCount = 5
+        $defaultParamCount = 11
+        [object[]]$params = (Get-ChildItem function:\Get-DbaWaitResource).Parameters.Keys
+        $knownParameters = 'SqlInstance','SqlCredential','WaitResource','Row','EnableException'
+        It "Should contain our specific parameters" {
+            ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
+        }
+        It "Should only contain $paramCount parameters" {
+            $params.Count - $defaultParamCount | Should Be $paramCount
+        }
+    }
+}
 
+Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
 
         $random = Get-Random
@@ -21,8 +32,8 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
                 insert into waittest values (1,'hello')
                 go
             "
-        
-        Invoke-DbaSqlQuery -SqlInstance $script:instance1 -Database $WaitResourceDB -Query $sql
+
+        Invoke-DbaQuery -SqlInstance $script:instance1 -Database $WaitResourceDB -Query $sql
     }
     AfterAll {
         Get-DbaDatabase -SqlInstance $script:instance1 -Database $WaitResourceDB | Remove-DbaDatabase -Confirm:$false
@@ -55,13 +66,13 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             select @pageid=PagePid from #TmpIndex where PageType=10
             select 'PAGE: '+convert(varchar(3),DB_ID())+':1:'+convert(varchar(15),@pageid)
         "
-       $page =  (Invoke-DbaSqlQuery -SqlInstance $script:instance1 -Database $WaitResourceDB -Query $Pagesql).Column1
-       $file = Get-DbaDatabaseFile -SqlInstance $script:instance1 -Database $WaitResourceDB | Where-Object TypeDescription -eq 'ROWS'
+       $page =  (Invoke-DbaQuery -SqlInstance $script:instance1 -Database $WaitResourceDB -Query $Pagesql).Column1
+       $file = Get-DbaDbFile -SqlInstance $script:instance1 -Database $WaitResourceDB | Where-Object TypeDescription -eq 'ROWS'
        $results = Get-DbaWaitResource -SqlInstance $script:instance1 -WaitResource $page
        It "Should return databasename $WaitResourceDB" {
            $results.DatabaseName | Should Be $WaitResourceDB
        }
-       
+
        It "Should return physical filename" {
            $results.DataFilePath | Should Be $file.PhysicalName
        }
@@ -92,7 +103,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 
             select 'KEY: '+convert(varchar(3),db_id())+':'+convert(varchar(30),@hobt_id)+' '+ %%lockres%% from keytest  where col1=1
         "
-        $key = (Invoke-DbaSqlQuery -SqlInstance $script:instance1 -Database $WaitResourceDB -Query $SqlKey).Column1
+        $key = (Invoke-DbaQuery -SqlInstance $script:instance1 -Database $WaitResourceDB -Query $SqlKey).Column1
         $resultskey = Get-DbaWaitResource -SqlInstance $script:instance1 -WaitResource $key -row
         It "Should Return DatabaseName $WaitResourceDB" {
             $results

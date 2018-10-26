@@ -1,19 +1,35 @@
-﻿$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
+$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 . "$PSScriptRoot\..\internal\functions\Invoke-Command2.ps1"
+
+
+Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+    Context "Validate parameters" {
+        $paramCount = 7
+        $defaultParamCount = 11
+        [object[]]$params = (Get-ChildItem function:\Get-DbaCredential).Parameters.Keys
+        $knownParameters = 'SqlInstance','SqlCredential','Name','ExcludeName','Identity','ExcludeIdentity','EnableException'
+        It "Should contain our specific parameters" {
+            ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
+        }
+        It "Should only contain $paramCount parameters" {
+            $params.Count - $defaultParamCount | Should Be $paramCount
+        }
+    }
+}
 
 Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
         $logins = "dbatoolsci_thor", "dbatoolsci_thorsmomma"
         $plaintext = "BigOlPassword!"
         $password = ConvertTo-SecureString $plaintext -AsPlainText -Force
-        
+
         # Add user
         foreach ($login in $logins) {
             $null = Invoke-Command2 -ScriptBlock { net user $args[0] $args[1] /add *>&1 } -ArgumentList $login, $plaintext -ComputerName $script:instance2
         }
-        
+
         $results = New-DbaCredential -SqlInstance $script:instance2 -Name dbatoolsci_thorcred -Identity dbatoolsci_thor -Password $password
         $results = New-DbaCredential -SqlInstance $script:instance2 -Identity dbatoolsci_thorsmomma -Password $password
     }
@@ -22,13 +38,13 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             (Get-DbaCredential -SqlInstance $script:instance2 -Identity dbatoolsci_thor, dbatoolsci_thorsmomma -ErrorAction Stop -WarningAction SilentlyContinue).Drop()
         }
         catch { }
-        
+
         foreach ($login in $logins) {
             $null = Invoke-Command2 -ScriptBlock { net user $args /delete *>&1 } -ArgumentList $login -ComputerName $script:instance2
             $null = Invoke-Command2 -ScriptBlock { net user $args /delete *>&1 } -ArgumentList $login -ComputerName $script:instance2
         }
     }
-    
+
     Context "Get credentials" {
         It "Should get just one credential with the proper properties when using Identity" {
             $results = Get-DbaCredential -SqlInstance $script:instance2 -Identity dbatoolsci_thorsmomma

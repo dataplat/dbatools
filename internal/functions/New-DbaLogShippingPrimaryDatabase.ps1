@@ -38,7 +38,7 @@ function New-DbaLogShippingPrimaryDatabase {
         .PARAMETER CompressBackup
             Enables the use of backup compression
 
-        .PARAMETER ThressAlert
+        .PARAMETER ThresholdAlert
             Is the length of time, in minutes, when the alert is to be raised when the backup threshold is exceeded.
             The default is 14,420.
 
@@ -81,7 +81,7 @@ function New-DbaLogShippingPrimaryDatabase {
         .NOTES
             Author: Sander Stad (@sqlstad, sqlstad.nl)
             Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+            Copyright: (c) 2018 by dbatools, licensed under MIT
             License: MIT https://opensource.org/licenses/MIT
 
         .EXAMPLE
@@ -91,62 +91,42 @@ function New-DbaLogShippingPrimaryDatabase {
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "Low")]
 
     param (
-        [parameter(Mandatory = $true)]
+        [parameter(Mandatory)]
         [Alias("ServerInstance", "SqlServer")]
         [object]$SqlInstance,
-
-        [System.Management.Automation.PSCredential]
-        $SqlCredential,
-
-        [Parameter(Mandatory = $true)]
+        [System.Management.Automation.PSCredential]$SqlCredential,
+        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [object]$Database,
-
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [string]$BackupDirectory,
-
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [string]$BackupJob,
-
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory)]
         [int]$BackupRetention,
-
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [string]$BackupShare,
-
         [int]$BackupThreshold = 60,
-
         [switch]$CompressBackup,
-
-        [int]$ThressAlert = 14420,
-
+        [int]$ThresholdAlert = 14420,
         [int]$HistoryRetention = 14420,
-
         [string]$MonitorServer,
-
         [ValidateSet(0, "sqlserver", 1, "windows")]
         [object]$MonitorServerSecurityMode = 1,
-
-        [System.Management.Automation.PSCredential]
-        $MonitorCredential,
-
+        [System.Management.Automation.PSCredential]$MonitorCredential,
         [switch]$ThresholdAlertEnabled,
-
         [Alias('Silent')]
         [switch]$EnableException,
-
         [switch]$Force
     )
 
     # Try connecting to the instance
-    Write-Message -Message "Connecting to $SqlInstance" -Level Verbose
     try {
         $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
-    }
-    catch {
+    } catch {
         Stop-Function -Message "Could not connect to Sql Server instance" -Target $SqlInstance -Continue
     }
 
@@ -154,8 +134,7 @@ function New-DbaLogShippingPrimaryDatabase {
     if ([bool]([uri]$BackupShare).IsUnc -and $BackupShare -notmatch '^\\(?:\\[^<>:`"/\\|?*]+)+$') {
         Stop-Function -Message "The backup share path $BackupShare should be formatted in the form \\server\share." -Target $SqlInstance
         return
-    }
-    else {
+    } else {
         if (-not ((Test-Path $BackupShare -PathType Container -IsValid) -and ((Get-Item $BackupShare).PSProvider.Name -eq 'FileSystem'))) {
             Stop-Function -Message "The backup share path $BackupShare is not valid or can't be reached." -Target $SqlInstance
             return
@@ -166,12 +145,10 @@ function New-DbaLogShippingPrimaryDatabase {
     if ($CompressBackup -eq $true) {
         Write-Message -Message "Setting backup compression to 1." -Level Verbose
         $BackupCompression = 1
-    }
-    elseif ($CompressBackup -eq $false) {
+    } elseif ($CompressBackup -eq $false) {
         Write-Message -Message "Setting backup compression to 0." -Level Verbose
         $BackupCompression = 0
-    }
-    elseif (-not $CompressBackup) {
+    } elseif (-not $CompressBackup) {
         $defaultCompression = (Get-DbaSpConfigure -SqlInstance $SqlInstance -ConfigName DefaultBackupCompression).ConfiguredValue
         Write-Message -Message "Setting backup compression to default value $defaultCompression." -Level Verbose
         $BackupCompression = $defaultCompression
@@ -185,17 +162,16 @@ function New-DbaLogShippingPrimaryDatabase {
     }
 
     # Check the MonitorServer
-    if ($Force -and -not $MonitorServer) {
+    if (-not $MonitorServer -and $Force) {
+        Write-Message -Message "Setting monitor server to $SqlInstance." -Level Verbose
         $MonitorServer = $SqlInstance
-        Write-Message -Message "Setting monitor server to $MonitorServer." -Level Verbose
     }
 
     # Check the MonitorServerSecurityMode if it's SQL Server authentication
     if ($MonitorServerSecurityMode -eq 0 -and -not $MonitorCredential) {
         Stop-Function -Message "The MonitorServerCredential cannot be empty when using SQL Server authentication." -Target $SqlInstance
         return
-    }
-    elseif ($MonitorServerSecurityMode -eq 0 -and $MonitorCredential) {
+    } elseif ($MonitorServerSecurityMode -eq 0 -and $MonitorCredential) {
         # Get the username and password from the credential
         $MonitorLogin = $MonitorCredential.UserName
         $MonitorPassword = $MonitorCredential.GetNetworkCredential().Password
@@ -217,8 +193,7 @@ function New-DbaLogShippingPrimaryDatabase {
     if ($ThresholdAlertEnabled) {
         [int]$ThresholdAlertEnabled = 1
         Write-Message -Message "Setting Threshold alert to $ThresholdAlertEnabled." -Level Verbose
-    }
-    else {
+    } else {
         [int]$ThresholdAlertEnabled = 0
         Write-Message -Message "Setting Threshold alert to $ThresholdAlertEnabled." -Level Verbose
     }
@@ -241,7 +216,7 @@ function New-DbaLogShippingPrimaryDatabase {
     if ($MonitorServer) {
         $Query += ",@monitor_server = N'$MonitorServer'
             ,@monitor_server_security_mode = $MonitorServerSecurityMode
-            ,@threshold_alert = $ThressAlert
+            ,@threshold_alert = $ThresholdAlert
             ,@threshold_alert_enabled = $ThresholdAlertEnabled"
     }
 
@@ -258,24 +233,23 @@ function New-DbaLogShippingPrimaryDatabase {
 
     if ($server.Version.Major -gt 9) {
         $Query += ",@overwrite = 1;"
-    }
-    else {
+    } else {
         $Query += ";"
     }
 
     # Execute the query to add the log shipping primary
     if ($PSCmdlet.ShouldProcess($SqlServer, ("Configuring logshipping for primary database $Database on $SqlInstance"))) {
         try {
-            Write-Message -Message "Configuring logshipping for primary database $Database." -Level Output
+            Write-Message -Message "Configuring logshipping for primary database $Database." -Level Verbose
             Write-Message -Message "Executing query:`n$Query" -Level Verbose
             $server.Query($Query)
-        }
-        catch {
+        } catch {
             Write-Message -Message "$($_.Exception.InnerException.InnerException.InnerException.InnerException.Message)" -Level Warning
             Stop-Function -Message "Error executing the query.`n$($_.Exception.Message)`n$($Query)" -ErrorRecord $_ -Target $SqlInstance -Continue
         }
     }
 
-    Write-Message -Message "Finished adding the primary database $Database to log shipping." -Level Output
+    Write-Message -Message "Finished adding the primary database $Database to log shipping." -Level Verbose
 
 }
+

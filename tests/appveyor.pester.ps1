@@ -55,6 +55,18 @@ Import-Module "$ModuleBase\dbatools.psd1"
 Update-TypeData -AppendPath "$ModuleBase\xml\dbatools.types.ps1xml"
 Start-Sleep 5
 
+function Split-ArrayInParts($array, [int]$parts) {
+    #splits an array in "equal" parts
+    $size = $array.Length / $parts
+    $counter = [pscustomobject] @{ Value = 0 }
+    $groups = $array | Group-Object -Property { [math]::Floor($counter.Value++ / $size) }
+    $rtn = @()
+    foreach($g in $groups) {
+        $rtn += , @($g.Group)
+    }
+    $rtn
+}
+
 function Get-CoverageIndications($Path, $ModuleBase) {
     # takes a test file path and figures out what to analyze for coverage (i.e. dependencies)
     $CBHRex = [regex]'(?smi)<#(.*)#>'
@@ -70,12 +82,15 @@ function Get-CoverageIndications($Path, $ModuleBase) {
         $f = $everything | Where-Object Name -eq $func_name
         $source = $f.Definition
         $CBH = $CBHRex.match($source).Value
-        $cmdonly = $source.Replace($CBH, '')
-        foreach ($e in $everyfunction) {
-            # hacky, I know, but every occurrence of any function plus a space kinda denotes usage !?
-            $searchme = "$e "
-            if ($cmdonly.contains($searchme)) {
-                $funcs += $e
+        # This fails very hard sometimes
+        if ($source -and $CBH) {
+            $cmdonly = $source.Replace($CBH, '')
+            foreach ($e in $everyfunction) {
+                # hacky, I know, but every occurrence of any function plus a space kinda denotes usage !?
+                $searchme = "$e "
+                if ($cmdonly.contains($searchme)) {
+                    $funcs += $e
+                }
             }
         }
     }
@@ -272,8 +287,19 @@ if (-not $Finalize) {
     else {
         $AllScenarioTests = $AllTests
     }
-
     Write-Host -ForegroundColor DarkGreen "Test Groups   : Reduced to $($AllScenarioTests.Count) out of $($AllDbatoolsTests.Count) tests"
+    # do we have a part ? (1/2, 2/2, etc)
+    if ($env:PART) {
+        try {
+            [int]$num, [int]$denom = $env:PART.Split('/')
+            Write-Host -ForegroundColor DarkGreen "Test Parts    : part $($env:PART) on total $($AllScenarioTests.Count)"
+            #shuffle things a bit (i.e. with natural sorting most of the *get* fall into the first part, all the *set* in the last, etc)
+            $AllScenarioTestsShuffled = $AllScenarioTests | Sort-Object -Property @{Expression={ $_.Name.Split('-')[-1].Replace('Dba', '') }; Ascending = $true}
+            $scenarioParts = Split-ArrayInParts -array $AllScenarioTestsShuffled -parts $denom
+            $AllScenarioTests = $scenarioParts[$num-1] | Sort-Object -Property Name
+        } catch {
+        }
+    }
     if ($AllTests.Count -eq 0 -and $AllScenarioTests.Count -eq 0) {
         throw "something went wrong, nothing to test"
     }

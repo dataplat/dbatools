@@ -82,7 +82,7 @@ function New-DbaLogShippingSecondaryDatabase {
         .NOTES
             Author: Sander Stad (@sqlstad, sqlstad.nl)
             Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+            Copyright: (c) 2018 by dbatools, licensed under MIT
             License: MIT https://opensource.org/licenses/MIT
 
         .EXAMPLE
@@ -92,7 +92,7 @@ function New-DbaLogShippingSecondaryDatabase {
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "Low")]
 
     param (
-        [parameter(Mandatory = $true)]
+        [parameter(Mandatory)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter]$SqlInstance,
         [PSCredential]$SqlCredential,
@@ -101,21 +101,21 @@ function New-DbaLogShippingSecondaryDatabase {
         [switch]$DisconnectUsers,
         [int]$HistoryRetention = 14420,
         [int]$MaxTransferSize,
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [DbaInstanceParameter]$PrimaryServer,
         [PSCredential]$PrimarySqlCredential,
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [object]$PrimaryDatabase,
         [int]$RestoreAll = 1,
         [int]$RestoreDelay = 0,
         [ValidateSet(0, 'NoRecovery', 1, 'Standby')]
         [object]$RestoreMode = 0,
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [int]$RestoreThreshold,
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [object]$SecondaryDatabase,
         [int]$ThresholdAlert = 14420,
@@ -126,20 +126,16 @@ function New-DbaLogShippingSecondaryDatabase {
     )
 
     # Try connecting to the instance
-    Write-Message -Message "Connecting to $SqlInstance" -Level Verbose
     try {
         $ServerSecondary = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
-    }
-    catch {
+    } catch {
         Stop-Function -Message "Failure" -Category ConnectionError -Target $SqlInstance -ErrorRecord $_ -Continue
     }
 
     # Try connecting to the instance
-    Write-Message -Message "Connecting to $PrimaryServer" -Level Verbose
     try {
         $ServerPrimary = Connect-SqlInstance -SqlInstance $PrimaryServer -SqlCredential $PrimarySqlCredential
-    }
-    catch {
+    } catch {
         Stop-Function -Message "Failure" -Category ConnectionError -Target $PrimaryServer -ErrorRecord $_ -Continue
     }
 
@@ -163,8 +159,7 @@ function New-DbaLogShippingSecondaryDatabase {
     if ($ThresholdAlertEnabled) {
         [int]$ThresholdAlertEnabled = 1
         Write-Message -Message "Setting Threshold alert to $ThresholdAlertEnabled." -Level Verbose
-    }
-    else {
+    } else {
         [int]$ThresholdAlertEnabled = 0
         Write-Message -Message "Setting Threshold alert to $ThresholdAlertEnabled." -Level Verbose
     }
@@ -173,8 +168,7 @@ function New-DbaLogShippingSecondaryDatabase {
     if ($DisconnectUsers) {
         [int]$DisconnectUsers = 1
         Write-Message -Message "Setting disconnect users to $DisconnectUsers." -Level Verbose
-    }
-    else {
+    } else {
         [int]$DisconnectUsers = 0
         Write-Message -Message "Setting disconnect users to $DisconnectUsers." -Level Verbose
     }
@@ -184,8 +178,7 @@ function New-DbaLogShippingSecondaryDatabase {
         if ($Force) {
             [int]$DisconnectUsers = 0
             Write-Message -Message "Illegal combination of database restore mode $RestoreMode and disconnect users $DisconnectUsers. Setting it to $DisconnectUsers." -Level Warning
-        }
-        else {
+        } else {
             Stop-Function -Message "Illegal combination of database restore mode $RestoreMode and disconnect users $DisconnectUsers." -Target $SqlInstance -Continue
         }
     }
@@ -219,24 +212,24 @@ function New-DbaLogShippingSecondaryDatabase {
 
     if ($ServerSecondary.Version.Major -gt 9) {
         $Query += ",@overwrite = 1;"
-    }
-    else {
+    } else {
         $Query += ";"
     }
 
     # Execute the query to add the log shipping primary
     if ($PSCmdlet.ShouldProcess($SqlServer, ("Configuring logshipping for secondary database $SecondaryDatabase on $SqlInstance"))) {
         try {
-            Write-Message -Message "Configuring logshipping for secondary database $SecondaryDatabase on $SqlInstance." -Level Output
+            Write-Message -Message "Configuring logshipping for secondary database $SecondaryDatabase on $SqlInstance." -Level Verbose
             Write-Message -Message "Executing query:`n$Query" -Level Verbose
             $ServerSecondary.Query($Query)
-        }
-        catch {
+        } catch {
             Write-Message -Message "$($_.Exception.InnerException.InnerException.InnerException.InnerException.Message)" -Level Warning
             Stop-Function -Message "Error executing the query.`n$($_.Exception.Message)`n$Query"  -ErrorRecord $_ -Target $SqlInstance -Continue
         }
     }
 
-    Write-Message -Message "Finished adding the secondary database $SecondaryDatabase to log shipping." -Level Output
+    Write-Message -Message "Finished adding the secondary database $SecondaryDatabase to log shipping." -Level Verbose
 
 }
+
+

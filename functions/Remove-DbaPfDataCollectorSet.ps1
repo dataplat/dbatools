@@ -1,73 +1,77 @@
-﻿function Remove-DbaPfDataCollectorSet {
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+function Remove-DbaPfDataCollectorSet {
     <#
-        .SYNOPSIS
-            Removes a Performance Monitor Data Collector Set
+    .SYNOPSIS
+        Removes a Performance Monitor Data Collector Set
 
-        .DESCRIPTION
-            Removes a Performance Monitor Data Collector Set. When removing data collector sets from the local instance, Run As Admin is required.
+    .DESCRIPTION
+        Removes a Performance Monitor Data Collector Set. When removing data collector sets from the local instance, Run As Admin is required.
 
-        .PARAMETER ComputerName
-            The target computer. Defaults to localhost.
+    .PARAMETER ComputerName
+        The target computer. Defaults to localhost.
 
-        .PARAMETER Credential
-            Allows you to login to $ComputerName using alternative credentials. To use:
+    .PARAMETER Credential
+        Allows you to login to the target computer using alternative credentials. To use:
 
-            $cred = Get-Credential, then pass $cred object to the -Credential parameter.
+        $cred = Get-Credential, then pass $cred object to the -Credential parameter.
 
-        .PARAMETER CollectorSet
-            The name of the Collector Set to remove.
+    .PARAMETER CollectorSet
+        The name of the Collector Set to remove.
 
-        .PARAMETER InputObject
-            Accepts the object output by Get-DbaPfDataCollectorSet via the pipeline.
+    .PARAMETER InputObject
+        Accepts the object output by Get-DbaPfDataCollectorSet via the pipeline.
 
-        .PARAMETER WhatIf
-            If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
+    .PARAMETER WhatIf
+        If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
-        .PARAMETER Confirm
-            If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
+    .PARAMETER Confirm
+        If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-        .NOTES
-            Tags: PerfMon
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: MIT https://opensource.org/licenses/MIT
+    .NOTES
+        Tags: PerfMon
+        Author: Chrissy LeMaire (@cl), netnerds.net
 
-        .LINK
-            https://dbatools.io/Remove-DbaPfDataCollectorSet
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-        .EXAMPLE
-            Remove-DbaPfDataCollectorSet
+    .LINK
+        https://dbatools.io/Remove-DbaPfDataCollectorSet
 
-            Prompts for confirmation then removes all ready Collectors on localhost.
+    .EXAMPLE
+        PS C:\> Remove-DbaPfDataCollectorSet
 
-        .EXAMPLE
-            Remove-DbaPfDataCollectorSet -ComputerName sql2017 -Confirm:$false
+        Prompts for confirmation then removes all ready Collectors on localhost.
 
-            Attempts to remove all ready Collectors on localhost and does not prompt to confirm.
+    .EXAMPLE
+        PS C:\> Remove-DbaPfDataCollectorSet -ComputerName sql2017 -Confirm:$false
 
-        .EXAMPLE
-            Remove-DbaPfDataCollectorSet -ComputerName sql2017, sql2016 -Credential (Get-Credential) -CollectorSet 'System Correlation'
+        Attempts to remove all ready Collectors on localhost and does not prompt to confirm.
 
-            Prompts for confirmation then removes the 'System Correlation' Collector on sql2017 and sql2016 using alternative credentials.
+    .EXAMPLE
+        PS C:\> Remove-DbaPfDataCollectorSet -ComputerName sql2017, sql2016 -Credential ad\sqldba -CollectorSet 'System Correlation'
 
-        .EXAMPLE
-            Get-DbaPfDataCollectorSet -CollectorSet 'System Correlation' | Remove-DbaPfDataCollectorSet
+        Prompts for confirmation then removes the 'System Correlation' Collector on sql2017 and sql2016 using alternative credentials.
 
-            Removes the 'System Correlation' Collector.
+    .EXAMPLE
+        PS C:\> Get-DbaPfDataCollectorSet -CollectorSet 'System Correlation' | Remove-DbaPfDataCollectorSet
 
-        .EXAMPLE
-            Get-DbaPfDataCollectorSet -CollectorSet 'System Correlation' | Stop-DbaPfDataCollectorSet | Remove-DbaPfDataCollectorSet
+        Removes the 'System Correlation' Collector.
 
-            Stops and removes the 'System Correlation' Collector.
-    #>
+    .EXAMPLE
+        PS C:\> Get-DbaPfDataCollectorSet -CollectorSet 'System Correlation' | Stop-DbaPfDataCollectorSet | Remove-DbaPfDataCollectorSet
+
+        Stops and removes the 'System Correlation' Collector.
+
+#>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "High")]
     param (
-        [DbaInstance[]]$ComputerName=$env:COMPUTERNAME,
+        [DbaInstance[]]$ComputerName = $env:COMPUTERNAME,
         [PSCredential]$Credential,
         [Alias("DataCollectorSet")]
         [string[]]$CollectorSet,
@@ -82,8 +86,7 @@
             $collectorset.Query($setname, $null)
             if ($collectorset.name -eq $setname) {
                 $null = $collectorset.Delete()
-            }
-            else {
+            } else {
                 Write-Warning "Data Collector Set $setname does not exist on $env:COMPUTERNAME."
             }
         }
@@ -117,7 +120,6 @@
             }
 
             if ($Pscmdlet.ShouldProcess("$computer", "Removing collector set $setname")) {
-                Write-Message -Level Verbose -Message "Connecting to $computer using Invoke-Command."
                 try {
                     Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $setscript -ArgumentList $setname -ErrorAction Stop
                     [pscustomobject]@{
@@ -125,11 +127,11 @@
                         Name         = $setname
                         Status       = "Removed"
                     }
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Failure Removing $setname on $computer." -ErrorRecord $_ -Target $computer -Continue
                 }
             }
         }
     }
 }
+

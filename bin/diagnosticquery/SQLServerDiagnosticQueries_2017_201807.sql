@@ -1,7 +1,7 @@
 
 -- SQL Server 2017 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: August 14, 2018
+-- Last Modified: September 21, 2018
 -- https://www.sqlskills.com/blogs/glenn/
 -- http://sqlserverperformance.wordpress.com/
 -- Twitter: GlennAlanBerry
@@ -78,6 +78,8 @@ SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version In
 -- 14.0.3029.16		CU8									6/19/2018		https://support.microsoft.com/en-us/help/4338363
 -- 14.0.3030.27		CU9									7/19/2018		https://support.microsoft.com/en-us/help/4341265
 -- 14.0.3035.2		CU9 + Security Update				8/13/2018		https://www.microsoft.com/en-us/download/details.aspx?id=57263
+-- 14.0.3037.1		CU10								8/27/2018		https://support.microsoft.com/en-us/help/4342123/cumulative-update-10-for-sql-server-2017
+-- 14.0.3038.14		CU11								9/20/2018		https://support.microsoft.com/en-us/help/4462262		
 		
 															
 
@@ -771,7 +773,7 @@ db.group_database_id, db.replica_id,db.is_memory_optimized_elevate_to_snapshot_o
 db.delayed_durability_desc, db.is_auto_create_stats_incremental_on,
 db.is_query_store_on, db.is_sync_with_backup, db.is_temporal_history_retention_enabled,
 db.is_supplemental_logging_enabled, db.is_remote_data_archive_enabled,
-db.is_encrypted, de.encryption_state, de.percent_complete, de.key_algorithm, de.key_length      
+db.is_encrypted, de.encryption_state, de.percent_complete, de.key_algorithm, de.key_length, db.resource_pool_id      
 FROM sys.databases AS db WITH (NOLOCK)
 INNER JOIN sys.dm_os_performance_counters AS lu WITH (NOLOCK)
 ON db.name = lu.instance_name
@@ -878,18 +880,26 @@ ORDER BY [CPU Rank] OPTION (RECOMPILE);
 
 -- Get I/O utilization by database (Query 37) (IO Usage By Database)
 WITH Aggregate_IO_Statistics
-AS
-(SELECT DB_NAME(database_id) AS [Database Name],
-CAST(SUM(num_of_bytes_read + num_of_bytes_written)/1048576 AS DECIMAL(12, 2)) AS io_in_mb
-FROM sys.dm_io_virtual_file_stats(NULL, NULL) AS [DM_IO_STATS]
-GROUP BY database_id)
-SELECT ROW_NUMBER() OVER(ORDER BY io_in_mb DESC) AS [I/O Rank], [Database Name], io_in_mb AS [Total I/O (MB)],
-       CAST(io_in_mb/ SUM(io_in_mb) OVER() * 100.0 AS DECIMAL(5,2)) AS [I/O Percent]
+AS (SELECT DB_NAME(database_id) AS [Database Name],
+    CAST(SUM(num_of_bytes_read + num_of_bytes_written) / 1048576 AS DECIMAL(12, 2)) AS [ioTotalMB],
+    CAST(SUM(num_of_bytes_read ) / 1048576 AS DECIMAL(12, 2)) AS [ioReadMB],
+    CAST(SUM(num_of_bytes_written) / 1048576 AS DECIMAL(12, 2)) AS [ioWriteMB]
+    FROM sys.dm_io_virtual_file_stats(NULL, NULL) AS [DM_IO_STATS]
+    GROUP BY database_id)
+SELECT ROW_NUMBER() OVER (ORDER BY ioTotalMB DESC) AS [I/O Rank],
+        [Database Name], ioTotalMB AS [Total I/O (MB)],
+        CAST(ioTotalMB / SUM(ioTotalMB) OVER () * 100.0 AS DECIMAL(5, 2)) AS [Total I/O %],
+        ioReadMB AS [Read I/O (MB)], 
+		CAST(ioReadMB / SUM(ioReadMB) OVER () * 100.0 AS DECIMAL(5, 2)) AS [Read I/O %],
+        ioWriteMB AS [Write I/O (MB)], 
+		CAST(ioWriteMB / SUM(ioWriteMB) OVER () * 100.0 AS DECIMAL(5, 2)) AS [Write I/O %]
 FROM Aggregate_IO_Statistics
 ORDER BY [I/O Rank] OPTION (RECOMPILE);
 ------
 
 -- Helps determine which database is using the most I/O resources on the instance
+-- These numbers are cumulative since the last service restart
+-- They include all I/O activity, not just the nominal I/O workload
 
 
 -- Get total buffer usage by database for current instance  (Query 38) (Total Buffer Usage by Database)
@@ -1267,6 +1277,8 @@ ORDER BY total_worker_time DESC OPTION (RECOMPILE);
 -- sys.dm_exec_function_stats (Transact-SQL)
 -- https://bit.ly/2q1Q6BM
 
+-- Showplan Enhancements for UDFs
+-- https://bit.ly/2LVqiQ1
 
 
 -- Database specific queries *****************************************************************
@@ -2042,7 +2054,10 @@ ORDER BY bs.backup_finish_date DESC OPTION (RECOMPILE);
 -- https://bit.ly/28Rpb2x
 
 
--- These three Pluralsight Courses go into more detail about how to run these queries and interpret the results
+-- These four Pluralsight Courses go into more detail about how to run these queries and interpret the results
+
+-- SQL Server 2017: Diagnosing Configuration Issues with DMVs
+-- https://bit.ly/2MSUDUL
 
 -- SQL Server 2014 DMV Diagnostic Queries – Part 1 
 -- https://bit.ly/2plxCer
@@ -2067,5 +2082,5 @@ ORDER BY bs.backup_finish_date DESC OPTION (RECOMPILE);
 -- https://bit.ly/2JMWe8x
 
 
--- August 2017 blog series about upgrading and migrating SQL Server
+-- August 2017 blog series about upgrading and migrating to SQL Server 2016/2017
 -- https://bit.ly/2ftKVrX

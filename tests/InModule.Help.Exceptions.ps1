@@ -1,4 +1,4 @@
-﻿$global:FunctionHelpTestExceptions = @(
+$global:FunctionHelpTestExceptions = @(
     "TabExpansion2"
 )
 
@@ -12,3 +12,4 @@ $global:HelpTestSkipParameterType = @{
     "Test-DbaCmConnection" = @("Type")
     "Get-DbaService"       = @("DoNotUse")
 }
+

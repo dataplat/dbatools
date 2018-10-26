@@ -1,5 +1,4 @@
 #ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
-
 function Get-DbaForceNetworkEncryption {
     <#
     .SYNOPSIS
@@ -11,7 +10,7 @@ function Get-DbaForceNetworkEncryption {
         This setting is found in Configuration Manager.
 
     .PARAMETER SqlInstance
-        The target SQL Server - defaults to localhost.
+       The target SQL Server instance or instances. Defaults to localhost.
 
     .PARAMETER Credential
         Allows you to login to the computer (not sql instance) using alternative Windows credentials
@@ -27,26 +26,31 @@ function Get-DbaForceNetworkEncryption {
     .PARAMETER Confirm
         Prompts you for confirmation before executing any changing operations within the command
 
+    .NOTES
+        Tags: Certificate
+        Author: Chrissy LeMaire (@cl), netnerds.net
+
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
+
+    .LINK
+        https://dbatools.io/Get-DbaForceNetworkEncryption
+
     .EXAMPLE
-        Get-DbaForceNetworkEncryption
+        PS C:\> Get-DbaForceNetworkEncryption
 
         Gets Force Encryption properties on the default (MSSQLSERVER) instance on localhost - requires (and checks for) RunAs admin.
 
     .EXAMPLE
-        Get-DbaForceNetworkEncryption -SqlInstance sql01\SQL2008R2SP2
+        PS C:\> Get-DbaForceNetworkEncryption -SqlInstance sql01\SQL2008R2SP2
 
         Gets Force Network Encryption for the SQL2008R2SP2 on sql01. Uses Windows Credentials to both login and view the registry.
 
-    .NOTES
-        Tags: Certificate
-
-        Website: https://dbatools.io
-        Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-        License: MIT https://opensource.org/licenses/MIT
 #>
     [CmdletBinding()]
     param (
-        [Parameter(ValueFromPipeline = $true)]
+        [Parameter(ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer", "ComputerName")]
         [DbaInstanceParameter[]]
         $SqlInstance = $env:COMPUTERNAME,
@@ -72,11 +76,9 @@ function Get-DbaForceNetworkEncryption {
                 Stop-Function -Message "Can't resolve $instance" -Target $instance -Continue -Category InvalidArgument
             }
 
-            Write-Message -Level Verbose -Message "Connecting to SQL WMI on $($instance.ComputerName)"
             try {
                 $sqlwmi = Invoke-ManagedComputerCommand -ComputerName $resolved.FullComputerName -ScriptBlock { $wmi.Services } -Credential $Credential -ErrorAction Stop | Where-Object DisplayName -eq "SQL Server ($($instance.InstanceName))"
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failed to access $instance" -Target $instance -Continue -ErrorRecord $_
             }
 
@@ -84,8 +86,7 @@ function Get-DbaForceNetworkEncryption {
             $vsname = ($sqlwmi.AdvancedProperties | Where-Object Name -eq VSNAME).Value
             try {
                 $instancename = $sqlwmi.DisplayName.Replace('SQL Server (', '').Replace(')', '') # Don't clown, I don't know regex :(
-            }
-            catch {
+            } catch {
                 # Probably because the instance name has been aliased or does not exist or samthin
             }
             $serviceaccount = $sqlwmi.ServiceAccount
@@ -97,8 +98,7 @@ function Get-DbaForceNetworkEncryption {
                 if (![System.String]::IsNullOrEmpty($regroot)) {
                     $regroot = ($regroot -Split 'Value\=')[1]
                     $vsname = ($vsname -Split 'Value\=')[1]
-                }
-                else {
+                } else {
                     Stop-Function -Message "Can't find instance $vsname on $instance" -Continue -Category ObjectNotFound -Target $instance
                 }
             }
@@ -131,11 +131,11 @@ function Get-DbaForceNetworkEncryption {
                     foreach ($result in $results) {
                         [pscustomobject]$result
                     }
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Failed to connect to $($resolved.FullComputerName) using PowerShell remoting!" -ErrorRecord $_ -Target $instance -Continue
                 }
             }
         }
     }
 }
+

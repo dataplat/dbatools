@@ -98,7 +98,7 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
         }
         Context "Server/database names and file paths have commas and spaces" {
             $Header = ConvertFrom-Json -InputObject (Get-Content $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\RestoreCommaIssues.json -raw)
-            $header | Add-Member -Type NoteProperty -Name FullName -Value $_.BackupPath
+            $header | Add-Member -Type NoteProperty -Name FullName -Value 'test'
 
             $Output = Select-DbaBackupInformation -BackupHistory $header
 

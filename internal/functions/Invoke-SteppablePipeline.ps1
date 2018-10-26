@@ -1,7 +1,6 @@
-﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
-function Invoke-SteppablePipeline
-{
-<#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+function Invoke-SteppablePipeline {
+    <#
     .SYNOPSIS
         Allows using steppable pipelines on the pipeline.
     
@@ -22,15 +21,16 @@ function Invoke-SteppablePipeline
 #>
     [CmdletBinding()]
     param (
-        [Parameter(ValueFromPipeline = $true)]
+        [Parameter(ValueFromPipeline)]
         $InputObject,
         
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory)]
         $Pipeline
     )
     
-    process
-    {
+    process {
         $Pipeline.Process($InputObject)
     }
 }
+
+

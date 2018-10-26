@@ -1,5 +1,5 @@
-﻿function Register-DbaMessageTransform {
-<#
+function Register-DbaMessageTransform {
+    <#
     .SYNOPSIS
         Registers a scriptblock that can transform message content.
     
@@ -74,23 +74,23 @@
 #>
     [CmdletBinding(PositionalBinding = $false)]
     param (
-        [Parameter(Mandatory = $true, ParameterSetName = "Target")]
+        [Parameter(Mandatory, ParameterSetName = "Target")]
         [string]
         $TargetType,
         
-        [Parameter(Mandatory = $true, ParameterSetName = "Exception")]
+        [Parameter(Mandatory, ParameterSetName = "Exception")]
         [string]
         $ExceptionType,
         
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory)]
         [ScriptBlock]
         $ScriptBlock,
         
-        [Parameter(Mandatory = $true, ParameterSetName = "TargetFilter")]
+        [Parameter(Mandatory, ParameterSetName = "TargetFilter")]
         [string]
         $TargetTypeFilter,
         
-        [Parameter(Mandatory = $true, ParameterSetName = "ExceptionFilter")]
+        [Parameter(Mandatory, ParameterSetName = "ExceptionFilter")]
         [string]
         $ExceptionTypeFilter,
         
@@ -118,3 +118,4 @@
         }
     }
 }
+

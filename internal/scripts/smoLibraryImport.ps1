@@ -1,5 +1,5 @@
-﻿$scriptBlock = {
-    Param (
+$scriptBlock = {
+    param (
         $ModuleRoot,
 
         $DllRoot,
@@ -9,7 +9,7 @@
 
     function Copy-Assembly {
         [CmdletBinding()]
-        Param (
+        param (
             [string]$ModuleRoot,
             [string]$DllRoot,
             [bool]$DoCopy,

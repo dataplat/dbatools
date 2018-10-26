@@ -1,4 +1,4 @@
-﻿$commandname = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+$commandname = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 
@@ -9,7 +9,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     Context "Set some options" {
         foreach ($instance in ($script:instance1, $script:instance2)) {
             $server = Connect-DbaInstance -SqlInstance $instance
-            $results = Get-DbaDbQueryStoreOptions -SqlInstance $instance -WarningVariable warning  3>&1
+            $results = Get-DbaDbQueryStoreOption -SqlInstance $instance -WarningVariable warning  3>&1
 
             if ($server.VersionMajor -lt 13) {
                 It "should warn" {
@@ -23,15 +23,15 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
                 }
 
                 $newnumber = $oldnumber + 1
-                $null = Set-DbaDbQueryStoreOptions -SqlInstance $instance -Database msdb -State Off
+                $null = Set-DbaDbQueryStoreOption -SqlInstance $instance -Database msdb -State Off
 
                 It "should warn that state is off" {
-                    $results = Set-DbaDbQueryStoreOptions -SqlInstance $instance -Database msdb -FlushInterval $newnumber -WarningVariable warning  3>&1
+                    $results = Set-DbaDbQueryStoreOption -SqlInstance $instance -Database msdb -FlushInterval $newnumber -WarningVariable warning  3>&1
                     $warning | Should Not Be $null
                 }
 
                 It "should change the specified param to the new value" {
-                    $results = Set-DbaDbQueryStoreOptions -SqlInstance $instance -Database msdb -FlushInterval $newnumber -State ReadWrite
+                    $results = Set-DbaDbQueryStoreOption -SqlInstance $instance -Database msdb -FlushInterval $newnumber -State ReadWrite
                     $results.DataFlushIntervalInSeconds | Should Be $newnumber
                 }
             }

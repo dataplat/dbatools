@@ -1,90 +1,93 @@
 function Reset-DbaAdmin {
     <#
-        .SYNOPSIS
-            This function allows administrators to regain access to SQL Servers in the event that passwords or access was lost.
+    .SYNOPSIS
+        This function allows administrators to regain access to SQL Servers in the event that passwords or access was lost.
 
-            Supports SQL Server 2005 and above. Windows administrator access is required.
+        Supports SQL Server 2005 and above. Windows administrator access is required.
 
-        .DESCRIPTION
-            This function allows administrators to regain access to local or remote SQL Servers by either resetting the sa password, adding the sysadmin role to existing login, or adding a new login (SQL or Windows) and granting it sysadmin privileges.
+    .DESCRIPTION
+        This function allows administrators to regain access to local or remote SQL Servers by either resetting the sa password, adding the sysadmin role to existing login, or adding a new login (SQL or Windows) and granting it sysadmin privileges.
 
-            This is accomplished by stopping the SQL services or SQL Clustered Resource Group, then restarting SQL via the command-line using the /mReset-DbaAdmin parameter which starts the server in Single-User mode and only allows this script to connect.
+        This is accomplished by stopping the SQL services or SQL Clustered Resource Group, then restarting SQL via the command-line using the /mReset-DbaAdmin parameter which starts the server in Single-User mode and only allows this script to connect.
 
-            Once the service is restarted, the following tasks are performed:
-            - Login is added if it doesn't exist
-            - If login is a Windows User, an attempt is made to ensure it exists
-            - If login is a SQL Login, password policy will be set to OFF when creating the login, and SQL Server authentication will be set to Mixed Mode.
-            - Login will be enabled and unlocked
-            - Login will be added to sysadmin role
+        Once the service is restarted, the following tasks are performed:
+        - Login is added if it doesn't exist
+        - If login is a Windows User, an attempt is made to ensure it exists
+        - If login is a SQL Login, password policy will be set to OFF when creating the login, and SQL Server authentication will be set to Mixed Mode.
+        - Login will be enabled and unlocked
+        - Login will be added to sysadmin role
 
-            If failures occur at any point, a best attempt is made to restart the SQL Server.
+        If failures occur at any point, a best attempt is made to restart the SQL Server.
 
-            In order to make this script as portable as possible, System.Data.SqlClient and Get-WmiObject are used (as opposed to requiring the Failover Cluster Admin tools or SMO).
+        In order to make this script as portable as possible, System.Data.SqlClient and Get-WmiObject are used (as opposed to requiring the Failover Cluster Admin tools or SMO).
 
-            If using this function against a remote SQL Server, ensure WinRM is configured and accessible. If this is not possible, run the script locally.
+        If using this function against a remote SQL Server, ensure WinRM is configured and accessible. If this is not possible, run the script locally.
 
-            Tested on Windows XP, 7, 8.1, Server 2012 and Windows Server Technical Preview 2.
-            Tested on SQL Server 2005 SP4 through 2016 CTP2.
+        Tested on Windows XP, 7, 8.1, Server 2012 and Windows Server Technical Preview 2.
+        Tested on SQL Server 2005 SP4 through 2016 CTP2.
 
-        .PARAMETER SqlInstance
-            The SQL Server instance. SQL Server must be 2005 and above, and can be a clustered or stand-alone instance.
+    .PARAMETER SqlInstance
+        The target SQL Server instance or instances. SQL Server must be 2005 and above, and can be a clustered or stand-alone instance.
 
-        .PARAMETER Login
-            By default, the Login parameter is "sa" but any other SQL or Windows account can be specified. If a login does not currently exist, it will be added.
+    .PARAMETER Login
+        By default, the Login parameter is "sa" but any other SQL or Windows account can be specified. If a login does not currently exist, it will be added.
 
-            When adding a Windows login to remote servers, ensure the SQL Server can add the login (ie, don't add WORKSTATION\Admin to remoteserver\instance. Domain users and Groups are valid input.
+        When adding a Windows login to remote servers, ensure the SQL Server can add the login (ie, don't add WORKSTATION\Admin to remoteserver\instance. Domain users and Groups are valid input.
 
-        .PARAMETER SecurePassword
-            By default, if a SQL Login is detected, you will be prompted for a password. Use this to securely bypass the prompt.
+    .PARAMETER SecurePassword
+        By default, if a SQL Login is detected, you will be prompted for a password. Use this to securely bypass the prompt.
 
-        .PARAMETER WhatIf
-            If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
+    .PARAMETER WhatIf
+        If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
-        .PARAMETER Confirm
-            If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
+    .PARAMETER Confirm
+        If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
-        .PARAMETER Force
-            If this switch is enabled, the Login(s) will be dropped and recreated on Destination. Logins that own Agent jobs cannot be dropped at this time.
+    .PARAMETER Force
+        If this switch is enabled, the Login(s) will be dropped and recreated on Destination. Logins that own Agent jobs cannot be dropped at this time.
 
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-        .EXAMPLE
-            Reset-DbaAdmin -SqlInstance sqlcluster
+    .NOTES
+        Tags: WSMan
+        Author: Chrissy LeMaire (@cl), netnerds.net
 
-            Prompts for password, then resets the "sa" account password on sqlcluster.
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-        .EXAMPLE
-            Reset-DbaAdmin -SqlInstance sqlserver\sqlexpress -Login ad\administrator
+        Requires: Admin access to server (not SQL Services),
+        Remoting must be enabled and accessible if $SqlInstance is not local
 
-            Prompts user to confirm that they understand the SQL Service will be restarted.
+    .LINK
+        https://dbatools.io/Reset-DbaAdmin
 
-            Adds the domain account "ad\administrator" as a sysadmin to the SQL instance.
-            If the account already exists, it will be added to the sysadmin role.
+    .EXAMPLE
+        PS C:\> Reset-DbaAdmin -SqlInstance sqlcluster
 
-        .EXAMPLE
-            Reset-DbaAdmin -SqlInstance sqlserver\sqlexpress -Login sqladmin -Force
+        Prompts for password, then resets the "sa" account password on sqlcluster.
 
-            Skips restart confirmation, prompts for password, then adds a SQL Login "sqladmin" with sysadmin privileges.
-            If the account already exists, it will be added to the sysadmin role and the password will be reset.
+    .EXAMPLE
+        PS C:\> Reset-DbaAdmin -SqlInstance sqlserver\sqlexpress -Login ad\administrator
 
-        .NOTES
-            Tags: WSMan
-            Author: Chrissy LeMaire (@cl), netnerds.net
-            Requires: Admin access to server (not SQL Services),
-            Remoting must be enabled and accessible if $SqlInstance is not local
+        Prompts user to confirm that they understand the SQL Service will be restarted.
 
-            dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-            Copyright (C) 2016 Chrissy LeMaire
+        Adds the domain account "ad\administrator" as a sysadmin to the SQL instance.
+        If the account already exists, it will be added to the sysadmin role.
 
-        .LINK
-            https://dbatools.io/Reset-DbaAdmin
+    .EXAMPLE
+        PS C:\> Reset-DbaAdmin -SqlInstance sqlserver\sqlexpress -Login sqladmin -Force
+
+        Skips restart confirmation, prompts for password, then adds a SQL Login "sqladmin" with sysadmin privileges.
+        If the account already exists, it will be added to the sysadmin role and the password will be reset.
+
 #>
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "High")]
     param (
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter]
         $SqlInstance,
@@ -106,7 +109,7 @@ function Reset-DbaAdmin {
              #>
             [CmdletBinding()]
             param (
-                [Parameter(Mandatory = $true)]
+                [Parameter(Mandatory)]
                 [Security.SecureString]
                 $Password
             )
@@ -124,7 +127,7 @@ function Reset-DbaAdmin {
             [OutputType([System.Boolean])]
             [CmdletBinding()]
             param (
-                [Parameter(Mandatory = $true)]
+                [Parameter(Mandatory)]
                 [Alias("ServerInstance", "SqlServer")]
                 [DbaInstanceParameter]
                 $SqlInstance,
@@ -141,8 +144,7 @@ function Reset-DbaAdmin {
                 $conn.Close()
                 $conn.Dispose()
                 return $true
-            }
-            catch {
+            } catch {
                 return $false
             }
         }
@@ -185,8 +187,7 @@ function Reset-DbaAdmin {
                         $tcp.Connect($hostname, 135)
                         $tcp.Close()
                         $tcp.Dispose()
-                    }
-                    catch {
+                    } catch {
                         throw "Can't connect to $baseaddress either via ping or tcp (WMI port 135)"
                     }
                 }
@@ -194,8 +195,7 @@ function Reset-DbaAdmin {
                 try {
                     $hostentry = [System.Net.Dns]::GetHostEntry($baseaddress)
                     $ipaddr = ($hostentry.AddressList | Where-Object { $_ -notlike '169.*' } | Select-Object -First 1).IPAddressToString
-                }
-                catch {
+                } catch {
                     throw "Could not resolve SqlServer IP or NetBIOS name"
                 }
 
@@ -205,8 +205,7 @@ function Reset-DbaAdmin {
                     if ($null -eq $hostname) {
                         $hostname = (nbtstat -A $ipaddr | Where-Object { $_ -match '\<00\>  UNIQUE' } | ForEach-Object { $_.SubString(4, 14) }).Trim()
                     }
-                }
-                catch {
+                } catch {
                     throw "Could not access remote WMI object. Check permissions and firewall."
                 }
             }
@@ -215,8 +214,7 @@ function Reset-DbaAdmin {
             if ($hostname -ne $env:COMPUTERNAME) {
                 try {
                     $session = New-PSSession -ComputerName $hostname
-                }
-                catch {
+                } catch {
                     throw "Can't access $hostname using PSSession. Check your firewall settings and ensure Remoting is enabled or run the script locally."
                 }
             }
@@ -229,16 +227,16 @@ function Reset-DbaAdmin {
                 try {
                     if ($hostname -eq $env:COMPUTERNAME) {
                         $account = New-Object System.Security.Principal.NTAccount($args)
-                        $sid = $account.Translate([System.Security.Principal.SecurityIdentifier])
-                    }
-                    else {
+                        #Variable $sid marked as unused by PSScriptAnalyzer replace with $null to catch output
+                        $null = $account.Translate([System.Security.Principal.SecurityIdentifier])
+                    } else {
                         Invoke-Command -ErrorAction Stop -Session $session -ArgumentList $login -ScriptBlock {
                             $account = New-Object System.Security.Principal.NTAccount($args)
-                            $sid = $account.Translate([System.Security.Principal.SecurityIdentifier])
+                            #Variable $sid marked as unused by PSScriptAnalyzer replace with $null to catch output
+                            $null = $account.Translate([System.Security.Principal.SecurityIdentifier])
                         }
                     }
-                }
-                catch {
+                } catch {
                     Write-Message -Level Warning -Message "Cannot resolve Windows User or Group $login. Trying anyway."
                 }
             }
@@ -251,11 +249,11 @@ function Reset-DbaAdmin {
                 }
                 while ($Password.Length -eq 0)
             }
-            
+
             If ((Test-Bound -ParameterName SecurePassword)) {
                 $Password = $SecurePassword
             }
-            
+
             # Get instance and service display name, then get services
             $instance = $null
             $instance = $SqlInstance.InstanceName
@@ -268,13 +266,11 @@ function Reset-DbaAdmin {
                 if ($hostname -eq $env:COMPUTERNAME) {
                     $instanceservices = Get-Service -ErrorAction Stop | Where-Object { $_.DisplayName -like "*($instance)*" -and $_.Status -eq "Running" }
                     $sqlservice = Get-Service -ErrorAction Stop | Where-Object DisplayName -eq "SQL Server ($instance)"
-                }
-                else {
+                } else {
                     $instanceservices = Get-Service -ComputerName $ipaddr -ErrorAction Stop | Where-Object { $_.DisplayName -like "*($instance)*" -and $_.Status -eq "Running" }
                     $sqlservice = Get-Service -ComputerName $ipaddr -ErrorAction Stop | Where-Object DisplayName -eq "SQL Server ($instance)"
                 }
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Cannot connect to WMI on $hostname or SQL Service does not exist. Check permissions, firewall and SQL Server running status." -ErrorRecord $_ -Target $SqlInstance
                 return
             }
@@ -290,8 +286,7 @@ function Reset-DbaAdmin {
             # itself connects immediately) or -f, so they are handled differently.
             try {
                 $checkcluster = Get-Service -ComputerName $ipaddr -ErrorAction Stop | Where-Object { $_.Name -eq "ClusSvc" -and $_.Status -eq "Running" }
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Can't check services." -Target $SqlInstance -ErrorRecord $_
                 return
             }
@@ -306,20 +301,17 @@ function Reset-DbaAdmin {
                 $isclustered = $true
                 try {
                     $clusterResource | Where-Object { $_.Name -eq "SQL Server" } | ForEach-Object { $_.TakeOffline(60) }
-                }
-                catch {
+                } catch {
                     $clusterResource | Where-Object { $_.Name -eq "SQL Server" } | ForEach-Object { $_.BringOnline(60) }
                     $clusterResource | Where-Object { $_.Name -ne "SQL Server" } | ForEach-Object { $_.BringOnline(60) }
                     Stop-Function -Message "Could not stop the SQL Service. Restarted SQL Service and quit." -ErrorRecord $_ -Target $SqlInstance
                     return
                 }
-            }
-            else {
+            } else {
                 try {
                     Stop-Service -InputObject $sqlservice -Force -ErrorAction Stop
                     Write-Message -Level Verbose -Message "Successfully stopped SQL service."
-                }
-                catch {
+                } catch {
                     Start-Service -InputObject $instanceservices -ErrorAction Stop
                     Stop-Function -Message "Could not stop the SQL Service. Restarted SQL service and quit." -ErrorRecord $_ -Target $SqlInstance
                     return
@@ -334,44 +326,37 @@ function Reset-DbaAdmin {
                     if ("$netstart" -notmatch "success") {
                         throw
                     }
-                }
-                else {
+                } else {
                     $netstart = Invoke-Command -ErrorAction Stop -Session $session -ArgumentList $displayname -ScriptBlock { net start ""$args"" /mReset-DbaAdmin } 2>&1
                     foreach ($line in $netstart) {
                         if ($line.length -gt 0) { Write-Message -Level Verbose -Message $line }
                     }
                 }
-            }
-            catch {
+            } catch {
                 Stop-Service -InputObject $sqlservice -Force -ErrorAction SilentlyContinue
 
                 if ($isclustered) {
                     $clusterResource | Where-Object Name -eq "SQL Server" | ForEach-Object { $_.BringOnline(60) }
                     $clusterResource | Where-Object Name -ne "SQL Server" | ForEach-Object { $_.BringOnline(60) }
-                }
-                else {
+                } else {
                     Start-Service -InputObject $instanceservices -ErrorAction SilentlyContinue
                 }
                 Stop-Function -Message "Couldn't execute net start command. Restarted services and quit." -ErrorRecord $_
                 return
             }
 
-            Write-Message -Level Verbose -Message "Reconnecting to SQL instance."
             try {
                 $null = Invoke-ResetSqlCmd -SqlInstance $sqlinstance -Sql "SELECT 1" -ErrorAction Stop
-            }
-            catch {
+            } catch {
                 try {
                     Start-Sleep 3
                     $null = Invoke-ResetSqlCmd -SqlInstance $sqlinstance -Sql "SELECT 1" -ErrorAction Stop
-                }
-                catch {
+                } catch {
                     Stop-Service Input-Object $sqlservice -Force -ErrorAction SilentlyContinue
                     if ($isclustered) {
                         $clusterResource | Where-Object { $_.Name -eq "SQL Server" } | ForEach-Object { $_.BringOnline(60) }
                         $clusterResource | Where-Object { $_.Name -ne "SQL Server" } | ForEach-Object { $_.BringOnline(60) }
-                    }
-                    else {
+                    } else {
                         Start-Service -InputObject $instanceservices -ErrorAction SilentlyContinue
                     }
                     Stop-Function -Message "Could not stop the SQL Service. Restarted SQL Service and quit." -ErrorRecord $_
@@ -387,8 +372,7 @@ function Reset-DbaAdmin {
                     Write-Message -Level Warning -Message "Couldn't create login."
                 }
 
-            }
-            elseif ($login -ne "sa") {
+            } elseif ($login -ne "sa") {
                 # Create new sql user
                 $sql = "IF NOT EXISTS (SELECT name FROM master.sys.server_principals WHERE name = '$login')
                     BEGIN CREATE LOGIN [$login] WITH PASSWORD = '$(ConvertTo-PlainText $Password)', CHECK_POLICY = OFF, CHECK_EXPIRATION = OFF END"
@@ -433,8 +417,7 @@ function Reset-DbaAdmin {
             if ($isclustered -eq $true) {
                 $clusterResource | Where-Object Name -eq "SQL Server" | ForEach-Object { $_.BringOnline(60) }
                 $clusterResource | Where-Object Name -ne "SQL Server" | ForEach-Object { $_.BringOnline(60) }
-            }
-            else {
+            } else {
                 Start-Service -InputObject $instanceservices -ErrorAction SilentlyContinue
             }
         }
@@ -443,3 +426,4 @@ function Reset-DbaAdmin {
         Write-Message -Level Verbose -Message "Script complete!"
     }
 }
+
