@@ -69,6 +69,7 @@ function Copy-DbaLinkedServer {
 
 #>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseSingularNouns","",Justification="Internal functions are ignored")]
     param (
         [parameter(Mandatory)]
         [DbaInstanceParameter]$Source,

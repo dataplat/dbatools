@@ -178,6 +178,7 @@ function Import-DbaCsvToSql {
 
 #>
     [CmdletBinding(DefaultParameterSetName = "Default")]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseSingularNouns","",Justification="Internal functions are ignored")]
     param (
         [string[]]$Csv,
         [Parameter(Mandatory)]
