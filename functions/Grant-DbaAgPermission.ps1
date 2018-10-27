@@ -115,10 +115,10 @@ function Grant-DbaAgPermission {
             $InputObject += Get-DbaLogin -SqlInstance $instance -SqlCredential $SqlCredential -Login $Login
             foreach ($account in $Login) {
                 if ($account -notin $InputObject.Name) {
-                    if ($account -match '\\') {
-                        $InputObject += New-DbaLogin -SqlInstance $server -Login $account
-                    } else {
-                        Stop-Function -Message "$account does not exist and cannot be created automatically" -Target $instance
+                    try {
+                        $InputObject += New-DbaLogin -SqlInstance $server -Login $account -EnableException
+                    } catch {
+                        Stop-Function -Message "Failure" -ErrorRecord $_ -Target $instance
                         return
                     }
                 }
