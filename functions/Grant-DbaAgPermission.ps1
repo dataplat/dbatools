@@ -116,6 +116,7 @@ function Grant-DbaAgPermission {
             foreach ($account in $Login) {
                 if ($account -notin $InputObject.Name) {
                     try {
+                        Write-Warning $account
                         $InputObject += New-DbaLogin -SqlInstance $server -Login $account -EnableException
                     } catch {
                         Stop-Function -Message "Failure" -ErrorRecord $_ -Target $instance
