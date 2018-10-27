@@ -525,7 +525,11 @@ function New-DbaAvailabilityGroup {
                 $primaryserviceaccount = "$saname`$"
             }
         }
-
+        
+        if (-not $primaryserviceaccount) {
+            $primaryserviceaccount = "$saname`$"
+        }
+        
         $serviceaccounts = @($primaryserviceaccount)
 
         foreach ($second in $secondaries) {
