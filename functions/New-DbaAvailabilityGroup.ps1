@@ -442,7 +442,7 @@ function New-DbaAvailabilityGroup {
         foreach ($db in $Database) {
             if ($SeedingMode -eq "Automatic") {
                 if ($Pscmdlet.ShouldProcess($Primary, "Backing up $db to NUL")) {
-                    $null = $primarydb | Backup-DbaDatabase -BackupFileName NUL
+                    $null = Backup-DbaDatabase -BackupFileName NUL -SqlInstance $Primary -SqlCredential $PrimarySqlCredential -Database $db
                 }
             }
 
