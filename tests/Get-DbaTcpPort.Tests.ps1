@@ -25,25 +25,26 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 }
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Command actually works" {
+        $results = Get-DbaTcpPort -SqlInstance $script:instance2
+        $resultsIpv6 = Get-DbaTcpPort -SqlInstance $script:instance2 -All -ExcludeIpv6
+        $resultsAll = Get-DbaTcpPort -SqlInstance $script:instance2 -All
+
         It "Should Return a Result" {
-            $results = Get-DbaTcpPort -SqlInstance $script:instance2
             $results | Should -Not -Be $null
-        }
-
-        It "Should Return Multiple Results" {
-            $resultsAll = Get-DbaTcpPort -SqlInstance $script:instance2 -All
-            $resultsAll.Count | Should -BeGreaterThan 1
-        }
-
-        It "Should Exclude Ipv6 Results" {
-            $resultsIpv6 = Get-DbaTcpPort -SqlInstance $script:instance2 -All -ExcludeIpv6
-            $resultsAll.Count - $resultsIpv6.Count | Should -BeGreaterThan 0
         }
 
         It "has the correct properties" {
             $result = $results[0]
             $ExpectedProps = 'ComputerName,InstanceName,SqlInstance,IPAddress,Counter,Port,Static,Type'.Split(',')
             ($result.PsObject.Properties.Name | Sort-Object) | Should Be ($ExpectedProps | Sort-Object)
+        }
+
+        It "Should Return Multiple Results" {
+            $resultsAll.Count | Should -BeGreaterThan 1
+        }
+
+        It "Should Exclude Ipv6 Results" {
+            $resultsAll.Count - $resultsIpv6.Count | Should -BeGreaterThan 0
         }
     }
 }

@@ -8,7 +8,7 @@ function Get-DbaManagementObject {
         Add-Type Load Template for each version on the server.
 
     .PARAMETER ComputerName
-        The name of the target you would like to check
+        The name of the Windows Server(s) you would like to check.
 
     .PARAMETER Credential
         This command uses Windows credentials. This parameter allows you to connect remotely as a different user.
