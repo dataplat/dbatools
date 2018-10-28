@@ -433,7 +433,68 @@ function New-DbaAvailabilityGroup {
             Stop-Function -Message $msg -ErrorRecord $_ -Target $Primary
             return
         }
-
+        
+        # Grant permissions, but first, get all necessary service accounts
+        $primaryserviceaccount = $server.ServiceAccount.Trim()
+        $saname = ([DbaInstanceParameter]($server.DomainInstanceName)).ComputerName
+        
+        if ($primaryserviceaccount) {
+            if ($primaryserviceaccount.StartsWith("NT ")) {
+                $primaryserviceaccount = "$saname`$"
+            }
+            if ($primaryserviceaccount.StartsWith("$saname")) {
+                $primaryserviceaccount = "$saname`$"
+            }
+            if ($primaryserviceaccount.StartsWith(".")) {
+                $primaryserviceaccount = "$saname`$"
+            }
+        }
+        
+        if (-not $primaryserviceaccount) {
+            $primaryserviceaccount = "$saname`$"
+        }
+        
+        $serviceaccounts = @($primaryserviceaccount)
+        
+        foreach ($second in $secondaries) {
+            # If service account is empty, add the computer account instead
+            $secondaryserviceaccount = $second.ServiceAccount.Trim()
+            $saname = ([DbaInstanceParameter]($second.DomainInstanceName)).ComputerName
+            
+            if ($secondaryserviceaccount) {
+                if ($secondaryserviceaccount.StartsWith("NT ")) {
+                    $secondaryserviceaccount = "$saname`$"
+                }
+                if ($secondaryserviceaccount.StartsWith("$saname")) {
+                    $secondaryserviceaccount = "$saname`$"
+                }
+                if ($secondaryserviceaccount.StartsWith(".")) {
+                    $secondaryserviceaccount = "$saname`$"
+                }
+            }
+            
+            if (-not $secondaryserviceaccount) {
+                $secondaryserviceaccount = "$saname`$"
+            }
+            
+            $serviceaccounts += $secondaryserviceaccount
+        }
+        
+        $serviceaccounts = $serviceaccounts | Select-Object -Unique
+        
+        foreach ($second in $secondaries) {
+            if ($server.HostPlatform -ne "Linux" -and $second.HostPlatform -ne "Linux") {
+                if ($Pscmdlet.ShouldProcess($second.Name, "Granting Connect permissions to service accounts: $serviceaccounts")) {
+                    $null = Grant-DbaAgPermission -SqlInstance $server, $second -Login $serviceaccounts -Type Endpoint -Permission Connect
+                }
+            }
+            if ($SeedingMode -eq 'Automatic') {
+                if ($Pscmdlet.ShouldProcess($second.Name, "Seeding mode is automatic. Adding CreateAnyDatabase permissions to service accounts.")) {
+                    $null = Grant-DbaAgPermission -SqlInstance $server, $second -Type AvailabilityGroup -Permission CreateAnyDatabase -AvailabilityGroup $Name
+                }
+            }
+        }
+        
         # Add databases
         Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Adding databases"
 
@@ -509,68 +570,7 @@ function New-DbaAvailabilityGroup {
                 }
             }
         }
-
-        # Grant permissions, but first, get all necessary service accounts
-        $primaryserviceaccount = $server.ServiceAccount.Trim()
-        $saname = ([DbaInstanceParameter]($server.DomainInstanceName)).ComputerName
-
-        if ($primaryserviceaccount) {
-            if ($primaryserviceaccount.StartsWith("NT ")) {
-                $primaryserviceaccount = "$saname`$"
-            }
-            if ($primaryserviceaccount.StartsWith("$saname")) {
-                $primaryserviceaccount = "$saname`$"
-            }
-            if ($primaryserviceaccount.StartsWith(".")) {
-                $primaryserviceaccount = "$saname`$"
-            }
-        }
         
-        if (-not $primaryserviceaccount) {
-            $primaryserviceaccount = "$saname`$"
-        }
-        
-        $serviceaccounts = @($primaryserviceaccount)
-
-        foreach ($second in $secondaries) {
-            # If service account is empty, add the computer account instead
-            $secondaryserviceaccount = $second.ServiceAccount.Trim()
-            $saname = ([DbaInstanceParameter]($second.DomainInstanceName)).ComputerName
-
-            if ($secondaryserviceaccount) {
-                if ($secondaryserviceaccount.StartsWith("NT ")) {
-                    $secondaryserviceaccount = "$saname`$"
-                }
-                if ($secondaryserviceaccount.StartsWith("$saname")) {
-                    $secondaryserviceaccount = "$saname`$"
-                }
-                if ($secondaryserviceaccount.StartsWith(".")) {
-                    $secondaryserviceaccount = "$saname`$"
-                }
-            }
-
-            if (-not $secondaryserviceaccount) {
-                $secondaryserviceaccount = "$saname`$"
-            }
-
-            $serviceaccounts += $secondaryserviceaccount
-        }
-
-        $serviceaccounts = $serviceaccounts | Select-Object -Unique
-        
-        foreach ($second in $secondaries) {
-            if ($server.HostPlatform -ne "Linux" -and $second.HostPlatform -ne "Linux") {
-                if ($Pscmdlet.ShouldProcess($second.Name, "Granting Connect permissions to service accounts: $serviceaccounts")) {
-                    $null = Grant-DbaAgPermission -SqlInstance $server, $second -Login $serviceaccounts -Type Endpoint -Permission Connect
-                }
-            }
-            if ($SeedingMode -eq 'Automatic') {
-                if ($Pscmdlet.ShouldProcess($second.Name, "Seeding mode is automatic. Adding CreateAnyDatabase permissions to service accounts.")) {
-                    $null = Grant-DbaAgPermission -SqlInstance $server, $second -Type AvailabilityGroup -Permission CreateAnyDatabase -AvailabilityGroup $Name
-                }
-            }
-        }
-
         # Get results
         Get-DbaAvailabilityGroup -SqlInstance $Primary -SqlCredential $PrimarySqlCredential -AvailabilityGroup $Name
     }
