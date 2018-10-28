@@ -101,40 +101,42 @@ function Grant-DbaAgPermission {
         [switch]$EnableException
     )
     process {
-        if ($SqlInstance -and -not $Login) {
-            Stop-Function -Message "You must specify one or more logins when using the SqlInstance parameter."
-            return
-        }
-
         if ($Type -contains "AvailabilityGroup" -and -not $AvailabilityGroup) {
             Stop-Function -Message "You must specify at least one availability group when using the AvailabilityGroup type."
             return
         }
-
+        
         foreach ($instance in $SqlInstance) {
-            $InputObject += Get-DbaLogin -SqlInstance $instance -SqlCredential $SqlCredential -Login $Login
-            foreach ($account in $Login) {
-                if ($account -notin $InputObject.Name) {
-                    try {
-                        $InputObject += New-DbaLogin -SqlInstance $server -Login $account -EnableException
-                    } catch {
-                        Stop-Function -Message "Failure" -ErrorRecord $_ -Target $instance
-                        return
+            if ($perm -eq "CreateAnyDatabase") {
+                $ags = Get-DbaAvailabilityGroup -SqlInstance $instance -SqlCredential $SqlCredential -AvailabilityGroup $AvailabilityGroup
+                foreach ($ag in $ags) {
+                    $ag.Parent.Query("ALTER AVAILABILITY GROUP $ag GRANT CREATE ANY DATABASE")
+                }
+            } else {
+                $InputObject += Get-DbaLogin -SqlInstance $instance -SqlCredential $SqlCredential -Login $Login
+                foreach ($account in $Login) {
+                    if ($account -notin $InputObject.Name) {
+                        try {
+                            $InputObject += New-DbaLogin -SqlInstance $server -Login $account -EnableException
+                        } catch {
+                            Stop-Function -Message "Failure" -ErrorRecord $_ -Target $instance
+                            return
+                        }
                     }
                 }
             }
         }
-
+        
         foreach ($account in $InputObject) {
             $server = $account.Parent
             if ($Type -contains "Endpoint") {
                 $server.Endpoints.Refresh()
                 $endpoint = $server.Endpoints | Where-Object EndpointType -eq DatabaseMirroring
-
+                
                 if (-not $endpoint) {
                     Stop-Function -Message "DatabaseMirroring endpoint does not exist on $server" -Target $server -Continue
                 }
-
+                
                 foreach ($perm in $Permission) {
                     if ($Pscmdlet.ShouldProcess($server.Name, "Granting $perm on $endpoint")) {
                         if ($perm -in 'CreateAnyDatabase') {
@@ -158,7 +160,7 @@ function Grant-DbaAgPermission {
                     }
                 }
             }
-
+            
             if ($Type -contains "AvailabilityGroup") {
                 $ags = Get-DbaAvailabilityGroup -SqlInstance $account.Parent -AvailabilityGroup $AvailabilityGroup
                 foreach ($ag in $ags) {
@@ -168,20 +170,16 @@ function Grant-DbaAgPermission {
                         }
                         if ($Pscmdlet.ShouldProcess($server.Name, "Granting $perm on $ags")) {
                             try {
-                                if ($perm -eq "CreateAnyDatabase") {
-                                    $ag.Parent.Query("ALTER AVAILABILITY GROUP $ag GRANT CREATE ANY DATABASE")
-                                } else {
-                                    $bigperms = New-Object Microsoft.SqlServer.Management.Smo.ObjectPermissionSet([Microsoft.SqlServer.Management.Smo.ObjectPermission]::$perm)
-                                    $ag.Grant($bigperms, $account.Name)
-                                    [pscustomobject]@{
-                                        ComputerName = $account.ComputerName
-                                        InstanceName = $account.InstanceName
-                                        SqlInstance  = $account.SqlInstance
-                                        Name         = $account.Name
-                                        Permission   = $perm
-                                        Type         = "Grant"
-                                        Status       = "Success"
-                                    }
+                                $bigperms = New-Object Microsoft.SqlServer.Management.Smo.ObjectPermissionSet([Microsoft.SqlServer.Management.Smo.ObjectPermission]::$perm)
+                                $ag.Grant($bigperms, $account.Name)
+                                [pscustomobject]@{
+                                    ComputerName = $account.ComputerName
+                                    InstanceName = $account.InstanceName
+                                    SqlInstance  = $account.SqlInstance
+                                    Name         = $account.Name
+                                    Permission   = $perm
+                                    Type         = "Grant"
+                                    Status       = "Success"
                                 }
                             } catch {
                                 Stop-Function -Message "Failure" -ErrorRecord $_ -Target $ag -Continue
@@ -193,4 +191,3 @@ function Grant-DbaAgPermission {
         }
     }
 }
-
