@@ -19,7 +19,7 @@ function Get-DbaMemoryUsage {
         Credential object used to connect to the SQL Server as a different user
 
     .PARAMETER Simple
-        Shows a simplified set of counters.
+        Shows a simplified set of counters. Excludes only totals for Plancounters and BufManpagecounters
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
