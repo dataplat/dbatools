@@ -21,4 +21,17 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Read https://github.com/sqlcollaborative/dbatools/blob/development/contributing.md#tests
     for more guidence.
 #>
+Describe "Get-DbaMsdtc Integration Test" -Tag "IntegrationTests" {
+    Context "Command actually works" {
+        $results = Get-DbaMsdtc -ComputerName $script:instance1
 
+        It "returns results" {
+            $results.Count -gt 0 | Should Be $true
+        }
+
+        It "Should return nothing if unable to connect to server" {
+            $result = Get-DbaMsdtc -ComputerName 'Melton5312' -WarningAction SilentlyContinue
+            $result | Should Be $null
+        }
+    }
+}

@@ -29,10 +29,16 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $results = Get-DbaTcpPort -SqlInstance $script:instance2
             $results | Should -Not -Be $null
         }
-        
+
         It -Skip "Should Return Multiple Results" {
             $results = Get-DbaTcpPort -SqlInstance $script:instance2 -All
             $results.Count | Should -BeGreaterThan 1
+        }
+
+        It "has the correct properties" {
+            $result = $results[0]
+            $ExpectedProps = 'ComputerName,InstanceName,SqlInstance,IPAddress,Counter,Port,Static,Type'.Split(',')
+            ($result.PsObject.Properties.Name | Sort-Object) | Should Be ($ExpectedProps | Sort-Object)
         }
     }
 }
