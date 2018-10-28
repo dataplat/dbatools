@@ -433,7 +433,7 @@ function New-DbaAvailabilityGroup {
             Stop-Function -Message $msg -ErrorRecord $_ -Target $Primary
             return
         }
-
+        
         # Add databases
         Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Adding databases"
 
@@ -442,7 +442,7 @@ function New-DbaAvailabilityGroup {
         foreach ($db in $Database) {
             if ($SeedingMode -eq "Automatic") {
                 if ($Pscmdlet.ShouldProcess($Primary, "Backing up $db to NUL")) {
-                    $null = $primarydb | Backup-DbaDatabase -BackupFileName NUL
+                    $null = Backup-DbaDatabase -BackupFileName NUL -SqlInstance $Primary -SqlCredential $PrimarySqlCredential -Database $db
                 }
             }
 
@@ -497,7 +497,7 @@ function New-DbaAvailabilityGroup {
             }
         }
 
-        Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Joining availability groups"
+        Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Joining availability group"
 
         foreach ($second in $secondaries) {
             if ($Pscmdlet.ShouldProcess("Joining $($second.Name) to $Name")) {
@@ -509,11 +509,11 @@ function New-DbaAvailabilityGroup {
                 }
             }
         }
-
+        
         # Grant permissions, but first, get all necessary service accounts
         $primaryserviceaccount = $server.ServiceAccount.Trim()
         $saname = ([DbaInstanceParameter]($server.DomainInstanceName)).ComputerName
-
+        
         if ($primaryserviceaccount) {
             if ($primaryserviceaccount.StartsWith("NT ")) {
                 $primaryserviceaccount = "$saname`$"
@@ -525,14 +525,18 @@ function New-DbaAvailabilityGroup {
                 $primaryserviceaccount = "$saname`$"
             }
         }
-
+        
+        if (-not $primaryserviceaccount) {
+            $primaryserviceaccount = "$saname`$"
+        }
+        
         $serviceaccounts = @($primaryserviceaccount)
-
+        
         foreach ($second in $secondaries) {
             # If service account is empty, add the computer account instead
             $secondaryserviceaccount = $second.ServiceAccount.Trim()
             $saname = ([DbaInstanceParameter]($second.DomainInstanceName)).ComputerName
-
+            
             if ($secondaryserviceaccount) {
                 if ($secondaryserviceaccount.StartsWith("NT ")) {
                     $secondaryserviceaccount = "$saname`$"
@@ -544,29 +548,36 @@ function New-DbaAvailabilityGroup {
                     $secondaryserviceaccount = "$saname`$"
                 }
             }
-
+            
             if (-not $secondaryserviceaccount) {
                 $secondaryserviceaccount = "$saname`$"
             }
-
+            
             $serviceaccounts += $secondaryserviceaccount
         }
-
+        
         $serviceaccounts = $serviceaccounts | Select-Object -Unique
-
+        
+        if ($SeedingMode -eq 'Automatic') {
+            if ($Pscmdlet.ShouldProcess($server.Name, "Seeding mode is automatic. Adding CreateAnyDatabase permissions to availability group.")) {
+                $null = $server.Query("ALTER AVAILABILITY GROUP [$Name] GRANT CREATE ANY DATABASE")
+            }
+        }
+        
         foreach ($second in $secondaries) {
-            if ($Pscmdlet.ShouldProcess($second.Name, "Granting Connect permissions to service accounts: $serviceaccounts")) {
-                $null = Grant-DbaAgPermission -SqlInstance $server, $second -Login $serviceaccounts -Type Endpoint -Permission Connect
+            if ($server.HostPlatform -ne "Linux" -and $second.HostPlatform -ne "Linux") {
+                if ($Pscmdlet.ShouldProcess($second.Name, "Granting Connect permissions to service accounts: $serviceaccounts")) {
+                    $null = Grant-DbaAgPermission -SqlInstance $server, $second -Login $serviceaccounts -Type Endpoint -Permission Connect
+                }
             }
             if ($SeedingMode -eq 'Automatic') {
-                if ($Pscmdlet.ShouldProcess($second.Name, "Seeding mode is automatic. Adding CreateAnyDatabase permissions to service accounts.")) {
-                    $null = Grant-DbaAgPermission -SqlInstance $server, $second -Login $serviceaccounts -Type AvailabilityGroup -Permission CreateAnyDatabase -AvailabilityGroup $Name
+                if ($Pscmdlet.ShouldProcess($second.Name, "Seeding mode is automatic. Adding CreateAnyDatabase permissions to availability group.")) {
+                    $null = $second.Query("ALTER AVAILABILITY GROUP [$Name] GRANT CREATE ANY DATABASE")
                 }
             }
         }
-
+        
         # Get results
         Get-DbaAvailabilityGroup -SqlInstance $Primary -SqlCredential $PrimarySqlCredential -AvailabilityGroup $Name
     }
 }
-
