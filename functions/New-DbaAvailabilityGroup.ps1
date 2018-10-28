@@ -482,6 +482,12 @@ function New-DbaAvailabilityGroup {
         
         $serviceaccounts = $serviceaccounts | Select-Object -Unique
         
+        if ($SeedingMode -eq 'Automatic') {
+            if ($Pscmdlet.ShouldProcess($server.Name, "Seeding mode is automatic. Adding CreateAnyDatabase permissions to availability group.")) {
+                $null = $server.Query("ALTER AVAILABILITY GROUP [$Name] GRANT CREATE ANY DATABASE")
+            }
+        }
+        
         foreach ($second in $secondaries) {
             if ($server.HostPlatform -ne "Linux" -and $second.HostPlatform -ne "Linux") {
                 if ($Pscmdlet.ShouldProcess($second.Name, "Granting Connect permissions to service accounts: $serviceaccounts")) {
@@ -490,7 +496,7 @@ function New-DbaAvailabilityGroup {
             }
             if ($SeedingMode -eq 'Automatic') {
                 if ($Pscmdlet.ShouldProcess($second.Name, "Seeding mode is automatic. Adding CreateAnyDatabase permissions to availability group.")) {
-                    $null = Grant-DbaAgPermission -SqlInstance $server, $second -Type AvailabilityGroup -Permission CreateAnyDatabase -AvailabilityGroup $Name
+                    $null = $second.Query("ALTER AVAILABILITY GROUP [$Name] GRANT CREATE ANY DATABASE")
                 }
             }
         }
