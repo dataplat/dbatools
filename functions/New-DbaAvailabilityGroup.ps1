@@ -497,7 +497,7 @@ function New-DbaAvailabilityGroup {
             }
         }
 
-        Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Joining availability groups"
+        Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Joining availability group"
 
         foreach ($second in $secondaries) {
             if ($Pscmdlet.ShouldProcess("Joining $($second.Name) to $Name")) {
