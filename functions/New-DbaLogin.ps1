@@ -264,13 +264,20 @@ function New-DbaLogin {
                 } else {
                     $loginName = $loginItem
                     $currentSid = $currentDefaultDatabase = $currentLanguage = $currentPasswordExpiration = $currentAsymmetricKey = $currentCertificate = $currentCredential = $currentDisabled = $currentPasswordPolicyEnforced = $null
-
-                    if ($PsCmdlet.ParameterSetName -eq "MapToCertificate") { $loginType = 'Certificate' }
-                    elseif ($PsCmdlet.ParameterSetName -eq "MapToAsymmetricKey") { $loginType = 'AsymmetricKey' }
-                    elseif ($loginItem.IndexOf('\') -eq -1) {    $loginType = 'SqlLogin' }
-                    else { $loginType = 'WindowsUser' }
+                    
+                    if ($PsCmdlet.ParameterSetName -eq "MapToCertificate") {
+                        $loginType = 'Certificate'
+                    } elseif ($loginItem.IndexOf('$') -ne -1) {
+                        $loginType = 'WindowsUser'
+                    } elseif ($PsCmdlet.ParameterSetName -eq "MapToAsymmetricKey") {
+                        $loginType = 'AsymmetricKey'
+                    } elseif ($loginItem.IndexOf('\') -eq -1) {
+                        $loginType = 'SqlLogin'
+                    } else {
+                        $loginType = 'WindowsUser'
+                    }
                 }
-
+                
                 if (($server.LoginMode -ne [Microsoft.SqlServer.Management.Smo.ServerLoginMode]::Mixed) -and ($loginType -eq 'SqlLogin')) {
                     Write-Message -Level Warning -Message "$instance does not have Mixed Mode enabled. [$loginName] is an SQL Login. Enable mixed mode authentication after the migration completes to use this type of login."
                 }
