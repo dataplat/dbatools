@@ -490,7 +490,6 @@ function New-DbaAvailabilityGroup {
             }
             if ($SeedingMode -eq 'Automatic') {
                 if ($Pscmdlet.ShouldProcess($second.Name, "Seeding mode is automatic. Adding CreateAnyDatabase permissions to availability group.")) {
-                    Write-Warning hello
                     $null = Grant-DbaAgPermission -SqlInstance $server, $second -Type AvailabilityGroup -Permission CreateAnyDatabase -AvailabilityGroup $Name
                 }
             }
