@@ -25,12 +25,12 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 }
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Command actually works" {
-        It -Skip "Should Return a Result" {
+        It "Should Return a Result" {
             $results = Get-DbaTcpPort -SqlInstance $script:instance2
             $results | Should -Not -Be $null
         }
 
-        It -Skip "Should Return Multiple Results" {
+        It "Should Return Multiple Results" {
             $results = Get-DbaTcpPort -SqlInstance $script:instance2 -All
             $results.Count | Should -BeGreaterThan 1
         }
