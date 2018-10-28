@@ -23098,6 +23098,14 @@
                            ""
                        ],
                        [
+                           "ClusterType",
+                           "Cluster type of the Availability Group. Only supported in SQL Server 2017 and above.\r\nOptions include: External, Wsfc or None.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
                            "InputObject",
                            "Enables piped input from Get-DbaAvailabilityGroup.",
                            "",
@@ -23136,7 +23144,7 @@
         "Name":  "Join-DbaAvailabilityGroup",
         "Links":  "https://dbatools.io/Join-DbaAvailabilityGroup",
         "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaAvailabilityGroup -SqlInstance sql01 -AvailabilityGroup SharePoint | Join-DbaAvailabilityGroup -SqlInstance sql02\nJoins sql02 to the SharePoint availability group on sql01\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003e$ag = Get-DbaAvailabilityGroup -SqlInstance sql01 -AvailabilityGroup SharePoint\nPS C:\\\u003e Join-DbaAvailabilityGroup -SqlInstance sql02 -InputObject $ag\nJoins sql02 to the SharePoint availability group on sql01\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaAvailabilityGroup -SqlInstance sql01 -AvailabilityGroup SharePoint | Join-DbaAvailabilityGroup -SqlInstance sql02 -WhatIf\nShows what would happen if the command were to run. No actions are actually performed.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaAvailabilityGroup -SqlInstance sql01 -AvailabilityGroup SharePoint | Join-DbaAvailabilityGroup -SqlInstance sql02 -Confirm\nPrompts for confirmation then joins sql02 to the SharePoint availability group on sql01.",
-        "Syntax":  "Join-DbaAvailabilityGroup [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-AvailabilityGroup] \u003cString[]\u003e] [[-InputObject] \u003cAvailabilityGroup[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Join-DbaAvailabilityGroup [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-AvailabilityGroup] \u003cString[]\u003e] [[-ClusterType] \u003cString\u003e] [[-InputObject] \u003cAvailabilityGroup[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "CommandName":  "Measure-DbaBackupThroughput",
