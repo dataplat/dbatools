@@ -101,18 +101,23 @@ function Grant-DbaAgPermission {
         [switch]$EnableException
     )
     process {
+        if ($SqlInstance -and -not $Login -and -not $AvailabilityGroup) {
+            Stop-Function -Message "You must specify one or more logins when using the SqlInstance parameter."
+            return
+        }
+        
         if ($Type -contains "AvailabilityGroup" -and -not $AvailabilityGroup) {
             Stop-Function -Message "You must specify at least one availability group when using the AvailabilityGroup type."
             return
         }
         
         foreach ($instance in $SqlInstance) {
-            if ($perm -eq "CreateAnyDatabase") {
+            if ($perm -contains"CreateAnyDatabase") {
                 $ags = Get-DbaAvailabilityGroup -SqlInstance $instance -SqlCredential $SqlCredential -AvailabilityGroup $AvailabilityGroup
                 foreach ($ag in $ags) {
                     $ag.Parent.Query("ALTER AVAILABILITY GROUP $ag GRANT CREATE ANY DATABASE")
                 }
-            } else {
+            } elseif ($Login) {
                 $InputObject += Get-DbaLogin -SqlInstance $instance -SqlCredential $SqlCredential -Login $Login
                 foreach ($account in $Login) {
                     if ($account -notin $InputObject.Name) {
@@ -165,7 +170,7 @@ function Grant-DbaAgPermission {
                 $ags = Get-DbaAvailabilityGroup -SqlInstance $account.Parent -AvailabilityGroup $AvailabilityGroup
                 foreach ($ag in $ags) {
                     foreach ($perm in $Permission) {
-                        if ($perm -notin 'Alter', 'Control', 'TakeOwnership', 'ViewDefinition', 'CreateAnyDatabase') {
+                        if ($perm -notin 'Alter', 'Control', 'TakeOwnership', 'ViewDefinition') {
                             Stop-Function -Message "$perm not supported by availability groups" -Continue
                         }
                         if ($Pscmdlet.ShouldProcess($server.Name, "Granting $perm on $ags")) {
