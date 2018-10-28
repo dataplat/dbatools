@@ -112,10 +112,14 @@ function Grant-DbaAgPermission {
         }
         
         foreach ($instance in $SqlInstance) {
-            if ($perm -contains"CreateAnyDatabase") {
-                $ags = Get-DbaAvailabilityGroup -SqlInstance $instance -SqlCredential $SqlCredential -AvailabilityGroup $AvailabilityGroup
-                foreach ($ag in $ags) {
-                    $ag.Parent.Query("ALTER AVAILABILITY GROUP $ag GRANT CREATE ANY DATABASE")
+            if ($perm -contains "CreateAnyDatabase") {
+                try {
+                    $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
+                } catch {
+                    Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                }
+                foreach ($ag in $AvailabilityGroup) {
+                    $server.Query("ALTER AVAILABILITY GROUP $ag GRANT CREATE ANY DATABASE")
                 }
             } elseif ($Login) {
                 $InputObject += Get-DbaLogin -SqlInstance $instance -SqlCredential $SqlCredential -Login $Login
