@@ -31,8 +31,13 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
 
         It "Should Return Multiple Results" {
-            $results = Get-DbaTcpPort -SqlInstance $script:instance2 -All
-            $results.Count | Should -BeGreaterThan 1
+            $resultsAll = Get-DbaTcpPort -SqlInstance $script:instance2 -All
+            $resultsAll.Count | Should -BeGreaterThan 1
+        }
+
+        It "Should Exclude Ipv6 Results" {
+            $resultsIpv6 = Get-DbaTcpPort -SqlInstance $script:instance2 -All -ExcludeIpv6
+            $resultsAll.Count - $resultsIpv6.Count | Should -BeGreaterThan 0
         }
 
         It "has the correct properties" {
