@@ -94,7 +94,7 @@ function Backup-DbaDbMasterKey {
 
         foreach ($db in $InputObject) {
             $server = $db.Parent
-            
+
             if (Test-Bound -ParameterName Path -Not) {
                 $Path = $server.BackupDirectory
             }

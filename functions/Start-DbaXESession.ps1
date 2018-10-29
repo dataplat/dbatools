@@ -69,6 +69,7 @@ function Start-DbaXESession {
 
 #>
     [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = 'Session')]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseSingularNouns", "", Justification = "Internal functions are ignored")]
     param (
         [parameter(Position = 1, Mandatory, ParameterSetName = 'Session')]
         [parameter(Position = 1, Mandatory, ParameterSetName = 'All')]
@@ -127,17 +128,18 @@ function Start-DbaXESession {
                 $name = "XE Session Stop - $session"
                 if ($Pscmdlet.ShouldProcess("$Server", "Making New XEvent StopJob for $session")) {
                     # Setup the schedule time
-                    $time = ($StopAt).ToString("HHmmss")
+                    $time = $(($StopAt).ToString("HHmmss"))
 
                     # Create the schedule
-                    $schedule = New-DbaAgentSchedule -SqlInstance $server -Schedule $name -FrequencyType Once -StartTime ($StopAt).ToString("HHmmss") -Force
+                    $schedule = New-DbaAgentSchedule -SqlInstance $server -Schedule $name -FrequencyType Once -StartTime $time -Force
 
                     # Create the job and attach the schedule
                     $job = New-DbaAgentJob -SqlInstance $server -Job $name -Schedule $schedule -DeleteLevel Always -Force
 
                     # Create the job step
                     $sql = "ALTER EVENT SESSION [$session] ON SERVER STATE = stop;"
-                    $jobstep = New-DbaAgentJobStep -SqlInstance $server -Job $job -StepName 'T-SQL Stop' -Subsystem TransactSql -Command $sql -Force
+                    #Variable $jobstep marked as unused by PSScriptAnalyzer replace with $null to catch output
+                    $null = New-DbaAgentJobStep -SqlInstance $server -Job $job -StepName 'T-SQL Stop' -Subsystem TransactSql -Command $sql -Force
                 }
             }
         }
@@ -168,4 +170,3 @@ function Start-DbaXESession {
         }
     }
 }
-

@@ -368,7 +368,7 @@ function Test-DbaLastBackup {
                                     $restoreresult = $lastbackup | Restore-DbaDatabase -SqlInstance $destserver -RestoredDatabaseNamePrefix $prefix -DestinationFilePrefix $Prefix -DestinationDataDirectory $datadirectory -DestinationLogDirectory $logdirectory -VerifyOnly:$VerifyOnly -IgnoreLogBackup:$IgnoreLogBackup -AzureCredential $AzureCredential -TrustDbBackupHistory
                                 } else {
                                     $restoreresult = $lastbackup | Restore-DbaDatabase -SqlInstance $destserver -RestoredDatabaseNamePrefix $prefix -DestinationFilePrefix $Prefix -DestinationDataDirectory $datadirectory -DestinationLogDirectory $logdirectory -IgnoreLogBackup:$IgnoreLogBackup -AzureCredential $AzureCredential -TrustDbBackupHistory
-                                    Write-verbose " Restore-DbaDatabase -SqlInstance $destserver -RestoredDatabaseNamePrefix $prefix -DestinationFilePrefix $Prefix -DestinationDataDirectory $datadirectory -DestinationLogDirectory $logdirectory -IgnoreLogBackup:$IgnoreLogBackup -AzureCredential $AzureCredential -TrustDbBackupHistory"
+                                    Write-Message -Level Verbose -Message " Restore-DbaDatabase -SqlInstance $destserver -RestoredDatabaseNamePrefix $prefix -DestinationFilePrefix $Prefix -DestinationDataDirectory $datadirectory -DestinationLogDirectory $logdirectory -IgnoreLogBackup:$IgnoreLogBackup -AzureCredential $AzureCredential -TrustDbBackupHistory"
 
                                 }
 
@@ -417,7 +417,8 @@ function Test-DbaLastBackup {
 
                                     ## Drop the database
                                     try {
-                                        $removeresult = Remove-DbaDatabase -SqlInstance $destserver -Database $dbname -Confirm:$false
+                                        #Variable $removeresult marked as unused by PSScriptAnalyzer replace with $null to catch output
+                                        $null = Remove-DbaDatabase -SqlInstance $destserver -Database $dbname -Confirm:$false
                                         Write-Message -Level Verbose -Message "Dropped $dbname Database on $destination."
                                     } catch {
                                         $destserver.Databases.Refresh()

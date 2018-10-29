@@ -137,7 +137,7 @@ function Find-DbaInstance {
 
     .NOTES
         Tags: Instance, Connect, SqlServer
-        Author: Scott Sutherland, 2018 NetSPI | Friedrich Weinmann (@FredWeinmann‏)
+        Author: Scott Sutherland, 2018 NetSPI | Friedrich Weinmann (@FredWeinmann)
 
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
@@ -198,6 +198,7 @@ function Find-DbaInstance {
 
 #>
     [CmdletBinding()]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseApprovedVerbs", "", Justification = "Internal functions are ignored")]
     param (
         [Parameter(Mandatory, ParameterSetName = 'Computer', ValueFromPipeline)]
         [DbaInstance[]]$ComputerName,
@@ -270,8 +271,9 @@ function Find-DbaInstance {
                     $ports = @()
                     $browseResult = $null
                     $services = @()
-                    $serverObject = $null
-                    $browseFailed = $false
+                    #Variable marked as unused by PSScriptAnalyzer
+                    #$serverObject = $null
+                    #$browseFailed = $false
                     #endregion Null variables to prevent scope lookup on conditional existence
 
                     #region Gather data
@@ -303,7 +305,8 @@ function Find-DbaInstance {
                         try {
                             $browseResult = Get-SQLInstanceBrowserUDP -ComputerName $computer -EnableException
                         } catch {
-                            $browseFailed = $true
+                            #Variable marked as unused by PSScriptAnalyzer
+                            #$browseFailed = $true
                         }
                     }
 
@@ -964,4 +967,3 @@ function Find-DbaInstance {
         $steppablePipeline.End()
     }
 }
-

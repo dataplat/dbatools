@@ -227,11 +227,13 @@ function Reset-DbaAdmin {
                 try {
                     if ($hostname -eq $env:COMPUTERNAME) {
                         $account = New-Object System.Security.Principal.NTAccount($args)
-                        $sid = $account.Translate([System.Security.Principal.SecurityIdentifier])
+                        #Variable $sid marked as unused by PSScriptAnalyzer replace with $null to catch output
+                        $null = $account.Translate([System.Security.Principal.SecurityIdentifier])
                     } else {
                         Invoke-Command -ErrorAction Stop -Session $session -ArgumentList $login -ScriptBlock {
                             $account = New-Object System.Security.Principal.NTAccount($args)
-                            $sid = $account.Translate([System.Security.Principal.SecurityIdentifier])
+                            #Variable $sid marked as unused by PSScriptAnalyzer replace with $null to catch output
+                            $null = $account.Translate([System.Security.Principal.SecurityIdentifier])
                         }
                     }
                 } catch {

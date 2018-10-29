@@ -370,7 +370,7 @@ function Expand-DbaTLogResponsibly {
                                                 $backup.MediaDescription = "Disk"
                                                 $dt = get-date -format yyyyMMddHHmmssms
                                                 $null = $backup.Devices.AddDevice($backupdirectory + "\" + $db + "_db_" + $dt + ".trn", 'File')
-                                                if ($DefaultCompression = $true) {
+                                                if ($DefaultCompression -eq $true) {
                                                     $backup.CompressionOption = 1
                                                 } else {
                                                     $backup.CompressionOption = 0

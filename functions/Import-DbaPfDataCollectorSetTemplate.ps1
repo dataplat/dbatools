@@ -152,7 +152,8 @@ function Import-DbaPfDataCollectorSetTemplate {
         [switch]$EnableException
     )
     begin {
-        $metadata = Import-Clixml "$script:PSModuleRoot\bin\perfmontemplates\collectorsets.xml"
+        #Variable marked as unused by PSScriptAnalyzer
+        #$metadata = Import-Clixml "$script:PSModuleRoot\bin\perfmontemplates\collectorsets.xml"
 
         $setscript = {
             $setname = $args[0]; $templatexml = $args[1]
@@ -194,7 +195,7 @@ function Import-DbaPfDataCollectorSetTemplate {
                     Set-Variable -Name DisplayName -Value (Get-ChildItem -Path $file).BaseName
                 }
 
-                $Name = $DisplayNameUnresolved = $DisplayName
+                $Name = $DisplayName
 
                 Write-Message -Level Verbose -Message "Processing $file for $computer"
 

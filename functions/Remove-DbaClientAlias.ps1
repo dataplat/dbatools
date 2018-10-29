@@ -69,6 +69,7 @@ function Remove-DbaClientAlias {
             foreach ($basekey in $basekeys) {
                 $fullKey = "$basekey\Client\ConnectTo"
                 if ((Test-Path $fullKey) -eq $false) {
+                    <# DO NOT use Write-Message as this is inside of a script block #>
                     Write-Warning "Registry key ($fullKey) does not exist. Quitting."
                     continue
                 }

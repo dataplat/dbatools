@@ -72,7 +72,7 @@ function New-DbaCmConnection {
 
     .NOTES
         Tags: ComputerManagement, CIM
-        Friedrich Weinmann (@FredWeinmann‏)
+        Friedrich Weinmann (@FredWeinmann)
 
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT

@@ -69,6 +69,7 @@ function Get-DbaMaintenanceSolutionLog {
 
 #>
     [CmdletBinding(DefaultParameterSetName = "Default")]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseApprovedVerbs", "", Justification = "Internal functions are ignored")]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
@@ -250,4 +251,3 @@ function Get-DbaMaintenanceSolutionLog {
         }
     }
 }
-

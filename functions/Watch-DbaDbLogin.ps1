@@ -123,7 +123,7 @@ function Watch-DbaDbLogin {
             }
 
             if (!(Test-SqlSa $server)) {
-                Write-Warning "Not a sysadmin on $instance, resultset would be underwhelming. Skipping.";
+                Write-Message -Level Warning -Message "Not a sysadmin on $instance, resultset would be underwhelming. Skipping.";
                 continue
             }
 
@@ -148,9 +148,9 @@ function Watch-DbaDbLogin {
             if ($procs.Count -gt 0) {
                 $procs | Select-Object @{Label = "ComputerName"; Expression = {$server.ComputerName}}, @{Label = "InstanceName"; Expression = {$server.ServiceName}}, @{Label = "SqlInstance"; Expression = {$server.DomainInstanceName}}, LoginTime, Login, Host, Program, DatabaseId, Database, IsSystem, CaptureTime | ConvertTo-DbaDataTable | Write-DbaDataTable -SqlInstance $serverDest -Database $Database -Table $Table -AutoCreateTable
 
-                Write-Output "Added process information for $instance to datatable."
+                Write-Message -Level Output -Message "Added process information for $instance to datatable."
             } else {
-                Write-message -Level Verbose -Message "No data returned for $instance."
+                Write-Message -Level Verbose -Message "No data returned for $instance."
             }
         }
     }

@@ -78,20 +78,20 @@ function Restore-DbaDbCertificate {
             Stop-Function -Message "Failed to connect to: $SqlInstance" -Target $SqlInstance -ErrorRecord $_
             return
         }
-        
+
         foreach ($fullname in $Path) {
             if (-not $SqlInstance.IsLocalHost -and -not $fullname.StartsWith('\')) {
                 Stop-Function -Message "Path ($fullname) must be a UNC share when SQL instance is not local." -Continue -Target $fullname
             }
-            
+
             if (-not (Test-DbaPath -SqlInstance $server -Path $fullname)) {
                 Stop-Function -Message "$SqlInstance cannot access $fullname" -Continue -Target $fullname
             }
-            
+
             $directory = Split-Path $fullname
             $filename = Split-Path $fullname -Leaf
             $certname = [io.path]::GetFileNameWithoutExtension($filename)
-            
+
             if ($Pscmdlet.ShouldProcess("$certname on $SqlInstance", "Importing Certificate")) {
                 $smocert = New-Object Microsoft.SqlServer.Management.Smo.Certificate
                 $smocert.Name = $certname
@@ -103,7 +103,7 @@ function Restore-DbaDbCertificate {
                     Write-Message -Level Verbose -Message "Full certificate path: $fullcertname"
                     Write-Message -Level Verbose -Message "Private key: $privatekey"
                     $fromfile = $true
-                    
+
                     if ($EncryptionPassword) {
                         $smocert.Create($fullcertname, $fromfile, $privatekey, [System.Runtime.InteropServices.marshal]::PtrToStringAuto([System.Runtime.InteropServices.marshal]::SecureStringToBSTR($password)), [System.Runtime.InteropServices.marshal]::PtrToStringAuto([System.Runtime.InteropServices.marshal]::SecureStringToBSTR($password)))
                     } else {
@@ -119,7 +119,7 @@ function Restore-DbaDbCertificate {
     }
     end {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Retore-DbaDatabaseCertificate
-        
+
     }
 }
 

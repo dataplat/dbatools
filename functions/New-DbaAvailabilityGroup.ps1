@@ -169,6 +169,27 @@ function New-DbaAvailabilityGroup {
 
         Creates a new availability group on sql2017 named SharePoint with a cluster type of non and a failover mode of manual
 
+    .EXAMPLE
+        PS C:\> New-DbaAvailabilityGroup -Primary sql1 -Secondary sql2 -Database pubs -ClusterType None -SeedingMode Automatic -FailoverMode Manual
+
+        Creates a new availability group with a primary replica on sql1 and a secondary on sql2. Automatically adds the database pubs.
+
+    .EXAMPLE
+        PS C:\> $cred = Get-Credential sqladmin
+        PS C:\> $params = @{
+                    >> Primary = "sql1"
+                    >> PrimarySqlCredential = $cred
+                    >> Secondary = "sql2"
+                    >> SecondarySqlCredential = $cred
+                    >> Database = "pubs"
+                    >> ClusterType = "None"
+                    >> SeedingMode = "Automatic"
+                    >> FailoverMode = "Manual"
+                    >> Confirm = $false
+                >> }
+        PS C:\> New-DbaAvailabilityGroup @params
+
+        This exact command was used to create an availability group on docker!
 #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
     param (
@@ -223,8 +244,8 @@ function New-DbaAvailabilityGroup {
         [switch]$EnableException
     )
     process {
-        $stepCounter = 0
-        $totalSteps = 9
+        $stepCounter = $wait = 0
+        $totalSteps = 10
         $activity = "Adding new availability group $name"
         
         if ($Force -and $Secondary -and (-not $NetworkShare -and -not $UseLastBackups) -and ($SeedingMode -ne 'Automatic')) {
@@ -285,11 +306,11 @@ function New-DbaAvailabilityGroup {
             }
         }
         
-        if ((Test-Bound -ParameterName ClusterType) -and $server.VersionMajor -lt 14) {
-            Stop-Function -Message "ClusterType only supported in SQL Server 2017 and above"
+        if ($ClusterType -eq "None" -and $server.VersionMajor -lt 14) {
+            Stop-Function -Message "ClusterType of None only supported in SQL Server 2017 and above"
             return
         }
-
+        
         if ($Secondary) {
             $secondaries = @()
             foreach ($computer in $Secondary) {
@@ -437,12 +458,13 @@ function New-DbaAvailabilityGroup {
         # Add databases
         Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Adding databases"
         
-        $allbackups = @{ }
+        $allbackups = @{
+        }
         
         foreach ($db in $Database) {
             if ($SeedingMode -eq "Automatic") {
                 if ($Pscmdlet.ShouldProcess($Primary, "Backing up $db to NUL")) {
-                    $null = $primarydb | Backup-DbaDatabase -BackupFileName NUL
+                    $null = Backup-DbaDatabase -BackupFileName NUL -SqlInstance $Primary -SqlCredential $PrimarySqlCredential -Database $db
                 }
             }
             
@@ -453,7 +475,7 @@ function New-DbaAvailabilityGroup {
             foreach ($second in $secondaries) {
                 if ($Pscmdlet.ShouldProcess($second.Name, "Adding $db to $Name")) {
                     $primarydb = Get-DbaDatabase -SqlInstance $Primary -SqlCredential $PrimarySqlCredential -Database $db
-                    $secondb = Get-DbaDatabase -SqlInstance $second -Database $db
+                    $seconddb = Get-DbaDatabase -SqlInstance $second -Database $db
                     
                     if ((-not $seconddb -or $Force) -and $SeedingMode -ne 'Automatic') {
                         try {
@@ -497,7 +519,7 @@ function New-DbaAvailabilityGroup {
             }
         }
         
-        Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Joining availability groups"
+        Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Joining availability group"
         
         foreach ($second in $secondaries) {
             if ($Pscmdlet.ShouldProcess("Joining $($second.Name) to $Name")) {
@@ -509,6 +531,8 @@ function New-DbaAvailabilityGroup {
                 }
             }
         }
+        
+        Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Granting permissions on availability group, this may take a moment"
         
         # Grant permissions, but first, get all necessary service accounts
         $primaryserviceaccount = $server.ServiceAccount.Trim()
@@ -524,6 +548,10 @@ function New-DbaAvailabilityGroup {
             if ($primaryserviceaccount.StartsWith(".")) {
                 $primaryserviceaccount = "$saname`$"
             }
+        }
+        
+        if (-not $primaryserviceaccount) {
+            $primaryserviceaccount = "$saname`$"
         }
         
         $serviceaccounts = @($primaryserviceaccount)
@@ -554,13 +582,42 @@ function New-DbaAvailabilityGroup {
         
         $serviceaccounts = $serviceaccounts | Select-Object -Unique
         
+        if ($SeedingMode -eq 'Automatic') {
+            try {
+                if ($Pscmdlet.ShouldProcess($server.Name, "Seeding mode is automatic. Adding CreateAnyDatabase permissions to availability group.")) {
+                    $null = $server.Query("ALTER AVAILABILITY GROUP [$Name] GRANT CREATE ANY DATABASE")
+                }
+            } catch {
+                # Log the exception but keep going
+                Stop-Function -Message "Failure" -ErrorRecord $_
+            }
+        }
+        
         foreach ($second in $secondaries) {
-            if ($Pscmdlet.ShouldProcess($second.Name, "Granting Connect permissions to service accounts: $serviceaccounts")) {
-                $null = Grant-DbaAgPermission -SqlInstance $server, $second -Login $serviceaccounts -Type Endpoint -Permission Connect
+            if ($server.HostPlatform -ne "Linux" -and $second.HostPlatform -ne "Linux") {
+                if ($Pscmdlet.ShouldProcess($second.Name, "Granting Connect permissions to service accounts: $serviceaccounts")) {
+                    $null = Grant-DbaAgPermission -SqlInstance $server, $second -Login $serviceaccounts -Type Endpoint -Permission Connect
+                }
             }
             if ($SeedingMode -eq 'Automatic') {
-                if ($Pscmdlet.ShouldProcess($second.Name, "Seeding mode is automatic. Adding CreateAnyDatabase permissions to service accounts.")) {
-                    $null = Grant-DbaAgPermission -SqlInstance $server, $second -Login $serviceaccounts -Type AvailabilityGroup -Permission CreateAnyDatabase -AvailabilityGroup $Name
+                $done = $false
+                try {
+                    if ($Pscmdlet.ShouldProcess($second.Name, "Seeding mode is automatic. Adding CreateAnyDatabase permissions to availability group.")) {
+                        do {
+                            $second.Refresh()
+                            $second.AvailabilityGroups.Refresh()
+                            if (Get-DbaAvailabilityGroup -SqlInstance $second -AvailabilityGroup $Name) {
+                                $null = $second.Query("ALTER AVAILABILITY GROUP [$Name] GRANT CREATE ANY DATABASE")
+                                $done = $true
+                            } else {
+                                $wait++
+                                Start-Sleep -Seconds 1
+                            }
+                        } while ($wait -lt 20 -and $done -eq $false)
+                    }
+                } catch {
+                    # Log the exception but keep going
+                    Stop-Function -Message "Failure" -ErrorRecord $_
                 }
             }
         }
@@ -569,4 +626,3 @@ function New-DbaAvailabilityGroup {
         Get-DbaAvailabilityGroup -SqlInstance $Primary -SqlCredential $PrimarySqlCredential -AvailabilityGroup $Name
     }
 }
-

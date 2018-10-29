@@ -3,10 +3,10 @@ function Add-DbaAgDatabase {
     <#
     .SYNOPSIS
         Adds a database to an availability group on a SQL Server instance.
-        
+
     .DESCRIPTION
         Adds a database to an availability group on a SQL Server instance.
-    
+
    .PARAMETER SqlInstance
         The target SQL Server instance or instances. Server version must be SQL Server version 2012 or higher.
 
@@ -15,52 +15,52 @@ function Add-DbaAgDatabase {
 
     .PARAMETER Database
         The database or databases to add.
-    
+
     .PARAMETER AvailabilityGroup
         The availability group where the databases will be added.
-        
+
     .PARAMETER InputObject
         Enables piping from Get-DbaDatabase, Get-DbaDbSharePoint and more.
-        
+
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
-        
+
     .PARAMETER Confirm
         Prompts you for confirmation before executing any changing operations within the command.
-    
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-        
+
     .NOTES
         Tags: AvailabilityGroup, HA, AG
         Author: Chrissy LeMaire (@cl), netnerds.net
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
-        
+
     .LINK
         https://dbatools.io/Add-DbaAgDatabase
-        
+
     .EXAMPLE
         PS C:\> Add-DbaAgDatabase -SqlInstance sql2017a -AvailabilityGroup ag1 -Database db1, db2 -Confirm
-        
+
         Adds db1 and db2 to ag1 on sql2017a. Prompts for confirmation.
-        
+
     .EXAMPLE
         PS C:\> Get-DbaDatabase -SqlInstance sql2017a | Out-GridView -Passthru | Add-DbaAgDatabase -AvailabilityGroup ag1
-        
+
         Adds selected databases from sql2017a to ag1
-  
+
     .EXAMPLE
         PS C:\> Get-DbaDbSharePoint -SqlInstance sqlcluster | Add-DbaAgDatabase -AvailabilityGroup SharePoint
-        
+
         Adds SharePoint databases as found in SharePoint_Config on sqlcluster to ag1 on sqlcluster
-    
+
     .EXAMPLE
         PS C:\> Get-DbaDbSharePoint -SqlInstance sqlcluster -ConfigDatabase SharePoint_Config_2019 | Add-DbaAgDatabase -AvailabilityGroup SharePoint
-        
+
         Adds SharePoint databases as found in SharePoint_Config_2019 on sqlcluster to ag1 on sqlcluster
 #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Low')]
@@ -81,14 +81,14 @@ function Add-DbaAgDatabase {
                 return
             }
         }
-        
+
         foreach ($instance in $SqlInstance) {
             $InputObject += Get-DbaDatabase -SqlInstance $instance -SqlCredential $SqlCredential -Database $Database
         }
-        
+
         foreach ($db in $InputObject) {
             $ags = Get-DbaAvailabilityGroup -SqlInstance $db.Parent -AvailabilityGroup $AvailabilityGroup
-            
+
             foreach ($ag in $ags) {
                 if ($Pscmdlet.ShouldProcess($ag.Parent.Name, "Adding availability group $db to $($db.Parent.Name)")) {
                     try {
