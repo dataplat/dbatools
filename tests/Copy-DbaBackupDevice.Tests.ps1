@@ -35,7 +35,7 @@ if (-not $env:appveyor) {
                     $server1.Query("EXEC master.dbo.sp_dropdevice @logicalname = N'$devicename'")
                 }
                 catch {
-                    # dont care
+                    # don't care
                 }
             }
 

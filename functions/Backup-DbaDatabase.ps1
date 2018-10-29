@@ -105,7 +105,7 @@ function Backup-DbaDatabase {
         This is passed in to perform a tail log backup if needed
 
     .PARAMETER BuildPath
-        By default this command will not attempt to create missing paths, this switch will change the behaviour so that it wll
+        By default this command will not attempt to create missing paths, this switch will change the behaviour so that it will
 
     .PARAMETER IgnoreFileChecks
         This switch stops the function from checking for the validity of paths. This can be useful if SQL Server only has read access to the backup area.

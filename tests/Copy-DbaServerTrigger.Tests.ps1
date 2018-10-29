@@ -36,7 +36,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
                 $server1.Query("DROP TRIGGER [$triggername] ON ALL SERVER")
             }
             catch {
-                # dont care
+                # don't care
             }
         }
 

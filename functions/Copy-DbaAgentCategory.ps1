@@ -74,7 +74,7 @@ function Copy-DbaAgentCategory {
     .EXAMPLE
         PS C:\> Copy-DbaAgentCategory -Source sqlserver2014a -Destination sqlcluster -OperatorCategory PSOperator -SourceSqlCredential $cred -Force
 
-        Copies a single operator category, the PSOperator operator category from sqlserver2014a to sqlcluster using SQL credentials to authenticate to sqlserver2014a and Windows credentials for sqlcluster. If a operator category with the same name exists on sqlcluster, it will be dropped and recreated because -Force was used.
+        Copies a single operator category, the PSOperator operator category from sqlserver2014a to sqlcluster using SQL credentials to authenticate to sqlserver2014a and Windows credentials for sqlcluster. If an operator category with the same name exists on sqlcluster, it will be dropped and recreated because -Force was used.
 
     .EXAMPLE
         PS C:\> Copy-DbaAgentCategory -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force

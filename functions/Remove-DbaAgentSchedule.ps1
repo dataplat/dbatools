@@ -5,7 +5,7 @@ function Remove-DbaAgentSchedule {
         Remove-DbaAgentJobSchedule removes a job schedule.
 
     .DESCRIPTION
-        Remove-DbaAgentJobSchedule removes a a job in the SQL Server Agent.
+        Remove-DbaAgentJobSchedule removes a job in the SQL Server Agent.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
