@@ -244,8 +244,8 @@ function New-DbaAvailabilityGroup {
         [switch]$EnableException
     )
     process {
-        $stepCounter = 0
-        $totalSteps = 9
+        $stepCounter = $wait = 0
+        $totalSteps = 10
         $activity = "Adding new availability group $name"
         
         if ($Force -and $Secondary -and (-not $NetworkShare -and -not $UseLastBackups) -and ($SeedingMode -ne 'Automatic')) {
@@ -458,7 +458,8 @@ function New-DbaAvailabilityGroup {
         # Add databases
         Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Adding databases"
         
-        $allbackups = @{}
+        $allbackups = @{
+        }
         
         foreach ($db in $Database) {
             if ($SeedingMode -eq "Automatic") {
@@ -531,6 +532,8 @@ function New-DbaAvailabilityGroup {
             }
         }
         
+        Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Granting permissions on availability group, this may take a moment"
+        
         # Grant permissions, but first, get all necessary service accounts
         $primaryserviceaccount = $server.ServiceAccount.Trim()
         $saname = ([DbaInstanceParameter]($server.DomainInstanceName)).ComputerName
@@ -597,9 +600,20 @@ function New-DbaAvailabilityGroup {
                 }
             }
             if ($SeedingMode -eq 'Automatic') {
+                $done = $false
                 try {
                     if ($Pscmdlet.ShouldProcess($second.Name, "Seeding mode is automatic. Adding CreateAnyDatabase permissions to availability group.")) {
-                        $null = $second.Query("ALTER AVAILABILITY GROUP [$Name] GRANT CREATE ANY DATABASE")
+                        do {
+                            $second.Refresh()
+                            $second.AvailabilityGroups.Refresh()
+                            if (Get-DbaAvailabilityGroup -SqlInstance $second -AvailabilityGroup $Name) {
+                                $null = $second.Query("ALTER AVAILABILITY GROUP [$Name] GRANT CREATE ANY DATABASE")
+                                $done = $true
+                            } else {
+                                $wait++
+                                Start-Sleep -Seconds 1
+                            }
+                        } while ($wait -lt 20 -and $done -eq $false)
                     }
                 } catch {
                     # Log the exception but keep going
