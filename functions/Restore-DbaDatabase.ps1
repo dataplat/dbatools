@@ -363,7 +363,7 @@ function Restore-DbaDatabase {
         [parameter(Mandatory, ParameterSetName = "RestorePage")][object]$PageRestore,
         [parameter(Mandatory, ParameterSetName = "RestorePage")][string]$PageRestoreTailFolder,
         [int]$StatementTimeout = 0
-        
+
     )
     begin {
         Write-Message -Level InternalComment -Message "Starting"
@@ -379,7 +379,7 @@ function Restore-DbaDatabase {
         if ($PSCmdlet.ParameterSetName -eq "Restore") {
             $UseDestinationDefaultDirectories = $true
             $paramCount = 0
-            
+
             if (!(Test-Bound "AllowContinue") -and $true -ne $AllowContinue) {
                 $AllowContinue = $false
             }
@@ -400,7 +400,7 @@ function Restore-DbaDatabase {
                 Stop-Function -Category InvalidArgument -Message "To use ReplaceDbNameInFile you must specify DatabaseName"
                 return
             }
-            
+
             if ((Test-Bound "DestinationLogDirectory") -and (Test-Bound "ReuseSourceFolderStructure")) {
                 Stop-Function -Category InvalidArgument -Message "The parameters DestinationLogDirectory and UseDestinationDefaultDirectories are mutually exclusive"
                 return
@@ -448,9 +448,9 @@ function Restore-DbaDatabase {
             if (!($PSBoundParameters.ContainsKey("DataBasename"))) {
                 $PipeDatabaseName = $true
             }
-            
+
         }
-        
+
         # changing statement timeout to $StatementTimeout
         if ($StatementTimeout -eq 0) {
             Write-Message -Level Verbose -Message "Changing statement timeout to infinity"
@@ -459,16 +459,16 @@ function Restore-DbaDatabase {
         }
         $RestoreInstance.ConnectionContext.StatementTimeout = ($StatementTimeout * 60)
         #endregion Validation
-        
+
         #Variable marked as unused by PSScriptAnalyzer
         #$isLocal = [dbavalidate]::IsLocalHost($SqlInstance.ComputerName)
-        
+
         if ($UseDestinationDefaultDirectories) {
             $DefaultPath = (Get-DbaDefaultPath -SqlInstance $RestoreInstance)
             $DestinationDataDirectory = $DefaultPath.Data
             $DestinationLogDirectory = $DefaultPath.Log
         }
-        
+
         $BackupHistory = @()
         #$UseDestinationDefaultDirectories = $true
     }
@@ -529,11 +529,23 @@ function Restore-DbaDatabase {
                             }
                         }
                     }
-                    if ($f.BackupPath -like 'http*' -and '' -eq $AzureCredential) {
-                        Stop-Function -Message "At least one Azure backup passed in, and no Credential supplied. Stopping"
-                        return
+
+                    if ($f.BackupPath -like 'http*'){
+                        if ('' -ne $AzureCredential){
+                            Write-Message -Message "At least one Azure backup passed in with a credential, assume correct" -Level Verbose
+                            Write-Message -Message "Storage Account Identity access means striped backups cannot be restore"
+                        }
+                        else {
+                            $f.BackupPath -match 'https://.*/.*/'
+                            if (Get-DbaCredential -SqlInstance $RestoreInstance -name $matches[0].trim('/') ){
+                                Write-Message -Message "We have a SAS credential to use with $($f.BackupPath)" -Level Verbose
+                            }
+                            else {
+                                Stop-Function -Message "A URL to a backup has been passed in, but no credential can be found to access it"
+                                return
+                            }
+                        }
                     }
-                    
                     $BackupHistory += $F | Select-Object *, @{
                         Name = "ServerName"; Expression = {
                             $_.SqlInstance
@@ -543,7 +555,7 @@ function Restore-DbaDatabase {
                             $_.Start -as [DateTime]
                         }
                     }
-                    
+
                 }
             } else {
                 $files = @()
@@ -584,12 +596,12 @@ function Restore-DbaDatabase {
                 if ($RestoreInstance.Databases[$DataBase].State -ne 'Existing') {
                     Write-Message -Message "$Database does not exist on $RestoreInstance" -level Warning
                     Continue
-                    
+
                 }
                 if ($RestoreInstance.Databases[$Database].Status -ne "Restoring") {
                     Write-Message -Message "$Database on $RestoreInstance is not in a Restoring State" -Level Warning
                     Continue
-                    
+
                 }
                 $RestoreComplete = $true
                 $RecoverSql = "RESTORE DATABASE $Database WITH RECOVERY"
@@ -629,34 +641,34 @@ function Restore-DbaDatabase {
             if ($StopAfterGetBackupInformation) {
                 return
             }
-            
+
             $null = $BackupHistory | Format-DbaBackupInformation -DataFileDirectory $DestinationDataDirectory -LogFileDirectory $DestinationLogDirectory -DestinationFileStreamDirectory $DestinationFileStreamDirectory -DatabaseFileSuffix $DestinationFileSuffix -DatabaseFilePrefix $DestinationFilePrefix -DatabaseNamePrefix $RestoredDatabaseNamePrefix -ReplaceDatabaseName $DatabaseName -Continue:$Continue -ReplaceDbNameInFile:$ReplaceDbNameInFile -FileMapping $FileMapping
-            
+
             if (Test-Bound -ParameterName FormatBackupInformation) {
                 Set-Variable -Name $FormatBackupInformation -Value $BackupHistory -Scope Global
             }
             if ($StopAfterFormatBackupInformation) {
                 return
             }
-            
+
             $FilteredBackupHistory = $BackupHistory | Select-DbaBackupInformation -RestoreTime $RestoreTime -IgnoreLogs:$IgnoreLogBackups -ContinuePoints $ContinuePoints -LastRestoreType $LastRestoreType -DatabaseName $DatabaseName
-            
+
             if (Test-Bound -ParameterName SelectBackupInformation) {
                 Write-Message -Message "Setting $SelectBackupInformation to FilteredBackupHistory" -Level Verbose
                 Set-Variable -Name $SelectBackupInformation -Value $FilteredBackupHistory -Scope Global
-                
+
             }
             if ($StopAfterSelectBackupInformation) {
                 return
             }
-            
+
             try {
                 Write-Message -Level Verbose -Message "VerifyOnly = $VerifyOnly"
                 $null = $FilteredBackupHistory | Test-DbaBackupInformation -SqlInstance $RestoreInstance -WithReplace:$WithReplace -Continue:$Continue -VerifyOnly:$VerifyOnly -EnableException:$true -OutputScriptOnly:$OutputScriptOnly
             } catch {
                 Stop-Function -ErrorRecord $_ -Message "Failure" -Continue
             }
-            
+
             if (Test-Bound -ParameterName TestBackupInformation) {
                 Set-Variable -Name $TestBackupInformation -Value $FilteredBackupHistory -Scope Global
             }
@@ -667,7 +679,7 @@ function Restore-DbaDatabase {
                     $_.IsVerified -eq $True
                 } | Select-Object -Property Database -Unique).Database -join ','
             Write-Message -Message "$DbVerfied passed testing" -Level Verbose
-            
+
             if (($FilteredBackupHistory | Where-Object {
                         $_.IsVerified -eq $True
                     }).count -lt $FilteredBackupHistory.count) {
@@ -681,7 +693,7 @@ function Restore-DbaDatabase {
                     return
                 }
             }
-            
+
             If ($PSCmdlet.ParameterSetName -eq "RestorePage") {
                 if (($FilteredBackupHistory.Database | select-Object -unique | Measure-Object).count -ne 1) {
                     Stop-Function -Message "Must only 1 database passed in for Page Restore. Sorry"
@@ -705,7 +717,7 @@ function Restore-DbaDatabase {
                 Stop-Function -Message "Failure" -ErrorRecord $_ -Continue -Target $RestoreInstance
             }
             if ($PSCmdlet.ParameterSetName -eq "RestorePage") {
-                if ($RestoreInstace.Edition -like '*Enterprise*') {
+                if ($RestoreInstance.Edition -like '*Enterprise*') {
                     Write-Message -Message "Taking Tail log backup for page restore for Enterprise" -Level Verbose
                     $TailBackup = Backup-DbaDatabase -SqlInstance $RestoreInstance -Database $DatabaseName -Type Log -BackupDirectory $PageRestoreTailFolder -Norecovery -CopyOnly
                 }
@@ -713,7 +725,7 @@ function Restore-DbaDatabase {
                 $TailBackup | Restore-DbaDatabase -SqlInstance $RestoreInstance -TrustDbBackupHistory -NoRecovery -OutputScriptOnly:$OutputScriptOnly -BlockSize $BlockSize -MaxTransferSize $MaxTransferSize -Buffercount $Buffercount -Continue
                 Restore-DbaDatabase -SqlInstance $RestoreInstance -Recover -DatabaseName $DatabaseName -OutputScriptOnly:$OutputScriptOnly
             }
-            
+
         }
     }
 }
