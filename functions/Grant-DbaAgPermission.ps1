@@ -118,8 +118,14 @@ function Grant-DbaAgPermission {
                 } catch {
                     Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
                 }
+                
                 foreach ($ag in $AvailabilityGroup) {
-                    $server.Query("ALTER AVAILABILITY GROUP $ag GRANT CREATE ANY DATABASE")
+                    try {
+                        $server.Query("ALTER AVAILABILITY GROUP $ag GRANT CREATE ANY DATABASE")
+                    } catch {
+                        Stop-Function -Message "Failure" -ErrorRecord $_ -Target $instance
+                        return
+                    }
                 }
             } elseif ($Login) {
                 $InputObject += Get-DbaLogin -SqlInstance $instance -SqlCredential $SqlCredential -Login $Login
