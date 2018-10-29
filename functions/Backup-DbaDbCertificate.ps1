@@ -136,7 +136,7 @@ function Backup-DbaDbCertificate {
 
     begin {
         if (-not $EncryptionPassword -and $DecryptionPassword) {
-            Stop-Function -Message "If you specify an decryption password, you must also specify an encryption password" -Target $DecryptionPassword
+            Stop-Function -Message "If you specify a decryption password, you must also specify an encryption password" -Target $DecryptionPassword
         }
 
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Backup-DbaDatabaseCertificate

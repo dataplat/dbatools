@@ -232,7 +232,7 @@ function Test-DbaDiskAlignment {
                     $IsOffsetBestPractice = $true
                 }
 
-                # as we cant tell the actual size of the file strip unit, just check all the sizes I know about
+                # as we can't tell the actual size of the file strip unit, just check all the sizes I know about
                 foreach ($size in $stripe_units) {
                     if ($offset % $size -eq 0) {
                         # for proper alignment we really only need to know that your offset divided by your stripe unit size has a remainder of 0
