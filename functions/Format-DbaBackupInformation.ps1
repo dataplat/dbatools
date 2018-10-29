@@ -181,7 +181,7 @@ function Format-DbaBackupInformation {
                         if ($ReplaceDbNameInFile -eq $true) {
                             $_.PhysicalName = $_.PhysicalName -Replace $History.OriginalDatabase, $History.Database
                         }
-                        Write-message -Message " 1 PhysicalName = $($_.PhysicalName) " -Level Verbose
+                        Write-Message -Message " 1 PhysicalName = $($_.PhysicalName) " -Level Verbose
                         $Pname = [System.Io.FileInfo]$_.PhysicalName
                         $RestoreDir = $Pname.DirectoryName
                         if ($_.Type -eq 'D' -or $_.FileType -eq 'D') {
@@ -203,7 +203,7 @@ function Format-DbaBackupInformation {
                         }
 
                         $_.PhysicalName = $RestoreDir + "\" + $DatabaseFilePrefix + $Pname.BaseName + $DatabaseFileSuffix + $pname.extension
-                        Write-message -Message "PhysicalName = $($_.PhysicalName) " -Level Verbose
+                        Write-Message -Message "PhysicalName = $($_.PhysicalName) " -Level Verbose
                     }
                 }
             }

@@ -29,7 +29,7 @@ function Watch-DbaUpdate {
     param()
     process {
         if (([Environment]::OSVersion).Version.Major -lt 10) {
-            Write-Warning "This command only supports Windows 10 and higher."
+            Write-Message -Level Warning -Message "This command only supports Windows 10 and higher."
             return
         }
 
