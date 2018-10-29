@@ -808,7 +808,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     }
 
     if ($env:azurepasswd) {
-        Context "Restores to Azure" {
+        Context "Restores From Azure using SAS" {
             BeforeAll {
                 $server = Connect-DbaInstance -SqlInstance $script:instance2
                 $sql = "CREATE CREDENTIAL [https://dbatools.blob.core.windows.net/sql] WITH IDENTITY = N'SHARED ACCESS SIGNATURE', SECRET = N'$env:azurepasswd'"
@@ -825,8 +825,27 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             }
         }
     }
+
+    if ($env:azurepasswd) {
+        Context "Restores Striped backup From Azure using SAS" {
+            BeforeAll {
+                $server = Connect-DbaInstance -SqlInstance $script:instance2
+                $sql = "CREATE CREDENTIAL [https://dbatools.blob.core.windows.net/sql] WITH IDENTITY = N'SHARED ACCESS SIGNATURE', SECRET = N'$env:azurepasswd'"
+                $server.Query($sql)
+                $server.Query("CREATE DATABASE dbatoolsci_azure")
+            }
+            AfterAll {
+                $server.Query("DROP CREDENTIAL [https://dbatools.blob.core.windows.net/sql]")
+                Get-DbaDatabase -SqlInstance $script:instance2 -Database "dbatoolsci_azure" | Remove-DbaDatabase -Confirm:$false
+            }
+            It "Should restore cleanly" {
+                $results = @('https://dbatools.blob.core.windows.net/sql/az-1.bak','https://dbatools.blob.core.windows.net/sql/az-2.bak','https://azdbatools.blob.core.windows.net/sql/az-3.bak') | Restore-DbaDatabase -SqlInstance $script:instance2 -DatabaseName azstripetest -Verbose -AzureCredential dbatools_ci -WithReplace -ReplaceDbNameInFile
+                $results
+            }
+        }
+    }
     if ($env:azurelegacypasswd) {
-        Context "Restores to Azure" {
+        Context "Restores from Azure using Access Key" {
             BeforeAll {
                 $server = Connect-DbaInstance -SqlInstance $script:instance2
                 $sql = "CREATE CREDENTIAL [dbatools_ci] WITH IDENTITY = N'dbatools', SECRET = N'$env:azurelegacypasswd'"
@@ -844,4 +863,6 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             }
         }
     }
+
+
 }
