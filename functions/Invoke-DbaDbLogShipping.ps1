@@ -1192,7 +1192,7 @@ function Invoke-DbaDbLogShipping {
                     $SecondaryDatabase += $SecondaryDatabaseSuffix
                 }
 
-                # Check is the database is already initialized an check if the database exists on the secondary instance
+                # Check is the database is already initialized a check if the database exists on the secondary instance
                 if ($NoInitialization -and ($DestinationServer.Databases.Name -notcontains $SecondaryDatabase)) {
                     $setupResult = "Failed"
                     $comment = "Database $SecondaryDatabase needs to be initialized before log shipping setting can continue"

@@ -64,7 +64,7 @@ function Copy-DbaAgentAlert {
     .EXAMPLE
         PS C:\> Copy-DbaAgentAlert -Source sqlserver2014a -Destination sqlcluster -Alert PSAlert -SourceSqlCredential $cred -Force
 
-        Copies a only the alert named PSAlert from sqlserver2014a to sqlcluster using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster. If a alert with the same name exists on sqlcluster, it will be dropped and recreated because -Force was used.
+        Copies a only the alert named PSAlert from sqlserver2014a to sqlcluster using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster. If an alert with the same name exists on sqlcluster, it will be dropped and recreated because -Force was used.
 
     .EXAMPLE
         PS C:\> Copy-DbaAgentAlert -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force
@@ -271,7 +271,7 @@ function Copy-DbaAgentAlert {
                             Status            = $null
                             DateTime          = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
                         }
-                        # cant add them this way, we need to modify the existing one or give all options that are supported.
+                        # can't add them this way, we need to modify the existing one or give all options that are supported.
                         foreach ($notify in $notifications) {
                             $notifyCollection = @()
                             if ($notify.UseNetSend -eq $true) {

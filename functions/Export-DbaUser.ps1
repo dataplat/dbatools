@@ -79,12 +79,12 @@ function Export-DbaUser {
     .EXAMPLE
         PS C:\> Export-DbaUser -SqlInstance sqlserver2014a -User User1, User2 -Path C:\temp\users.sql
 
-        Exports ONLY users User1 and User2 from sqlsever2014a to the file  C:\temp\users.sql
+        Exports ONLY users User1 and User2 from sqlserver2014a to the file  C:\temp\users.sql
 
     .EXAMPLE
         PS C:\> Export-DbaUser -SqlInstance sqlserver2008 -User User1 -Path C:\temp\users.sql -DestinationVersion SQLServer2016
 
-        Exports user User1 from sqlsever2008 to the file C:\temp\users.sql with syntax to run on SQL Server 2016
+        Exports user User1 from sqlserver2008 to the file C:\temp\users.sql with syntax to run on SQL Server 2016
 
     .EXAMPLE
         PS C:\> Export-DbaUser -SqlInstance sqlserver2008 -Database db1,db2 -Path C:\temp\users.sql
@@ -225,7 +225,7 @@ function Export-DbaUser {
                         $users = $db.Users | Where-Object { $User -contains $_.Name -and $_.IsSystemObject -eq $false -and $_.Name -notlike "##*" }
                     }
                 }
-                # Store roles between users so if we hit the same one we dont create it again
+                # Store roles between users so if we hit the same one we don't create it again
                 $roles = @()
                 if ($users.Count -gt 0) {
                     foreach ($dbuser in $users) {

@@ -432,7 +432,7 @@ function Restore-DbaDatabase {
             }
             if ('' -ne $StandbyDirectory) {
                 if (!(Test-DbaPath -Path $StandbyDirectory -SqlInstance $RestoreInstance)) {
-                    Stop-Function -Message "$SqlSever cannot see the specified Standby Directory $StandbyDirectory" -Target $SqlInstance
+                    Stop-Function -Message "$SqlServer cannot see the specified Standby Directory $StandbyDirectory" -Target $SqlInstance
                     return
                 }
             }

@@ -1074,7 +1074,7 @@ function Import-DbaCsvToSql {
                         }
                     }
 
-                    # Check to see if file has quote identified data (ie. "first","second","third")
+                    # Check to see if file has quote identified data (i.e. "first","second","third")
                     $quoted = $false
                     $checkline = Get-Content $file -Last 1
                     $checkcolumns = $checkline.Split($InternalDelimiter)
