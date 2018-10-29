@@ -241,7 +241,6 @@
         Write-Message -Level Verbose -Message 'Setup will start from ' + $SetupFile
     }
 
-
     Out-File -FilePath C:\Temp\ConfigurationFile2.ini -InputObject $startScript
 
     
@@ -257,12 +256,15 @@
 
     (Get-Content -Path $configini).Replace('SQLSYSADMINACCOUNTS="WIN-NAJQHOBU8QD\Administrator"', 'SQLSYSADMINACCOUNTS="' + $env:COMPUTERNAME + '\Administrator"')| Out-File $configini
 
-    #$SetupFile = 'C:\Users\Administrator\Downloads\SQLEXPR_x64_ENU\Setup.exe'
-    #$ConfigFile = 'C:\temp\ConfigurationFile2.ini'
+    If($SaveFile -eq "Yes")
+    {
+        $SaveFileLocation = Read-Host "Please enter your preferred directory for saving a copy of the configuration file: "
+        Copy-Item $configini -Destination $SaveFileLocation
+    }
 
-    $SAPassW = '[InsertPasswordHere]'
+    $SAPassW = [PsCredential](Get-Credential -UserName "SA"  -Message "Please Enter the SA Password.")
 
-    & $SetupFile /ConfigurationFile=$configini /Q /IACCEPTSQLSERVERLICENSETERMS /SAPWD=$SAPassW
+    & $SetupFile /ConfigurationFile=$configini /Q /IACCEPTSQLSERVERLICENSETERMS /SAPWD=$SAPassW.GetNetworkCredential().Password
 
     # Grant service account the right to perform volume maintenance
     # code found at https://social.technet.microsoft.com/Forums/windows/en-US/5f293595-772e-4d0c-88af-f54e55814223/adding-domain-account-to-the-local-policy-user-rights-assignment-perform-volume-maintenance?forum=winserverpowershell
