@@ -170,7 +170,7 @@ function New-DbaAvailabilityGroup {
         Creates a new availability group on sql2017 named SharePoint with a cluster type of non and a failover mode of manual
 
     .EXAMPLE
-        PS C:\> New-DbaAvailabilityGroup -Primary sql1 -Secondary sql2 -Database pubs -ClusterType None -SeedingMode Automatic -FailoverMode Manual 
+        PS C:\> New-DbaAvailabilityGroup -Primary sql1 -Secondary sql2 -Database pubs -ClusterType None -SeedingMode Automatic -FailoverMode Manual
 
         Creates a new availability group with a primary replica on sql1 and a secondary on sql2. Automatically adds the database pubs.
 
@@ -454,7 +454,7 @@ function New-DbaAvailabilityGroup {
             Stop-Function -Message $msg -ErrorRecord $_ -Target $Primary
             return
         }
-        
+
         # Add databases
         Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Adding databases"
 
@@ -530,11 +530,11 @@ function New-DbaAvailabilityGroup {
                 }
             }
         }
-        
+
         # Grant permissions, but first, get all necessary service accounts
         $primaryserviceaccount = $server.ServiceAccount.Trim()
         $saname = ([DbaInstanceParameter]($server.DomainInstanceName)).ComputerName
-        
+
         if ($primaryserviceaccount) {
             if ($primaryserviceaccount.StartsWith("NT ")) {
                 $primaryserviceaccount = "$saname`$"
@@ -546,18 +546,18 @@ function New-DbaAvailabilityGroup {
                 $primaryserviceaccount = "$saname`$"
             }
         }
-        
+
         if (-not $primaryserviceaccount) {
             $primaryserviceaccount = "$saname`$"
         }
-        
+
         $serviceaccounts = @($primaryserviceaccount)
-        
+
         foreach ($second in $secondaries) {
             # If service account is empty, add the computer account instead
             $secondaryserviceaccount = $second.ServiceAccount.Trim()
             $saname = ([DbaInstanceParameter]($second.DomainInstanceName)).ComputerName
-            
+
             if ($secondaryserviceaccount) {
                 if ($secondaryserviceaccount.StartsWith("NT ")) {
                     $secondaryserviceaccount = "$saname`$"
@@ -569,22 +569,22 @@ function New-DbaAvailabilityGroup {
                     $secondaryserviceaccount = "$saname`$"
                 }
             }
-            
+
             if (-not $secondaryserviceaccount) {
                 $secondaryserviceaccount = "$saname`$"
             }
-            
+
             $serviceaccounts += $secondaryserviceaccount
         }
-        
+
         $serviceaccounts = $serviceaccounts | Select-Object -Unique
-        
+
         if ($SeedingMode -eq 'Automatic') {
             if ($Pscmdlet.ShouldProcess($server.Name, "Seeding mode is automatic. Adding CreateAnyDatabase permissions to availability group.")) {
                 $null = $server.Query("ALTER AVAILABILITY GROUP [$Name] GRANT CREATE ANY DATABASE")
             }
         }
-        
+
         foreach ($second in $secondaries) {
             if ($server.HostPlatform -ne "Linux" -and $second.HostPlatform -ne "Linux") {
                 if ($Pscmdlet.ShouldProcess($second.Name, "Granting Connect permissions to service accounts: $serviceaccounts")) {
@@ -597,7 +597,7 @@ function New-DbaAvailabilityGroup {
                 }
             }
         }
-        
+
         # Get results
         Get-DbaAvailabilityGroup -SqlInstance $Primary -SqlCredential $PrimarySqlCredential -AvailabilityGroup $Name
     }
