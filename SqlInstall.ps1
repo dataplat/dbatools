@@ -18,6 +18,10 @@
     Note that the dowloaded installation file must be unzipped, an ISO has to be mounted. This will not be executed from this script.
 
     .PARAMETER Version will hold the SQL Server version you wish to install. The variable will support autocomplete
+
+    .PARAMETER Edition wull hold the different basic editions of SQL Server: Express, Standard, Enterprise and Developer. The variable will support autocomplete
+
+    .PARAMETER StatsAndMl will hold the R and Python choices. The variable will support autocomplete. There will be a check on version; this parameter will revert to NULL if the version is below 2016
     
     .PARAMETER Appvolume will hold the volume letter of the application disc. If left empty, it will default to C, unless there is a drive named like App
 
@@ -58,7 +62,9 @@
 
     #>
     Param  (
-        [ValidateSet("2012", "2014", "2016","2017","2019")][int]$Version,    
+        [ValidateSet("2012", "2014", "2016","2017","2019")][int]$Version, 
+        [ValidateSet("Express", "Standard", "Enterprise", "Developer")][string]$Edition,
+        [ValidateSet("Python", "R", "Python and R")][string]$StatsAndMl,
         [string]$AppVolume, 
         [string]$DataVolume, 
         [string]$LogVolume, 
@@ -67,6 +73,16 @@
         [ValidateSet("Yes", "No")][string]$PerformVolumeMaintenance
     )
 
+# Check if the edition of SQL Server supports Python and R. Introduced in SQL 2016, it should not be allowed in 2008,2012 and 2014 installations.
+
+    IF( $null -eq $StatsAndMl -or $StatsAndMl -ne '' )
+    {
+        IF($Version -le 2016)
+        {
+            $StatsAndMl = '';
+        }
+    }
+    
     $configini = Get-Content "$script:PSModuleRoot\bin\installtemplate\$version.ini"
 
     $SqlServerAccount = Get-CimInstance -ClassName Win32_UserAccount  | Out-GridView -title 'Please select the Service Account for your Sql Server instance.' -PassThru | Select-Object -ExpandProperty Name
