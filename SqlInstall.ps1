@@ -82,8 +82,8 @@
             $StatsAndMl = '';
         }
     }
-    
-    $configini = Get-Content "$script:PSModuleRoot\bin\installtemplate\$version.ini"
+
+    $configini = Get-Content "$script:PSModuleRoot\bin\installtemplate\$version\$Edition\config.ini"
 
     $SqlServerAccount = Get-CimInstance -ClassName Win32_UserAccount  | Out-GridView -title 'Please select the Service Account for your Sql Server instance.' -PassThru | Select-Object -ExpandProperty Name
     
