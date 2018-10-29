@@ -81,6 +81,7 @@ function Remove-DbaComputerCertificate {
 
                 $Folder
             )
+            <# DO NOT use Write-Message as this is inside of a script block #>
             Write-Verbose "Searching Cert:\$Store\$Folder for thumbprint: $thumbprint"
             $cert = Get-ChildItem "Cert:\$store\$folder" -Recurse | Where-Object { $_.Thumbprint -eq $Thumbprint }
 

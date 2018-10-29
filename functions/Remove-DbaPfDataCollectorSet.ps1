@@ -87,6 +87,7 @@ function Remove-DbaPfDataCollectorSet {
             if ($collectorset.name -eq $setname) {
                 $null = $collectorset.Delete()
             } else {
+                <# DO NOT use Write-Message as this is inside of a script block #>
                 Write-Warning "Data Collector Set $setname does not exist on $env:COMPUTERNAME."
             }
         }

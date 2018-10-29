@@ -77,6 +77,7 @@ function Get-DbaClientAlias {
                 foreach ($basekey in $basekeys) {
 
                     if ((Test-Path $basekey) -eq $false) {
+                        <# DO NOT use Write-Message as this is inside of a script block #>
                         Write-Warning "Base key ($basekey) does not exist. Quitting."
                         continue
                     }
