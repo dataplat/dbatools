@@ -178,6 +178,7 @@ function Import-DbaCsvToSql {
 
 #>
     [CmdletBinding(DefaultParameterSetName = "Default")]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseSingularNouns", "", Justification = "Internal functions are ignored")]
     param (
         [string[]]$Csv,
         [Parameter(Mandatory)]
@@ -675,12 +676,13 @@ function Import-DbaCsvToSql {
 
                 # Perform the actual switch, which removes any registered Import-DbaCsvToSql modules
                 # Then imports, and finally re-executes the command.
-                $csv = $csv -join ","; $switches = $switches -join " "
+                $csvParam = ($csv | ForEach-Object { "'$($_ -replace "'", "''")'" }) -join ","
+                $switches = $switches -join " "
                 if ($SqlCredential.count -gt 0) {
                     $SqlCredentialPath = "$env:TEMP\sqlcredential.xml"
                     Export-CliXml -InputObject $SqlCredential $SqlCredentialPath
                 }
-                $command = "Import-DbaCsvToSql -Csv $csv -SqlInstance '$SqlInstance'-Database '$database' -Table '$table' -Delimiter '$InternalDelimiter' -First $First -Query '$query' -Batchsize $BatchSize -NotifyAfter $NotifyAfter $switches -shellswitch"
+                $command = "Import-DbaCsvToSql -Csv $csvParam -SqlInstance '$SqlInstance'-Database '$database' -Table '$table' -Delimiter '$InternalDelimiter' -First $First -Query '$query' -Batchsize $BatchSize -NotifyAfter $NotifyAfter $switches -shellswitch"
 
                 if ($SqlCredentialPath.length -gt 0) {
                     $command += " -SqlCredentialPath $SqlCredentialPath"
@@ -1302,4 +1304,3 @@ function Import-DbaCsvToSql {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Import-CsvToSql
     }
 }
-

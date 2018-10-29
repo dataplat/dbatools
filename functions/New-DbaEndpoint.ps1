@@ -9,7 +9,7 @@ function New-DbaEndpoint {
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
-    
+
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
@@ -33,7 +33,7 @@ function New-DbaEndpoint {
 
     .PARAMETER Certificate
         Database certificate used for authentication.
-    
+
     .PARAMETER EndpointEncryption
         Used to specify the state of encryption on the endpoint. Defaults to required.
         Disabled

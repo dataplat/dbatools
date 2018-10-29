@@ -56,6 +56,7 @@ function Clear-DbaLatchStatistics {
         Connects using sqladmin credential and clears latch statistics on servers sql2008 and sqlserver2012
 #>
     [CmdletBinding(ConfirmImpact = 'High', SupportsShouldProcess)]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseSingularNouns", "", Justification = "Singular Noun doesn't make sense")]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer", "SqlServers")]
@@ -92,4 +93,3 @@ function Clear-DbaLatchStatistics {
         }
     }
 }
-

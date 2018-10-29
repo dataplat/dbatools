@@ -33,7 +33,7 @@ function Register-DbatoolsConfig {
 
     .NOTES
         Tags: Config, Module
-        Author: Friedrich Weinmann (@FredWeinmann‏)
+        Author: Friedrich Weinmann (@FredWeinmann)
 
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
@@ -56,6 +56,7 @@ function Register-DbatoolsConfig {
 
 #>
     [CmdletBinding(DefaultParameterSetName = "Default")]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseApprovedVerbs", "", Justification = "Internal functions are ignored")]
     param (
         [Parameter(ParameterSetName = "Default", Position = 0, ValueFromPipeline)]
         [Sqlcollaborative.Dbatools.Configuration.Config[]]$Config,
@@ -164,4 +165,3 @@ function Register-DbatoolsConfig {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Register-DbaConfig
     }
 }
-

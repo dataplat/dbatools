@@ -42,7 +42,7 @@ function Get-DbaClientAlias {
         PS C:\> Get-DbaClientAlias -ComputerName workstationx -Credential ad\sqldba
 
         Logs into workstationx as ad\sqldba then retrieves all SQL Server client aliases on Workstationx
-        
+
     .EXAMPLE
         PS C:\> 'Server1', 'Server2' | Get-DbaClientAlias
 
@@ -77,6 +77,7 @@ function Get-DbaClientAlias {
                 foreach ($basekey in $basekeys) {
 
                     if ((Test-Path $basekey) -eq $false) {
+                        <# DO NOT use Write-Message as this is inside of a script block #>
                         Write-Warning "Base key ($basekey) does not exist. Quitting."
                         continue
                     }

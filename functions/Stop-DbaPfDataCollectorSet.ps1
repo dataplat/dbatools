@@ -79,7 +79,8 @@ function Stop-DbaPfDataCollectorSet {
         [switch]$EnableException
     )
     begin {
-        $sets = @()
+        #Variable marked as unused by PSScriptAnalyzer
+        #$sets = @()
         $wait = $NoWait -eq $false
 
         $setscript = {

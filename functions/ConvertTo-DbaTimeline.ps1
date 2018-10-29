@@ -128,9 +128,6 @@ function ConvertTo-DbaTimeline {
     }
 
     process {
-        # build html container
-        $BaseObject = $InputObject.PsObject.BaseObject
-
         # create server list to support multiple servers
         if ($InputObject[0].SqlInstance -notin $servers) {
             $servers += $InputObject[0].SqlInstance

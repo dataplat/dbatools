@@ -78,7 +78,8 @@ function New-DbaClientAlias {
         # This is a script block so cannot use messaging system
         $scriptblock = {
             $basekeys = "HKLM:\SOFTWARE\WOW6432Node\Microsoft\MSSQLServer", "HKLM:\SOFTWARE\Microsoft\MSSQLServer"
-            $ServerName = $args[0]
+            #Variable marked as unused by PSScriptAnalyzer
+            #$ServerName = $args[0]
             $Alias = $args[1]
             $serverstring = $args[2]
 
@@ -105,12 +106,16 @@ function New-DbaClientAlias {
                     $null = New-Item -Path $connect -Force
                 }
 
+                <#
+                #Variable marked as unused by PSScriptAnalyzer
+                #Looks like it was once used for a Verbose Message
                 if ($basekey -like "*WOW64*") {
                     $architecture = "32-bit"
                 } else {
                     $architecture = "64-bit"
                 }
-
+                #>
+                <# DO NOT use Write-Message as this is inside of a script block #>
                 # Write-Verbose "Creating/updating alias for $ComputerName for $architecture"
                 $null = New-ItemProperty -Path $connect -Name $Alias -Value $serverstring -PropertyType String -Force
             }

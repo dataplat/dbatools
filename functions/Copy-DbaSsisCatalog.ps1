@@ -108,13 +108,14 @@ function Copy-DbaSsisCatalog {
             )
             $result = Get-DbaService -ComputerName $Computer -Type SSIS
             if ($result) {
-                $running = $false
+                #Variable marked as unused by PSScriptAnalyzer
+                #$running = $false
                 foreach ($service in $result) {
                     if (!$service.State -eq "Running") {
                         Write-Message -Level Warning -Message "Service $($service.DisplayName) was found on the destination, but is currently not running."
                     } else {
                         Write-Message -Level Verbose -Message "Service $($service.DisplayName) was found running on the destination."
-                        $running = $true
+                        #$running = $true
                     }
                 }
             } else {

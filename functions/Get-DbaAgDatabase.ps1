@@ -6,7 +6,7 @@ function Get-DbaAgDatabase {
 
     .DESCRIPTION
         Gets availability group databases from a SQL Server instance.
-    
+
         Default view provides most common set of properties for information on the database in an availability group.
 
         Information returned on the database will be specific to that replica, whether it is primary or a secondary.
@@ -16,7 +16,7 @@ function Get-DbaAgDatabase {
 
     .PARAMETER SqlCredential
         Login to the SqlInstance instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
-    
+
     .PARAMETER AvailabilityGroup
         Specify the availability groups to query.
 
@@ -25,7 +25,7 @@ function Get-DbaAgDatabase {
 
     .PARAMETER InputObject
         Enables piped input from Get-DbaAvailabilityGroup.
-    
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -72,7 +72,7 @@ function Get-DbaAgDatabase {
         if ($SqlInstance) {
             $InputObject += Get-DbaAvailabilityGroup -SqlInstance $SqlInstance -SqlCredential $SqlCredential -AvailabilityGroup $AvailabilityGroup
         }
-        
+
         foreach ($db in $InputObject.AvailabilityDatabases) {
             if ($Database) {
                 if ($db.Name -notin $Database) { continue }
@@ -84,7 +84,7 @@ function Get-DbaAgDatabase {
             Add-Member -Force -InputObject $db -MemberType NoteProperty -Name Replica -value $server.ComputerName
             Add-Member -Force -InputObject $db -MemberType NoteProperty -Name DatabaseName -value $db.Name # for backwards compat
             Add-Member -Force -InputObject $db -MemberType NoteProperty -Name AvailabilityGroup -value $db.Parent.Name
-            
+
             $defaults = 'ComputerName', 'InstanceName', 'SqlInstance', 'AvailabilityGroup', 'Replica', 'Name', 'SynchronizationState', 'IsFailoverReady', 'IsJoined', 'IsSuspended'
             Select-DefaultView -InputObject $db -Property $defaults
         }

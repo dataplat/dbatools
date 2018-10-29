@@ -71,7 +71,7 @@ function Watch-DbaXESession {
     )
     process {
         if (-not $SqlInstance) {
-           
+
         } else {
             try {
                 $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential -MinimumVersion 11
@@ -84,12 +84,12 @@ function Watch-DbaXESession {
             Write-Message -Level Verbose -Message "Getting XEvents Sessions on $SqlInstance."
             $InputObject += $XEStore.sessions | Where-Object Name -eq $Session
         }
-        
+
         foreach ($xesession in $InputObject) {
             $server = $xesession.Parent
             $sessionname = $xesession.Name
             Write-Message -Level Verbose -Message "Watching $sessionname on $($server.Name)."
-            
+
             if (-not $xesession.IsRunning -and -not $xesession.IsRunning) {
                 Stop-Function -Message "$($xesession.Name) is not running on $($server.Name)" -Continue
             }

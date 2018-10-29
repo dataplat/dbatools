@@ -239,12 +239,13 @@ function Copy-DbaDatabase {
             Stop-Function -Message "-Continue cannot be used without -UseLastBackups"
             return
         }
-
+        <#
+        #Variable marked as unused by PSScriptAnalyzer
         if ($null -ne $NewName -or $null -ne $Prefix) {
             $ReplaceDbNameInFile = $true
         } else {
             $ReplaceDbNameInFile = $false
-        }
+        }#>
 
         function Join-Path {
             <#
@@ -265,7 +266,7 @@ function Copy-DbaDatabase {
                 }
             }
         }
-        
+
         function Join-AdminUnc {
             <#
         .SYNOPSIS
@@ -615,7 +616,10 @@ function Copy-DbaDatabase {
                 if ($detachresult) {
 
                     $transfer = Start-SqlFileTransfer $fileStructure $dbName
-                    if ($transfer -eq $false) { Write-Warning "Could not copy files."; return "Could not copy files." }
+                    if ($transfer -eq $false) {
+                        Write-Message -Level Verbose -Message "Could not copy files."
+                        return "Could not copy files."
+                    }
                     $attachresult = Mount-SqlDatabase $destServer $destDbName $destfilestructure $dbOwner
 
                     if ($attachresult -eq $true) {
