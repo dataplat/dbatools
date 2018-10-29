@@ -37,6 +37,8 @@
 
     .PARAMETER SaveFile will prompt you for a file location to save the new config file. Otherwise it will only be saved in the PowerShell bin directory.
 
+    .PARAMETER Authentication will prompt you if you want mixed mode authentication or just Windows AD authentication. With Mixed Mode, you will be prompted for the SA password.
+
     .Inputs
     None
 
@@ -73,7 +75,8 @@
         [string]$TempVolume, 
         [string]$BackupVolume,
         [ValidateSet("Yes", "No")][string]$PerformVolumeMaintenance,
-        [ValidateSet("Yes")][string]$SaveFile
+        [ValidateSet("Yes")][string]$SaveFile,
+        [ValidateSet("Windows", "Mixed Mode")][string]$Authentication
     )
 
 # Check if the edition of SQL Server supports Python and R. Introduced in SQL 2016, it should not be allowed in earlier installations.
@@ -254,7 +257,7 @@
 
     (Get-Content -Path $configini).Replace('SQLUSERDBLOGDIR="E:\Program Files\Microsoft SQL Server\MSSQL12.AXIANSDB01\MSSQL\Log"', 'SQLUSERDBLOGDIR="' + $LogVolume + ':\Program Files\Microsoft SQL Server\MSSQL12.AXIANSDB01\MSSQL\Log"') | Out-File $configini
 
-    (Get-Content -Path $configini).Replace('SQLSYSADMINACCOUNTS="WIN-NAJQHOBU8QD\Administrator"', 'SQLSYSADMINACCOUNTS="' + $env:COMPUTERNAME + '\Administrator"')| Out-File $configini
+    (Get-Content -Path $configini).Replace('SQLSYSADMINACCOUNTS="WIN-NAJQHOBU8QD\Administrator"', 'SQLSYSADMINACCOUNTS="' + $SqlServerAccount)| Out-File $configini
 
     If($SaveFile -eq "Yes")
     {
@@ -262,9 +265,18 @@
         Copy-Item $configini -Destination $SaveFileLocation
     }
 
-    $SAPassW = [PsCredential](Get-Credential -UserName "SA"  -Message "Please Enter the SA Password.")
+    IF($Authentication -eq "Mixed Mode")
+    {
+        $SAPassW = [PsCredential](Get-Credential -UserName "SA"  -Message "Please Enter the SA Password.")
 
-    & $SetupFile /ConfigurationFile=$configini /Q /IACCEPTSQLSERVERLICENSETERMS /SAPWD=$SAPassW.GetNetworkCredential().Password
+    & $SetupFile /ConfigurationFile=$configini /Q /IACCEPTSQLSERVERLICENSETERMS /SAPWD= $SAPassW.GetNetworkCredential().Password
+
+    }
+    else {
+        & $SetupFile /ConfigurationFile=$configini /Q /IACCEPTSQLSERVERLICENSETERMS
+    }
+
+    
 
     # Grant service account the right to perform volume maintenance
     # code found at https://social.technet.microsoft.com/Forums/windows/en-US/5f293595-772e-4d0c-88af-f54e55814223/adding-domain-account-to-the-local-policy-user-rights-assignment-perform-volume-maintenance?forum=winserverpowershell
