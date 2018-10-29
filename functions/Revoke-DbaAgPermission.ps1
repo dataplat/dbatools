@@ -99,58 +99,81 @@ function Revoke-DbaAgPermission {
         [switch]$EnableException
     )
     process {
-        if ($SqlInstance -and -not $Login) {
+        if ($SqlInstance -and -not $Login -and -not $AvailabilityGroup) {
             Stop-Function -Message "You must specify one or more logins when using the SqlInstance parameter."
             return
         }
-
+        
         if ($Type -contains "AvailabilityGroup" -and -not $AvailabilityGroup) {
             Stop-Function -Message "You must specify at least one availability group when using the AvailabilityGroup type."
             return
         }
-
+        
         foreach ($instance in $SqlInstance) {
-            $InputObject += Get-DbaLogin -SqlInstance $instance -SqlCredential $SqlCredential -Login $Login
-            foreach ($account in $Login) {
-                if ($account -notin $InputObject.Name) {
-                    Stop-Function -Message "$account does not exist on $instance" -Target $instance -Continue
+            if ($perm -contains "CreateAnyDatabase") {
+                try {
+                    $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
+                } catch {
+                    Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
                 }
-            }
-        }
-
-        foreach ($account in $InputObject) {
-            $server = $account.Parent
-            if ($Type -contains "Endpoint") {
-                $endpoint = Get-DbaEndpoint -SqlInstance $server -Type DatabaseMirroring
-                if (-not $endpoint) {
-                    Stop-Function -Message "DatabaseMirroring endpoint does not exist on $server" -Target $server -Continue
+                
+                foreach ($ag in $AvailabilityGroup) {
+                    try {
+                        $server.Query("ALTER AVAILABILITY GROUP $ag GRANT CREATE ANY DATABASE")
+                    } catch {
+                        Stop-Function -Message "Failure" -ErrorRecord $_ -Target $instance
+                        return
+                    }
                 }
-
-                foreach ($perm in $Permission) {
-                    if ($Pscmdlet.ShouldProcess($server.Name, "Revoking $perm on $endpoint")) {
-                        if ($perm -eq "CreateAnyDatabase") {
-                            $ag.Parent.Query("ALTER AVAILABILITY GROUP $ag REVOKE CREATE ANY DATABASE")
-                        } else {
-                            $bigperms = New-Object Microsoft.SqlServer.Management.Smo.ObjectPermissionSet([Microsoft.SqlServer.Management.Smo.ObjectPermission]::$perm)
-                            try {
-                                $endpoint.Revoke($bigperms, $account.Name)
-                                [pscustomobject]@{
-                                    ComputerName = $account.ComputerName
-                                    InstanceName = $account.InstanceName
-                                    SqlInstance  = $account.SqlInstance
-                                    Name         = $account.Name
-                                    Permission   = $perm
-                                    Type         = "Revoke"
-                                    Status       = "Success"
-                                }
-                            } catch {
-                                Stop-Function -Message "Failure" -ErrorRecord $_
-                            }
+            } elseif ($Login) {
+                $InputObject += Get-DbaLogin -SqlInstance $instance -SqlCredential $SqlCredential -Login $Login
+                foreach ($account in $Login) {
+                    if ($account -notin $InputObject.Name) {
+                        try {
+                            $InputObject += New-DbaLogin -SqlInstance $server -Login $account -EnableException
+                        } catch {
+                            Stop-Function -Message "Failure" -ErrorRecord $_ -Target $instance
+                            return
                         }
                     }
                 }
             }
-
+        }
+        
+        foreach ($account in $InputObject) {
+            $server = $account.Parent
+            if ($Type -contains "Endpoint") {
+                $server.Endpoints.Refresh()
+                $endpoint = $server.Endpoints | Where-Object EndpointType -eq DatabaseMirroring
+                
+                if (-not $endpoint) {
+                    Stop-Function -Message "DatabaseMirroring endpoint does not exist on $server" -Target $server -Continue
+                }
+                
+                foreach ($perm in $Permission) {
+                    if ($Pscmdlet.ShouldProcess($server.Name, "Revokeing $perm on $endpoint")) {
+                        if ($perm -in 'CreateAnyDatabase') {
+                            Stop-Function -Message "$perm not supported by endpoints" -Continue
+                        }
+                        try {
+                            $bigperms = New-Object Microsoft.SqlServer.Management.Smo.ObjectPermissionSet([Microsoft.SqlServer.Management.Smo.ObjectPermission]::$perm)
+                            $endpoint.Revoke($bigperms, $account.Name)
+                            [pscustomobject]@{
+                                ComputerName = $account.ComputerName
+                                InstanceName = $account.InstanceName
+                                SqlInstance  = $account.SqlInstance
+                                Name         = $account.Name
+                                Permission   = $perm
+                                Type         = "Revoke"
+                                Status       = "Success"
+                            }
+                        } catch {
+                            Stop-Function -Message "Failure" -ErrorRecord $_ -Target $ag -Continue
+                        }
+                    }
+                }
+            }
+            
             if ($Type -contains "AvailabilityGroup") {
                 $ags = Get-DbaAvailabilityGroup -SqlInstance $account.Parent -AvailabilityGroup $AvailabilityGroup
                 foreach ($ag in $ags) {
@@ -158,7 +181,7 @@ function Revoke-DbaAgPermission {
                         if ($perm -notin 'Alter', 'Control', 'TakeOwnership', 'ViewDefinition') {
                             Stop-Function -Message "$perm not supported by availability groups" -Continue
                         }
-                        if ($Pscmdlet.ShouldProcess($server.Name, "Revoking $perm on $ags")) {
+                        if ($Pscmdlet.ShouldProcess($server.Name, "Revokeing $perm on $ags")) {
                             try {
                                 $bigperms = New-Object Microsoft.SqlServer.Management.Smo.ObjectPermissionSet([Microsoft.SqlServer.Management.Smo.ObjectPermission]::$perm)
                                 $ag.Revoke($bigperms, $account.Name)
@@ -172,7 +195,7 @@ function Revoke-DbaAgPermission {
                                     Status       = "Success"
                                 }
                             } catch {
-                                Stop-Function -Message "Failure" -ErrorRecord $_
+                                Stop-Function -Message "Failure" -ErrorRecord $_ -Target $ag -Continue
                             }
                         }
                     }
@@ -181,4 +204,3 @@ function Revoke-DbaAgPermission {
         }
     }
 }
-
