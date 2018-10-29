@@ -77,10 +77,14 @@ function Join-DbaAvailabilityGroup {
         [switch]$EnableException
     )
     process {
+        
         if ($InputObject) {
             $AvailabilityGroup += $InputObject.Name
             if (-not $ClusterType) {
-                $ClusterType = ($InputObject | Select-Object -First 1).ClusterType
+                $tempclustertype = ($InputObject | Select-Object -First 1).ClusterType
+                if ($tempclustertype) {
+                    $ClusterType = $tempclustertype
+                }
             }
         }
         
@@ -88,14 +92,14 @@ function Join-DbaAvailabilityGroup {
             Stop-Function -Message "No availability group to add"
             return
         }
-
+        
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
             } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-
+            
             foreach ($ag in $AvailabilityGroup) {
                 if ($Pscmdlet.ShouldProcess($server.Name, "Joining $ag")) {
                     try {
