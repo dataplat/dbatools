@@ -87,8 +87,8 @@ function Get-DbaMemoryUsage {
                 $BufManpagecounters,
                 $SSAScounters,
                 $SSIScounters)
-                <# DO NOT use Write-Message as this is inside of a script block #>
-                Write-Verbose -Message "Searching for Memory Manager Counters on $Computer"
+            <# DO NOT use Write-Message as this is inside of a script block #>
+            Write-Verbose -Message "Searching for Memory Manager Counters on $Computer"
             try {
                 $availablecounters = (Get-Counter -ListSet '*sql*:Memory Manager*' -ErrorAction SilentlyContinue).paths
                 (Get-Counter -Counter $availablecounters -ErrorAction SilentlyContinue).countersamples |
@@ -222,4 +222,3 @@ function Get-DbaMemoryUsage {
         }
     }
 }
-
