@@ -68,7 +68,6 @@ function Remove-DbaDbCertificate {
     }
     process {
         if ($SqlInstance) {
-            Write-Warning hello
             $InputObject += Get-DbaDbCertificate -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Certificate $Certificate -Database $Database
         }
         foreach ($cert in $InputObject) {

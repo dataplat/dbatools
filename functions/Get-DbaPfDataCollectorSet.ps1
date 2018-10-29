@@ -164,6 +164,7 @@ function Get-DbaPfDataCollectorSet {
                         Credential                 = $args[1]
                     }
                 } catch {
+                    <# DO NOT use Write-Message as this is inside of a script block #>
                     Write-Warning -Message "Issue with getting Collector Set $setname on $env:Computername : $_."
                     continue
                 }
