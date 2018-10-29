@@ -676,12 +676,13 @@ function Import-DbaCsvToSql {
 
                 # Perform the actual switch, which removes any registered Import-DbaCsvToSql modules
                 # Then imports, and finally re-executes the command.
-                $csv = $csv -join ","; $switches = $switches -join " "
+                $csvParam = ($csv | ForEach-Object { "'$($_ -replace "'", "''")'" }) -join ","
+                $switches = $switches -join " "
                 if ($SqlCredential.count -gt 0) {
                     $SqlCredentialPath = "$env:TEMP\sqlcredential.xml"
                     Export-CliXml -InputObject $SqlCredential $SqlCredentialPath
                 }
-                $command = "Import-DbaCsvToSql -Csv $csv -SqlInstance '$SqlInstance'-Database '$database' -Table '$table' -Delimiter '$InternalDelimiter' -First $First -Query '$query' -Batchsize $BatchSize -NotifyAfter $NotifyAfter $switches -shellswitch"
+                $command = "Import-DbaCsvToSql -Csv $csvParam -SqlInstance '$SqlInstance'-Database '$database' -Table '$table' -Delimiter '$InternalDelimiter' -First $First -Query '$query' -Batchsize $BatchSize -NotifyAfter $NotifyAfter $switches -shellswitch"
 
                 if ($SqlCredentialPath.length -gt 0) {
                     $command += " -SqlCredentialPath $SqlCredentialPath"
