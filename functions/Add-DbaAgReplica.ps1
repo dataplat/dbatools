@@ -168,7 +168,7 @@ function Add-DbaAgReplica {
                         $replica.ConnectionModeInPrimaryRole = [Microsoft.SqlServer.Management.Smo.AvailabilityReplicaConnectionModeInPrimaryRole]::$ConnectionModeInPrimaryRole
                         $replica.ConnectionModeInSecondaryRole = [Microsoft.SqlServer.Management.Smo.AvailabilityReplicaConnectionModeInSecondaryRole]::$ConnectionModeInSecondaryRole
                     }
-                        $replica.BackupPriority = $BackupPriority
+                    $replica.BackupPriority = $BackupPriority
 
                     if ($ReadonlyRoutingConnectionUrl) {
                         $replica.ReadonlyRoutingConnectionUrl = $ReadonlyRoutingConnectionUrl
@@ -204,4 +204,3 @@ function Add-DbaAgReplica {
         }
     }
 }
-
