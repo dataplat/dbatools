@@ -239,7 +239,7 @@ function Get-DbaPermission {
                 Write-Message -Level Verbose -Message "Processing $db on $instance."
 
                 if ($db.IsAccessible -eq $false) {
-                    Write-Warning "The database $db is not accessible. Skipping database."
+                    Write-Message -Level Warning -Message "The database $db is not accessible. Skipping database."
                     Continue
                 }
 

@@ -63,6 +63,6 @@ function Restore-DbaBackupFromDirectory {
         [switch]$Force
     )
 
-    Write-Warning "This command is no longer supported. Please use Get-ChildItem | Restore-DbaDatabase instead"
+    Write-Message -Level Warning -Message "This command is no longer supported. Please use Get-ChildItem | Restore-DbaDatabase instead"
 }
 

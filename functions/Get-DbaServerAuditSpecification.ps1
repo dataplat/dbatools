@@ -52,14 +52,9 @@ function Get-DbaServerAuditSpecification {
     process {
         foreach ($instance in $SqlInstance) {
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 10
             } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
-            }
-
-            if ($server.versionMajor -lt 10) {
-                Write-Warning "Server Audits are only supported in SQL Server 2008 and above. Quitting."
-                continue
             }
 
             foreach ($auditSpecification in $server.ServerAuditSpecifications) {
