@@ -822,6 +822,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             It "Should restore cleanly" {
                 $results = Restore-DbaDatabase -SqlInstance $script:instance2 -WithReplace -DatabaseName dbatoolsci_azure -Path https://dbatools.blob.core.windows.net/sql/dbatoolsci_azure.bak
                 $results.BackupFile | Should -Be 'https://dbatools.blob.core.windows.net/sql/dbatoolsci_azure.bak'
+                $results.RestoreComplete | Should Be $True
             }
         }
     }
@@ -839,8 +840,8 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
                 Get-DbaDatabase -SqlInstance $script:instance2 -Database "dbatoolsci_azure" | Remove-DbaDatabase -Confirm:$false
             }
             It "Should restore cleanly" {
-                $results = @('https://dbatools.blob.core.windows.net/sql/az-1.bak','https://dbatools.blob.core.windows.net/sql/az-2.bak','https://azdbatools.blob.core.windows.net/sql/az-3.bak') | Restore-DbaDatabase -SqlInstance $script:instance2 -DatabaseName azstripetest -Verbose -AzureCredential dbatools_ci -WithReplace -ReplaceDbNameInFile
-                $results
+                $results = @('https://dbatools.blob.core.windows.net/sql/az-1.bak','https://dbatools.blob.core.windows.net/sql/az-2.bak','https://azdbatools.blob.core.windows.net/sql/az-3.bak') | Restore-DbaDatabase -SqlInstance $script:instance2 -DatabaseName azstripetest -AzureCredential dbatools_ci -WithReplace -ReplaceDbNameInFile
+                $results.RestoreComplete | Should Be $True
             }
         }
     }
@@ -860,6 +861,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
                 $results = Restore-DbaDatabase -SqlInstance $script:instance2 -WithReplace -DatabaseName dbatoolsci_azure -Path https://dbatools.blob.core.windows.net/legacy/dbatoolsci_azure.bak -AzureCredential dbatools_ci
                 $results.BackupFile | Should -Be 'https://dbatools.blob.core.windows.net/legacy/dbatoolsci_azure.bak'
                 $results.Script -match 'CREDENTIAL' | Should -Be $true
+                $results.RestoreComplete | Should Be $True
             }
         }
     }
