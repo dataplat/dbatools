@@ -8,7 +8,7 @@ function Get-TableNameParts {
 
     .PARAMETER Table
         The table name to parse. You can specify a one, two, or three part table name.
-        If the object has special characters they must be wraped in square brackets [ ].
+        If the object has special characters they must be wrapped in square brackets [ ].
         If the name contains character ']' this must be escaped by duplicating the character
 
     .NOTES

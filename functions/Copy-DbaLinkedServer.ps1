@@ -52,7 +52,7 @@ function Copy-DbaLinkedServer {
         License: MIT https://opensource.org/licenses/MIT
 
         Requires: sysadmin access on SQL Servers
-        Limitations: This just copies the SQL portion. It does not copy files (ie. a local SQLite database, or Microsoft Access DB), nor does it configure ODBC entries.
+        Limitations: This just copies the SQL portion. It does not copy files (i.e. a local SQLite database, or Microsoft Access DB), nor does it configure ODBC entries.
 
     .LINK
         https://dbatools.io/Copy-DbaLinkedServer
