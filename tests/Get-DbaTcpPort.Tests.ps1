@@ -35,7 +35,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 
         It "has the correct properties" {
             $result = $results[0]
-            $ExpectedProps = 'ComputerName,InstanceName,SqlInstance,IPAddress,Counter,Port,Static,Type'.Split(',')
+            $ExpectedProps = 'ComputerName,InstanceName,SqlInstance,IPAddress,Port,Static,Type'.Split(',')
             ($result.PsObject.Properties.Name | Sort-Object) | Should Be ($ExpectedProps | Sort-Object)
         }
 
