@@ -165,6 +165,11 @@ function New-DbaAvailabilityGroup {
         Creates a new availability group on sql2016b named SharePoint with a secondary replica, sql2016b
 
     .EXAMPLE
+        PS C:\> New-DbaAvailabilityGroup -Primary sql2016std -Name BAG1 -Basic -Confirm:$false
+
+        Creates a basic availability group named BAG1 on sql2016std and does not confirm when setting up
+    
+    .EXAMPLE
         PS C:\> New-DbaAvailabilityGroup -Primary sql2017 -Name SharePoint -ClusterType None -FailoverMode Manual
 
         Creates a new availability group on sql2017 named SharePoint with a cluster type of non and a failover mode of manual

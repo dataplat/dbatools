@@ -92,7 +92,7 @@ function Export-DbaLogin {
     .EXAMPLE
         PS C:\> Export-DbaLogin -SqlInstance sqlserver2008 -Login realcajun -Path C:\temp\users.sql -DestinationVersion SQLServer2016
 
-        Exports login realcajun from sqlsever2008 to the file C:\temp\users.sql with syntax to run on SQL Server 2016
+        Exports login realcajun from sqlserver2008 to the file C:\temp\users.sql with syntax to run on SQL Server 2016
 
 #>
     [CmdletBinding(SupportsShouldProcess = $true)]

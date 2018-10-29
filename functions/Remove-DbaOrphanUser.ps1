@@ -195,7 +195,7 @@ function Remove-DbaOrphanUser {
                                                 On sql server 2008 or lower the EnumObjects method does not accept empty parameter.
                                                 0x1FFFFFFF is the way we can say we want everything known by those versions
 
-                                                When it is an higher version we can use empty to get all
+                                                When it is a higher version we can use empty to get all
                                             #>
                                             if ($server.versionMajor -lt 11) {
                                                 $NumberObjects = ($db.EnumObjects(0x1FFFFFFF) | Where-Object { $_.Schema -eq $sch.Name } | Measure-Object).Count
