@@ -5,7 +5,7 @@ function Remove-DbaAgentJob {
         Remove-DbaAgentJob removes a job.
 
     .DESCRIPTION
-        Remove-DbaAgentJob removes a a job in the SQL Server Agent.
+        Remove-DbaAgentJob removes a job in the SQL Server Agent.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
