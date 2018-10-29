@@ -198,6 +198,7 @@ function Find-DbaInstance {
 
 #>
     [CmdletBinding()]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseApprovedVerbs", "", Justification = "Internal functions are ignored")]
     param (
         [Parameter(Mandatory, ParameterSetName = 'Computer', ValueFromPipeline)]
         [DbaInstance[]]$ComputerName,
@@ -966,4 +967,3 @@ function Find-DbaInstance {
         $steppablePipeline.End()
     }
 }
-

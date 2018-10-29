@@ -131,7 +131,7 @@ function Test-DbaBackupInformation {
                         } elseif ($path -in $OtherFileCheck) {
                             Write-Message -Message "File $path already exists on $SqlInstance and owned by another database, cannot restore" -Level Warning
                             $VerificationErrors++
-                        } elseif ($path -in $DBHistoryPhysicalPathsExists) {
+                        } elseif ($path -in $DBHistoryPhysicalPathsExists -and $RestoreInstance.VersionMajor -gt 8) {
                             Write-Message -Message "File $path already exists on $($SqlInstance.ComputerName), not owned by any database in $SqlInstance, will not overwrite." -Level Warning
                             $VerificationErrors++
                         }

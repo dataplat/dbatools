@@ -800,22 +800,6 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         }
     }
 
-    Context "Warn if trying to restore to sql2000" {
-        InModuleScope dbatools {
-            It "Should return advice"{
-                Mock Connect-SQLInstance -MockWith {
-                    return [object]@{
-                        Name      = 'SQLServerName'
-                        ComputerName   = 'SQLServerName'
-                        VersionMajor = 8
-                    } #object
-                } #mock connect-sqlserver
-                $null = Restore-DbaDatabase -SqlInstance SQLServerName -path c:\temp -WarningVariable warnvar
-                $warnvar | Should BeLike '*Due to SQL Server 2000 not returning all the backup headers we cannot restore directly*'
-            }
-        }
-    }
-
     Context "Don't try to create/test folders with OutputScriptOnly (Issue 4046)"{
         $null = Restore-DbaDatabase -SqlInstance $script:instance2 -Path $script:appveyorlabrepo\RestoreTimeClean\RestoreTimeClean.bak -DestinationDataDirectory g:\DoesNtExist -OutputScriptOnly -WarningVariable warnvar
         It "Should not raise a warning" {
