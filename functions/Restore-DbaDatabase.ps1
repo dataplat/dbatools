@@ -530,17 +530,15 @@ function Restore-DbaDatabase {
                         }
                     }
 
-                    if ($f.BackupPath -like 'http*'){
-                        if ('' -ne $AzureCredential){
+                    if ($f.BackupPath -like 'http*') {
+                        if ('' -ne $AzureCredential) {
                             Write-Message -Message "At least one Azure backup passed in with a credential, assume correct" -Level Verbose
                             Write-Message -Message "Storage Account Identity access means striped backups cannot be restore"
-                        }
-                        else {
+                        } else {
                             $f.BackupPath -match 'https://.*/.*/'
-                            if (Get-DbaCredential -SqlInstance $RestoreInstance -name $matches[0].trim('/') ){
+                            if (Get-DbaCredential -SqlInstance $RestoreInstance -name $matches[0].trim('/') ) {
                                 Write-Message -Message "We have a SAS credential to use with $($f.BackupPath)" -Level Verbose
-                            }
-                            else {
+                            } else {
                                 Stop-Function -Message "A URL to a backup has been passed in, but no credential can be found to access it"
                                 return
                             }
@@ -729,4 +727,3 @@ function Restore-DbaDatabase {
         }
     }
 }
-

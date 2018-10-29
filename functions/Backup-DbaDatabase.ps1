@@ -252,17 +252,14 @@ function Backup-DbaDatabase {
             }
             if ('' -ne $AzureBaseUrl) {
                 $AzureBaseUrl = $AzureBaseUrl.Trim("/")
-                if ('' -ne $AzureCredential){
+                if ('' -ne $AzureCredential) {
                     Write-Message -Message "Azure Credential name passed in, will proceed assuming it's value" -Level Verbose
                     $FileCount = 1
-                }
-                else{
+                } else {
                     Write-Message -Message "AzureUrl and no credential, testing for SAS credential"
-                    if (Get-DbaCredential -SqlInstance $server -Name $AzureBaseUrl)
-                    {
+                    if (Get-DbaCredential -SqlInstance $server -Name $AzureBaseUrl) {
                         Write-Message -Message "Found a SAS backup credental" -Level Verbose
-                    }
-                    else{
+                    } else {
                         Stop-Function -Message "You must provide the credential name for the Azure Storage Account"
                         return
                     }
@@ -594,4 +591,3 @@ function Backup-DbaDatabase {
         }
     }
 }
-
