@@ -35,6 +35,8 @@
 
     .PARAMETER PerformVolumeMaintenance will set the policy for grant or deny this right to the SQL Server service account.
 
+    .PARAMETER SaveFile will prompt you for a file location to save the new config file. Otherwise it will only be saved in the PowerShell bin directory.
+
     .Inputs
     None
 
@@ -62,7 +64,7 @@
 
     #>
     Param  (
-        [ValidateSet("2012", "2014", "2016","2017","2019")][int]$Version, 
+        [ValidateSet("2008", "2008R2", "2012", "2014", "2016","2017","2019")][string]$Version, 
         [ValidateSet("Express", "Standard", "Enterprise", "Developer")][string]$Edition,
         [ValidateSet("Python", "R", "Python and R")][string]$StatsAndMl,
         [string]$AppVolume, 
@@ -70,20 +72,23 @@
         [string]$LogVolume, 
         [string]$TempVolume, 
         [string]$BackupVolume,
-        [ValidateSet("Yes", "No")][string]$PerformVolumeMaintenance
+        [ValidateSet("Yes", "No")][string]$PerformVolumeMaintenance,
+        [ValidateSet("Yes")][string]$SaveFile
     )
 
-# Check if the edition of SQL Server supports Python and R. Introduced in SQL 2016, it should not be allowed in 2008,2012 and 2014 installations.
+# Check if the edition of SQL Server supports Python and R. Introduced in SQL 2016, it should not be allowed in earlier installations.
 
     IF( $null -eq $StatsAndMl -or $StatsAndMl -ne '' )
     {
-        IF($Version -le 2016)
+        $Array = "2016", "2017", "2019"
+
+        IF($Version -notin $Array )
         {
             $StatsAndMl = '';
         }
     }
 
-    $configini = Get-Content "$script:PSModuleRoot\bin\installtemplate\$version\$Edition\config.ini"
+    $configini = Get-Content "$script:PSModuleRoot\bin\installtemplate\$version\$Edition\Configuration$version.ini"
 
     $SqlServerAccount = Get-CimInstance -ClassName Win32_UserAccount  | Out-GridView -title 'Please select the Service Account for your Sql Server instance.' -PassThru | Select-Object -ExpandProperty Name
     
@@ -237,32 +242,27 @@
     }
 
 
-    $ConfigFile = 'c:\temp\'
-
-    if ( -Not (Test-Path -Path $ConfigFile ) ) {
-        New-Item -ItemType directory -Path $ConfigFile
-    }
-
     Out-File -FilePath C:\Temp\ConfigurationFile2.ini -InputObject $startScript
 
-    $FileLocation2 = $ConfigFile + 'ConfigurationFile2.ini'
+    
+    #$FileLocation2 = $ConfigFile + 'ConfigurationFile2.ini'
 
-    (Get-Content -Path $FileLocation2).Replace('SQLBACKUPDIR="E:\Program Files\Microsoft SQL Server\MSSQL12.AXIANSDB01\MSSQL\Backup"', 'SQLBACKUPDIR="' + $BackupVolume + ':\Program Files\Microsoft SQL Server\MSSQL12.AXIANSDB01\MSSQL\Backup"') | Out-File $FileLocation2
+    (Get-Content -Path $configini).Replace('SQLBACKUPDIR="E:\Program Files\Microsoft SQL Server\MSSQL12.AXIANSDB01\MSSQL\Backup"', 'SQLBACKUPDIR="' + $BackupVolume + ':\Program Files\Microsoft SQL Server\MSSQL12.AXIANSDB01\MSSQL\Backup"') | Out-File $configini
 
-    (Get-Content -Path $FileLocation2).Replace('SQLUSERDBDIR="E:\Program Files\Microsoft SQL Server\MSSQL12.AXIANSDB01\MSSQL\Data"', 'SQLUSERDBDIR="' + $DataVolume + ':\Program Files\Microsoft SQL Server\MSSQL12.AXIANSDB01\MSSQL\Data"') | Out-File $FileLocation2
+    (Get-Content -Path $configini).Replace('SQLUSERDBDIR="E:\Program Files\Microsoft SQL Server\MSSQL12.AXIANSDB01\MSSQL\Data"', 'SQLUSERDBDIR="' + $DataVolume + ':\Program Files\Microsoft SQL Server\MSSQL12.AXIANSDB01\MSSQL\Data"') | Out-File $configini
 
-    (Get-Content -Path $FileLocation2).Replace('SQLTEMPDBDIR="E:\Program Files\Microsoft SQL Server\MSSQL12.AXIANSDB01\MSSQL\Data"', 'SQLTEMPDBDIR="' + $TempVolume + ':\Program Files\Microsoft SQL Server\MSSQL12.AXIANSDB01\MSSQL\Data"') | Out-File $FileLocation2
+    (Get-Content -Path$configini).Replace('SQLTEMPDBDIR="E:\Program Files\Microsoft SQL Server\MSSQL12.AXIANSDB01\MSSQL\Data"', 'SQLTEMPDBDIR="' + $TempVolume + ':\Program Files\Microsoft SQL Server\MSSQL12.AXIANSDB01\MSSQL\Data"') | Out-File $configini
 
-    (Get-Content -Path $FileLocation2).Replace('SQLUSERDBLOGDIR="E:\Program Files\Microsoft SQL Server\MSSQL12.AXIANSDB01\MSSQL\Log"', 'SQLUSERDBLOGDIR="' + $LogVolume + ':\Program Files\Microsoft SQL Server\MSSQL12.AXIANSDB01\MSSQL\Log"') | Out-File $FileLocation2
+    (Get-Content -Path $configini).Replace('SQLUSERDBLOGDIR="E:\Program Files\Microsoft SQL Server\MSSQL12.AXIANSDB01\MSSQL\Log"', 'SQLUSERDBLOGDIR="' + $LogVolume + ':\Program Files\Microsoft SQL Server\MSSQL12.AXIANSDB01\MSSQL\Log"') | Out-File $configini
 
-    (Get-Content -Path $FileLocation2).Replace('SQLSYSADMINACCOUNTS="WIN-NAJQHOBU8QD\Administrator"', 'SQLSYSADMINACCOUNTS="' + $env:COMPUTERNAME + '\Administrator"')| Out-File $FileLocation2
+    (Get-Content -Path $configini).Replace('SQLSYSADMINACCOUNTS="WIN-NAJQHOBU8QD\Administrator"', 'SQLSYSADMINACCOUNTS="' + $env:COMPUTERNAME + '\Administrator"')| Out-File $configini
 
     #$SetupFile = 'C:\Users\Administrator\Downloads\SQLEXPR_x64_ENU\Setup.exe'
     #$ConfigFile = 'C:\temp\ConfigurationFile2.ini'
 
     $SAPassW = '[InsertPasswordHere]'
 
-    & $SetupFile /ConfigurationFile=$FileLocation2 /Q /IACCEPTSQLSERVERLICENSETERMS /SAPWD=$SAPassW
+    & $SetupFile /ConfigurationFile=$configini /Q /IACCEPTSQLSERVERLICENSETERMS /SAPWD=$SAPassW
 
     # Grant service account the right to perform volume maintenance
     # code found at https://social.technet.microsoft.com/Forums/windows/en-US/5f293595-772e-4d0c-88af-f54e55814223/adding-domain-account-to-the-local-policy-user-rights-assignment-perform-volume-maintenance?forum=winserverpowershell
