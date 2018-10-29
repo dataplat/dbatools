@@ -169,6 +169,27 @@ function New-DbaAvailabilityGroup {
 
         Creates a new availability group on sql2017 named SharePoint with a cluster type of non and a failover mode of manual
 
+    .EXAMPLE
+        PS C:\> New-DbaAvailabilityGroup -Primary sql1 -Secondary sql2 -Database pubs -ClusterType None -SeedingMode Automatic -FailoverMode Manual 
+
+        Creates a new availability group with a primary replica on sql1 and a secondary on sql2. Automatically adds the database pubs.
+
+    .EXAMPLE
+        PS C:\> $cred = Get-Credential sqladmin
+        PS C:\> $params = @{
+                    >> Primary = "sql1"
+                    >> PrimarySqlCredential = $cred
+                    >> Secondary = "sql2"
+                    >> SecondarySqlCredential = $cred
+                    >> Database = "pubs"
+                    >> ClusterType = "None"
+                    >> SeedingMode = "Automatic"
+                    >> FailoverMode = "Manual"
+                    >> Confirm = $false
+                >> }
+        PS C:\> New-DbaAvailabilityGroup @params
+
+        This exact command was used to create an availability group on docker!
 #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
     param (
