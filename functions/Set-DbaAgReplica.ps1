@@ -15,9 +15,12 @@ function Set-DbaAgReplica {
     .PARAMETER SqlCredential
         Login to the SqlInstance instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
+    .PARAMETER Replica
+        The replicas to modify.
+    
     .PARAMETER AvailabilityGroup
-        The Availability Group to which a replica will be bestowed upon.
-
+        The availability group of the replica.
+    
     .PARAMETER AvailabilityMode
         Sets the availability mode of the availability group replica. Options are: AsynchronousCommit and SynchronousCommit. SynchronousCommit is default.
 
