@@ -42,7 +42,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
             $results = Resume-DbaAgDbDataMovement -SqlInstance $script:instance3 -Database $dbname -Confirm:$false
             $results.AvailabilityGroup | Should -Be $agname
             $results.Name | Should -Be $dbname
-            $results.SynchronizationState | Should -Be 'NotSynchronizing'
+            $results.SynchronizationState | Should -Be 'Synchronized'
         }
     }
 } #$script:instance2 for appveyor
