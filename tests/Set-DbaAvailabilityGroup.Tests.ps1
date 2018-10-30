@@ -29,12 +29,16 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     AfterAll {
         Remove-DbaAvailabilityGroup -SqlInstance $script:instance3 -AvailabilityGroup $agname -Confirm:$false
     }
-    Context "resumes  data movement" {
-        It "returns resumed results" {
-            $results = Set-DbaAvailabilityGroup -SqlInstance $script:instance3 -AvailabilityGroup $agname -Confirm:$false
+    Context "sets ag properties" {
+        It "returns modified results" {
+            $results = Set-DbaAvailabilityGroup -SqlInstance $script:instance3 -AvailabilityGroup $agname -Confirm:$false -DtcSupportEnabled:$false
             $results.AvailabilityGroup | Should -Be $agname
-            $results.Name | Should -Be $dbname
-            $results.SynchronizationState | Should -Be 'NotSynchronizing'
+            $results.DtcSupportEnabled | Should -Be $false
+        }
+        It "returns newly modified results" {
+            $results = Set-DbaAvailabilityGroup -SqlInstance $script:instance3 -AvailabilityGroup $agname -Confirm:$false -DtcSupportEnabled
+            $results.AvailabilityGroup | Should -Be $agname
+            $results.DtcSupportEnabled | Should -Be $true
         }
     }
 } #$script:instance2 for appveyor
