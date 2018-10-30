@@ -18,7 +18,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 }
 
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
-    <#
+
     Context "Properly restores a database on the local drive using Path" {
         $results = Backup-DbaDatabase -SqlInstance $script:instance1 -BackupDirectory C:\temp\backups
         It "Should return a database name, specifically master" {
@@ -28,7 +28,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $results.ForEach{ $_.BackupComplete | Should -Be $true }
         }
     }
-    #>
+
     BeforeAll {
         $DestBackupDir = 'C:\Temp\backups'
         $random = Get-Random
@@ -264,33 +264,42 @@ go
             $results.BackupPath | Should -BeLike "$DestBackupDir\master\$(($script:instance1).split('\')[1])\Full\master-Full.bak"
         }
     }
-    # skip for now
-    if ($env:azurepasswd1) {
+
+
+    if ($env:azurepasswd) {
         Context "Azure works" {
             BeforeAll {
+                Get-DbaDatabase -SqlInstance $script:instance2 -Database "dbatoolsci_azure" | Remove-DbaDatabase -Confirm:$false
                 $server = Connect-DbaInstance -SqlInstance $script:instance2
-                $sql = "CREATE CREDENTIAL [https://dbatools.blob.core.windows.net/sql] WITH IDENTITY = N'SHARED ACCESS SIGNATURE', SECRET = N'$env:azurepasswd'"
+                if (Get-DbaCredential -SqlInstance $script:instance2 -Name "[$script:azureblob]" ){
+                    $sql = "DROP CREDENTIAL [$script:azureblob]"
+                    $server.Query($sql)
+                }
+                $sql = "CREATE CREDENTIAL [$script:azureblob] WITH IDENTITY = N'SHARED ACCESS SIGNATURE', SECRET = N'$env:azurepasswd'"
                 $server.Query($sql)
                 $server.Query("CREATE DATABASE dbatoolsci_azure")
-                $sql = "CREATE CREDENTIAL [dbatools_ci] WITH IDENTITY = N'dbatools', SECRET = N'$env:azurelegacypasswd'"
+                if (Get-DbaCredential -SqlInstance $script:instance2 -name dbatools_ci) {
+                    $sql = "DROP CREDENTIAL dbatools_ci"
+                    $server.Query($sql)
+                }
+                $sql = "CREATE CREDENTIAL [dbatools_ci] WITH IDENTITY = N'$script:azureblobaccount', SECRET = N'$env:azurelegacypasswd'"
                 $server.Query($sql)
             }
             AfterAll {
                 Get-DbaDatabase -SqlInstance $script:instance2 -Database "dbatoolsci_azure" | Remove-DbaDatabase -Confirm:$false
-                $server.Query("DROP CREDENTIAL [https://dbatools.blob.core.windows.net/sql]")
-                $server.Query("DROP CREDENTIAL dbatools_ci")
+                $server.Query("DROP CREDENTIAL [$script:azureblob]")
             }
             It "backs up to Azure properly using SHARED ACCESS SIGNATURE" {
-                $results = Backup-DbaDatabase -SqlInstance $script:instance2 -AzureBaseUrl https://dbatools.blob.core.windows.net/sql -Database dbatoolsci_azure -BackupFileName dbatoolsci_azure.bak -WithFormat
+                $results = Backup-DbaDatabase -SqlInstance $script:instance2 -AzureBaseUrl $script:azureblob -Database dbatoolsci_azure -BackupFileName dbatoolsci_azure.bak -WithFormat
                 $results.Database | Should -Be 'dbatoolsci_azure'
                 $results.DeviceType | Should -Be 'URL'
                 $results.BackupFile | Should -Be 'dbatoolsci_azure.bak'
             }
             It "backs up to Azure properly using legacy credential" {
-                $results = Backup-DbaDatabase -SqlInstance $script:instance2 -AzureBaseUrl https://dbatools.blob.core.windows.net/sql -Database dbatoolsci_azure -BackupFileName dbatoolsci_azure.bak -WithFormat -AzureCredential dbatools_ci
+                $results = Backup-DbaDatabase -SqlInstance $script:instance2 -AzureBaseUrl $script:azureblob -Database dbatoolsci_azure -BackupFileName dbatoolsci_azure2.bak -WithFormat -AzureCredential dbatools_ci
                 $results.Database | Should -Be 'dbatoolsci_azure'
                 $results.DeviceType | Should -Be 'URL'
-                $results.BackupFile | Should -Be 'dbatoolsci_azure.bak'
+                $results.BackupFile | Should -Be 'dbatoolsci_azure2.bak'
             }
         }
     }
