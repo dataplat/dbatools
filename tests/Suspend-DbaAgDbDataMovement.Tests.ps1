@@ -39,7 +39,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     }
     Context "resumes  data movement" {
         It "returns resumed results" {
-            $results = Resume-DbaAgDbDataMovement -SqlInstance $script:instance3 -Database $dbname -Confirm:$false
+            $results = Suspend-DbaAgDbDataMovement -SqlInstance $script:instance3 -Database $dbname -Confirm:$false
             $results.AvailabilityGroup | Should -Be $agname
             $results.Name | Should -Be $dbname
             $results.SynchronizationState | Should -Be 'NotSynchronized'
