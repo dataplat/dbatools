@@ -77,7 +77,7 @@ function Get-DbaAgReplica {
 
         foreach ($agreplica in $InputObject.AvailabilityReplicas) {
             #Variable marked as unused by PSScriptAnalyzer
-            #$sever = $agreplica.Parent.Parent
+            #$server = $agreplica.Parent.Parent
             Add-Member -Force -InputObject $agreplica -MemberType NoteProperty -Name ComputerName -value $agreplica.Parent.ComputerName
             Add-Member -Force -InputObject $agreplica -MemberType NoteProperty -Name InstanceName -value $agreplica.Parent.InstanceName
             Add-Member -Force -InputObject $agreplica -MemberType NoteProperty -Name SqlInstance -value $agreplica.Parent.SqlInstance

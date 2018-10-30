@@ -170,7 +170,7 @@ function ConvertTo-DbaDataTable {
                 $specialType = 'Size'
             } elseif (-not ($type -in $types)) {
                 # All types which are not found in the array will be converted into strings.
-                # In this way we dont ignore it completely and it will be clear in the end why it looks as it does.
+                # In this way we don't ignore it completely and it will be clear in the end why it looks as it does.
                 $type = 'System.String'
             }
 
