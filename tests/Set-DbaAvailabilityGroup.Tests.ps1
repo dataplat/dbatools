@@ -20,3 +20,21 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         }
     }
 }
+
+Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
+    BeforeAll {
+        $agname = "dbatoolsci_agroup"
+        $null = New-DbaAvailabilityGroup -Primary $script:instance3 -Name $agname -ClusterType None -FailoverMode Manual -Confirm:$false -Certificate dbatoolsci_AGCert
+    }
+    AfterAll {
+        Remove-DbaAvailabilityGroup -SqlInstance $script:instance3 -AvailabilityGroup $agname -Confirm:$false
+    }
+    Context "resumes  data movement" {
+        It "returns resumed results" {
+            $results = Set-DbaAvailabilityGroup -SqlInstance $script:instance3 -AvailabilityGroup $agname -Confirm:$false
+            $results.AvailabilityGroup | Should -Be $agname
+            $results.Name | Should -Be $dbname
+            $results.SynchronizationState | Should -Be 'NotSynchronizing'
+        }
+    }
+} #$script:instance2 for appveyor
