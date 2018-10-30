@@ -130,7 +130,8 @@ function Restore-DbaDatabase {
         If a directory is specified the database(s) will be restored into a standby state, with the standby file placed into this directory (which must exist, and be writable by the target Sql Server instance)
 
     .PARAMETER AzureCredential
-        The name of the SQL Server credential to be used if restoring from an Azure hosted backup
+        The name of the SQL Server credential to be used if restoring from an Azure hosted backup using Storage Access Keys
+        If a backup path beginning http is passed in and this parameter is not specified then if a credential with a name matching the URL
 
     .PARAMETER ReplaceDbNameInFile
         If switch set and occurrence of the original database's name in a data or log file will be replace with the name specified in the DatabaseName parameter
@@ -243,6 +244,11 @@ function Restore-DbaDatabase {
 
         Will restore the backup held at  http://demo.blob.core.windows.net/backups/dbbackup.bak to server1\instance1. The connection to Azure will be made using the
         credential MyAzureCredential held on instance Server1\instance1
+
+    .EXAMPLE
+        PS C:\> Restore-DbaDatabase -SqlInstance server1\instance1 -Path http://demo.blob.core.windows.net/backups/dbbackup.bak
+
+        Will attempt to restore the backups from http://demo.blob.core.windows.net/backups/dbbackup.bak if a SAS credential with the name http://demo.blob.core.windows.net/backups exists on server1\instance1
 
     .EXAMPLE
         PS C:\> $File = Get-ChildItem c:\backups, \\server1\backups -recurse
