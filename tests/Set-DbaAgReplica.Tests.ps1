@@ -20,3 +20,24 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         }
     }
 }
+Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
+    BeforeAll {
+        $agname = "dbatoolsci_arepgroup"
+        $null = New-DbaAvailabilityGroup -Primary $script:instance3 -Name $agname -ClusterType None -FailoverMode Manual -Confirm:$false -Certificate dbatoolsci_AGCert
+    }
+    AfterAll {
+        Remove-DbaAvailabilityGroup -SqlInstance $script:instance3 -AvailabilityGroup $agname -Confirm:$false
+    }
+    Context "sets ag properties" {
+        It "returns modified results" {
+            $results = Set-DbaAgReplica -SqlInstance $script:instance3 -AvailabilityGroup $agname -Confirm:$false -BackupPriority 5000
+            $results.AvailabilityGroup | Should -Be $agname
+            $results.BackupPriority | Should -Be 5000
+        }
+        It "returns modified results" {
+            $results = Set-DbaAgReplica -SqlInstance $script:instance3 -AvailabilityGroup $agname -Confirm:$false -BackupPriority 1000
+            $results.AvailabilityGroup | Should -Be $agname
+            $results.BackupPriority | Should -Be 1000
+        }
+    }
+} #$script:instance2 for appveyor
