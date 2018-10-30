@@ -20,6 +20,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         }
     }
 }
+
 Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
         $agname = "dbatoolsci_arepgroup"
