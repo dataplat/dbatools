@@ -47,11 +47,11 @@ function Invoke-DbatoolsFormatter {
         if (Test-FunctionInterrupt) { return }
         foreach ($p in $Path) {
             try {
-                $realPath = (Resolve-Path -Path $p).Path
+                $realPath = (Resolve-Path -Path $p -ErrorAction Stop).Path
             } catch {
-                Write-Message -Level Warning "Cannot resolve to $p"
-                continue
+                Stop-Function -Message "Cannot find or resolve $p" -Continue
             }
+            
             $content = Get-Content -Path $realPath -Raw -Encoding UTF8
             #strip ending empty lines
             $content = $content -replace "(?s)`r`n\s*$"
