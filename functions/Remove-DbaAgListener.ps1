@@ -70,23 +70,23 @@ function Remove-DbaAgListener {
                 return
             }
         }
-
+        
         if ($SqlInstance) {
             $InputObject += Get-DbaAgListener -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Listener $Listener
         }
-
+        
         foreach ($aglistener in $InputObject) {
             if ($Pscmdlet.ShouldProcess($aglistener.Parent.Parent.Name, "Removing availability group listener $aglistener")) {
                 try {
                     $ag = $aglistener.Parent.Name
                     $aglistener.Parent.AvailabilityGroupListeners[$aglistener.Name].Drop()
                     [pscustomobject]@{
-                        ComputerName      = $aglistener.ComputerName
-                        InstanceName      = $aglistener.InstanceName
-                        SqlInstance       = $aglistener.SqlInstance
+                        ComputerName = $aglistener.ComputerName
+                        InstanceName = $aglistener.InstanceName
+                        SqlInstance  = $aglistener.SqlInstance
                         AvailabilityGroup = $ag
-                        Listener          = $aglistener.Name
-                        Status            = "Removed"
+                        Listener     = $aglistener.Name
+                        Status       = "Removed"
                     }
                 } catch {
                     Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
@@ -95,4 +95,3 @@ function Remove-DbaAgListener {
         }
     }
 }
-
