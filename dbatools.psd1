@@ -448,7 +448,7 @@
         'Remove-DbaPfDataCollectorCounter',
         'Get-DbaPfAvailableCounter',
         'Get-DbaXESmartTarget',
-        'Remove-DbaXESmartTarget'
+        'Remove-DbaXESmartTarget',
         'Stop-DbaXESmartTarget',
         'Get-DbaCmsRegServerGroup',
         'New-DbaDbUser',
