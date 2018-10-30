@@ -1,4 +1,4 @@
-﻿$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 
@@ -9,8 +9,8 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
             Commands with SupportShouldProcess = 13
         #>
         $defaultParamCount = 13
-        [object[]]$params = (Get-ChildItem function:\Set-DbaAgListener).Parameters.Keys
-        $knownParameters = 'SqlInstance', 'SqlCredential', 'AvailabilityGroup', 'Listener', 'Port', 'InputObject', 'EnableException'
+        [object[]]$params = (Get-ChildItem function:\Set-DbaAgReplica).Parameters.Keys
+        $knownParameters = 'SqlInstance', 'SqlCredential', 'AvailabilityGroup', 'Replica', 'AvailabilityMode', 'InputObject', 'EnableException', 'FailoverMode', 'BackupPriority', 'EndpointUrl', 'ConnectionModeInPrimaryRole', 'ConnectionModeInSecondaryRole', 'ReadonlyRoutingConnectionUrl', 'SeedingMode'
         $paramCount = $knownParameters.Count
         It "Should contain our specific parameters" {
             ((Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count) | Should Be $paramCount
