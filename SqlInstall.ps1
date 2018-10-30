@@ -74,6 +74,7 @@
         [string]$LogVolume, 
         [string]$TempVolume, 
         [string]$BackupVolume,
+        [string]$InstallFolder,
         [ValidateSet("Yes", "No")][string]$PerformVolumeMaintenance,
         [ValidateSet("Yes")][string]$SaveFile,
         [ValidateSet("Windows", "Mixed Mode")][string]$Authentication
@@ -90,11 +91,38 @@
             $StatsAndMl = '';
         }
     }
+# Copy the source config file to a new destination. This way the original source file will be reusable.
 
-    $configini = Get-Content "$script:PSModuleRoot\bin\installtemplate\$version\$Edition\Configuration$version.ini"
+    Copy-Item "$script:PSModuleRoot\bin\installtemplate\$version\$Edition\Configuration$version.ini" -Destination "$script:PSModuleRoot\bin\installtemplate\"
+
+    $configini = Get-Content "$script:PSModuleRoot\bin\installtemplate\Configuration$version.ini"
 
     $SqlServerAccount = Get-CimInstance -ClassName Win32_UserAccount  | Out-GridView -title 'Please select the Service Account for your Sql Server instance.' -PassThru | Select-Object -ExpandProperty Name
     
+    IF ($InstallFolder::IsNullOrEmpty()) {
+        Write-Message -level Verbose -Message "No Setup directory found. Switching to autosearch"
+
+        $SetupFile = Get-ChildItem -Path C:\ -Include SETUP.EXE -Recurse -ErrorAction SilentlyContinue -Depth 2 |
+                Where-Object {$_.FullName -notlike '*Users*' -and $_.FullName -notlike '*Program*' -and $_.FullName -notlike '*Windows*'} |
+                ForEach-Object { $_.FullName } | 
+                Out-GridView -Title 'Please select the correct folder with the SQL Server installation Media' -PassThru | 
+                Select-Object -ExpandProperty FullName
+        $SetupFile
+        Write-Message -Level Verbose -Message 'Selected Setup: ' + $SetupFile
+    }
+    else {
+        $SetupFile = $SetupFile -replace "\\$"
+        $SetupFile = $SetupFile -replace ":$"
+    }
+
+    IF ($SetupFile.Length -eq 1) {
+        $SetupFile = $SetupFile + ':\SQLEXPR_x64_ENU\SETUP.EXE'
+        Write-Message -Level Verbose -Message 'Setup will start from ' + $SetupFile
+    } 
+    else {
+        $SetupFile = $SetupFile + '\SQLEXPR_x64_ENU\SETUP.EXE'
+        Write-Message -Level Verbose -Message 'Setup will start from ' + $SetupFile
+    }
 
     # Check if there are designated drives for Data, Log, TempDB, Back-up and Application.
     If ($DataVolume -eq $null -or $DataVolume -eq '') {
@@ -226,28 +254,8 @@
         Default {Write-Message -Level Verbose -Message "Drives agreed, continuing"; }
     }
 
-    $SetupFile = Read-Host -Prompt 'Please enter the root location for Setup.exe'
-    IF ([string]::IsNullOrEmpty()) {
-        Write-Message -level Verbose -Message "No Setup directory found. Switching to autosearch"
-    }
-    else {
-        $SetupFile = $SetupFile -replace "\\$"
-        $SetupFile = $SetupFile -replace ":$"
-    }
 
-    IF ($SetupFile.Length -eq 1) {
-        $SetupFile = $SetupFile + ':\SQLEXPR_x64_ENU\SETUP.EXE'
-        Write-Message -Level Verbose -Message 'Setup will start from ' + $SetupFile
-    } 
-    else {
-        $SetupFile = $SetupFile + '\SQLEXPR_x64_ENU\SETUP.EXE'
-        Write-Message -Level Verbose -Message 'Setup will start from ' + $SetupFile
-    }
-
-    Out-File -FilePath C:\Temp\ConfigurationFile2.ini -InputObject $startScript
-
-    
-    #$FileLocation2 = $ConfigFile + 'ConfigurationFile2.ini'
+    # Out-File -FilePath C:\Temp\ConfigurationFile2.ini -InputObject $startScript
 
     (Get-Content -Path $configini).Replace('SQLBACKUPDIR="E:\Program Files\Microsoft SQL Server\MSSQL12.AXIANSDB01\MSSQL\Backup"', 'SQLBACKUPDIR="' + $BackupVolume + ':\Program Files\Microsoft SQL Server\MSSQL12.AXIANSDB01\MSSQL\Backup"') | Out-File $configini
 
