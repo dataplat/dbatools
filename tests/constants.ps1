@@ -15,6 +15,8 @@ else {
     $script:appveyorlabrepo = "C:\github\appveyor-lab"
     $instances = @($script:instance1, $script:instance2)
     $ssisserver = "localhost\sql2016"
+    $script:azureblob = "https://dbatools.blob.core.windows.net/sql"
+    $script:azureblobaccount = "dbatools"
 }
 
 $PSDefaultParameterValues['*:WarningAction' ] = 'SilentlyContinue'
