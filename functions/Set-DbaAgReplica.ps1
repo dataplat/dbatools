@@ -27,19 +27,17 @@ function Set-DbaAgReplica {
     .PARAMETER BackupPriority
         Sets the backup priority availability group replica. Default is 50.
 
-    .PARAMETER Endpoint
-        By default, this command will attempt to find a DatabaseMirror endpoint. If one does not exist, it will create it.
-
-        If an endpoint must be created, the name "hadr_endpoint" will be used. If an alternative is preferred, use Endpoint.
+    .PARAMETER EndpointUrl
+        The endpoint URL.
 
      .PARAMETER InputObject
         Enables piping from Get-DbaAgReplica.
 
     .PARAMETER ConnectionModeInPrimaryRole
-        Specifies the connection intent modes of an Availability Replica in primary role.
+        Sets the connection intent modes of an Availability Replica in primary role.
 
     .PARAMETER ConnectionModeInSecondaryRole
-        Specifies the connection modes of an Availability Replica in secondary role.
+        Sets the connection modes of an Availability Replica in secondary role.
 
     .PARAMETER ReadonlyRoutingConnectionUrl
         Sets the read only routing connection url for the availability replica.
@@ -50,11 +48,6 @@ function Set-DbaAgReplica {
         Automatic enables direct seeding. This method will seed the secondary replica over the network. This method does not require you to backup and restore a copy of the primary database on the replica.
 
         Manual requires you to create a backup of the database on the primary replica and manually restore that backup on the secondary replica.
-
-    .PARAMETER Certificate
-        Specifies that the endpoint is to authenticate the connection using the certificate specified by certificate_name to establish identity for authorization.
-
-        The far endpoint must have a certificate with the public key matching the private key of the specified certificate.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
@@ -78,20 +71,21 @@ function Set-DbaAgReplica {
         https://dbatools.io/Set-DbaAgReplica
 
     .EXAMPLE
-        PS C:\> Get-DbaAvailabilityGroup -SqlInstance sql2017a -AvailabilityGroup SharePoint | Set-DbaAgReplica -SqlInstance sql2017b
+        PS C:\> Set-DbaAgReplica -SqlInstance sql2016 -Replica sql2016 -AvailabilityGroup SharePoint -BackupPriority 5000
 
-        Sets the properties for sql2017b to the SharePoint availability group on sql2017a
+        Sets the backup priority to 5000 for the sql2016 replica for the SharePoint availability group on sql2016
 
     .EXAMPLE
-        PS C:\> Get-DbaAvailabilityGroup -SqlInstance sql2017a -AvailabilityGroup SharePoint | Set-DbaAgReplica -SqlInstance sql2017b -FailoverMode Manual
+        PS C:\> Get-DbaAgReplica -SqlInstance sql2016 | Out-GridView -Passthru | Set-DbaAgReplica -BackupPriority 5000
 
-        Sets the properties for sql2017b to the SharePoint availability group on sql2017a with a manual failover mode.
-#>
+        Sets the backup priority to 5000 for the selected availability groups.
+    #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Medium')]
     param (
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string]$AvailabilityGroup,
+        [string]$Replica,
         [ValidateSet('AsynchronousCommit', 'SynchronousCommit')]
         [string]$AvailabilityMode,
         [ValidateSet('Automatic', 'Manual', 'External')]
@@ -103,70 +97,66 @@ function Set-DbaAgReplica {
         [string]$ConnectionModeInSecondaryRole,
         [ValidateSet('Automatic', 'Manual')]
         [string]$SeedingMode,
-        [string]$Endpoint,
+        [string]$EndpointUrl,
         [string]$ReadonlyRoutingConnectionUrl,
-        [string]$Certificate,
         [parameter(ValueFromPipeline)]
-        [Microsoft.SqlServer.Management.Smo.AvailabilityGroup]$InputObject,
+        [Microsoft.SqlServer.Management.Smo.AvailabilityReplica]$InputObject,
         [switch]$EnableException
     )
     process {
-        if (-not $AvailabilityGroup -and -not $InputObject) {
-            Stop-Function -Message "You must specify either AvailabilityGroup or pipe in an availabilty group to continue."
-            return
+        if (-not $InputObject) {
+            if (-not $AvailabilityGroup -or -not $Replica) {
+                Stop-Function -Message "You must specify an AvailabilityGroup and replica or pipe in an availabilty group to continue."
+                return
+            }
         }
         
-        foreach ($instance in $SqlInstance) {
-            try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 11
-            } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
-            }
-            
-            if ($AvailabilityGroup) {
-                $InputObject = Get-DbaAgReplica -SqlInstance $server -AvailabilityGroup $AvailabilityGroup
-            }
-            
-            if ($Pscmdlet.ShouldProcess($server.Name, "Creating a replica for $($InputObject.Name) named $Name")) {
+        if ($SqlInstance) {
+            $InputObject += Get-DbaAgReplica -SqlInstance $SqlInstance -SqlCredential $SqlCredential -AvailabilityGroup $AvailabilityGroup -Replica $Replica
+        }
+        
+        foreach ($agreplica in $InputObject) {
+            $server = $agreplica.Parent.Parent
+            if ($Pscmdlet.ShouldProcess($server.Name, "Modifying replica for $($agreplica.Name) named $Name")) {
                 try {
-                    $replica.EndpointUrl = $ep.Fqdn
-                    $replica.FailoverMode = [Microsoft.SqlServer.Management.Smo.AvailabilityReplicaFailoverMode]::$FailoverMode
-                    $replica.AvailabilityMode = [Microsoft.SqlServer.Management.Smo.AvailabilityReplicaAvailabilityMode]::$AvailabilityMode
-                    if ($server.EngineEdition -ne "Standard") {
-                        $replica.ConnectionModeInPrimaryRole = [Microsoft.SqlServer.Management.Smo.AvailabilityReplicaConnectionModeInPrimaryRole]::$ConnectionModeInPrimaryRole
-                        $replica.ConnectionModeInSecondaryRole = [Microsoft.SqlServer.Management.Smo.AvailabilityReplicaConnectionModeInSecondaryRole]::$ConnectionModeInSecondaryRole
+                    if ($EndpointUrl) {
+                        $agreplica.EndpointUrl = $EndpointUrl
                     }
-                    $replica.BackupPriority = $BackupPriority
+                    
+                    if ($FailoverMode) {
+                        $agreplica.FailoverMode = [Microsoft.SqlServer.Management.Smo.AvailabilityReplicaFailoverMode]::$FailoverMode
+                    }
+                    
+                    if ($AvailabilityMode) {
+                        $agreplica.AvailabilityMode = [Microsoft.SqlServer.Management.Smo.AvailabilityReplicaAvailabilityMode]::$AvailabilityMode
+                    }
+                    
+                    if ($ConnectionModeInPrimaryRole) {
+                        $agreplica.ConnectionModeInPrimaryRole = [Microsoft.SqlServer.Management.Smo.AvailabilityReplicaConnectionModeInPrimaryRole]::$ConnectionModeInPrimaryRole
+                    }
+                    
+                    if ($ConnectionModeInSecondaryRole) {
+                        $agreplica.ConnectionModeInSecondaryRole = [Microsoft.SqlServer.Management.Smo.AvailabilityReplicaConnectionModeInSecondaryRole]::$ConnectionModeInSecondaryRole
+                    }
+                    
+                    if ($BackupPriority) {
+                        $agreplica.BackupPriority = $BackupPriority
+                    }
                     
                     if ($ReadonlyRoutingConnectionUrl) {
-                        $replica.ReadonlyRoutingConnectionUrl = $ReadonlyRoutingConnectionUrl
+                        $agreplica.ReadonlyRoutingConnectionUrl = $ReadonlyRoutingConnectionUrl
                     }
                     
                     if ($SeedingMode) {
-                        $replica.SeedingMode = $SeedingMode
+                        $agreplica.SeedingMode = $SeedingMode
                     }
                     
-                    if ($Passthru) {
-                        return $replica
-                    }
+                    $agreplica.Alter()
+                    $agreplica
                     
-                    $defaults = 'ComputerName', 'InstanceName', 'SqlInstance', 'AvailabilityGroup', 'Name', 'Role', 'RollupSynchronizationState', 'AvailabilityMode', 'BackupPriority', 'EndpointUrl', 'SessionTimeout', 'FailoverMode', 'ReadonlyRoutingList'
-                    
-                    $InputObject.AvailabilityReplicas.Set($replica)
-                    $agreplica = $InputObject.AvailabilityReplicas[$Name]
-                    Set-Member -Force -InputObject $agreplica -MemberType NoteProperty -Name ComputerName -value $agreplica.Parent.ComputerName
-                    Set-Member -Force -InputObject $agreplica -MemberType NoteProperty -Name InstanceName -value $agreplica.Parent.InstanceName
-                    Set-Member -Force -InputObject $agreplica -MemberType NoteProperty -Name SqlInstance -value $agreplica.Parent.SqlInstance
-                    Set-Member -Force -InputObject $agreplica -MemberType NoteProperty -Name AvailabilityGroup -value $agreplica.Parent.Name
-                    Set-Member -Force -InputObject $agreplica -MemberType NoteProperty -Name Replica -value $agreplica.Name # backwards compat
-                    
-                    Select-DefaultView -InputObject $agreplica -Property $defaults
                 } catch {
-                    $msg = $_.Exception.InnerException.InnerException.Message
-                    if (-not $msg) {
-                        $msg = $_
-                    }
-                    Stop-Function -Message $msg -ErrorRecord $_ -Continue
+                    $message = Get-ErrorMessage -Record $_
+                    Stop-Function -Message $message -ErrorRecord $_ -Continue
                 }
             }
         }
