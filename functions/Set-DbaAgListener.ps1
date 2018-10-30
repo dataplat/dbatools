@@ -21,6 +21,9 @@ function Set-DbaAgListener {
     .PARAMETER Port
         Sets the port number used to communicate with the availability group.
 
+    .PARAMETER Listener
+        Modify only specific listeners.
+
     .PARAMETER InputObject
         Enables piping from Get-DbaAvailabilityGroup
 
@@ -60,6 +63,7 @@ function Set-DbaAgListener {
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string[]]$AvailabilityGroup,
+        [string[]]$Listener,
         [Parameter(Mandatory)]
         [int]$Port,
         [parameter(ValueFromPipeline)]
@@ -73,7 +77,7 @@ function Set-DbaAgListener {
         }
         
         if ($SqlInstance) {
-            $InputObject += Get-DbaAgListener -SqlInstance $SqlInstance -SqlCredential $SqlCredential -AvailabilityGroup $AvailabilityGroup
+            $InputObject += Get-DbaAgListener -SqlInstance $SqlInstance -SqlCredential $SqlCredential -AvailabilityGroup $AvailabilityGroup -Listener $Listener
         }
         
         foreach ($aglistener in $InputObject) {
