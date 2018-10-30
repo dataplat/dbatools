@@ -81,12 +81,12 @@ function Remove-DbaAgListener {
                     $ag = $aglistener.Parent.Name
                     $aglistener.Parent.AvailabilityGroupListeners[$aglistener.Name].Drop()
                     [pscustomobject]@{
-                        ComputerName = $aglistener.ComputerName
-                        InstanceName = $aglistener.InstanceName
-                        SqlInstance  = $aglistener.SqlInstance
+                        ComputerName      = $aglistener.ComputerName
+                        InstanceName      = $aglistener.InstanceName
+                        SqlInstance       = $aglistener.SqlInstance
                         AvailabilityGroup = $ag
-                        Listener     = $aglistener.Name
-                        Status       = "Removed"
+                        Listener          = $aglistener.Name
+                        Status            = "Removed"
                     }
                 } catch {
                     Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
