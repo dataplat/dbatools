@@ -13,9 +13,11 @@
     The perform volume maintenance right can be granted to the SQL Server account. If you happen to activate this in an environment where you are not allowed to do this,
     please revert that operation by removing the right from the local security policy (secpol.msc).
 
-    You will see a screen with the users available on your machine. There you can choose the user that will act as Service Account for your SQL Server Install.
+    You will see a screen with the users available on your machine. There you can choose the user that will act as Service Account for your SQL Server Install. This
+    implies that the user has been created beforehand. 
 
-    Note that the dowloaded installation file must be unzipped, an ISO has to be mounted. This will not be executed from this script.
+    Note that the dowloaded installation file must be unzipped or an ISO has to be mounted. This will not be executed from this script. This function offers the possibility
+    to execute an autosearch for the installation files. But you can just browse to the correct file if you like.
 
     .PARAMETER Version will hold the SQL Server version you wish to install. The variable will support autocomplete
 
@@ -97,17 +99,23 @@
 
     $configini = Get-Content "$script:PSModuleRoot\bin\installtemplate\Configuration$version.ini"
 
+    # Let the user set the Service Account for SQL Server. This does imply that the user has been created.
+
     $SqlServerAccount = Get-CimInstance -ClassName Win32_UserAccount  | Out-GridView -title 'Please select the Service Account for your Sql Server instance.' -PassThru | Select-Object -ExpandProperty Name
     
+    # Get the installation folder of SQL Server. If the user didn't choose a specific folder, the autosearch will commence. It will take some time!
+    #To limit the number of results, the search won't go deeper than 2 levels.
+
     IF ($InstallFolder::IsNullOrEmpty()) {
+        
         Write-Message -level Verbose -Message "No Setup directory found. Switching to autosearch"
 
-        $SetupFile = Get-ChildItem -Path C:\ -Include SETUP.EXE -Recurse -ErrorAction SilentlyContinue -Depth 2 |
-                Where-Object {$_.FullName -notlike '*Users*' -and $_.FullName -notlike '*Program*' -and $_.FullName -notlike '*Windows*'} |
-                ForEach-Object { $_.FullName } | 
+        $SetupFile = Get-CimInstance -ClassName cim_datafile -Filter "Extension = 'EXE'" |
+                Where-Object {($_.Name.ToUpper().Contains('SETUP') -and $_.Name -notlike '*users*' -and $_.Name -notlike '*Program*' -and $_.Name -notlike '*Windows*')} | 
+                Select-Object -Property @{Label="FileLocation";Expression={$_.Name}} |
                 Out-GridView -Title 'Please select the correct folder with the SQL Server installation Media' -PassThru | 
-                Select-Object -ExpandProperty FullName
-        $SetupFile
+                Select-Object -ExpandProperty FileLocation
+                
         Write-Message -Level Verbose -Message 'Selected Setup: ' + $SetupFile
     }
     else {
