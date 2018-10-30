@@ -58,7 +58,6 @@ function Resume-DbaAgDbDataMovement {
     param (
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [parameter(Mandatory)]
         [string]$AvailabilityGroup,
         [string[]]$Database,
         [parameter(ValueFromPipeline)]
@@ -67,7 +66,7 @@ function Resume-DbaAgDbDataMovement {
     )
     process {
         if ((Test-Bound -ParameterName SqlInstance)) {
-            if ((Test-Bound -Not -ParameterName Database) -or (Test-Bound -Not -ParameterName AvailabilityGroup)) {
+            if ((Test-Bound -Not -ParameterName Database) -and (Test-Bound -Not -ParameterName AvailabilityGroup)) {
                 Stop-Function -Message "You must specify one or more databases and one Availability Groups when using the SqlInstance parameter."
                 return
             }
