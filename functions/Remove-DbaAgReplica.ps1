@@ -1,4 +1,4 @@
-﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Remove-DbaAgReplica {
     <#
     .SYNOPSIS
@@ -80,12 +80,12 @@ function Remove-DbaAgReplica {
                 try {
                     $agreplica.Parent.AvailabilityGroupReplicas[$agreplica.Name].Drop()
                     [pscustomobject]@{
-                        ComputerName = $agreplica.ComputerName
-                        InstanceName = $agreplica.InstanceName
-                        SqlInstance  = $agreplica.SqlInstance
+                        ComputerName      = $agreplica.ComputerName
+                        InstanceName      = $agreplica.InstanceName
+                        SqlInstance       = $agreplica.SqlInstance
                         AvailabilityGroup = $agreplica.Parent.Name
-                        Replica      = $agreplica.Name
-                        Status       = "Removed"
+                        Replica           = $agreplica.Name
+                        Status            = "Removed"
                     }
                 } catch {
                     Stop-Function -Message "Failure" -ErrorRecord $_ -Continue

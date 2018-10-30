@@ -1,4 +1,4 @@
-﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Set-DbaAgReplica {
     <#
     .SYNOPSIS
@@ -92,7 +92,6 @@ function Set-DbaAgReplica {
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string]$AvailabilityGroup,
-        [string]$Name,
         [ValidateSet('AsynchronousCommit', 'SynchronousCommit')]
         [string]$AvailabilityMode,
         [ValidateSet('Automatic', 'Manual', 'External')]
@@ -105,7 +104,6 @@ function Set-DbaAgReplica {
         [ValidateSet('Automatic', 'Manual')]
         [string]$SeedingMode,
         [string]$Endpoint,
-        [switch]$Passthru,
         [string]$ReadonlyRoutingConnectionUrl,
         [string]$Certificate,
         [parameter(ValueFromPipeline)]
