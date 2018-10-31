@@ -41,6 +41,11 @@
 
     .PARAMETER Authentication will prompt you if you want mixed mode authentication or just Windows AD authentication. With Mixed Mode, you will be prompted for the SA password.
 
+    .PARAMETER EnableException
+            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+
     .Inputs
     None
 
@@ -79,8 +84,14 @@
         [string]$InstallFolder,
         [ValidateSet("Yes", "No")][string]$PerformVolumeMaintenance,
         [ValidateSet("Yes")][string]$SaveFile,
-        [ValidateSet("Windows", "Mixed Mode")][string]$Authentication
+        [ValidateSet("Windows", "Mixed Mode")][string]$Authentication,
+        [switch]$EnableException
     )
+
+
+    if ($Null -eq $Version -or $Version -eq '') {
+        Stop-Function -Message "You need to specify a SQL Server Version to run this function." -Continue -EnableException $EnableException
+    }
 
     # Check if the edition of SQL Server supports Python and R. Introduced in SQL 2016, it should not be allowed in earlier installations.
 
