@@ -671,16 +671,6 @@ function Invoke-DbaDbLogShipping {
             $SourceInstanceName = "MSSQLSERVER"
         }
 
-        <#
-        #Variable marked as unused by PSScriptAnalyzer
-        $IsSourceLocal = $false
-
-        # Check if it's local or remote
-        if ($SourceServerName -in ".", "localhost", $env:ServerName, "127.0.0.1") {
-            $IsSourceLocal = $true
-        }
-        #>
-
         # Set up regex strings for several checks
         $RegexDate = '(?<!\d)(?:(?:(?:1[6-9]|[2-9]\d)?\d{2})(?:(?:(?:0[13578]|1[02])31)|(?:(?:0[1,3-9]|1[0-2])(?:29|30)))|(?:(?:(?:(?:1[6-9]|[2-9]\d)?(?:0[48]|[2468][048]|[13579][26])|(?:(?:16|[2468][048]|[3579][26])00)))0229)|(?:(?:1[6-9]|[2-9]\d)?\d{2})(?:(?:0?[1-9])|(?:1[0-2]))(?:0?[1-9]|1\d|2[0-8]))(?!\d)'
         $RegexTime = '^(?:(?:([01]?\d|2[0-3]))?([0-5]?\d))?([0-5]?\d)$'
@@ -1531,7 +1521,7 @@ function Invoke-DbaDbLogShipping {
                 }
 
                 # Check the primary monitor server
-                if ($Force -and (-not$PrimaryMonitorServer -or [string]$PrimaryMonitorServer -eq '' -or $PrimaryMonitorServer -eq $null)) {
+                if ($Force -and (-not$PrimaryMonitorServer -or [string]$PrimaryMonitorServer -eq '' -or $null -eq $PrimaryMonitorServer)) {
                     Write-Message -Message "Setting monitor server for primary server to $SourceSqlInstance." -Level Verbose
                     $PrimaryMonitorServer = $SourceSqlInstance
                 }
@@ -1559,7 +1549,7 @@ function Invoke-DbaDbLogShipping {
                 }
 
                 # Check the secondary monitor server
-                if ($Force -and (-not $SecondaryMonitorServer -or [string]$SecondaryMonitorServer -eq '' -or $SecondaryMonitorServer -eq $null)) {
+                if ($Force -and (-not $SecondaryMonitorServer -or [string]$SecondaryMonitorServer -eq '' -or $null -eq $SecondaryMonitorServer)) {
                     Write-Message -Message "Setting secondary monitor server for $destInstance to $SourceSqlInstance." -Level Verbose
                     $SecondaryMonitorServer = $SourceSqlInstance
                 }
