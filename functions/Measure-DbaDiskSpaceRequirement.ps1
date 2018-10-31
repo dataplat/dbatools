@@ -217,7 +217,7 @@ function Measure-DbaDiskSpaceRequirement {
 
         foreach ($sourceFile in $sourceFiles) {
             foreach ($destFile in $destFiles) {
-                if ($found = ($sourceFile.Name -eq $destFile.Name)) {
+                if (($found = ($sourceFile.Name -eq $destFile.Name))) {
                     # Files found on both sides
                     [PSCustomObject]@{
                         SourceComputerName      = $sourceServer.ComputerName
