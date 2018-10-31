@@ -2,7 +2,7 @@
 function Sync-DbaAvailabilityGroup {
     <#
     .SYNOPSIS
-        Automates the creation of availaibility groups.
+        Syncs jobs, logins, whatnot for availability groups
 
     .DESCRIPTION
         
@@ -91,7 +91,7 @@ function Sync-DbaAvailabilityGroup {
     process {
         $stepCounter = $wait = 0
         $totalSteps = 10
-        $activity = "Adding new availability group $name"
+        $activity = "Syncing availability group $AvailabilityGroup"
         
         if ($Force -and $Secondary -and (-not $NetworkShare -and -not $UseLastBackups) -and ($SeedingMode -ne 'Automatic')) {
             Stop-Function -Message "NetworkShare or UseLastBackups is required when Force is used"
@@ -102,11 +102,6 @@ function Sync-DbaAvailabilityGroup {
             $server = Connect-SqlInstance -SqlInstance $Primary -SqlCredential $PrimarySqlCredential
         } catch {
             Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Primary
-            return
-        }
-        
-        if ($SeedingMode -eq 'Automatic' -and $server.VersionMajor -lt 13) {
-            Stop-Function -Message "Automatic seeding mode only supported in SQL Server 2016 and above" -Target $Primary
             return
         }
         
