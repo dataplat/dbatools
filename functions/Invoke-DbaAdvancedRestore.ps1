@@ -144,7 +144,6 @@ function Invoke-DbaAdvancedRestore {
             $NoRecovery = $True
             $Pages = $tmpPages -join ','
         }
-        #$OutputScriptOnly  = $false
         $InternalHistory = @()
     }
     process {
@@ -155,7 +154,12 @@ function Invoke-DbaAdvancedRestore {
     end {
         if (Test-FunctionInterrupt) { return }
         $Databases = $InternalHistory.Database | Select-Object -Unique
+        $databaseRestored = 1
         foreach ($Database in $Databases) {
+            if ($Databases.Count -gt 1) {
+                Write-Progress -id 1 -Activity "Restoring $databaseRestored from $($Databases.Count)"
+                $databaseRestored += 1
+            }
             $DatabaseRestoreStartTime = Get-Date
             if ($Database -in $Server.Databases.Name) {
                 if (-not $OutputScriptOnly -and -not $VerifyOnly) {
@@ -256,25 +260,25 @@ function Invoke-DbaAdvancedRestore {
                                 $script = $script.TrimEnd() + ' WITH KEEP_CDC'
                             }
                             if ($true -ne $OutputScriptOnly) {
-                                Write-Progress -id 2 -activity "Restoring $Database to $sqlinstance - Backup $BackupCnt of $($Backups.count)" -percentcomplete 0 -status ([System.String]::Format("Progress: {0} %", 0))
+                                Write-Progress -id 2 -ParentId 1 -activity "Restoring $Database to $sqlinstance - Backup $BackupCnt of $($Backups.count)" -percentcomplete 0 -status ([System.String]::Format("Progress: {0} %", 0))
                                 $null = $server.ConnectionContext.ExecuteNonQuery($script)
-                                Write-Progress -id 2 -activity "Restoring $Database to $sqlinstance - Backup $BackupCnt of $($Backups.count)" -status "Complete" -Completed
+                                Write-Progress -id 2 -ParentId 1 -activity "Restoring $Database to $sqlinstance - Backup $BackupCnt of $($Backups.count)" -status "Complete" -Completed
                             }
                         } elseif ($null -ne $Pages -and $Action -eq 'Database') {
                             $script = $Restore.Script($server)
                             $script = $script -replace "] FROM", "] PAGE='$pages' FROM"
                             if ($true -ne $OutputScriptOnly) {
-                                Write-Progress -id 2 -activity "Restoring $Database to $sqlinstance - Backup $BackupCnt of $($Backups.count)" -percentcomplete 0 -status ([System.String]::Format("Progress: {0} %", 0))
+                                Write-Progress -id 2 -ParentId 1 -activity "Restoring $Database to $sqlinstance - Backup $BackupCnt of $($Backups.count)" -percentcomplete 0 -status ([System.String]::Format("Progress: {0} %", 0))
                                 $null = $server.ConnectionContext.ExecuteNonQuery($script)
-                                Write-Progress -id 2 -activity "Restoring $Database to $sqlinstance - Backup $BackupCnt of $($Backups.count)" -status "Complete" -Completed
+                                Write-Progress -id 2 -ParentId 1 -activity "Restoring $Database to $sqlinstance - Backup $BackupCnt of $($Backups.count)" -status "Complete" -Completed
                             }
                         } elseif ($OutputScriptOnly) {
                             $script = $Restore.Script($server)
                         } elseif ($VerifyOnly) {
                             Write-Message -Message "VerifyOnly restore" -Level Verbose
-                            Write-Progress -id 2 -activity "Verifying $Database backup file on $sqlinstance - Backup $BackupCnt of $($Backups.count)" -percentcomplete 0 -status ([System.String]::Format("Progress: {0} %", 0))
+                            Write-Progress -id 2 -ParentId 1 -activity "Verifying $Database backup file on $sqlinstance - Backup $BackupCnt of $($Backups.count)" -percentcomplete 0 -status ([System.String]::Format("Progress: {0} %", 0))
                             $Verify = $Restore.SqlVerify($server)
-                            Write-Progress -id 2 -activity "Verifying $Database backup file on $sqlinstance - Backup $BackupCnt of $($Backups.count)" -status "Complete" -Completed
+                            Write-Progress -id 2 -ParentId 1 -activity "Verifying $Database backup file on $sqlinstance - Backup $BackupCnt of $($Backups.count)" -status "Complete" -Completed
                             if ($verify -eq $true) {
                                 Write-Message -Message "VerifyOnly restore Succeeded" -Level Verbose
                                 return "Verify successful"
@@ -305,7 +309,6 @@ function Invoke-DbaAdvancedRestore {
                         Stop-Function -Message "Failed to restore db $Database, stopping" -ErrorRecord $_
                         return
                     } finally {
-
                         if ($OutputScriptOnly -eq $false) {
                             [PSCustomObject]@{
                                 SqlInstance            = $SqlInstance
@@ -340,14 +343,14 @@ function Invoke-DbaAdvancedRestore {
                         $server.ConnectionContext.Disconnect()
                     }
                 }
-                Write-Progress -id 1 -Activity "Restoring" -Completed
-                Write-Progress -id 2 -Activity "Restoring" -Completed
                 $BackupCnt++
             }
-            if ($server.ConnectionContext.exists) {
+            #Write-Progress -id 2 -Activity "Restoring" -Completed
+            Write-Progress -id 3 -Activity "Restore" -Completed
+            if ($server.ConnsectionContext.exists) {
                 $server.ConnectionContext.Disconnect()
             }
         }
+        Write-Progress -id 1 -Activity "Batch finished" -Completed
     }
 }
-
