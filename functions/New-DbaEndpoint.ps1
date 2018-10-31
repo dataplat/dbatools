@@ -53,6 +53,9 @@ function New-DbaEndpoint {
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
 
+    .PARAMETER Owner
+        Owner of the endpoint. Defaults to sa.
+
     .PARAMETER Confirm
         Prompts you for confirmation before executing any changing operations within the command.
 
@@ -101,6 +104,7 @@ function New-DbaEndpoint {
         [string]$Certificate,
         [int]$Port,
         [int]$SslPort,
+        [string]$Owner,
         [switch]$EnableException
     )
     process {
@@ -114,7 +118,11 @@ function New-DbaEndpoint {
             } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-
+            
+            if (-not (Test-Bound -ParameterName Owner)) {
+                $Owner = Get-SaLoginName -SqlInstance $server
+            }
+            
             if ($Certificate) {
                 $cert = Get-DbaDbCertificate -SqlInstance $server -Certificate $Certificate
                 if (-not $cert) {
@@ -147,6 +155,7 @@ function New-DbaEndpoint {
                     $endpoint = New-Object Microsoft.SqlServer.Management.Smo.EndPoint $server, $Name
                     $endpoint.ProtocolType = [Microsoft.SqlServer.Management.Smo.ProtocolType]::$Protocol
                     $endpoint.EndpointType = [Microsoft.SqlServer.Management.Smo.EndpointType]::$Type
+                    $endpoint.Owner = $Owner
                     if ($Protocol -eq "TCP") {
                         $endpoint.Protocol.Tcp.ListenerPort = $tcpPort
                         $endpoint.Payload.DatabaseMirroring.ServerMirroringRole = [Microsoft.SqlServer.Management.Smo.ServerMirroringRole]::$Role
@@ -175,4 +184,3 @@ function New-DbaEndpoint {
         }
     }
 }
-
