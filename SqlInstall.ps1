@@ -68,7 +68,7 @@
 
     #>
     Param  (
-        [ValidateSet("2008", "2008R2", "2012", "2014", "2016","2017","2019")][string]$Version, 
+        [ValidateSet("2008", "2008R2", "2012", "2014", "2016", "2017", "2019")][string]$Version, 
         [ValidateSet("Express", "Standard", "Enterprise", "Developer")][string]$Edition,
         [ValidateSet("Python", "R", "Python and R")][string]$StatsAndMl,
         [string]$AppVolume, 
@@ -82,18 +82,16 @@
         [ValidateSet("Windows", "Mixed Mode")][string]$Authentication
     )
 
-# Check if the edition of SQL Server supports Python and R. Introduced in SQL 2016, it should not be allowed in earlier installations.
+    # Check if the edition of SQL Server supports Python and R. Introduced in SQL 2016, it should not be allowed in earlier installations.
 
-    IF( $null -eq $StatsAndMl -or $StatsAndMl -ne '' )
-    {
+    IF ( $null -eq $StatsAndMl -or $StatsAndMl -ne '' ) {
         $Array = "2016", "2017", "2019"
 
-        IF($Version -notin $Array )
-        {
+        IF ($Version -notin $Array ) {
             $StatsAndMl = '';
         }
     }
-# Copy the source config file to a new destination. This way the original source file will be reusable.
+    # Copy the source config file to a new destination. This way the original source file will be reusable.
 
     Copy-Item "$script:PSModuleRoot\bin\installtemplate\$version\$Edition\Configuration$version.ini" -Destination "$script:PSModuleRoot\bin\installtemplate\"
 
@@ -111,10 +109,10 @@
         Write-Message -level Verbose -Message "No Setup directory found. Switching to autosearch"
 
         $SetupFile = Get-CimInstance -ClassName cim_datafile -Filter "Extension = 'EXE'" |
-                Where-Object {($_.Name.ToUpper().Contains('SETUP') -and $_.Name -notlike '*users*' -and $_.Name -notlike '*Program*' -and $_.Name -notlike '*Windows*')} | 
-                Select-Object -Property @{Label="FileLocation";Expression={$_.Name}} |
-                Out-GridView -Title 'Please select the correct folder with the SQL Server installation Media' -PassThru | 
-                Select-Object -ExpandProperty FileLocation
+            Where-Object {($_.Name.ToUpper().Contains('SETUP') -and $_.Name -notlike '*users*' -and $_.Name -notlike '*Program*' -and $_.Name -notlike '*Windows*')} | 
+            Select-Object -Property @{Label = "FileLocation"; Expression = {$_.Name}} |
+            Out-GridView -Title 'Please select the correct folder with the SQL Server installation Media' -PassThru | 
+            Select-Object -ExpandProperty FileLocation
                 
         Write-Message -Level Verbose -Message 'Selected Setup: ' + $SetupFile
     }
@@ -159,7 +157,7 @@
             Select-Object -ExpandProperty DriveLetter
     }
     #Check the number of cores available on the server. Summed because every processor can contain multiple cores
-    $NumberOfCores =  Get-CimInstance -ClassName Win32_processor | Measure-Object NumberOfCores -Sum | Select-Object -ExpandProperty sum
+    $NumberOfCores = Get-CimInstance -ClassName Win32_processor | Measure-Object NumberOfCores -Sum | Select-Object -ExpandProperty sum
 
     IF ($NumberOfCores -gt 8)
     { $NumberOfCores = 8 }
@@ -199,28 +197,28 @@
         Y {Write-Message -Level Verbose -Message "Yes, drives agreed, continuing"; }
         N {
             Write-Message -Level Verbose -Message "Datadrive: " $DataVolume
-                $NewDataVolume = Read-Host "Your datavolume: "
-                If ([string]::IsNullOrEmpty($NewDataVolume)) {
-                    Write-Message -Level Verbose -Message "Datavolume remains on " $DataVolume
-                }
-                else {
+            $NewDataVolume = Read-Host "Your datavolume: "
+            If ([string]::IsNullOrEmpty($NewDataVolume)) {
+                Write-Message -Level Verbose -Message "Datavolume remains on " $DataVolume
+            }
+            else {
                 $NewDataVolume = $NewDataVolume -replace "\\$"
                 $NewDataVolume = $NewDataVolume -replace ":$"
                 $DataVolume = $NewDataVolume
-            Write-Message -Level Verbose -Message "DataVolume moved to " $DataVolume
-                }
+                Write-Message -Level Verbose -Message "DataVolume moved to " $DataVolume
+            }
             
             Write-Message -Level Verbose -Message "logvolume: " $LogVolume
-                $NewLogVolume = Read-Host "Your logvolume: "
-                If ([string]::IsNullOrEmpty($NewLogVolume)) {
-                    Write-Message -Level Verbose -Message "Logvolume remains on " $LogVolume
-                }
-                else {
+            $NewLogVolume = Read-Host "Your logvolume: "
+            If ([string]::IsNullOrEmpty($NewLogVolume)) {
+                Write-Message -Level Verbose -Message "Logvolume remains on " $LogVolume
+            }
+            else {
                 $NewLogVolume = $NewLogVolume -replace "\\$"
                 $NewLogVolume = $NewLogVolume -replace ":$"
                 $LogVolume = $NewLogVolume
                 Write-Message -Level Verbose -Message "LogVolume moved to " $LogVolume
-                }
+            }
 
 
             Write-Message -Level Verbose -Message "TempVolume: " $TempVolume
@@ -252,7 +250,7 @@
             If ([string]::IsNullOrEmpty($NewBackupVolume)) {
                 Write-Message -Level Verbose -Message "BackupVolume remains on " $BackupVolume
             }
-            else{
+            else {
                 $NewBackupVolume = $NewBackupVolume -replace "\\$"
                 $NewBackupVolume = $NewBackupVolume -replace ":$"
                 $BackupVolume = $NewBackupVolume
@@ -275,17 +273,15 @@
 
     (Get-Content -Path $configini).Replace('SQLSYSADMINACCOUNTS="WIN-NAJQHOBU8QD\Administrator"', 'SQLSYSADMINACCOUNTS="' + $SqlServerAccount)| Out-File $configini
 
-    If($SaveFile -eq "Yes")
-    {
+    If ($SaveFile -eq "Yes") {
         $SaveFileLocation = Read-Host "Please enter your preferred directory for saving a copy of the configuration file: "
         Copy-Item $configini -Destination $SaveFileLocation
     }
 
-    IF($Authentication -eq "Mixed Mode")
-    {
+    IF ($Authentication -eq "Mixed Mode") {
         $SAPassW = [PsCredential](Get-Credential -UserName "SA"  -Message "Please Enter the SA Password.")
 
-    & $SetupFile /ConfigurationFile=$configini /Q /IACCEPTSQLSERVERLICENSETERMS /SAPWD= $SAPassW.GetNetworkCredential().Password
+        & $SetupFile /ConfigurationFile=$configini /Q /IACCEPTSQLSERVERLICENSETERMS /SAPWD= $SAPassW.GetNetworkCredential().Password
 
     }
     else {
