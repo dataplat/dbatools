@@ -181,7 +181,7 @@ function New-DbaDbUser {
                         } else {
                             #get the login associated with the given name.
                             $smoLogin = $server.Logins | Where-Object Name -eq $Login
-                            if ($smoLogin -eq $null) {
+                            if ($null -eq $smoLogin) {
                                 Stop-Function -Message "Invalid Login: $Login is not found on $Server" -Target $instance;
                                 return
                             }
