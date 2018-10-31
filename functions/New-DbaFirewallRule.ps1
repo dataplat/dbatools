@@ -163,10 +163,17 @@
     Import-Module NetSecurity
 
     # KNOWN ISSUE: currently does not handle multiple SSIS instances, as it will try to pass an array to New-NetFirewallRule which expects a string for -Program
+    #$ssispath = Get-DbaSqlService -ComputerName $Computername -Type SSIS | Select BinaryPath # provided by @sqllensman
+    $ssis = @(Get-DbaService -ComputerName $Computername -Type SSIS)
+    # $ssis # debug
+    # $ssis.GetType() # Debug
     $ssispath = (Get-DbaSqlService -ComputerName $ComputerName -Type SSIS).BinaryPath # provided by @sqllensman.
-        
+    $ssispath = @($ssis).BinaryPath # @ in case the server has multiple SSIS instances
+    $ssispath = $ssispath.Replace('"',"") # strip off double " marks around the BinaryPath, otherwise error "New-NetFirewallRule : The application contains invalid characters, or is an invalid length." is thrown.  
         # $ssispath # debug
         # $ssispath.GetType() # debug
+
+    $ssisversion = @($ssis).DisplayName
 
     $FirewallRules =
     @{
@@ -257,13 +264,13 @@
                 'Profile' = $networkProfile
                 'Enabled' = 'True'; 
             };
-    <#
+
         # KNOWN ISSUE: currently does not handle multiple SSIS instances, as it will try to pass an array to New-NetFirewallRule which expects a string for -Program
         'SSISExe' = # this might need its own function since Program, LocalAddress, and RemoteAddress parameters don't exist in any other firewall rules
             @{
                 'DisplayName' = "SQL Integration Services MsDtsSrvr.exe (TCP-in)";
                 'Program' = $ssispath;
-                'LocalAddress' = "LocalSubnet";
+                #'LocalAddress' = "LocalSubnet";
                 #'RemoteAddress' = "LocalSubnet"; # not sure if this is needed
                 'Direction' = 'Inbound';
                 'Protocol' = 'TCP';
@@ -272,7 +279,7 @@
                 'Profile' = $networkProfile
                 'Enabled' = 'True'; 
             };
-    #>
+
         'SSRS' =
             @{
                 'DisplayName' = "SQL Reporting Services (TCP-in)";
@@ -314,7 +321,30 @@
         $FirewallRules.Keys
         $FirewallRules.Values
         #>
+        
+$FirewallRulesByProgram =
+@{
+    'SSISExe' = # this might need its own function since Program, LocalAddress, and RemoteAddress parameters don't exist in any other firewall rules
+        @{
+            'DisplayName' = "SQL Integration Services MsDtsSrvr.exe (TCP-in)";
+            'Program' = $ssispath;
+            #'LocalAddress' = "LocalSubnet";
+            #'RemoteAddress' = "LocalSubnet";
+            'Direction' = 'Inbound';
+            'Protocol' = 'TCP';
+            'LocalPort' = $portSSIS
+            'Action' = 'Allow'
+            'Profile' = $networkProfile
+            'Enabled' = 'True'; 
+        };
+};
 
+    # debug
+    <#
+    $FirewallRulesByProgram
+    $FirewallRulesByProgram.Keys
+    $FirewallRulesByProgram.Values
+    #>
         # DEBUG
         <#
         $debugrule = "Wireless Display (TCP-In)"
@@ -341,10 +371,41 @@
         # Get-NetFirewallRule -DisplayName $FirewallRulesDisplayNames | ForEach { $_.Group = $displaygroup ; Set-NetFirewallRule -InputObject $_ } # assign to DisplayGroup. works!
 
     # the new way
-    function Invoke-NewFirewallRule
+    function Invoke-NewFirewallRules
     {
-        param ($FirewallObject)
-        New-NetFirewallRule @FirewallObject #-InformationAction SilentlyContinue
+        param ($FirewallObject, $displayGroup)
+
+        New-NetFirewallRule @FirewallObject
+        # Get-NetFirewallRule -DisplayName $debugrule | ForEach { $_.Group = $debugdisplaygroup ; Set-NetFirewallRule -InputObject $_ } # assign to DisplayGroup. works!
+
+        <# moved to own function #>
+        #$FirewallRulesDisplayNames = ($FirewallRules.GetEnumerator() | ForEach-Object { $_.Value }).DisplayName # convert splat to regular array list to pass to Set-NetFirewallRule 
+        #$FirewallRulesDisplayNames = ($FirewallObject.GetEnumerator() | ForEach-Object { $_.Value }).DisplayName # convert splat to regular array list to pass to Set-NetFirewallRule # not this one
+            #Write-Host "debug FirewallRulesDisplayNames: $FirewallRulesDisplayNames" # debug
+        #Get-NetFirewallRule -DisplayName $FirewallRulesDisplayNames | ForEach { $_.Group = $displaygroup ; Set-NetFirewallRule -InputObject $_ }
+    }
+
+    # the new way
+    function Invoke-SetFirewallRulesDisplayGroup
+    {
+        param ($FirewallDisplayGroup)
+        $FirewallRulesDisplayNames = ($FirewallRules.GetEnumerator() | ForEach-Object { $_.Value }).DisplayName # convert splat to regular array list to pass to Set-NetFirewallRule 
+        #Get-NetFirewallRule -DisplayName $debugrule | ForEach-Object { $_.Group = $debugdisplaygroup ; Set-NetFirewallRule -InputObject $_ } # assign to DisplayGroup
+        Get-NetFirewallRule -DisplayName $FirewallRulesDisplayNames | ForEach-Object { $_.Group = $displayGroup ; Set-NetFirewallRule -InputObject $_ } # assign to DisplayGroup
+    }
+
+    # the new way BY PROGRAM
+    function Invoke-FirewallRulesByProgram
+    {
+        param ($FirewallObjectByProgram, $displayGroup)
+
+        New-NetFirewallRule @FirewallObjectByProgram
+        Get-NetFirewallRule -DisplayName $FirewallObjectByProgram.DisplayName |
+        ForEach-Object
+            {
+                $_.Group = $displayGroup # Dont know what this is yet, might need to pass it in - @ck
+                Set-NetFirewallRule -InputObject $_ # assign to DisplayGroup
+            }
     }
 
     # the new way. add new firewall rules.
@@ -353,7 +414,7 @@
         Write-Verbose "$($rule.Name) rule has these settings:"
         Write-Verbose "Rule Display Name: $($parameters.DisplayName)"
         Write-Verbose "Program: $($parameters.Program)"
-        Write-Verbose "Local Address: $($parameters.LocalAddress)"
+        #Write-Verbose "Local Address: $($parameters.LocalAddress)"
         #Write-Verbose "Remote Address: $($parameters.RemoteAddress)" # not sure if this is needed
         Write-Verbose "Direction: $($parameters.Direction)"
         Write-Verbose "Protocol: $($parameters.Protocol)"
@@ -366,6 +427,25 @@
         #Invoke-NewFirewallRule -FirewallObject @parameters -DisplayGroup $displayGroup # not this one
         #Invoke-FirewallRule @rule # splatting, by passing a hash table with a @ prefix and not a $, which means "unwrap my key value pairs to parameters and their values if they are named the same" - @ck
         Write-Host "Added firewall rule: $($rule.Name)"
+    }
+
+    Invoke-SetFirewallRulesDisplayGroup -FirewallDisplayGroup $displayGroup
+
+    # the new way BY PROGRAM
+    foreach ( $rule in $FirewallRulesByProgram.GetEnumerator() ) {
+        $parametersByProgram = $rule.Value
+        Write-Host "$($rule.Name) rule has these settings:"
+        Write-Host "DisplayName: $($parametersByProgram.DisplayName)"
+        Write-Host "Program: $($parametersByProgram.Program)"
+        #Write-Host "Local Address: $($parametersByProgram.LocalAddress)"
+        #Write-Host "Remote Address: $($parametersByProgram.RemoteAddress)"
+        Write-Host "Direction: $($parametersByProgram.Direction)"
+        Write-Host "Protocol: $($parametersByProgram.Protocol)"
+        Write-Host "Action: $($parametersByProgram.Action)"
+        Write-Host "Profile: $($parametersByProgram.Profile)"
+        Write-Host "Enabled: $($parametersByProgram.Enabled)"
+        Invoke-FirewallRulesByProgram -FirewallObjectByProgram $parametersByProgram -DisplayGroup $displayGroup
+        #Invoke-FirewallRules @rule # splatting, by passing a hash table with a @ prefix and not a $, which means "unwrap my key value pairs to parameters and their values if they are named the same" - @ck
     }
 
     # the new way. assign Display Group, outside the foreach loop and outside the Invoke-NewFirewallRule function so that it doesn't try to assign display group to rules that haven't been created yet.
