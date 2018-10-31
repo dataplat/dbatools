@@ -104,7 +104,7 @@
     $SqlServerAccount = Get-CimInstance -ClassName Win32_UserAccount  | Out-GridView -title 'Please select the Service Account for your Sql Server instance.' -PassThru | Select-Object -ExpandProperty Name
     
     # Get the installation folder of SQL Server. If the user didn't choose a specific folder, the autosearch will commence. It will take some time!
-    #To limit the number of results, the search won't go deeper than 2 levels.
+    #To limit the number of results, the search exludes the Windows
 
     IF ($InstallFolder::IsNullOrEmpty()) {
         
