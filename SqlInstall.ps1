@@ -21,7 +21,9 @@
 
     .PARAMETER Version will hold the SQL Server version you wish to install. The variable will support autocomplete
 
-    .PARAMETER Edition wull hold the different basic editions of SQL Server: Express, Standard, Enterprise and Developer. The variable will support autocomplete
+    .PARAMETER Edition will hold the different basic editions of SQL Server: Express, Standard, Enterprise and Developer. The variable will support autocomplete
+
+    .PARAMETER Role Will hold the option to install all features with defaults. Version is still mandatory. If no Edition is selected, it will default to Express!
 
     .PARAMETER StatsAndMl will hold the R and Python choices. The variable will support autocomplete. There will be a check on version; this parameter will revert to NULL if the version is below 2016
     
@@ -75,6 +77,7 @@
     Param  (
         [ValidateSet("2008", "2008R2", "2012", "2014", "2016", "2017", "2019")][string]$Version, 
         [ValidateSet("Express", "Standard", "Enterprise", "Developer")][string]$Edition,
+        [ValidateSet("AllFeaturesWithDefaults", "Custom")][string]$Role,
         [ValidateSet("Python", "R", "Python and R")][string]$StatsAndMl,
         [string]$AppVolume, 
         [string]$DataVolume, 
@@ -91,6 +94,18 @@
 
     if ($Null -eq $Version -or $Version -eq '') {
         Stop-Function -Message "You need to specify a SQL Server Version to run this function." -Continue -EnableException $EnableException
+    }
+
+    If($Null -eq $Edition -or $Edition -eq '')
+    {
+        $Edition = "Express"
+    }
+
+    If($null -eq $Role -or $Role -eq "AllFeaturesWithDefaults"){
+        If($null -eq $Edition)
+        {
+            $Edition = "Express"
+        }
     }
 
     # Check if the edition of SQL Server supports Python and R. Introduced in SQL 2016, it should not be allowed in earlier installations.
