@@ -28261,6 +28261,89 @@
         "Syntax":  "Remove-DbaAgListener [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Listener] \u003cString[]\u003e] [[-AvailabilityGroup] \u003cString[]\u003e] [[-InputObject] \u003cAvailabilityGroupListener[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
+        "CommandName":  "Remove-DbaAgReplica",
+        "Description":  "Removes availability group replicas from availability groups.",
+        "Tags":  [
+                     "AG",
+                     "HA",
+                     "AvailabilityGroup",
+                     "Replica"
+                 ],
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "The target SQL Server instance or instances. Server version must be SQL Server version 2012 or higher.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "SqlCredential",
+                           "Login to the SqlInstance instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "AvailabilityGroup",
+                           "The specific availability group to query.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Replica",
+                           "The replica to remove.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "InputObject",
+                           "Enables piped input from Get-DbaAgReplica.",
+                           "",
+                           false,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "WhatIf",
+                           "Shows what would happen if the command were to run. No actions are actually performed.",
+                           "wi",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Confirm",
+                           "Prompts you for confirmation before executing any changing operations within the command.",
+                           "cf",
+                           false,
+                           "false",
+                           ""
+                       ]
+                   ],
+        "Alias":  "",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
+        "Synopsis":  "Removes availability group replicas from availability groups.",
+        "Name":  "Remove-DbaAgReplica",
+        "Links":  "https://dbatools.io/Remove-DbaAgReplica",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eRemove-DbaAgReplica -SqlInstance sql2017a -AvailabilityGroup SharePoint -Replica sp1\nRemoves the sp1 replica from the SharePoint ag on sql2017a. Prompts for confirmation.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eRemove-DbaAgReplica -SqlInstance sql2017a | Select-Object *\nReturns full object properties on all availability group replicas found on sql2017a",
+        "Syntax":  "Remove-DbaAgReplica [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-AvailabilityGroup] \u003cString[]\u003e] [[-Replica] \u003cString[]\u003e] [[-InputObject] \u003cAvailabilityReplica[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+    },
+    {
         "CommandName":  "Remove-DbaAvailabilityGroup",
         "Description":  "Removes availability groups on a SQL Server instance.\n\nIf possible, remove the availability group only while connected to the server instance that hosts the primary replica.\nWhen the availability group is dropped from the primary replica, changes are allowed in the former primary databases (without high availability protection).\nDeleting an availability group from a secondary replica leaves the primary replica in the RESTORING state, and changes are not allowed on the databases.\n\nAvoid dropping an availability group when the Windows Server Failover Clustering (WSFC) cluster has no quorum.\nIf you must drop an availability group while the cluster lacks quorum, the metadata availability group that is stored in the cluster is not removed.\nAfter the cluster regains quorum, you will need to drop the availability group again to remove it from the WSFC cluster.\n\nFor more information: https://docs.microsoft.com/en-us/sql/t-sql/statements/drop-availability-group-transact-sql",
         "Tags":  [
@@ -31564,6 +31647,88 @@
         "Syntax":  "Restore-DbaDbSnapshot [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cObject[]\u003e] [[-ExcludeDatabase] \u003cObject[]\u003e] [[-Snapshot] \u003cObject[]\u003e] [[-InputObject] \u003cDatabase[]\u003e] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
+        "CommandName":  "Resume-DbaAgDbDataMovement",
+        "Description":  "Resumes data movement for an availability group database on a SQL Server instance.",
+        "Tags":  [
+                     "AvailabilityGroup",
+                     "HA",
+                     "AG"
+                 ],
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "The target SQL Server instance or instances. Server version must be SQL Server version 2012 or higher.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "SqlCredential",
+                           "Login to the SqlInstance instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "AvailabilityGroup",
+                           "The availability group where the database movement will be resumeed.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Database",
+                           "The database or databases to resume movement upon.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "InputObject",
+                           "Enables piping from Get-DbaAgDatabase",
+                           "",
+                           false,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "WhatIf",
+                           "Shows what would happen if the command were to run. No actions are actually performed.",
+                           "wi",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Confirm",
+                           "Prompts you for confirmation before executing any changing operations within the command.",
+                           "cf",
+                           false,
+                           "false",
+                           ""
+                       ]
+                   ],
+        "Alias":  "",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
+        "Synopsis":  "Resumes data movement for an availability group database on a SQL Server instance.",
+        "Name":  "Resume-DbaAgDbDataMovement",
+        "Links":  "https://dbatools.io/Resume-DbaAgDbDataMovement",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eResume-DbaAgDbDataMovement -SqlInstance sql2017a -AvailabilityGroup ag1 -Database db1, db2\nResumes data movement on db1 and db2 to ag1 on sql2017a. Prompts for confirmation.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaAgDatabase -SqlInstance sql2017a, sql2019 | Out-GridView -Passthru | Resume-DbaAgDbDataMovement -Confirm:$false\nResumes data movement on the selected availability group databases. Does not prompt for confirmation.",
+        "Syntax":  "Resume-DbaAgDbDataMovement [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-AvailabilityGroup] \u003cString\u003e] [[-Database] \u003cString[]\u003e] [[-InputObject] \u003cAvailabilityDatabase[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+    },
+    {
         "CommandName":  "Revoke-DbaAgPermission",
         "Description":  "Revokes endpoint and availability group permissions to a login.",
         "Tags":  [
@@ -32659,6 +32824,388 @@
         "Syntax":  "Set-DbaAgentSchedule [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [-Job] \u003cObject[]\u003e [-ScheduleName] \u003cString\u003e [[-NewName] \u003cString\u003e] [-Enabled] [-Disabled] [[-FrequencyType] \u003cObject\u003e] [[-FrequencyInterval] \u003cObject[]\u003e] [[-FrequencySubdayType] \u003cObject\u003e] [[-FrequencySubdayInterval] \u003cInt32\u003e] [[-FrequencyRelativeInterval] \u003cObject\u003e] [[-FrequencyRecurrenceFactor] \u003cInt32\u003e] [[-StartDate] \u003cString\u003e] [[-EndDate] \u003cString\u003e] [[-StartTime] \u003cString\u003e] [[-EndTime] \u003cString\u003e] [-EnableException] [-Force] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
+        "CommandName":  "Set-DbaAgListener",
+        "Description":  "Sets a listener property for an availability group on a SQL Server instance.\n\nBasically, only the port is settable at this time, so this command updates the listener port.",
+        "Tags":  [
+                     "AvailabilityGroup",
+                     "HA",
+                     "AG"
+                 ],
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "The target SQL Server instance or instances. Server version must be SQL Server version 2012 or higher.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "SqlCredential",
+                           "Login to the SqlInstance instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "AvailabilityGroup",
+                           "The Availability Group to which a property will be changed.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Listener",
+                           "Modify only specific listeners.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Port",
+                           "Sets the port number used to communicate with the availability group.",
+                           "",
+                           true,
+                           "false",
+                           "0"
+                       ],
+                       [
+                           "InputObject",
+                           "Enables piping from Get-DbaAvailabilityGroup",
+                           "",
+                           false,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "WhatIf",
+                           "Shows what would happen if the command were to run. No actions are actually performed.",
+                           "wi",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Confirm",
+                           "Prompts you for confirmation before executing any changing operations within the command.",
+                           "cf",
+                           false,
+                           "false",
+                           ""
+                       ]
+                   ],
+        "Alias":  "",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
+        "Synopsis":  "Sets a listener property for an availability group on a SQL Server instance.",
+        "Name":  "Set-DbaAgListener",
+        "Links":  "https://dbatools.io/Set-DbaAgListener",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eSet-DbaAgListener -SqlInstance sql2017 -AvailabilityGroup SharePoint -Port 14333\nChanges the port for the SharePoint AG Listener on sql2017. Prompts for confirmation.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaAgListener -SqlInstance sql2017 | Out-GridView -Passthru | Set-DbaAgListener -Port 1433 -Confirm:$false\nChanges the port for selected AG listeners to 1433. Does not prompt for confirmation.",
+        "Syntax":  "Set-DbaAgListener [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-AvailabilityGroup] \u003cString[]\u003e] [[-Listener] \u003cString[]\u003e] [-Port] \u003cInt32\u003e [[-InputObject] \u003cAvailabilityGroup[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+    },
+    {
+        "CommandName":  "Set-DbaAgReplica",
+        "Description":  "Sets the properties for a replica to an availability group on a SQL Server instance.\n\nAutomatically creates a database mirroring endpoint if required.",
+        "Tags":  [
+                     "AvailabilityGroup",
+                     "HA",
+                     "AG"
+                 ],
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "The target SQL Server instance or instances. Server version must be SQL Server version 2012 or higher.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "SqlCredential",
+                           "Login to the SqlInstance instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "AvailabilityGroup",
+                           "The availability group of the replica.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Replica",
+                           "The replicas to modify.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "AvailabilityMode",
+                           "Sets the availability mode of the availability group replica. Options are: AsynchronousCommit and SynchronousCommit. SynchronousCommit is default.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "FailoverMode",
+                           "Sets the failover mode of the availability group replica. Options are Automatic and Manual.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "BackupPriority",
+                           "Sets the backup priority availability group replica. Default is 50.",
+                           "",
+                           false,
+                           "false",
+                           "0"
+                       ],
+                       [
+                           "ConnectionModeInPrimaryRole",
+                           "Sets the connection intent modes of an Availability Replica in primary role.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "ConnectionModeInSecondaryRole",
+                           "Sets the connection modes of an Availability Replica in secondary role.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "SeedingMode",
+                           "Specifies how the secondary replica will be initially seeded.\nAutomatic enables direct seeding. This method will seed the secondary replica over the network. This method does not require you to backup and restore a copy of the primary database on the replica.\nManual requires you to create a backup of the database on the primary replica and manually restore that backup on the secondary replica.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "EndpointUrl",
+                           "The endpoint URL.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "ReadonlyRoutingConnectionUrl",
+                           "Sets the read only routing connection url for the availability replica.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "InputObject",
+                           "Enables piping from Get-DbaAgReplica.",
+                           "",
+                           false,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "WhatIf",
+                           "Shows what would happen if the command were to run. No actions are actually performed.",
+                           "wi",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Confirm",
+                           "Prompts you for confirmation before executing any changing operations within the command.",
+                           "cf",
+                           false,
+                           "false",
+                           ""
+                       ]
+                   ],
+        "Alias":  "",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
+        "Synopsis":  "Sets the properties for a replica to an availability group on a SQL Server instance.",
+        "Name":  "Set-DbaAgReplica",
+        "Links":  "https://dbatools.io/Set-DbaAgReplica",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eSet-DbaAgReplica -SqlInstance sql2016 -Replica sql2016 -AvailabilityGroup SharePoint -BackupPriority 5000\nSets the backup priority to 5000 for the sql2016 replica for the SharePoint availability group on sql2016\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaAgReplica -SqlInstance sql2016 | Out-GridView -Passthru | Set-DbaAgReplica -BackupPriority 5000\nSets the backup priority to 5000 for the selected availability groups.",
+        "Syntax":  "Set-DbaAgReplica [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-AvailabilityGroup] \u003cString\u003e] [[-Replica] \u003cString\u003e] [[-AvailabilityMode] \u003cString\u003e] [[-FailoverMode] \u003cString\u003e] [[-BackupPriority] \u003cInt32\u003e] [[-ConnectionModeInPrimaryRole] \u003cString\u003e] [[-ConnectionModeInSecondaryRole] \u003cString\u003e] [[-SeedingMode] \u003cString\u003e] [[-EndpointUrl] \u003cString\u003e] [[-ReadonlyRoutingConnectionUrl] \u003cString\u003e] [[-InputObject] \u003cAvailabilityReplica\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+    },
+    {
+        "CommandName":  "Set-DbaAvailabilityGroup",
+        "Description":  "Sets availability group properties on a SQL Server instance.",
+        "Tags":  [
+                     "AvailabilityGroup",
+                     "HA",
+                     "AG"
+                 ],
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "The target SQL Server instance or instances. Server version must be SQL Server version 2012 or higher.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "SqlCredential",
+                           "Login to the SqlInstance instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "AvailabilityGroup",
+                           "Only set specific availability group properties.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "AllAvailabilityGroups",
+                           "Set properties for all availability group on an instance.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "DtcSupportEnabled",
+                           "Enables DtcSupport.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "ClusterType",
+                           "Cluster type of the Availability Group. Only supported in SQL Server 2017 and above.\r\nOptions include: External, Wsfc or None.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "AutomatedBackupPreference",
+                           "Specifies how replicas in the primary role are treated in the evaluation to pick the desired replica to perform a backup.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "FailureConditionLevel",
+                           "Specifies the different conditions that can trigger an automatic failover in Availability Group.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "HealthCheckTimeout",
+                           "This setting used to specify the length of time, in milliseconds, that the SQL Server resource DLL should wait for information returned by the sp_server_diagnostics stored procedure before reporting \r\nthe Always On Failover Cluster Instance (FCI) as unresponsive.\nChanges that are made to the timeout settings are effective immediately and do not require a restart of the SQL Server resource.\nDefaults is 30000 (30 seconds).",
+                           "",
+                           false,
+                           "false",
+                           "0"
+                       ],
+                       [
+                           "BasicAvailabilityGroup",
+                           "Indicates whether the availability group is basic. Basic availability groups like pumpkin spice and uggs.\nhttps://docs.microsoft.com/en-us/sql/database-engine/availability-groups/windows/basic-availability-groups-always-on-availability-groups",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "DatabaseHealthTrigger",
+                           "Indicates whether the availability group triggers the database health.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "IsDistributedAvailabilityGroup",
+                           "Indicates whether the availability group is distributed.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "InputObject",
+                           "Enables piping from Get-DbaAvailabilityGroup.",
+                           "",
+                           false,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "WhatIf",
+                           "Shows what would happen if the command were to run. No actions are actually performed.",
+                           "wi",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Confirm",
+                           "Prompts you for confirmation before executing any changing operations within the command.",
+                           "cf",
+                           false,
+                           "false",
+                           ""
+                       ]
+                   ],
+        "Alias":  "",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
+        "Synopsis":  "Sets availability group properties on a SQL Server instance.",
+        "Name":  "Set-DbaAvailabilityGroup",
+        "Links":  "https://dbatools.io/Set-DbaAvailabilityGroup",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaAvailabilityGroup -SqlInstance sql2016 | Set-DbaAvailabilityGroup -DtcSupportEnabled\nEnables DTC for all availability groups on sql2016\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaAvailabilityGroup -SqlInstance sql2016 -AvailabilityGroup AG1 | Set-DbaAvailabilityGroup -DtcSupportEnabled:$false\nDisables DTC support for the availability group AG1\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eSet-DbaAvailabilityGroup -SqlInstance sql2016 -AvailabilityGroup AG1 -DtcSupportEnabled:$false\nDisables DTC support for the availability group AG1",
+        "Syntax":  "Set-DbaAvailabilityGroup [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-AvailabilityGroup] \u003cString[]\u003e] [-AllAvailabilityGroups] [-DtcSupportEnabled] [[-ClusterType] \u003cString\u003e] [[-AutomatedBackupPreference] \u003cString\u003e] [[-FailureConditionLevel] \u003cString\u003e] [[-HealthCheckTimeout] \u003cInt32\u003e] [-BasicAvailabilityGroup] [-DatabaseHealthTrigger] [-IsDistributedAvailabilityGroup] [[-InputObject] \u003cAvailabilityGroup[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+    },
+    {
         "CommandName":  "Set-DbaCmConnection",
         "Description":  "Configures a connection object for use in remote computer management.\nThis function will either create new records for computers that have no connection registered so far, or it will configure existing connections if already present.\n\nAs such it can be handy in making bulk-edits on connections or manually adjusting some settings.",
         "Tags":  [
@@ -33632,6 +34179,100 @@
         "Links":  "https://dbatools.io/Set-DbaDbState",
         "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eSet-DbaDbState -SqlInstance sqlserver2014a -Database HR -Offline\nSets the HR database as OFFLINE\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eSet-DbaDbState -SqlInstance sqlserver2014a -AllDatabases -Exclude HR -ReadOnly -Force\nSets all databases of the sqlserver2014a instance, except for HR, as READ_ONLY\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaDbState -SqlInstance sql2016 | Where-Object Status -eq \u0027Offline\u0027 | Set-DbaDbState -Online\nFinds all offline databases and sets them to online\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eSet-DbaDbState -SqlInstance sqlserver2014a -Database HR -SingleUser\nSets the HR database as SINGLE_USER\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eSet-DbaDbState -SqlInstance sqlserver2014a -Database HR -SingleUser -Force\nSets the HR database as SINGLE_USER, dropping all other connections (and rolling back open transactions)\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eGet-DbaDatabase -SqlInstance sqlserver2014a -Database HR | Set-DbaDbState -SingleUser -Force\nGets the databases from Get-DbaDatabase, and sets them as SINGLE_USER, dropping all other connections (and rolling back open transactions)",
         "Syntax":  "Set-DbaDbState [-SqlCredential \u003cPSCredential\u003e] [-Database \u003cObject[]\u003e] [-ExcludeDatabase \u003cObject[]\u003e] [-AllDatabases] [-ReadOnly] [-ReadWrite] [-Online] [-Offline] [-Emergency] [-Detached] [-SingleUser] [-RestrictedUser] [-MultiUser] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nSet-DbaDbState -SqlInstance \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Database \u003cObject[]\u003e] [-ExcludeDatabase \u003cObject[]\u003e] [-AllDatabases] [-ReadOnly] [-ReadWrite] [-Online] [-Offline] [-Emergency] [-Detached] [-SingleUser] [-RestrictedUser] [-MultiUser] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nSet-DbaDbState [-SqlCredential \u003cPSCredential\u003e] [-Database \u003cObject[]\u003e] [-ExcludeDatabase \u003cObject[]\u003e] [-AllDatabases] [-ReadOnly] [-ReadWrite] [-Online] [-Offline] [-Emergency] [-Detached] [-SingleUser] [-RestrictedUser] [-MultiUser] [-Force] [-EnableException] -InputObject \u003cPSObject[]\u003e [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+    },
+    {
+        "CommandName":  "Set-DbaEndpoint",
+        "Description":  "Sets endpoint properties on a SQL Server instance.",
+        "Tags":  "Endpoint",
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "The target SQL Server instance or instances.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "SqlCredential",
+                           "Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "EndPoint",
+                           "Only set specific endpoint properties.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Owner",
+                           "Change the endpoint owner.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Type",
+                           "Change the endpoint type. Options: DatabaseMirroring, ServiceBroker, Soap, TSql",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "AllEndpoints",
+                           "Set all endpoint properties on an instance.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "InputObject",
+                           "Enables piping from Get-Endpoint.",
+                           "",
+                           false,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "WhatIf",
+                           "Shows what would happen if the command were to run. No actions are actually performed.",
+                           "wi",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Confirm",
+                           "Prompts you for confirmation before executing any changing operations within the command.",
+                           "cf",
+                           false,
+                           "false",
+                           ""
+                       ]
+                   ],
+        "Alias":  "",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
+        "Synopsis":  "Sets endpoint properties on a SQL Server instance.",
+        "Name":  "Set-DbaEndpoint",
+        "Links":  "https://dbatools.io/Set-DbaEndpoint",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eSet-DbaEndpoint -SqlInstance sql2016 -AllEndpoints -Owner sa\nSets all endpoint owners to sa on sql2016\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaEndpoint -SqlInstance sql2016 -Endpoint ep1 | Set-DbaEndpoint -Type TSql\nChanges the endpoint type to tsql on endpoint ep1",
+        "Syntax":  "Set-DbaEndpoint [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-EndPoint] \u003cString[]\u003e] [[-Owner] \u003cString\u003e] [[-Type] \u003cString\u003e] [-AllEndpoints] [[-InputObject] \u003cEndpoint[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "CommandName":  "Set-DbaErrorLogConfig",
@@ -36723,6 +37364,88 @@
         "Links":  "https://dbatools.io/Stop-DbaXESmartTarget\nhttps://github.com/spaghettidba/XESmartTarget/wiki",
         "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaXESmartTarget | Stop-DbaXESmartTarget\nStops all XESmartTarget jobs.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaXESmartTarget | Where-Object Id -eq 2 | Stop-DbaXESmartTarget\nStops a specific XESmartTarget job.",
         "Syntax":  "Stop-DbaXESmartTarget [-InputObject] \u003cObject[]\u003e [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+    },
+    {
+        "CommandName":  "Suspend-DbaAgDbDataMovement",
+        "Description":  "Suspends data movement for an availability group database on a SQL Server instance.",
+        "Tags":  [
+                     "AvailabilityGroup",
+                     "HA",
+                     "AG"
+                 ],
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "The target SQL Server instance or instances. Server version must be SQL Server version 2012 or higher.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "SqlCredential",
+                           "Login to the SqlInstance instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "AvailabilityGroup",
+                           "The availability group where the database movement will be suspended.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Database",
+                           "The database or databases to suspend movement upon.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "InputObject",
+                           "Enables piping from Get-DbaAgDatabase",
+                           "",
+                           false,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "WhatIf",
+                           "Shows what would happen if the command were to run. No actions are actually performed.",
+                           "wi",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Confirm",
+                           "Prompts you for confirmation before executing any changing operations within the command.",
+                           "cf",
+                           false,
+                           "false",
+                           ""
+                       ]
+                   ],
+        "Alias":  "",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
+        "Synopsis":  "Suspends data movement for an availability group database on a SQL Server instance.",
+        "Name":  "Suspend-DbaAgDbDataMovement",
+        "Links":  "https://dbatools.io/Suspend-DbaAgDbDataMovement",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eSuspend-DbaAgDbDataMovement -SqlInstance sql2017a -AvailabilityGroup ag1 -Database db1, db2\nSuspends data movement on db1 and db2 to ag1 on sql2017a. Prompts for confirmation.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaAgDatabase -SqlInstance sql2017a, sql2019 | Out-GridView -Passthru | Suspend-DbaAgDbDataMovement -Confirm:$false\nSuspends data movement on the selected availability group databases. Does not prompt for confirmation.",
+        "Syntax":  "Suspend-DbaAgDbDataMovement [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-AvailabilityGroup] \u003cString\u003e] [[-Database] \u003cString[]\u003e] [[-InputObject] \u003cAvailabilityDatabase[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "CommandName":  "Sync-DbaLoginPermission",
