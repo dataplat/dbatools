@@ -165,6 +165,16 @@ function New-DbaAvailabilityGroup {
         Creates a new availability group on sql2016b named SharePoint with a secondary replica, sql2016b
 
     .EXAMPLE
+        PS C:\> New-DbaAvailabilityGroup -Primary sql2016std -Name BAG1 -Basic -Confirm:$false
+
+        Creates a basic availability group named BAG1 on sql2016std and does not confirm when setting up
+    
+    .EXAMPLE
+        PS C:\> New-DbaAvailabilityGroup -Primary sql2016b -Name AG1 -ClusterType Wsfc -Dhcp -Database db1 -UseLastBackup
+    
+        Creates an availability group on sql2016b with the name ag1. Uses the last backups available to add the database db1 to the AG.
+
+    .EXAMPLE
         PS C:\> New-DbaAvailabilityGroup -Primary sql2017 -Name SharePoint -ClusterType None -FailoverMode Manual
 
         Creates a new availability group on sql2017 named SharePoint with a cluster type of non and a failover mode of manual
@@ -503,11 +513,11 @@ function New-DbaAvailabilityGroup {
         }
         
         # Add listener
-        Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Adding endpoint connect permissions"
+        Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Adding listener"
         
         if ($IPAddress) {
             if ($Pscmdlet.ShouldProcess($Primary, "Adding static IP listener for $Name to the Primary replica")) {
-                $null = Add-DbaAgListener -InputObject $ag -IPAddress $IPAddress -SubnetMask $SubnetMask -Port $Port -Dhcp:$Dhcp
+                $null = Add-DbaAgListener -InputObject $ag -IPAddress $IPAddress[0] -SubnetMask $SubnetMask -Port $Port -Dhcp:$Dhcp
             }
         } elseif ($Dhcp) {
             if ($Pscmdlet.ShouldProcess($Primary, "Adding DHCP listener for $Name to all replicas")) {
