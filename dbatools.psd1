@@ -556,7 +556,14 @@
         'Get-DbaDbCompatibility',
         'Set-DbaDbCompatibility',
         'New-DbaDacOption',
-        'Invoke-DbatoolsFormatter'
+        'Invoke-DbatoolsFormatter',
+        'Remove-DbaAgReplica',
+        'Resume-DbaAgDbDataMovement',
+        'Set-DbaAgListener',
+        'Set-DbaAgReplica',
+        'Set-DbaAvailabilityGroup',
+        'Set-DbaEndpoint',
+        'Suspend-DbaAgDbDataMovement'
     )
 
     # Cmdlets to export from this module
