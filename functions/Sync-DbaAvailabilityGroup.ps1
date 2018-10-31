@@ -126,7 +126,6 @@ function Sync-DbaAvailabilityGroup {
         
         Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Granting permissions on availability group, this may take a moment"
         
-        # Get results
-        Get-DbaAvailabilityGroup -SqlInstance $Primary -SqlCredential $PrimarySqlCredential -AvailabilityGroup $Name
+        
     }
 }
