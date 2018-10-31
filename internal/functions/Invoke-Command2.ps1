@@ -57,13 +57,11 @@ function Invoke-Command2 {
             $timeout = New-PSSessionOption -IdleTimeout (New-TimeSpan -Minutes 10).TotalMilliSeconds
             if ($Credential) {
                 $InvokeCommandSplat["Session"] = (New-PSSession -ComputerName $ComputerName.ComputerName -Name $sessionName -SessionOption $timeout -Credential $Credential -ErrorAction Stop)
-            }
-            else {
+            } else {
                 $InvokeCommandSplat["Session"] = (New-PSSession -ComputerName $ComputerName.ComputerName -Name $sessionName -SessionOption $timeout -ErrorAction Stop)
             }
             $currentSession = $InvokeCommandSplat["Session"]
-        }
-        else {
+        } else {
             if ($currentSession.State -eq "Disconnected") {
                 $null = $currentSession | Connect-PSSession -ErrorAction Stop
             }
@@ -76,8 +74,7 @@ function Invoke-Command2 {
 
     if ($Raw) {
         Invoke-Command @InvokeCommandSplat
-    }
-    else {
+    } else {
         Invoke-Command @InvokeCommandSplat | Select-Object -Property * -ExcludeProperty PSComputerName, RunspaceId, PSShowComputerName
     }
 
@@ -90,3 +87,4 @@ function Invoke-Command2 {
         }
     }
 }
+

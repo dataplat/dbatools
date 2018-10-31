@@ -1,4 +1,4 @@
-﻿$scriptBlock = {
+$scriptBlock = {
     $script:___ScriptName = 'dbatools-teppasynccache'
 
     #region Utility Functions
@@ -12,7 +12,7 @@
 
     function Update-TeppCache {
         [CmdletBinding()]
-        Param (
+        param (
             [Parameter(ValueFromPipeline)]
             $ServerAccess
         )
@@ -82,3 +82,4 @@ Register-DbaRunspace -ScriptBlock $scriptBlock -Name "dbatools-teppasynccache"
 if (-not ([Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::TeppAsyncDisabled -or [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::TeppDisabled)) {
     Start-DbaRunspace -Name "dbatools-teppasynccache"
 }
+

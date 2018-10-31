@@ -1,65 +1,67 @@
-﻿#ValidationTags#CodeStyle,Messaging,FlowControl,Pipeline#
+#ValidationTags#CodeStyle,Messaging,FlowControl,Pipeline#
 function Get-DbaFeature {
     <#
-        .SYNOPSIS
-             Runs the SQL Server feature discovery report (setup.exe /Action=RunDiscovery)
+    .SYNOPSIS
+        Runs the SQL Server feature discovery report (setup.exe /Action=RunDiscovery)
 
-        .DESCRIPTION
-            Runs the SQL Server feature discovery report (setup.exe /Action=RunDiscovery)
+    .DESCRIPTION
+        Runs the SQL Server feature discovery report (setup.exe /Action=RunDiscovery)
 
-            Inspired by Dave Mason's (@BeginTry) post at
-            https://itsalljustelectrons.blogspot.be/2018/04/SQL-Server-Discovery-Report.html
+        Inspired by Dave Mason's (@BeginTry) post at
+        https://itsalljustelectrons.blogspot.be/2018/04/SQL-Server-Discovery-Report.html
 
-            Assumptions:
-            1. The sub-folder "Microsoft SQL Server" exists in $env:ProgramFiles,
-                even if SQL was installed to a non-default path. This has been
-                verified on SQL 2008R2 and SQL 2012. Further verification may be needed.
-            2. The discovery report displays installed components for the version of SQL
-                Server associated with setup.exe, along with installed components of all
-                lesser versions of SQL Server that are installed.
+        Assumptions:
+        1. The sub-folder "Microsoft SQL Server" exists in $env:ProgramFiles,
+        even if SQL was installed to a non-default path. This has been
+        verified on SQL 2008R2 and SQL 2012. Further verification may be needed.
+        2. The discovery report displays installed components for the version of SQL
+        Server associated with setup.exe, along with installed components of all
+        lesser versions of SQL Server that are installed.
 
-        .PARAMETER ComputerName
-            The target computer. If the target is not localhost, it must have PowerShell remoting enabled.
+    .PARAMETER ComputerName
+        The target computer. If the target is not localhost, it must have PowerShell remoting enabled.
 
-            Note that this is not the SqlInstance, but rather the ComputerName
+        Note that this is not the SqlInstance, but rather the ComputerName
 
-        .PARAMETER Credential
-            Allows you to login to servers using alternative credentials. To use:
+    .PARAMETER Credential
+        Allows you to login to servers using alternative credentials. To use:
 
-            $cred = Get-Credential, then pass $cred object to the -Credential parameter.
+        $cred = Get-Credential, then pass $cred object to the -Credential parameter.
 
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-        .NOTES
-            Tags: Feature, Component
-            Author: Chrissy LeMaire (@cl), netnerds.net
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: MIT https://opensource.org/licenses/MIT
+    .NOTES
+        Tags: Feature, Component
+        Author: Chrissy LeMaire (@cl), netnerds.net
 
-        .LINK
-            https://dbatools.io/Get-DbaFeature
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-        .EXAMPLE
-            Get-DbaFeature -ComputerName sql2017, sql2016, sql2005
+    .LINK
+        https://dbatools.io/Get-DbaFeature
 
-            Gets all SQL Server features for all instances on sql2017, sql2016 and sql2005.
+    .EXAMPLE
+        PS C:\> Get-DbaFeature -ComputerName sql2017, sql2016, sql2005
 
-        .EXAMPLE
-            Get-DbaFeature -Verbose
+        Gets all SQL Server features for all instances on sql2017, sql2016 and sql2005.
 
-            Gets all SQL Server features for all instances on localhost. Outputs to screen if no instances are found.
+    .EXAMPLE
+        PS C:\> Get-DbaFeature -Verbose
 
-        .EXAMPLE
-            Get-DbaFeature -ComputerName sql2017 -Credential (Get-Credential ad\sqladmin)
+        Gets all SQL Server features for all instances on localhost. Outputs to screen if no instances are found.
 
-            Gets all SQL Server features for all instances on sql2017 using the ad\sqladmin credential (which has access to the Windows Server).
-    #>
+    .EXAMPLE
+        PS C:\> Get-DbaFeature -ComputerName sql2017 -Credential ad\sqldba
+
+        Gets all SQL Server features for all instances on sql2017 using the ad\sqladmin credential (which has access to the Windows Server).
+
+#>
     [CmdletBinding()]
-    Param (
+    param (
         [parameter(ValueFromPipeline)]
         [DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,
         [PSCredential]$Credential,
@@ -107,8 +109,7 @@ function Get-DbaFeature {
                         Configured   = $result.Configured
                     }
                 }
-            }
-            catch {
+            } catch {
                 Stop-Function -Continue -ErrorRecord $_ -Message "Failure"
             }
         }
@@ -117,3 +118,4 @@ function Get-DbaFeature {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-DbaSqlFeature
     }
 }
+

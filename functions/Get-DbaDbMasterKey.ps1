@@ -1,106 +1,97 @@
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaDbMasterKey {
     <#
-.SYNOPSIS
-Gets specified database master key
+    .SYNOPSIS
+        Gets specified database master key
 
-.DESCRIPTION
-Gets specified database master key
+    .DESCRIPTION
+        Gets specified database master key
 
-.PARAMETER SqlInstance
-The target SQL Server instance
+    .PARAMETER SqlInstance
+        The target SQL Server instance
 
-.PARAMETER SqlCredential
-Allows you to login to SQL Server using alternative credentials
+    .PARAMETER SqlCredential
+        Allows you to login to SQL Server using alternative credentials
 
-.PARAMETER Database
-Get master key from specific database
+    .PARAMETER Database
+        Get master key from specific database
 
-.PARAMETER ExcludeDatabase
-The database(s) to exclude - this list is auto-populated from the server
+    .PARAMETER ExcludeDatabase
+        The database(s) to exclude - this list is auto-populated from the server
 
-.PARAMETER WhatIf
-Shows what would happen if the command were to run. No actions are actually performed
+    .PARAMETER InputObject
+        Database object piped in from Get-DbaDatabase
 
-.PARAMETER Confirm
-Prompts you for confirmation before executing any changing operations within the command
+    .PARAMETER WhatIf
+        Shows what would happen if the command were to run. No actions are actually performed
 
-.PARAMETER EnableException
+    .PARAMETER Confirm
+        Prompts you for confirmation before executing any changing operations within the command
+
+    .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-.NOTES
-Tags: Certificate, Database
-Author: Chrissy LeMaire (@cl), netnerds.net
-Website: https://dbatools.io
-Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-License: MIT https://opensource.org/licenses/MIT
+    .NOTES
+        Tags: Certificate, Database
+        Author: Chrissy LeMaire (@cl), netnerds.net
 
-.EXAMPLE
-Get-DbaDbMasterKey -SqlInstance sql2016
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-Gets all master database keys
+    .EXAMPLE
+        PS C:\> Get-DbaDbMasterKey -SqlInstance sql2016
 
-.EXAMPLE
-Get-DbaDbMasterKey -SqlInstance Server1 -Database db1
+        Gets all master database keys
 
-Gets the master key for the db1 database
+    .EXAMPLE
+        PS C:\> Get-DbaDbMasterKey -SqlInstance Server1 -Database db1
+
+        Gets the master key for the db1 database
 
 #>
     [CmdletBinding()]
     param (
-        [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [object[]]$Database,
-        [object[]]$ExcludeDatabase,
-        [Alias('Silent')]
+        [string[]]$Database,
+        [string[]]$ExcludeDatabase,
+        [parameter(ValueFromPipeline)]
+        [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
         [switch]$EnableException
     )
 
     process {
-        foreach ($instance in $SqlInstance) {
-            try {
-                Write-Message -Level Verbose -Message "Connecting to $instance"
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
-            }
-            catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
-            }
+        if ($SqlInstance) {
+            $InputObject += Get-DbaDatabase -SqlInstance $SqlInstance -Database $Database -ExcludeDatabase $ExcludeDatabase
+        }
 
-            $databases = $server.Databases | Where-Object IsAccessible
-
-            if ($Database) {
-                $databases = $databases | Where-Object Name -In $Database
-            }
-            if ($ExcludeDatabase) {
-                $databases = $databases | Where-Object Name -NotIn $ExcludeDatabase
+        foreach ($db in $InputObject) {
+            if (!$db.IsAccessible) {
+                Write-Message -Level Warning -Message "Database $db on $($db.Parent) is not accessible. Skipping."
+                continue
             }
 
-            foreach ($db in $databases) {
-                if (!$db.IsAccessible) {
-                    Write-Message -Level Warning -Message "Database $db is not accessible. Skipping."
-                    continue
-                }
+            $masterkey = $db.MasterKey
 
-                $masterkey = $db.MasterKey
-
-                if (!$masterkey) {
-                    Write-Message -Message "No master key exists in the $db database on $instance" -Target $db -Level Verbose
-                    continue
-                }
-
-                Add-Member -Force -InputObject $masterkey -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
-                Add-Member -Force -InputObject $masterkey -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
-                Add-Member -Force -InputObject $masterkey -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
-                Add-Member -Force -InputObject $masterkey -MemberType NoteProperty -Name Database -value $db.Name
-
-                Select-DefaultView -InputObject $masterkey -Property ComputerName, InstanceName, SqlInstance, Database, CreateDate, DateLastModified, IsEncryptedByServer
+            if (!$masterkey) {
+                Write-Message -Message "No master key exists in the $db database on $instance" -Target $db -Level Verbose
+                continue
             }
+
+            Add-Member -Force -InputObject $masterkey -MemberType NoteProperty -Name ComputerName -value $db.Parent.ComputerName
+            Add-Member -Force -InputObject $masterkey -MemberType NoteProperty -Name InstanceName -value $db.Parent.ServiceName
+            Add-Member -Force -InputObject $masterkey -MemberType NoteProperty -Name SqlInstance -value $db.Parent.DomainInstanceName
+            Add-Member -Force -InputObject $masterkey -MemberType NoteProperty -Name Database -value $db.Name
+
+            Select-DefaultView -InputObject $masterkey -Property ComputerName, InstanceName, SqlInstance, Database, CreateDate, DateLastModified, IsEncryptedByServer
         }
     }
     end {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-DbaDatabaseMasterKey
     }
 }
+

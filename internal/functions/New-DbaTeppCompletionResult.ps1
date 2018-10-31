@@ -1,4 +1,4 @@
-﻿function global:New-DbaTeppCompletionResult {
+function global:New-DbaTeppCompletionResult {
     <#
         .SYNOPSIS
             Generates a completion result for dbatools internal tab completion.
@@ -77,3 +77,4 @@
 }
 
 (Get-Item Function:\New-DbaTeppCompletionResult).Visibility = "Private"
+

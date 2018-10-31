@@ -1,10 +1,10 @@
-﻿$scriptBlock = {
+$scriptBlock = {
     $script:___ScriptName = 'dbatools-logging'
 
     #region Helper Functions
     function Clean-ErrorXml {
         [CmdletBinding()]
-        Param (
+        param (
             $Path
         )
 
@@ -24,7 +24,7 @@
 
     function Clean-MessageLog {
         [CmdletBinding()]
-        Param (
+        param (
             $Path
         )
 
@@ -44,7 +44,7 @@
 
     function Clean-GlobalLog {
         [CmdletBinding()]
-        Param (
+        param (
             $Path
         )
 

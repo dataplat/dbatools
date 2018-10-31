@@ -22,7 +22,7 @@ function Set-ServiceStartMode {
         Author: Kirill Kravtsov ( @nvarscar )
 
         dbatools PowerShell module (https://dbatools.io)
-        Copyright (C) 2017 Chrissy LeMaire
+        Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
         .EXAMPLE
@@ -47,8 +47,7 @@ function Set-ServiceStartMode {
         $callStack = Get-PSCallStack
         if ($callStack.Length -gt 1) {
             $callerName = $callStack[1].Command
-        }
-        else {
+        } else {
             $callerName = $callStack[0].Command
         }
         $ProcessArray = @()
@@ -71,3 +70,4 @@ function Set-ServiceStartMode {
         }
     }
 }
+

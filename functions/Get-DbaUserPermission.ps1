@@ -11,7 +11,7 @@ function Get-DbaUserPermission {
         Note that if you Ctrl-C out of this command and end it prematurely, it will leave behind a STIG schema in tempdb.
 
     .PARAMETER SqlInstance
-        Allows you to specify a comma separated list of servers to query.
+        The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
@@ -37,31 +37,35 @@ function Get-DbaUserPermission {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-    Tags: Discovery, Permissions, Security
-    Author: Brandon Abshire, netnerds.net
+        Tags: Discovery, Permissions, Security
+        Author: Brandon Abshire, netnerds.net
 
         Website: https://dbatools.io
-        Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+        Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
         https://dbatools.io/Get-DbaUserPermission
 
     .EXAMPLE
-        Get-DbaUserPermission -SqlInstance sql2008, sqlserver2012
+        PS C:\> Get-DbaUserPermission -SqlInstance sql2008, sqlserver2012
+
         Check server and database permissions for servers sql2008 and sqlserver2012.
 
     .EXAMPLE
-        Get-DbaUserPermission -SqlInstance sql2008 -Database TestDB
+        PS C:\> Get-DbaUserPermission -SqlInstance sql2008 -Database TestDB
+
         Check server and database permissions on server sql2008 for only the TestDB database
 
     .EXAMPLE
-        Get-DbaUserPermission -SqlInstance sql2008 -Database TestDB -IncludePublicGuest -IncludeSystemObjects
+        PS C:\> Get-DbaUserPermission -SqlInstance sql2008 -Database TestDB -IncludePublicGuest -IncludeSystemObjects
+
         Check server and database permissions on server sql2008 for only the TestDB database,
         including public and guest grants, and sys schema objects.
-    #>
+
+#>
     [CmdletBinding()]
-    Param (
+    param (
         [parameter(Position = 0, Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer", "SqlServers")]
         [DbaInstanceParameter[]]$SqlInstance,
@@ -180,12 +184,10 @@ function Get-DbaUserPermission {
 
     process {
         foreach ($instance in $SqlInstance) {
-            Write-Message -Level Verbose -Message "Connecting to $instance"
 
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 10
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -284,3 +286,4 @@ function Get-DbaUserPermission {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-DbaUserLevelPermission
     }
 }
+

@@ -1,69 +1,83 @@
 function Get-DbaDbTable {
     <#
-.SYNOPSIS
-Returns a summary of information on the tables
+    .SYNOPSIS
+        Returns a summary of information on the tables
 
-.DESCRIPTION
-Shows table information around table row and data sizes and if it has any table type information.
+    .DESCRIPTION
+        Shows table information around table row and data sizes and if it has any table type information.
 
-.PARAMETER SqlInstance
-SQL Server name or SMO object representing the SQL Server to connect to. This can be a
-collection and receive pipeline input
+    .PARAMETER SqlInstance
+        The target SQL Server instance or instances. This can be a collection and receive pipeline input.
 
-.PARAMETER SqlCredential
-Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+    .PARAMETER SqlCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-.PARAMETER Database
-The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
+    .PARAMETER Database
+        The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
 
-.PARAMETER ExcludeDatabase
-The database(s) to exclude - this list is auto-populated from the server
+    .PARAMETER ExcludeDatabase
+        The database(s) to exclude - this list is auto-populated from the server
 
-.PARAMETER IncludeSystemDBs
-Switch parameter that when used will display system database information
+    .PARAMETER IncludeSystemDBs
+        Switch parameter that when used will display system database information
 
-.PARAMETER Table
-Define a specific table you would like to query. You can specify up to three-part name like db.sch.tbl.
-If the object has special characters please wrap them in square brackets [ ].
-This dbo.First.Table will try to find table named 'Table' on schema 'First' and database 'dbo'.
-The correct way to find table named 'First.Table' on schema 'dbo' is passing dbo.[First.Table]
+    .PARAMETER Table
+        Define a specific table you would like to query. You can specify up to three-part name like db.sch.tbl.
 
-.PARAMETER EnableException
+        If the object has special characters please wrap them in square brackets [ ].
+        Using dbo.First.Table will try to find table named 'Table' on schema 'First' and database 'dbo'.
+        The correct way to find table named 'First.Table' on schema 'dbo' is by passing dbo.[First.Table]
+        Any actual usage of the ] must be escaped by duplicating the ] character.
+        The correct way to find a table Name] in schema Schema.Name is by passing [Schema.Name].[Name]]]
+
+    .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-.NOTES
-Tags: Database, Tables
-Author: Stephen Bennett, https://sqlnotesfromtheunderground.wordpress.com/
+    .NOTES
+        Tags: Database, Tables
+        Author: Stephen Bennett, https://sqlnotesfromtheunderground.wordpress.com/
 
-Website: https://dbatools.io
-Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-License: MIT https://opensource.org/licenses/MIT
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-.LINK
-https://dbatools.io/Get-DbaDbTable
+    .LINK
+        https://dbatools.io/Get-DbaDbTable
 
-.EXAMPLE
-Get-DbaDbTable -SqlInstance DEV01 -Database Test1
-Return all tables in the Test1 database
+    .EXAMPLE
+        PS C:\> Get-DbaDbTable -SqlInstance DEV01 -Database Test1
 
-.EXAMPLE
-Get-DbaDbTable -SqlInstance DEV01 -Database MyDB -Table MyTable
-Return only information on the table MyTable from the database MyDB
+        Return all tables in the Test1 database
 
-.EXAMPLE
-Get-DbaDbTable -SqlInstance DEV01 -Table MyTable
-Returns information on table called MyTable if it exists in any database on the server, under any schema
+    .EXAMPLE
+        PS C:\> Get-DbaDbTable -SqlInstance DEV01 -Database MyDB -Table MyTable
 
-.EXAMPLE
-Get-DbaDbTable -SqlInstance DEV01 -Table dbo.[First.Table]
-Returns information on table called First.Table on schema dbo if it exists in any database on the server
+        Return only information on the table MyTable from the database MyDB
 
-.EXAMPLE
-'localhost','localhost\namedinstance' | Get-DbaDbTable -Database DBA -Table Commandlog
-Returns information on the CommandLog table in the DBA database on both instances localhost and the named instance localhost\namedinstance
+    .EXAMPLE
+        PS C:\> Get-DbaDbTable -SqlInstance DEV01 -Table MyTable
 
+        Returns information on table called MyTable if it exists in any database on the server, under any schema
+
+    .EXAMPLE
+        PS C:\> Get-DbaDbTable -SqlInstance DEV01 -Table dbo.[First.Table]
+
+        Returns information on table called First.Table on schema dbo if it exists in any database on the server
+
+    .EXAMPLE
+        PS C:\> 'localhost','localhost\namedinstance' | Get-DbaDbTable -Database DBA -Table Commandlog
+
+        Returns information on the CommandLog table in the DBA database on both instances localhost and the named instance localhost\namedinstance
+
+    .EXAMPLE
+        PS C:\> Get-DbaDbTable -SqlInstance DEV01 -Table "[[DbName]]].[Schema.With.Dots].[`"[Process]]`"]" -Verbose
+
+        For the instance Dev01 Returns information for a table named: "[Process]" in schema named: Schema.With.Dots in database named: [DbName]
+        The Table name, Schema name and Database name must be wrapped in square brackets [ ]
+        Special charcters like " must be escaped by a ` charcter.
+        In addition any actual instance of the ] character must be escaped by being duplicated.
 #>
     [CmdletBinding()]
     param ([parameter(ValueFromPipeline, Mandatory)]
@@ -84,47 +98,22 @@ Returns information on the CommandLog table in the DBA database on both instance
         if ($Table) {
             $fqtns = @()
             foreach ($t in $Table) {
-                $splitName = [regex]::Matches($t, "(\[.+?\])|([^\.]+)").Value
-                $dotcount = $splitName.Count
+                $fqtn = Get-TableNameParts -Table $t
 
-                $splitDb = $Schema = $null
-
-                switch ($dotcount) {
-                    1 {
-                        $tbl = $t
-                    }
-                    2 {
-                        $schema = $splitName[0]
-                        $tbl = $splitName[1]
-                    }
-                    3 {
-                        $splitDb = $splitName[0]
-                        $schema = $splitName[1]
-                        $tbl = $splitName[2]
-                    }
-                    default {
-                        Write-Message -Level Warning -Message "Please make sure that you are using up to three-part names. If your search value contains '.' character you must use [ ] to wrap the name. The value $t is not a valid name."
-                        Continue
-                    }
-                }
-
-                if ($splitDb -like "[[]*[]]") {
-                    $splitDb = $splitDb.Substring(1, ($splitDb.Length - 2))
-                }
-
-                if ($schema -like "[[]*[]]") {
-                    $schema = $schema.Substring(1, ($schema.Length - 2))
-                }
-
-                if ($tbl -like "[[]*[]]") {
-                    $tbl = $tbl.Substring(1, ($tbl.Length - 2))
+                if (!$fqtn.Parsed) {
+                    Write-Message -Level Warning -Message "Please check you are using proper three-part names. If your search value contains special characters you must use [ ] to wrap the name. The value $t could not be parsed as a valid name."
+                    Continue
                 }
 
                 $fqtns += [PSCustomObject] @{
-                    Database = $splitDb
-                    Schema   = $Schema
-                    Table    = $tbl
+                    Database   = $fqtn.Database
+                    Schema     = $fqtn.Schema
+                    Table      = $fqtn.Table
+                    InputValue = $fqtn.InputValue
                 }
+            }
+            if (!$fqtns) {
+                Stop-Function -Message "No Valid Table specified"  -ErrorRecord $_ -Target $instance -Continue
             }
         }
     }
@@ -132,10 +121,8 @@ Returns information on the CommandLog table in the DBA database on both instance
     process {
         foreach ($instance in $sqlinstance) {
             try {
-                Write-Message -Level Verbose -Message "Connecting to $instance"
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -155,8 +142,7 @@ Returns information on the CommandLog table in the DBA database on both instance
                 if ($ExcludeDatabase) {
                     $dbs = $dbs | Where-Object { $ExcludeDatabase -notcontains $_.Name }
                 }
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Unable to gather dbs for $instance" -Target $instance -Continue -ErrorRecord $_
             }
 
@@ -181,8 +167,7 @@ Returns information on the CommandLog table in the DBA database on both instance
                         }
                         $tables += $tbl
                     }
-                }
-                else {
+                } else {
                     $tables = $db.Tables
                 }
 
@@ -203,3 +188,4 @@ Returns information on the CommandLog table in the DBA database on both instance
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-DbaTable
     }
 }
+

@@ -1,84 +1,85 @@
-#ValidationTags#Messaging#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Export-DbaExecutionPlan {
     <#
-        .SYNOPSIS
-            Exports execution plans to disk.
+    .SYNOPSIS
+        Exports execution plans to disk.
 
-        .DESCRIPTION
-            Exports execution plans to disk. Can pipe from Get-DbaExecutionPlan
+    .DESCRIPTION
+        Exports execution plans to disk. Can pipe from Get-DbaExecutionPlan
 
-            Thanks to
-                https://www.simple-talk.com/sql/t-sql-programming/dmvs-for-query-plan-metadata/
-                and
-                http://www.scarydba.com/2017/02/13/export-plans-cache-sqlplan-file/
-            for the idea and query.
+        Thanks to
+        https://www.simple-talk.com/sql/t-sql-programming/dmvs-for-query-plan-metadata/
+        and
+        http://www.scarydba.com/2017/02/13/export-plans-cache-sqlplan-file/
+        for the idea and query.
 
-        .PARAMETER SqlInstance
-            The SQL Server that you're connecting to.
+    .PARAMETER SqlInstance
+        The target SQL Server instance or instances.
 
-        .PARAMETER SqlCredential
-            Credential object used to connect to the SQL Server as a different user
+    .PARAMETER SqlCredential
+        Credential object used to connect to the SQL Server as a different user
 
-        .PARAMETER Database
-            The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
+    .PARAMETER Database
+        The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
 
-        .PARAMETER ExcludeDatabase
-            The database(s) to exclude - this list is auto-populated from the server
+    .PARAMETER ExcludeDatabase
+        The database(s) to exclude - this list is auto-populated from the server
 
-        .PARAMETER SinceCreation
-            Datetime object used to narrow the results to a date
+    .PARAMETER SinceCreation
+        Datetime object used to narrow the results to a date
 
-        .PARAMETER SinceLastExecution
-            Datetime object used to narrow the results to a date
+    .PARAMETER SinceLastExecution
+        Datetime object used to narrow the results to a date
 
-        .PARAMETER Path
-            The directory where all of the sqlxml files will be exported
+    .PARAMETER Path
+        The directory where all of the sqlxml files will be exported
 
-        .PARAMETER WhatIf
-            Shows what would happen if the command were to run. No actions are actually performed.
+    .PARAMETER WhatIf
+        Shows what would happen if the command were to run. No actions are actually performed.
 
-        .PARAMETER Confirm
-            Prompts you for confirmation before executing any changing operations within the command.
+    .PARAMETER Confirm
+        Prompts you for confirmation before executing any changing operations within the command.
 
-        .PARAMETER PipedObject
-            Internal parameter
+    .PARAMETER PipedObject
+        Internal parameter
 
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-        .NOTES
-            Tags: Performance, ExecutionPlan
-            Author: Chrissy LeMaire (@cl), netnerds.net
-            Website: https://dbatools.io
-            Copyright (C) 2016 Chrissy LeMaire
-            License: MIT https://opensource.org/licenses/MIT
+    .NOTES
+        Tags: Performance, ExecutionPlan
+        Author: Chrissy LeMaire (@cl), netnerds.net
 
-        .LINK
-            https://dbatools.io/Export-DbaExecutionPlan
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-        .EXAMPLE
-            Export-DbaExecutionPlan -SqlInstance sqlserver2014a -Path C:\Temp
+    .LINK
+        https://dbatools.io/Export-DbaExecutionPlan
 
-            Exports all execution plans for sqlserver2014a. Files saved in to C:\Temp
+    .EXAMPLE
+        PS C:\> Export-DbaExecutionPlan -SqlInstance sqlserver2014a -Path C:\Temp
 
-        .EXAMPLE
-            Export-DbaExecutionPlan -SqlInstance sqlserver2014a -Database db1, db2 -SinceLastExecution '2016-07-01 10:47:00' -Path C:\Temp
+        Exports all execution plans for sqlserver2014a. Files saved in to C:\Temp
 
-            Exports all execution plans for databases db1 and db2 on sqlserver2014a since July 1, 2016 at 10:47 AM. Files saved in to C:\Temp
+    .EXAMPLE
+        PS C:\> Export-DbaExecutionPlan -SqlInstance sqlserver2014a -Database db1, db2 -SinceLastExecution '2016-07-01 10:47:00' -Path C:\Temp
 
-        .EXAMPLE
-            Get-DbaExecutionPlan -SqlInstance sqlserver2014a | Export-DbaExecutionPlan -Path C:\Temp
+        Exports all execution plans for databases db1 and db2 on sqlserver2014a since July 1, 2016 at 10:47 AM. Files saved in to C:\Temp
 
-            Gets all execution plans for sqlserver2014a. Using Pipeline exports them all to C:\Temp
+    .EXAMPLE
+        PS C:\> Get-DbaExecutionPlan -SqlInstance sqlserver2014a | Export-DbaExecutionPlan -Path C:\Temp
 
-        .EXAMPLE
-            Get-DbaExecutionPlan -SqlInstance sqlserver2014a | Export-DbaExecutionPlan -Path C:\Temp -WhatIf
+        Gets all execution plans for sqlserver2014a. Using Pipeline exports them all to C:\Temp
 
-            Gets all execution plans for sqlserver2014a. Then shows what would happen if the results where piped to Export-DbaExecutionPlan
+    .EXAMPLE
+        PS C:\> Get-DbaExecutionPlan -SqlInstance sqlserver2014a | Export-DbaExecutionPlan -Path C:\Temp -WhatIf
 
-    #>
+        Gets all execution plans for sqlserver2014a. Then shows what would happen if the results where piped to Export-DbaExecutionPlan
+
+#>
     [cmdletbinding(SupportsShouldProcess = $true, DefaultParameterSetName = "Default")]
     param (
         [parameter(ParameterSetName = 'NotPiped', Mandatory)]
@@ -122,8 +123,7 @@ function Export-DbaExecutionPlan {
                     if ($Pscmdlet.ShouldProcess("localhost", "Writing XML file to $fileName")) {
                         $queryPlan.Save($fileName)
                     }
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Skipped query plan for $fileName because it is null." -Target $fileName -ErrorRecord $_ -Continue
                 }
             }
@@ -135,8 +135,7 @@ function Export-DbaExecutionPlan {
                     if ($Pscmdlet.ShouldProcess("localhost", "Writing XML file to $fileName")) {
                         $statementPlan.Save($fileName)
                     }
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Skipped statement plan for $fileName because it is null." -Target $fileName -ErrorRecord $_ -Continue
                 }
             }
@@ -161,11 +160,9 @@ function Export-DbaExecutionPlan {
         }
 
         foreach ($instance in $SqlInstance) {
-            Write-Message -Level Verbose -Message "Connecting to $instance"
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -224,8 +221,7 @@ function Export-DbaExecutionPlan {
             Write-Message -Level Debug -Message "SQL Statement: $sql"
             try {
                 $dataTable = $server.ConnectionContext.ExecuteWithResults($sql).Tables
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Issue collecting execution plans" -Target $instance -ErroRecord $_ -Continue
             }
 
@@ -253,3 +249,4 @@ function Export-DbaExecutionPlan {
         }
     }
 }
+

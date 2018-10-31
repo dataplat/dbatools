@@ -1,4 +1,4 @@
-﻿$start = Get-Date
+$start = Get-Date
 
 #region Import helper functions
 function Import-ModuleFile {
@@ -19,7 +19,7 @@ function Import-ModuleFile {
         Imports the file stored at '$function.FullName'
 #>
     [CmdletBinding()]
-    Param (
+    param (
         $Path
     )
 
@@ -44,7 +44,7 @@ function Write-ImportTime {
         Adds the message "Starting SMO Import" to the debug list
 #>
     [CmdletBinding()]
-    Param (
+    param (
         [string]$Text,
         $Timestamp = (Get-Date)
     )
@@ -377,11 +377,11 @@ $script:renames = @(
     },
     @{
         "AliasName"  = "Get-SqlRegisteredServerName"
-        "Definition" = "Get-DbaRegisteredServer"
+        "Definition" = "Get-DbaCmsRegServer"
     },
     @{
-        "AliasName"  = "Get-DbaRegisteredServerName"
-        "Definition" = "Get-DbaRegisteredServer"
+        "AliasName"  = "Get-DbaCmsRegServerName"
+        "Definition" = "Get-DbaCmsRegServer"
     },
     @{
         "AliasName"  = "Get-SqlServerKey"
@@ -858,6 +858,69 @@ $script:renames = @(
     @{
         "AliasName"  = "Copy-DbaTableData"
         "Definition" = "Copy-DbaDbTableData"
+    }, @{
+        "AliasName"  = "Add-DbaRegisteredServer"
+        "Definition" = "Add-DbaCmsRegServer"
+    },
+    @{
+        "AliasName"  = "Add-DbaRegisteredServerGroup"
+        "Definition" = "Add-DbaCmsRegServerGroup"
+    },
+    @{
+        "AliasName"  = "Export-DbaRegisteredServer"
+        "Definition" = "Export-DbaCmsRegServer"
+    },
+    @{
+        "AliasName"  = "Get-DbaRegisteredServer"
+        "Definition" = "Get-DbaCmsRegServer"
+    },
+    @{
+        "AliasName"  = "Get-DbaRegisteredServerGroup"
+        "Definition" = "Get-DbaCmsRegServerGroup"
+    },
+    @{
+        "AliasName"  = "Get-DbaRegisteredServerStore"
+        "Definition" = "Get-DbaCmsRegServerStore"
+    },
+    @{
+        "AliasName"  = "Import-DbaRegisteredServer"
+        "Definition" = "Import-DbaCmsRegServer"
+    },
+    @{
+        "AliasName"  = "Move-DbaRegisteredServer"
+        "Definition" = "Move-DbaCmsRegServer"
+    },
+    @{
+        "AliasName"  = "Move-DbaRegisteredServerGroup"
+        "Definition" = "Move-DbaCmsRegServerGroup"
+    },
+    @{
+        "AliasName"  = "Remove-DbaRegisteredServer"
+        "Definition" = "Remove-DbaCmsRegServer"
+    },
+    @{
+        "AliasName"  = "Remove-DbaRegisteredServerGroup"
+        "Definition" = "Remove-DbaCmsRegServerGroup"
+    },
+    @{
+        "AliasName"  = "Get-DbaLogShippingError"
+        "Definition" = "Get-DbaDbLogShipError"
+    },
+    @{
+        "AliasName"  = "Invoke-DbaLogShipping"
+        "Definition" = "Invoke-DbaDbLogShipping"
+    },
+    @{
+        "AliasName"  = "Invoke-DbaLogShippingRecovery"
+        "Definition" = "Invoke-DbaDbLogShipRecovery"
+    },
+    @{
+        "AliasName"  = "Test-DbaLogShippingStatus"
+        "Definition" = "Test-DbaDbLogShipStatus"
+    },
+    @{
+        "AliasName"  = "Get-DbaRoleMember"
+        "Definition" = "Get-DbaDbRoleMember"
     }
 )
 

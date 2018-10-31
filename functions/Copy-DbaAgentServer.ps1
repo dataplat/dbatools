@@ -1,72 +1,74 @@
 function Copy-DbaAgentServer {
     <#
-        .SYNOPSIS
-            Copy SQL Server Agent from one server to another.
+    .SYNOPSIS
+        Copy SQL Server Agent from one server to another.
 
-        .DESCRIPTION
-            A wrapper function that calls the associated Copy command for each of the object types seen in SSMS under SQL Server Agent. This also copies all of the the SQL Agent properties (job history max rows, DBMail profile name, etc.).
+    .DESCRIPTION
+        A wrapper function that calls the associated Copy command for each of the object types seen in SSMS under SQL Server Agent. This also copies all of the the SQL Agent properties (job history max rows, DBMail profile name, etc.).
 
-            You must have sysadmin access and server version must be SQL Server version 2000 or greater.
+        You must have sysadmin access and server version must be SQL Server version 2000 or greater.
 
-        .PARAMETER Source
-            Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
+    .PARAMETER Source
+        Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
 
-        .PARAMETER SourceSqlCredential
-            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+    .PARAMETER SourceSqlCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-        .PARAMETER Destination
-            Destination SQL Server. You must have sysadmin access and the server must be SQL Server 2000 or higher.
+    .PARAMETER Destination
+        Destination SQL Server. You must have sysadmin access and the server must be SQL Server 2000 or higher.
 
-        .PARAMETER DestinationSqlCredential
-            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+    .PARAMETER DestinationSqlCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-        .PARAMETER DisableJobsOnDestination
-            If this switch is enabled, the jobs will be disabled on Destination after copying.
+    .PARAMETER DisableJobsOnDestination
+        If this switch is enabled, the jobs will be disabled on Destination after copying.
 
-        .PARAMETER DisableJobsOnSource
-            If this switch is enabled, the jobs will be disabled on Source after copying.
+    .PARAMETER DisableJobsOnSource
+        If this switch is enabled, the jobs will be disabled on Source after copying.
 
-        .PARAMETER WhatIf
-            If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
+    .PARAMETER WhatIf
+        If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
-        .PARAMETER Confirm
-            If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
+    .PARAMETER Confirm
+        If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-        .PARAMETER Force
-            If this switch is enabled, existing objects on Destination with matching names from Source will be dropped, then copied.
+    .PARAMETER Force
+        If this switch is enabled, existing objects on Destination with matching names from Source will be dropped, then copied.
 
-        .NOTES
-            Tags: Migration, SqlServerAgent, SqlAgent
-            Author: Chrissy LeMaire (@cl), netnerds.net
-            Requires: sysadmin access on SQL Servers
+    .NOTES
+        Tags: Migration, SqlServerAgent, SqlAgent
+        Author: Chrissy LeMaire (@cl), netnerds.net
 
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: MIT https://opensource.org/licenses/MIT
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-        .LINK
-            https://dbatools.io/Copy-DbaAgentServer
+        Requires: sysadmin access on SQL Servers
 
-        .EXAMPLE
-            Copy-DbaAgentServer -Source sqlserver2014a -Destination sqlcluster
+    .LINK
+        https://dbatools.io/Copy-DbaAgentServer
 
-            Copies all job server objects from sqlserver2014a to sqlcluster using Windows credentials for authentication. If job objects with the same name exist on sqlcluster, they will be skipped.
+    .EXAMPLE
+        PS C:\> Copy-DbaAgentServer -Source sqlserver2014a -Destination sqlcluster
 
-        .EXAMPLE
-            Copy-DbaAgentServer -Source sqlserver2014a -Destination sqlcluster -SourceSqlCredential $cred
+        Copies all job server objects from sqlserver2014a to sqlcluster using Windows credentials for authentication. If job objects with the same name exist on sqlcluster, they will be skipped.
 
-            Copies all job objects from sqlserver2014a to sqlcluster using SQL credentials to authentication to sqlserver2014a and Windows credentials to authenticate to sqlcluster.
+    .EXAMPLE
+        PS C:\> Copy-DbaAgentServer -Source sqlserver2014a -Destination sqlcluster -SourceSqlCredential $cred
 
-        .EXAMPLE
-            Copy-DbaAgentServer -Source sqlserver2014a -Destination sqlcluster -WhatIf
+        Copies all job objects from sqlserver2014a to sqlcluster using SQL credentials to authentication to sqlserver2014a and Windows credentials to authenticate to sqlcluster.
 
-            Shows what would happen if the command were executed.
-    #>
+    .EXAMPLE
+        PS C:\> Copy-DbaAgentServer -Source sqlserver2014a -Destination sqlcluster -WhatIf
+
+        Shows what would happen if the command were executed.
+
+#>
     [cmdletbinding(SupportsShouldProcess = $true)]
     param (
         [parameter(Mandatory)]
@@ -84,10 +86,8 @@ function Copy-DbaAgentServer {
 
     begin {
         try {
-            Write-Message -Level Verbose -Message "Connecting to $Source"
             $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
-        }
-        catch {
+        } catch {
             Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Source
             return
         }
@@ -98,54 +98,52 @@ function Copy-DbaAgentServer {
         if (Test-FunctionInterrupt) { return }
         foreach ($destinstance in $Destination) {
             try {
-                Write-Message -Level Verbose -Message "Connecting to $destinstance"
                 $destServer = Connect-SqlInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
             }
             Invoke-SmoCheck -SqlInstance $destServer
             # All of these support whatif inside of them
             Copy-DbaAgentCategory -Source $sourceServer -Destination $destServer -Force:$force
-            
+
             $destServer.JobServer.JobCategories.Refresh()
             $destServer.JobServer.OperatorCategories.Refresh()
             $destServer.JobServer.AlertCategories.Refresh()
-            
+
             Copy-DbaAgentOperator -Source $sourceServer -Destination $destServer -Force:$force
             $destServer.JobServer.Operators.Refresh()
-            
+
             Copy-DbaAgentAlert -Source $sourceServer -Destination $destServer -Force:$force -IncludeDefaults
             $destServer.JobServer.Alerts.Refresh()
-            
+
             Copy-DbaAgentProxyAccount -Source $sourceServer -Destination $destServer -Force:$force
             $destServer.JobServer.ProxyAccounts.Refresh()
-            
+
             Copy-DbaAgentSharedSchedule -Source $sourceServer -Destination $destServer -Force:$force
             $destServer.JobServer.SharedSchedules.Refresh()
-            
+
             $destServer.JobServer.Refresh()
             $destServer.Refresh()
             Copy-DbaAgentJob -Source $sourceServer -Destination $destServer -Force:$force -DisableOnDestination:$DisableJobsOnDestination -DisableOnSource:$DisableJobsOnSource
-            
+
             # To do
-        <#
+            <#
             Copy-DbaAgentMasterServer -Source $sourceServer -Destination $destServer -Force:$force
             Copy-DbaAgentTargetServer -Source $sourceServer -Destination $destServer -Force:$force
             Copy-DbaAgentTargetServerGroup -Source $sourceServer -Destination $destServer -Force:$force
         #>
-            
-        <# Here are the properties which must be migrated separately #>
+
+            <# Here are the properties which must be migrated separately #>
             $copyAgentPropStatus = [pscustomobject]@{
-                SourceServer = $sourceServer.Name
+                SourceServer      = $sourceServer.Name
                 DestinationServer = $destServer.Name
-                Name         = "Server level properties"
-                Type         = "Agent Properties"
-                Status       = $null
-                Notes        = $null
-                DateTime     = [DbaDateTime](Get-Date)
+                Name              = "Server level properties"
+                Type              = "Agent Properties"
+                Status            = $null
+                Notes             = $null
+                DateTime          = [DbaDateTime](Get-Date)
             }
-            
+
             if ($Pscmdlet.ShouldProcess($destinstance, "Copying Agent Properties")) {
                 try {
                     Write-Message -Level Verbose -Message "Copying SQL Agent Properties"
@@ -155,11 +153,10 @@ function Copy-DbaAgentServer {
                     $sql = $sql -replace [Regex]::Escape("@auto_start="), [Regex]::Escape("--@auto_start=")
                     Write-Message -Level Debug -Message $sql
                     $null = $destServer.Query($sql)
-                    
+
                     $copyAgentPropStatus.Status = "Successful"
                     $copyAgentPropStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                }
-                catch {
+                } catch {
                     $message = $_.Exception.InnerException.InnerException.InnerException.Message
                     if (-not $message) { $message = $_.Exception.Message }
                     $copyAgentPropStatus.Status = "Failed"
@@ -175,3 +172,4 @@ function Copy-DbaAgentServer {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-DbaSqlServerAgent
     }
 }
+

@@ -1,4 +1,4 @@
-﻿function Write-HostColor {
+function Write-HostColor {
     <#
     .SYNOPSIS
         Function that recognizes html-style tags to insert color into printed text.
@@ -52,7 +52,7 @@
 #>
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingWriteHost", "")]
     [CmdletBinding()]
-    Param (
+    param (
         [Parameter(ValueFromPipeline)]
         [string[]]
         $String,
@@ -77,8 +77,7 @@
 
                             $index = $match[$count].Index + $match[$count].Length
                             $count++
-                        }
-                        else {
+                        } else {
                             Write-Host -Object $row.SubString($index) -ForegroundColor $DefaultColor
                             $count++
                         }
@@ -88,3 +87,4 @@
         }
     }
 }
+

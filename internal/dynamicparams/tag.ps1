@@ -1,4 +1,4 @@
-﻿$ScriptBlock = {
+$ScriptBlock = {
     param (
         $commandName,
 
@@ -87,3 +87,4 @@
 }
 
 Register-DbaTeppScriptblock -ScriptBlock $ScriptBlock -Name "tag"
+

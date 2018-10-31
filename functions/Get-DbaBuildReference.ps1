@@ -1,3 +1,4 @@
+#ValidationTags#CodeStyle,Messaging,FlowControl,Pipeline#
 function Get-DbaBuildReference {
     <#
     .SYNOPSIS
@@ -5,7 +6,7 @@ function Get-DbaBuildReference {
 
     .DESCRIPTION
         Returns info about the specific build of a SQL instance, including the SP, the CU and the reference KB, wherever possible.
-        It also includes End Of Support dates as specified on Microsoft Lifecycle Policy
+        It also includes End Of Support dates as specified on Microsoft Life Cycle Policy
 
     .PARAMETER Build
         Instead of connecting to a real instance, pass a string identifying the build to get the info back.
@@ -24,41 +25,41 @@ function Get-DbaBuildReference {
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-    .EXAMPLE
-        Get-DbaBuildReference -Build "12.00.4502"
-
-        Returns information about a build identified by  "12.00.4502" (which is SQL 2014 with SP1 and CU11)
-
-    .EXAMPLE
-        Get-DbaBuildReference -Build "12.00.4502" -Update
-
-        Returns information about a build trying to fetch the most up to date index online. When the online version is newer, the local one gets overwritten
-
-    .EXAMPLE
-        Get-DbaBuildReference -Build "12.0.4502","10.50.4260"
-
-        Returns information builds identified by these versions strings
-
-    .EXAMPLE
-        Get-DbaRegisteredServer -SqlInstance sqlserver2014a | Get-DbaBuildReference
-
-        Integrate with other commandlets to have builds checked for all your registered servers on sqlserver2014a
-
     .NOTES
-        Author: niphlod
-        Editor: Fred
         Tags: SqlBuild
+        Author: Simone Bizzotto (@niphold) | Friedrich Weinmann (@FredWeinmann)
 
-        dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-        Copyright (C) 2016 Chrissy LeMaire
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
         https://dbatools.io/Get-DbaBuildReference
+
+    .EXAMPLE
+        PS C:\> Get-DbaBuildReference -Build "12.00.4502"
+
+        Returns information about a build identified by  "12.00.4502" (which is SQL 2014 with SP1 and CU11)
+
+    .EXAMPLE
+        PS C:\> Get-DbaBuildReference -Build "12.00.4502" -Update
+
+        Returns information about a build trying to fetch the most up to date index online. When the online version is newer, the local one gets overwritten
+
+    .EXAMPLE
+        PS C:\> Get-DbaBuildReference -Build "12.0.4502","10.50.4260"
+
+        Returns information builds identified by these versions strings
+
+    .EXAMPLE
+        PS C:\> Get-DbaCmsRegServer -SqlInstance sqlserver2014a | Get-DbaBuildReference
+
+        Integrate with other cmdlets to have builds checked for all your registered servers on sqlserver2014a
+
 #>
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "")]
     [CmdletBinding()]
-    Param (
+    param (
         [version[]]
         $Build,
 
@@ -82,7 +83,7 @@ function Get-DbaBuildReference {
         #region Helper functions
         function Get-DbaBuildReferenceIndex {
             [CmdletBinding()]
-            Param (
+            param (
                 [string]
                 $Moduledirectory,
 
@@ -123,8 +124,7 @@ function Get-DbaBuildReference {
                 if ($module_time -gt $data_time) {
                     Copy-Item -Path $orig_idxfile -Destination $writable_idxfile -Force -ErrorAction Stop
                     $result = $module_content
-                }
-                else {
+                } else {
                     $result = $data_content
                     $offline_time = $data_time
                 }
@@ -158,21 +158,19 @@ function Get-DbaBuildReference {
 
         function Get-DbaBuildReferenceIndexOnline {
             [CmdletBinding()]
-            Param (
+            param (
                 [bool]
                 $EnableException
             )
             $url = Get-DbatoolsConfigValue -Name 'assets.sqlbuildreference'
             try {
-                $WebContent = Invoke-WebRequest $url -ErrorAction Stop
-            }
-            catch {
+                $WebContent = Invoke-TlsWebRequest $url -ErrorAction Stop
+            } catch {
                 try {
                     Write-Message -Level Verbose -Message "Probably using a proxy for internet access, trying default proxy settings"
                     (New-Object System.Net.WebClient).Proxy.Credentials = [System.Net.CredentialCache]::DefaultNetworkCredentials
-                    $WebContent = Invoke-WebRequest $url -ErrorAction Stop
-                }
-                catch {
+                    $WebContent = Invoke-TlsWebRequest $url -ErrorAction Stop
+                } catch {
                     Write-Message -Level Warning -Message "Couldn't download updated index from $url"
                     return
                 }
@@ -184,7 +182,7 @@ function Get-DbaBuildReference {
             [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "")]
             [CmdletBinding()]
             [OutputType([System.Collections.Hashtable])]
-            Param (
+            param (
                 [version]
                 $Build,
 
@@ -203,8 +201,7 @@ function Get-DbaBuildReference {
             If ($IdxVersion.Length -eq 0) {
                 Write-Message -Level Warning -Message "No info in store for this Release"
                 $Detected.Warning = "No info in store for this Release"
-            }
-            else {
+            } else {
                 $LastVer = $IdxVersion[0]
             }
             foreach ($el in $IdxVersion) {
@@ -241,8 +238,7 @@ function Get-DbaBuildReference {
 
         try {
             $IdxRef = Get-DbaBuildReferenceIndex -Moduledirectory $moduledirectory -Update $Update -EnableException $EnableException
-        }
-        catch {
+        } catch {
             Stop-Function -Message "Error loading SQL build reference" -ErrorRecord $_
             return
         }
@@ -253,17 +249,14 @@ function Get-DbaBuildReference {
         foreach ($instance in $SqlInstance) {
             #region Ensure the connection is established
             try {
-                Write-Message -Level VeryVerbose -Message "Connecting to $instance" -Target $instance
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failed to process Instance $Instance" -ErrorRecord $_ -Target $instance -Continue
             }
 
             try {
                 $null = $server.Version.ToString()
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
             #endregion Ensure the connection is established
@@ -303,3 +296,4 @@ function Get-DbaBuildReference {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-DbaSqlBuildReference
     }
 }
+

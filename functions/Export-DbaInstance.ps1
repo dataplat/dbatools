@@ -1,121 +1,122 @@
-﻿function Export-DbaInstance {
+function Export-DbaInstance {
     <#
-        .SYNOPSIS
-            Exports SQL Server *ALL* databases, logins, database mail profiles/accounts, credentials, SQL Agent objects, linked servers,
-            Central Management Server objects, server configuration settings (sp_configure), user objects in systems databases,
-            system triggers and backup devices from one SQL Server to another.
+    .SYNOPSIS
+        Exports SQL Server *ALL* database restore scripts, logins, database mail profiles/accounts, credentials, SQL Agent objects, linked servers,
+        Central Management Server objects, server configuration settings (sp_configure), user objects in systems databases,
+        system triggers and backup devices from one SQL Server to another.
 
-            For more granular control, please use one of the -Exclude parameters and use the other functions available within the dbatools module.
+        For more granular control, please use one of the -Exclude parameters and use the other functions available within the dbatools module.
 
-        .DESCRIPTION
-            Export-DbaInstance consolidates most of the export scripts in dbatools into one command.
+    .DESCRIPTION
+        Export-DbaInstance consolidates most of the export scripts in dbatools into one command.
 
-            This is useful when you're looking to Export entire instances. It less flexible than using the underlying functions.
-            Think of it as an easy button. Unless an -Exclude is specified, it exports:
+        This is useful when you're looking to Export entire instances. It less flexible than using the underlying functions.
+        Think of it as an easy button. Unless an -Exclude is specified, it exports:
 
-            All databases.
-            All logins.
-            All database mail objects.
-            All credentials.
-            All objects within the Job Server (SQL Agent).
-            All linked servers.
-            All groups and servers within Central Management Server.
-            All SQL Server configuration objects (everything in sp_configure).
-            All user objects in system databases.
-            All system triggers.
-            All system backup devices.
-            All Audits.
-            All Endpoints.
-            All Extended Events.
-            All Policy Management objects.
-            All Resource Governor objects.
-            All Server Audit Specifications.
-            All Custom Errors (User Defined Messages).
-            All Server Roles.
-            All Availability Groups.
+        All database restore scripts.
+        All logins.
+        All database mail objects.
+        All credentials.
+        All objects within the Job Server (SQL Agent).
+        All linked servers.
+        All groups and servers within Central Management Server.
+        All SQL Server configuration objects (everything in sp_configure).
+        All user objects in system databases.
+        All system triggers.
+        All system backup devices.
+        All Audits.
+        All Endpoints.
+        All Extended Events.
+        All Policy Management objects.
+        All Resource Governor objects.
+        All Server Audit Specifications.
+        All Custom Errors (User Defined Messages).
+        All Server Roles.
+        All Availability Groups.
 
-        .PARAMETER SqlInstance
-            The target SQL Server instances
+    .PARAMETER SqlInstance
+        The target SQL Server instances
 
-        .PARAMETER SqlCredential
-            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+    .PARAMETER SqlCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-        .PARAMETER Credential
-            Alternative Windows credentials for exporting Linked Servers and Credentials. Accepts credential objects (Get-Credential)
+    .PARAMETER Credential
+        Alternative Windows credentials for exporting Linked Servers and Credentials. Accepts credential objects (Get-Credential)
 
-        .PARAMETER Path
-            The path to the export file
+    .PARAMETER Path
+        The path to the export file
 
-        .PARAMETER NetworkShare
-            Specifies the network location for the backup files. The SQL Server service accounts on both Source and Destination must have read/write permission to access this location.
+    .PARAMETER NetworkShare
+        Specifies the network location for the backup files. The SQL Server service accounts on both Source and Destination must have read/write permission to access this location.
 
-        .PARAMETER WithReplace
-            If this switch is used, databases are restored from backup using WITH REPLACE. This is useful if you want to stage some complex file paths.
+    .PARAMETER WithReplace
+        If this switch is used, databases are restored from backup using WITH REPLACE. This is useful if you want to stage some complex file paths.
 
-        .PARAMETER NoRecovery
-            If this switch is used, databases will be left in the No Recovery state to enable further backups to be added.
+    .PARAMETER NoRecovery
+        If this switch is used, databases will be left in the No Recovery state to enable further backups to be added.
 
-        .PARAMETER IncludeDbMasterKey
-            Exports the db master key then logs into the server to copy it to the $Path
+    .PARAMETER IncludeDbMasterKey
+        Exports the db master key then logs into the server to copy it to the $Path
 
-        .PARAMETER Exclude
-            Exclude one or more objects to export
+    .PARAMETER Exclude
+        Exclude one or more objects to export
 
-            Databases
-            Logins
-            AgentServer
-            Credentials
-            LinkedServers
-            SpConfigure
-            CentralManagementServer
-            DatabaseMail
-            SysDbUserObjects
-            SystemTriggers
-            BackupDevices
-            Audits
-            Endpoints
-            ExtendedEvents
-            PolicyManagement
-            ResourceGovernor
-            ServerAuditSpecifications
-            CustomErrors
-            ServerRoles
-            SupportDbs
-            AvailabilityGroups
-            ReplicationSettings
+        Databases
+        Logins
+        AgentServer
+        Credentials
+        LinkedServers
+        SpConfigure
+        CentralManagementServer
+        DatabaseMail
+        SysDbUserObjects
+        SystemTriggers
+        BackupDevices
+        Audits
+        Endpoints
+        ExtendedEvents
+        PolicyManagement
+        ResourceGovernor
+        ServerAuditSpecifications
+        CustomErrors
+        ServerRoles
+        AvailabilityGroups
+        ReplicationSettings
 
-        .PARAMETER BatchSeparator
-            Batch separator for scripting output. "GO" by default.
+    .PARAMETER BatchSeparator
+        Batch separator for scripting output. "GO" by default.
 
-        .PARAMETER ScriptingOption
-            Add scripting options to scripting output for all objects except Registered Servers and Extended Events.
+    .PARAMETER ScriptingOption
+        Add scripting options to scripting output for all objects except Registered Servers and Extended Events.
 
-        .PARAMETER EnableException
+    .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-        .NOTES
-            Tags: Export
-            Author: Chrissy LeMaire (@cl), netnerds.net
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: MIT https://opensource.org/licenses/MIT
+    .NOTES
+        Tags: Export
+        Author: Chrissy LeMaire (@cl), netnerds.net
 
-        .LINK
-            https://dbatools.io/Export-DbaInstance
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-        .EXAMPLE
-            Export-DbaInstance -SqlInstance sqlserver\instance
+    .LINK
+        https://dbatools.io/Export-DbaInstance
 
-            All databases, logins, job objects and sp_configure options will be exported from
-            sqlserver\instance to an automaticallyl generated folder name in Documents.
+    .EXAMPLE
+        PS C:\> Export-DbaInstance -SqlInstance sqlserver\instance
 
-        .EXAMPLE
-            Export-DbaInstance -SqlInstance sqlcluster -Exclude Databases, Logins -Path C:\dr\sqlcluster
+        All databases, logins, job objects and sp_configure options will be exported from
+        sqlserver\instance to an automatically generated folder name in Documents.
 
-            Exports everything but logins and database restore scripts to C:\dr\sqlcluster
-    #>
+    .EXAMPLE
+        PS C:\> Export-DbaInstance -SqlInstance sqlcluster -Exclude Databases, Logins -Path C:\dr\sqlcluster
+
+        Exports everything but logins and database restore scripts to C:\dr\sqlcluster
+
+#>
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
@@ -166,10 +167,8 @@
         foreach ($instance in $SqlInstance) {
             $stepCounter = $filecounter = 0
             try {
-                Write-Message -Level Verbose -Message "Connecting to $instance."
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential -MinimumVersion 10
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -182,13 +181,12 @@
             if (-not (Test-Path $Path)) {
                 try {
                     $null = New-Item -ItemType Directory -Path $Path -ErrorAction Stop
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Failure" -ErrorRecord $_
                     return
                 }
             }
-            
+
             if ($Exclude -notcontains 'SpConfigure') {
                 $fileCounter++
                 Write-Message -Level Verbose -Message "Exporting SQL Server Configuration"
@@ -198,7 +196,7 @@
                     $fileCounter--
                 }
             }
-            
+
             if ($Exclude -notcontains 'CustomErrors') {
                 $fileCounter++
                 Write-Message -Level Verbose -Message "Exporting custom errors (user defined messages)"
@@ -209,7 +207,7 @@
                     $fileCounter--
                 }
             }
-            
+
             if ($Exclude -notcontains 'ServerRoles') {
                 $fileCounter++
                 Write-Message -Level Verbose -Message "Exporting server roles"
@@ -220,7 +218,7 @@
                     $fileCounter--
                 }
             }
-            
+
             if ($Exclude -notcontains 'Credentials') {
                 $fileCounter++
                 Write-Message -Level Verbose -Message "Exporting SQL credentials"
@@ -231,7 +229,7 @@
                     $fileCounter--
                 }
             }
-            
+
             if ($Exclude -notcontains 'DatabaseMail') {
                 $fileCounter++
                 Write-Message -Level Verbose -Message "Exporting database mail"
@@ -246,19 +244,19 @@
                     $fileCounter--
                 }
             }
-            
+
             if ($Exclude -notcontains 'CentralManagementServer') {
                 $fileCounter++
                 Write-Message -Level Verbose -Message "Exporting Central Management Server"
                 Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Exporting Central Management Server"
-                $null = Get-DbaRegisteredServerGroup -SqlInstance $server | Export-DbaScript -Path "$Path\$fileCounter-regserver.sql" -Append -BatchSeparator 'GO'
-                $null = Get-DbaRegisteredServer -SqlInstance $server | Export-DbaScript -Path "$Path\$fileCounter-regserver.sql" -Append -BatchSeparator 'GO'
+                $null = Get-DbaCmsRegServerGroup -SqlInstance $server | Export-DbaScript -Path "$Path\$fileCounter-regserver.sql" -Append -BatchSeparator 'GO'
+                $null = Get-DbaCmsRegServer -SqlInstance $server | Export-DbaScript -Path "$Path\$fileCounter-regserver.sql" -Append -BatchSeparator 'GO'
                 Get-ChildItem -ErrorAction Ignore -Path "$Path\$fileCounter-regserver.sql"
                 if (-not (Test-Path "$Path\$fileCounter-regserver.sql")) {
                     $fileCounter--
                 }
             }
-            
+
             if ($Exclude -notcontains 'BackupDevices') {
                 $fileCounter++
                 Write-Message -Level Verbose -Message "Exporting Backup Devices"
@@ -269,7 +267,7 @@
                     $fileCounter--
                 }
             }
-            
+
             if ($Exclude -notcontains 'LinkedServers') {
                 $fileCounter++
                 Write-Message -Level Verbose -Message "Exporting linked servers"
@@ -279,7 +277,7 @@
                     $fileCounter--
                 }
             }
-            
+
             if ($Exclude -notcontains 'SystemTriggers') {
                 $fileCounter++
                 Write-Message -Level Verbose -Message "Exporting System Triggers"
@@ -296,7 +294,7 @@
                     $fileCounter--
                 }
             }
-            
+
             if ($Exclude -notcontains 'Databases') {
                 $fileCounter++
                 Write-Message -Level Verbose -Message "Exporting database restores"
@@ -307,7 +305,7 @@
                     $fileCounter--
                 }
             }
-            
+
             if ($Exclude -notcontains 'Logins') {
                 $fileCounter++
                 Write-Message -Level Verbose -Message "Exporting logins"
@@ -317,7 +315,7 @@
                     $fileCounter--
                 }
             }
-            
+
             if ($Exclude -notcontains 'Audits') {
                 $fileCounter++
                 Write-Message -Level Verbose -Message "Exporting Audits"
@@ -328,7 +326,7 @@
                     $fileCounter--
                 }
             }
-            
+
             if ($Exclude -notcontains 'ServerAuditSpecifications') {
                 $fileCounter++
                 Write-Message -Level Verbose -Message "Exporting Server Audit Specifications"
@@ -339,7 +337,7 @@
                     $fileCounter--
                 }
             }
-            
+
             if ($Exclude -notcontains 'Endpoints') {
                 $fileCounter++
                 Write-Message -Level Verbose -Message "Exporting Endpoints"
@@ -350,7 +348,7 @@
                     $fileCounter--
                 }
             }
-            
+
             if ($Exclude -notcontains 'PolicyManagement') {
                 $fileCounter++
                 Write-Message -Level Verbose -Message "Exporting Policy Management"
@@ -363,7 +361,7 @@
                     $fileCounter--
                 }
             }
-            
+
             if ($Exclude -notcontains 'ResourceGovernor') {
                 $fileCounter++
                 Write-Message -Level Verbose -Message "Exporting Resource Governor"
@@ -371,14 +369,14 @@
                 $null = Get-DbaResourceGovernor -SqlInstance $server | Export-DbaScript -Path "$Path\$fileCounter-resourcegov.sql" -Append -BatchSeparator $BatchSeparator -ScriptingOptionsObject $ScriptingOption
                 $null = Get-DbaRgClassifierFunction -SqlInstance $server | Export-DbaScript -Path "$Path\$fileCounter-resourcegov.sql" -Append -BatchSeparator $BatchSeparator -ScriptingOptionsObject $ScriptingOption
                 $null = Get-DbaRgResourcePool -SqlInstance $server | Where-Object Name -notin 'default', 'internal' | Export-DbaScript -Path "$Path\$fileCounter-resourcegov.sql" -Append -BatchSeparator $BatchSeparator -ScriptingOptionsObject $ScriptingOption
-                $null = Get-DbaRgWorkloadGroup -SqlInstance $server | Where-Object Name -notin 'default','internal' | Export-DbaScript -Path "$Path\$fileCounter-resourcegov.sql" -Append -BatchSeparator $BatchSeparator -ScriptingOptionsObject $ScriptingOption
+                $null = Get-DbaRgWorkloadGroup -SqlInstance $server | Where-Object Name -notin 'default', 'internal' | Export-DbaScript -Path "$Path\$fileCounter-resourcegov.sql" -Append -BatchSeparator $BatchSeparator -ScriptingOptionsObject $ScriptingOption
                 $null = Add-Content -Value "ALTER RESOURCE GOVERNOR RECONFIGURE" -Path "$Path\$stepCounter-resourcegov.sql"
                 Get-ChildItem -ErrorAction Ignore -Path "$Path\$fileCounter-resourcegov.sql"
                 if (-not (Test-Path "$Path\$fileCounter-resourcegov.sql")) {
                     $fileCounter--
                 }
             }
-            
+
             if ($Exclude -notcontains 'ExtendedEvents') {
                 $fileCounter++
                 Write-Message -Level Verbose -Message "Exporting Extended Events"
@@ -389,7 +387,7 @@
                     $fileCounter--
                 }
             }
-            
+
             if ($Exclude -notcontains 'AgentServer') {
                 $fileCounter++
                 Write-Message -Level Verbose -Message "Exporting job server"
@@ -406,7 +404,7 @@
                     $fileCounter--
                 }
             }
-            
+
             if ($Exclude -notcontains 'ReplicationSettings') {
                 $fileCounter++
                 Write-Message -Level Verbose -Message "Exporting replication settings"
@@ -417,7 +415,7 @@
                     $fileCounter--
                 }
             }
-            
+
             if ($Exclude -notcontains 'SysDbUserObjects') {
                 $fileCounter++
                 Write-Message -Level Verbose -Message "Exporting user objects in system databases (this can take a minute)."
@@ -428,18 +426,18 @@
                     $fileCounter--
                 }
             }
-            
+
             if ($Exclude -notcontains 'AvailabilityGroups') {
                 $fileCounter++
                 Write-Message -Level Verbose -Message "Exporting availability group"
                 Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Exporting availability groups"
-                $null = Get-DbaAvailabilityGroup -SqlInstance $server -WarningAction SilentlyContinue | Export-DbaScript -Path "$Path\$fileCounter-availabilitygroups.sql" -Append -BatchSeparator $BatchSeparator #-ScriptingOptionsObject $ScriptingOption
-                Get-ChildItem -ErrorAction Ignore -Path "$Path\$fileCounter-availabilitygroups.sql"
-                if (-not (Test-Path "$Path\$fileCounter-availabilitygroups.sql")) {
+                $null = Get-DbaAvailabilityGroup -SqlInstance $server -WarningAction SilentlyContinue | Export-DbaScript -Path "$Path\$fileCounter-DbaAvailabilityGroups.sql" -Append -BatchSeparator $BatchSeparator #-ScriptingOptionsObject $ScriptingOption
+                Get-ChildItem -ErrorAction Ignore -Path "$Path\$fileCounter-DbaAvailabilityGroups.sql"
+                if (-not (Test-Path "$Path\$fileCounter-DbaAvailabilityGroups.sql")) {
                     $fileCounter--
                 }
             }
-            
+
             Write-Progress -Activity "Performing Instance Export for $instance" -Completed
         }
     }
@@ -451,3 +449,4 @@
         Write-Message -Level Verbose -Message "Total Elapsed time: $totaltime"
     }
 }
+

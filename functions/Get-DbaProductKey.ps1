@@ -1,48 +1,49 @@
 function Get-DbaProductKey {
     <#
-.SYNOPSIS
-Gets SQL Server Product Keys from local or destination SQL Servers. Works with SQL Server 2005-2016
+    .SYNOPSIS
+        Gets SQL Server Product Keys from local or destination SQL Servers. Works with SQL Server 2005-2016
 
-.DESCRIPTION
-Using a string of servers, a text file, or Central Management Server to provide a list of servers, this script will go to each server and get the product key for all installed instances. Clustered instances are supported as well. Requires regular user access to the SQL instances, SMO installed locally, Remote Registry enabled and accessible by the account running the script.
+    .DESCRIPTION
+        Using a string of servers, a text file, or Central Management Server to provide a list of servers, this script will go to each server and get the product key for all installed instances. Clustered instances are supported as well. Requires regular user access to the SQL instances, SMO installed locally, Remote Registry enabled and accessible by the account running the script.
 
-Uses key decoder by Jakob Bindslet (http://goo.gl/1jiwcB)
+        Uses key decoder by Jakob Bindslet (http://goo.gl/1jiwcB)
 
-.PARAMETER SqlInstance
-Allows you to specify a comma separated list of servers to query.
+    .PARAMETER SqlInstance
+        The target SQL Server instance or instances.
 
-.PARAMETER SqlCredential
-Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+    .PARAMETER SqlCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-.PARAMETER SqlCms
-Deprecated, pipe in from Get-DbaRegisteredServer
+    .PARAMETER SqlCms
+        Deprecated, pipe in from Get-DbaCmsRegServer
 
-.PARAMETER ServersFromFile
-Deprecated, pipe in from Get-Content
+    .PARAMETER ServersFromFile
+        Deprecated, pipe in from Get-Content
 
-.PARAMETER EnableException
-By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-.NOTES
-Author: Chrissy LeMaire (@cl), netnerds.net
-Tags: ProductKey
+    .NOTES
+        Tags: ProductKey
+        Author: Chrissy LeMaire (@cl), netnerds.net
 
-Website: https://dbatools.io
-Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-License: MIT https://opensource.org/licenses/MIT
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-.LINK
-https://dbatools.io/Get-DbaProductKey
+    .LINK
+        https://dbatools.io/Get-DbaProductKey
 
-.EXAMPLE
-Get-DbaProductKey winxp, sqlservera, sqlserver2014a, win2k8
-Gets SQL Server versions, editions and product keys for all instances within each server or workstation.
+    .EXAMPLE
+        PS C:\> Get-DbaProductKey -SqlInstance winxp, sqlservera, sqlserver2014a, win2k8
+
+        Gets SQL Server versions, editions and product keys for all instances within each server or workstation.
 
 #>
     [CmdletBinding()]
-    Param (
+    param (
         [parameter(ValueFromPipeline, Mandatory)]
         [Alias("ServerInstance", "SqlServer", "SqlInstances")]
         [DbaInstanceParameter[]]$SqlInstance,
@@ -76,8 +77,7 @@ Gets SQL Server versions, editions and product keys for all instances within eac
                         $productKey = "-" + $productKey
                     }
                 }
-            }
-            catch {
+            } catch {
                 $productkey = "Cannot decode product key."
             }
             return $productKey
@@ -86,7 +86,7 @@ Gets SQL Server versions, editions and product keys for all instances within eac
 
     process {
         if ($SqlCms) {
-            Stop-Function -Message "Please pipe in servers using Get-DbaRegisteredServer instead"
+            Stop-Function -Message "Please pipe in servers using Get-DbaCmsRegServer instead"
             return
         }
 
@@ -99,16 +99,14 @@ Gets SQL Server versions, editions and product keys for all instances within eac
             $computerName = $instance.ComputerName
             try {
                 $regRoots = Get-DbaRegistryRoot -ComputerName $computerName -EnableException
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Can't access registry for $computerName. Is the Remote Registry service started?" -Continue
             }
             if ($instance.IsLocalhost) {
                 $localmachine = [Microsoft.Win32.RegistryHive]::LocalMachine
                 $defaultview = [Microsoft.Win32.RegistryView]::Default
                 $reg = [Microsoft.Win32.RegistryKey]::OpenBaseKey($localmachine, $defaultview)
-            }
-            else {
+            } else {
                 # Get IP for remote registry access. It's the most reliable.
                 try { $ipaddr = ([System.Net.Dns]::GetHostAddresses($computerName)).IPAddressToString }
                 catch {
@@ -117,8 +115,7 @@ Gets SQL Server versions, editions and product keys for all instances within eac
 
                 try {
                     $reg = [Microsoft.Win32.RegistryKey]::OpenRemoteBaseKey("LocalMachine", $ipaddr)
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Can't access registry for $computerName. Is the Remote Registry service started?" -Continue
                 }
             }
@@ -130,12 +127,9 @@ Gets SQL Server versions, editions and product keys for all instances within eac
             # Get Product Keys for all instances on the server.
             foreach ($instanceReg in $regRoots) {
 
-                Write-Message -Level Verbose -Message "Connecting to $($instanceReg.SqlInstance)"
                 try {
-                    Write-Message -Level Verbose -Message "Connecting to $instance"
                     $server = Connect-SqlInstance -SqlInstance $instanceReg.SqlInstance -SqlCredential $SqlCredential -MinimumVersion 10
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instanceReg.SqlInstance -Continue
                 }
 
@@ -187,25 +181,21 @@ Gets SQL Server versions, editions and product keys for all instances within eac
                         try {
                             $binarykey = $($reg.OpenSubKey($subkey)).GetValue($binaryvalue)
                             break
-                        }
-                        catch {
+                        } catch {
                             $binarykey = $null
                         }
                     }
 
                     if ($null -eq $binarykey) {
                         $sqlkey = "Could not read Product Key from registry on $computername"
-                    }
-                    else {
+                    } else {
                         try {
                             $sqlkey = Unlock-SqlInstanceKey $binarykey $server.VersionMajor
-                        }
-                        catch {
+                        } catch {
                             $sqlkey = "Unable to unlock key"
                         }
                     }
-                }
-                else {
+                } else {
                     $sqlkey = "SQL Server Express Edition"
                 }
 
@@ -227,3 +217,4 @@ Gets SQL Server versions, editions and product keys for all instances within eac
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Parameter ServersFromFile
     }
 }
+

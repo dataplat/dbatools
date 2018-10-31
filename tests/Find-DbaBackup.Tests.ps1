@@ -29,7 +29,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         { Find-DbaBackup -Path $testPath -BackupFileExtension '.bak' -RetentionPeriod '0d' -EnableException -WarningAction SilentlyContinue } | Should Not Throw
     }
     Context "BackupFileExtension message validation" {
-        $warnmessage = Find-DbaBackup -Path $testPath -BackupFileExtension '.bak' -RetentionPeriod '0d' 3>&1
+        $warnmessage = Find-DbaBackup -WarningAction Continue -Path $testPath -BackupFileExtension '.bak' -RetentionPeriod '0d' 3>&1
         $warnmessage | Should BeLike '*period*'
     }
     Context "Files found match the proper retention" {
@@ -129,3 +129,4 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
     }
 }
+

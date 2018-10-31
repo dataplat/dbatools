@@ -1,4 +1,4 @@
-﻿$commandname = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+$commandname = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 
@@ -23,11 +23,12 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         $dbname = "dbatoolsci_test_$(get-random)"
         $server = Connect-DbaInstance -SqlInstance $script:instance2
         $null = $server.Query("Create Database [$dbname]")
-        $null = $server.Query("select * into syscols from sys.all_columns
-                                select * into sysallparams from sys.all_parameters
-                                create clustered index CL_sysallparams on sysallparams (object_id)
+        $null = $server.Query("Create Schema test",$dbname)
+        $null = $server.Query(" select * into syscols from sys.all_columns
+                                select * into test.sysallparams from sys.all_parameters
+                                create clustered index CL_sysallparams on test.sysallparams (object_id)
                                 create nonclustered index NC_syscols on syscols (precision) include (collation_name)
-                                update sysallparams set is_xml_document = 1 where name = '@dbname'
+                                update test.sysallparams set is_xml_document = 1 where name = '@dbname'
                                 ",$dbname)
        }
     AfterAll {
@@ -42,6 +43,10 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         $results.foreach{
             It "Should suggest ROW, PAGE or NO_GAIN for $($PSitem.TableName) - $($PSitem.IndexType) " {
                 $PSitem.CompressionTypeRecommendation | Should BeIn ("ROW","PAGE","NO_GAIN")
+            }
+            It "Should have values for PercentScan and PercentUpdate  $($PSitem.TableName) - $($PSitem.IndexType) " {
+                $PSitem.PercentUpdate | Should Not BeNullOrEmpty
+                $PSitem.PercentScan | Should Not BeNullOrEmpty
             }
         }
     }

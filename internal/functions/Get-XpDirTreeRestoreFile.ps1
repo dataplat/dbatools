@@ -39,13 +39,11 @@ function Get-XpDirTreeRestoreFile {
 
     Write-Message -Level InternalComment -Message "Starting"
 
-    Write-Message -Level Verbose -Message "Connecting to $SqlInstance"
     $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
 
     if (($path -like '*.bak') -or ($path -like '*.trn')) {
         # For a future person who knows what's up, please replace this comment with the reason this is empty
-    }
-    elseif ($Path[-1] -ne "\") {
+    } elseif ($Path[-1] -ne "\") {
         $Path = $Path + "\"
     }
 
@@ -54,8 +52,7 @@ function Get-XpDirTreeRestoreFile {
     }
     if ($server.VersionMajor -lt 9) {
         $sql = "EXEC master..xp_dirtree '$Path',1,1;"
-    }
-    else {
+    } else {
         $sql = "EXEC master.sys.xp_dirtree '$Path',1,1;"
     }
     #$queryResult = Invoke-Sqlcmd2 -ServerInstance $SqlInstance -Credential $SqlCredential -Database tempdb -Query $query
@@ -74,3 +71,5 @@ function Get-XpDirTreeRestoreFile {
     }
     return $Results
 }
+
+

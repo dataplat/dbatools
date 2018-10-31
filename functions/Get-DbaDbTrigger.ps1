@@ -1,55 +1,57 @@
-﻿function Get-DbaDbTrigger {
+function Get-DbaDbTrigger {
     <#
-.SYNOPSIS
-Get all existing database triggers on one or more SQL instances.
+    .SYNOPSIS
+        Get all existing database triggers on one or more SQL instances.
 
-.DESCRIPTION
-Get all existing database triggers on one or more SQL instances.
+    .DESCRIPTION
+        Get all existing database triggers on one or more SQL instances.
 
-.PARAMETER SqlInstance
-The SQL Instance that you're connecting to.
+    .PARAMETER SqlInstance
+        The target SQL Server instance or instances.
 
-.PARAMETER SqlCredential
-SqlCredential object used to connect to the SQL Server as a different user.
+    .PARAMETER SqlCredential
+        SqlCredential object used to connect to the SQL Server as a different user.
 
-.PARAMETER Database
-The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
+    .PARAMETER Database
+        The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
 
-.PARAMETER ExcludeDatabase
-The database(s) to exclude - this list is auto-populated from the server
+    .PARAMETER ExcludeDatabase
+        The database(s) to exclude - this list is auto-populated from the server
 
-.PARAMETER InputObject
-Allow pipedline input from Get-DbaDatabase
+    .PARAMETER InputObject
+        Allow pipedline input from Get-DbaDatabase
 
-.PARAMETER EnableException
-By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/ca
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/ca
 
-.NOTES
-Tags: Database, Trigger
-Author: Chrissy LeMaire (@cl), netnerds.net
-Website: https://dbatools.io
-Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-License: MIT https://opensource.org/licenses/MIT
+    .NOTES
+        Tags: Database, Trigger
+        Author: Chrissy LeMaire (@cl), netnerds.net
 
-.LINK
- https://dbatools.io/Get-DbaDbTrigger
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-.EXAMPLE
-Get-DbaDbTrigger -SqlInstance sql2017
+    .LINK
+        https://dbatools.io/Get-DbaDbTrigger
 
-Returns all database triggers
+    .EXAMPLE
+        PS C:\> Get-DbaDbTrigger -SqlInstance sql2017
 
-.EXAMPLE
-Get-DbaDatabase -SqlInstance sql2017 -Database supa | Get-DbaDbTrigger
+        Returns all database triggers
 
-Returns all triggers for database supa on sql2017
+    .EXAMPLE
+        PS C:\> Get-DbaDatabase -SqlInstance sql2017 -Database supa | Get-DbaDbTrigger
 
-.EXAMPLE
-Get-DbaDbTrigger -SqlInstance sql2017 -Database supa
+        Returns all triggers for database supa on sql2017
 
-Returns all triggers for database supa on sql2017
+    .EXAMPLE
+        PS C:\> Get-DbaDbTrigger -SqlInstance sql2017 -Database supa
+
+        Returns all triggers for database supa on sql2017
+
 #>
     [CmdletBinding()]
     param (
@@ -65,7 +67,6 @@ Returns all triggers for database supa on sql2017
 
     process {
         foreach ($Instance in $SqlInstance) {
-            Write-Message -Level Verbose -Message "Connecting to $Instance"
             $InputObject += Get-DbaDatabase -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database -ExcludeDatabase $ExcludeDatabase
         }
 
@@ -77,10 +78,10 @@ Returns all triggers for database supa on sql2017
                     Add-Member -Force -InputObject $trigger -MemberType NoteProperty -Name SqlInstance -value $db.Parent.DomainInstanceName
                     Select-DefaultView -InputObject $trigger -Property ComputerName, InstanceName, SqlInstance, Name, IsEnabled, DateLastModified
                 }
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
             }
         }
     }
 }
+

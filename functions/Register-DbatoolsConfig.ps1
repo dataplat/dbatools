@@ -1,58 +1,63 @@
-﻿function Register-DbatoolsConfig {
+function Register-DbatoolsConfig {
     <#
-        .SYNOPSIS
-            Registers an existing configuration object in registry.
+    .SYNOPSIS
+        Registers an existing configuration object in registry.
 
-        .DESCRIPTION
-            Registers an existing configuration object in registry.
-            This allows simple persisting of settings across powershell consoles.
-            It also can be used to generate a registry template, which can then be used to create policies.
+    .DESCRIPTION
+        Registers an existing configuration object in registry.
+        This allows simple persisting of settings across powershell consoles.
+        It also can be used to generate a registry template, which can then be used to create policies.
 
-        .PARAMETER Config
-            The configuration object to write to registry.
-            Can be retrieved using Get-DbatoolsConfig.
+    .PARAMETER Config
+        The configuration object to write to registry. Can be retrieved using Get-DbatoolsConfig.
 
-        .PARAMETER FullName
-            The full name of the setting to be written to registry.
+    .PARAMETER FullName
+        The full name of the setting to be written to registry.
 
-        .PARAMETER Module
-            The name of the module, whose settings should be written to registry.
+    .PARAMETER Module
+        The name of the module, whose settings should be written to registry.
 
-        .PARAMETER Name
-            Default: "*"
-            Used in conjunction with the -Module parameter to restrict the number of configuration items written to registry.
+    .PARAMETER Name
+        Default: "*"
+        Used in conjunction with the -Module parameter to restrict the number of configuration items written to registry.
 
-        .PARAMETER Scope
-            Default: UserDefault
-            Who will be affected by this export how? Current user or all? Default setting or enforced?
-            Legal values: UserDefault, UserMandatory, SystemDefault, SystemMandatory
+    .PARAMETER Scope
+        Default: UserDefault
+        Who will be affected by this export how? Current user or all? Default setting or enforced?
+        Legal values: UserDefault, UserMandatory, SystemDefault, SystemMandatory
 
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-        .NOTES
-            Tags: Config, Module
-            Author: Friedrich Weinmann
+    .NOTES
+        Tags: Config, Module
+        Author: Friedrich Weinmann (@FredWeinmann)
 
-        .EXAMPLE
-            PS C:\> Get-DbatoolsConfig message.* | Register-DbatoolsConfig
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-            Retrieves all configuration items that that start with message. and registers them in registry for the current user.
+    .EXAMPLE
+        PS C:\> Get-DbatoolsConfig message.* | Register-DbatoolsConfig
 
-        .EXAMPLE
-            PS C:\> Register-DbatoolsConfig -FullName "developer.mode.enable" -Scope SystemDefault
+        Retrieves all configuration items that that start with message. and registers them in registry for the current user.
 
-            Retrieves the configuration item "developer.mode.enable" and registers it in registry as the default setting for all users on this machine.
+    .EXAMPLE
+        PS C:\> Register-DbatoolsConfig -FullName "developer.mode.enable" -Scope SystemDefault
 
-        .EXAMPLE
-            PS C:\> Register-DbatoolsConfig -Module message -Scope SystemMandatory
+        Retrieves the configuration item "developer.mode.enable" and registers it in registry as the default setting for all users on this machine.
 
-            Retrieves all configuration items of the module MyModule, then registers them in registry to enforce them for all users on the current system.
-    #>
+    .EXAMPLE
+        PS C:\> Register-DbatoolsConfig -Module message -Scope SystemMandatory
+
+        Retrieves all configuration items of the module MyModule, then registers them in registry to enforce them for all users on the current system.
+
+#>
     [CmdletBinding(DefaultParameterSetName = "Default")]
-    Param (
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseApprovedVerbs", "", Justification = "Internal functions are ignored")]
+    param (
         [Parameter(ParameterSetName = "Default", Position = 0, ValueFromPipeline)]
         [Sqlcollaborative.Dbatools.Configuration.Config[]]$Config,
         [Parameter(ParameterSetName = "Default", Position = 0, ValueFromPipeline)]
@@ -70,7 +75,7 @@
 
         function Write-Config {
             [CmdletBinding()]
-            Param (
+            param (
                 [Sqlcollaborative.Dbatools.Configuration.Config]
                 $Config,
 
@@ -118,8 +123,7 @@
                     Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\WindowsPowerShell\dbatools\Config\Enforced" -Name $Config.FullName -Value $Config.RegistryData -ErrorAction Stop
                 }
                 #endregion System Mandatory
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failed to export $($Config.FullName), to scope $Scope" -EnableException $EnableException -Target $Config -ErrorRecord $_ -FunctionName $FunctionName #-ModuleName "PSFramework" -Tag "config", "fail"
                 return
             }
@@ -127,7 +131,7 @@
 
         function Ensure-RegistryPath {
             [CmdletBinding()]
-            Param (
+            param (
                 [string]
                 $Path
             )

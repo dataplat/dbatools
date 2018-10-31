@@ -1,72 +1,74 @@
 function Copy-DbaResourceGovernor {
     <#
-        .SYNOPSIS
-            Migrates Resource Pools
+    .SYNOPSIS
+        Migrates Resource Pools
 
-        .DESCRIPTION
-            By default, all non-system resource pools are migrated. If the pool already exists on the destination, it will be skipped unless -Force is used.
+    .DESCRIPTION
+        By default, all non-system resource pools are migrated. If the pool already exists on the destination, it will be skipped unless -Force is used.
 
-            The -ResourcePool parameter is auto-populated for command-line completion and can be used to copy only specific objects.
+        The -ResourcePool parameter is auto-populated for command-line completion and can be used to copy only specific objects.
 
-        .PARAMETER Source
-            Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2008 or higher.
+    .PARAMETER Source
+        Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2008 or higher.
 
-        .PARAMETER SourceSqlCredential
-            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+    .PARAMETER SourceSqlCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-        .PARAMETER Destination
-            Destination SQL Server. You must have sysadmin access and the server must be SQL Server 2008 or higher.
+    .PARAMETER Destination
+        Destination SQL Server. You must have sysadmin access and the server must be SQL Server 2008 or higher.
 
-        .PARAMETER DestinationSqlCredential
-            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+    .PARAMETER DestinationSqlCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-        .PARAMETER ResourcePool
-            Specifies the resource pool(s) to process. Options for this list are auto-populated from the server. If unspecified, all resource pools will be processed.
+    .PARAMETER ResourcePool
+        Specifies the resource pool(s) to process. Options for this list are auto-populated from the server. If unspecified, all resource pools will be processed.
 
-        .PARAMETER ExcludeResourcePool
-            Specifies the resource pool(s) to exclude. Options for this list are auto-populated from the server
+    .PARAMETER ExcludeResourcePool
+        Specifies the resource pool(s) to exclude. Options for this list are auto-populated from the server
 
-        .PARAMETER WhatIf
-            If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
+    .PARAMETER WhatIf
+        If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
-        .PARAMETER Confirm
-            If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
+    .PARAMETER Confirm
+        If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
-        .PARAMETER Force
-            If this switch is enabled, the policies will be dropped and recreated on Destination.
+    .PARAMETER Force
+        If this switch is enabled, the policies will be dropped and recreated on Destination.
 
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-        .NOTES
-            Tags: Migration, ResourceGovernor
-            Author: Chrissy LeMaire (@cl), netnerds.net
-            Requires: sysadmin access on SQL Servers
+    .NOTES
+        Tags: Migration, ResourceGovernor
+        Author: Chrissy LeMaire (@cl), netnerds.net
 
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: MIT https://opensource.org/licenses/MIT
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-        .LINK
-            https://dbatools.io/Copy-DbaResourceGovernor
+        Requires: sysadmin access on SQL Servers
 
-        .EXAMPLE
-            Copy-DbaResourceGovernor -Source sqlserver2014a -Destination sqlcluster
+    .LINK
+        https://dbatools.io/Copy-DbaResourceGovernor
 
-            Copies all all non-system resource pools from sqlserver2014a to sqlcluster using Windows credentials to connect to the SQL Server instances..
+    .EXAMPLE
+        PS C:\> Copy-DbaResourceGovernor -Source sqlserver2014a -Destination sqlcluster
 
-        .EXAMPLE
-            Copy-DbaResourceGovernor -Source sqlserver2014a -Destination sqlcluster -SourceSqlCredential $cred
+        Copies all all non-system resource pools from sqlserver2014a to sqlcluster using Windows credentials to connect to the SQL Server instances..
 
-            Copies all all non-system resource pools from sqlserver2014a to sqlcluster using SQL credentials to connect to sqlserver2014a and Windows credentials to connect to sqlcluster.
+    .EXAMPLE
+        PS C:\> Copy-DbaResourceGovernor -Source sqlserver2014a -Destination sqlcluster -SourceSqlCredential $cred
 
-        .EXAMPLE
-            Copy-DbaResourceGovernor -Source sqlserver2014a -Destination sqlcluster -WhatIf
+        Copies all all non-system resource pools from sqlserver2014a to sqlcluster using SQL credentials to connect to sqlserver2014a and Windows credentials to connect to sqlcluster.
 
-            Shows what would happen if the command were executed.
-    #>
+    .EXAMPLE
+        PS C:\> Copy-DbaResourceGovernor -Source sqlserver2014a -Destination sqlcluster -WhatIf
+
+        Shows what would happen if the command were executed.
+
+#>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
     param (
         [parameter(Mandatory)]
@@ -83,58 +85,52 @@ function Copy-DbaResourceGovernor {
     )
     process {
         try {
-            Write-Message -Level Verbose -Message "Connecting to $Source"
             $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -MinimumVersion 10
-        }
-        catch {
+        } catch {
             Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Source
             return
         }
         $sourceClassifierFunction = Get-DbaRgClassifierFunction -SqlInstance $sourceServer
 
-       foreach ($destinstance in $Destination) {
+        foreach ($destinstance in $Destination) {
             try {
-                Write-Message -Level Verbose -Message "Connecting to $destinstance"
                 $destServer = Connect-SqlInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential -MinimumVersion 10
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
             }
             $destClassifierFunction = Get-DbaRgClassifierFunction -SqlInstance $destServer
 
             $copyResourceGovSetting = [pscustomobject]@{
-                SourceServer = $sourceServer.Name
+                SourceServer      = $sourceServer.Name
                 DestinationServer = $destServer.Name
-                Type         = "Resource Governor Settings"
-                Name         = "All Settings"
-                Status       = $null
-                Notes        = $null
-                DateTime     = [DbaDateTime](Get-Date)
+                Type              = "Resource Governor Settings"
+                Name              = "All Settings"
+                Status            = $null
+                Notes             = $null
+                DateTime          = [DbaDateTime](Get-Date)
             }
 
             $copyResourceGovClassifierFunc = [pscustomobject]@{
-                SourceServer = $sourceServer.Name
+                SourceServer      = $sourceServer.Name
                 DestinationServer = $destServer.Name
-                Type         = "Resource Governor Settings"
-                Name         = "Classifier Function"
-                Status       = $null
-                Notes        = $null
-                DateTime     = [DbaDateTime](Get-Date)
+                Type              = "Resource Governor Settings"
+                Name              = "Classifier Function"
+                Status            = $null
+                Notes             = $null
+                DateTime          = [DbaDateTime](Get-Date)
             }
 
             if ($Pscmdlet.ShouldProcess($destinstance, "Updating Resource Governor settings")) {
                 if ($destServer.Edition -notmatch 'Enterprise' -and $destServer.Edition -notmatch 'Datacenter' -and $destServer.Edition -notmatch 'Developer') {
                     Write-Message -Level Verbose -Message "The resource governor is not available in this edition of SQL Server. You can manipulate resource governor metadata but you will not be able to apply resource governor configuration. Only Enterprise edition of SQL Server supports resource governor."
-                }
-                else {
+                } else {
                     try {
                         Write-Message -Level Verbose -Message "Managing classifier function."
                         if (!$sourceClassifierFunction) {
                             $copyResourceGovClassifierFunc.Status = "Skipped"
                             $copyResourceGovClassifierFunc.Notes = $null
                             $copyResourceGovClassifierFunc | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                        }
-                        else {
+                        } else {
                             $fullyQualifiedFunctionName = $sourceClassifierFunction.Schema + "." + $sourceClassifierFunction.Name
 
                             if (!$destClassifierFunction) {
@@ -156,14 +152,12 @@ function Copy-DbaResourceGovernor {
                                 $copyResourceGovClassifierFunc.Status = "Successful"
                                 $copyResourceGovClassifierFunc.Notes = "The new classifier function has been created"
                                 $copyResourceGovClassifierFunc | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                            }
-                            else {
+                            } else {
                                 if ($Force -eq $false) {
                                     $copyResourceGovClassifierFunc.Status = "Skipped"
                                     $copyResourceGovClassifierFunc.Notes = "A classifier function already exists"
                                     $copyResourceGovClassifierFunc | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                                }
-                                else {
+                                } else {
 
                                     $sql = "ALTER RESOURCE GOVERNOR WITH (CLASSIFIER_FUNCTION = NULL);"
                                     Write-Message -Level Debug -Message $sql
@@ -194,8 +188,7 @@ function Copy-DbaResourceGovernor {
                                 }
                             }
                         }
-                    }
-                    catch {
+                    } catch {
                         $copyResourceGovSetting.Status = "Failed"
                         $copyResourceGovSetting.Notes = (Get-ErrorMessage -Record $_)
                         $copyResourceGovSetting | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
@@ -208,11 +201,9 @@ function Copy-DbaResourceGovernor {
             # Pools
             if ($ResourcePool) {
                 $pools = $sourceServer.ResourceGovernor.ResourcePools | Where-Object Name -In $ResourcePool
-            }
-            elseif ($ExcludeResourcePool) {
+            } elseif ($ExcludeResourcePool) {
                 $pool = $sourceServer.ResourceGovernor.ResourcePools | Where-Object Name -NotIn $ExcludeResourcePool
-            }
-            else {
+            } else {
                 $pools = $sourceServer.ResourceGovernor.ResourcePools | Where-Object { $_.Name -notin "internal", "default" }
             }
 
@@ -221,13 +212,13 @@ function Copy-DbaResourceGovernor {
                 $poolName = $pool.Name
 
                 $copyResourceGovPool = [pscustomobject]@{
-                    SourceServer = $sourceServer.Name
+                    SourceServer      = $sourceServer.Name
                     DestinationServer = $destServer.Name
-                    Type         = "Resource Governor Pool"
-                    Name         = $poolName
-                    Status       = $null
-                    Notes        = $null
-                    DateTime     = [DbaDateTime](Get-Date)
+                    Type              = "Resource Governor Pool"
+                    Name              = $poolName
+                    Status            = $null
+                    Notes             = $null
+                    DateTime          = [DbaDateTime](Get-Date)
                 }
 
                 if ($null -ne $destServer.ResourceGovernor.ResourcePools[$poolName]) {
@@ -238,8 +229,7 @@ function Copy-DbaResourceGovernor {
                         $copyResourceGovPool.Notes = "Already exists"
                         $copyResourceGovPool | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                         continue
-                    }
-                    else {
+                    } else {
                         if ($Pscmdlet.ShouldProcess($destinstance, "Attempting to drop $poolName")) {
                             Write-Message -Level Verbose -Message "Pool '$poolName' exists on $destinstance."
                             Write-Message -Level Verbose -Message "Force specified. Dropping $poolName."
@@ -253,8 +243,7 @@ function Copy-DbaResourceGovernor {
                                 }
                                 $destPool.Drop()
                                 $destServer.ResourceGovernor.Alter()
-                            }
-                            catch {
+                            } catch {
                                 $copyResourceGovPool.Status = "Failed to drop from Destination"
                                 $copyResourceGovPool.Notes = (Get-ErrorMessage -Record $_)
                                 $copyResourceGovPool | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
@@ -280,13 +269,13 @@ function Copy-DbaResourceGovernor {
                             $workgroupName = $workloadGroup.Name
 
                             $copyResourceGovWorkGroup = [pscustomobject]@{
-                                SourceServer = $sourceServer.Name
+                                SourceServer      = $sourceServer.Name
                                 DestinationServer = $destServer.Name
-                                Type         = "Resource Governor Pool Workgroup"
-                                Name         = $workgroupName
-                                Status       = $null
-                                Notes        = $null
-                                DateTime     = [DbaDateTime](Get-Date)
+                                Type              = "Resource Governor Pool Workgroup"
+                                Name              = $workgroupName
+                                Status            = $null
+                                Notes             = $null
+                                DateTime          = [DbaDateTime](Get-Date)
                             }
 
                             $sql = $workloadGroup.Script() | Out-String
@@ -297,8 +286,7 @@ function Copy-DbaResourceGovernor {
                             $copyResourceGovWorkGroup.Status = "Successful"
                             $copyResourceGovWorkGroup | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                         }
-                    }
-                    catch {
+                    } catch {
                         if ($copyResourceGovWorkGroup) {
                             $copyResourceGovWorkGroup.Status = "Failed"
                             $copyResourceGovWorkGroup.Notes = (Get-ErrorMessage -Record $_)
@@ -312,33 +300,30 @@ function Copy-DbaResourceGovernor {
             if ($Pscmdlet.ShouldProcess($destinstance, "Reconfiguring")) {
                 if ($destServer.Edition -notmatch 'Enterprise' -and $destServer.Edition -notmatch 'Datacenter' -and $destServer.Edition -notmatch 'Developer') {
                     Write-Message -Level Verbose -Message "The resource governor is not available in this edition of SQL Server. You can manipulate resource governor metadata but you will not be able to apply resource governor configuration. Only Enterprise edition of SQL Server supports resource governor."
-                }
-                else {
+                } else {
 
                     Write-Message -Level Verbose -Message "Reconfiguring Resource Governor."
                     try {
                         if (!$sourceServer.ResourceGovernor.Enabled) {
                             $sql = "ALTER RESOURCE GOVERNOR DISABLE"
                             $destServer.Query($sql)
-                        }
-                        else {
+                        } else {
                             $sql = "ALTER RESOURCE GOVERNOR RECONFIGURE"
                             $destServer.Query($sql)
                         }
-                    }
-                    catch {
+                    } catch {
                         $altermsg = $_.Exception
                     }
 
 
                     $copyResourceGovReconfig = [pscustomobject]@{
-                        SourceServer = $sourceServer.Name
+                        SourceServer      = $sourceServer.Name
                         DestinationServer = $destServer.Name
-                        Type         = "Reconfigure Resource Governor"
-                        Name         = "Reconfigure Resource Governor"
-                        Status       = "Successful"
-                        Notes        = $altermsg
-                        DateTime     = [DbaDateTime](Get-Date)
+                        Type              = "Reconfigure Resource Governor"
+                        Name              = "Reconfigure Resource Governor"
+                        Status            = "Successful"
+                        Notes             = $altermsg
+                        DateTime          = [DbaDateTime](Get-Date)
                     }
                     $copyResourceGovReconfig | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                 }
@@ -349,3 +334,4 @@ function Copy-DbaResourceGovernor {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-SqlResourceGovernor
     }
 }
+

@@ -1,8 +1,23 @@
-$commandname = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
+$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
+Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+    Context "Validate parameters" {
+        $paramCount = 8
+        $defaultParamCount = 11
+        [object[]]$params = (Get-ChildItem function:\Get-DbaDbCertificate).Parameters.Keys
+        $knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'Certificate', 'InputObject', 'Subject', 'EnableException'
+        It "Should contain our specific parameters" {
+            ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
+        }
+        It "Should only contain $paramCount parameters" {
+            $params.Count - $defaultParamCount | Should Be $paramCount
+        }
+    }
+}
+
+Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Can get a database certificate" {
         BeforeAll {
             if (-not (Get-DbaDbMasterKey -SqlInstance $script:instance1 -Database master)) {
@@ -12,8 +27,8 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $tempdbmasterkey = New-DbaDbMasterKey -SqlInstance $script:instance1 -Database tempdb -Password $(ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force) -Confirm:$false
             $certificateName1 = "Cert_$(Get-random)"
             $certificateName2 = "Cert_$(Get-random)"
-            $cert1 = New-DbaDbCertificate -SqlInstance $script:instance1 -Name $certificateName1
-            $cert2 = New-DbaDbCertificate -SqlInstance $script:instance1 -Name $certificateName2 -Database "tempdb"
+            $cert1 = New-DbaDbCertificate -SqlInstance $script:instance1 -Name $certificateName1 -Confirm:$false
+            $cert2 = New-DbaDbCertificate -SqlInstance $script:instance1 -Name $certificateName2 -Database "tempdb" -Confirm:$false
         }
         AfterAll {
             $null = $cert1 | Remove-DbaDbCertificate -Confirm:$false

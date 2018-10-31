@@ -1,69 +1,69 @@
 #ValidationTags#Messaging,FlowControl,Pipeline#
 function Get-DbaDbState {
     <#
-.SYNOPSIS
-Gets various options for databases, hereby called "states"
+    .SYNOPSIS
+        Gets various options for databases, hereby called "states"
 
-.DESCRIPTION
-Gets some common "states" on databases:
- - "RW" options : READ_ONLY or READ_WRITE
- - "Status" options : ONLINE, OFFLINE, EMERGENCY, RESTORING
- - "Access" options : SINGLE_USER, RESTRICTED_USER, MULTI_USER
+    .DESCRIPTION
+        Gets some common "states" on databases:
+        - "RW" options : READ_ONLY or READ_WRITE
+        - "Status" options : ONLINE, OFFLINE, EMERGENCY, RESTORING
+        - "Access" options : SINGLE_USER, RESTRICTED_USER, MULTI_USER
 
-Returns an object with SqlInstance, Database, RW, Status, Access
+        Returns an object with SqlInstance, Database, RW, Status, Access
 
-.PARAMETER SqlInstance
-The SQL Server that you're connecting to
+    .PARAMETER SqlInstance
+        The target SQL Server instance or instances
 
-.PARAMETER SqlCredential
-Credential object used to connect to the SQL Server as a different user
+    .PARAMETER SqlCredential
+        Credential object used to connect to the SQL Server as a different user
 
-.PARAMETER Database
-The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
+    .PARAMETER Database
+        The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
 
-.PARAMETER ExcludeDatabase
-The database(s) to exclude - this list is auto-populated from the server
+    .PARAMETER ExcludeDatabase
+        The database(s) to exclude - this list is auto-populated from the server
 
-.PARAMETER EnableException
+    .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-.NOTES
-Tags: Database
-Author: niphlod
+    .NOTES
+        Tags: Database
+        Author: Simone Bizzotto (@niphold)
 
-Website: https://dbatools.io
-Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-License: MIT https://opensource.org/licenses/MIT
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-.LINK
-https://dbatools.io/Get-DbaDbState
+    .LINK
+        https://dbatools.io/Get-DbaDbState
 
-.EXAMPLE
-Get-DbaDbState -SqlInstance sqlserver2014a
+    .EXAMPLE
+        PS C:\> Get-DbaDbState -SqlInstance sqlserver2014a
 
-Gets options for all databases of the sqlserver2014a instance
+        Gets options for all databases of the sqlserver2014a instance
 
-.EXAMPLE
-Get-DbaDbState -SqlInstance sqlserver2014a -Database HR, Accounting
+    .EXAMPLE
+        PS C:\> Get-DbaDbState -SqlInstance sqlserver2014a -Database HR, Accounting
 
-Gets options for both HR and Accounting database of the sqlserver2014a instance
+        Gets options for both HR and Accounting database of the sqlserver2014a instance
 
-.EXAMPLE
-Get-DbaDbState -SqlInstance sqlserver2014a -Exclude HR
+    .EXAMPLE
+        PS C:\> Get-DbaDbState -SqlInstance sqlserver2014a -Exclude HR
 
-Gets options for all databases of the sqlserver2014a instance except HR
+        Gets options for all databases of the sqlserver2014a instance except HR
 
-.EXAMPLE
-'sqlserver2014a', 'sqlserver2014b' | Get-DbaDbState
+    .EXAMPLE
+        PS C:\> 'sqlserver2014a', 'sqlserver2014b' | Get-DbaDbState
 
-Gets options for all databases of sqlserver2014a and sqlserver2014b instances
+        Gets options for all databases of sqlserver2014a and sqlserver2014b instances
 
 #>
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseLiteralInitializerForHashtable", "")]
     [CmdletBinding()]
-    Param (
+    param (
         [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
@@ -91,11 +91,9 @@ FROM sys.databases
     }
     process {
         foreach ($instance in $SqlInstance) {
-            Write-Message -Level Verbose -Message "Connecting to $instance"
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
             $dbStates = $server.Query($DbStatesQuery)
@@ -134,3 +132,4 @@ FROM sys.databases
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-DbaDatabaseState
     }
 }
+

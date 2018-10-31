@@ -1,67 +1,68 @@
 function Set-DbaDbOwner {
     <#
-        .SYNOPSIS
-            Sets database owners with a desired login if databases do not match that owner.
+    .SYNOPSIS
+        Sets database owners with a desired login if databases do not match that owner.
 
-        .DESCRIPTION
-            This function will alter database ownership to match a specified login if their current owner does not match the target login. By default, the target login will be 'sa', but the function will allow the user to specify a different login for  ownership. The user can also apply this to all databases or only to a select list of databases (passed as either a comma separated list or a string array).
+    .DESCRIPTION
+        This function will alter database ownership to match a specified login if their current owner does not match the target login. By default, the target login will be 'sa', but the function will allow the user to specify a different login for  ownership. The user can also apply this to all databases or only to a select list of databases (passed as either a comma separated list or a string array).
 
-            Best Practice reference: http://weblogs.sqlteam.com/dang/archive/2008/01/13/Database-Owner-Troubles.aspx
+        Best Practice reference: http://weblogs.sqlteam.com/dang/archive/2008/01/13/Database-Owner-Troubles.aspx
 
-        .PARAMETER SqlInstance
-            Specifies the SQL Server instance(s) to scan.
+    .PARAMETER SqlInstance
+        The target SQL Server instance or instances.
 
-        .PARAMETER SqlCredential
-            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+    .PARAMETER SqlCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-        .PARAMETER Database
-            Specifies the database(s) to process. Options for this list are auto-populated from the server. If unspecified, all databases will be processed.
+    .PARAMETER Database
+        Specifies the database(s) to process. Options for this list are auto-populated from the server. If unspecified, all databases will be processed.
 
-        .PARAMETER ExcludeDatabase
-            Specifies the database(s) to exclude from processing. Options for this list are auto-populated from the server.
+    .PARAMETER ExcludeDatabase
+        Specifies the database(s) to exclude from processing. Options for this list are auto-populated from the server.
 
-        .PARAMETER TargetLogin
-            Specifies the login that you wish check for ownership. This defaults to 'sa' or the sysadmin name if sa was renamed. This must be a valid security principal which exists on the target server.
+    .PARAMETER TargetLogin
+        Specifies the login that you wish check for ownership. This defaults to 'sa' or the sysadmin name if sa was renamed. This must be a valid security principal which exists on the target server.
 
-        .PARAMETER WhatIf
-            If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
+    .PARAMETER WhatIf
+        If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
-        .PARAMETER Confirm
-            If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
+    .PARAMETER Confirm
+        If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-        .NOTES
-            Tags: Database, Owner, DbOwner
-            Author: Michael Fal (@Mike_Fal), http://mikefal.net
+    .NOTES
+        Tags: Database, Owner, DbOwner
+        Author: Michael Fal (@Mike_Fal), http://mikefal.net
 
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: MIT https://opensource.org/licenses/MIT
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-        .LINK
-            https://dbatools.io/Set-DbaDbOwner
+    .LINK
+        https://dbatools.io/Set-DbaDbOwner
 
-        .EXAMPLE
-            Set-DbaDbOwner -SqlInstance localhost
+    .EXAMPLE
+        PS C:\> Set-DbaDbOwner -SqlInstance localhost
 
-            Sets database owner to 'sa' on all databases where the owner does not match 'sa'.
+        Sets database owner to 'sa' on all databases where the owner does not match 'sa'.
 
-        .EXAMPLE
-            Set-DbaDbOwner -SqlInstance localhost -TargetLogin DOMAIN\account
+    .EXAMPLE
+        PS C:\> Set-DbaDbOwner -SqlInstance localhost -TargetLogin DOMAIN\account
 
-            Sets the database owner to DOMAIN\account on all databases where the owner does not match DOMAIN\account.
+        Sets the database owner to DOMAIN\account on all databases where the owner does not match DOMAIN\account.
 
-        .EXAMPLE
-            Set-DbaDbOwner -SqlInstance sqlserver -Database db1, db2
+    .EXAMPLE
+        PS C:\> Set-DbaDbOwner -SqlInstance sqlserver -Database db1, db2
 
-            Sets database owner to 'sa' on the db1 and db2 databases if their current owner does not match 'sa'.
-    #>
+        Sets database owner to 'sa' on the db1 and db2 databases if their current owner does not match 'sa'.
+
+#>
     [CmdletBinding(SupportsShouldProcess = $true)]
-    Param (
+    param (
         [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
@@ -78,11 +79,9 @@ function Set-DbaDbOwner {
 
     process {
         foreach ($instance in $SqlInstance) {
-            Write-Message -Level Verbose -Message "Connecting to $instance."
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure." -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -137,8 +136,7 @@ function Set-DbaDbOwner {
                         #Is the login mapped as a user? Logins already mapped in the database can not be the owner
                         elseif ($db.Users.name -contains $TargetLogin) {
                             Write-Message -Level Warning -Message "$dbname on $instance has $TargetLogin as a mapped user. Mapped users can not be database owners."
-                        }
-                        else {
+                        } else {
                             $db.SetOwner($TargetLogin)
                             [PSCustomObject]@{
                                 ComputerName = $server.ComputerName
@@ -148,8 +146,7 @@ function Set-DbaDbOwner {
                                 Owner        = $TargetLogin
                             }
                         }
-                    }
-                    catch {
+                    } catch {
                         Stop-Function -Message "Failure updating owner." -ErrorRecord $_ -Target $instance -Continue
                     }
                 }
@@ -160,3 +157,4 @@ function Set-DbaDbOwner {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Set-DbaDatabaseOwner
     }
 }
+

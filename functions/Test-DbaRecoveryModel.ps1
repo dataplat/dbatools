@@ -1,72 +1,73 @@
 function Test-DbaRecoveryModel {
     <#
-        .SYNOPSIS
-            Find if database is really a specific recovery model or not.
+    .SYNOPSIS
+        Find if database is really a specific recovery model or not.
 
-        .DESCRIPTION
-            When you switch a database into FULL recovery model, it will behave like a SIMPLE recovery model until a full backup is taken in order to begin a log backup chain.
+    .DESCRIPTION
+        When you switch a database into FULL recovery model, it will behave like a SIMPLE recovery model until a full backup is taken in order to begin a log backup chain.
 
-            However, you may also desire to validate if a database is SIMPLE or BULK LOGGED on an instance.
+        However, you may also desire to validate if a database is SIMPLE or BULK LOGGED on an instance.
 
-            Inspired by Paul Randal's post (http://www.sqlskills.com/blogs/paul/new-script-is-that-database-really-in-the-full-recovery-mode/)
+        Inspired by Paul Randal's post (http://www.sqlskills.com/blogs/paul/new-script-is-that-database-really-in-the-full-recovery-mode/)
 
-        .PARAMETER SqlInstance
-            The SQL Server instance to connect to.
+    .PARAMETER SqlInstance
+        The target SQL Server instance or instances.
 
-        .PARAMETER SqlCredential
-            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+    .PARAMETER SqlCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-        .PARAMETER Database
-            Specifies the database(s) to process. Options for this list are auto-populated from the server. If unspecified, all databases will be processed.
+    .PARAMETER Database
+        Specifies the database(s) to process. Options for this list are auto-populated from the server. If unspecified, all databases will be processed.
 
-        .PARAMETER ExcludeDatabase
-            Specifies the database(s) to exclude from processing. Options for this list are auto-populated from the server.
+    .PARAMETER ExcludeDatabase
+        Specifies the database(s) to exclude from processing. Options for this list are auto-populated from the server.
 
-        .PARAMETER RecoveryModel
-            Specifies the type of recovery model you wish to test. By default it will test for FULL Recovery Model.
+    .PARAMETER RecoveryModel
+        Specifies the type of recovery model you wish to test. By default it will test for FULL Recovery Model.
 
-        .PARAMETER Detailed
-            Output all properties, will be deprecated in 1.0.0 release.
+    .PARAMETER Detailed
+        Output all properties, will be deprecated in 1.0.0 release.
 
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-        .NOTES
-            Tags: DisasterRecovery, Backup
-            Author: Claudio Silva (@ClaudioESSilva)
+    .NOTES
+        Tags: DisasterRecovery, Backup
+        Author: Claudio Silva (@ClaudioESSilva)
 
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
-        .LINK
-            https://dbatools.io/Test-DbaRecoveryModel
+    .LINK
+        https://dbatools.io/Test-DbaRecoveryModel
 
-        .EXAMPLE
-            Test-DbaRecoveryModel -SqlInstance sql2005
+    .EXAMPLE
+        PS C:\> Test-DbaRecoveryModel -SqlInstance sql2005
 
-            Shows all databases where the configured recovery model is FULL and indicates whether or not they are really in FULL recovery model.
+        Shows all databases where the configured recovery model is FULL and indicates whether or not they are really in FULL recovery model.
 
-        .EXAMPLE
-            Test-DbaRecoveryModel -SqlInstance . | Where-Object {$_.ActualRecoveryModel -ne "FULL"}
+    .EXAMPLE
+        PS C:\> Test-DbaRecoveryModel -SqlInstance . | Where-Object {$_.ActualRecoveryModel -ne "FULL"}
 
-            Only shows the databases that are functionally in 'simple' mode.
+        Only shows the databases that are functionally in 'simple' mode.
 
-        .EXAMPLE
-            Test-DbaRecoveryModel -SqlInstance sql2008 -RecoveryModel Bulk_Logged | Sort-Object Server  -Descending
+    .EXAMPLE
+        PS C:\> Test-DbaRecoveryModel -SqlInstance sql2008 -RecoveryModel Bulk_Logged | Sort-Object Server  -Descending
 
-            Shows all databases where the configured recovery model is BULK_LOGGED and sort them by server name descending
+        Shows all databases where the configured recovery model is BULK_LOGGED and sort them by server name descending
 
-        .EXAMPLE
-            Test-DbaRecoveryModel -SqlInstance localhost | Select-Object -Property *
+    .EXAMPLE
+        PS C:\> Test-DbaRecoveryModel -SqlInstance localhost | Select-Object -Property *
 
-            Shows all of the properties for the databases that have Full Recovery Model
-    #>
+        Shows all of the properties for the databases that have Full Recovery Model
+
+#>
     [CmdletBinding()]
     [OutputType("System.Collections.ArrayList")]
-    Param (
+    param (
         [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
@@ -74,7 +75,7 @@ function Test-DbaRecoveryModel {
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
         [PSCredential]$SqlCredential,
-        [validateSet("Full","Simple","Bulk_Logged")]
+        [validateSet("Full", "Simple", "Bulk_Logged")]
         [object]$RecoveryModel,
         [switch]$Detailed,
         [Alias('Silent')]
@@ -84,14 +85,14 @@ function Test-DbaRecoveryModel {
         Test-DbaDeprecation -DeprecatedOn 1.0.0 -Parameter Detailed
         Test-DbaDeprecation -DeprecatedOn 1.0.0 -Alias Test-DbaFullRecoveryModel
 
-        if(Test-Bound -ParameterName RecoveryModel -Not){
+        if (Test-Bound -ParameterName RecoveryModel -Not) {
             $RecoveryModel = "Full"
         }
 
-        switch($RecoveryModel){
-            "Full"          {$recoveryCode = 1}
-            "Bulk_Logged"   {$recoveryCode = 2}
-            "Simple"        {$recoveryCode = 3}
+        switch ($RecoveryModel) {
+            "Full" {$recoveryCode = 1}
+            "Bulk_Logged" {$recoveryCode = 2}
+            "Simple" {$recoveryCode = 3}
         }
 
         $sqlRecoveryModel = "SELECT  SERVERPROPERTY('MachineName') AS ComputerName,
@@ -125,10 +126,8 @@ function Test-DbaRecoveryModel {
     process {
         foreach ($instance in $SqlInstance) {
             try {
-                Write-Message -Level Verbose -Message "Connecting to $instance."
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential -MinimumVersion 9
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -142,24 +141,23 @@ function Test-DbaRecoveryModel {
                 foreach ($row in $results) {
                     if (!([bool]$row.IsReallyInFullRecoveryModel) -and $RecoveryModel -eq 'Full') {
                         $ActualRecoveryModel = "SIMPLE"
-                    }
-                    else{
+                    } else {
                         $ActualRecoveryModel = "$($RecoveryModel.ToString().ToUpper())"
                     }
 
                     [PSCustomObject]@{
-                        ComputerName   = $row.ComputerName
-                        InstanceName   = $row.InstanceName
-                        SqlInstance    = $row.SqlInstance
-                        Database       = $row.Database
+                        ComputerName            = $row.ComputerName
+                        InstanceName            = $row.InstanceName
+                        SqlInstance             = $row.SqlInstance
+                        Database                = $row.Database
                         ConfiguredRecoveryModel = $row.RecoveryModelDesc
-                        ActualRecoveryModel = $ActualRecoveryModel
-                    } | Select-DefaultView -Property ComputerName,InstanceName,SqlInstance,Database,ConfiguredRecoveryModel,ActualRecoveryModel
+                        ActualRecoveryModel     = $ActualRecoveryModel
+                    } | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, Database, ConfiguredRecoveryModel, ActualRecoveryModel
                 }
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
         }
     }
 }
+

@@ -38,35 +38,37 @@ function Copy-DbaDbMail {
     .NOTES
         Tags: Migration, Mail
         Author: Chrissy LeMaire (@cl), netnerds.net
-        Requires: sysadmin access on SQL Servers
 
         Website: https://dbatools.io
-        Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+        Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
+
+        Requires: sysadmin access on SQL Servers
 
     .LINK
         https://dbatools.io/Copy-DbaDbMail
 
     .EXAMPLE
-        Copy-DbaDbMail -Source sqlserver2014a -Destination sqlcluster
+        PS C:\> Copy-DbaDbMail -Source sqlserver2014a -Destination sqlcluster
 
         Copies all database mail objects from sqlserver2014a to sqlcluster using Windows credentials. If database mail objects with the same name exist on sqlcluster, they will be skipped.
 
     .EXAMPLE
-        Copy-DbaDbMail -Source sqlserver2014a -Destination sqlcluster -SourceSqlCredential $cred
+        PS C:\> Copy-DbaDbMail -Source sqlserver2014a -Destination sqlcluster -SourceSqlCredential $cred
 
         Copies all database mail objects from sqlserver2014a to sqlcluster using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster.
 
     .EXAMPLE
-        Copy-DbaDbMail -Source sqlserver2014a -Destination sqlcluster -WhatIf
+        PS C:\> Copy-DbaDbMail -Source sqlserver2014a -Destination sqlcluster -WhatIf
 
         Shows what would happen if the command were executed.
 
     .EXAMPLE
-        Copy-DbaDbMail -Source sqlserver2014a -Destination sqlcluster -EnableException
+        PS C:\> Copy-DbaDbMail -Source sqlserver2014a -Destination sqlcluster -EnableException
 
         Performs execution of function, and will throw a terminating exception if something breaks
-    #>
+
+#>
     [cmdletbinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
     param (
         [parameter(Mandatory)]
@@ -105,8 +107,7 @@ function Copy-DbaDbMail {
                     $destServer.Query($sql) | Out-Null
                     $mail.ConfigurationValues.Refresh()
                     $copyMailConfigStatus.Status = "Successful"
-                }
-                catch {
+                } catch {
                     $copyMailConfigStatus.Status = "Failed"
                     $copyMailConfigStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                     Stop-Function -Message "Unable to migrate mail configuration." -Category InvalidOperation -InnerErrorRecord $_ -Target $destServer
@@ -114,7 +115,7 @@ function Copy-DbaDbMail {
                 $copyMailConfigStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
             }
         }
-        
+
         function Copy-DbaDatabaseAccount {
             [cmdletbinding(SupportsShouldProcess)]
             $sourceAccounts = $sourceServer.Mail.Accounts
@@ -152,8 +153,7 @@ function Copy-DbaDbMail {
                             Write-Message -Message "Dropping account $accountName." -Level Verbose
                             $destServer.Mail.Accounts[$accountName].Drop()
                             $destServer.Mail.Accounts.Refresh()
-                        }
-                        catch {
+                        } catch {
                             $copyMailAccountStatus.Status = "Failed"
                             $copyMailAccountStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                             Stop-Function -Message "Issue dropping account." -Target $accountName -Category InvalidOperation -InnerErrorRecord $_ -Continue
@@ -169,8 +169,7 @@ function Copy-DbaDbMail {
                         Write-Message -Message $sql -Level Debug
                         $destServer.Query($sql) | Out-Null
                         $copyMailAccountStatus.Status = "Successful"
-                    }
-                    catch {
+                    } catch {
                         $copyMailAccountStatus.Status = "Failed"
                         $copyMailAccountStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                         Stop-Function -Message "Issue copying mail account." -Target $accountName -Category InvalidOperation -InnerErrorRecord $_
@@ -179,7 +178,7 @@ function Copy-DbaDbMail {
                 }
             }
         }
-        
+
         function Copy-DbaDbMailProfile {
 
             $sourceProfiles = $sourceServer.Mail.Profiles
@@ -219,8 +218,7 @@ function Copy-DbaDbMail {
                             Write-Message -Message "Dropping profile $profileName." -Level Verbose
                             $destServer.Mail.Profiles[$profileName].Drop()
                             $destServer.Mail.Profiles.Refresh()
-                        }
-                        catch {
+                        } catch {
                             $copyMailProfileStatus.Status = "Failed"
                             $copyMailProfileStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                             Stop-Function -Message "Issue dropping profile." -Target $profileName -Category InvalidOperation -InnerErrorRecord $_ -Continue
@@ -237,8 +235,7 @@ function Copy-DbaDbMail {
                         $destServer.Query($sql) | Out-Null
                         $destServer.Mail.Profiles.Refresh()
                         $copyMailProfileStatus.Status = "Successful"
-                    }
-                    catch {
+                    } catch {
                         $copyMailProfileStatus.Status = "Failed"
                         $copyMailProfileStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                         Stop-Function -Message "Issue copying mail profile." -Target $profileName -Category InvalidOperation -InnerErrorRecord $_
@@ -247,7 +244,7 @@ function Copy-DbaDbMail {
                 }
             }
         }
-        
+
         function Copy-DbaDbMailServer {
             [cmdletbinding(SupportsShouldProcess)]
             $sourceMailServers = $sourceServer.Mail.Accounts.MailServers
@@ -284,8 +281,7 @@ function Copy-DbaDbMail {
                         try {
                             Write-Message -Message "Dropping mail server $mailServerName." -Level Verbose
                             $destServer.Mail.Accounts.MailServers[$mailServerName].Drop()
-                        }
-                        catch {
+                        } catch {
                             $copyMailServerStatus.Status = "Failed"
                             $copyMailServerStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                             Stop-Function -Message "Issue dropping mail server." -Target $mailServerName -Category InvalidOperation -InnerErrorRecord $_ -Continue
@@ -301,8 +297,7 @@ function Copy-DbaDbMail {
                         Write-Message -Message $sql -Level Debug
                         $destServer.Query($sql) | Out-Null
                         $copyMailServerStatus.Status = "Successful"
-                    }
-                    catch {
+                    } catch {
                         $copyMailServerStatus.Status = "Failed"
                         $copyMailServerStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                         Stop-Function -Message "Issue copying mail server" -Target $mailServerName -Category InvalidOperation -InnerErrorRecord $_
@@ -311,12 +306,10 @@ function Copy-DbaDbMail {
                 }
             }
         }
-        
+
         try {
-            Write-Message -Level Verbose -Message "Connecting to $Source"
             $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -MinimumVersion 9
-        }
-        catch {
+        } catch {
             Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Source
             return
         }
@@ -326,58 +319,56 @@ function Copy-DbaDbMail {
         if (Test-FunctionInterrupt) { return }
         foreach ($destinstance in $Destination) {
             try {
-                Write-Message -Level Verbose -Message "Connecting to $destinstance"
                 $destServer = Connect-SqlInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential -MinimumVersion 9
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
             }
-            
+
             if ($type.Count -gt 0) {
-                
+
                 switch ($type) {
                     "ConfigurationValues" {
                         Copy-DbaDbMailConfig
                         $destServer.Mail.ConfigurationValues.Refresh()
                     }
-                    
+
                     "Profiles" {
                         Copy-DbaDbMailProfile
                         $destServer.Mail.Profiles.Refresh()
                     }
-                    
+
                     "Accounts" {
                         Copy-DbaDatabaseAccount
                         $destServer.Mail.Accounts.Refresh()
                     }
-                    
+
                     "mailServers" {
                         Copy-DbaDbMailServer
                     }
                 }
-                
+
                 continue
             }
-            
+
             if (($profiles.count + $accounts.count + $mailServers.count) -gt 0) {
-                
+
                 if ($profiles.count -gt 0) {
                     Copy-DbaDbMailProfile -Profiles $profiles
                     $destServer.Mail.Profiles.Refresh()
                 }
-                
+
                 if ($accounts.count -gt 0) {
                     Copy-DbaDatabaseAccount -Accounts $accounts
                     $destServer.Mail.Accounts.Refresh()
                 }
-                
+
                 if ($mailServers.count -gt 0) {
                     Copy-DbaDbMailServer -mailServers $mailServers
                 }
-                
+
                 continue
             }
-            
+
             Copy-DbaDbMailConfig
             $destServer.Mail.ConfigurationValues.Refresh()
             Copy-DbaDatabaseAccount
@@ -390,31 +381,30 @@ function Copy-DbaDbMail {
             $copyMailProfileStatus
             $copyMailServerStatus
             $enableDBMailStatus
-            
-        <# ToDo: Use Get/Set-DbaSpConfigure once the dynamic parameters are replaced. #>
-            
+
+            <# ToDo: Use Get/Set-DbaSpConfigure once the dynamic parameters are replaced. #>
+
             if (($sourceDbMailEnabled -eq 1) -and ($destDbMailEnabled -eq 0)) {
                 if ($pscmdlet.ShouldProcess($destinstance, "Enabling Database Mail")) {
                     $sourceDbMailEnabled = ($sourceServer.Configuration.DatabaseMailEnabled).ConfigValue
                     Write-Message -Message "$sourceServer DBMail configuration value: $sourceDbMailEnabled." -Level Verbose
-                    
+
                     $destDbMailEnabled = ($destServer.Configuration.DatabaseMailEnabled).ConfigValue
                     Write-Message -Message "$destServer DBMail configuration value: $destDbMailEnabled." -Level Verbose
                     $enableDBMailStatus = [pscustomobject]@{
-                        SourceServer = $sourceServer.name
+                        SourceServer      = $sourceServer.name
                         DestinationServer = $destServer.name
-                        Name         = "Enabled on Destination"
-                        Type         = "Mail Configuration"
-                        Status       = if ($destDbMailEnabled -eq 1) { "Enabled" } else { $null }
-                        DateTime     = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
+                        Name              = "Enabled on Destination"
+                        Type              = "Mail Configuration"
+                        Status            = if ($destDbMailEnabled -eq 1) { "Enabled" } else { $null }
+                        DateTime          = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
                     }
                     try {
                         Write-Message -Message "Enabling Database Mail on $destServer." -Level Verbose
                         $destServer.Configuration.DatabaseMailEnabled.ConfigValue = 1
                         $destServer.Alter()
                         $enableDBMailStatus.Status = "Successful"
-                    }
-                    catch {
+                    } catch {
                         $enableDBMailStatus.Status = "Failed"
                         $enableDBMailStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                         Stop-Function -Message "Cannot enable Database Mail." -Category InvalidOperation -ErrorRecord $_ -Target $destServer
@@ -429,3 +419,4 @@ function Copy-DbaDbMail {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-DbaDatabaseMail
     }
 }
+

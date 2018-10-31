@@ -1,175 +1,176 @@
 function Invoke-Sqlcmd2 {
     <#
-        .SYNOPSIS
-            Runs a T-SQL script.
+    .SYNOPSIS
+        Runs a T-SQL script.
 
-        .DESCRIPTION
-            Runs a T-SQL script. Invoke-Sqlcmd2 runs the whole script and only captures the first selected result set, such as the output of PRINT statements when -verbose parameter is specified.
-            Parameterized queries are supported.
+    .DESCRIPTION
+        Runs a T-SQL script. Invoke-Sqlcmd2 runs the whole script and only captures the first selected result set, such as the output of PRINT statements when -verbose parameter is specified.
+        Parameterized queries are supported.
 
-            Help details below borrowed from Invoke-Sqlcmd
+        Help details below borrowed from Invoke-Sqlcmd
 
-        .PARAMETER ServerInstance
-            Specifies the SQL Server instance(s) to execute the query against.
+    .PARAMETER ServerInstance
+        Specifies the SQL Server instance(s) to execute the query against.
 
-        .PARAMETER Database
-            Specifies the name of the database to execute the query against. If specified, this database will be used in the ConnectionString when establishing the connection to SQL Server.
+    .PARAMETER Database
+        Specifies the name of the database to execute the query against. If specified, this database will be used in the ConnectionString when establishing the connection to SQL Server.
 
-            If a SQLConnection is provided, the default database for that connection is overridden with this database.
+        If a SQLConnection is provided, the default database for that connection is overridden with this database.
 
-        .PARAMETER Query
-            Specifies one or more queries to be run. The queries can be Transact-SQL, XQuery statements, or sqlcmd commands. Multiple queries in a single batch may be separated by a semicolon.
+    .PARAMETER Query
+        Specifies one or more queries to be run. The queries can be Transact-SQL, XQuery statements, or sqlcmd commands. Multiple queries in a single batch may be separated by a semicolon.
 
-            Do not specify the sqlcmd GO separator (or, use the ParseGo parameter). Escape any double quotation marks included in the string.
+        Do not specify the sqlcmd GO separator (or, use the ParseGo parameter). Escape any double quotation marks included in the string.
 
-            Consider using bracketed identifiers such as [MyTable] instead of quoted identifiers such as "MyTable".
+        Consider using bracketed identifiers such as [MyTable] instead of quoted identifiers such as "MyTable".
 
-        .PARAMETER InputFile
-            Specifies the full path to a file to be used as the query input to Invoke-Sqlcmd2. The file can contain Transact-SQL statements, XQuery statements, sqlcmd commands and scripting variables.
+    .PARAMETER InputFile
+        Specifies the full path to a file to be used as the query input to Invoke-Sqlcmd2. The file can contain Transact-SQL statements, XQuery statements, sqlcmd commands and scripting variables.
 
-        .PARAMETER Credential
-            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+    .PARAMETER Credential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-            SECURITY NOTE: If you use the -Debug switch, the connectionstring including plain text password will be sent to the debug stream.
+        SECURITY NOTE: If you use the -Debug switch, the connectionstring including plain text password will be sent to the debug stream.
 
-        .PARAMETER Encrypt
-            If this switch is enabled, the connection to SQL Server will be made using SSL.
+    .PARAMETER Encrypt
+        If this switch is enabled, the connection to SQL Server will be made using SSL.
 
-            This requires that the SQL Server has been set up to accept SSL requests. For information regarding setting up SSL on SQL Server, see https://technet.microsoft.com/en-us/library/ms189067(v=sql.105).aspx
+        This requires that the SQL Server has been set up to accept SSL requests. For information regarding setting up SSL on SQL Server, see https://technet.microsoft.com/en-us/library/ms189067(v=sql.105).aspx
 
-        .PARAMETER QueryTimeout
-            Specifies the number of seconds before the queries time out.
+    .PARAMETER QueryTimeout
+        Specifies the number of seconds before the queries time out.
 
-        .PARAMETER ConnectionTimeout
-            Specifies the number of seconds before Invoke-Sqlcmd2 times out if it cannot successfully connect to an instance of the Database Engine. The timeout value must be an integer between 0 and 65534. If 0 is specified, connection attempts do not time out.
+    .PARAMETER ConnectionTimeout
+        Specifies the number of seconds before Invoke-Sqlcmd2 times out if it cannot successfully connect to an instance of the Database Engine. The timeout value must be an integer between 0 and 65534. If 0 is specified, connection attempts do not time out.
 
-        .PARAMETER As
-            Specifies output type. Valid options for this parameter are 'DataSet', 'DataTable', 'DataRow', 'PSObject', and 'SingleValue'
+    .PARAMETER As
+        Specifies output type. Valid options for this parameter are 'DataSet', 'DataTable', 'DataRow', 'PSObject', and 'SingleValue'
 
-            PSObject output introduces overhead but adds flexibility for working with results: http://powershell.org/wp/forums/topic/dealing-with-dbnull/
+        PSObject output introduces overhead but adds flexibility for working with results: http://powershell.org/wp/forums/topic/dealing-with-dbnull/
 
-        .PARAMETER SqlParameters
-            Specifies a hashtable of parameters for parameterized SQL queries.  http://blog.codinghorror.com/give-me-parameterized-sql-or-give-me-death/
+    .PARAMETER SqlParameters
+        Specifies a hashtable of parameters for parameterized SQL queries.  http://blog.codinghorror.com/give-me-parameterized-sql-or-give-me-death/
 
-            Example:
+        Example:
 
-        .PARAMETER AppendServerInstance
-            If this switch is enabled, the SQL Server instance will be appended to PSObject and DataRow output.
+    .PARAMETER AppendServerInstance
+        If this switch is enabled, the SQL Server instance will be appended to PSObject and DataRow output.
 
-        .PARAMETER ParseGo
-            If this switch is enabled, "GO" statements will be handled automatically.
-            Every "GO" will effectively run in a separate query, like if you issued multiple Invoke-SqlCmd2 commands.
-            "GO"s will be recognized if they are on a single line, as this covers
-            the 95% of the cases "GO" parsing is needed
-            Note:
-                Queries will always target that database, e.g. if you have this Query:
-                    USE DATABASE [dbname]
-                    GO
-                    SELECT * from sys.tables
-                and you call it via
-                    Invoke-SqlCmd2 -ServerInstance instance -Database msdb -Query ...
-                you'll get back tables from msdb, not dbname.
+    .PARAMETER ParseGo
+        If this switch is enabled, "GO" statements will be handled automatically.
+        Every "GO" will effectively run in a separate query, like if you issued multiple Invoke-SqlCmd2 commands.
+        "GO"s will be recognized if they are on a single line, as this covers
+        the 95% of the cases "GO" parsing is needed
+        Note:
+        Queries will always target that database, e.g. if you have this Query:
+        USE DATABASE [dbname]
+        GO
+        SELECT * from sys.tables
+        and you call it via
+        Invoke-SqlCmd2 -ServerInstance instance -Database msdb -Query ...
+        you'll get back tables from msdb, not dbname.
 
 
-        .PARAMETER SQLConnection
-            Specifies an existing SQLConnection object to use in connecting to SQL Server. If the connection is closed, an attempt will be made to open it.
+    .PARAMETER SQLConnection
+        Specifies an existing SQLConnection object to use in connecting to SQL Server. If the connection is closed, an attempt will be made to open it.
 
-        .INPUTS
-            None
-                You cannot pipe objects to Invoke-Sqlcmd2
+    .INPUTS
+        None
+        You cannot pipe objects to Invoke-Sqlcmd2
 
-        .OUTPUTS
+    .OUTPUTS
         As PSObject:     System.Management.Automation.PSCustomObject
         As DataRow:      System.Data.DataRow
         As DataTable:    System.Data.DataTable
         As DataSet:      System.Data.DataTableCollectionSystem.Data.DataSet
         As SingleValue:  Dependent on data type in first column.
 
-        .EXAMPLE
-            Invoke-Sqlcmd2 -ServerInstance "MyComputer\MyInstance" -Query "SELECT login_time AS 'StartTime' FROM sysprocesses WHERE spid = 1"
+    .EXAMPLE
+        Invoke-Sqlcmd2 -ServerInstance "MyComputer\MyInstance" -Query "SELECT login_time AS 'StartTime' FROM sysprocesses WHERE spid = 1"
 
-            Connects to a named instance of the Database Engine on a computer and runs a basic T-SQL query.
+        Connects to a named instance of the Database Engine on a computer and runs a basic T-SQL query.
 
-            StartTime
-            -----------
-            2010-08-12 21:21:03.593
+        StartTime
+        -----------
+        2010-08-12 21:21:03.593
 
-        .EXAMPLE
-            Invoke-Sqlcmd2 -ServerInstance "MyComputer\MyInstance" -InputFile "C:\MyFolder\tsqlscript.sql" | Out-File -filePath "C:\MyFolder\tsqlscript.rpt"
+    .EXAMPLE
+        Invoke-Sqlcmd2 -ServerInstance "MyComputer\MyInstance" -InputFile "C:\MyFolder\tsqlscript.sql" | Out-File -filePath "C:\MyFolder\tsqlscript.rpt"
 
-            Reads a file containing T-SQL statements, runs the file, and writes the output to another file.
+        Reads a file containing T-SQL statements, runs the file, and writes the output to another file.
 
-        .EXAMPLE
-            Invoke-Sqlcmd2  -ServerInstance "MyComputer\MyInstance" -Query "PRINT 'hello world'" -Verbose
+    .EXAMPLE
+        Invoke-Sqlcmd2  -ServerInstance "MyComputer\MyInstance" -Query "PRINT 'hello world'" -Verbose
 
-            Uses the PowerShell -Verbose parameter to return the message output of the PRINT command.
-            VERBOSE: hello world
+        Uses the PowerShell -Verbose parameter to return the message output of the PRINT command.
+        VERBOSE: hello world
 
-        .EXAMPLE
-            Invoke-Sqlcmd2 -ServerInstance MyServer\MyInstance -Query "SELECT ServerName, VCNumCPU FROM tblServerInfo" -as PSObject | ?{$_.VCNumCPU -gt 8}
-            Invoke-Sqlcmd2 -ServerInstance MyServer\MyInstance -Query "SELECT ServerName, VCNumCPU FROM tblServerInfo" -as PSObject | ?{$_.VCNumCPU}
+    .EXAMPLE
+        Invoke-Sqlcmd2 -ServerInstance MyServer\MyInstance -Query "SELECT ServerName, VCNumCPU FROM tblServerInfo" -as PSObject | ?{$_.VCNumCPU -gt 8}
+        Invoke-Sqlcmd2 -ServerInstance MyServer\MyInstance -Query "SELECT ServerName, VCNumCPU FROM tblServerInfo" -as PSObject | ?{$_.VCNumCPU}
 
-            This example uses the PSObject output type to allow more flexibility when working with results.
+        This example uses the PSObject output type to allow more flexibility when working with results.
 
-            If we used DataRow rather than PSObject, we would see the following behavior:
-                Each row where VCNumCPU does not exist would produce an error in the first example
-                Results would include rows where VCNumCPU has DBNull value in the second example
+        If we used DataRow rather than PSObject, we would see the following behavior:
+        Each row where VCNumCPU does not exist would produce an error in the first example
+        Results would include rows where VCNumCPU has DBNull value in the second example
 
-        .EXAMPLE
-            'Instance1', 'Server1/Instance1', 'Server2' | Invoke-Sqlcmd2 -query "Sp_databases" -as psobject -AppendServerInstance
+    .EXAMPLE
+        'Instance1', 'Server1/Instance1', 'Server2' | Invoke-Sqlcmd2 -query "Sp_databases" -as psobject -AppendServerInstance
 
-            This example lists databases for each instance.  It includes a column for the ServerInstance in question.
-                DATABASE_NAME          DATABASE_SIZE REMARKS        ServerInstance
-                -------------          ------------- -------        --------------
-                REDACTED                       88320                Instance1
-                master                         17920                Instance1
-                ...
-                msdb                          618112                Server1/Instance1
-                tempdb                        563200                Server1/Instance1
-                ...
-                OperationsManager           20480000                Server2
+        This example lists databases for each instance.  It includes a column for the ServerInstance in question.
+        DATABASE_NAME          DATABASE_SIZE REMARKS        ServerInstance
+        -------------          ------------- -------        --------------
+        REDACTED                       88320                Instance1
+        master                         17920                Instance1
+    ...
+        msdb                          618112                Server1/Instance1
+        tempdb                        563200                Server1/Instance1
+    ...
+        OperationsManager           20480000                Server2
 
-        .EXAMPLE
-            #Construct a query using SQL parameters
-                $Query = "SELECT ServerName, VCServerClass, VCServerContact FROM tblServerInfo WHERE VCServerContact LIKE @VCServerContact AND VCServerClass LIKE @VCServerClass"
+    .EXAMPLE
+        #Construct a query using SQL parameters
+        $Query = "SELECT ServerName, VCServerClass, VCServerContact FROM tblServerInfo WHERE VCServerContact LIKE @VCServerContact AND VCServerClass LIKE @VCServerClass"
 
-            #Run the query, specifying values for SQL parameters
-                Invoke-Sqlcmd2 -ServerInstance SomeServer\NamedInstance -Database ServerDB -query $query -SqlParameters @{ VCServerContact="%cookiemonster%"; VCServerClass="Prod" }
+        #Run the query, specifying values for SQL parameters
+        Invoke-Sqlcmd2 -ServerInstance SomeServer\NamedInstance -Database ServerDB -query $query -SqlParameters @{ VCServerContact="%cookiemonster%"; VCServerClass="Prod" }
 
-                ServerName    VCServerClass VCServerContact
-                ----------    ------------- ---------------
-                SomeServer1   Prod          cookiemonster, blah
-                SomeServer2   Prod          cookiemonster
-                SomeServer3   Prod          blah, cookiemonster
+        ServerName    VCServerClass VCServerContact
+        ----------    ------------- ---------------
+        SomeServer1   Prod          cookiemonster, blah
+        SomeServer2   Prod          cookiemonster
+        SomeServer3   Prod          blah, cookiemonster
 
-        .EXAMPLE
-            Invoke-Sqlcmd2 -SQLConnection $Conn -Query "SELECT login_time AS 'StartTime' FROM sysprocesses WHERE spid = 1"
+    .EXAMPLE
+        Invoke-Sqlcmd2 -SQLConnection $Conn -Query "SELECT login_time AS 'StartTime' FROM sysprocesses WHERE spid = 1"
 
-            Uses an existing SQLConnection and runs a basic T-SQL query against it
+        Uses an existing SQLConnection and runs a basic T-SQL query against it
 
-            StartTime
-            -----------
-            2010-08-12 21:21:03.593
+        StartTime
+        -----------
+        2010-08-12 21:21:03.593
 
-        .EXAMPLE
-            Invoke-SqlCmd -SQLConnection $Conn -Query "SELECT ServerName FROM tblServerInfo WHERE ServerName LIKE @ServerName" -SqlParameters @{"ServerName = "c-is-hyperv-1"}
+    .EXAMPLE
+        Invoke-SqlCmd -SQLConnection $Conn -Query "SELECT ServerName FROM tblServerInfo WHERE ServerName LIKE @ServerName" -SqlParameters @{"ServerName = "c-is-hyperv-1"}
 
-            Executes a parameterized query against the existing SQLConnection, with a collection of one parameter to be passed to the query when executed.
+        Executes a parameterized query against the existing SQLConnection, with a collection of one parameter to be passed to the query when executed.
 
-        .NOTES
-            Changelog moved to CHANGELOG.md:
+    .NOTES
+        Changelog moved to CHANGELOG.md:
 
-            https://github.com/sqlcollaborative/Invoke-SqlCmd2/blob/master/CHANGELOG.md
+        https://github.com/sqlcollaborative/Invoke-SqlCmd2/blob/master/CHANGELOG.md
 
-        .LINK
-            https://github.com/sqlcollaborative/Invoke-SqlCmd2
+    .LINK
+        https://github.com/sqlcollaborative/Invoke-SqlCmd2
 
-        .LINK
-            https://github.com/RamblingCookieMonster/PowerShell
+    .LINK
+        https://github.com/RamblingCookieMonster/PowerShell
 
-        .FUNCTIONALITY
-            SQL
-    #>
+    .FUNCTIONALITY
+        SQL
+
+#>
 
     [CmdletBinding(DefaultParameterSetName = 'Ins-Que')]
     [OutputType([System.Management.Automation.PSCustomObject], [System.Data.DataRow], [System.Data.DataTable], [System.Data.DataTableCollection], [System.Data.DataSet])]
@@ -332,8 +333,7 @@ function Invoke-Sqlcmd2 {
 
             try {
                 Add-Type -TypeDefinition $cSharp -ReferencedAssemblies 'System.Data', 'System.Xml' -ErrorAction stop
-            }
-            catch {
+            } catch {
                 if (-not $_.ToString() -like "*The type name 'DBNullScrubber' already exists*") {
                     Write-Warning "Could not load DBNullScrubber.  Defaulting to DataRow output: $_."
                     $As = "Datarow"
@@ -347,8 +347,7 @@ function Invoke-Sqlcmd2 {
                 try {
                     Write-Verbose "Opening connection from '$($SQLConnection.State)' state."
                     $SQLConnection.Open()
-                }
-                catch {
+                } catch {
                     throw $_
                 }
             }
@@ -357,16 +356,14 @@ function Invoke-Sqlcmd2 {
                 try {
                     Write-Verbose "Changing SQLConnection database from '$($SQLConnection.Database)' to $Database."
                     $SQLConnection.ChangeDatabase($Database)
-                }
-                catch {
+                } catch {
                     throw "Could not change Connection database '$($SQLConnection.Database)' to $Database`: $_"
                 }
             }
 
             if ($SQLConnection.state -like "Open") {
                 $ServerInstance = @($SQLConnection.DataSource)
-            }
-            else {
+            } else {
                 throw "SQLConnection is not open"
             }
         }
@@ -379,8 +376,7 @@ function Invoke-Sqlcmd2 {
 
             if ($PSBoundParameters.Keys -contains "SQLConnection") {
                 $Conn = $SQLConnection
-            }
-            else {
+            } else {
                 $CSBuilder = New-Object -TypeName System.Data.SqlClient.SqlConnectionStringBuilder
                 $CSBuilder["Server"] = $SQLInstance
                 $CSBuilder["Database"] = $Database
@@ -394,14 +390,12 @@ function Invoke-Sqlcmd2 {
                     $CSBuilder["Trusted_Connection"] = $false
                     $CSBuilder["User ID"] = $Credential.UserName
                     $CSBuilder["Password"] = $Credential.GetNetworkCredential().Password
-                }
-                else {
+                } else {
                     $CSBuilder["Integrated Security"] = $true
                 }
                 if ($ApplicationName) {
                     $CSBuilder["Application Name"] = $ApplicationName
-                }
-                else {
+                } else {
                     $ScriptName = (Get-PSCallStack)[-1].Command.ToString()
                     if ($ScriptName -ne "<ScriptBlock>") {
                         $CSBuilder["Application Name"] = $ScriptName
@@ -415,8 +409,7 @@ function Invoke-Sqlcmd2 {
 
                 try {
                     $conn.Open()
-                }
-                catch {
+                } catch {
                     Write-Error $_
                     continue
                 }
@@ -431,8 +424,7 @@ function Invoke-Sqlcmd2 {
             if ($ParseGO) {
                 Write-Verbose "Stripping GOs from source"
                 $Pieces = $GoSplitterRegex.Split($Query)
-            }
-            else {
+            } else {
                 $Pieces = , $Query
             }
             # Only execute non-empty statements
@@ -446,8 +438,7 @@ function Invoke-Sqlcmd2 {
                         ForEach-Object {
                         if ($null -ne $_.Value) {
                             $cmd.Parameters.AddWithValue($_.Key, $_.Value)
-                        }
-                        else {
+                        } else {
                             $cmd.Parameters.AddWithValue($_.Key, [DBNull]::Value)
                         }
                     } > $null
@@ -458,8 +449,7 @@ function Invoke-Sqlcmd2 {
 
                 try {
                     [void]$da.fill($ds)
-                }
-                catch [System.Data.SqlClient.SqlException] {
+                } catch [System.Data.SqlClient.SqlException] {
                     # For SQL exception
 
                     $Err = $_
@@ -484,8 +474,7 @@ function Invoke-Sqlcmd2 {
                             Throw $Err
                         }
                     }
-                }
-                catch {
+                } catch {
                     # For other exception
                     Write-Verbose "Capture Other Error"
 
@@ -509,8 +498,7 @@ function Invoke-Sqlcmd2 {
                             throw $Err
                         }
                     }
-                }
-                finally {
+                } finally {
                     #Close the connection
                     if (-not $PSBoundParameters.ContainsKey('SQLConnection')) {
                         $conn.Close()
@@ -562,3 +550,4 @@ function Invoke-Sqlcmd2 {
         }
     }
 } #Invoke-Sqlcmd2
+

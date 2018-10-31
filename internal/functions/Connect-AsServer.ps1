@@ -14,7 +14,7 @@ Shorten the timeout
 
 .NOTES
 Website: https://dbatools.io
-Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+Copyright: (c) 2018 by dbatools, licensed under MIT
 License: MIT https://opensource.org/licenses/MIT
 
 .EXAMPLE
@@ -46,10 +46,8 @@ Connects to SSAS on the local server
     try {
         if ($ParameterConnection) {
             $server.Connect("Data Source=$AsServer;Connect Timeout=2")
-        }
-        else { $server.Connect("Data Source=$AsServer;Connect Timeout=3") }
-    }
-    catch {
+        } else { $server.Connect("Data Source=$AsServer;Connect Timeout=3") }
+    } catch {
         $message = $_.Exception.InnerException
         $message = $message.ToString()
         $message = ($message -Split '-->')[0]
@@ -60,3 +58,5 @@ Connects to SSAS on the local server
 
     return $server
 }
+
+

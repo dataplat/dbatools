@@ -1,4 +1,4 @@
-﻿function Get-DbaDbMailServer {
+function Get-DbaDbMailServer {
     <#
     .SYNOPSIS
         Gets database mail servers from SQL Server
@@ -7,7 +7,7 @@
         Gets database mail servers from SQL Server
 
     .PARAMETER SqlInstance
-        The SQL Server instance, or instances.
+        TThe target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
@@ -18,7 +18,6 @@
     .PARAMETER Account
         Get only the mail server associated with specific accounts
 
-
     .PARAMETER InputObject
         Accepts pipeline input from Get-DbaDbMail
 
@@ -28,35 +27,36 @@
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: databasemail, dbmail, mail
+        Tags: DatabaseMail, DBMail, Mail
         Author: Chrissy LeMaire (@cl), netnerds.net
+
         Website: https://dbatools.io
-        Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+        Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
         https://dbatools.io/Get-DbaDbMailServer
 
     .EXAMPLE
-        Get-DbaDbMailServer -SqlInstance sql01\sharepoint
+        PS C:\> Get-DbaDbMailServer -SqlInstance sql01\sharepoint
 
-        Returns all dbmail servers on sql01\sharepoint
-
-    .EXAMPLE
-        Get-DbaDbMailServer -SqlInstance sql01\sharepoint -Server DbaTeam
-
-        Returns The DBA Team dbmail server from sql01\sharepoint
+        Returns all DBMail servers on sql01\sharepoint
 
     .EXAMPLE
-        Get-DbaDbMailServer -SqlInstance sql01\sharepoint | Select *
+        PS C:\> Get-DbaDbMailServer -SqlInstance sql01\sharepoint -Server DbaTeam
 
-        Returns the dbmail servers on sql01\sharepoint then return a bunch more columns
+        Returns The DBA Team DBMail server from sql01\sharepoint
 
     .EXAMPLE
-        $servers = "sql2014","sql2016", "sqlcluster\sharepoint"
-        $servers | Get-DbaDbMail | Get-DbaDbMailServer
+        PS C:\> Get-DbaDbMailServer -SqlInstance sql01\sharepoint | Select *
 
-        Returns the dbmail servers for "sql2014","sql2016" and "sqlcluster\sharepoint"
+        Returns the DBMail servers on sql01\sharepoint then return a bunch more columns
+
+    .EXAMPLE
+        PS C:\> $servers = "sql2014","sql2016", "sqlcluster\sharepoint"
+        PS C:\> $servers | Get-DbaDbMail | Get-DbaDbMailServer
+
+        Returns the DBMail servers for "sql2014","sql2016" and "sqlcluster\sharepoint"
 
 #>
     [CmdletBinding()]
@@ -74,7 +74,6 @@
     )
     process {
         foreach ($instance in $SqlInstance) {
-            Write-Message -Level Verbose -Message "Connecting to $instance"
             $InputObject += Get-DbaDbMail -SqlInstance $SqlInstance -SqlCredential $SqlCredential
         }
 
@@ -99,10 +98,10 @@
                     $servers | Add-Member -Force -MemberType NoteProperty -Name Account -value $servers[0].Parent.Name
                     $servers | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, Account, Name, Port, EnableSsl, ServerType, UserName, UseDefaultCredentials, NoCredentialChange
                 }
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
             }
         }
     }
 }
+

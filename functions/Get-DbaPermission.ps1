@@ -1,72 +1,73 @@
 function Get-DbaPermission {
     <#
-        .SYNOPSIS
-            Get a list of Server and Database level permissions
+    .SYNOPSIS
+        Get a list of Server and Database level permissions
 
-        .DESCRIPTION
-            Retrieves a list of permissions
+    .DESCRIPTION
+        Retrieves a list of permissions
 
-            Permissions link principals to securables.
-            Principals exist on Windows, Instance and Database level.
-            Securables exist on Instance and Database level.
-            A permission state can be GRANT, DENY or REVOKE.
-            The permission type can be SELECT, CONNECT, EXECUTE and more.
+        Permissions link principals to securables.
+        Principals exist on Windows, Instance and Database level.
+        Securables exist on Instance and Database level.
+        A permission state can be GRANT, DENY or REVOKE.
+        The permission type can be SELECT, CONNECT, EXECUTE and more.
 
-            See https://msdn.microsoft.com/en-us/library/ms191291.aspx for more information
+        See https://msdn.microsoft.com/en-us/library/ms191291.aspx for more information
 
-        .PARAMETER SqlInstance
-            The SQL Server instance to connect to.
+    .PARAMETER SqlInstance
+        The target SQL Server instance or instances. Defaults to localhost.
 
-        .PARAMETER SqlCredential
-            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+    .PARAMETER SqlCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-        .PARAMETER Database
-            Specifies one or more database(s) to process. If unspecified, all databases will be processed.
+    .PARAMETER Database
+        Specifies one or more database(s) to process. If unspecified, all databases will be processed.
 
-        .PARAMETER ExcludeDatabase
-            Specifies one or more database(s) to exclude from processing.
+    .PARAMETER ExcludeDatabase
+        Specifies one or more database(s) to exclude from processing.
 
-        .PARAMETER IncludeServerLevel
-            If this switch is enabled, information about Server Level Permissions will be output.
+    .PARAMETER IncludeServerLevel
+        If this switch is enabled, information about Server Level Permissions will be output.
 
-        .PARAMETER NoSystemObjects
-            If this switch is enabled, permissions on system securables will be excluded.
+    .PARAMETER NoSystemObjects
+        If this switch is enabled, permissions on system securables will be excluded.
 
-        .PARAMETER EnableException
-            If this switch is enabled exceptions will be thrown to the caller, which will need to perform its own exception processing. Otherwise, the function will try to catch the exception, interpret it and provide a friendly error message.
+    .PARAMETER EnableException
+        If this switch is enabled exceptions will be thrown to the caller, which will need to perform its own exception processing. Otherwise, the function will try to catch the exception, interpret it and provide a friendly error message.
 
-        .NOTES
-            Tags: Permissions, Databases
-            Author: Klaas Vandenberghe ( @PowerDBAKlaas )
+    .NOTES
+        Tags: Permissions, Databases
+        Author: Klaas Vandenberghe (@PowerDBAKlaas)
 
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: MIT https://opensource.org/licenses/MIT
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-        .LINK
-            https://dbatools.io/Get-DbaPermission
+    .LINK
+        https://dbatools.io/Get-DbaPermission
 
-        .EXAMPLE
-            Get-DbaPermission -SqlInstance ServerA\sql987
+    .EXAMPLE
+        PS C:\> Get-DbaPermission -SqlInstance ServerA\sql987
 
-            Returns a custom object with Server name, Database name, permission state, permission type, grantee and securable.
+        Returns a custom object with Server name, Database name, permission state, permission type, grantee and securable.
 
-        .EXAMPLE
-            Get-DbaPermission -SqlInstance ServerA\sql987 | Format-Table -AutoSize
+    .EXAMPLE
+        PS C:\> Get-DbaPermission -SqlInstance ServerA\sql987 | Format-Table -AutoSize
 
-            Returns a formatted table displaying Server, Database, permission state, permission type, grantee, granteetype, securable and securabletype.
+        Returns a formatted table displaying Server, Database, permission state, permission type, grantee, granteetype, securable and securabletype.
 
-        .EXAMPLE
-            Get-DbaPermission -SqlInstance ServerA\sql987 -NoSystemObjects -IncludeServerLevel
+    .EXAMPLE
+        PS C:\> Get-DbaPermission -SqlInstance ServerA\sql987 -NoSystemObjects -IncludeServerLevel
 
-            Returns a custom object with Server name, Database name, permission state, permission type, grantee and securable
-            in all databases and on the server level, but not on system securables.
+        Returns a custom object with Server name, Database name, permission state, permission type, grantee and securable
+        in all databases and on the server level, but not on system securables.
 
-        .EXAMPLE
-            Get-DbaPermission -SqlInstance sql2016 -Database master
+    .EXAMPLE
+        PS C:\> Get-DbaPermission -SqlInstance sql2016 -Database master
 
-            Returns a custom object with permissions for the master database.
-    #>
+        Returns a custom object with permissions for the master database.
+
+#>
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
@@ -212,12 +213,10 @@ function Get-DbaPermission {
 
     process {
         foreach ($instance in $SqlInstance) {
-            Write-Message -Level Verbose -Message "Connecting to $instance."
 
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential -MinimumVersion 9
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -240,7 +239,7 @@ function Get-DbaPermission {
                 Write-Message -Level Verbose -Message "Processing $db on $instance."
 
                 if ($db.IsAccessible -eq $false) {
-                    Write-Warning "The database $db is not accessible. Skipping database."
+                    Write-Message -Level Warning -Message "The database $db is not accessible. Skipping database."
                     Continue
                 }
 
@@ -250,3 +249,4 @@ function Get-DbaPermission {
         }
     }
 }
+

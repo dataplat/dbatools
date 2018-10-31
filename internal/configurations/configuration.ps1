@@ -56,7 +56,7 @@ In order to reduce import times, this is executed in a separate runspace.
 #>
 
 $scriptBlock = {
-    Param (
+    param (
         $DbatoolsConfig
     )
     $ModuleRoot = [Sqlcollaborative.Dbatools.dbaSystem.SystemHost]::ModuleBase
@@ -93,7 +93,7 @@ $scriptBlock = {
 
         function Convert-RegType {
             [CmdletBinding()]
-            Param (
+            param (
                 [string]
                 $Value
             )

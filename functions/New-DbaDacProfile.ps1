@@ -1,60 +1,68 @@
 function New-DbaDacProfile {
     <#
-        .SYNOPSIS
-            Creates a new Publish Profile.
+    .SYNOPSIS
+        Creates a new Publish Profile.
 
-        .DESCRIPTION
-            The New-PublishProfile command generates a standard publish profile xml file that can be used by the DacFx (this and everything else) to control the deployment of your dacpac
-            This generates a standard template XML which is enough to dpeloy a dacpac but it is highly recommended that you add additional options to the publish profile.
-            If you use Visual Studio you can open a publish.xml file and use the ui to edit the file -
-            To create a new file, right click on an SSDT project, choose "Publish" then "Load Profile" and load your profile or create a new one.
-            Once you have loaded it in Visual Studio, clicking advanced shows you the list of options available to you.
-            For a full list of options that you can add to the profile, google "sqlpackage.exe command line switches" or (https://msdn.microsoft.com/en-us/library/hh550080(v=vs.103).aspx)
+    .DESCRIPTION
+        The New-DbaDacProfile command generates a standard publish profile xml file that can be used by the DacFx (this and everything else) to control the deployment of your dacpac
+        This generates a standard template XML which is enough to dpeloy a dacpac but it is highly recommended that you add additional options to the publish profile.
+        If you use Visual Studio you can open a publish.xml file and use the ui to edit the file -
+        To create a new file, right click on an SSDT project, choose "Publish" then "Load Profile" and load your profile or create a new one.
+        Once you have loaded it in Visual Studio, clicking advanced shows you the list of options available to you.
+        For a full list of options that you can add to the profile, google "sqlpackage.exe command line switches" or (https://msdn.microsoft.com/en-us/library/hh550080(v=vs.103).aspx)
 
-        .PARAMETER SqlInstance
-        SQL Server name or SMO object representing the SQL Server to connect to and publish to. Alternatively, you can provide a ConnectionString.
+    .PARAMETER SqlInstance
+        The target SQL Server instance or instances. Alternatively, you can provide a ConnectionString.
 
-        .PARAMETER SqlCredential
+    .PARAMETER SqlCredential
         Allows you to login to servers using alternative logins instead Integrated, accepts Credential object created by Get-Credential
 
-        .PARAMETER Database
-            The database name you are targeting
+    .PARAMETER Database
+        The database name you are targeting
 
-        .PARAMETER ConnectionString
-            The connection string to the database you are upgrading.
+    .PARAMETER ConnectionString
+        The connection string to the database you are upgrading.
 
-            Alternatively, you can provide a SqlInstance (and optionally SqlCredential) and the script will connect and generate the connectionstring.
+        Alternatively, you can provide a SqlInstance (and optionally SqlCredential) and the script will connect and generate the connectionstring.
 
-        .PARAMETER Path
-            The directory where you would like to save the profile xml file(s).
+    .PARAMETER Path
+        The directory where you would like to save the profile xml file(s).
 
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+    .PARAMETER WhatIf
+        If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
-        .NOTES
-            Tags: Dacpac
-            Author: Richie lee (@bzzzt_io)
+    .PARAMETER Confirm
+        If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: MIT https://opensource.org/licenses/MIT
-        .LINK
-            https://dbatools.io/New-DbaDacProfile
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-        .EXAMPLE
-        New-DbaDacProfile -SqlInstance sql2017 -SqlCredential (Get-Credential) -Database WorldWideImporters -Path C:\temp
+    .NOTES
+        Tags: Dacpac
+        Author: Richie lee (@richiebzzzt)
+
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
+
+    .LINK
+        https://dbatools.io/New-DbaDacProfile
+
+    .EXAMPLE
+        PS C:\> New-DbaDacProfile -SqlInstance sql2017 -SqlCredential ad\sqldba -Database WorldWideImporters -Path C:\temp
 
         In this example, a prompt will appear for alternative credentials, then a connection will be made to sql2017. Using that connection,
         the ConnectionString will be extracted and used within the Publish Profile XML file which will be created at C:\temp\sql2017-WorldWideImporters-publish.xml
 
-        .EXAMPLE
-        New-DbaDacProfile -Database WorldWideImporters -Path C:\temp -ConnectionString "SERVER=(localdb)\MSSQLLocalDB;Integrated Security=True;Database=master"
+    .EXAMPLE
+        PS C:\> New-DbaDacProfile -Database WorldWideImporters -Path C:\temp -ConnectionString "SERVER=(localdb)\MSSQLLocalDB;Integrated Security=True;Database=master"
 
         In this example, no connections are made, and a Publish Profile XML would be created at C:\temp\localdb-MSSQLLocalDB-WorldWideImporters-publish.xml
-    #>
-    [CmdletBinding()]
+
+#>
+    [CmdletBinding(SupportsShouldProcess)]
     param (
         [parameter(ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
@@ -108,10 +116,8 @@ function New-DbaDacProfile {
 
         foreach ($instance in $sqlinstance) {
             try {
-                Write-Message -Level Verbose -Message "Connecting to $instance."
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -121,26 +127,27 @@ function New-DbaDacProfile {
 
         foreach ($connstring in $ConnectionString) {
             foreach ($db in $Database) {
-                $profileTemplate = Get-Template $db, $connstring
-                $instancename = Get-ServerName $connstring
+                if ($Pscmdlet.ShouldProcess($db, "Creating new DAC Profile")) {
+                    $profileTemplate = Get-Template $db, $connstring
+                    $instancename = Get-ServerName $connstring
 
-                try {
-                    $server = [DbaInstance]($instancename.ToString().Replace('--', '\'))
-                    $PublishProfile = Join-Path $Path "$($instancename.Replace('--','-'))-$db-publish.xml" -ErrorAction Stop
-                    Write-Message -Level Verbose -Message "Writing to $PublishProfile"
-                    $profileTemplate | Out-File $PublishProfile -ErrorAction Stop
-                    [pscustomobject]@{
-                        ComputerName     = $server.ComputerName
-                        InstanceName     = $server.InstanceName
-                        SqlInstance      = $server.FullName
-                        Database         = $db
-                        FileName         = $PublishProfile
-                        ConnectionString = $connstring
-                        ProfileTemplate  = $profileTemplate
-                    } | Select-DefaultView -ExcludeProperty ComputerName, InstanceName, ProfileTemplate
-                }
-                catch {
-                    Stop-Function -ErrorRecord $_ -Message "Failure" -Target $instancename -Continue
+                    try {
+                        $server = [DbaInstance]($instancename.ToString().Replace('--', '\'))
+                        $PublishProfile = Join-Path $Path "$($instancename.Replace('--','-'))-$db-publish.xml" -ErrorAction Stop
+                        Write-Message -Level Verbose -Message "Writing to $PublishProfile"
+                        $profileTemplate | Out-File $PublishProfile -ErrorAction Stop
+                        [pscustomobject]@{
+                            ComputerName     = $server.ComputerName
+                            InstanceName     = $server.InstanceName
+                            SqlInstance      = $server.FullName
+                            Database         = $db
+                            FileName         = $PublishProfile
+                            ConnectionString = $connstring
+                            ProfileTemplate  = $profileTemplate
+                        } | Select-DefaultView -ExcludeProperty ComputerName, InstanceName, ProfileTemplate
+                    } catch {
+                        Stop-Function -ErrorRecord $_ -Message "Failure" -Target $instancename -Continue
+                    }
                 }
             }
         }
@@ -149,3 +156,4 @@ function New-DbaDacProfile {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias New-DbaPublishProfile
     }
 }
+

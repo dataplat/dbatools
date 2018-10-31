@@ -1,59 +1,60 @@
 function Test-DbaDbOwner {
     <#
-        .SYNOPSIS
-            Checks database owners against a login to validate which databases do not match that owner.
+    .SYNOPSIS
+        Checks database owners against a login to validate which databases do not match that owner.
 
-        .DESCRIPTION
-            This function will check all databases on an instance against a SQL login to validate if that
-            login owns those databases or not. By default, the function will check against 'sa' for
-            ownership, but the user can pass a specific login if they use something else.
+    .DESCRIPTION
+        This function will check all databases on an instance against a SQL login to validate if that
+        login owns those databases or not. By default, the function will check against 'sa' for
+        ownership, but the user can pass a specific login if they use something else.
 
-            Best Practice reference: http://weblogs.sqlteam.com/dang/archive/2008/01/13/Database-Owner-Troubles.aspx
+        Best Practice reference: http://weblogs.sqlteam.com/dang/archive/2008/01/13/Database-Owner-Troubles.aspx
 
-        .PARAMETER SqlInstance
-            Specifies the SQL Server instance(s) to scan.
+    .PARAMETER SqlInstance
+        The target SQL Server instance or instances.
 
-        .PARAMETER SqlCredential
-            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+    .PARAMETER SqlCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-        .PARAMETER Database
-            Specifies the database(s) to process. Options for this list are auto-populated from the server. If unspecified, all databases will be processed.
+    .PARAMETER Database
+        Specifies the database(s) to process. Options for this list are auto-populated from the server. If unspecified, all databases will be processed.
 
-        .PARAMETER ExcludeDatabase
-            Specifies the database(s) to exclude from processing. Options for this list are auto-populated from the server.
+    .PARAMETER ExcludeDatabase
+        Specifies the database(s) to exclude from processing. Options for this list are auto-populated from the server.
 
-        .PARAMETER TargetLogin
-            Specifies the login that you wish check for ownership. This defaults to 'sa' or the sysadmin name if sa was renamed. This must be a valid security principal which exists on the target server.
+    .PARAMETER TargetLogin
+        Specifies the login that you wish check for ownership. This defaults to 'sa' or the sysadmin name if sa was renamed. This must be a valid security principal which exists on the target server.
 
-        .PARAMETER Detailed
-            Will be deprecated in 1.0.0 release.
+    .PARAMETER Detailed
+        Will be deprecated in 1.0.0 release.
 
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-        .NOTES
-            Tags: Database, Owner, DbOwner
-            Author: Michael Fal (@Mike_Fal), http://mikefal.net
+    .NOTES
+        Tags: Database, Owner, DbOwner
+        Author: Michael Fal (@Mike_Fal), http://mikefal.net
 
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: MIT https://opensource.org/licenses/MIT
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-        .LINK
-            https://dbatools.io/Test-DbaDbOwner
+    .LINK
+        https://dbatools.io/Test-DbaDbOwner
 
-        .EXAMPLE
-            Test-DbaDbOwner -SqlInstance localhost
+    .EXAMPLE
+        PS C:\> Test-DbaDbOwner -SqlInstance localhost
 
-            Returns all databases where the owner does not match 'sa'.
+        Returns all databases where the owner does not match 'sa'.
 
-        .EXAMPLE
-            Test-DbaDbOwner -SqlInstance localhost -TargetLogin 'DOMAIN\account'
+    .EXAMPLE
+        PS C:\> Test-DbaDbOwner -SqlInstance localhost -TargetLogin 'DOMAIN\account'
 
-            Returns all databases where the owner does not match 'DOMAIN\account'.
-    #>
+        Returns all databases where the owner does not match 'DOMAIN\account'.
+
+#>
     [CmdletBinding()]
     param (
         [parameter(Mandatory)]
@@ -75,10 +76,8 @@ function Test-DbaDbOwner {
     process {
         foreach ($instance in $SqlInstance) {
             try {
-                Write-Message -Level Verbose -Message "Connecting to $instance."
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -129,3 +128,4 @@ function Test-DbaDbOwner {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Test-DbaDatabaseOwner
     }
 }
+

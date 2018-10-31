@@ -1,48 +1,50 @@
 #ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Test-DbaMaxMemory {
     <#
-        .SYNOPSIS
-            Calculates the recommended value for SQL Server 'Max Server Memory' configuration setting. Works on SQL Server 2000-2014.
+    .SYNOPSIS
+        Calculates the recommended value for SQL Server 'Max Server Memory' configuration setting. Works on SQL Server 2000-2014.
 
-        .DESCRIPTION
-            Inspired by Jonathan Kehayias's post about SQL Server Max memory (http://bit.ly/sqlmemcalc), this script displays a SQL Server's: total memory, currently configured SQL max memory, and the calculated recommendation.
+    .DESCRIPTION
+        Inspired by Jonathan Kehayias's post about SQL Server Max memory (http://bit.ly/sqlmemcalc), this script displays a SQL Server's: total memory, currently configured SQL max memory, and the calculated recommendation.
 
-            Jonathan notes that the formula used provides a *general recommendation* that doesn't account for everything that may be going on in your specific environment.
+        Jonathan notes that the formula used provides a *general recommendation* that doesn't account for everything that may be going on in your specific environment.
 
-        .PARAMETER SqlInstance
-            Allows you to specify a comma separated list of servers to query.
+    .PARAMETER SqlInstance
+        The target SQL Server instance or instances.
 
-        .PARAMETER SqlCredential
-            Windows or Sql Login Credential with permission to log into the SQL instance
+    .PARAMETER SqlCredential
+        Windows or Sql Login Credential with permission to log into the SQL instance
 
-        .PARAMETER Credential
-            Windows Credential with permission to log on to the server running the SQL instance
+    .PARAMETER Credential
+        Windows Credential with permission to log on to the server running the SQL instance
 
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-        .NOTES
-            Tags: MaxMemory, Memory
-            Author: Chrissy LeMaire (@cl), netnerds.net
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: MIT https://opensource.org/licenses/MIT
+    .NOTES
+        Tags: MaxMemory, Memory
+        Author: Chrissy LeMaire (@cl), netnerds.net
 
-        .LINK
-            https://dbatools.io/Test-DbaMaxMemory
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-        .EXAMPLE
-            Test-DbaMaxMemory -SqlInstance sqlcluster,sqlserver2012
+    .LINK
+        https://dbatools.io/Test-DbaMaxMemory
 
-            Calculate the 'Max Server Memory' settings for all servers within the SQL Server Central Management Server "sqlcluster"
+    .EXAMPLE
+        PS C:\> Test-DbaMaxMemory -SqlInstance sqlcluster,sqlserver2012
 
-        .EXAMPLE
-            Test-DbaMaxMemory -SqlInstance sqlcluster | Where-Object { $_.SqlMaxMB -gt $_.TotalMB } | Set-DbaMaxMemory
+        Calculate the 'Max Server Memory' settings for all servers within the SQL Server Central Management Server "sqlcluster"
 
-            Find all servers in CMS that have Max SQL memory set to higher than the total memory of the server (think 2147483647) and set it to recommended value.
-    #>
+    .EXAMPLE
+        PS C:\> Test-DbaMaxMemory -SqlInstance sqlcluster | Where-Object { $_.SqlMaxMB -gt $_.TotalMB } | Set-DbaMaxMemory
+
+        Find all servers in CMS that have Max SQL memory set to higher than the total memory of the server (think 2147483647) and set it to recommended value.
+
+#>
     [CmdletBinding()]
     param (
         [parameter(Position = 0, Mandatory, ValueFromPipeline)]
@@ -60,8 +62,7 @@ function Test-DbaMaxMemory {
 
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -71,13 +72,11 @@ function Test-DbaMaxMemory {
                 Write-Message -Level Verbose -Target $instance -Message "Retrieving number of instances from $($instance.ComputerName)"
                 if ($Credential) {
                     $serverService = Get-DbaService -ComputerName $instance -Credential $Credential -EnableException
-                }
-                else {
+                } else {
                     $serverService = Get-DbaService -ComputerName $instance -EnableException
                 }
                 $instanceCount = ($serverService | Where-Object State -Like Running | Where-Object InstanceName | Group-Object InstanceName | Measure-Object Count).Count
-            }
-            catch {
+            } catch {
                 Write-Message -Level Warning -Message "Couldn't get accurate SQL Server instance count on $instance. Defaulting to 1." -Target $instance -ErrorRecord $_
                 $instanceCount = 1
             }
@@ -96,15 +95,13 @@ function Test-DbaMaxMemory {
                     if ($currentCount -gt 16384) {
                         $reserve += 1
                         $currentCount += -8192
-                    }
-                    else {
+                    } else {
                         $reserve += 1
                         $currentCount += -4096
                     }
                 }
                 $recommendedMax = [int]($totalMemory - ($reserve * 1024))
-            }
-            else {
+            } else {
                 $recommendedMax = $totalMemory * .5
             }
 
@@ -122,3 +119,4 @@ function Test-DbaMaxMemory {
         }
     }
 }
+

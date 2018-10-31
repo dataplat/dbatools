@@ -24,22 +24,24 @@ function Clear-DbaConnectionPool {
     .NOTES
         Tags: Connection
         Author: Chrissy LeMaire (@cl), netnerds.net
+
         Website: https://dbatools.io
-        Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+        Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
         https://dbatools.io/Clear-DbaConnectionPool
 
     .EXAMPLE
-        Clear-DbaConnectionPool
+        PS C:\> Clear-DbaConnectionPool
 
         Clears all local connection pools.
 
     .EXAMPLE
-        Clear-DbaConnectionPool -ComputerName workstation27
+        PS C:\> Clear-DbaConnectionPool -ComputerName workstation27
 
         Clears all connection pools on workstation27.
+
 #>
     [CmdletBinding()]
     param (
@@ -50,32 +52,28 @@ function Clear-DbaConnectionPool {
         [switch][Alias('Silent')]
         $EnableException
     )
-    
+
     process {
         # TODO: https://jamessdixon.wordpress.com/2013/01/22/ado-net-and-connection-pooling
-        
+
         foreach ($computer in $ComputerName) {
             try {
                 if (-not $computer.IsLocalhost) {
                     Write-Message -Level Verbose -Message "Clearing all pools on remote computer $computer"
                     if (Test-Bound 'Credential') {
                         Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock { [System.Data.SqlClient.SqlConnection]::ClearAllPools() }
-                    }
-                    else {
+                    } else {
                         Invoke-Command2 -ComputerName $computer -ScriptBlock { [System.Data.SqlClient.SqlConnection]::ClearAllPools() }
                     }
-                }
-                else {
+                } else {
                     Write-Message -Level Verbose -Message "Clearing all local pools"
                     if (Test-Bound 'Credential') {
                         Invoke-Command2 -Credential $Credential -ScriptBlock { [System.Data.SqlClient.SqlConnection]::ClearAllPools() }
-                    }
-                    else {
+                    } else {
                         Invoke-Command2 -ScriptBlock { [System.Data.SqlClient.SqlConnection]::ClearAllPools() }
                     }
                 }
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -ErrorRecord $_ -Target $computer -Continue
             }
         }

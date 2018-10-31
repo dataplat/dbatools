@@ -37,7 +37,7 @@ function Invoke-DbaDbCorruption {
       Author: Constantine Kokkinos (@mobileck https://constantinekokkinos.com)
       Reference: https://www.sqlskills.com/blogs/paul/dbcc-writepage/
       Website: https://dbatools.io
-      Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+      Copyright: (c) 2018 by dbatools, licensed under MIT
       License: MIT https://opensource.org/licenses/MIT
 
       .LINK
@@ -119,10 +119,8 @@ function Invoke-DbaDbCorruption {
     }
 
     try {
-        Write-Message -Level Verbose -Message "Connecting to $SqlInstance"
         $Server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential -MinimumVersion 9
-    }
-    catch {
+    } catch {
         Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $SqlInstance
         return
     }
@@ -134,8 +132,7 @@ function Invoke-DbaDbCorruption {
     }
     if ($Table) {
         $tb = $db.Tables | Where-Object Name -eq $Table
-    }
-    else {
+    } else {
         $tb = $db.Tables | Select-Object -First 1
     }
 
@@ -162,8 +159,7 @@ function Invoke-DbaDbCorruption {
             $null = Stop-DbaProcess -SqlInstance $Server -Database $Database
             Write-Message -Level Verbose -Message "Corrupting data."
             Dbcc-WritePage -SqlInstance $Server -Database $Database -PageId $pages.PagePID -FileId $pages.PageFID
-        }
-        catch {
+        } catch {
             $Server.ConnectionContext.Disconnect()
             $Server.ConnectionContext.Connect()
             $null = Set-DbaDbState -SqlServer $Server -Database $Database -MultiUser -Force
@@ -187,3 +183,5 @@ function Invoke-DbaDbCorruption {
         }
     }
 }
+
+

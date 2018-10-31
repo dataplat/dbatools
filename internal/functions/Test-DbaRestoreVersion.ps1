@@ -26,7 +26,7 @@ function Test-DbaRestoreVersion {
         Author: Stuart Moore (@napalmgram), stuart-moore.com
         Tags:
         dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-        Copyright (C) 2016 Chrissy LeMaire
+       Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
     .EXAMPLE
@@ -58,12 +58,10 @@ function Test-DbaRestoreVersion {
         if ($SqlInstance -isnot [Microsoft.SqlServer.Management.Smo.SqlSmoObject]) {
             $Newconnection = $true
             $Server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
-        }
-        else {
+        } else {
             $server = $SqlInstance
         }
-    }
-    catch {
+    } catch {
         Write-Message -Level Warning -Message "Cannot connect to $SqlInstance"
         break
     }
@@ -74,8 +72,7 @@ function Test-DbaRestoreVersion {
             return $false
             break
         }
-    }
-    else {
+    } else {
         if ($RestoreVersion -gt $Server.VersionMajor) {
             Write-Message -Level Warning -Message "Backups are from a newer version of SQL Server than $($Server.Name)"
             return $false
@@ -93,4 +90,6 @@ function Test-DbaRestoreVersion {
     }
     return $True
 }
+
+
 

@@ -1,76 +1,78 @@
 function Copy-DbaDbAssembly {
     <#
-        .SYNOPSIS
-            Copy-DbaDbAssembly migrates assemblies from one SQL Server to another.
+    .SYNOPSIS
+        Copy-DbaDbAssembly migrates assemblies from one SQL Server to another.
 
-        .DESCRIPTION
-            By default, all assemblies are copied.
+    .DESCRIPTION
+        By default, all assemblies are copied.
 
-            If the assembly already exists on the destination, it will be skipped unless -Force is used.
+        If the assembly already exists on the destination, it will be skipped unless -Force is used.
 
-            This script does not yet copy dependencies or dependent objects.
+        This script does not yet copy dependencies or dependent objects.
 
-        .PARAMETER Source
-            Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
+    .PARAMETER Source
+        Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
 
-        .PARAMETER SourceSqlCredential
-            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+    .PARAMETER SourceSqlCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-        .PARAMETER Destination
-            Destination SQL Server. You must have sysadmin access and the server must be SQL Server 2000 or higher.
+    .PARAMETER Destination
+        Destination SQL Server. You must have sysadmin access and the server must be SQL Server 2000 or higher.
 
-        .PARAMETER DestinationSqlCredential
-            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+    .PARAMETER DestinationSqlCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-        .PARAMETER Assembly
-            The assembly(ies) to process. This list is auto-populated from the server. If unspecified, all assemblies will be processed.
+    .PARAMETER Assembly
+        The assembly(ies) to process. This list is auto-populated from the server. If unspecified, all assemblies will be processed.
 
-        .PARAMETER ExcludeAssembly
-            The assembly(ies) to exclude. This list is auto-populated from the server.
+    .PARAMETER ExcludeAssembly
+        The assembly(ies) to exclude. This list is auto-populated from the server.
 
-        .PARAMETER WhatIf
-            If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
+    .PARAMETER WhatIf
+        If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
-        .PARAMETER Confirm
-            If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
+    .PARAMETER Confirm
+        If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-        .PARAMETER Force
-            If this switch is enabled, existing assemblies on Destination with matching names from Source will be dropped.
+    .PARAMETER Force
+        If this switch is enabled, existing assemblies on Destination with matching names from Source will be dropped.
 
-        .NOTES
-            Tags: Migration, Assembly
-            Author: Chrissy LeMaire (@cl), netnerds.net
-            Requires: sysadmin access on SQL Servers
+    .NOTES
+        Tags: Migration, Assembly
+        Author: Chrissy LeMaire (@cl), netnerds.net
 
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: MIT https://opensource.org/licenses/MIT
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-        .LINK
-            http://dbatools.io/Get-SqlDatabaseAssembly
+        Requires: sysadmin access on SQL Servers
 
-        .EXAMPLE
-            Copy-DbaDbAssembly -Source sqlserver2014a -Destination sqlcluster
+    .LINK
+        http://dbatools.io/Get-SqlDatabaseAssembly
 
-            Copies all assemblies from sqlserver2014a to sqlcluster using Windows credentials. If assemblies with the same name exist on sqlcluster, they will be skipped.
+    .EXAMPLE
+        PS C:\> Copy-DbaDbAssembly -Source sqlserver2014a -Destination sqlcluster
 
-        .EXAMPLE
-            Copy-DbaDbAssembly -Source sqlserver2014a -Destination sqlcluster -Assembly dbname.assemblyname, dbname3.anotherassembly -SourceSqlCredential $cred -Force
+        Copies all assemblies from sqlserver2014a to sqlcluster using Windows credentials. If assemblies with the same name exist on sqlcluster, they will be skipped.
 
-            Copies two assemblies, the dbname.assemblyname and dbname3.anotherassembly from sqlserver2014a to sqlcluster using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster. If an assembly with the same name exists on sqlcluster, it will be dropped and recreated because -Force was used.
+    .EXAMPLE
+        PS C:\> Copy-DbaDbAssembly -Source sqlserver2014a -Destination sqlcluster -Assembly dbname.assemblyname, dbname3.anotherassembly -SourceSqlCredential $cred -Force
 
-            In this example, anotherassembly will be copied to the dbname3 database on the server sqlcluster.
+        Copies two assemblies, the dbname.assemblyname and dbname3.anotherassembly from sqlserver2014a to sqlcluster using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster. If an assembly with the same name exists on sqlcluster, it will be dropped and recreated because -Force was used.
 
-        .EXAMPLE
-            Copy-DbaDbAssembly -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force
+        In this example, anotherassembly will be copied to the dbname3 database on the server sqlcluster.
 
-            Shows what would happen if the command were executed using force.
-    #>
+    .EXAMPLE
+        PS C:\> Copy-DbaDbAssembly -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force
+
+        Shows what would happen if the command were executed using force.
+
+#>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
     param (
         [parameter(Mandatory)]
@@ -87,10 +89,8 @@ function Copy-DbaDbAssembly {
     )
     begin {
         try {
-            Write-Message -Level Verbose -Message "Connecting to $Source"
             $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -MinimumVersion 9
-        }
-        catch {
+        } catch {
             Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Source
             return
         }
@@ -104,18 +104,15 @@ function Copy-DbaDbAssembly {
                 foreach ($assembly in $userAssemblies) {
                     $sourceAssemblies += $assembly
                 }
-            }
-            catch { }
+            } catch { }
         }
     }
     process {
         if (Test-FunctionInterrupt) { return }
         foreach ($destinstance in $Destination) {
             try {
-                Write-Message -Level Verbose -Message "Connecting to $destinstance"
                 $destServer = Connect-SqlInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential -MinimumVersion 9
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
             }
 
@@ -128,8 +125,7 @@ function Copy-DbaDbAssembly {
                     foreach ($assembly in $userAssemblies) {
                         $destAssemblies += $assembly
                     }
-                }
-                catch { }
+                } catch { }
             }
             foreach ($currentAssembly in $sourceAssemblies) {
                 $assemblyName = $currentAssembly.Name
@@ -137,15 +133,15 @@ function Copy-DbaDbAssembly {
                 $destDb = $destServer.Databases[$dbName]
                 Write-Message -Level VeryVerbose -Message "Processing $assemblyName on $dbname"
                 $copyDbAssemblyStatus = [pscustomobject]@{
-                    SourceServer = $sourceServer.Name
-                    SourceDatabase = $dbName
-                    DestinationServer = $destServer.Name
+                    SourceServer        = $sourceServer.Name
+                    SourceDatabase      = $dbName
+                    DestinationServer   = $destServer.Name
                     DestinationDatabase = $destDb
-                    type         = "Database Assembly"
-                    Name         = $assemblyName
-                    Status       = $null
-                    Notes        = $null
-                    DateTime     = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
+                    type                = "Database Assembly"
+                    Name                = $assemblyName
+                    Status              = $null
+                    Notes               = $null
+                    DateTime            = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
                 }
 
 
@@ -169,8 +165,7 @@ function Copy-DbaDbAssembly {
                         try {
                             Write-Message -Level Debug -Message $sql
                             $destServer.Query($sql)
-                        }
-                        catch {
+                        } catch {
                             $copyDbAssemblyStatus.Status = "Failed"
                             $copyDbAssemblyStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
@@ -187,8 +182,7 @@ function Copy-DbaDbAssembly {
 
                         Write-Message -Level Verbose -Message "Assembly $assemblyName exists at destination in the $dbName database. Use -Force to drop and migrate."
                         continue
-                    }
-                    else {
+                    } else {
                         if ($Pscmdlet.ShouldProcess($destinstance, "Dropping assembly $assemblyName and recreating")) {
                             try {
                                 Write-Message -Level Verbose -Message "Dropping assembly $assemblyName."
@@ -198,8 +192,7 @@ function Copy-DbaDbAssembly {
                                 $sql = $currentAssembly.Script()
                                 Write-Message -Level Debug -Message $sql
                                 $destServer.Query($sql, $dbName)
-                            }
-                            catch {
+                            } catch {
                                 $copyDbAssemblyStatus.Status = "Failed"
                                 $copyDbAssemblyStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
@@ -219,8 +212,7 @@ function Copy-DbaDbAssembly {
                         $copyDbAssemblyStatus.Status = "Successful"
                         $copyDbAssemblyStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
-                    }
-                    catch {
+                    } catch {
                         $copyDbAssemblyStatus.Status = "Failed"
                         $copyDbAssemblyStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
@@ -235,3 +227,4 @@ function Copy-DbaDbAssembly {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-DbaDatabaseAssembly
     }
 }
+

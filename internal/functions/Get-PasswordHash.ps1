@@ -19,7 +19,7 @@ function Get-PasswordHash {
     Tags: Login, Internal
     Author: Kirill Kravtsov (@nvarscar)
     dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-    Copyright (C) 2016 Chrissy LeMaire
+   Copyright: (c) 2018 by dbatools, licensed under MIT
     License: MIT https://opensource.org/licenses/MIT
 
     .EXAMPLE
@@ -42,8 +42,7 @@ function Get-PasswordHash {
     if ($SqlMajorVersion -lt 11) {
         $algorithm = 'SHA1'
         $hashVersion = '0100'
-    }
-    else {
+    } else {
         $algorithm = 'SHA512'
         $hashVersion = '0200'
     }
@@ -61,8 +60,7 @@ function Get-PasswordHash {
     if ($Password.GetType().Name -eq 'SecureString') {
         $cred = New-Object System.Management.Automation.PSCredential -ArgumentList 'foo', $Password
         $plainPassword = $cred.GetNetworkCredential().Password
-    }
-    else {
+    } else {
         $plainPassword = $Password
     }
     #Get byte representation of the password string
@@ -82,3 +80,4 @@ function Get-PasswordHash {
     }
     return $hashString
 }
+

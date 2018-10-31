@@ -1,4 +1,4 @@
-﻿function Invoke-DbaAsync {
+function Invoke-DbaAsync {
     <#
         .SYNOPSIS
             Runs a T-SQL script.
@@ -86,8 +86,7 @@
                         'Continue' { throw $Err }
                         Default { Throw $Err }
                     }
-                }
-                else {
+                } else {
                     # For other exception
                     Write-Message -Level Debug -Message "Capture Other Error"
                     if ($PSBoundParameters.Verbose) {
@@ -138,8 +137,7 @@
 
             try {
                 Add-Type -TypeDefinition $cSharp -ReferencedAssemblies 'System.Data', 'System.Xml' -ErrorAction stop
-            }
-            catch {
+            } catch {
                 if (-not $_.ToString() -like "*The type name 'DBNullScrubber' already exists*") {
                     Write-Warning "Could not load DBNullScrubber.  Defaulting to DataRow output: $_."
                     $As = "Datarow"
@@ -168,8 +166,7 @@
                     ForEach-Object {
                     if ($null -ne $_.Value) {
                         $cmd.Parameters.AddWithValue($_.Key, $_.Value)
-                    }
-                    else {
+                    } else {
                         $cmd.Parameters.AddWithValue($_.Key, [DBNull]::Value)
                     }
                 } > $null
@@ -184,18 +181,16 @@
                 $pool.Open()
                 $runspaces = @()
                 $scriptblock = {
-                    Param ($da, $ds, $conn, $queue )
+                    param ($da, $ds, $conn, $queue )
                     $conn.FireInfoMessageEventOnUserErrors = $false
                     $handler = [System.Data.SqlClient.SqlInfoMessageEventHandler] { $queue.Enqueue($_) }
                     $conn.add_InfoMessage($handler)
                     $Err = $null
                     try {
                         [void]$da.fill($ds)
-                    }
-                    catch {
+                    } catch {
                         $Err = $_
-                    }
-                    finally {
+                    } finally {
                         $conn.remove_InfoMessage($handler)
                     }
                     return $Err
@@ -232,8 +227,7 @@
                 }
                 $pool.Close()
                 $pool.Dispose()
-            }
-            else {
+            } else {
                 #Following EventHandler is used for PRINT and RAISERROR T-SQL statements. Executed when -Verbose parameter specified by caller and no -MessageToOutput
                 if ($PSBoundParameters.Verbose) {
                     $conn.FireInfoMessageEventOnUserErrors = $false
@@ -242,11 +236,9 @@
                 }
                 try {
                     [void]$da.fill($ds)
-                }
-                catch {
+                } catch {
                     $Err = $_
-                }
-                finally {
+                } finally {
                     if ($PSBoundParameters.Verbose) {
                         $conn.remove_InfoMessage($handler)
                     }
@@ -257,7 +249,7 @@
                 #Basics from Chad Miller
                 $Column = New-Object Data.DataColumn
                 $Column.ColumnName = "ServerInstance"
-                
+
                 if ($ds.Tables.Count -ne 0) {
                     $ds.Tables[0].Columns.Add($Column)
                     Foreach ($row in $ds.Tables[0]) {
@@ -297,3 +289,5 @@
 
     }
 }
+
+

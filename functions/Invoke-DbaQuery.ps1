@@ -1,93 +1,94 @@
-﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Invoke-DbaQuery {
     <#
-        .SYNOPSIS
-            A command to run explicit T-SQL commands or files.
+    .SYNOPSIS
+        A command to run explicit T-SQL commands or files.
 
-        .DESCRIPTION
-            This function is a wrapper command around Invoke-DbaAsync, which in turn is based on Invoke-SqlCmd2.
-            It was designed to be more convenient to use in a pipeline and to behave in a way consistent with the rest of our functions.
+    .DESCRIPTION
+        This function is a wrapper command around Invoke-DbaAsync, which in turn is based on Invoke-SqlCmd2.
+        It was designed to be more convenient to use in a pipeline and to behave in a way consistent with the rest of our functions.
 
-        .PARAMETER SqlInstance
-            SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
+    .PARAMETER SqlInstance
+        The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
 
-        .PARAMETER SqlCredential
-            Credential object used to connect to the SQL Server Instance as a different user. This can be a Windows or SQL Server account. Windows users are determined by the existence of a backslash, so if you are intending to use an alternative Windows connection instead of a SQL login, ensure it contains a backslash.
+    .PARAMETER SqlCredential
+        Credential object used to connect to the SQL Server Instance as a different user. This can be a Windows or SQL Server account. Windows users are determined by the existence of a backslash, so if you are intending to use an alternative Windows connection instead of a SQL login, ensure it contains a backslash.
 
-        .PARAMETER Database
-            The database to select before running the query. This list is auto-populated from the server.
+    .PARAMETER Database
+        The database to select before running the query. This list is auto-populated from the server.
 
-        .PARAMETER Query
-            Specifies one or more queries to be run. The queries can be Transact-SQL, XQuery statements, or sqlcmd commands. Multiple queries in a single batch may be separated by a semicolon or a GO
+    .PARAMETER Query
+        Specifies one or more queries to be run. The queries can be Transact-SQL, XQuery statements, or sqlcmd commands. Multiple queries in a single batch may be separated by a semicolon or a GO
 
-            Escape any double quotation marks included in the string.
+        Escape any double quotation marks included in the string.
 
-            Consider using bracketed identifiers such as [MyTable] instead of quoted identifiers such as "MyTable".
+        Consider using bracketed identifiers such as [MyTable] instead of quoted identifiers such as "MyTable".
 
-        .PARAMETER QueryTimeout
-            Specifies the number of seconds before the queries time out.
+    .PARAMETER QueryTimeout
+        Specifies the number of seconds before the queries time out.
 
-        .PARAMETER File
-            Specifies the path to one or several files to be used as the query input.
+    .PARAMETER File
+        Specifies the path to one or several files to be used as the query input.
 
-        .PARAMETER SqlObject
-            Specify on or multiple SQL objects. Those will be converted to script and their scripts run on the target system(s).
+    .PARAMETER SqlObject
+        Specify on or multiple SQL objects. Those will be converted to script and their scripts run on the target system(s).
 
-        .PARAMETER As
-            Specifies output type. Valid options for this parameter are 'DataSet', 'DataTable', 'DataRow', 'PSObject', and 'SingleValue'
+    .PARAMETER As
+        Specifies output type. Valid options for this parameter are 'DataSet', 'DataTable', 'DataRow', 'PSObject', and 'SingleValue'
 
-            PSObject output introduces overhead but adds flexibility for working with results: http://powershell.org/wp/forums/topic/dealing-with-dbnull/
+        PSObject output introduces overhead but adds flexibility for working with results: http://powershell.org/wp/forums/topic/dealing-with-dbnull/
 
-        .PARAMETER SqlParameters
-            Specifies a hashtable of parameters for parameterized SQL queries.  http://blog.codinghorror.com/give-me-parameterized-sql-or-give-me-death/
+    .PARAMETER SqlParameters
+        Specifies a hashtable of parameters for parameterized SQL queries.  http://blog.codinghorror.com/give-me-parameterized-sql-or-give-me-death/
 
-        .PARAMETER AppendServerInstance
-            If this switch is enabled, the SQL Server instance will be appended to PSObject and DataRow output.
+    .PARAMETER AppendServerInstance
+        If this switch is enabled, the SQL Server instance will be appended to PSObject and DataRow output.
 
-        .PARAMETER MessagesToOutput
-            Use this switch to have on the output stream messages too (e.g. PRINT statements). Output will hold the resultset too. See examples for detail
+    .PARAMETER MessagesToOutput
+        Use this switch to have on the output stream messages too (e.g. PRINT statements). Output will hold the resultset too. See examples for detail
 
-        .PARAMETER InputObject
-            A collection of databases (such as returned by Get-DbaDatabase)
+    .PARAMETER InputObject
+        A collection of databases (such as returned by Get-DbaDatabase)
 
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-        .NOTES
-            Tags: Database, Query
-            Author: Fred Winmann (@FredWeinmann)
+    .NOTES
+        Tags: Database, Query
+        Author: Friedrich Weinmann (@FredWeinmann)
 
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: MIT https://opensource.org/licenses/MIT
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-        .LINK
-            https://dbatools.io/Invoke-DbaQuery
+    .LINK
+        https://dbatools.io/Invoke-DbaQuery
 
-        .EXAMPLE
-            Invoke-DbaQuery -SqlInstance server\instance -Query 'SELECT foo FROM bar'
+    .EXAMPLE
+        PS C:\> Invoke-DbaQuery -SqlInstance server\instance -Query 'SELECT foo FROM bar'
 
-            Runs the sql query 'SELECT foo FROM bar' against the instance 'server\instance'
+        Runs the sql query 'SELECT foo FROM bar' against the instance 'server\instance'
 
-        .EXAMPLE
-            Get-DbaRegisteredServer -SqlInstance [SERVERNAME] -Group [GROUPNAME] | Invoke-DbaQuery -Query 'SELECT foo FROM bar'
+    .EXAMPLE
+        PS C:\> Get-DbaCmsRegServer -SqlInstance [SERVERNAME] -Group [GROUPNAME] | Invoke-DbaQuery -Query 'SELECT foo FROM bar'
 
-            Runs the sql query 'SELECT foo FROM bar' against all instances in the group [GROUPNAME] on the CMS [SERVERNAME]
+        Runs the sql query 'SELECT foo FROM bar' against all instances in the group [GROUPNAME] on the CMS [SERVERNAME]
 
-        .EXAMPLE
-            "server1", "server1\nordwind", "server2" | Invoke-DbaQuery -File "C:\scripts\sql\rebuild.sql"
+    .EXAMPLE
+        PS C:\> "server1", "server1\nordwind", "server2" | Invoke-DbaQuery -File "C:\scripts\sql\rebuild.sql"
 
-            Runs the sql commands stored in rebuild.sql against the instances "server1", "server1\nordwind" and "server2"
+        Runs the sql commands stored in rebuild.sql against the instances "server1", "server1\nordwind" and "server2"
 
-        .EXAMPLE
-            Get-DbaDatabase -SqlInstance "server1", "server1\nordwind", "server2" | Invoke-DbaQuery -File "C:\scripts\sql\rebuild.sql"
+    .EXAMPLE
+        PS C:\> Get-DbaDatabase -SqlInstance "server1", "server1\nordwind", "server2" | Invoke-DbaQuery -File "C:\scripts\sql\rebuild.sql"
 
-            Runs the sql commands stored in rebuild.sql against all accessible databases of the instances "server1", "server1\nordwind" and "server2"
-    #>
+        Runs the sql commands stored in rebuild.sql against all accessible databases of the instances "server1", "server1\nordwind" and "server2"
+
+#>
     [CmdletBinding(DefaultParameterSetName = "Query")]
-    Param (
+    param (
         [parameter(ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstance[]]
@@ -140,7 +141,7 @@ function Invoke-DbaQuery {
         Write-Message -Level Debug -Message "Bound parameters: $($PSBoundParameters.Keys -join ", ")"
 
         $splatInvokeDbaSqlAsync = @{
-            As      = $As
+            As = $As
         }
 
         if (Test-Bound -ParameterName "SqlParameters") {
@@ -198,12 +199,16 @@ function Invoke-DbaQuery {
                             "http" {
                                 $tempfile = "$env:TEMP\$temporaryFilesPrefix-$temporaryFilesCount.sql"
                                 try {
-                                    Invoke-WebRequest -Uri $item -OutFile $tempfile -ErrorAction Stop
+                                    try {
+                                        Invoke-TlsWebRequest -Uri $item -OutFile $tempfile -ErrorAction Stop
+                                    } catch {
+                                        (New-Object System.Net.WebClient).Proxy.Credentials = [System.Net.CredentialCache]::DefaultNetworkCredentials
+                                        Invoke-TlsWebRequest -Uri $item -OutFile $tempfile -ErrorAction Stop
+                                    }
                                     $files += $tempfile
                                     $temporaryFilesCount++
                                     $temporaryFiles += $tempfile
-                                }
-                                catch {
+                                } catch {
                                     Stop-Function -Message "Failed to download file $item" -ErrorRecord $_
                                     return
                                 }
@@ -211,8 +216,7 @@ function Invoke-DbaQuery {
                             default {
                                 try {
                                     $paths = Resolve-Path $item | Select-Object -ExpandProperty Path | Get-Item -ErrorAction Stop
-                                }
-                                catch {
+                                } catch {
                                     Stop-Function -Message "Failed to resolve path: $item" -ErrorRecord $_
                                     return
                                 }
@@ -256,8 +260,7 @@ function Invoke-DbaQuery {
                     $files += $newfile
                     $temporaryFilesCount++
                     $temporaryFiles += $newfile
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Failed to write sql script to temp" -ErrorRecord $_
                     return
                 }
@@ -295,18 +298,15 @@ function Invoke-DbaQuery {
                         $QueryfromFile = [System.IO.File]::ReadAllText("$filePath")
                         Invoke-DbaAsync -SQLConnection $conncontext @splatInvokeDbaSqlAsync -Query $QueryfromFile
                     }
-                }
-                else { Invoke-DbaAsync -SQLConnection $conncontext @splatInvokeDbaSqlAsync }
-            }
-            catch {
+                } else { Invoke-DbaAsync -SQLConnection $conncontext @splatInvokeDbaSqlAsync }
+            } catch {
                 Stop-Function -Message "[$db] Failed during execution" -ErrorRecord $_ -Target $server -Continue
             }
         }
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -ErrorRecord $_ -Target $instance -Continue
             }
             $conncontext = $server.ConnectionContext
@@ -322,12 +322,10 @@ function Invoke-DbaQuery {
                         $QueryfromFile = [System.IO.File]::ReadAllText("$filePath")
                         Invoke-DbaAsync -SQLConnection $conncontext @splatInvokeDbaSqlAsync -Query $QueryfromFile
                     }
-                }
-                else {
+                } else {
                     Invoke-DbaAsync -SQLConnection $conncontext @splatInvokeDbaSqlAsync
                 }
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "[$instance] Failed during execution" -ErrorRecord $_ -Target $instance -Continue
             }
         }
@@ -346,3 +344,4 @@ function Invoke-DbaQuery {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Invoke-DbaSqlQuery
     }
 }
+

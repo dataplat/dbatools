@@ -1,78 +1,96 @@
 function Get-DbaService {
     <#
-        .SYNOPSIS
-            Gets the SQL Server related services on a computer.
+    .SYNOPSIS
+        Gets the SQL Server related services on a computer.
 
-        .DESCRIPTION
-            Gets the SQL Server related services on one or more computers.
+    .DESCRIPTION
+        Gets the SQL Server related services on one or more computers.
 
-        .PARAMETER ComputerName
-            The SQL Server (or server in general) that you're connecting to. This command handles named instances.
+        Requires Local Admin rights on destination computer(s).
 
-        .PARAMETER InstanceName
-            Only returns services that belong to the specific instances.
+    .PARAMETER ComputerName
+        The target SQL Server instance or instances.
 
-        .PARAMETER Credential
-            Credential object used to connect to the computer as a different user.
+    .PARAMETER InstanceName
+        Only returns services that belong to the specific instances.
 
-        .PARAMETER Type
-            Use -Type to collect only services of the desired SqlServiceType.
-            Can be one of the following: "Agent","Browser","Engine","FullText","SSAS","SSIS","SSRS"
+    .PARAMETER Credential
+        Credential object used to connect to the computer as a different user.
 
-        .PARAMETER ServiceName
-            Can be used to specify service names explicitly, without looking for service types/instances.
+    .PARAMETER Type
+        Use -Type to collect only services of the desired SqlServiceType.
+        Can be one of the following: "Agent","Browser","Engine","FullText","SSAS","SSIS","SSRS"
 
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+    .PARAMETER ServiceName
+        Can be used to specify service names explicitly, without looking for service types/instances.
 
-        .NOTES
-            Tags: Service, SqlServer, Instance, Connect
-            Author: Klaas Vandenberghe ( @PowerDBAKlaas )
+    .PARAMETER AdvancedProperties
+        Collect additional properties from the SqlServiceAdvancedProperty Namespace
+        This collects information about Version, Service Pack Level", SkuName, Clustered status and the Cluster Service Name
+        This adds additional overhead to the command.
 
-            Requires Local Admin rights on destination computer(s).
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-            dbatools PowerShell module (https://dbatools.io)
-            Copyright (C) 2016 Chrissy LeMaire
-            License: MIT https://opensource.org/licenses/MIT
+    .NOTES
+        Tags: Service, SqlServer, Instance, Connect
+        Author: Klaas Vandenberghe ( @PowerDBAKlaas )
 
-        .LINK
-            https://dbatools.io/Get-DbaService
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-        .EXAMPLE
-            Get-DbaService -ComputerName sqlserver2014a
+    .LINK
+        https://dbatools.io/Get-DbaService
 
-            Gets the SQL Server related services on computer sqlserver2014a.
+    .EXAMPLE
+        PS C:\> Get-DbaService -ComputerName sqlserver2014a
 
-        .EXAMPLE
-            'sql1','sql2','sql3' | Get-DbaService
+        Gets the SQL Server related services on computer sqlserver2014a.
 
-            Gets the SQL Server related services on computers sql1, sql2 and sql3.
+    .EXAMPLE
+        PS C:\> 'sql1','sql2','sql3' | Get-DbaService -AdvancedProperties
 
-        .EXAMPLE
-            Get-DbaService -ComputerName sql1,sql2 | Out-GridView
+        Gets the SQL Server related services on computers sql1, sql2 and sql3. Includes Advanced Properties from the SqlServiceAdvancedProperty Namespace
 
-            Gets the SQL Server related services on computers sql1 and sql2, and shows them in a grid view.
+    .EXAMPLE
+        PS C:\> $cred = Get-Credential WindowsUser
+        PS C:\> Get-DbaService -ComputerName sql1,sql2 -Credential $cred  | Out-GridView
 
-        .EXAMPLE
-            Get-DbaService -ComputerName $MyServers -Type SSRS
+        Gets the SQL Server related services on computers sql1 and sql2 via the user WindowsUser, and shows them in a grid view.
 
-            Gets the SQL Server related services of type "SSRS" (Reporting Services) on computers in the variable MyServers.
+    .EXAMPLE
+        PS C:\> Get-DbaService -ComputerName sql1,sql2 -InstanceName MSSQLSERVER
 
-        .EXAMPLE
-            $services = Get-DbaService -ComputerName sql1 -Type Agent,Engine
-            $services.ChangeStartMode('Manual')
+        Gets the SQL Server related services related to the default instance MSSQLSERVER on computers sql1 and sql2.
 
-            Gets the SQL Server related services of types Sql Agent and DB Engine on computer sql1 and changes their startup mode to 'Manual'.
+    .EXAMPLE
+        PS C:\> Get-DbaService -ComputerName $MyServers -Type SSRS
 
-        .EXAMPLE
-            (Get-DbaService sql1 -Type Engine).Restart($true)
+        Gets the SQL Server related services of type "SSRS" (Reporting Services) on computers in the variable MyServers.
 
-            Calls a Restart method for each Engine service on computer sql1 with -Force option.
-    #>
+    .EXAMPLE
+        PS C:\> $MyServers =  Get-Content .\servers.txt
+        PS C:\> Get-DbaService -ComputerName $MyServers -ServiceName MSSQLSERVER,SQLSERVERAGENT
+
+        Gets the SQL Server related services with ServiceName MSSQLSERVER or SQLSERVERAGENT  for all the servers that are stored in the file. Every line in the file can only contain one hostname for a server.
+
+    .EXAMPLE
+        PS C:\> $services = Get-DbaService -ComputerName sql1 -Type Agent,Engine
+        PS C:\> $services.ChangeStartMode('Manual')
+
+        Gets the SQL Server related services of types Sql Agent and DB Engine on computer sql1 and changes their startup mode to 'Manual'.
+
+    .EXAMPLE
+        PS C:\> (Get-DbaService -ComputerName sql1 -Type Engine).Restart($true)
+
+        Calls a Restart method for each Engine service on computer sql1.
+
+#>
     [CmdletBinding(DefaultParameterSetName = "Search")]
-    Param (
+    param (
         [parameter(ValueFromPipeline, Position = 1)]
         [Alias("cn", "host", "Server")]
         [DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,
@@ -85,6 +103,7 @@ function Get-DbaService {
         [string[]]$Type,
         [Parameter(ParameterSetName = "ServiceName")]
         [string[]]$ServiceName,
+        [switch]$AdvancedProperties,
         [Alias('Silent')]
         [switch]$EnableException
     )
@@ -110,20 +129,17 @@ function Get-DbaService {
                         $searchClause += "SQLServiceType = $id"
                     }
                 }
-            }
-            else {
+            } else {
                 $searchClause = "SQLServiceType > 0"
             }
-        }
-        elseif ($PsCmdlet.ParameterSetName -match 'ServiceName') {
+        } elseif ($PsCmdlet.ParameterSetName -match 'ServiceName') {
             if ($ServiceName) {
                 $searchClause = ""
                 foreach ($sn in $ServiceName) {
                     if ($searchClause) { $searchClause += ' OR ' }
                     $searchClause += "ServiceName = '$sn'"
                 }
-            }
-            else {
+            } else {
                 $searchClause = "SQLServiceType > 0"
             }
         }
@@ -149,8 +165,7 @@ function Get-DbaService {
                                     Service   = $service
                                 }
                             }
-                        }
-                        catch {
+                        } catch {
                             Write-Message -Level Verbose -EnableException $EnableException.ToBool() -Message "Failed to acquire services from namespace $($namespace.Name)." -Target $Computer -ErrorRecord $_
                         }
                     }
@@ -167,17 +182,14 @@ function Get-DbaService {
 
                             if ($service.ServiceName -in ("MSSQLSERVER", "SQLSERVERAGENT", "ReportServer", "MSSQLServerOLAPService")) {
                                 $instance = "MSSQLSERVER"
-                            }
-                            else {
+                            } else {
                                 if ($service.ServiceType -in @("Agent", "Engine", "SSRS", "SSAS")) {
                                     if ($service.ServiceName.indexof('$') -ge 0) {
                                         $instance = $service.ServiceName.split('$')[1]
-                                    }
-                                    else {
+                                    } else {
                                         $instance = "Unknown"
                                     }
-                                }
-                                else {
+                                } else {
                                     $instance = ""
                                 }
                             }
@@ -191,16 +203,16 @@ function Get-DbaService {
                                 Add-Member -Force -InputObject $service -NotePropertyName InstanceName -NotePropertyValue $instance
                                 Add-Member -Force -InputObject $service -NotePropertyName ServicePriority -NotePropertyValue $priority
                                 Add-Member -Force -InputObject $service -MemberType ScriptMethod -Name "Stop" -Value {
-                                    Param ([bool]$Force = $false)
+                                    param ([bool]$Force = $false)
                                     Stop-DbaService -InputObject $this -Force:$Force
                                 }
                                 Add-Member -Force -InputObject $service -MemberType ScriptMethod -Name "Start" -Value { Start-DbaService -InputObject $this }
                                 Add-Member -Force -InputObject $service -MemberType ScriptMethod -Name "Restart" -Value {
-                                    Param ([bool]$Force = $false)
+                                    param ([bool]$Force = $false)
                                     Restart-DbaService -InputObject $this -Force:$Force
                                 }
                                 Add-Member -Force -InputObject $service -MemberType ScriptMethod -Name "ChangeStartMode" -Value {
-                                    Param (
+                                    param (
                                         [parameter(Mandatory)]
                                         [string]$Mode
                                     )
@@ -212,19 +224,37 @@ function Get-DbaService {
                                     Set-ServiceStartMode -InputObject $this -Mode $Mode -ErrorAction Stop
                                     $this.StartMode = $Mode
                                 }
-                                Select-DefaultView -InputObject $service -Property ComputerName, ServiceName, ServiceType, InstanceName, DisplayName, StartName, State, StartMode -TypeName DbaSqlService
+
+                                if ($AdvancedProperties) {
+                                    $namespaceValue = $service.CimClass.ToString().ToUpper().Replace(":SQLSERVICE", "").Replace("ROOT/MICROSOFT/SQLSERVER/", "")
+                                    $serviceAdvancedProperties = Get-DbaCmObject -ComputerName $Computer -Namespace "root\Microsoft\SQLServer\$($namespaceValue)" -Query "SELECT * FROM SqlServiceAdvancedProperty WHERE ServiceName = '$($service.ServiceName)'"
+
+                                    Add-Member -Force -InputObject $service -MemberType NoteProperty -Name Version -Value ($serviceAdvancedProperties | Where-Object PropertyName -eq 'VERSION' ).PropertyStrValue
+                                    Add-Member -Force -InputObject $service -MemberType NoteProperty -Name SPLevel -Value ($serviceAdvancedProperties | Where-Object PropertyName -eq 'SPLEVEL' ).PropertyNumValue
+                                    Add-Member -Force -InputObject $service -MemberType NoteProperty -Name SkuName -Value ($serviceAdvancedProperties | Where-Object PropertyName -eq 'SKUNAME' ).PropertyStrValue
+
+                                    $ClusterServiceTypeList = @(1, 2, 5, 7)
+                                    if ($ClusterServiceTypeList -contains $service.SQLServiceType) {
+                                        Add-Member -Force -InputObject $service -MemberType NoteProperty -Name Clustered -Value ($serviceAdvancedProperties | Where-Object PropertyName -eq 'CLUSTERED' ).PropertyNumValue
+                                        Add-Member -Force -InputObject $service -MemberType NoteProperty -Name VSName -Value ($serviceAdvancedProperties | Where-Object PropertyName -eq 'VSNAME' ).PropertyStrValue
+                                    } else {
+                                        Add-Member -Force -InputObject $service -MemberType NoteProperty -Name Clustered -Value ''
+                                        Add-Member -Force -InputObject $service -MemberType NoteProperty -Name VSName -Value ''
+                                    }
+                                    $defaults = "ComputerName", "ServiceName", "ServiceType", "InstanceName", "DisplayName", "StartName", "State", "StartMode", "Version", "SPLevel", "SkuName", "Clustered", "VSName"
+                                } else {
+                                    $defaults = "ComputerName", "ServiceName", "ServiceType", "InstanceName", "DisplayName", "StartName", "State", "StartMode"
+                                }
+                                Select-DefaultView -InputObject $service -Property $defaults -TypeName DbaSqlService
                             }
                         }
-                    }
-                    else {
+                    } else {
                         Stop-Function -EnableException $EnableException -Message "No Sql Services found on $Computer" -Continue
                     }
-                }
-                else {
+                } else {
                     Stop-Function -EnableException $EnableException -Message "No ComputerManagement Namespace on $Computer. Please note that this function is available from SQL 2005 up." -Continue
                 }
-            }
-            else {
+            } else {
                 Stop-Function -EnableException $EnableException -Message "Failed to connect to $Computer" -Continue
             }
         }
@@ -233,3 +263,4 @@ function Get-DbaService {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-DbaSqlService
     }
 }
+

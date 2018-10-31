@@ -42,14 +42,14 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     Context "Command handles heaps and clustered indexes" {
         foreach ($row in $results | Where-Object {$_.IndexId -le 1}){
             It "Should process object $($row.TableName)" {
-                $row.AlreadyProcesssed | Should Be $True
+                $row.AlreadyProcessed | Should Be $True
             }
         }
     }
     Context "Command handles nonclustered indexes" {
         foreach ($row in $results | Where-Object {$_.IndexId -gt 1}){
             It "Should process nonclustered index $($row.IndexName)" {
-                $row.AlreadyProcesssed | Should Be $True
+                $row.AlreadyProcessed | Should Be $True
             }
         }
     }
@@ -67,7 +67,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
         foreach ($row in $results) {
             It "Should process object $($row.TableName) from InputObject" {
-                $row.AlreadyProcesssed | Should Be $True
+                $row.AlreadyProcessed | Should Be $True
             }
         }
     }
@@ -99,3 +99,4 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
     }
 }
+

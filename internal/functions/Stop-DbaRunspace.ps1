@@ -54,12 +54,10 @@ function Stop-DbaRunspace {
                 try {
                     Write-Message -Level Verbose -Message "Stopping runspace: $($item.ToLower())" -Target $item.ToLower()
                     [Sqlcollaborative.Dbatools.Runspace.RunspaceHost]::Runspaces[$item.ToLower()].Stop()
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Failed to stop runspace: $($item.ToLower())" -EnableException $EnableException -Target $item.ToLower() -Continue
                 }
-            }
-            else {
+            } else {
                 Stop-Function -Message "Failed to stop runspace: $($item.ToLower()) | No runspace registered under this name!" -EnableException $EnableException -Category InvalidArgument -Target $item.ToLower() -Continue
             }
         }
@@ -68,10 +66,11 @@ function Stop-DbaRunspace {
             try {
                 Write-Message -Level Verbose -Message "Stopping runspace: $($item.Name.ToLower())" -Target $item
                 $item.Stop()
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failed to stop runspace: $($item.Name.ToLower())" -EnableException $EnableException -Target $item -Continue
             }
         }
     }
 }
+
+

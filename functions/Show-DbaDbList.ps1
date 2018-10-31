@@ -1,48 +1,55 @@
 function Show-DbaDbList {
     <#
-        .SYNOPSIS
-            Shows a list of databases in a GUI.
+    .SYNOPSIS
+        Shows a list of databases in a GUI.
 
-        .DESCRIPTION
-            Shows a list of databases in a GUI. Returns a string holding the name of the selected database. Hitting cancel returns null.
+    .DESCRIPTION
+        Shows a list of databases in a GUI. Returns a string holding the name of the selected database. Hitting cancel returns null.
 
-        .PARAMETER SqlInstance
-            The SQL Server Instance to connect to..
+    .PARAMETER SqlInstance
+        The target SQL Server instance or instances..
 
-        .PARAMETER SqlCredential
-            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+    .PARAMETER SqlCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-        .PARAMETER Title
-            Title of the window being displayed. Default is "Select Database".
+    .PARAMETER Title
+        Title of the window being displayed. Default is "Select Database".
 
-        .PARAMETER Header
-            Header text displayed above the database listing. Default is "Select the database:".
+    .PARAMETER Header
+        Header text displayed above the database listing. Default is "Select the database:".
 
-        .PARAMETER DefaultDb
-            Specify a database to have selected when the window appears.
+    .PARAMETER DefaultDb
+        Specify a database to have selected when the window appears.
 
-        .NOTES
-            Tags: Database, FileSystem
-            Author: Chrissy LeMaire (@cl), netnerds.net
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: MIT https://opensource.org/licenses/MIT
+    .NOTES
+        Tags: Database, FileSystem
+        Author: Chrissy LeMaire (@cl), netnerds.net
 
-        .LINK
-            https://dbatools.io/Show-DbaDbList
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-        .EXAMPLE
-            Show-DbaDbList -SqlInstance sqlserver2014a
+    .LINK
+        https://dbatools.io/Show-DbaDbList
 
-            Shows a GUI list of databases using Windows Authentication to connect to the SQL Server. Returns a string of the selected database.
+    .EXAMPLE
+        PS C:\> Show-DbaDbList -SqlInstance sqlserver2014a
 
-        .EXAMPLE
-            Show-DbaDbList -Source sqlserver2014a -SqlCredential $cred
+        Shows a GUI list of databases using Windows Authentication to connect to the SQL Server. Returns a string of the selected database.
 
-            Shows a GUI list of databases using SQL credentials to connect to the SQL Server. Returns a string of the selected database.
-    #>
+    .EXAMPLE
+        PS C:\> Show-DbaDbList -SqlInstance sqlserver2014a -SqlCredential $cred
+
+        Shows a GUI list of databases using SQL credentials to connect to the SQL Server. Returns a string of the selected database.
+
+    .EXAMPLE
+        PS C:\> Show-DbaDbList -SqlInstance sqlserver2014a -DefaultDb master
+
+        Shows a GUI list of databases using Windows Authentication to connect to the SQL Server. The "master" database will be selected when the lists shows. Returns a string of the selected database.
+
+#>
     [CmdletBinding()]
-    Param (
+    param (
         [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter]$SqlInstance,
@@ -55,13 +62,12 @@ function Show-DbaDbList {
     begin {
         try {
             Add-Type -AssemblyName PresentationFramework
-        }
-        catch {
+        } catch {
             throw "Windows Presentation Framework required but not installed"
         }
 
         function Add-TreeItem {
-            Param (
+            param (
                 [string]$name,
                 [object]$parent,
                 [string]$tag
@@ -150,12 +156,12 @@ function Show-DbaDbList {
         [void]$stackpanel.Children.Add($image)
         [void]$stackpanel.Children.Add($textblock)
         $childitem.Header = $stackpanel
-        $databaseParent = $treeview.Items.Add($childitem)
+        #Variable marked as unused by PSScriptAnalyzer
+        #$databaseParent = $treeview.Items.Add($childitem)
 
         try {
             $databases = $sourceserver.databases.name
-        }
-        catch {
+        } catch {
             return
         }
 
@@ -189,8 +195,9 @@ function Show-DbaDbList {
         if ($script:selected.length -gt 0 -and $script:okay -eq $true) {
             return $script:selected
         }
-        
+
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Show-SqlDatabaseList
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Show-DbaDatabaseList
     }
 }
+

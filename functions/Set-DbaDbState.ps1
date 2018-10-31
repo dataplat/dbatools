@@ -1,122 +1,124 @@
 #ValidationTags#Messaging,FlowControl,Pipeline#
 function Set-DbaDbState {
     <#
-        .SYNOPSIS
-            Sets various options for databases, hereby called "states"
+    .SYNOPSIS
+        Sets various options for databases, hereby called "states"
 
-        .DESCRIPTION
-            Sets some common "states" on databases:
-            - "RW" options (ReadOnly, ReadWrite)
-            - "Status" options (Online, Offline, Emergency, plus a special "Detached")
-            - "Access" options (SingleUser, RestrictedUser, MultiUser)
+    .DESCRIPTION
+        Sets some common "states" on databases:
+        - "RW" options (ReadOnly, ReadWrite)
+        - "Status" options (Online, Offline, Emergency, plus a special "Detached")
+        - "Access" options (SingleUser, RestrictedUser, MultiUser)
 
-            Returns an object with SqlInstance, Database, RW, Status, Access, Notes
+        Returns an object with SqlInstance, Database, RW, Status, Access, Notes
 
-            Notes gets filled when something went wrong setting the state
+        Notes gets filled when something went wrong setting the state
 
-        .PARAMETER SqlInstance
-            The SQL Server that you're connecting to
+    .PARAMETER SqlInstance
+        The target SQL Server instance or instances
 
-        .PARAMETER SqlCredential
-            Credential object used to connect to the SQL Server as a different user
+    .PARAMETER SqlCredential
+        Credential object used to connect to the SQL Server as a different user
 
-        .PARAMETER Database
-            The database(s) to process - this list is auto-populated from the server. if unspecified, all databases will be processed.
+    .PARAMETER Database
+        The database(s) to process - this list is auto-populated from the server. if unspecified, all databases will be processed.
 
-        .PARAMETER ExcludeDatabase
-            The database(s) to exclude - this list is auto-populated from the server
+    .PARAMETER ExcludeDatabase
+        The database(s) to exclude - this list is auto-populated from the server
 
-        .PARAMETER AllDatabases
-            This is a parameter that was included for safety, so you don't accidentally set options on all databases without specifying
+    .PARAMETER AllDatabases
+        This is a parameter that was included for safety, so you don't accidentally set options on all databases without specifying
 
-        .PARAMETER ReadOnly
-            RW Option : Sets the database as READ_ONLY
+    .PARAMETER ReadOnly
+        RW Option : Sets the database as READ_ONLY
 
-        .PARAMETER ReadWrite
-            RW Option : Sets the database as READ_WRITE
+    .PARAMETER ReadWrite
+        RW Option : Sets the database as READ_WRITE
 
-        .PARAMETER Online
-            Status Option : Sets the database as ONLINE
+    .PARAMETER Online
+        Status Option : Sets the database as ONLINE
 
-        .PARAMETER Offline
-            Status Option : Sets the database as OFFLINE
+    .PARAMETER Offline
+        Status Option : Sets the database as OFFLINE
 
-        .PARAMETER Emergency
-            Status Option : Sets the database as EMERGENCY
+    .PARAMETER Emergency
+        Status Option : Sets the database as EMERGENCY
 
-        .PARAMETER Detached
-            Status Option : Detaches the database
+    .PARAMETER Detached
+        Status Option : Detaches the database
 
-        .PARAMETER SingleUser
-            Access Option : Sets the database as SINGLE_USER
+    .PARAMETER SingleUser
+        Access Option : Sets the database as SINGLE_USER
 
-        .PARAMETER RestrictedUser
-            Access Option : Sets the database as RESTRICTED_USER
+    .PARAMETER RestrictedUser
+        Access Option : Sets the database as RESTRICTED_USER
 
-        .PARAMETER MultiUser
-            Access Option : Sets the database as MULTI_USER
+    .PARAMETER MultiUser
+        Access Option : Sets the database as MULTI_USER
 
-        .PARAMETER WhatIf
-            Shows what would happen if the command were to run. No actions are actually performed.
+    .PARAMETER WhatIf
+        Shows what would happen if the command were to run. No actions are actually performed.
 
-        .PARAMETER Confirm
-            Prompts you for confirmation before executing any changing operations within the command.
+    .PARAMETER Confirm
+        Prompts you for confirmation before executing any changing operations within the command.
 
-        .PARAMETER Force
-            For most options, this translates to instantly rolling back any open transactions
-            that may be stopping the process.
-            For -Detached it is required to break mirroring and Availability Groups
+    .PARAMETER Force
+        For most options, this translates to instantly rolling back any open transactions
+        that may be stopping the process.
+        For -Detached it is required to break mirroring and Availability Groups
 
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-        .PARAMETER InputObject
-            Accepts piped database objects
+    .PARAMETER InputObject
+        Accepts piped database objects
 
-        .NOTES
-            Tags: Database, State
-            Author: niphlod
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: MIT https://opensource.org/licenses/MIT
+    .NOTES
+        Tags: Database, State
+        Author: Simone Bizzotto (@niphold)
 
-        .LINK
-            https://dbatools.io/Set-DbaDbState
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-        .EXAMPLE
-            Set-DbaDbState -SqlInstance sqlserver2014a -Database HR -Offline
+    .LINK
+        https://dbatools.io/Set-DbaDbState
 
-            Sets the HR database as OFFLINE
+    .EXAMPLE
+        PS C:\> Set-DbaDbState -SqlInstance sqlserver2014a -Database HR -Offline
 
-        .EXAMPLE
-            Set-DbaDbState -SqlInstance sqlserver2014a -AllDatabases -Exclude HR -Readonly -Force
+        Sets the HR database as OFFLINE
 
-            Sets all databases of the sqlserver2014a instance, except for HR, as READ_ONLY
+    .EXAMPLE
+        PS C:\> Set-DbaDbState -SqlInstance sqlserver2014a -AllDatabases -Exclude HR -ReadOnly -Force
 
-        .EXAMPLE
-            Get-DbaDbState -SqlInstance sql2016 | Where-Object Status -eq 'Offline' | Set-DbaDbState -Online
+        Sets all databases of the sqlserver2014a instance, except for HR, as READ_ONLY
 
-            Finds all offline databases and sets them to online
+    .EXAMPLE
+        PS C:\> Get-DbaDbState -SqlInstance sql2016 | Where-Object Status -eq 'Offline' | Set-DbaDbState -Online
 
-        .EXAMPLE
-            Set-DbaDbState -SqlInstance sqlserver2014a -Database HR -SingleUser
+        Finds all offline databases and sets them to online
 
-            Sets the HR database as SINGLE_USER
+    .EXAMPLE
+        PS C:\> Set-DbaDbState -SqlInstance sqlserver2014a -Database HR -SingleUser
 
-        .EXAMPLE
-            Set-DbaDbState -SqlInstance sqlserver2014a -Database HR -SingleUser -Force
+        Sets the HR database as SINGLE_USER
 
-            Sets the HR database as SINGLE_USER, dropping all other connections (and rolling back open transactions)
+    .EXAMPLE
+        PS C:\> Set-DbaDbState -SqlInstance sqlserver2014a -Database HR -SingleUser -Force
 
-        .EXAMPLE
-            Get-DbaDatabase -SqlInstance sqlserver2014a -Database HR | Set-DbaDbState -SingleUser -Force
+        Sets the HR database as SINGLE_USER, dropping all other connections (and rolling back open transactions)
 
-            Gets the databases from Get-DbaDatabase, and sets them as SINGLE_USER, dropping all other connections (and rolling back open transactions)
-    #>
+    .EXAMPLE
+        PS C:\> Get-DbaDatabase -SqlInstance sqlserver2014a -Database HR | Set-DbaDbState -SingleUser -Force
+
+        Gets the databases from Get-DbaDatabase, and sets them as SINGLE_USER, dropping all other connections (and rolling back open transactions)
+
+#>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
-    Param (
+    param (
         [parameter(Mandatory, ValueFromPipelineByPropertyName, ParameterSetName = "Server")]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
@@ -161,8 +163,7 @@ function Set-DbaDbState {
             $sql = "ALTER DATABASE [$dbname] SET $opt"
             if ($immediate) {
                 $sql += " WITH ROLLBACK IMMEDIATE"
-            }
-            else {
+            } else {
                 $sql += " WITH NO_WAIT"
             }
             try {
@@ -174,8 +175,7 @@ function Set-DbaDbState {
                     $sqlinstance.KillAllProcesses($dbname)
                 }
                 $null = $sqlinstance.Query($sql)
-            }
-            catch {
+            } catch {
                 $warn = "Failed to set '$dbname' to $opt"
                 Write-Message -Level Warning -Message $warn
             }
@@ -205,22 +205,19 @@ function Set-DbaDbState {
         $allparams = $PSBoundParameters
         try {
             Get-WrongCombo -optset $RWExclusive -allparams $allparams
-        }
-        catch {
+        } catch {
             Stop-Function -Message $_
             return
         }
         try {
             Get-WrongCombo -optset $StatusExclusive -allparams $allparams
-        }
-        catch {
+        } catch {
             Stop-Function -Message $_
             return
         }
         try {
             Get-WrongCombo -optset $AccessExclusive -allparams $allparams
-        }
-        catch {
+        } catch {
             Stop-Function -Message $_
             return
         }
@@ -237,19 +234,15 @@ function Set-DbaDbState {
             if ($InputObject.Database) {
                 # comes from Get-DbaDbState
                 $dbs += $InputObject.Database
-            }
-            elseif ($InputObject.Name) {
+            } elseif ($InputObject.Name) {
                 # comes from Get-DbaDatabase
                 $dbs += $InputObject
             }
-        }
-        else {
+        } else {
             foreach ($instance in $SqlInstance) {
-                Write-Message -Level Verbose -Message "Connecting to $instance"
                 try {
                     $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
                 }
                 $all_dbs = $server.Databases
@@ -290,8 +283,7 @@ function Set-DbaDbState {
             if ($ReadOnly -eq $true) {
                 if ($db_status.RW -eq 'READ_ONLY') {
                     Write-Message -Level VeryVerbose -Message "Database $db is already READ_ONLY"
-                }
-                else {
+                } else {
                     if ($Pscmdlet.ShouldProcess($server, "Set $db to READ_ONLY")) {
                         Write-Message -Level VeryVerbose -Message "Setting database $db to READ_ONLY"
                         $partial = Edit-DatabaseState -sqlinstance $server -dbname $db.Name -opt "READ_ONLY" -immediate $Force
@@ -306,8 +298,7 @@ function Set-DbaDbState {
             if ($ReadWrite -eq $true) {
                 if ($db_status.RW -eq 'READ_WRITE') {
                     Write-Message -Level VeryVerbose -Message "Database $db is already READ_WRITE"
-                }
-                else {
+                } else {
                     if ($Pscmdlet.ShouldProcess($server, "Set $db to READ_WRITE")) {
                         Write-Message -Level VeryVerbose -Message "Setting database $db to READ_WRITE"
                         $partial = Edit-DatabaseState -sqlinstance $server -dbname $db.Name -opt "READ_WRITE" -immediate $Force
@@ -322,8 +313,7 @@ function Set-DbaDbState {
             if ($Online -eq $true) {
                 if ($db_status.Status -eq 'ONLINE') {
                     Write-Message -Level VeryVerbose -Message "Database $db is already ONLINE"
-                }
-                else {
+                } else {
                     if ($Pscmdlet.ShouldProcess($server, "Set $db to ONLINE")) {
                         Write-Message -Level VeryVerbose -Message "Setting database $db to ONLINE"
                         $partial = Edit-DatabaseState -sqlinstance $server -dbname $db.Name -opt "ONLINE" -immediate $Force
@@ -338,8 +328,7 @@ function Set-DbaDbState {
             if ($Offline -eq $true) {
                 if ($db_status.Status -eq 'OFFLINE') {
                     Write-Message -Level VeryVerbose -Message "Database $db is already OFFLINE"
-                }
-                else {
+                } else {
                     if ($Pscmdlet.ShouldProcess($server, "Set $db to OFFLINE")) {
                         Write-Message -Level VeryVerbose -Message "Setting database $db to OFFLINE"
                         $partial = Edit-DatabaseState -sqlinstance $server -dbname $db.Name -opt "OFFLINE" -immediate $Force
@@ -354,8 +343,7 @@ function Set-DbaDbState {
             if ($Emergency -eq $true) {
                 if ($db_status.Status -eq 'EMERGENCY') {
                     Write-Message -Level VeryVerbose -Message "Database $db is already EMERGENCY"
-                }
-                else {
+                } else {
                     if ($Pscmdlet.ShouldProcess($server, "Set $db to EMERGENCY")) {
                         Write-Message -Level VeryVerbose -Message "Setting database $db to EMERGENCY"
                         $partial = Edit-DatabaseState -sqlinstance $server -dbname $db.Name -opt "EMERGENCY" -immediate $Force
@@ -369,8 +357,7 @@ function Set-DbaDbState {
             if ($SingleUser -eq $true) {
                 if ($db_status.Access -eq 'SINGLE_USER') {
                     Write-Message -Level VeryVerbose -Message "Database $db is already SINGLE_USER"
-                }
-                else {
+                } else {
                     if ($Pscmdlet.ShouldProcess($server, "Set $db to SINGLE_USER")) {
                         Write-Message -Level VeryVerbose -Message "Setting $db to SINGLE_USER"
                         $partial = Edit-DatabaseState -sqlinstance $server -dbname $db.Name -opt "SINGLE_USER" -immediate $Force
@@ -384,8 +371,7 @@ function Set-DbaDbState {
             if ($RestrictedUser -eq $true) {
                 if ($db_status.Access -eq 'RESTRICTED_USER') {
                     Write-Message -Level VeryVerbose -Message "Database $db is already RESTRICTED_USER"
-                }
-                else {
+                } else {
                     if ($Pscmdlet.ShouldProcess($server, "Set $db to RESTRICTED_USER")) {
                         Write-Message -Level VeryVerbose -Message "Setting $db to RESTRICTED_USER"
                         $partial = Edit-DatabaseState -sqlinstance $server -dbname $db.Name -opt "RESTRICTED_USER" -immediate $Force
@@ -399,8 +385,7 @@ function Set-DbaDbState {
             if ($MultiUser -eq $true) {
                 if ($db_status.Access -eq 'MULTI_USER') {
                     Write-Message -Level VeryVerbose -Message "Database $db is already MULTI_USER"
-                }
-                else {
+                } else {
                     if ($Pscmdlet.ShouldProcess($server, "Set $db to MULTI_USER")) {
                         Write-Message -Level VeryVerbose -Message "Setting $db to MULTI_USER"
                         $partial = Edit-DatabaseState -sqlinstance $server -dbname $db.Name -opt "MULTI_USER" -immediate $Force
@@ -435,8 +420,7 @@ function Set-DbaDbState {
                             $db.Alter()
                             $db.Refresh()
                             Write-Message -Level VeryVerbose -Message "Broke mirroring for $db"
-                        }
-                        catch {
+                        } catch {
                             Stop-Function -Message "Could not break mirror for $db. Skipping." -ErrorRecord $_ -Target $server -Continue
                         }
                     }
@@ -448,8 +432,7 @@ function Set-DbaDbState {
                         try {
                             $server.AvailabilityGroups[$db.AvailabilityGroupName].AvailabilityDatabases[$db.Name].Drop()
                             Write-Message -Level VeryVerbose -Message "Successfully removed $db from AG [$agname] on $server"
-                        }
-                        catch {
+                        } catch {
                             Stop-Function -Message "Could not remove $db from AG [$agname] on $server" -ErrorRecord $_ -Target $server -Continue
                         }
                     }
@@ -466,8 +449,7 @@ function Set-DbaDbState {
                         Write-Message -Level System -Message $sql
                         $null = $server.Query($sql)
                         $db_status.Status = 'DETACHED'
-                    }
-                    catch {
+                    } catch {
                         Stop-Function -Message "Failed to detach $db" -ErrorRecord $_ -Target $server -Continue
                         $warn += "Failed to detach"
                     }
@@ -478,8 +460,7 @@ function Set-DbaDbState {
             if ($warn) {
                 $warn = $warn | Get-Unique
                 $warn = $warn -Join ';'
-            }
-            else {
+            } else {
                 $warn = $null
             }
             if ($Detached -eq $true) {
@@ -494,14 +475,12 @@ function Set-DbaDbState {
                     Notes        = $warn
                     Database     = $db
                 } | Select-DefaultView -ExcludeProperty Database
-            }
-            else {
+            } else {
                 $db.Refresh()
                 if ($null -eq $warn) {
                     # we avoid reenumerating properties
                     $newstate = $db_status
-                }
-                else {
+                } else {
                     $newstate = Get-DbState -databaseName $db.Name -dbStatuses $stateCache[$server]
                 }
 
@@ -524,3 +503,4 @@ function Set-DbaDbState {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Set-DbaDatabaseState
     }
 }
+

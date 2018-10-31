@@ -1,48 +1,49 @@
 function Get-DbaCmConnection {
     <#
-        .SYNOPSIS
-            Retrieves windows management connections from the cache
+    .SYNOPSIS
+        Retrieves windows management connections from the cache
 
-        .DESCRIPTION
-            Retrieves windows management connections from the cache
+    .DESCRIPTION
+        Retrieves windows management connections from the cache
 
-        .PARAMETER ComputerName
-            The computername to ComputerName for.
+    .PARAMETER ComputerName
+        The computername to ComputerName for.
 
-        .PARAMETER UserName
-            Username on credentials to look for. Will not find connections using the default windows credentials.
+    .PARAMETER UserName
+        Username on credentials to look for. Will not find connections using the default windows credentials.
 
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-        .NOTES
-            Tags: ComputerManagement, CIM
-            Author: Fred Winmann (@FredWeinmann)
+    .NOTES
+        Tags: ComputerManagement, CIM
+        Author: Friedrich Weinmann (@FredWeinmann)
 
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: MIT https://opensource.org/licenses/MIT
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-        .LINK
-            https://dbatools.io/Get-DbaCmConnection
+    .LINK
+        https://dbatools.io/Get-DbaCmConnection
 
-        .EXAMPLE
-            Get-DbaCmConnection
+    .EXAMPLE
+        PS C:\> Get-DbaCmConnection
 
-            List all cached connections.
+        List all cached connections.
 
-        .EXAMPLE
-            Get-DbaCmConnection sql2014
+    .EXAMPLE
+        PS C:\> Get-DbaCmConnection sql2014
 
-            List the cached connection - if any - to the server sql2014.
+        List the cached connection - if any - to the server sql2014.
 
-        .EXAMPLE
-            Get-DbaCmConnection -UserName "*charles*"
+    .EXAMPLE
+        PS C:\> Get-DbaCmConnection -UserName "*charles*"
 
-            List all cached connection that use a username containing "charles" as default or override credentials.
-    #>
+        List all cached connection that use a username containing "charles" as default or override credentials.
+
+#>
     [CmdletBinding()]
     param
     (
@@ -72,3 +73,4 @@ function Get-DbaCmConnection {
         Write-Message -Level InternalComment -Message "Ending"
     }
 }
+

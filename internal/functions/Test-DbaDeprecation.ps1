@@ -98,10 +98,11 @@ function Test-DbaDeprecation {
         "Alias" {
             if ($Alias -eq $Call.InvocationName) {
                 if ($CustomMessage) { $Message = $CustomMessage }
-                else { $Message = "Using the alias $Alias is deprecated. This alias will be removed in version $DeprecatedOn, use $FunctionName instead" }
+                else { $Message = "Using the alias $Alias is deprecated. This alias will be removed in version $DeprecatedOn, use $FunctionName instead. Invoke-DbatoolsRenameHelper can also help rename commands within your scripts." }
 
                 Write-Message -Message $Message -Level Warning -FunctionName $FunctionName -Once "Deprecated.Alias.$Alias"
             }
         }
     }
 }
+

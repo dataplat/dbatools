@@ -1,63 +1,65 @@
 function Get-DbaDbSpace {
     <#
-        .SYNOPSIS
-            Returns database file space information for database files on a SQL instance.
+    .SYNOPSIS
+        Returns database file space information for database files on a SQL instance.
 
-        .DESCRIPTION
-            This function returns database file space information for a SQL Instance or group of SQL Instances. Information is based on a query against sys.database_files and the FILEPROPERTY function to query and return information.
+    .DESCRIPTION
+        This function returns database file space information for a SQL Instance or group of SQL Instances. Information is based on a query against sys.database_files and the FILEPROPERTY function to query and return information.
 
-            File free space script borrowed and modified from Glenn Berry's DMV scripts (http://www.sqlskills.com/blogs/glenn/category/dmv-queries/)
+        File free space script borrowed and modified from Glenn Berry's DMV scripts (http://www.sqlskills.com/blogs/glenn/category/dmv-queries/)
 
-        .PARAMETER SqlInstance
-            Specifies the SQL Server instance(s) to scan.
+    .PARAMETER SqlInstance
+        The target SQL Server instance or instances.
 
-        .PARAMETER SqlCredential
-            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+    .PARAMETER SqlCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-        .PARAMETER Database
-            Specifies the database(s) to process. Options for this list are auto-populated from the server. If unspecified, all databases will be processed.
+    .PARAMETER Database
+        Specifies the database(s) to process. Options for this list are auto-populated from the server. If unspecified, all databases will be processed.
 
-        .PARAMETER ExcludeDatabase
-            Specifies the database(s) to exclude from processing. Options for this list are auto-populated from the server.
+    .PARAMETER ExcludeDatabase
+        Specifies the database(s) to exclude from processing. Options for this list are auto-populated from the server.
 
-        .PARAMETER IncludeSystemDBs
-            If this switch is enabled, system databases will be processed. By default, only user databases are processed.
+    .PARAMETER IncludeSystemDBs
+        If this switch is enabled, system databases will be processed. By default, only user databases are processed.
 
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-        .NOTES
-            Tags: Database, Space, Storage
-            Author: Michael Fal (@Mike_Fal), http://mikefal.net
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: MIT https://opensource.org/licenses/MIT
+    .NOTES
+        Tags: Database, Space, Storage
+        Author: Michael Fal (@Mike_Fal), http://mikefal.net
 
-        .LINK
-            https://dbatools.io/Get-DbaDbSpace
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-        .EXAMPLE
-            Get-DbaDbSpace -SqlInstance localhost
+    .LINK
+        https://dbatools.io/Get-DbaDbSpace
 
-            Returns all user database files and free space information for the localhost.
+    .EXAMPLE
+        PS C:\> Get-DbaDbSpace -SqlInstance localhost
 
-        .EXAMPLE
-            Get-DbaDbSpace -SqlInstance localhost | Where-Object {$_.PercentUsed -gt 80}
+        Returns all user database files and free space information for the localhost.
 
-            Returns all user database files and free space information for the local host. Filters the output object by any files that have a percent used of greater than 80%.
+    .EXAMPLE
+        PS C:\> Get-DbaDbSpace -SqlInstance localhost | Where-Object {$_.PercentUsed -gt 80}
 
-        .EXAMPLE
-            'localhost','localhost\namedinstance' | Get-DbaDbSpace
+        Returns all user database files and free space information for the local host. Filters the output object by any files that have a percent used of greater than 80%.
 
-            Returns all user database files and free space information for the localhost and localhost\namedinstance SQL Server instances. Processes data via the pipeline.
+    .EXAMPLE
+        PS C:\> 'localhost','localhost\namedinstance' | Get-DbaDbSpace
 
-        .EXAMPLE
-            Get-DbaDbSpace -SqlInstance localhost -Database db1, db2
+        Returns all user database files and free space information for the localhost and localhost\namedinstance SQL Server instances. Processes data via the pipeline.
 
-            Returns database files and free space information for the db1 and db2 on localhost.
-    #>
+    .EXAMPLE
+        PS C:\> Get-DbaDbSpace -SqlInstance localhost -Database db1, db2
+
+        Returns database files and free space information for the db1 and db2 on localhost.
+
+#>
     [CmdletBinding()]
     param ([parameter(ValueFromPipeline, Mandatory)]
         [Alias("ServerInstance", "SqlServer")]
@@ -129,10 +131,8 @@ function Get-DbaDbSpace {
     process {
         foreach ($instance in $SqlInstance) {
             try {
-                Write-Message -Level VeryVerbose -Message "Connecting to $instance." -Target $instance
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failed to process Instance $Instance." -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -146,19 +146,16 @@ function Get-DbaDbSpace {
             try {
                 if (Test-Bound "Database") {
                     $dbs = $server.Databases | Where-Object Name -In $Database
-                }
-                elseif ($IncludeSystemDBs) {
+                } elseif ($IncludeSystemDBs) {
                     $dbs = $server.Databases | Where-Object IsAccessible
-                }
-                else {
+                } else {
                     $dbs = $server.Databases | Where-Object { $_.IsAccessible -and $_.IsSystemObject -eq 0 }
                 }
 
                 if (Test-Bound "ExcludeDatabase") {
                     $dbs = $dbs | Where-Object Name -NotIn $ExcludeDatabase
                 }
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Unable to gather databases for $instance." -ErrorRecord $_ -Continue
             }
 
@@ -173,32 +170,27 @@ function Get-DbaDbSpace {
                     foreach ($row in ($db.ExecuteWithResults($sql)).Tables.Rows) {
                         if ($row.UsedSpaceMB -is [System.DBNull]) {
                             $UsedMB = 0
-                        }
-                        else {
+                        } else {
                             $UsedMB = [Math]::Round($row.UsedSpaceMB)
                         }
                         if ($row.FreeSpaceMB -is [System.DBNull]) {
                             $FreeMB = 0
-                        }
-                        else {
+                        } else {
                             $FreeMB = [Math]::Round($row.FreeSpaceMB)
                         }
                         if ($row.PercentUsed -is [System.DBNull]) {
                             $PercentUsed = 0
-                        }
-                        else {
+                        } else {
                             $PercentUsed = [Math]::Round($row.PercentUsed)
                         }
                         if ($row.SpaceBeforeMax -is [System.DBNull]) {
                             $SpaceUntilMax = 0
-                        }
-                        else {
+                        } else {
                             $SpaceUntilMax = [Math]::Round($row.SpaceBeforeMax)
                         }
                         if ($row.UnusableSpaceMB -is [System.DBNull]) {
                             $UnusableSpace = 0
-                        }
-                        else {
+                        } else {
                             $UnusableSpace = [Math]::Round($row.UnusableSpaceMB)
                         }
 
@@ -222,8 +214,7 @@ function Get-DbaDbSpace {
                             UnusableSpaceMB      = $UnusableSpace
                         }
                     }
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Unable to query $instance - $db." -Target $db -ErrorRecord $_ -Continue
                 }
             }

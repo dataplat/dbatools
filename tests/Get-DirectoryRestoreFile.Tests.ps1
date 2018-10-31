@@ -1,8 +1,22 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
+. "$PSScriptRoot\..\internal\functions\Get-DirectoryRestoreFile.ps1"
 
-Describe "$commandname Unit Tests" -Tag 'UnitTests' {
+Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+    Context "Validate parameters" {
+        $paramCount = 3
+        $defaultParamCount = 11
+        [object[]]$params = (Get-ChildItem function:\Get-DirectoryRestoreFile).Parameters.Keys
+        $knownParameters = 'Path','Recurse','EnableException'
+        It "Should contain our specific parameters" {
+            ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
+        }
+        It "Should only contain $paramCount parameters" {
+            $params.Count - $defaultParamCount | Should Be $paramCount
+        }
+    }
+
     Context "Test Path handling" {
         It "Should throw on an invalid Path" {
             { Get-DirectoryRestoreFile -Path TestDrive:\foo\bar\does\not\exist\ -EnableException } | Should Throw
@@ -57,3 +71,4 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
         }
     }
 }
+

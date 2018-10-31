@@ -1,98 +1,100 @@
 function Export-DbaLogin {
     <#
-        .SYNOPSIS
-            Exports Windows and SQL Logins to a T-SQL file. Export includes login, SID, password, default database, default language, server permissions, server roles, db permissions, db roles.
+    .SYNOPSIS
+        Exports Windows and SQL Logins to a T-SQL file. Export includes login, SID, password, default database, default language, server permissions, server roles, db permissions, db roles.
 
-        .DESCRIPTION
-            Exports Windows and SQL Logins to a T-SQL file. Export includes login, SID, password, default database, default language, server permissions, server roles, db permissions, db roles.
+    .DESCRIPTION
+        Exports Windows and SQL Logins to a T-SQL file. Export includes login, SID, password, default database, default language, server permissions, server roles, db permissions, db roles.
 
-        .PARAMETER SqlInstance
-            The SQL Server instance name. SQL Server 2000 and above supported.
+    .PARAMETER SqlInstance
+        The target SQL Server instance or instances. SQL Server 2000 and above supported.
 
-        .PARAMETER SqlCredential
-            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+    .PARAMETER SqlCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-        .PARAMETER Login
-            The login(s) to process. Options for this list are auto-populated from the server. If unspecified, all logins will be processed.
+    .PARAMETER Login
+        The login(s) to process. Options for this list are auto-populated from the server. If unspecified, all logins will be processed.
 
-        .PARAMETER ExcludeLogin
-            The login(s) to exclude. Options for this list are auto-populated from the server.
+    .PARAMETER ExcludeLogin
+        The login(s) to exclude. Options for this list are auto-populated from the server.
 
-        .PARAMETER Database
-            The database(s) to process. Options for this list are auto-populated from the server. If unspecified, all databases will be processed.
+    .PARAMETER Database
+        The database(s) to process. Options for this list are auto-populated from the server. If unspecified, all databases will be processed.
 
-        .PARAMETER Path
-            The file to write to.
+    .PARAMETER Path
+        The file to write to.
 
-        .PARAMETER NoClobber
-            If this switch is enabled, a file already existing at the path specified by Path will not be overwritten.
+    .PARAMETER NoClobber
+        If this switch is enabled, a file already existing at the path specified by Path will not be overwritten.
 
-        .PARAMETER Append
-            If this switch is enabled, content will be appended to a file already existing at the path specified by Path. If the file does not exist, it will be created.
+    .PARAMETER Append
+        If this switch is enabled, content will be appended to a file already existing at the path specified by Path. If the file does not exist, it will be created.
 
-        .PARAMETER NoJobs
-            If this switch is enabled, Agent job ownership will not be exported.
+    .PARAMETER NoJobs
+        If this switch is enabled, Agent job ownership will not be exported.
 
-        .PARAMETER NoDatabases
-            If this switch is enabled, mappings for databases will not be exported.
+    .PARAMETER NoDatabases
+        If this switch is enabled, mappings for databases will not be exported.
 
-        .PARAMETER WhatIf
-            If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-        .PARAMETER Confirm
-            If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
+    .PARAMETER ExcludeGoBatchSeparator
+        If specified, will NOT script the 'GO' batch separator.
 
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+    .PARAMETER DestinationVersion
+        To say to which version the script should be generated. If not specified will use instance major version.
 
-        .PARAMETER ExcludeGoBatchSeparator
-            If specified, will NOT script the 'GO' batch separator.
+    .PARAMETER WhatIf
+        If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
-        .PARAMETER DestinationVersion
-            To say to which version the script should be generated. If not specified will use instance major version.
+    .PARAMETER Confirm
+        If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
-        .NOTES
-            Tags: Export, Login
-            Author: Chrissy LeMaire (@cl), netnerds.net
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: MIT https://opensource.org/licenses/MIT
+    .NOTES
+        Tags: Export, Login
+        Author: Chrissy LeMaire (@cl), netnerds.net
 
-        .LINK
-            https://dbatools.io/Export-DbaLogin
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-        .EXAMPLE
-            Export-DbaLogin -SqlInstance sql2005 -Path C:\temp\sql2005-logins.sql
+    .LINK
+        https://dbatools.io/Export-DbaLogin
 
-            Exports the logins for SQL Server "sql2005" and writes them to the file "C:\temp\sql2005-logins.sql"
+    .EXAMPLE
+        PS C:\> Export-DbaLogin -SqlInstance sql2005 -Path C:\temp\sql2005-logins.sql
 
-        .EXAMPLE
-            Export-DbaLogin -SqlInstance sqlserver2014a -Exclude realcajun -SqlCredential $scred -Path C:\temp\logins.sql -Append
+        Exports the logins for SQL Server "sql2005" and writes them to the file "C:\temp\sql2005-logins.sql"
 
-            Authenticates to sqlserver2014a using SQL Authentication. Exports all logins except for realcajun to C:\temp\logins.sql, and appends to the file if it exists. If not, the file will be created.
+    .EXAMPLE
+        PS C:\> Export-DbaLogin -SqlInstance sqlserver2014a -ExcludeLogin realcajun -SqlCredential $scred -Path C:\temp\logins.sql -Append
 
-        .EXAMPLE
-            Export-DbaLogin -SqlInstance sqlserver2014a -Login realcajun, netnerds -Path C:\temp\logins.sql
+        Authenticates to sqlserver2014a using SQL Authentication. Exports all logins except for realcajun to C:\temp\logins.sql, and appends to the file if it exists. If not, the file will be created.
 
-            Exports ONLY logins netnerds and realcajun FROM sqlserver2014a to the file  C:\temp\logins.sql
+    .EXAMPLE
+        PS C:\> Export-DbaLogin -SqlInstance sqlserver2014a -Login realcajun, netnerds -Path C:\temp\logins.sql
 
-        .EXAMPLE
-            Export-DbaLogin -SqlInstance sqlserver2014a -Login realcajun, netnerds -Database HR, Accounting
+        Exports ONLY logins netnerds and realcajun FROM sqlserver2014a to the file  C:\temp\logins.sql
 
-            Exports ONLY logins netnerds and realcajun FROM sqlserver2014a with the permissions on databases HR and Accounting
+    .EXAMPLE
+        PS C:\> Export-DbaLogin -SqlInstance sqlserver2014a -Login realcajun, netnerds -Database HR, Accounting
 
-        .EXAMPLE
-            Export-DbaLogin -SqlInstance sqlserver2008 -Login realcajun, netnerds -Path C:\temp\login.sql -ExcludeGoBatchSeparator
+        Exports ONLY logins netnerds and realcajun FROM sqlserver2014a with the permissions on databases HR and Accounting
 
-            Exports ONLY logins netnerds and realcajun FROM sqlserver2008 server, to the C:\temp\login.sql file without the 'GO' batch separator.
+    .EXAMPLE
+        PS C:\> Export-DbaLogin -SqlInstance sqlserver2008 -Login realcajun, netnerds -Path C:\temp\login.sql -ExcludeGoBatchSeparator
 
-        .EXAMPLE
-            Export-DbaLogin -SqlInstance sqlserver2008 -Login realcajun -Path C:\temp\users.sql -DestinationVersion SQLServer2016
+        Exports ONLY logins netnerds and realcajun FROM sqlserver2008 server, to the C:\temp\login.sql file without the 'GO' batch separator.
 
-            Exports login realcajun from sqlsever2008 to the file C:\temp\users.sql with syntax to run on SQL Server 2016
-    #>
+    .EXAMPLE
+        PS C:\> Export-DbaLogin -SqlInstance sqlserver2008 -Login realcajun -Path C:\temp\users.sql -DestinationVersion SQLServer2016
+
+        Exports login realcajun from sqlserver2008 to the file C:\temp\users.sql with syntax to run on SQL Server 2016
+
+#>
     [CmdletBinding(SupportsShouldProcess = $true)]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
@@ -141,7 +143,6 @@ function Export-DbaLogin {
             return
         }
 
-        Write-Message -Level Verbose -Message "Connecting to $sqlinstance."
         $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $sqlcredential
 
         if ($NoDatabases -eq $false -or $Database) {
@@ -204,15 +205,13 @@ function Export-DbaLogin {
 
                 if ($sourceLogin.PasswordPolicyEnforced -eq $false) {
                     $checkPolicy = "OFF"
-                }
-                else {
+                } else {
                     $checkPolicy = "ON"
                 }
 
                 if (!$sourceLogin.PasswordExpirationEnabled) {
                     $checkExpiration = "OFF"
-                }
-                else {
+                } else {
                     $checkExpiration = "ON"
                 }
 
@@ -237,8 +236,7 @@ function Export-DbaLogin {
 
                     try {
                         $hashedPass = $server.ConnectionContext.ExecuteScalar($sql)
-                    }
-                    catch {
+                    } catch {
                         $hashedPassDt = $server.Databases['master'].ExecuteWithResults($sql)
                         $hashedPass = $hashedPassDt.Tables[0].Rows[0].Item(0)
                     }
@@ -281,16 +279,14 @@ function Export-DbaLogin {
                 # SMO changed over time
                 try {
                     $roleMembers = $role.EnumMemberNames()
-                }
-                catch {
+                } catch {
                     $roleMembers = $role.EnumServerRoleMembers()
                 }
 
                 if ($roleMembers -contains $userName) {
                     if (($server.VersionMajor -lt 11 -and [string]::IsNullOrEmpty($destinationVersion)) -or ($DestinationVersion -in "SQLServer2000", "SQLServer2005", "SQLServer2008/2008R2")) {
                         $outsql += "EXEC sys.sp_addsrvrolemember @rolename=N'$roleName', @loginame=N'$userName'"
-                    }
-                    else {
+                    } else {
                         $outsql += "ALTER SERVER ROLE [$roleName] ADD MEMBER [$userName]"
                     }
                 }
@@ -319,8 +315,7 @@ function Export-DbaLogin {
                     if ($permState -eq "GrantWithGrant") {
                         $grantWithGrant = "WITH GRANT OPTION"
                         $permState = "GRANT"
-                    }
-                    else {
+                    } else {
                         $grantWithGrant = $null
                     }
 
@@ -352,8 +347,7 @@ function Export-DbaLogin {
                     try {
                         $sql = $server.Databases[$dbName].Users[$dbUserName].Script()
                         $outsql += $sql
-                    }
-                    catch {
+                    } catch {
                         Write-Message -Level Warning -Message "User cannot be found in selected database"
                     }
 
@@ -365,8 +359,7 @@ function Export-DbaLogin {
                             $roleName = $role.Name
                             if (($server.VersionMajor -lt 11 -and [string]::IsNullOrEmpty($destinationVersion)) -or ($DestinationVersion -in "SQLServer2000", "SQLServer2005", "SQLServer2008/2008R2")) {
                                 $outsql += "EXEC sys.sp_addrolemember @rolename=N'$roleName', @membername=N'$dbUserName'"
-                            }
-                            else {
+                            } else {
                                 $outsql += "ALTER ROLE [$roleName] ADD MEMBER [$dbUserName]"
                             }
                         }
@@ -382,8 +375,7 @@ function Export-DbaLogin {
                         if ($permState -eq "GrantWithGrant") {
                             $grantWithGrant = "WITH GRANT OPTION"
                             $permState = "GRANT"
-                        }
-                        else {
+                        } else {
                             $grantWithGrant = $null
                         }
 
@@ -398,8 +390,7 @@ function Export-DbaLogin {
 
         if ($ExcludeGoBatchSeparator) {
             $sql = $outsql
-        }
-        else {
+        } else {
             $sql = $outsql -join "`r`nGO`r`n"
             #add the final GO
             $sql += "`r`nGO"
@@ -408,10 +399,10 @@ function Export-DbaLogin {
         if ($Path) {
             $sql | Out-File -Encoding UTF8 -FilePath $Path -Append:$Append -NoClobber:$NoClobber
             Get-ChildItem $Path
-        }
-        else {
+        } else {
             $sql
         }
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Export-SqlLogin
     }
 }
+

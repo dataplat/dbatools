@@ -1,87 +1,84 @@
 function Copy-DbaCredential {
     <#
-        .SYNOPSIS
-            Copy-DbaCredential migrates SQL Server Credentials from one SQL Server to another while maintaining Credential passwords.
+    .SYNOPSIS
+        Copy-DbaCredential migrates SQL Server Credentials from one SQL Server to another while maintaining Credential passwords.
 
-        .DESCRIPTION
-            By using password decryption techniques provided by Antti Rantasaari (NetSPI, 2014), this script migrates SQL Server Credentials from one server to another while maintaining username and password.
+    .DESCRIPTION
+        By using password decryption techniques provided by Antti Rantasaari (NetSPI, 2014), this script migrates SQL Server Credentials from one server to another while maintaining username and password.
 
-            Credit: https://blog.netspi.com/decrypting-mssql-database-link-server-passwords/
+        Credit: https://blog.netspi.com/decrypting-mssql-database-link-server-passwords/
 
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: MIT https://opensource.org/licenses/MIT
+    .PARAMETER Source
+        Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
 
-        .PARAMETER Source
-            Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
+    .PARAMETER SourceSqlCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-        .PARAMETER SourceSqlCredential
-            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+    .PARAMETER Destination
+        Destination SQL Server. You must have sysadmin access and the server must be SQL Server 2000 or higher.
 
-        .PARAMETER Destination
-            Destination SQL Server. You must have sysadmin access and the server must be SQL Server 2000 or higher.
+    .PARAMETER DestinationSqlCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-        .PARAMETER DestinationSqlCredential
-            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+    .PARAMETER Credential
+        This command requires access to the Windows OS via PowerShell remoting. Use this credential to connect to Windows using alternative credentials.
 
-        .PARAMETER Credential
-             This command requires access to the Windows OS via PowerShell remoting. Use this credential to connect to Windows using alternative credentials.
+    .PARAMETER Name
+        Only include specific names
+        Note: if spaces exist in the credential name, you will have to type "" or '' around it.
 
-        .PARAMETER Name
-            Only include specific names
-            Note: if spaces exist in the credential name, you will have to type "" or '' around it.
+    .PARAMETER ExcludeName
+        Excluded credential names
 
-        .PARAMETER ExcludeName
-            Excluded credential names
+    .PARAMETER Identity
+        Only include specific identities
+        Note: if spaces exist in the credential identity, you will have to type "" or '' around it.
 
-        .PARAMETER Identity
-            Only include specific identities
-            Note: if spaces exist in the credential identity, you will have to type "" or '' around it.
+    .PARAMETER ExcludeIdentity
+        Excluded identities
 
-        .PARAMETER ExcludeIdentity
-            Excluded identities
+    .PARAMETER Force
+        If this switch is enabled, the Credential will be dropped and recreated if it already exists on Destination.
 
-        .PARAMETER Force
-            If this switch is enabled, the Credential will be dropped and recreated if it already exists on Destination.
+    .PARAMETER WhatIf
+        If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
-        .PARAMETER WhatIf
-            If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
+    .PARAMETER Confirm
+        If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
-        .PARAMETER Confirm
-            If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+    .NOTES
+        Tags: WSMan, Migration
+        Author: Chrissy LeMaire (@cl), netnerds.net
 
-        .NOTES
-            Tags: WSMan, Migration
-            Author: Chrissy LeMaire (@cl), netnerds.net
-            Requires:
-                - PowerShell Version 3.0, SQL Server SMO,
-                - Administrator access on Windows
-                - sysadmin access on SQL Server.
-                - DAC access enabled for local (default)
-            Limitations: Hasn't been tested thoroughly. Works on Win8.1 and SQL Server 2012 & 2014 so far.
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: MIT https://opensource.org/licenses/MIT
+        Requires:
+        - PowerShell Version 3.0
+        - Administrator access on Windows
+        - sysadmin access on SQL Server.
+        - DAC access enabled for local (default)
 
-        .LINK
-            https://dbatools.io/Copy-DbaCredential
+    .LINK
+        https://dbatools.io/Copy-DbaCredential
 
-        .EXAMPLE
-            Copy-DbaCredential -Source sqlserver2014a -Destination sqlcluster
+    .EXAMPLE
+        PS C:\> Copy-DbaCredential -Source sqlserver2014a -Destination sqlcluster
 
-            Copies all SQL Server Credentials on sqlserver2014a to sqlcluster. If Credentials exist on destination, they will be skipped.
+        Copies all SQL Server Credentials on sqlserver2014a to sqlcluster. If Credentials exist on destination, they will be skipped.
 
-        .EXAMPLE
-            Copy-DbaCredential -Source sqlserver2014a -Destination sqlcluster -Name "PowerShell Proxy Account" -Force
+    .EXAMPLE
+        PS C:\> Copy-DbaCredential -Source sqlserver2014a -Destination sqlcluster -Name "PowerShell Proxy Account" -Force
 
-            Copies over one SQL Server Credential (PowerShell Proxy Account) from sqlserver to sqlcluster. If the Credential already exists on the destination, it will be dropped and recreated.
-    #>
+        Copies over one SQL Server Credential (PowerShell Proxy Account) from sqlserver to sqlcluster. If the Credential already exists on the destination, it will be dropped and recreated.
+
+#>
     [CmdletBinding(SupportsShouldProcess)]
     param (
         [parameter(Mandatory)]
@@ -147,8 +144,7 @@ function Copy-DbaCredential {
 
                         Write-Message -Level Verbose -Message "$credentialName exists $($destServer.Name). Skipping."
                         continue
-                    }
-                    else {
+                    } else {
                         if ($Pscmdlet.ShouldProcess($destinstance.Name, "Dropping $identity")) {
                             $destServer.Credentials[$credentialName].Drop()
                             $destServer.Credentials.Refresh()
@@ -161,7 +157,7 @@ function Copy-DbaCredential {
                     $currentCred = $sourceCredentials | Where-Object { $_.Name -eq "[$credentialName]" }
                     $sqlcredentialName = $credentialName.Replace("'", "''")
                     $identity = $currentCred.Identity.Replace("'", "''")
-                    $password = $currentCred.Password.Replace("'","''")
+                    $password = $currentCred.Password.Replace("'", "''")
                     if ($Pscmdlet.ShouldProcess($destinstance.Name, "Copying $identity")) {
                         $destServer.Query("CREATE CREDENTIAL [$sqlcredentialName] WITH IDENTITY = N'$identity', SECRET = N'$password'")
                         $destServer.Credentials.Refresh()
@@ -170,8 +166,7 @@ function Copy-DbaCredential {
 
                     $copyCredentialStatus.Status = "Successful"
                     $copyCredentialStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                }
-                catch {
+                } catch {
                     $copyCredentialStatus.Status = "Failed"
                     $copyCredentialStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
@@ -181,10 +176,8 @@ function Copy-DbaCredential {
         }
 
         try {
-            Write-Message -Level Verbose -Message "Connecting to $Source"
             $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -MinimumVersion 9
-        }
-        catch {
+        } catch {
             Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance
             return
         }
@@ -200,8 +193,7 @@ function Copy-DbaCredential {
         Write-Message -Level Verbose -Message "Checking if Remote Registry is enabled on $source"
         try {
             Invoke-Command2 -ComputerName $sourceNetBios -Credential $credential -ScriptBlock { Get-ItemProperty -Path "HKLM:\SOFTWARE\" }
-        }
-        catch {
+        } catch {
             Stop-Function -Message "Can't connect to registry on $source" -Target $sourceNetBios -ErrorRecord $_
             return
         }
@@ -211,10 +203,8 @@ function Copy-DbaCredential {
 
         foreach ($destinstance in $Destination) {
             try {
-                Write-Message -Level Verbose -Message "Connecting to $destinstance"
                 $destServer = Connect-SqlInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential -MinimumVersion 9
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
             }
             Invoke-SmoCheck -SqlInstance $destServer
@@ -226,3 +216,4 @@ function Copy-DbaCredential {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-SqlCredential
     }
 }
+

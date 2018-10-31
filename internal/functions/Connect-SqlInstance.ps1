@@ -58,8 +58,7 @@ function Connect-SqlInstance {
 
         try {
             [ScriptBlock]::Create($scriptBlock).Invoke()
-        }
-        catch {
+        } catch {
             # If the SQL Server version doesn't support the feature, we ignore it and silently continue
             if ($_.Exception.InnerException.InnerException.GetType().FullName -eq "Microsoft.SqlServer.Management.Sdk.Sfc.InvalidVersionEnumeratorException") {
                 return
@@ -82,7 +81,7 @@ function Connect-SqlInstance {
     #>
     if ($SqlCredential) {
         if ($SqlCredential.GetType() -ne [System.Management.Automation.PSCredential]) {
-            throw "The credential parameter was of a non-supported type! Only specify PSCredentials such as generated from Get-Credential. Input was of type $($SqlCredential.GetType().FullName)"
+            throw "The credential parameter was of a non-supported type. Only specify PSCredentials such as generated from Get-Credential. Input was of type $($SqlCredential.GetType().FullName)"
         }
     }
     #endregion Ensure Credential integrity
@@ -100,8 +99,7 @@ function Connect-SqlInstance {
         if ($ConvertedSqlInstance.Type -like "SqlConnection") {
             [DbaInstanceParameter]$ConvertedSqlInstance = New-Object Microsoft.SqlServer.Management.Smo.Server($ConvertedSqlInstance.InputObject)
         }
-    }
-    else {
+    } else {
         [DbaInstanceParameter]$ConvertedSqlInstance = [DbaInstanceParameter]($SqlInstance | Select-Object -First 1)
 
         if ($SqlInstance.Count -gt 1) {
@@ -116,12 +114,10 @@ function Connect-SqlInstance {
         if ($server.ConnectionContext.IsOpen -eq $false) {
             if ($NonPooled) {
                 $server.ConnectionContext.Connect()
-            }
-            elseif ($authtype -eq "Windows Authentication with Credential") {
+            } elseif ($authtype -eq "Windows Authentication with Credential") {
                 # Make it connect in a natural way, hard to explain.
                 $null = $server.IsMemberOfWsfcCluster
-            }
-            else {
+            } else {
                 $server.ConnectionContext.SqlConnectionObject.Open()
             }
         }
@@ -172,30 +168,25 @@ function Connect-SqlInstance {
                 $server.ConnectionContext.ConnectAsUser = $true
                 $server.ConnectionContext.ConnectAsUserName = $username
                 $server.ConnectionContext.ConnectAsUserPassword = ($SqlCredential).GetNetworkCredential().Password
-            }
-            else {
+            } else {
                 $authtype = "SQL Authentication"
                 $server.ConnectionContext.LoginSecure = $false
                 $server.ConnectionContext.set_Login($username)
                 $server.ConnectionContext.set_SecurePassword($SqlCredential.Password)
             }
         }
-    }
-    catch { }
+    } catch { }
 
     try {
         if ($NonPooled) {
             $server.ConnectionContext.Connect()
-        }
-        elseif ($authtype -eq "Windows Authentication with Credential") {
+        } elseif ($authtype -eq "Windows Authentication with Credential") {
             # Make it connect in a natural way, hard to explain.
             $null = $server.IsMemberOfWsfcCluster
-        }
-        else {
+        } else {
             $server.ConnectionContext.SqlConnectionObject.Open()
         }
-    }
-    catch {
+    } catch {
         $message = $_.Exception.InnerException.InnerException
         if ($message) {
             $message = $message.ToString()
@@ -208,8 +199,7 @@ function Connect-SqlInstance {
             }
 
             throw "Can't connect to $ConvertedSqlInstance`: $message "
-        }
-        else {
+        } else {
             throw $_
         }
     }
@@ -256,8 +246,7 @@ function Connect-SqlInstance {
                 [void]$initFieldsLogin.AddRange($Fields2000_Login)
                 $server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Database], $initFieldsDb)
                 $server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Login], $initFieldsLogin)
-            }
-            elseif ($server.VersionMajor -eq 9 -or $server.VersionMajor -eq 10) {
+            } elseif ($server.VersionMajor -eq 9 -or $server.VersionMajor -eq 10) {
                 # 2005 and 2008
                 $initFieldsDb = New-Object System.Collections.Specialized.StringCollection
                 [void]$initFieldsDb.AddRange($Fields200x_Db)
@@ -265,8 +254,7 @@ function Connect-SqlInstance {
                 [void]$initFieldsLogin.AddRange($Fields200x_Login)
                 $server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Database], $initFieldsDb)
                 $server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Login], $initFieldsLogin)
-            }
-            else {
+            } else {
                 # 2012 and above
                 $initFieldsDb = New-Object System.Collections.Specialized.StringCollection
                 [void]$initFieldsDb.AddRange($Fields201x_Db)
@@ -276,8 +264,7 @@ function Connect-SqlInstance {
                 $server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Login], $initFieldsLogin)
             }
         }
-    }
-    catch {
+    } catch {
         # perhaps a DLL issue, continue going
     }
 
@@ -307,3 +294,4 @@ function Connect-SqlInstance {
     return $server
     #endregion Input Object was anything else
 }
+

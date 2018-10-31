@@ -1,8 +1,23 @@
-﻿$commandname = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
+$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 
-Describe "$commandname Unit Tests" -Tag "Unit" {
+Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+    Context "Validate parameters" {
+        $paramCount = 6
+        $defaultParamCount = 11
+        [object[]]$params = (Get-ChildItem function:\Get-DbaDbFile).Parameters.Keys
+        $knownParameters = 'SqlInstance','SqlCredential','Database','ExcludeDatabase','InputObject','EnableException'
+        It "Should contain our specific parameters" {
+            ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
+        }
+        It "Should only contain $paramCount parameters" {
+            $params.Count - $defaultParamCount | Should Be $paramCount
+        }
+    }
+}
+
+Describe "$CommandName Unit Tests" -Tag "Unit" {
     Context "Ensure array" {
         $results = Get-Command -Name Get-DbaDbFile | Select-Object -ExpandProperty ScriptBlock
         It "returns disks as an array" {
@@ -11,14 +26,14 @@ Describe "$commandname Unit Tests" -Tag "Unit" {
     }
 }
 
-Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
+Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     Context "Count system databases on localhost" {
         $results = Get-DbaDbFile -SqlInstance $script:instance1
         It "returns information about tempdb" {
             $results.Database -contains "tempdb" | Should -Be $true
         }
     }
-    
+
     Context "Check that temppb database is in Simple recovery mode" {
         $results = Get-DbaDbFile -SqlInstance $script:instance1 -Database tempdb
         foreach ($result in $results) {
@@ -27,7 +42,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
             }
         }
     }
-    
+
     Context "Physical name is populated" {
         $results = Get-DbaDbFile -SqlInstance $script:instance1 -Database master
         It "master returns proper results" {

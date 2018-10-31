@@ -1,12 +1,11 @@
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Test-DbaBuild {
     <#
     .SYNOPSIS
         Returns SQL Server Build "compliance" level on a build
 
     .DESCRIPTION
-        It answers the question "is this build up to date ?"
-        Returns info about the specific build of a SQL instance, including the SP, the CU and the reference KB, End Of Support, wherever possible.
-        It adds a Compliance property as true/false, and adds details about the "targeted compliance"
+        Returns info about the specific build of a SQL instance, including the SP, the CU and the reference KB, End Of Support, wherever possible. It adds a Compliance property as true/false, and adds details about the "targeted compliance"
 
     .PARAMETER Build
         Instead of connecting to a real instance, pass a string identifying the build to get the info back.
@@ -15,8 +14,7 @@ function Test-DbaBuild {
         This is the build version to test "compliance" against. Anything below this is flagged as not compliant
 
     .PARAMETER MaxBehind
-        Instead of using a specific MinimumBuild here you can pass "how many service packs and cu back" is the targeted compliance level
-        You can use xxSP or xxCU or both, where xx is a number. See Examples for more informations
+        Instead of using a specific MinimumBuild here you can pass "how many service packs and cu back" is the targeted compliance level. You can use xxSP or xxCU or both, where xx is a number. See the Examples for more information.
 
     .PARAMETER Latest
         Shortcut for specifying the very most up-to-date build available.
@@ -31,71 +29,68 @@ function Test-DbaBuild {
         Looks online for the most up to date reference, replacing the local one.
 
     .PARAMETER Quiet
-        Makes the function just return $true/$false. It's useful if you use Test-DbaBuild in your own scripts, like
-            if (Test-DbaBuild -Build "12.0.5540" -MaxBehind "0CU" -Quiet) {
-                Do-Something
-            }
+        Makes the function just return $true/$false. It's useful if you use Test-DbaBuild in your own scripts.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
+    .NOTES
+        Tags: SqlBuild, Version
+        Author: Simone Bizzotto (@niphold) | Friedrich Weinmann (@FredWeinmann)
+
+        dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
+
+    .LINK
+        https://dbatools.io/Test-DbaBuild
+
     .EXAMPLE
-        Test-DbaBuild -Build "12.0.5540" -MinimumBuild "12.0.5557"
+        PS C:\> Test-DbaBuild -Build "12.0.5540" -MinimumBuild "12.0.5557"
 
         Returns information about a build identified by "12.0.5540" (which is SQL 2014 with SP2 and CU4), which is not compliant as the minimum required
         build is "12.0.5557" (which is SQL 2014 with SP2 and CU8)
 
     .EXAMPLE
-        Test-DbaBuild -Build "12.0.5540" -MaxBehind "1SP"
+        PS C:\> Test-DbaBuild -Build "12.0.5540" -MaxBehind "1SP"
 
         Returns information about a build identified by "12.0.5540", making sure it is AT MOST 1 Service Pack "behind". For that version,
         that identifies an SP2, means accepting as the lowest compliance version as "12.0.4110", that identifies 2014 with SP1
 
     .EXAMPLE
-        Test-DbaBuild -Build "12.0.5540" -MaxBehind "1SP 1CU"
+        PS C:\> Test-DbaBuild -Build "12.0.5540" -MaxBehind "1SP 1CU"
 
         Returns information about a build identified by "12.0.5540", making sure it is AT MOST 1 Service Pack "behind", plus 1 CU "behind". For that version,
         that identifies an SP2 and CU, rolling back 1 SP brings you to "12.0.4110", but given the latest CU for SP1 is CU13, the target "compliant" build
         will be "12.0.4511", which is 2014 with SP1 and CU12
 
     .EXAMPLE
-        Test-DbaBuild -Build "12.0.5540" -MaxBehind "0CU"
+        PS C:\> Test-DbaBuild -Build "12.0.5540" -MaxBehind "0CU"
 
         Returns information about a build identified by "12.0.5540", making sure it is the latest CU release.
 
     .EXAMPLE
-        Test-DbaBuild -Build "12.0.5540" -Latest
+        PS C:\> Test-DbaBuild -Build "12.0.5540" -Latest
 
         Same as previous, returns information about a build identified by "12.0.5540", making sure it is the latest build available.
 
     .EXAMPLE
-        Test-DbaBuild -Build "12.00.4502" -MinimumBuild "12.0.4511" -Update
+        PS C:\> Test-DbaBuild -Build "12.00.4502" -MinimumBuild "12.0.4511" -Update
 
         Same as before, but tries to fetch the most up to date index online. When the online version is newer, the local one gets overwritten
 
     .EXAMPLE
-        Test-DbaBuild -Build "12.0.4502","10.50.4260" -MinimumBuild "12.0.4511"
+        PS C:\> Test-DbaBuild -Build "12.0.4502","10.50.4260" -MinimumBuild "12.0.4511"
 
         Returns information builds identified by these versions strings
 
     .EXAMPLE
-        Get-DbaRegisteredServer -SqlInstance sqlserver2014a | Test-DbaBuild -MinimumBuild "12.0.4511"
+        PS C:\> Get-DbaCmsRegServer -SqlInstance sqlserver2014a | Test-DbaBuild -MinimumBuild "12.0.4511"
 
-        Integrate with other commandlets to have builds checked for all your registered servers on sqlserver2014a
+        Integrate with other cmdlets to have builds checked for all your registered servers on sqlserver2014a
 
-    .NOTES
-        Author: niphlod
-        Editor: Fred
-        Tags: SqlBuild
-
-        dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-        Copyright (C) 2016 Chrissy LeMaire
-        License: MIT https://opensource.org/licenses/MIT
-
-    .LINK
-        https://dbatools.io/Test-DbaBuild
 #>
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "")]
     [CmdletBinding()]
@@ -159,8 +154,7 @@ function Test-DbaBuild {
             # Empty call just to make sure the buildref is updated and on the right path
             Get-DbaBuildReference -Update:$Update -EnableException:$true
             $IdxRef = Get-DbaBuildReferenceIndex
-        }
-        catch {
+        } catch {
             Stop-Function -Message "Error loading SQL build reference" -ErrorRecord $_
             return
         }
@@ -174,15 +168,13 @@ function Test-DbaBuild {
                     if ($pieceMatch.Success -ne $true) {
                         Stop-Function -Message "MaxBehind has an invalid syntax ('$piece' could not be parsed correctly)" -ErrorRecord $_
                         return
-                    }
-                    else {
+                    } else {
                         $howmany = [int]$pieceMatch.Groups['howmany'].Value
                         $what = $pieceMatch.Groups['what'].Value
                         if ($ParsedMaxBehind.ContainsKey($what)) {
                             Stop-Function -Message "The specifier $what has been already passed" -ErrorRecord $_
                             return
-                        }
-                        else {
+                        } else {
                             $ParsedMaxBehind[$what] = $howmany
                         }
                     }
@@ -190,8 +182,7 @@ function Test-DbaBuild {
                 if (-not $ParsedMaxBehind.ContainsKey('SP')) {
                     $ParsedMaxBehind['SP'] = 0
                 }
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Error parsing MaxBehind" -ErrorRecord $_
                 return
             }
@@ -205,8 +196,7 @@ function Test-DbaBuild {
         }
         if ($MinimumBuild) {
             $hiddenProps += 'MaxBehind', 'SPTarget', 'CUTarget', 'BuildTarget'
-        }
-        elseif ($MaxBehind -or $Latest) {
+        } elseif ($MaxBehind -or $Latest) {
             $hiddenProps += 'MinimumBuild'
         }
         $BuildVersions = Get-DbaBuildReference -Build $Build -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Update:$Update -EnableException:$EnableException
@@ -216,15 +206,14 @@ function Test-DbaBuild {
             $targetSPName = $null
             $targetCUName = $null
             if ($BuildVersion.MatchType -eq 'Approximate') {
-                Stop-Function -Message "$($BuildVersion.Build) is not recognized as a correct version" -ErrorRecord $_ -Continue
+                Write-Message -Level Warning -Message "$($BuildVersion.Build) is not recognized as a correct version"
             }
             if ($MinimumBuild) {
                 Write-Message -Level Debug -Message "Comparing $MinimumBuild to $inputbuild"
                 if ($inputbuild -ge $MinimumBuild) {
                     $compliant = $true
                 }
-            }
-            elseif ($MaxBehind -or $Latest) {
+            } elseif ($MaxBehind -or $Latest) {
                 $IdxVersion = $IdxRef | Where-Object Version -like "$($inputbuild.Major).$($inputbuild.Minor).*"
                 $lastsp = ''
                 $SPsAndCUs = @()
@@ -247,8 +236,7 @@ function Test-DbaBuild {
                 $targetedBuild = $SPsAndCUs[0]
                 if ($Latest) {
                     $targetedBuild = $IdxVersion[$IdxVersion.Length - 1]
-                }
-                else {
+                } else {
                     if ($ParsedMaxBehind.ContainsKey('SP')) {
                         $AllSPs = $SPsAndCUs.SP | Select-Object -Unique
                         $targetSP = $AllSPs.Length - $ParsedMaxBehind['SP'] - 1
@@ -285,8 +273,7 @@ function Test-DbaBuild {
             Add-Member -InputObject $BuildVersion -MemberType NoteProperty -Name BuildTarget -Value $targetedBuild.VersionObject
             if ($Quiet) {
                 $BuildVersion.Compliant
-            }
-            else {
+            } else {
                 $BuildVersion | Select-Object * | Select-DefaultView -ExcludeProperty $hiddenProps
             }
         }
@@ -295,3 +282,4 @@ function Test-DbaBuild {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Test-DbaSqlBuild
     }
 }
+
