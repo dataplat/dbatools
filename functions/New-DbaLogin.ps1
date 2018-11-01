@@ -314,7 +314,7 @@ function New-DbaLogin {
                 }
 
                 #verify if login exists on the server
-                if ($existingLogin = $server.Logins[$loginName]) {
+                if (($existingLogin = $server.Logins[$loginName])) {
                     if ($force) {
                         if ($Pscmdlet.ShouldProcess($existingLogin, "Dropping existing login $loginName on $instance because -Force was used")) {
                             try {

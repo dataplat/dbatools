@@ -2,10 +2,10 @@
 function New-DbaAvailabilityGroup {
     <#
     .SYNOPSIS
-        Automates the creation of availaibility groups.
+        Automates the creation of availability groups.
 
     .DESCRIPTION
-        Automates the creation of availaibility groups.
+        Automates the creation of availability groups.
 
     	* Checks prerequisites
     	* Creates Availability Group and adds primary replica
@@ -513,11 +513,11 @@ function New-DbaAvailabilityGroup {
         }
         
         # Add listener
-        Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Adding endpoint connect permissions"
+        Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Adding listener"
         
         if ($IPAddress) {
             if ($Pscmdlet.ShouldProcess($Primary, "Adding static IP listener for $Name to the Primary replica")) {
-                $null = Add-DbaAgListener -InputObject $ag -IPAddress $IPAddress -SubnetMask $SubnetMask -Port $Port -Dhcp:$Dhcp
+                $null = Add-DbaAgListener -InputObject $ag -IPAddress $IPAddress[0] -SubnetMask $SubnetMask -Port $Port -Dhcp:$Dhcp
             }
         } elseif ($Dhcp) {
             if ($Pscmdlet.ShouldProcess($Primary, "Adding DHCP listener for $Name to all replicas")) {
