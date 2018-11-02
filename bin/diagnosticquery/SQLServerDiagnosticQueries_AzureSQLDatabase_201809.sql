@@ -1,7 +1,7 @@
 
 -- Azure SQL Database Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: September 19, 2018
+-- Last Modified: October 16, 2018
 -- https://www.sqlskills.com/blogs/glenn/
 -- http://sqlserverperformance.wordpress.com/
 -- Twitter: GlennAlanBerry
@@ -318,13 +318,13 @@ OPTION (RECOMPILE);
 
 
 -- Get VLF Counts for current database (Query 17) (VLF Counts)
-SELECT [name] AS [Database Name], [VLF Count] 
-FROM sys.databases AS db WITH (NOLOCK)
-CROSS APPLY (SELECT file_id, COUNT(*) AS [VLF Count] 
-			 FROM sys.dm_db_log_info(db.database_id) 
-             GROUP BY file_id) AS li
+SELECT [name] AS [Database Name], [VLF Count]
+FROM sys.databases AS db WITH (NOLOCK)
+CROSS APPLY (SELECT file_id, COUNT(*) AS [VLF Count]
+		     FROM sys.dm_db_log_info(db.database_id)
+			 GROUP BY file_id) AS li
 WHERE [name] <> N'master'
-ORDER BY [VLF Count] DESC  OPTION (RECOMPILE);
+ORDER BY [VLF Count] DESC OPTION (RECOMPILE);
 ------
 
 -- High VLF counts can affect write performance to the log file
