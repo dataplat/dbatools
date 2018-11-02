@@ -98,7 +98,7 @@ function Sync-DbaLoginPermission {
                 $currentLogin = $sourceServer.ConnectionContext.TrueLogin
                 
                 if (!$Login -and $currentLogin -eq $username) {
-                    Write-Message -Level Warning -Message "Sync does not modify the permissions of the current user. Skipping."
+                    Write-Message -Level Verbose -Message "Sync does not modify the permissions of the current user. Skipping."
                     continue
                 }
                 
