@@ -275,6 +275,11 @@ function New-DbaAvailabilityGroup {
             return
         }
         
+        if ($Basic -and $server.VersionMajor -lt 13) {
+            Stop-Function -Message "Basic availability groups are only supported in SQL Server 2016 and above" -Target $Primary
+            return
+        }
+        
         Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Checking perquisites"
         
         # Don't reuse $server here, it fails
