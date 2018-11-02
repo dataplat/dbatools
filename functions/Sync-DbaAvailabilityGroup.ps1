@@ -187,7 +187,7 @@ function Sync-DbaAvailabilityGroup {
     end {
         if (Test-FunctionInterrupt) { return }
         
-        # now that all combinations have been figured out, begin sync
+        # now that all combinations have been figured out, begin sync without duplicating work
         foreach ($ag in $allcombos) {
             $server = $ag.PrimaryServer
             $secondaries = $ag.SecondaryServer
