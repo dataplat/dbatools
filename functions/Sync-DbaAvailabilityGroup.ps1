@@ -309,7 +309,7 @@ function Sync-DbaAvailabilityGroup {
             if ($Exclude -notcontains "AgentJob") {
                 if ($PSCmdlet.ShouldProcess("Syncing Agent Jobs from $primaryserver to $secondaryservers")) {
                     Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Syncing Agent Jobs"
-                    Copy-DbaAgentJob -Source $server -Destination $secondaries -Force:$force -DisableOnDestination:$DisableJobsOnDestination -DisableOnSource:$DisableJobsOnSource
+                    Copy-DbaAgentJob -Source $server -Destination $secondaries -Force:$force
                 }
             }
             
