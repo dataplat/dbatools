@@ -315,6 +315,20 @@ function Set-DbaAgentSchedule {
             Stop-Function -Message "End time $EndTime needs to match between '000000' and '235959'" -Target $SqlInstance
             return
         }
+
+        #Format dates and times
+        if ($StartDate) {
+            $StartDate = $StartDate.Insert(6, '-').Insert(4, '-')
+        }
+        if ($EndDate) {
+            $EndDate = $EndDate.Insert(6, '-').Insert(4, '-')
+        }
+        if ($StartTime) {
+            $StartTime = $StartTime.Insert(4, ':').Insert(2, ':')
+        }
+        if ($EndTime) {
+            $EndTime = $EndTime.Insert(4, ':').Insert(2, ':')
+        }
     }
 
     process {
@@ -392,25 +406,21 @@ function Set-DbaAgentSchedule {
                         }
 
                         if ($StartDate) {
-                            $StartDate = $StartDate.Insert(6, '-').Insert(4, '-')
                             Write-Message -Message "Setting job schedule start date to $StartDate for schedule $ScheduleName" -Level Verbose
                             $JobSchedule.StartDate = $StartDate
                         }
 
                         if ($EndDate) {
-                            $EndDate = $EndDate.Insert(6, '-').Insert(4, '-')
                             Write-Message -Message "Setting job schedule end date to $EndDate for schedule $ScheduleName" -Level Verbose
                             $JobSchedule.EndDate = $EndDate
                         }
 
                         if ($StartTime) {
-                            $StartTime = $StartTime.Insert(4, ':').Insert(2, ':')
                             Write-Message -Message "Setting job schedule start time to $StartTime for schedule $ScheduleName" -Level Verbose
                             $JobSchedule.ActiveStartTimeOfDay = $StartTime
                         }
 
                         if ($EndTime) {
-                            $EndTime = $EndTime.Insert(4, ':').Insert(2, ':')
                             Write-Message -Message "Setting job schedule end time to $EndTime for schedule $ScheduleName" -Level Verbose
                             $JobSchedule.ActiveStartTimeOfDay = $EndTime
                         }
