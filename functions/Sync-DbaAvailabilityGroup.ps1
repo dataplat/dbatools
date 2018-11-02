@@ -64,6 +64,9 @@ function Sync-DbaAvailabilityGroup {
     .PARAMETER InputObject
         Enables piping from Get-DbaAvailabilityGroup.
     
+    .PARAMETER Force
+        If this switch is enabled, the objects will dropped and recreated on Destination.
+
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
 
@@ -117,6 +120,7 @@ function Sync-DbaAvailabilityGroup {
         [string[]]$Exclude,
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.AvailabilityGroup[]]$InputObject,
+        [switch]$Force,
         [switch]$EnableException
     )
     begin {
@@ -200,6 +204,13 @@ function Sync-DbaAvailabilityGroup {
             $primaryserver = $server.Name
             $secondaryservers = $secondaries.Name -join ", "
             
+            if ($Exclude -notcontains "SpConfigure") {
+                if ($PSCmdlet.ShouldProcess("Syncing SQL Server Configuration from $primaryserver to $secondaryservers")) {
+                    Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Syncing SQL Server Configuration"
+                    Copy-DbaSpConfigure -Source $server -Destination $secondaries
+                }
+            }
+            
             if ($Exclude -notcontains "Logins") {
                 if ($PSCmdlet.ShouldProcess("Syncing logins from $primaryserver to $secondaryservers")) {
                     Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Syncing logins"
@@ -213,13 +224,6 @@ function Sync-DbaAvailabilityGroup {
                     foreach ($sec in $secondaries) {
                         $null = Update-SqlDbOwner -Source $server -Destination $sec
                     }
-                }
-            }
-            
-            if ($Exclude -notcontains "SpConfigure") {
-                if ($PSCmdlet.ShouldProcess("Syncing SQL Server Configuration from $primaryserver to $secondaryservers")) {
-                    Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Syncing SQL Server Configuration"
-                    Copy-DbaSpConfigure -Source $server -Destination $secondaries
                 }
             }
             
