@@ -5,7 +5,8 @@ function Sync-DbaAvailabilityGroup {
         Syncs jobs, logins, whatnot for availability groups
 
     .DESCRIPTION
-        
+        Syncs jobs, logins, whatnot for availability groups
+    
     .PARAMETER Primary
         The primary SQL Server instance. Server version must be SQL Server version 2012 or higher.
 
