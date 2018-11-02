@@ -2,10 +2,10 @@
 function New-DbaAvailabilityGroup {
     <#
     .SYNOPSIS
-        Automates the creation of availaibility groups.
+        Automates the creation of availability groups.
 
     .DESCRIPTION
-        Automates the creation of availaibility groups.
+        Automates the creation of availability groups.
 
     	* Checks prerequisites
     	* Creates Availability Group and adds primary replica
