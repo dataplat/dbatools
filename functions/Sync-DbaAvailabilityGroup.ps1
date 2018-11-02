@@ -84,6 +84,11 @@ function Sync-DbaAvailabilityGroup {
         [switch]$EnableException
     )
     process {
+        if (-not $AvailabilityGroup -and -not $Secondary) {
+            Stop-Function -Message "You must specify a secondary or an availability group."    
+            return
+        }
+        
         $stepCounter = $wait = 0
         $totalSteps = 10
         $activity = "Syncing availability group $AvailabilityGroup"
@@ -95,19 +100,16 @@ function Sync-DbaAvailabilityGroup {
             return
         }
         
-       if ($Secondary) {
-            $secondaries = @()
-            foreach ($computer in $Secondary) {
-                try {
-                    $secondaries += Connect-SqlInstance -SqlInstance $computer -SqlCredential $SecondarySqlCredential
-                } catch {
-                    Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Primary
-                    return
-                }
-            }
+        if ($AvailabilityGroup) {
+            $InputObject += Get-DbaAvailabilityGroup -SqlInstance $server -AvailabilityGroup $AvailabilityGroup
         }
         
-        if ($AvailabilityGroup) {
+        if ($InputObject) {
+            $seconds = $InputObject.AvailabilityReplicas
+            $Secondary += (($seconds | Where-Object Name -ne $server.DomainInstanceName).Name | Select-Object -Unique)
+        }
+        
+        if ($Secondary) {
             $secondaries = @()
             foreach ($computer in $Secondary) {
                 try {
