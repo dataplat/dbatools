@@ -67,7 +67,7 @@ function Invoke-DbMirrorValidation {
         [DbaInstanceParameter]$Primary,
         [PSCredential]$PrimarySqlCredential,
         [parameter(Mandatory)]
-        [DbaInstanceParameter]$Mirror,
+        [DbaInstanceParameter[]]$Mirror,
         [PSCredential]$MirrorSqlCredential,
         [DbaInstanceParameter]$Witness,
         [PSCredential]$WitnessSqlCredential,
