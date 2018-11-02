@@ -25,12 +25,6 @@ function Add-DbaCmsRegServerGroup {
     .PARAMETER InputObject
         Allows results from Get-DbaCmsRegServerGroup to be piped in
 
-    .PARAMETER IncludeRegisteredServers
-        Create the registered servers within the group, too
-
-    .PARAMETER InputObject
-        Allows results from Get-DbaCmsRegServerGroup to be piped in
-
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
 
