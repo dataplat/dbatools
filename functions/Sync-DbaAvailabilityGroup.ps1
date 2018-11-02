@@ -119,6 +119,13 @@ function Sync-DbaAvailabilityGroup {
             }
         }
         
+        if ($Exclude -notcontains "Logins") {
+            if ($PSCmdlet.ShouldProcess("Syncing logins")) {
+                Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Syncing logins"
+                Copy-DbaLogin -Source $server -Destination $secondaries -Force:$Force
+            }
+        }
+        
         if ($Exclude -notcontains "SpConfigure") {
             if ($PSCmdlet.ShouldProcess("Syncing SQL Server Configuration")) {
                 Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Syncing SQL Server Configuration"
@@ -151,20 +158,6 @@ function Sync-DbaAvailabilityGroup {
             if ($PSCmdlet.ShouldProcess("Syncing linked servers")) {
                 Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Syncing linked servers"
                 Copy-DbaLinkedServer -Source $server -Destination $secondaries -Force:$Force
-            }
-        }
-        
-        if ($Exclude -notcontains "Logins") {
-            if ($PSCmdlet.ShouldProcess("Syncing logins")) {
-                Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Syncing logins"
-                Copy-DbaLogin -Source $server -Destination $secondaries -Force:$Force
-            }
-        }
-        
-        if ($Exclude -notcontains "LoginPermissions") {
-            if ($PSCmdlet.ShouldProcess("Syncing login permissions")) {
-                Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Syncing login permissions"
-                Sync-DbaLoginPermission -Source $server -Destination $secondaries
             }
         }
         
@@ -233,6 +226,13 @@ function Sync-DbaAvailabilityGroup {
             if ($PSCmdlet.ShouldProcess("Syncing Agent Jobs")) {
                 Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Syncing Agent Jobs"
                 Copy-DbaAgentJob -Source $sourceServer -Destination $destServer -Force:$force -DisableOnDestination:$DisableJobsOnDestination -DisableOnSource:$DisableJobsOnSource
+            }
+        }
+        
+        if ($Exclude -notcontains "LoginPermissions") {
+            if ($PSCmdlet.ShouldProcess("Syncing login permissions")) {
+                Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Syncing login permissions"
+                Sync-DbaLoginPermission -Source $server -Destination $secondaries
             }
         }
     }
