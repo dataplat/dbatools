@@ -210,7 +210,7 @@ function Expand-DbaTLogResponsibly {
                 $databases = $databases | Where-Object Name -In $Database
             }
             if ($ExcludeDatabase) {
-                $database = $databases | Where-Object Name -NotIn $ExcludeDatabase
+                $databases = $databases | Where-Object Name -NotIn $ExcludeDatabase
             }
 
             #go through all databases
@@ -220,14 +220,14 @@ function Expand-DbaTLogResponsibly {
                 $databaseProgressbar += 1
 
                 #set step to reutilize on logging operations
-                [string]$step = "$databaseProgressbar/$($Database.Count)"
+                [string]$step = "$databaseProgressbar/$($Databases.Count)"
 
                 if ($server.Databases[$db]) {
                     Write-Progress `
                         -Id 1 `
                         -Activity "Using database: $db on Instance: '$SqlInstance'" `
-                        -PercentComplete ($databaseProgressbar / $Database.Count * 100) `
-                        -Status "Processing - $databaseProgressbar of $($Database.Count)"
+                        -PercentComplete ($databaseProgressbar / $Databases.Count * 100) `
+                        -Status "Processing - $databaseProgressbar of $($Databases.Count)"
 
                     #Validate which file will grow
                     if ($LogByFileID) {
