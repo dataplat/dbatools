@@ -238,10 +238,10 @@ function Install-DbaSQLWATCH {
                     Stop-Function -Message "DACPAC failed to publish to $database on $instance." -ErrorRecord $_ -Target $instance -Continue
                 }
 
-                Write-PSFMessage -Level Verbose -Message "Finished installing/updating SQLWATCH in $database on $instance."
+                Write-Message -Level Verbose -Message "Finished installing/updating SQLWATCH in $database on $instance."
                 #notify user of location to PowerBI file
                 #$pbitLocation = Get-ChildItem $tempFolder -Recurse -include *.pbit | Select-Object -ExpandProperty Directory -Unique
-                #Write-PSFMessage -Level Output -Message "SQLWATCH installed successfully. Power BI dashboard files can be found at $($pbitLocation.FullName)"
+                #Write-Message -Level Output -Message "SQLWATCH installed successfully. Power BI dashboard files can be found at $($pbitLocation.FullName)"
             }
         }
     }
