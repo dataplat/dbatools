@@ -24359,7 +24359,7 @@
     },
     {
         "CommandName":  "New-DbaAvailabilityGroup",
-        "Description":  "Automates the creation of availaibility groups.\n\n* Checks prerequisites\n* Creates Availability Group and adds primary replica\n* Grants cluster permissions if necessary\n* Adds secondary replica if supplied\n* Adds databases if supplied\n* Performs backup/restore if seeding mode is manual\n* Performs backup to NUL if seeding mode is automatic\n* Adds listener to primary if supplied\n* Joins secondaries to availability group\n* Grants endpoint connect permissions to service accounts\n* Grants CreateAnyDatabase permissions if seeding mode is automatic\n* Returns Availability Group object from primary\n\nNOTE: If a backup / restore is performed, the backups will be left intact on the network share.\n\nThanks for this, Thomas Stringer! https://blogs.technet.microsoft.com/heyscriptingguy/2013/04/29/set-up-an-alwayson-availability-group-with-powershell/",
+        "Description":  "Automates the creation of availability groups.\n\n* Checks prerequisites\n* Creates Availability Group and adds primary replica\n* Grants cluster permissions if necessary\n* Adds secondary replica if supplied\n* Adds databases if supplied\n* Performs backup/restore if seeding mode is manual\n* Performs backup to NUL if seeding mode is automatic\n* Adds listener to primary if supplied\n* Joins secondaries to availability group\n* Grants endpoint connect permissions to service accounts\n* Grants CreateAnyDatabase permissions if seeding mode is automatic\n* Returns Availability Group object from primary\n\nNOTE: If a backup / restore is performed, the backups will be left intact on the network share.\n\nThanks for this, Thomas Stringer! https://blogs.technet.microsoft.com/heyscriptingguy/2013/04/29/set-up-an-alwayson-availability-group-with-powershell/",
         "Tags":  "HA",
         "Params":  [
                        [
@@ -24629,7 +24629,7 @@
                    ],
         "Alias":  "",
         "Author":  "Chrissy LeMaire (@cl), netnerds.net",
-        "Synopsis":  "Automates the creation of availaibility groups.",
+        "Synopsis":  "Automates the creation of availability groups.",
         "Name":  "New-DbaAvailabilityGroup",
         "Links":  "https://dbatools.io/New-DbaAvailabilityGroup",
         "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eNew-DbaAvailabilityGroup -Primary sql2016a -Name SharePoint\nCreates a new availability group on sql2016a named SharePoint\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eNew-DbaAvailabilityGroup -Primary sql2016a -Name SharePoint -Secondary sql2016b\nCreates a new availability group on sql2016b named SharePoint with a secondary replica, sql2016b\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eNew-DbaAvailabilityGroup -Primary sql2016std -Name BAG1 -Basic -Confirm:$false\nCreates a basic availability group named BAG1 on sql2016std and does not confirm when setting up\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eNew-DbaAvailabilityGroup -Primary sql2016b -Name AG1 -ClusterType Wsfc -Dhcp -Database db1 -UseLastBackup\nCreates an availability group on sql2016b with the name ag1. Uses the last backups available to add the database db1 to the AG.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eNew-DbaAvailabilityGroup -Primary sql2017 -Name SharePoint -ClusterType None -FailoverMode Manual\nCreates a new availability group on sql2017 named SharePoint with a cluster type of non and a failover mode of manual\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eNew-DbaAvailabilityGroup -Primary sql1 -Secondary sql2 -Database pubs -ClusterType None -SeedingMode Automatic -FailoverMode Manual\nCreates a new availability group with a primary replica on sql1 and a secondary on sql2. Automatically adds the database pubs.\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003e$cred = Get-Credential sqladmin\nPS C:\\\u003e $params = @{\r\n            \u003e\u003e Primary = \"sql1\"\r\n            \u003e\u003e PrimarySqlCredential = $cred\r\n            \u003e\u003e Secondary = \"sql2\"\r\n            \u003e\u003e SecondarySqlCredential = $cred\r\n            \u003e\u003e Database = \"pubs\"\r\n            \u003e\u003e ClusterType = \"None\"\r\n            \u003e\u003e SeedingMode = \"Automatic\"\r\n            \u003e\u003e FailoverMode = \"Manual\"\r\n            \u003e\u003e Confirm = $false\r\n        \u003e\u003e }\r\nPS C:\\\u003e New-DbaAvailabilityGroup @params\nThis exact command was used to create an availability group on docker!",
@@ -26152,6 +26152,14 @@
                            "0"
                        ],
                        [
+                           "Owner",
+                           "Owner of the endpoint. Defaults to sa.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
                            "EnableException",
                            "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
                            "",
@@ -26182,7 +26190,7 @@
         "Name":  "New-DbaEndpoint",
         "Links":  "https://dbatools.io/New-DbaEndpoint",
         "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eNew-DbaEndpoint -SqlInstance localhost\nCreates all Endpoint(s) on the local default SQL Server instance\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eNew-DbaEndpoint -SqlInstance localhost, sql2016\nReturns all Endpoint(s) for the local and sql2016 SQL Server instances",
-        "Syntax":  "New-DbaEndpoint [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Name \u003cString\u003e] [-Type \u003cString\u003e] [-Protocol \u003cString\u003e] [-Role \u003cString\u003e] [-EndpointEncryption \u003cString\u003e] [-EncryptionAlgorithm \u003cString\u003e] [-Certificate \u003cString\u003e] [-Port \u003cInt32\u003e] [-SslPort \u003cInt32\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "New-DbaEndpoint [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Name \u003cString\u003e] [-Type \u003cString\u003e] [-Protocol \u003cString\u003e] [-Role \u003cString\u003e] [-EndpointEncryption \u003cString\u003e] [-EncryptionAlgorithm \u003cString\u003e] [-Certificate \u003cString\u003e] [-Port \u003cInt32\u003e] [-SslPort \u003cInt32\u003e] [-Owner \u003cString\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "CommandName":  "New-DbaLogin",
@@ -37448,6 +37456,108 @@
         "Syntax":  "Suspend-DbaAgDbDataMovement [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-AvailabilityGroup] \u003cString\u003e] [[-Database] \u003cString[]\u003e] [[-InputObject] \u003cAvailabilityDatabase[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
+        "CommandName":  "Sync-DbaAvailabilityGroup",
+        "Description":  "Syncs depdendent objects for availability groups. Such objects include:\n\nSpConfigure\nCustomErrors\nCredentials\nDatabaseMail\nLinkedServers\nLogins\nLoginPermissions\nSystemTriggers\nDatabaseOwner\nAgentCategory\nAgentOperator\nAgentAlert\nAgentProxy\nAgentSchedule\nAgentJob\n\nNote that any of these can be excluded. For specific object exclusions (such as a single job), using the underlying Copy-Dba* command will be required.\n\nThis command does not filter by which logins are in use by the ag databases or which linked servers are used. All objects that are not excluded will be copied like hulk smash.",
+        "Tags":  "HA",
+        "Params":  [
+                       [
+                           "Primary",
+                           "The primary SQL Server instance. Server version must be SQL Server version 2012 or higher.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "PrimarySqlCredential",
+                           "Login to the primary instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Secondary",
+                           "The target SQL Server instance or instances. Server version must be SQL Server version 2012 or higher.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "SecondarySqlCredential",
+                           "Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "AvailabilityGroup",
+                           "The name of the Availability Group.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Exclude",
+                           "Exclude one or more objects to export\nSpConfigure\r\nCustomErrors\r\nCredentials\r\nDatabaseMail\r\nLinkedServers\r\nLogins\r\nLoginPermissions\r\nSystemTriggers\r\nDatabaseOwner\r\nAgentCategory\r\nAgentOperator\r\nAgentAlert\r\nAgentProxy\r\nAgentSchedule\r\nAgentJob",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "InputObject",
+                           "Enables piping from Get-DbaAvailabilityGroup.",
+                           "",
+                           false,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
+                           "Force",
+                           "If this switch is enabled, the objects will dropped and recreated on Destination.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "WhatIf",
+                           "Shows what would happen if the command were to run. No actions are actually performed.",
+                           "wi",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Confirm",
+                           "Prompts you for confirmation before executing any changing operations within the command.",
+                           "cf",
+                           false,
+                           "false",
+                           ""
+                       ]
+                   ],
+        "Alias":  "",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
+        "Synopsis":  "Syncs depdendent objects such as jobs, logins and custom errors for availability groups",
+        "Name":  "Sync-DbaAvailabilityGroup",
+        "Links":  "https://dbatools.io/Sync-DbaAvailabilityGroup",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eSync-DbaAvailabilityGroup -Primary sql2016a -AvailabilityGroup db3\nSyncs the following on all replicas found in the db3 AG:\r\nSpConfigure, CustomErrors, Credentials, DatabaseMail, LinkedServers\r\nLogins, LoginPermissions, SystemTriggers, DatabaseOwner, AgentCategory,\r\nAgentOperator, AgentAlert, AgentProxy, AgentScheduleAgentJob\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaAvailabilityGroup -SqlInstance sql2016a | Sync-DbaAvailabilityGroup -Exclude LoginPermissions, LinkedServers\nSyncs the following on all replicas found in the db3 AG:\r\nSpConfigure, CustomErrors, Credentials, DatabaseMail, Logins,\r\nSystemTriggers, DatabaseOwner, AgentCategory, AgentOperator\r\nAgentAlert, AgentProxy, AgentScheduleAgentJob\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaAvailabilityGroup -SqlInstance sql2016a | Sync-DbaAvailabilityGroup -WhatIf\nShows what would happen if the command were to run but doesn\u0027t actually perform the action.",
+        "Syntax":  "Sync-DbaAvailabilityGroup [[-Primary] \u003cDbaInstanceParameter\u003e] [[-PrimarySqlCredential] \u003cPSCredential\u003e] [[-Secondary] \u003cDbaInstanceParameter[]\u003e] [[-SecondarySqlCredential] \u003cPSCredential\u003e] [[-AvailabilityGroup] \u003cString\u003e] [[-Exclude] \u003cString[]\u003e] [[-InputObject] \u003cAvailabilityGroup[]\u003e] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+    },
+    {
         "CommandName":  "Sync-DbaLoginPermission",
         "Description":  "Syncs only SQL Server login permissions, roles, etc. Does not add or drop logins. If a matching login does not exist on the destination, the login will be skipped. Credential removal is not currently supported for this operation.",
         "Tags":  [
@@ -37506,7 +37616,7 @@
                        [
                            "EnableException",
                            "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
-                           "Silent",
+                           "",
                            false,
                            "false",
                            "False"
@@ -37534,7 +37644,7 @@
         "Name":  "Sync-DbaLoginPermission",
         "Links":  "https://dbatools.io/Sync-DbaLoginPermission",
         "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eSync-DbaLoginPermission -Source sqlserver2014a -Destination sqlcluster\nSyncs only SQL Server login permissions, roles, etc. Does not add or drop logins or users. To copy logins and their permissions, use Copy-SqlLogin.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eSync-DbaLoginPermission -Source sqlserver2014a -Destination sqlcluster -Exclude realcajun -SourceSqlCredential $scred -DestinationSqlCredential $dcred\nCopies all login permissions except for realcajun using SQL Authentication to connect to each server. If a login already exists on the destination, the permissions will not be migrated.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eSync-DbaLoginPermission -Source sqlserver2014a -Destination sqlcluster -Login realcajun, netnerds\nCopies permissions ONLY for logins netnerds and realcajun.",
-        "Syntax":  "Sync-DbaLoginPermission [-Source] \u003cDbaInstanceParameter\u003e [[-SourceSqlCredential] \u003cPSCredential\u003e] [-Destination] \u003cDbaInstanceParameter\u003e [[-DestinationSqlCredential] \u003cPSCredential\u003e] [[-Login] \u003cObject[]\u003e] [[-ExcludeLogin] \u003cObject[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Sync-DbaLoginPermission [-Source] \u003cDbaInstanceParameter\u003e [[-SourceSqlCredential] \u003cPSCredential\u003e] [-Destination] \u003cDbaInstanceParameter[]\u003e [[-DestinationSqlCredential] \u003cPSCredential\u003e] [[-Login] \u003cString[]\u003e] [[-ExcludeLogin] \u003cString[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "CommandName":  "Test-DbaBackupInformation",
