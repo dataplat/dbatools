@@ -56,7 +56,6 @@ Function Uninstall-DbaSQLWATCH {
         [PSCredential]$SqlCredential,
         [Parameter(Mandatory)]
         [object]$Database = "master",
-        [string]$LocalFile,
         [switch]$Force,
         [Alias('Silent')]
         [switch]$EnableException

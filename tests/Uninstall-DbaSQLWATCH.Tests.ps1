@@ -4,10 +4,10 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        $paramCount = 7
+        $paramCount = 6
         $commonParamCount = ([System.Management.Automation.PSCmdlet]::CommonParameters).Count + 2
         [object[]]$params = (Get-ChildItem function:\Uninstall-DbaSQLWATCH).Parameters.Keys
-        $knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'Force', 'LocalFile', 'EnableException', 'ConnectionString'
+        $knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'Force', 'LocalFile', 'EnableException'
         It "Should contain our specific parameters" {
             ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
         }
