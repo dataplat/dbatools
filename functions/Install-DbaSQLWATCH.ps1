@@ -15,10 +15,7 @@ function Install-DbaSQLWATCH {
             Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
         .PARAMETER Database
-            Specifies the database to install SQLWATCH into.
-
-        .PARAMETER Branch
-            Specifies an alternate branch of SQLWATCH to install. (master or dev)
+            Specifies the database to install SQLWATCH into.s
 
         .PARAMETER LocalFile
             Specifies the path to a local file to install SQLWATCH from. This *should* be the zipfile as distributed by the maintainers.
