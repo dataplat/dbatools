@@ -64,7 +64,7 @@ Describe "$ModuleName style" -Tag 'Compliance' {
         $results = $jobs | Receive-Job
 
         foreach ($f in $results) {
-            It "$f is adopting OTSB formatting style, see Invoke-DbatoolsFormatter" {
+            It "$f is adopting OTSB formatting style. Please run Invoke-DbatoolsFormatter against the failing file and commit the changes." {
                 1 | Should -Be 0
             }
         }
