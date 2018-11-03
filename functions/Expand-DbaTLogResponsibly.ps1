@@ -495,8 +495,8 @@ function Expand-DbaTLogResponsibly {
                     ID              = $logfile.ID
                     Name            = $logfile.Name
                     LogFileCount    = $numLogfiles
-                    InitialSize     = [dbasize]($currentSizeMB * 1024)
-                    CurrentSize     = [dbasize]($TargetLogSizeMB * 1024)
+                    InitialSize     = [dbasize]($currentSizeMB * 1024 * 1024)
+                    CurrentSize     = [dbasize]($TargetLogSizeMB * 1024 * 1024)
                     InitialVLFCount = $initialVLFCount.Total
                     CurrentVLFCount = $currentVLFCount.Total
                 } | Select-DefaultView -ExcludeProperty LogFileCount
