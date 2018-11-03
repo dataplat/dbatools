@@ -5557,17 +5557,17 @@
                            ""
                        ],
                        [
-                           "TargetLogSizeMB",
+                           "TargetLogSize",
                            "Specifies the target size of the transaction log file in megabytes.",
-                           "",
+                           "TargetLogSizeMB",
                            true,
                            "false",
                            "0"
                        ],
                        [
+                           "IncrementSize",
+                           "Specifies the amount the transaction log should grow in megabytes. If this value differs from the suggested value based on your TargetLogSize, you will be prompted to confirm your choice.\nThis value will be calculated if not specified.",
                            "IncrementSizeMB",
-                           "Specifies the amount the transaction log should grow in megabytes. If this value differs from the suggested value based on your TargetLogSizeMB, you will be prompted to confirm your choice.\nThis value will be calculated if not specified.",
-                           "",
                            false,
                            "false",
                            "-1"
@@ -5589,9 +5589,9 @@
                            "False"
                        ],
                        [
+                           "ShrinkSize",
+                           "Specifies the target size of the transaction log file for the shrink operation in megabytes.",
                            "ShrinkSizeMB",
-                           "Specifies the target size of the transaction log file for the shrink operation.",
-                           "",
                            true,
                            "false",
                            "0"
@@ -5603,6 +5603,14 @@
                            false,
                            "false",
                            ""
+                       ],
+                       [
+                           "ExcludeDiskSpaceValidation",
+                           "If this switch is enabled, the validation for enough disk space using Get-DbaDiskSpace command will be skipped.\r\nThis can be useful when you know that you have enough space to grow your TLog but you don\u0027t have PowerShell Remoting enabled to validate it.",
+                           "",
+                           false,
+                           "false",
+                           "False"
                        ],
                        [
                            "EnableException",
@@ -5634,8 +5642,8 @@
         "Synopsis":  "This command will help you to automatically grow your transaction log  file in a responsible way (preventing the generation of too many VLFs).",
         "Name":  "Expand-DbaTLogResponsibly",
         "Links":  "https://dbatools.io/Expand-DbaTLogResponsibly",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eExpand-DbaTLogResponsibly -SqlInstance sqlcluster -Database db1 -TargetLogSizeMB 50000\nGrows the transaction log for database db1 on sqlcluster to 50000 MB and calculates the increment size.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eExpand-DbaTLogResponsibly -SqlInstance sqlcluster -Database db1, db2 -TargetLogSizeMB 10000 -IncrementSizeMB 200\nGrows the transaction logs for databases db1 and db2 on sqlcluster to 1000MB and sets the growth increment to 200MB.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eExpand-DbaTLogResponsibly -SqlInstance sqlcluster -Database db1 -TargetLogSizeMB 10000 -LogFileId 9\nGrows the transaction log file  with FileId 9 of the db1 database on sqlcluster instance to 10000MB.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eExpand-DbaTLogResponsibly -SqlInstance sqlcluster -Database (Get-Content D:\\DBs.txt) -TargetLogSizeMB 50000\nGrows the transaction log of the databases specified in the file \u0027D:\\DBs.txt\u0027 on sqlcluster instance to 50000MB.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eExpand-DbaTLogResponsibly -SqlInstance SqlInstance -Database db1,db2 -TargetLogSizeMB 100 -IncrementSizeMB 10 -ShrinkLogFile -ShrinkSizeMB 10 -BackupDirectory R:\\MSSQL\\Backup\nGrows the transaction logs for databases db1 and db2 on SQL server SQLInstance to 100MB, sets the incremental growth to 10MB, shrinks the transaction log to 10MB and uses the directory \r\nR:\\MSSQL\\Backup for the required backups.",
-        "Syntax":  "Expand-DbaTLogResponsibly [-SqlInstance] \u003cDbaInstanceParameter\u003e [[-SqlCredential] \u003cPSCredential\u003e] [-Database \u003cObject[]\u003e] [[-ExcludeDatabase] \u003cObject[]\u003e] [-TargetLogSizeMB] \u003cInt32\u003e [[-IncrementSizeMB] \u003cInt32\u003e] [[-LogFileId] \u003cInt32\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nExpand-DbaTLogResponsibly [-SqlInstance] \u003cDbaInstanceParameter\u003e [[-SqlCredential] \u003cPSCredential\u003e] [-Database \u003cObject[]\u003e] [[-ExcludeDatabase] \u003cObject[]\u003e] [-TargetLogSizeMB] \u003cInt32\u003e [[-IncrementSizeMB] \u003cInt32\u003e] [[-LogFileId] \u003cInt32\u003e] [-ShrinkLogFile] [-ShrinkSizeMB] \u003cInt32\u003e [[-BackupDirectory] \u003cString\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eExpand-DbaTLogResponsibly -SqlInstance sqlcluster -Database db1 -TargetLogSize 50000\nGrows the transaction log for database db1 on sqlcluster to 50000 MB and calculates the increment size.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eExpand-DbaTLogResponsibly -SqlInstance sqlcluster -Database db1, db2 -TargetLogSize 10000 -IncrementSize 200\nGrows the transaction logs for databases db1 and db2 on sqlcluster to 1000MB and sets the growth increment to 200MB.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eExpand-DbaTLogResponsibly -SqlInstance sqlcluster -Database db1 -TargetLogSize 10000 -LogFileId 9\nGrows the transaction log file  with FileId 9 of the db1 database on sqlcluster instance to 10000MB.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eExpand-DbaTLogResponsibly -SqlInstance sqlcluster -Database (Get-Content D:\\DBs.txt) -TargetLogSize 50000\nGrows the transaction log of the databases specified in the file \u0027D:\\DBs.txt\u0027 on sqlcluster instance to 50000MB.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eExpand-DbaTLogResponsibly -SqlInstance SqlInstance -Database db1,db2 -TargetLogSize 100 -IncrementSize 10 -ShrinkLogFile -ShrinkSize 10 -BackupDirectory R:\\MSSQL\\Backup\nGrows the transaction logs for databases db1 and db2 on SQL server SQLInstance to 100MB, sets the incremental growth to 10MB, shrinks the transaction log to 10MB and uses the directory \r\nR:\\MSSQL\\Backup for the required backups.",
+        "Syntax":  "Expand-DbaTLogResponsibly [-SqlInstance] \u003cDbaInstanceParameter\u003e [[-SqlCredential] \u003cPSCredential\u003e] [-Database \u003cObject[]\u003e] [[-ExcludeDatabase] \u003cObject[]\u003e] [-TargetLogSize] \u003cInt32\u003e [[-IncrementSize] \u003cInt32\u003e] [[-LogFileId] \u003cInt32\u003e] [-ExcludeDiskSpaceValidation] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nExpand-DbaTLogResponsibly [-SqlInstance] \u003cDbaInstanceParameter\u003e [[-SqlCredential] \u003cPSCredential\u003e] [-Database \u003cObject[]\u003e] [[-ExcludeDatabase] \u003cObject[]\u003e] [-TargetLogSize] \u003cInt32\u003e [[-IncrementSize] \u003cInt32\u003e] [[-LogFileId] \u003cInt32\u003e] [-ShrinkLogFile] [-ShrinkSize] \u003cInt32\u003e [[-BackupDirectory] \u003cString\u003e] [-ExcludeDiskSpaceValidation] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "CommandName":  "Export-DbaAvailabilityGroup",
