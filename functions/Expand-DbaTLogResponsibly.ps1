@@ -72,6 +72,10 @@ function Expand-DbaTLogResponsibly {
 
         If this value is not specified, the SQL Server instance's default backup directory will be used.
 
+    .PARAMETER ExcludeDiskSpaceValidation
+        If this switch is enabled, the validation for enough disk space using Get-DbaDiskSpace command will be skipped.
+        This can be useful when you know that you have enough space to grow your TLog but you don't have PowerShell Remoting enabled to validate it.
+
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
@@ -154,6 +158,7 @@ function Expand-DbaTLogResponsibly {
         [parameter(Position = 10, ParameterSetName = 'Shrink')]
         [AllowEmptyString()]
         [string]$BackupDirectory,
+        [switch]$ExcludeDiskSpaceValidation,
         [switch][Alias('Silent')]
         $EnableException
     )
@@ -248,222 +253,231 @@ function Expand-DbaTLogResponsibly {
                     Write-Message -Level Verbose -Message "$step - Log file current size: $([System.Math]::Round($($currentSize/1024.0), 2)) MB "
                     [long]$requiredSpace = ($TargetLogSizeKB - $currentSize)
 
-                    Write-Message -Level Verbose -Message "Verifying if sufficient space exists ($([System.Math]::Round($($requiredSpace / 1024.0), 2))MB) on the volume to perform this task."
+                    if ($ExcludeDiskSpaceValidation -eq $false) {
+                        Write-Message -Level Verbose -Message "Verifying if sufficient space exists ($([System.Math]::Round($($requiredSpace / 1024.0), 2))MB) on the volume to perform this task."
 
-                    [long]$TotalTLogFreeDiskSpaceKB = 0
-                    Write-Message -Level Verbose -Message "Get TLog drive free space"
-                    [object]$AllDrivesFreeDiskSpace = Get-DbaDiskSpace -ComputerName $sourcenetbios | Select-Object Name, SizeInKB
+                        [long]$TotalTLogFreeDiskSpaceKB = 0
+                        Write-Message -Level Verbose -Message "Get TLog drive free space"
 
-                    #Verify path using Split-Path on $logfile.FileName in backwards. This way we will catch the LUNs. Example: "K:\Log01" as LUN name. Need to add final backslash if not there
-                    $DrivePath = Split-Path $logfile.FileName -parent
-                    $DrivePath = if (!($DrivePath.EndsWith("\"))) { "$DrivePath\" }
-                    else { $DrivePath }
-                    Do {
-                        if ($AllDrivesFreeDiskSpace | Where-Object { $DrivePath -eq "$($_.Name)" }) {
-                            $TotalTLogFreeDiskSpaceKB = ($AllDrivesFreeDiskSpace | Where-Object { $DrivePath -eq $_.Name }).SizeInKB
-                            $match = $true
-                            break
-                        } else {
-                            $match = $false
-                            $DrivePath = Split-Path $DrivePath -parent
+                        try {
+                            [object]$AllDrivesFreeDiskSpace = Get-DbaDiskSpace -ComputerName $sourcenetbios | Select-Object Name, SizeInKB
+
+                            #Verify path using Split-Path on $logfile.FileName in backwards. This way we will catch the LUNs. Example: "K:\Log01" as LUN name. Need to add final backslash if not there
+                            $DrivePath = Split-Path $logfile.FileName -parent
                             $DrivePath = if (!($DrivePath.EndsWith("\"))) { "$DrivePath\" }
                             else { $DrivePath }
+                            Do {
+                                if ($AllDrivesFreeDiskSpace | Where-Object { $DrivePath -eq "$($_.Name)" }) {
+                                    $TotalTLogFreeDiskSpaceKB = ($AllDrivesFreeDiskSpace | Where-Object { $DrivePath -eq $_.Name }).SizeInKB
+                                    $match = $true
+                                    break
+                                } else {
+                                    $match = $false
+                                    $DrivePath = Split-Path $DrivePath -parent
+                                    $DrivePath = if (!($DrivePath.EndsWith("\"))) { "$DrivePath\" }
+                                    else { $DrivePath }
+                                }
+
+                            }
+                            while (!$match -or ([string]::IsNullOrEmpty($DrivePath)))
+
+                            Write-Message -Level Verbose -Message "Total TLog Free Disk Space in MB: $([System.Math]::Round($($TotalTLogFreeDiskSpaceKB / 1024.0), 2))"
+
+                        }
+                        catch {
+                            #Could not validate the disk space. Will ask if we want to continue.
+                            $TotalTLogFreeDiskSpaceKB = 0
                         }
 
-                    }
-                    while (!$match -or ([string]::IsNullOrEmpty($DrivePath)))
-
-                    Write-Message -Level Verbose -Message "Total TLog Free Disk Space in MB: $([System.Math]::Round($($TotalTLogFreeDiskSpaceKB / 1024.0), 2))"
-
-                    if (($TotalTLogFreeDiskSpaceKB -le 0) -or ([string]::IsNullOrEmpty($TotalTLogFreeDiskSpaceKB))) {
-                        $title = "Choose increment value for database '$db':"
-                        $message = "Cannot validate freespace on drive where the log file resides. Do you wish to continue? (Y/N)"
-                        $yes = New-Object System.Management.Automation.Host.ChoiceDescription "&Yes", "Will continue"
-                        $no = New-Object System.Management.Automation.Host.ChoiceDescription "&No", "Will exit"
-                        $options = [System.Management.Automation.Host.ChoiceDescription[]]($yes, $no)
-                        $result = $host.ui.PromptForChoice($title, $message, $options, 0)
-                        #no
-                        if ($result -eq 1) {
-                            Write-Message -Level Warning -Message "You have cancelled the execution"
+                        if (($TotalTLogFreeDiskSpaceKB -le 0) -or ([string]::IsNullOrEmpty($TotalTLogFreeDiskSpaceKB))) {
+                            $title = "Choose increment value for database '$db':"
+                            $message = "Cannot validate freespace on drive where the log file resides. Do you wish to continue? (Y/N)"
+                            $yes = New-Object System.Management.Automation.Host.ChoiceDescription "&Yes", "Will continue"
+                            $no = New-Object System.Management.Automation.Host.ChoiceDescription "&No", "Will exit"
+                            $options = [System.Management.Automation.Host.ChoiceDescription[]]($yes, $no)
+                            $result = $host.ui.PromptForChoice($title, $message, $options, 0)
+                            #no
+                            if ($result -eq 1) {
+                                Write-Message -Level Warning -Message "You have cancelled the execution"
+                                return
+                            }
+                        }
+                        elseif ($requiredSpace -gt $TotalTLogFreeDiskSpaceKB) {
+                            Write-Message -Level Verbose -Message "There is not enough space on volume to perform this task. `r`n" `
+                                "Available space: $([System.Math]::Round($($TotalTLogFreeDiskSpaceKB / 1024.0), 2))MB;`r`n" `
+                                "Required space: $([System.Math]::Round($($requiredSpace / 1024.0), 2))MB;"
                             return
                         }
                     }
 
-                    if ($requiredSpace -gt $TotalTLogFreeDiskSpaceKB) {
-                        Write-Message -Level Verbose -Message "There is not enough space on volume to perform this task. `r`n" `
-                            "Available space: $([System.Math]::Round($($TotalTLogFreeDiskSpaceKB / 1024.0), 2))MB;`r`n" `
-                            "Required space: $([System.Math]::Round($($requiredSpace / 1024.0), 2))MB;"
-                        return
+                    if ($currentSize -ige $TargetLogSizeKB -and ($ShrinkLogFile -eq $false)) {
+                        Write-Message -Level Verbose -Message "$step - [INFO] The T-Log file '$logfile' size is already equal or greater than target size - No action required."
                     } else {
-                        if ($currentSize -ige $TargetLogSizeKB -and ($ShrinkLogFile -eq $false)) {
-                            Write-Message -Level Verbose -Message "$step - [INFO] The T-Log file '$logfile' size is already equal or greater than target size - No action required."
-                        } else {
-                            Write-Message -Level Verbose -Message "$step - [OK] There is sufficient free space to perform this task."
+                        Write-Message -Level Verbose -Message "$step - [OK] There is sufficient free space to perform this task."
 
-                            # If SQL Server version is greater or equal to 2012
-                            if ($server.Version.Major -ge "11") {
-                                switch ($TargetLogSizeMB) {
-                                    { $_ -le 64 } { $SuggestLogIncrementSize = 64 }
-                                    { $_ -ge 64 -and $_ -lt 256 } { $SuggestLogIncrementSize = 256 }
-                                    { $_ -ge 256 -and $_ -lt 1024 } { $SuggestLogIncrementSize = 512 }
-                                    { $_ -ge 1024 -and $_ -lt 4096 } { $SuggestLogIncrementSize = 1024 }
-                                    { $_ -ge 4096 -and $_ -lt 8192 } { $SuggestLogIncrementSize = 2048 }
-                                    { $_ -ge 8192 -and $_ -lt 16384 } { $SuggestLogIncrementSize = 4096 }
-                                    { $_ -ge 16384 } { $SuggestLogIncrementSize = 8192 }
-                                }
-                            }
-                            # 2008 R2 or under
-                            else {
-                                switch ($TargetLogSizeMB) {
-                                    { $_ -le 64 } { $SuggestLogIncrementSize = 64 }
-                                    { $_ -ge 64 -and $_ -lt 256 } { $SuggestLogIncrementSize = 256 }
-                                    { $_ -ge 256 -and $_ -lt 1024 } { $SuggestLogIncrementSize = 512 }
-                                    { $_ -ge 1024 -and $_ -lt 4096 } { $SuggestLogIncrementSize = 1024 }
-                                    { $_ -ge 4096 -and $_ -lt 8192 } { $SuggestLogIncrementSize = 2048 }
-                                    { $_ -ge 8192 -and $_ -lt 16384 } { $SuggestLogIncrementSize = 4000 }
-                                    { $_ -ge 16384 } { $SuggestLogIncrementSize = 8000 }
-                                }
-
-                                if (($IncrementSizeMB % 4096) -eq 0) {
-                                    Write-Message -Level Verbose -Message "Your instance version is below SQL 2012, remember the known BUG mentioned on HELP. `r`nUse Get-Help Expand-DbaTLogFileResponsibly to read help`r`nUse a different value for incremental size.`r`n"
-                                    return
-                                }
-                            }
-                            Write-Message -Level Verbose -Message "Instance $server version: $($server.Version.Major) - Suggested TLog increment size: $($SuggestLogIncrementSize)MB"
-
-                            # Shrink Log File to desired size before re-growth to desired size (You need to remove as many VLF's as possible to ensure proper growth)
-                            $ShrinkSizeMB = $ShrinkSize / 1024
-                            if ($ShrinkLogFile -eq $true) {
-                                if ($server.Databases[$db].RecoveryModel -eq [Microsoft.SqlServer.Management.Smo.RecoveryModel]::Simple) {
-                                    Write-Message -Level Warning -Message "Database '$db' is in Simple RecoveryModel which does not allow log backups. Do not specify -ShrinkLogFile and -ShrinkSizeMB parameters."
-                                    Continue
-                                }
-
-                                try {
-                                    $sql = "SELECT last_log_backup_lsn FROM sys.database_recovery_status WHERE database_id = DB_ID('$db')"
-                                    $sqlResult = $server.ConnectionContext.ExecuteWithResults($sql);
-
-                                    if ($sqlResult.Tables[0].Rows[0]["last_log_backup_lsn"] -is [System.DBNull]) {
-                                        Write-Message -Level Warning -Message "First, you need to make a full backup before you can do Tlog backup on database '$db' (last_log_backup_lsn is null)."
-                                        Continue
-                                    }
-                                } catch {
-                                    Stop-Function -Message "Can't execute SQL on $server. `r`n $($_)" -Continue
-                                }
-
-                                If ($Pscmdlet.ShouldProcess($($server.name), "Backing up TLog for $db")) {
-                                    Write-Message -Level Verbose -Message "We are about to backup the Tlog for database '$db' to '$backupdirectory' and shrink the log."
-                                    Write-Message -Level Verbose -Message "Starting Size = $currentSizeMB."
-
-                                    $DefaultCompression = $server.Configuration.DefaultBackupCompression.ConfigValue
-
-                                    if ($currentSizeMB -gt $ShrinkSizeMB) {
-                                        $backupRetries = 1
-                                        Do {
-                                            try {
-                                                $percent = $null
-                                                $backup = New-Object Microsoft.SqlServer.Management.Smo.Backup
-                                                $backup.Action = [Microsoft.SqlServer.Management.Smo.BackupActionType]::Log
-                                                $backup.BackupSetDescription = "Transaction Log backup of " + $db
-                                                $backup.BackupSetName = $db + " Backup"
-                                                $backup.Database = $db
-                                                $backup.MediaDescription = "Disk"
-                                                $dt = get-date -format yyyyMMddHHmmssms
-                                                $null = $backup.Devices.AddDevice($backupdirectory + "\" + $db + "_db_" + $dt + ".trn", 'File')
-                                                if ($DefaultCompression -eq $true) {
-                                                    $backup.CompressionOption = 1
-                                                } else {
-                                                    $backup.CompressionOption = 0
-                                                }
-                                                $null = [Microsoft.SqlServer.Management.Smo.PercentCompleteEventHandler] {
-                                                    Write-Progress -id 2 -ParentId 1 -activity "Backing up $db to $server" -percentcomplete $_.Percent -status ([System.String]::Format("Progress: {0} %", $_.Percent))
-                                                }
-                                                $backup.add_PercentComplete($percent)
-                                                $backup.PercentCompleteNotification = 10
-                                                $backup.add_Complete($complete)
-                                                Write-Progress -id 2 -ParentId 1 -activity "Backing up $db to $server" -percentcomplete 0 -Status ([System.String]::Format("Progress: {0} %", 0))
-                                                $backup.SqlBackup($server)
-                                                Write-Progress -id 2 -ParentId 1 -activity "Backing up $db to $server" -status "Complete" -Completed
-                                                $logfile.Shrink($ShrinkSizeMB, [Microsoft.SqlServer.Management.SMO.ShrinkMethod]::TruncateOnly)
-                                                $logfile.Refresh()
-                                            } catch {
-                                                Write-Progress -id 1 -activity "Backup" -status "Failed" -completed
-                                                Stop-Function -Message "Backup failed for database" -ErrorRecord $_ -Target $db -Continue
-                                                Continue
-                                            }
-
-                                        }
-                                        while (($logfile.Size / 1024) -gt $ShrinkSizeMB -and ++$backupRetries -lt 6)
-
-                                        $currentSize = $logfile.Size
-                                        Write-Message -Level Verbose -Message "TLog backup and truncate for database '$db' finished. Current TLog size after $backupRetries backups is $($currentSize/1024)MB"
-                                    }
-                                }
-                            }
-
-                            # SMO uses values in KB
-                            $SuggestLogIncrementSize = $SuggestLogIncrementSize * 1024
-
-                            # If default, use $SuggestedLogIncrementSize
-                            if ($IncrementSizeMB -eq -1) {
-                                $LogIncrementSize = $SuggestLogIncrementSize
-                            } else {
-                                $title = "Choose increment value for database '$db':"
-                                $message = "The input value for increment size was $([System.Math]::Round($LogIncrementSize/1024, 0))MB. However the suggested value for increment is $($SuggestLogIncrementSize/1024)MB.`r`nDo you want to use the suggested value of $([System.Math]::Round($SuggestLogIncrementSize/1024, 0))MB insted of $([System.Math]::Round($LogIncrementSize/1024, 0))MB"
-                                $yes = New-Object System.Management.Automation.Host.ChoiceDescription "&Yes", "Uses recomended size."
-                                $no = New-Object System.Management.Automation.Host.ChoiceDescription "&No", "Will use parameter value."
-                                $options = [System.Management.Automation.Host.ChoiceDescription[]]($yes, $no)
-                                $result = $host.ui.PromptForChoice($title, $message, $options, 0)
-                                #yes
-                                if ($result -eq 0) {
-                                    $LogIncrementSize = $SuggestLogIncrementSize
-                                }
-                            }
-
-                            #start growing file
-                            If ($Pscmdlet.ShouldProcess($($server.name), "Starting log growth. Increment chunk size: $($LogIncrementSize/1024)MB for database '$db'")) {
-                                Write-Message -Level Verbose -Message "Starting log growth. Increment chunk size: $($LogIncrementSize/1024)MB for database '$db'"
-
-                                Write-Message -Level Verbose -Message "$step - While current size less than target log size."
-
-                                while ($currentSize -lt $TargetLogSizeKB) {
-
-                                    Write-Progress `
-                                        -Id 2 `
-                                        -ParentId 1 `
-                                        -Activity "Growing file $logfile on '$db' database" `
-                                        -PercentComplete ($currentSize / $TargetLogSizeKB * 100) `
-                                        -Status "Remaining - $([System.Math]::Round($($($TargetLogSizeKB - $currentSize) / 1024.0), 2)) MB"
-
-                                    Write-Message -Level Verbose -Message "$step - Verifying if the log can grow or if it's already at the desired size."
-                                    if (($TargetLogSizeKB - $currentSize) -lt $LogIncrementSize) {
-                                        Write-Message -Level Verbose -Message "$step - Log size is lower than the increment size. Setting current size equals $TargetLogSizeKB."
-                                        $currentSize = $TargetLogSizeKB
-                                    } else {
-                                        Write-Message -Level Verbose -Message "$step - Grow the $logfile file in $([System.Math]::Round($($LogIncrementSize / 1024.0), 2)) MB"
-                                        $currentSize += $LogIncrementSize
-                                    }
-
-                                    #When -WhatIf Switch, do not run
-                                    if ($PSCmdlet.ShouldProcess("$step - File will grow to $([System.Math]::Round($($currentSize/1024.0), 2)) MB", "This action will grow the file $logfile on database $db to $([System.Math]::Round($($currentSize/1024.0), 2)) MB .`r`nDo you wish to continue?", "Perform grow")) {
-                                        Write-Message -Level Verbose -Message "$step - Set size $logfile to $([System.Math]::Round($($currentSize/1024.0), 2)) MB"
-                                        $logfile.size = $currentSize
-
-                                        Write-Message -Level Verbose -Message "$step - Applying changes"
-                                        $logfile.Alter()
-                                        Write-Message -Level Verbose -Message "$step - Changes have been applied"
-
-                                        #Will put the info like VolumeFreeSpace up to date
-                                        $logfile.Refresh()
-                                    }
-                                }
-
-                                Write-Message -Level Verbose -Message "`r`n$step - [OK] Growth process for logfile '$logfile' on database '$db', has been finished."
-
-                                Write-Message -Level Verbose -Message "$step - Grow $logfile log file on $db database finished."
+                        # If SQL Server version is greater or equal to 2012
+                        if ($server.Version.Major -ge "11") {
+                            switch ($TargetLogSizeMB) {
+                                { $_ -le 64 } { $SuggestLogIncrementSize = 64 }
+                                { $_ -ge 64 -and $_ -lt 256 } { $SuggestLogIncrementSize = 256 }
+                                { $_ -ge 256 -and $_ -lt 1024 } { $SuggestLogIncrementSize = 512 }
+                                { $_ -ge 1024 -and $_ -lt 4096 } { $SuggestLogIncrementSize = 1024 }
+                                { $_ -ge 4096 -and $_ -lt 8192 } { $SuggestLogIncrementSize = 2048 }
+                                { $_ -ge 8192 -and $_ -lt 16384 } { $SuggestLogIncrementSize = 4096 }
+                                { $_ -ge 16384 } { $SuggestLogIncrementSize = 8192 }
                             }
                         }
-                    } #else space available
+                        # 2008 R2 or under
+                        else {
+                            switch ($TargetLogSizeMB) {
+                                { $_ -le 64 } { $SuggestLogIncrementSize = 64 }
+                                { $_ -ge 64 -and $_ -lt 256 } { $SuggestLogIncrementSize = 256 }
+                                { $_ -ge 256 -and $_ -lt 1024 } { $SuggestLogIncrementSize = 512 }
+                                { $_ -ge 1024 -and $_ -lt 4096 } { $SuggestLogIncrementSize = 1024 }
+                                { $_ -ge 4096 -and $_ -lt 8192 } { $SuggestLogIncrementSize = 2048 }
+                                { $_ -ge 8192 -and $_ -lt 16384 } { $SuggestLogIncrementSize = 4000 }
+                                { $_ -ge 16384 } { $SuggestLogIncrementSize = 8000 }
+                            }
+
+                            if (($IncrementSizeMB % 4096) -eq 0) {
+                                Write-Message -Level Verbose -Message "Your instance version is below SQL 2012, remember the known BUG mentioned on HELP. `r`nUse Get-Help Expand-DbaTLogFileResponsibly to read help`r`nUse a different value for incremental size.`r`n"
+                                return
+                            }
+                        }
+                        Write-Message -Level Verbose -Message "Instance $server version: $($server.Version.Major) - Suggested TLog increment size: $($SuggestLogIncrementSize)MB"
+
+                        # Shrink Log File to desired size before re-growth to desired size (You need to remove as many VLF's as possible to ensure proper growth)
+                        $ShrinkSizeMB = $ShrinkSize / 1024
+                        if ($ShrinkLogFile -eq $true) {
+                            if ($server.Databases[$db].RecoveryModel -eq [Microsoft.SqlServer.Management.Smo.RecoveryModel]::Simple) {
+                                Write-Message -Level Warning -Message "Database '$db' is in Simple RecoveryModel which does not allow log backups. Do not specify -ShrinkLogFile and -ShrinkSizeMB parameters."
+                                Continue
+                            }
+
+                            try {
+                                $sql = "SELECT last_log_backup_lsn FROM sys.database_recovery_status WHERE database_id = DB_ID('$db')"
+                                $sqlResult = $server.ConnectionContext.ExecuteWithResults($sql);
+
+                                if ($sqlResult.Tables[0].Rows[0]["last_log_backup_lsn"] -is [System.DBNull]) {
+                                    Write-Message -Level Warning -Message "First, you need to make a full backup before you can do Tlog backup on database '$db' (last_log_backup_lsn is null)."
+                                    Continue
+                                }
+                            } catch {
+                                Stop-Function -Message "Can't execute SQL on $server. `r`n $($_)" -Continue
+                            }
+
+                            If ($Pscmdlet.ShouldProcess($($server.name), "Backing up TLog for $db")) {
+                                Write-Message -Level Verbose -Message "We are about to backup the Tlog for database '$db' to '$backupdirectory' and shrink the log."
+                                Write-Message -Level Verbose -Message "Starting Size = $currentSizeMB."
+
+                                $DefaultCompression = $server.Configuration.DefaultBackupCompression.ConfigValue
+
+                                if ($currentSizeMB -gt $ShrinkSizeMB) {
+                                    $backupRetries = 1
+                                    Do {
+                                        try {
+                                            $percent = $null
+                                            $backup = New-Object Microsoft.SqlServer.Management.Smo.Backup
+                                            $backup.Action = [Microsoft.SqlServer.Management.Smo.BackupActionType]::Log
+                                            $backup.BackupSetDescription = "Transaction Log backup of " + $db
+                                            $backup.BackupSetName = $db + " Backup"
+                                            $backup.Database = $db
+                                            $backup.MediaDescription = "Disk"
+                                            $dt = get-date -format yyyyMMddHHmmssms
+                                            $null = $backup.Devices.AddDevice($backupdirectory + "\" + $db + "_db_" + $dt + ".trn", 'File')
+                                            if ($DefaultCompression -eq $true) {
+                                                $backup.CompressionOption = 1
+                                            } else {
+                                                $backup.CompressionOption = 0
+                                            }
+                                            $null = [Microsoft.SqlServer.Management.Smo.PercentCompleteEventHandler] {
+                                                Write-Progress -id 2 -ParentId 1 -activity "Backing up $db to $server" -percentcomplete $_.Percent -status ([System.String]::Format("Progress: {0} %", $_.Percent))
+                                            }
+                                            $backup.add_PercentComplete($percent)
+                                            $backup.PercentCompleteNotification = 10
+                                            $backup.add_Complete($complete)
+                                            Write-Progress -id 2 -ParentId 1 -activity "Backing up $db to $server" -percentcomplete 0 -Status ([System.String]::Format("Progress: {0} %", 0))
+                                            $backup.SqlBackup($server)
+                                            Write-Progress -id 2 -ParentId 1 -activity "Backing up $db to $server" -status "Complete" -Completed
+                                            $logfile.Shrink($ShrinkSizeMB, [Microsoft.SqlServer.Management.SMO.ShrinkMethod]::TruncateOnly)
+                                            $logfile.Refresh()
+                                        } catch {
+                                            Write-Progress -id 1 -activity "Backup" -status "Failed" -completed
+                                            Stop-Function -Message "Backup failed for database" -ErrorRecord $_ -Target $db -Continue
+                                            Continue
+                                        }
+
+                                    }
+                                    while (($logfile.Size / 1024) -gt $ShrinkSizeMB -and ++$backupRetries -lt 6)
+
+                                    $currentSize = $logfile.Size
+                                    Write-Message -Level Verbose -Message "TLog backup and truncate for database '$db' finished. Current TLog size after $backupRetries backups is $($currentSize/1024)MB"
+                                }
+                            }
+                        }
+
+                        # SMO uses values in KB
+                        $SuggestLogIncrementSize = $SuggestLogIncrementSize * 1024
+
+                        # If default, use $SuggestedLogIncrementSize
+                        if ($IncrementSizeMB -eq -1) {
+                            $LogIncrementSize = $SuggestLogIncrementSize
+                        } else {
+                            $title = "Choose increment value for database '$db':"
+                            $message = "The input value for increment size was $([System.Math]::Round($LogIncrementSize/1024, 0))MB. However the suggested value for increment is $($SuggestLogIncrementSize/1024)MB.`r`nDo you want to use the suggested value of $([System.Math]::Round($SuggestLogIncrementSize/1024, 0))MB insted of $([System.Math]::Round($LogIncrementSize/1024, 0))MB"
+                            $yes = New-Object System.Management.Automation.Host.ChoiceDescription "&Yes", "Uses recomended size."
+                            $no = New-Object System.Management.Automation.Host.ChoiceDescription "&No", "Will use parameter value."
+                            $options = [System.Management.Automation.Host.ChoiceDescription[]]($yes, $no)
+                            $result = $host.ui.PromptForChoice($title, $message, $options, 0)
+                            #yes
+                            if ($result -eq 0) {
+                                $LogIncrementSize = $SuggestLogIncrementSize
+                            }
+                        }
+
+                        #start growing file
+                        If ($Pscmdlet.ShouldProcess($($server.name), "Starting log growth. Increment chunk size: $($LogIncrementSize/1024)MB for database '$db'")) {
+                            Write-Message -Level Verbose -Message "Starting log growth. Increment chunk size: $($LogIncrementSize/1024)MB for database '$db'"
+
+                            Write-Message -Level Verbose -Message "$step - While current size less than target log size."
+
+                            while ($currentSize -lt $TargetLogSizeKB) {
+
+                                Write-Progress `
+                                    -Id 2 `
+                                    -ParentId 1 `
+                                    -Activity "Growing file $logfile on '$db' database" `
+                                    -PercentComplete ($currentSize / $TargetLogSizeKB * 100) `
+                                    -Status "Remaining - $([System.Math]::Round($($($TargetLogSizeKB - $currentSize) / 1024.0), 2)) MB"
+
+                                Write-Message -Level Verbose -Message "$step - Verifying if the log can grow or if it's already at the desired size."
+                                if (($TargetLogSizeKB - $currentSize) -lt $LogIncrementSize) {
+                                    Write-Message -Level Verbose -Message "$step - Log size is lower than the increment size. Setting current size equals $TargetLogSizeKB."
+                                    $currentSize = $TargetLogSizeKB
+                                } else {
+                                    Write-Message -Level Verbose -Message "$step - Grow the $logfile file in $([System.Math]::Round($($LogIncrementSize / 1024.0), 2)) MB"
+                                    $currentSize += $LogIncrementSize
+                                }
+
+                                #When -WhatIf Switch, do not run
+                                if ($PSCmdlet.ShouldProcess("$step - File will grow to $([System.Math]::Round($($currentSize/1024.0), 2)) MB", "This action will grow the file $logfile on database $db to $([System.Math]::Round($($currentSize/1024.0), 2)) MB .`r`nDo you wish to continue?", "Perform grow")) {
+                                    Write-Message -Level Verbose -Message "$step - Set size $logfile to $([System.Math]::Round($($currentSize/1024.0), 2)) MB"
+                                    $logfile.size = $currentSize
+
+                                    Write-Message -Level Verbose -Message "$step - Applying changes"
+                                    $logfile.Alter()
+                                    Write-Message -Level Verbose -Message "$step - Changes have been applied"
+
+                                    #Will put the info like VolumeFreeSpace up to date
+                                    $logfile.Refresh()
+                                }
+                            }
+
+                            Write-Message -Level Verbose -Message "`r`n$step - [OK] Growth process for logfile '$logfile' on database '$db', has been finished."
+
+                            Write-Message -Level Verbose -Message "$step - Grow $logfile log file on $db database finished."
+                        }
+                    }
                 }
                 #else verifying existence
                 else {
