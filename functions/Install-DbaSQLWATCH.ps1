@@ -195,7 +195,7 @@ function Install-DbaSQLWATCH {
         }
 
         foreach ($instance in $SqlInstance) {
-            if ($PSCmdlet.ShouldProcess($env:computername, "Installing SQLWATCH")) {
+            if ($PSCmdlet.ShouldProcess($instance, "Installing SQLWATCH")) {
                 try {
                     Write-Message -Level VeryVerbose -Message "Connecting to $instance."
                     $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
