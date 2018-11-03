@@ -195,52 +195,54 @@ function Install-DbaSQLWATCH {
         }
 
         foreach ($instance in $SqlInstance) {
-            try {
-                Write-Message -Level VeryVerbose -Message "Connecting to $instance."
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
-            }
-            catch {
-                Stop-Function -Message "Failure." -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
-            }
-
-            Write-Message -Level Verbose -Message "Starting installing/updating SQLWATCH in $database on $instance."
-
-            try {
-
-                # create a publish profile and publish DACPAC
-                $DacPacPath = Get-ChildItem -Filter "SQLWATCH.dacpac" -Path $LocalCacheFolder -Recurse | Select-Object -ExpandProperty FullName
-                $PublishOptions = @{
-                    RegisterDataTierApplication = $true
+            if ($PSCmdlet.ShouldProcess($env:computername, "Installing SQLWATCH")) {
+                try {
+                    Write-Message -Level VeryVerbose -Message "Connecting to $instance."
+                    $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
                 }
-                $DacProfile = New-DbaDacProfile -SqlInstance $server -Database $Database -Path $LocalCacheFolder -PublishOptions $PublishOptions | Select-Object -ExpandProperty FileName
-                $PublishResults = Publish-DbaDacPackage -SqlInstance $server -Database $Database -Path $DacPacPath -PublishXml $DacProfile
-                
-                # parse results
-                $parens = Select-String -InputObject $PublishResults.Result -Pattern "\(([^\)]+)\)" -AllMatches
-                if ($parens.matches) {
-                    $ExtractedResult = $parens.matches | Select-Object -Last 1 #| ForEach-Object { $_.value -replace '(', '' -replace ')', '' }
-                }                
-                [PSCustomObject]@{
-                    ComputerName         = $PublishResults.ComputerName
-                    InstanceName         = $PublishResults.InstanceName
-                    SqlInstance          = $PublishResults.SqlInstance
-                    Database             = $PublishResults.Database
-                    Dacpac               = $PublishResults.Dacpac
-                    PublishXml           = $PublishResults.PublishXml
-                    Result               = $ExtractedResult
-                    FullResult           = $PublishResults.Result
-                    DeployOptions        = $PublishResults.DeployOptions
-                    SqlCmdVariableValues = $PublishResults.SqlCmdVariableValues
-                } | Select-DefaultView -ExcludeProperty Dacpac, PublishXml, FullResult, DeployOptions, SqlCmdVariableValues
-            }
-            catch {
-                Stop-Function -Message "DACPAC failed to publish to $database on $instance." -ErrorRecord $_ -Target $instance -Continue
-            }
+                catch {
+                    Stop-Function -Message "Failure." -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                }
 
-            Write-PSFMessage -Level Verbose -Message "Finished installing/updating SQLWATCH in $database on $instance."
-            #notify user of location to PowerBI file
-            #$pbitLocation = Get-ChildItem $tempFolder -Recurse -include *.pbit | Select-Object -ExpandProperty Directory -Unique
-            #Write-PSFMessage -Level Output -Message "SQLWATCH installed successfully. Power BI dashboard files can be found at $($pbitLocation.FullName)"
+                Write-Message -Level Verbose -Message "Starting installing/updating SQLWATCH in $database on $instance."
+
+                try {
+
+                    # create a publish profile and publish DACPAC
+                    $DacPacPath = Get-ChildItem -Filter "SQLWATCH.dacpac" -Path $LocalCacheFolder -Recurse | Select-Object -ExpandProperty FullName
+                    $PublishOptions = @{
+                        RegisterDataTierApplication = $true
+                    }
+                    $DacProfile = New-DbaDacProfile -SqlInstance $server -Database $Database -Path $LocalCacheFolder -PublishOptions $PublishOptions | Select-Object -ExpandProperty FileName
+                    $PublishResults = Publish-DbaDacPackage -SqlInstance $server -Database $Database -Path $DacPacPath -PublishXml $DacProfile
+                
+                    # parse results
+                    $parens = Select-String -InputObject $PublishResults.Result -Pattern "\(([^\)]+)\)" -AllMatches
+                    if ($parens.matches) {
+                        $ExtractedResult = $parens.matches | Select-Object -Last 1 #| ForEach-Object { $_.value -replace '(', '' -replace ')', '' }
+                    }                
+                    [PSCustomObject]@{
+                        ComputerName         = $PublishResults.ComputerName
+                        InstanceName         = $PublishResults.InstanceName
+                        SqlInstance          = $PublishResults.SqlInstance
+                        Database             = $PublishResults.Database
+                        Dacpac               = $PublishResults.Dacpac
+                        PublishXml           = $PublishResults.PublishXml
+                        Result               = $ExtractedResult
+                        FullResult           = $PublishResults.Result
+                        DeployOptions        = $PublishResults.DeployOptions
+                        SqlCmdVariableValues = $PublishResults.SqlCmdVariableValues
+                    } | Select-DefaultView -ExcludeProperty Dacpac, PublishXml, FullResult, DeployOptions, SqlCmdVariableValues
+                }
+                catch {
+                    Stop-Function -Message "DACPAC failed to publish to $database on $instance." -ErrorRecord $_ -Target $instance -Continue
+                }
+
+                Write-PSFMessage -Level Verbose -Message "Finished installing/updating SQLWATCH in $database on $instance."
+                #notify user of location to PowerBI file
+                #$pbitLocation = Get-ChildItem $tempFolder -Recurse -include *.pbit | Select-Object -ExpandProperty Directory -Unique
+                #Write-PSFMessage -Level Output -Message "SQLWATCH installed successfully. Power BI dashboard files can be found at $($pbitLocation.FullName)"
+            }
         }
     }
 
