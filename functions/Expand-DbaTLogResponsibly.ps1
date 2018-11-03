@@ -512,6 +512,9 @@ function Expand-DbaTLogResponsibly {
     end {
         Write-Message -Level Verbose -Message "Process finished $((Get-Date) - ($initialTime))"
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Expand-SqlTLogResponsibly
+        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Parameter TargetLogSizeMB
+        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Parameter IncrementSizeMB
+        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Parameter ShrinkSizeMB
     }
 }
 
