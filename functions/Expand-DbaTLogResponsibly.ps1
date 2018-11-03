@@ -48,11 +48,11 @@ function Expand-DbaTLogResponsibly {
     .PARAMETER Database
         The database(s) to process. Options for this list are auto-populated from the server. If unspecified, all databases will be processed.
 
-    .PARAMETER TargetLogSizeMB
+    .PARAMETER TargetLogSize
         Specifies the target size of the transaction log file in megabytes.
 
-    .PARAMETER IncrementSizeMB
-        Specifies the amount the transaction log should grow in megabytes. If this value differs from the suggested value based on your TargetLogSizeMB, you will be prompted to confirm your choice.
+    .PARAMETER IncrementSize
+        Specifies the amount the transaction log should grow in megabytes. If this value differs from the suggested value based on your TargetLogSize, you will be prompted to confirm your choice.
 
         This value will be calculated if not specified.
 
@@ -64,8 +64,8 @@ function Expand-DbaTLogResponsibly {
     .PARAMETER ShrinkLogFile
         If this switch is enabled, your transaction log files will be shrunk.
 
-    .PARAMETER ShrinkSizeMB
-        Specifies the target size of the transaction log file for the shrink operation.
+    .PARAMETER ShrinkSize
+        Specifies the target size of the transaction log file for the shrink operation in megabytes.
 
     .PARAMETER BackupDirectory
         Specifies the location of your backups. Backups must be performed to shrink the transaction log.
@@ -109,27 +109,27 @@ function Expand-DbaTLogResponsibly {
         https://dbatools.io/Expand-DbaTLogResponsibly
 
     .EXAMPLE
-        PS C:\> Expand-DbaTLogResponsibly -SqlInstance sqlcluster -Database db1 -TargetLogSizeMB 50000
+        PS C:\> Expand-DbaTLogResponsibly -SqlInstance sqlcluster -Database db1 -TargetLogSize 50000
 
         Grows the transaction log for database db1 on sqlcluster to 50000 MB and calculates the increment size.
 
     .EXAMPLE
-        PS C:\> Expand-DbaTLogResponsibly -SqlInstance sqlcluster -Database db1, db2 -TargetLogSizeMB 10000 -IncrementSizeMB 200
+        PS C:\> Expand-DbaTLogResponsibly -SqlInstance sqlcluster -Database db1, db2 -TargetLogSize 10000 -IncrementSize 200
 
         Grows the transaction logs for databases db1 and db2 on sqlcluster to 1000MB and sets the growth increment to 200MB.
 
     .EXAMPLE
-        PS C:\> Expand-DbaTLogResponsibly -SqlInstance sqlcluster -Database db1 -TargetLogSizeMB 10000 -LogFileId 9
+        PS C:\> Expand-DbaTLogResponsibly -SqlInstance sqlcluster -Database db1 -TargetLogSize 10000 -LogFileId 9
 
         Grows the transaction log file  with FileId 9 of the db1 database on sqlcluster instance to 10000MB.
 
     .EXAMPLE
-        PS C:\> Expand-DbaTLogResponsibly -SqlInstance sqlcluster -Database (Get-Content D:\DBs.txt) -TargetLogSizeMB 50000
+        PS C:\> Expand-DbaTLogResponsibly -SqlInstance sqlcluster -Database (Get-Content D:\DBs.txt) -TargetLogSize 50000
 
         Grows the transaction log of the databases specified in the file 'D:\DBs.txt' on sqlcluster instance to 50000MB.
 
     .EXAMPLE
-        PS C:\> Expand-DbaTLogResponsibly -SqlInstance SqlInstance -Database db1,db2 -TargetLogSizeMB 100 -IncrementSizeMB 10 -ShrinkLogFile -ShrinkSizeMB 10 -BackupDirectory R:\MSSQL\Backup
+        PS C:\> Expand-DbaTLogResponsibly -SqlInstance SqlInstance -Database db1,db2 -TargetLogSize 100 -IncrementSize 10 -ShrinkLogFile -ShrinkSize 10 -BackupDirectory R:\MSSQL\Backup
 
         Grows the transaction logs for databases db1 and db2 on SQL server SQLInstance to 100MB, sets the incremental growth to 10MB, shrinks the transaction log to 10MB and uses the directory R:\MSSQL\Backup for the required backups.
 
@@ -146,15 +146,18 @@ function Expand-DbaTLogResponsibly {
         [parameter(Position = 4)]
         [object[]]$ExcludeDatabase,
         [parameter(Position = 5, Mandatory)]
-        [int]$TargetLogSizeMB,
+        [Alias('TargetLogSizeMB')]
+        [int]$TargetLogSize,
         [parameter(Position = 6)]
-        [int]$IncrementSizeMB = -1,
+        [Alias('IncrementSizeMB')]
+        [int]$IncrementSize = -1,
         [parameter(Position = 7)]
         [int]$LogFileId = -1,
         [parameter(Position = 8, ParameterSetName = 'Shrink', Mandatory)]
         [switch]$ShrinkLogFile,
         [parameter(Position = 9, ParameterSetName = 'Shrink', Mandatory)]
-        [int]$ShrinkSizeMB,
+        [Alias('ShrinkSizeMB')]
+        [int]$ShrinkSize,
         [parameter(Position = 10, ParameterSetName = 'Shrink')]
         [AllowEmptyString()]
         [string]$BackupDirectory,
@@ -169,9 +172,9 @@ function Expand-DbaTLogResponsibly {
 
         #Convert MB to KB (SMO works in KB)
         Write-Message -Level Verbose -Message "Convert variables MB to KB (SMO works in KB)."
-        [int]$TargetLogSizeKB = $TargetLogSizeMB * 1024
-        [int]$LogIncrementSize = $incrementSizeMB * 1024
-        [int]$ShrinkSize = $ShrinkSizeMB * 1024
+        [int]$TargetLogSizeKB = $TargetLogSize * 1024
+        [int]$LogIncrementSize = $IncrementSize * 1024
+        [int]$ShrinkSizeKB = $ShrinkSize * 1024
         [int]$SuggestLogIncrementSize = 0
         [bool]$LogByFileID = if ($LogFileId -eq -1) {
             $false
@@ -317,7 +320,7 @@ function Expand-DbaTLogResponsibly {
 
                         # If SQL Server version is greater or equal to 2012
                         if ($server.Version.Major -ge "11") {
-                            switch ($TargetLogSizeMB) {
+                            switch ($TargetLogSize) {
                                 { $_ -le 64 } { $SuggestLogIncrementSize = 64 }
                                 { $_ -ge 64 -and $_ -lt 256 } { $SuggestLogIncrementSize = 256 }
                                 { $_ -ge 256 -and $_ -lt 1024 } { $SuggestLogIncrementSize = 512 }
@@ -329,7 +332,7 @@ function Expand-DbaTLogResponsibly {
                         }
                         # 2008 R2 or under
                         else {
-                            switch ($TargetLogSizeMB) {
+                            switch ($TargetLogSize) {
                                 { $_ -le 64 } { $SuggestLogIncrementSize = 64 }
                                 { $_ -ge 64 -and $_ -lt 256 } { $SuggestLogIncrementSize = 256 }
                                 { $_ -ge 256 -and $_ -lt 1024 } { $SuggestLogIncrementSize = 512 }
@@ -339,7 +342,7 @@ function Expand-DbaTLogResponsibly {
                                 { $_ -ge 16384 } { $SuggestLogIncrementSize = 8000 }
                             }
 
-                            if (($IncrementSizeMB % 4096) -eq 0) {
+                            if (($IncrementSize % 4096) -eq 0) {
                                 Write-Message -Level Verbose -Message "Your instance version is below SQL 2012, remember the known BUG mentioned on HELP. `r`nUse Get-Help Expand-DbaTLogFileResponsibly to read help`r`nUse a different value for incremental size.`r`n"
                                 return
                             }
@@ -347,10 +350,10 @@ function Expand-DbaTLogResponsibly {
                         Write-Message -Level Verbose -Message "Instance $server version: $($server.Version.Major) - Suggested TLog increment size: $($SuggestLogIncrementSize)MB"
 
                         # Shrink Log File to desired size before re-growth to desired size (You need to remove as many VLF's as possible to ensure proper growth)
-                        $ShrinkSizeMB = $ShrinkSize / 1024
+                        $ShrinkSize = $ShrinkSizeKB / 1024
                         if ($ShrinkLogFile -eq $true) {
                             if ($server.Databases[$db].RecoveryModel -eq [Microsoft.SqlServer.Management.Smo.RecoveryModel]::Simple) {
-                                Write-Message -Level Warning -Message "Database '$db' is in Simple RecoveryModel which does not allow log backups. Do not specify -ShrinkLogFile and -ShrinkSizeMB parameters."
+                                Write-Message -Level Warning -Message "Database '$db' is in Simple RecoveryModel which does not allow log backups. Do not specify -ShrinkLogFile and -ShrinkSize parameters."
                                 Continue
                             }
 
@@ -372,7 +375,7 @@ function Expand-DbaTLogResponsibly {
 
                                 $DefaultCompression = $server.Configuration.DefaultBackupCompression.ConfigValue
 
-                                if ($currentSizeMB -gt $ShrinkSizeMB) {
+                                if ($currentSizeMB -gt $ShrinkSize) {
                                     $backupRetries = 1
                                     Do {
                                         try {
@@ -399,7 +402,7 @@ function Expand-DbaTLogResponsibly {
                                             Write-Progress -id 2 -ParentId 1 -activity "Backing up $db to $server" -percentcomplete 0 -Status ([System.String]::Format("Progress: {0} %", 0))
                                             $backup.SqlBackup($server)
                                             Write-Progress -id 2 -ParentId 1 -activity "Backing up $db to $server" -status "Complete" -Completed
-                                            $logfile.Shrink($ShrinkSizeMB, [Microsoft.SqlServer.Management.SMO.ShrinkMethod]::TruncateOnly)
+                                            $logfile.Shrink($ShrinkSize, [Microsoft.SqlServer.Management.SMO.ShrinkMethod]::TruncateOnly)
                                             $logfile.Refresh()
                                         } catch {
                                             Write-Progress -id 1 -activity "Backup" -status "Failed" -completed
@@ -408,7 +411,7 @@ function Expand-DbaTLogResponsibly {
                                         }
 
                                     }
-                                    while (($logfile.Size / 1024) -gt $ShrinkSizeMB -and ++$backupRetries -lt 6)
+                                    while (($logfile.Size / 1024) -gt $ShrinkSize -and ++$backupRetries -lt 6)
 
                                     $currentSize = $logfile.Size
                                     Write-Message -Level Verbose -Message "TLog backup and truncate for database '$db' finished. Current TLog size after $backupRetries backups is $($currentSize/1024)MB"
@@ -420,7 +423,7 @@ function Expand-DbaTLogResponsibly {
                         $SuggestLogIncrementSize = $SuggestLogIncrementSize * 1024
 
                         # If default, use $SuggestedLogIncrementSize
-                        if ($IncrementSizeMB -eq -1) {
+                        if ($IncrementSize -eq -1) {
                             $LogIncrementSize = $SuggestLogIncrementSize
                         } else {
                             $title = "Choose increment value for database '$db':"
@@ -496,7 +499,7 @@ function Expand-DbaTLogResponsibly {
                     Name            = $logfile.Name
                     LogFileCount    = $numLogfiles
                     InitialSize     = [dbasize]($currentSizeMB * 1024 * 1024)
-                    CurrentSize     = [dbasize]($TargetLogSizeMB * 1024 * 1024)
+                    CurrentSize     = [dbasize]($TargetLogSize * 1024 * 1024)
                     InitialVLFCount = $initialVLFCount.Total
                     CurrentVLFCount = $currentVLFCount.Total
                 } | Select-DefaultView -ExcludeProperty LogFileCount
