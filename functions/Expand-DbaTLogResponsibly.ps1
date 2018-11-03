@@ -286,8 +286,7 @@ function Expand-DbaTLogResponsibly {
 
                             Write-Message -Level Verbose -Message "Total TLog Free Disk Space in MB: $([System.Math]::Round($($TotalTLogFreeDiskSpaceKB / 1024.0), 2))"
 
-                        }
-                        catch {
+                        } catch {
                             #Could not validate the disk space. Will ask if we want to continue.
                             $TotalTLogFreeDiskSpaceKB = 0
                         }
@@ -304,8 +303,7 @@ function Expand-DbaTLogResponsibly {
                                 Write-Message -Level Warning -Message "You have cancelled the execution"
                                 return
                             }
-                        }
-                        elseif ($requiredSpace -gt $TotalTLogFreeDiskSpaceKB) {
+                        } elseif ($requiredSpace -gt $TotalTLogFreeDiskSpaceKB) {
                             Write-Message -Level Verbose -Message "There is not enough space on volume to perform this task. `r`n" `
                                 "Available space: $([System.Math]::Round($($TotalTLogFreeDiskSpaceKB / 1024.0), 2))MB;`r`n" `
                                 "Required space: $([System.Math]::Round($($requiredSpace / 1024.0), 2))MB;"
@@ -517,4 +515,3 @@ function Expand-DbaTLogResponsibly {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -Parameter ShrinkSizeMB
     }
 }
-
