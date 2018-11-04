@@ -37,9 +37,10 @@ function Install-DbaSqlWatch {
 
         .NOTES
             Tags: SqlWatch
-            Author: marcingminski, koglerk
+            Author: Ken K (github.com/koglerk)
             Website: https://sqlwatch.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+            Website: https://dbatools.io
+            Copyright: (c) 2018 by dbatools, licensed under MIT
             License: MIT https://opensource.org/licenses/MIT
 
         .LINK
@@ -76,42 +77,40 @@ function Install-DbaSqlWatch {
 
             Installs the dev branch version of SqlWatch in the master database on sql2016 instance.
     #>
-    [CmdletBinding(SupportsShouldProcess = $true)]
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
     param (
         [Parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [object]$Database = "master",
+        [string]$Database = "master",
         [string]$LocalFile,
         [switch]$Force,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 
     begin {
 
-        $DbatoolsData = Get-DbatoolsConfigValue -FullName "Path.DbatoolsData"        
+        $DbatoolsData = Get-DbatoolsConfigValue -FullName "Path.DbatoolsData"
         $tempFolder = ([System.IO.Path]::GetTempPath()).TrimEnd("\")
         $zipfile = "$tempFolder\SqlWatch.zip"
 
         if ($LocalFile -eq $null -or $LocalFile.Length -eq 0) {
 
             if ($PSCmdlet.ShouldProcess($env:computername, "Downloading latest release from GitHub")) {
-        
+
                 # query the releases to find the latest, check and see if its cached
                 $ReleasesUrl = "https://api.github.com/repos/marcingminski/sqlwatch/releases"
                 $DownloadBase = "https://github.com/marcingminski/sqlwatch/releases/download/"
-            
+
                 Write-Message -Level Verbose -Message "Checking GitHub for the latest release."
                 $LatestReleaseUrl = (Invoke-TlsWebRequest -UseBasicParsing -Uri $ReleasesUrl | ConvertFrom-Json)[0].assets[0].browser_download_url
-            
+
                 Write-Message -Level VeryVerbose -Message "Latest release is available at $LatestReleaseUrl"
                 $LocallyCachedZip = Join-Path -Path $DbatoolsData -ChildPath $($LatestReleaseUrl -replace $DownloadBase, '');
-            
+
                 # if local cached copy exists, use it, otherwise download a new one
                 if (-not $Force) {
-                
+
                     # download from github
                     Write-Message -Level Verbose "Downloading $LatestReleaseUrl"
                     try {
@@ -136,7 +135,7 @@ function Install-DbaSqlWatch {
 
             # $LocalFile was passed, so use it
             if ($PSCmdlet.ShouldProcess($env:computername, "Copying local file to temp directory")) {
-                
+
                 if ($LocalFile.EndsWith("zip")) {
                     $LocallyCachedZip = $zipfile
                     Copy-Item -Path $LocalFile -Destination $LocallyCachedZip -Force
@@ -174,7 +173,7 @@ function Install-DbaSqlWatch {
             Write-Message -Level VeryVerbose "Deleting $LocallyCachedZip"
             Remove-Item -Path $LocallyCachedZip
         }
-        
+
     }
 
 
@@ -203,12 +202,12 @@ function Install-DbaSqlWatch {
                     }
                     $DacProfile = New-DbaDacProfile -SqlInstance $server -Database $Database -Path $LocalCacheFolder -PublishOptions $PublishOptions | Select-Object -ExpandProperty FileName
                     $PublishResults = Publish-DbaDacPackage -SqlInstance $server -Database $Database -Path $DacPacPath -PublishXml $DacProfile
-                
+
                     # parse results
                     $parens = Select-String -InputObject $PublishResults.Result -Pattern "\(([^\)]+)\)" -AllMatches
                     if ($parens.matches) {
                         $ExtractedResult = $parens.matches | Select-Object -Last 1 #| ForEach-Object { $_.value -replace '(', '' -replace ')', '' }
-                    }                
+                    }
                     [PSCustomObject]@{
                         ComputerName         = $PublishResults.ComputerName
                         InstanceName         = $PublishResults.InstanceName
