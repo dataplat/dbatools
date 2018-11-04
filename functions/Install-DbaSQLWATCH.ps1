@@ -94,9 +94,6 @@ function Install-DbaSQLWATCH {
         $DbatoolsData = Get-DbatoolsConfigValue -FullName "Path.DbatoolsData"        
         $tempFolder = ([System.IO.Path]::GetTempPath()).TrimEnd("\")
         $zipfile = "$tempFolder\SQLWATCH.zip"
-        
-        $oldSslSettings = [System.Net.ServicePointManager]::SecurityProtocol
-        [System.Net.ServicePointManager]::SecurityProtocol = "Tls12"
 
         if ($LocalFile -eq $null -or $LocalFile.Length -eq 0) {
 
@@ -107,7 +104,7 @@ function Install-DbaSQLWATCH {
                 $DownloadBase = "https://github.com/marcingminski/sqlwatch/releases/download/"
             
                 Write-Message -Level Verbose -Message "Checking GitHub for the latest release."
-                $LatestReleaseUrl = (Invoke-WebRequest -UseBasicParsing -Uri $ReleasesUrl | ConvertFrom-Json)[0].assets[0].browser_download_url
+                $LatestReleaseUrl = (Invoke-TlsWebRequest -UseBasicParsing -Uri $ReleasesUrl | ConvertFrom-Json)[0].assets[0].browser_download_url
             
                 Write-Message -Level VeryVerbose -Message "Latest release is available at $LatestReleaseUrl"
                 $LocallyCachedZip = Join-Path -Path $DbatoolsData -ChildPath $($LatestReleaseUrl -replace $DownloadBase, '');
@@ -118,11 +115,11 @@ function Install-DbaSQLWATCH {
                     # download from github
                     Write-Message -Level Verbose "Downloading $LatestReleaseUrl"
                     try {
-                        Invoke-WebRequest $LatestReleaseUrl -OutFile $zipfile -ErrorAction Stop -UseBasicParsing
+                        Invoke-TlsWebRequest $LatestReleaseUrl -OutFile $zipfile -ErrorAction Stop -UseBasicParsing
                     } catch {
                         #try with default proxy and usersettings
                         (New-Object System.Net.WebClient).Proxy.Credentials = [System.Net.CredentialCache]::DefaultNetworkCredentials
-                        Invoke-WebRequest $LatestReleaseUrl -OutFile $zipfile -ErrorAction Stop -UseBasicParsing
+                        Invoke-TlsWebRequest $LatestReleaseUrl -OutFile $zipfile -ErrorAction Stop -UseBasicParsing
                     }
 
                     # copy the file from temp to local cache
@@ -177,8 +174,6 @@ function Install-DbaSQLWATCH {
             Write-Message -Level VeryVerbose "Deleting $LocallyCachedZip"
             Remove-Item -Path $LocallyCachedZip
         }
-
-        [System.Net.ServicePointManager]::SecurityProtocol = $oldSslSettings
         
     }
 
