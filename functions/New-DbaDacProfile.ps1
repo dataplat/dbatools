@@ -28,6 +28,9 @@ function New-DbaDacProfile {
     .PARAMETER Path
         The directory where you would like to save the profile xml file(s).
 
+    .PARAMETER PublishOptions
+        Optional hashtable to set publish options. Key/value pairs in the hashtable get converted to strings of "<key>value</key>".
+        
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
@@ -73,6 +76,7 @@ function New-DbaDacProfile {
         [string[]]$Database,
         [string]$Path = "$home\Documents",
         [string[]]$ConnectionString,
+        [hashtable]$PublishOptions,
         [switch]$EnableException
     )
     begin {
@@ -88,6 +92,18 @@ function New-DbaDacProfile {
             Stop-Function -Message "Path must be a directory"
         }
 
+        function Convert-HashtableToXMLString($PublishOptions) {
+            $return = @()
+            if ($PublishOptions) {
+                $PublishOptions.GetEnumerator() | ForEach-Object {
+                    $key = $PSItem.Key.ToString()
+                    $value = $PSItem.Value.ToString()
+                    $return += "<$key>$value</$key>"
+                }
+            } 
+            $return | Out-String
+        }
+
         function Get-Template ($db, $connstring) {
             "<?xml version=""1.0"" ?>
             <Project ToolsVersion=""14.0"" xmlns=""http://schemas.microsoft.com/developer/msbuild/2003"">
@@ -95,8 +111,9 @@ function New-DbaDacProfile {
                 <TargetDatabaseName>{0}</TargetDatabaseName>
                 <TargetConnectionString>{1}</TargetConnectionString>
                 <ProfileVersionNumber>1</ProfileVersionNumber>
+                {2}
               </PropertyGroup>
-            </Project>" -f $db[0], $connstring
+            </Project>" -f $db[0], $connstring, $(Convert-HashtableToXMLString($PublishOptions))
         }
 
         function Get-ServerName ($connstring) {
