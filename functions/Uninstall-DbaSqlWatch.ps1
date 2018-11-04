@@ -1,53 +1,52 @@
 #ValidationTags#CodeStyle,Messaging,FlowControl,Pipeline#
 Function Uninstall-DbaSqlWatch {
     <#
-        .SYNOPSIS
-            Uninstalls SqlWatch.
+    .SYNOPSIS
+        Uninstalls SqlWatch.
 
-        .DESCRIPTION
-            Deletes all user objects, agent jobs, and historical data associated with SqlWatch.
+    .DESCRIPTION
+        Deletes all user objects, agent jobs, and historical data associated with SqlWatch.
 
-        .PARAMETER SqlInstance
-            SQL Server name or SMO object representing the SQL Server to connect to.
+    .PARAMETER SqlInstance
+        SQL Server name or SMO object representing the SQL Server to connect to.
 
-        .PARAMETER SqlCredential
-            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+    .PARAMETER SqlCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-        .PARAMETER Database
-            Specifies the database to install SqlWatch into.
+    .PARAMETER Database
+        Specifies the database to install SqlWatch into.
 
-        .PARAMETER Confirm
-            Prompts to confirm actions
+    .PARAMETER Confirm
+        Prompts to confirm actions
 
-        .PARAMETER WhatIf
-            Shows what would happen if the command were to run. No actions are actually performed.
+    .PARAMETER WhatIf
+        Shows what would happen if the command were to run. No actions are actually performed.
 
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-        .NOTES
-            Tags: SqlWatch
-            Author: Ken K (github.com/koglerk)
-            Website: https://sqlwatch.io
-            Website: https://dbatools.io
-            Copyright: (c) 2018 by dbatools, licensed under MIT
-            License: MIT https://opensource.org/licenses/MIT
+    .NOTES
+        Tags: SqlWatch
+        Author: Ken K (github.com/koglerk)
+        Website: https://sqlwatch.io
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-        .LINK
-            https://dbatools.io/Uninstall-DbaSqlWatch
+    .LINK
+        https://dbatools.io/Uninstall-DbaSqlWatch
 
-        .EXAMPLE
-            Uninstall-DbaSqlWatch -SqlInstance server1 -Database master
+    .EXAMPLE
+        Uninstall-DbaSqlWatch -SqlInstance server1 -Database master
 
-            Deletes all user objects, agent jobs, and historical data associated with SqlWatch from the master database.
+        Deletes all user objects, agent jobs, and historical data associated with SqlWatch from the master database.
 
-        .EXAMPLE
-            Install-DbaSqlWatch -SqlInstance server1\instance1 -Database DBA
+    .EXAMPLE
+        Install-DbaSqlWatch -SqlInstance server1\instance1 -Database DBA
 
-            Logs into server1\instance1 with Windows authentication and then deletes all user objects, agent jobs, and historical data associated with SqlWatch from the DBA database.
-
+        Logs into server1\instance1 with Windows authentication and then deletes all user objects, agent jobs, and historical data associated with SqlWatch from the DBA database.
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
     param (
