@@ -616,7 +616,10 @@ function Copy-DbaDatabase {
                 if ($detachresult) {
 
                     $transfer = Start-SqlFileTransfer $fileStructure $dbName
-                    if ($transfer -eq $false) { Write-Warning "Could not copy files."; return "Could not copy files." }
+                    if ($transfer -eq $false) {
+                        Write-Message -Level Verbose -Message "Could not copy files."
+                        return "Could not copy files."
+                    }
                     $attachresult = Mount-SqlDatabase $destServer $destDbName $destfilestructure $dbOwner
 
                     if ($attachresult -eq $true) {

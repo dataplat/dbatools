@@ -123,4 +123,3 @@ function Test-DbaEndpoint {
         }
     }
 }
-

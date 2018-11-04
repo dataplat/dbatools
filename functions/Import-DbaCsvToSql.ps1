@@ -676,12 +676,13 @@ function Import-DbaCsvToSql {
 
                 # Perform the actual switch, which removes any registered Import-DbaCsvToSql modules
                 # Then imports, and finally re-executes the command.
-                $csv = $csv -join ","; $switches = $switches -join " "
+                $csvParam = ($csv | ForEach-Object { "'$($_ -replace "'", "''")'" }) -join ","
+                $switches = $switches -join " "
                 if ($SqlCredential.count -gt 0) {
                     $SqlCredentialPath = "$env:TEMP\sqlcredential.xml"
                     Export-CliXml -InputObject $SqlCredential $SqlCredentialPath
                 }
-                $command = "Import-DbaCsvToSql -Csv $csv -SqlInstance '$SqlInstance'-Database '$database' -Table '$table' -Delimiter '$InternalDelimiter' -First $First -Query '$query' -Batchsize $BatchSize -NotifyAfter $NotifyAfter $switches -shellswitch"
+                $command = "Import-DbaCsvToSql -Csv $csvParam -SqlInstance '$SqlInstance'-Database '$database' -Table '$table' -Delimiter '$InternalDelimiter' -First $First -Query '$query' -Batchsize $BatchSize -NotifyAfter $NotifyAfter $switches -shellswitch"
 
                 if ($SqlCredentialPath.length -gt 0) {
                     $command += " -SqlCredentialPath $SqlCredentialPath"
@@ -1073,7 +1074,7 @@ function Import-DbaCsvToSql {
                         }
                     }
 
-                    # Check to see if file has quote identified data (ie. "first","second","third")
+                    # Check to see if file has quote identified data (i.e. "first","second","third")
                     $quoted = $false
                     $checkline = Get-Content $file -Last 1
                     $checkcolumns = $checkline.Split($InternalDelimiter)

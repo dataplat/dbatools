@@ -122,4 +122,3 @@ function Add-DbaAgListener {
         }
     }
 }
-

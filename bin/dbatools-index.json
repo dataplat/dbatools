@@ -943,7 +943,7 @@
                        ],
                        [
                            "AzureCredential",
-                           "The name of the credential on the SQL instance that can write to the AzureBaseUrl.",
+                           "The name of the credential on the SQL instance that can write to the AzureBaseUrl, only needed if using Storage access keys\r\nIf using SAS credentials, the command will look for a credential with a name matching the AzureBaseUrl",
                            "",
                            false,
                            "false",
@@ -959,7 +959,7 @@
                        ],
                        [
                            "BuildPath",
-                           "By default this command will not attempt to create missing paths, this switch will change the behaviour so that it wll",
+                           "By default this command will not attempt to create missing paths, this switch will change the behaviour so that it will",
                            "",
                            false,
                            "false",
@@ -1043,7 +1043,7 @@
         "Synopsis":  "Backup one or more SQL Sever databases from a single SQL Server SqlInstance.",
         "Name":  "Backup-DbaDatabase",
         "Links":  null,
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eBackup-DbaDatabase -SqlInstance Server1 -Database HR, Finance\nThis will perform a full database backup on the databases HR and Finance on SQL Server Instance Server1 to Server1 default backup directory.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eBackup-DbaDatabase -SqlInstance sql2016 -BackupDirectory C:\\temp -Database AdventureWorks2014 -Type Full\nBacks up AdventureWorks2014 to sql2016 C:\\temp folder.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eBackup-DbaDatabase -SqlInstance sql2016 -AzureBaseUrl https://dbatoolsaz.blob.core.windows.net/azbackups/ -AzureCredential dbatoolscred -Type Full -CreateFolder\nPerforms a full backup of all databases on the sql2016 instance to their own containers under the https://dbatoolsaz.blob.core.windows.net/azbackups/ container on Azure blog storage using the sql \r\ncredential \"dbatoolscred\" registered on the sql2016 instance.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eBackup-Dbadatabase -SqlInstance Server1\\Prod -Database db1 -BackupDirectory \\\\filestore\\backups\\servername\\instancename\\dbname\\backuptype -Type Full -ReplaceInName\nPerforms a full backup of db1 into the folder \\\\filestore\\backups\\server1\\prod\\db1\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eBackup-Dbadatabase -SqlInstance Server1\\Prod -BackupDirectory \\\\filestore\\backups\\servername\\instancename\\dbname\\backuptype -BackupFileName dbname-backuptype-timestamp.trn -Type Log \r\n-ReplaceInName\nPerforms a log backup for every database. For the database db1 this would results in backup files in \\\\filestore\\backups\\server1\\prod\\db1\\Log\\db1-log-31102018.trn\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eBackup-DbaDatabase -SqlInstance Sql2017 -Database master -BackupFileName NUL\nPerforms a backup of master, but sends the output to the NUL device (ie; throws it away)",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eBackup-DbaDatabase -SqlInstance Server1 -Database HR, Finance\nThis will perform a full database backup on the databases HR and Finance on SQL Server Instance Server1 to Server1 default backup directory.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eBackup-DbaDatabase -SqlInstance sql2016 -BackupDirectory C:\\temp -Database AdventureWorks2014 -Type Full\nBacks up AdventureWorks2014 to sql2016 C:\\temp folder.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eBackup-DbaDatabase -SqlInstance sql2016 -AzureBaseUrl https://dbatoolsaz.blob.core.windows.net/azbackups/ -AzureCredential dbatoolscred -Type Full -CreateFolder\nPerforms a full backup of all databases on the sql2016 instance to their own containers under the https://dbatoolsaz.blob.core.windows.net/azbackups/ container on Azure blog storage using the sql \r\ncredential \"dbatoolscred\" registered on the sql2016 instance.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eBackup-DbaDatabase -SqlInstance sql2016 -AzureBaseUrl https://dbatoolsaz.blob.core.windows.net/azbackups/  -Type Full\nPerforms a full backup of all databases on the sql2016 instance to the https://dbatoolsaz.blob.core.windows.net/azbackups/ container on Azure blog storage using the Shared Access Signature sql \r\ncredential \"https://dbatoolsaz.blob.core.windows.net/azbackups\" registered on the sql2016 instance.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eBackup-Dbadatabase -SqlInstance Server1\\Prod -Database db1 -BackupDirectory \\\\filestore\\backups\\servername\\instancename\\dbname\\backuptype -Type Full -ReplaceInName\nPerforms a full backup of db1 into the folder \\\\filestore\\backups\\server1\\prod\\db1\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eBackup-Dbadatabase -SqlInstance Server1\\Prod -BackupDirectory \\\\filestore\\backups\\servername\\instancename\\dbname\\backuptype -BackupFileName dbname-backuptype-timestamp.trn -Type Log \r\n-ReplaceInName\nPerforms a log backup for every database. For the database db1 this would results in backup files in \\\\filestore\\backups\\server1\\prod\\db1\\Log\\db1-log-31102018.trn\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003eBackup-DbaDatabase -SqlInstance Sql2017 -Database master -BackupFileName NUL\nPerforms a backup of master, but sends the output to the NUL device (ie; throws it away)",
         "Syntax":  "Backup-DbaDatabase [-SqlCredential \u003cPSCredential\u003e] [-Database \u003cObject[]\u003e] [-ExcludeDatabase \u003cObject[]\u003e] [-BackupDirectory \u003cString[]\u003e] [-BackupFileName \u003cString\u003e] [-ReplaceInName] [-CopyOnly] [-Type \u003cString\u003e] [-CreateFolder] [-FileCount \u003cInt32\u003e] [-CompressBackup] [-Checksum] [-Verify] [-MaxTransferSize \u003cInt32\u003e] [-BlockSize \u003cInt32\u003e] [-BufferCount \u003cInt32\u003e] [-AzureBaseUrl \u003cString\u003e] [-AzureCredential \u003cString\u003e] [-NoRecovery] [-BuildPath] [-WithFormat] [-Initialize] [-SkipTapeHeader] [-TimeStampFormat \u003cString\u003e] [-IgnoreFileChecks] [-OutputScriptOnly] [-EnableException] [-WhatIf] [-Confirm] \r\n[\u003cCommonParameters\u003e]\nBackup-DbaDatabase -SqlInstance \u003cDbaInstanceParameter\u003e [-SqlCredential \u003cPSCredential\u003e] [-Database \u003cObject[]\u003e] [-ExcludeDatabase \u003cObject[]\u003e] [-BackupDirectory \u003cString[]\u003e] [-BackupFileName \u003cString\u003e] [-ReplaceInName] [-CopyOnly] [-Type \u003cString\u003e] [-CreateFolder] [-FileCount \u003cInt32\u003e] [-CompressBackup] [-Checksum] [-Verify] [-MaxTransferSize \u003cInt32\u003e] [-BlockSize \u003cInt32\u003e] [-BufferCount \u003cInt32\u003e] [-AzureBaseUrl \u003cString\u003e] [-AzureCredential \u003cString\u003e] [-NoRecovery] [-BuildPath] [-WithFormat] [-Initialize] [-SkipTapeHeader] [-TimeStampFormat \u003cString\u003e] [-IgnoreFileChecks] [-OutputScriptOnly] \r\n[-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nBackup-DbaDatabase [-SqlCredential \u003cPSCredential\u003e] [-Database \u003cObject[]\u003e] [-ExcludeDatabase \u003cObject[]\u003e] [-BackupDirectory \u003cString[]\u003e] [-BackupFileName \u003cString\u003e] [-ReplaceInName] [-CopyOnly] [-Type \u003cString\u003e] -InputObject \u003cObject[]\u003e [-CreateFolder] [-FileCount \u003cInt32\u003e] [-CompressBackup] [-Checksum] [-Verify] [-MaxTransferSize \u003cInt32\u003e] [-BlockSize \u003cInt32\u003e] [-BufferCount \u003cInt32\u003e] [-AzureBaseUrl \u003cString\u003e] [-AzureCredential \u003cString\u003e] [-NoRecovery] [-BuildPath] [-WithFormat] [-Initialize] [-SkipTapeHeader] [-TimeStampFormat \u003cString\u003e] [-IgnoreFileChecks] [-OutputScriptOnly] [-EnableException] \r\n[-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
@@ -1364,7 +1364,7 @@
         "Synopsis":  "Clears Latch Statistics",
         "Name":  "Clear-DbaLatchStatistics",
         "Links":  "https://dbatools.io/Clear-DbaLatchStatistics",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eClear-DbaLatchStatistics -SqlInstance sql2008, sqlserver2012\nAfter confirmation, clears latch statistics on servers sql2008 and sqlserver2012\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eClear-DbaLatchStatistics -SqlInstance sql2008, sqlserver2012 -Confirm:$false\nClears clears latch statistics on servers sql2008 and sqlserver2012, without prompting\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003e\u0027sql2008\u0027,\u0027sqlserver2012\u0027 | Clear-DbaLatchStatistics\nAfter confirmation, clears latch statistics on servers sql2008 and sqlserver2012\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003e$cred = Get-Credential sqladmin\nPS C:\\\u003e Clear-DbaLatchStatistics -SqlInstance sql2008 -SqlCredential $cred\nConnects using sqladmin credential and clears latch statistics on servers sql2008 and sqlserver2012",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eClear-DbaLatchStatistics -SqlInstance sql2008, sqlserver2012\nAfter confirmation, clears latch statistics on servers sql2008 and sqlserver2012\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eClear-DbaLatchStatistics -SqlInstance sql2008, sqlserver2012 -Confirm:$false\nClears latch statistics on servers sql2008 and sqlserver2012, without prompting\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003e\u0027sql2008\u0027,\u0027sqlserver2012\u0027 | Clear-DbaLatchStatistics\nAfter confirmation, clears latch statistics on servers sql2008 and sqlserver2012\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003e$cred = Get-Credential sqladmin\nPS C:\\\u003e Clear-DbaLatchStatistics -SqlInstance sql2008 -SqlCredential $cred\nConnects using sqladmin credential and clears latch statistics on servers sql2008 and sqlserver2012",
         "Syntax":  "Clear-DbaLatchStatistics [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
@@ -1966,7 +1966,7 @@
         "Synopsis":  "Copy-DbaAgentAlert migrates alerts from one SQL Server to another.",
         "Name":  "Copy-DbaAgentAlert",
         "Links":  "https://dbatools.io/Copy-DbaAgentAlert",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eCopy-DbaAgentAlert -Source sqlserver2014a -Destination sqlcluster\nCopies all alerts from sqlserver2014a to sqlcluster using Windows credentials. If alerts with the same name exist on sqlcluster, they will be skipped.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eCopy-DbaAgentAlert -Source sqlserver2014a -Destination sqlcluster -Alert PSAlert -SourceSqlCredential $cred -Force\nCopies a only the alert named PSAlert from sqlserver2014a to sqlcluster using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster. If a alert with the same name exists on \r\nsqlcluster, it will be dropped and recreated because -Force was used.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eCopy-DbaAgentAlert -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force\nShows what would happen if the command were executed using force.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eCopy-DbaAgentAlert -Source sqlserver2014a -Destination sqlcluster\nCopies all alerts from sqlserver2014a to sqlcluster using Windows credentials. If alerts with the same name exist on sqlcluster, they will be skipped.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eCopy-DbaAgentAlert -Source sqlserver2014a -Destination sqlcluster -Alert PSAlert -SourceSqlCredential $cred -Force\nCopies a only the alert named PSAlert from sqlserver2014a to sqlcluster using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster. If an alert with the same name exists on \r\nsqlcluster, it will be dropped and recreated because -Force was used.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eCopy-DbaAgentAlert -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force\nShows what would happen if the command were executed using force.",
         "Syntax":  "Copy-DbaAgentAlert [-Source] \u003cDbaInstanceParameter\u003e [[-SourceSqlCredential] \u003cPSCredential\u003e] [-Destination] \u003cDbaInstanceParameter[]\u003e [[-DestinationSqlCredential] \u003cPSCredential\u003e] [[-Alert] \u003cObject[]\u003e] [[-ExcludeAlert] \u003cObject[]\u003e] [-IncludeDefaults] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
@@ -2079,7 +2079,7 @@
         "Synopsis":  "Copy-DbaAgentCategory migrates SQL Agent categories from one SQL Server to another. This is similar to sp_add_category.\n\nhttps://msdn.microsoft.com/en-us/library/ms181597.aspx",
         "Name":  "Copy-DbaAgentCategory",
         "Links":  "https://dbatools.io/Copy-DbaAgentCategory",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eCopy-DbaAgentCategory -Source sqlserver2014a -Destination sqlcluster\nCopies all operator categories from sqlserver2014a to sqlcluster using Windows authentication. If operator categories with the same name exist on sqlcluster, they will be skipped.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eCopy-DbaAgentCategory -Source sqlserver2014a -Destination sqlcluster -OperatorCategory PSOperator -SourceSqlCredential $cred -Force\nCopies a single operator category, the PSOperator operator category from sqlserver2014a to sqlcluster using SQL credentials to authenticate to sqlserver2014a and Windows credentials for sqlcluster. \r\nIf a operator category with the same name exists on sqlcluster, it will be dropped and recreated because -Force was used.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eCopy-DbaAgentCategory -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force\nShows what would happen if the command were executed using force.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eCopy-DbaAgentCategory -Source sqlserver2014a -Destination sqlcluster\nCopies all operator categories from sqlserver2014a to sqlcluster using Windows authentication. If operator categories with the same name exist on sqlcluster, they will be skipped.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eCopy-DbaAgentCategory -Source sqlserver2014a -Destination sqlcluster -OperatorCategory PSOperator -SourceSqlCredential $cred -Force\nCopies a single operator category, the PSOperator operator category from sqlserver2014a to sqlcluster using SQL credentials to authenticate to sqlserver2014a and Windows credentials for sqlcluster. \r\nIf an operator category with the same name exists on sqlcluster, it will be dropped and recreated because -Force was used.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eCopy-DbaAgentCategory -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force\nShows what would happen if the command were executed using force.",
         "Syntax":  "Copy-DbaAgentCategory -Source \u003cDbaInstanceParameter\u003e [-SourceSqlCredential \u003cPSCredential\u003e] -Destination \u003cDbaInstanceParameter[]\u003e [-DestinationSqlCredential \u003cPSCredential\u003e] [-JobCategory \u003cString[]\u003e] [-AgentCategory \u003cString[]\u003e] [-OperatorCategory \u003cString[]\u003e] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nCopy-DbaAgentCategory -Source \u003cDbaInstanceParameter\u003e [-SourceSqlCredential \u003cPSCredential\u003e] -Destination \u003cDbaInstanceParameter[]\u003e [-DestinationSqlCredential \u003cPSCredential\u003e] [-CategoryType \u003cString[]\u003e] [-JobCategory \u003cString[]\u003e] [-AgentCategory \u003cString[]\u003e] [-OperatorCategory \u003cString[]\u003e] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
@@ -5557,17 +5557,17 @@
                            ""
                        ],
                        [
-                           "TargetLogSizeMB",
+                           "TargetLogSize",
                            "Specifies the target size of the transaction log file in megabytes.",
-                           "",
+                           "TargetLogSizeMB",
                            true,
                            "false",
                            "0"
                        ],
                        [
+                           "IncrementSize",
+                           "Specifies the amount the transaction log should grow in megabytes. If this value differs from the suggested value based on your TargetLogSize, you will be prompted to confirm your choice.\nThis value will be calculated if not specified.",
                            "IncrementSizeMB",
-                           "Specifies the amount the transaction log should grow in megabytes. If this value differs from the suggested value based on your TargetLogSizeMB, you will be prompted to confirm your choice.\nThis value will be calculated if not specified.",
-                           "",
                            false,
                            "false",
                            "-1"
@@ -5589,9 +5589,9 @@
                            "False"
                        ],
                        [
+                           "ShrinkSize",
+                           "Specifies the target size of the transaction log file for the shrink operation in megabytes.",
                            "ShrinkSizeMB",
-                           "Specifies the target size of the transaction log file for the shrink operation.",
-                           "",
                            true,
                            "false",
                            "0"
@@ -5603,6 +5603,14 @@
                            false,
                            "false",
                            ""
+                       ],
+                       [
+                           "ExcludeDiskSpaceValidation",
+                           "If this switch is enabled, the validation for enough disk space using Get-DbaDiskSpace command will be skipped.\r\nThis can be useful when you know that you have enough space to grow your TLog but you don\u0027t have PowerShell Remoting enabled to validate it.",
+                           "",
+                           false,
+                           "false",
+                           "False"
                        ],
                        [
                            "EnableException",
@@ -5634,8 +5642,8 @@
         "Synopsis":  "This command will help you to automatically grow your transaction log  file in a responsible way (preventing the generation of too many VLFs).",
         "Name":  "Expand-DbaTLogResponsibly",
         "Links":  "https://dbatools.io/Expand-DbaTLogResponsibly",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eExpand-DbaTLogResponsibly -SqlInstance sqlcluster -Database db1 -TargetLogSizeMB 50000\nGrows the transaction log for database db1 on sqlcluster to 50000 MB and calculates the increment size.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eExpand-DbaTLogResponsibly -SqlInstance sqlcluster -Database db1, db2 -TargetLogSizeMB 10000 -IncrementSizeMB 200\nGrows the transaction logs for databases db1 and db2 on sqlcluster to 1000MB and sets the growth increment to 200MB.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eExpand-DbaTLogResponsibly -SqlInstance sqlcluster -Database db1 -TargetLogSizeMB 10000 -LogFileId 9\nGrows the transaction log file  with FileId 9 of the db1 database on sqlcluster instance to 10000MB.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eExpand-DbaTLogResponsibly -SqlInstance sqlcluster -Database (Get-Content D:\\DBs.txt) -TargetLogSizeMB 50000\nGrows the transaction log of the databases specified in the file \u0027D:\\DBs.txt\u0027 on sqlcluster instance to 50000MB.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eExpand-DbaTLogResponsibly -SqlInstance SqlInstance -Database db1,db2 -TargetLogSizeMB 100 -IncrementSizeMB 10 -ShrinkLogFile -ShrinkSizeMB 10 -BackupDirectory R:\\MSSQL\\Backup\nGrows the transaction logs for databases db1 and db2 on SQL server SQLInstance to 100MB, sets the incremental growth to 10MB, shrinks the transaction log to 10MB and uses the directory \r\nR:\\MSSQL\\Backup for the required backups.",
-        "Syntax":  "Expand-DbaTLogResponsibly [-SqlInstance] \u003cDbaInstanceParameter\u003e [[-SqlCredential] \u003cPSCredential\u003e] [-Database \u003cObject[]\u003e] [[-ExcludeDatabase] \u003cObject[]\u003e] [-TargetLogSizeMB] \u003cInt32\u003e [[-IncrementSizeMB] \u003cInt32\u003e] [[-LogFileId] \u003cInt32\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nExpand-DbaTLogResponsibly [-SqlInstance] \u003cDbaInstanceParameter\u003e [[-SqlCredential] \u003cPSCredential\u003e] [-Database \u003cObject[]\u003e] [[-ExcludeDatabase] \u003cObject[]\u003e] [-TargetLogSizeMB] \u003cInt32\u003e [[-IncrementSizeMB] \u003cInt32\u003e] [[-LogFileId] \u003cInt32\u003e] [-ShrinkLogFile] [-ShrinkSizeMB] \u003cInt32\u003e [[-BackupDirectory] \u003cString\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eExpand-DbaTLogResponsibly -SqlInstance sqlcluster -Database db1 -TargetLogSize 50000\nGrows the transaction log for database db1 on sqlcluster to 50000 MB and calculates the increment size.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eExpand-DbaTLogResponsibly -SqlInstance sqlcluster -Database db1, db2 -TargetLogSize 10000 -IncrementSize 200\nGrows the transaction logs for databases db1 and db2 on sqlcluster to 1000MB and sets the growth increment to 200MB.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eExpand-DbaTLogResponsibly -SqlInstance sqlcluster -Database db1 -TargetLogSize 10000 -LogFileId 9\nGrows the transaction log file  with FileId 9 of the db1 database on sqlcluster instance to 10000MB.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eExpand-DbaTLogResponsibly -SqlInstance sqlcluster -Database (Get-Content D:\\DBs.txt) -TargetLogSize 50000\nGrows the transaction log of the databases specified in the file \u0027D:\\DBs.txt\u0027 on sqlcluster instance to 50000MB.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eExpand-DbaTLogResponsibly -SqlInstance SqlInstance -Database db1,db2 -TargetLogSize 100 -IncrementSize 10 -ShrinkLogFile -ShrinkSize 10 -BackupDirectory R:\\MSSQL\\Backup\nGrows the transaction logs for databases db1 and db2 on SQL server SQLInstance to 100MB, sets the incremental growth to 10MB, shrinks the transaction log to 10MB and uses the directory \r\nR:\\MSSQL\\Backup for the required backups.",
+        "Syntax":  "Expand-DbaTLogResponsibly [-SqlInstance] \u003cDbaInstanceParameter\u003e [[-SqlCredential] \u003cPSCredential\u003e] [-Database \u003cObject[]\u003e] [[-ExcludeDatabase] \u003cObject[]\u003e] [-TargetLogSize] \u003cInt32\u003e [[-IncrementSize] \u003cInt32\u003e] [[-LogFileId] \u003cInt32\u003e] [-ExcludeDiskSpaceValidation] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nExpand-DbaTLogResponsibly [-SqlInstance] \u003cDbaInstanceParameter\u003e [[-SqlCredential] \u003cPSCredential\u003e] [-Database \u003cObject[]\u003e] [[-ExcludeDatabase] \u003cObject[]\u003e] [-TargetLogSize] \u003cInt32\u003e [[-IncrementSize] \u003cInt32\u003e] [[-LogFileId] \u003cInt32\u003e] [-ShrinkLogFile] [-ShrinkSize] \u003cInt32\u003e [[-BackupDirectory] \u003cString\u003e] [-ExcludeDiskSpaceValidation] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "CommandName":  "Export-DbaAvailabilityGroup",
@@ -6482,7 +6490,7 @@
         "Synopsis":  "Exports Windows and SQL Logins to a T-SQL file. Export includes login, SID, password, default database, default language, server permissions, server roles, db permissions, db roles.",
         "Name":  "Export-DbaLogin",
         "Links":  "https://dbatools.io/Export-DbaLogin",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eExport-DbaLogin -SqlInstance sql2005 -Path C:\\temp\\sql2005-logins.sql\nExports the logins for SQL Server \"sql2005\" and writes them to the file \"C:\\temp\\sql2005-logins.sql\"\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eExport-DbaLogin -SqlInstance sqlserver2014a -ExcludeLogin realcajun -SqlCredential $scred -Path C:\\temp\\logins.sql -Append\nAuthenticates to sqlserver2014a using SQL Authentication. Exports all logins except for realcajun to C:\\temp\\logins.sql, and appends to the file if it exists. If not, the file will be created.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eExport-DbaLogin -SqlInstance sqlserver2014a -Login realcajun, netnerds -Path C:\\temp\\logins.sql\nExports ONLY logins netnerds and realcajun FROM sqlserver2014a to the file  C:\\temp\\logins.sql\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eExport-DbaLogin -SqlInstance sqlserver2014a -Login realcajun, netnerds -Database HR, Accounting\nExports ONLY logins netnerds and realcajun FROM sqlserver2014a with the permissions on databases HR and Accounting\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eExport-DbaLogin -SqlInstance sqlserver2008 -Login realcajun, netnerds -Path C:\\temp\\login.sql -ExcludeGoBatchSeparator\nExports ONLY logins netnerds and realcajun FROM sqlserver2008 server, to the C:\\temp\\login.sql file without the \u0027GO\u0027 batch separator.\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eExport-DbaLogin -SqlInstance sqlserver2008 -Login realcajun -Path C:\\temp\\users.sql -DestinationVersion SQLServer2016\nExports login realcajun from sqlsever2008 to the file C:\\temp\\users.sql with syntax to run on SQL Server 2016",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eExport-DbaLogin -SqlInstance sql2005 -Path C:\\temp\\sql2005-logins.sql\nExports the logins for SQL Server \"sql2005\" and writes them to the file \"C:\\temp\\sql2005-logins.sql\"\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eExport-DbaLogin -SqlInstance sqlserver2014a -ExcludeLogin realcajun -SqlCredential $scred -Path C:\\temp\\logins.sql -Append\nAuthenticates to sqlserver2014a using SQL Authentication. Exports all logins except for realcajun to C:\\temp\\logins.sql, and appends to the file if it exists. If not, the file will be created.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eExport-DbaLogin -SqlInstance sqlserver2014a -Login realcajun, netnerds -Path C:\\temp\\logins.sql\nExports ONLY logins netnerds and realcajun FROM sqlserver2014a to the file  C:\\temp\\logins.sql\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eExport-DbaLogin -SqlInstance sqlserver2014a -Login realcajun, netnerds -Database HR, Accounting\nExports ONLY logins netnerds and realcajun FROM sqlserver2014a with the permissions on databases HR and Accounting\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eExport-DbaLogin -SqlInstance sqlserver2008 -Login realcajun, netnerds -Path C:\\temp\\login.sql -ExcludeGoBatchSeparator\nExports ONLY logins netnerds and realcajun FROM sqlserver2008 server, to the C:\\temp\\login.sql file without the \u0027GO\u0027 batch separator.\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eExport-DbaLogin -SqlInstance sqlserver2008 -Login realcajun -Path C:\\temp\\users.sql -DestinationVersion SQLServer2016\nExports login realcajun from sqlserver2008 to the file C:\\temp\\users.sql with syntax to run on SQL Server 2016",
         "Syntax":  "Export-DbaLogin [-SqlInstance] \u003cDbaInstanceParameter\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Login] \u003cObject[]\u003e] [[-ExcludeLogin] \u003cObject[]\u003e] [[-Database] \u003cObject[]\u003e] [[-Path] \u003cString\u003e] [-NoClobber] [-Append] [-NoDatabases] [-NoJobs] [-EnableException] [-ExcludeGoBatchSeparator] [[-DestinationVersion] \u003cString\u003e] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
@@ -6918,7 +6926,7 @@
         "Synopsis":  "Exports users creation and its permissions to a T-SQL file or host.",
         "Name":  "Export-DbaUser",
         "Links":  "https://dbatools.io/Export-DbaUser",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eExport-DbaUser -SqlInstance sql2005 -Path C:\\temp\\sql2005-users.sql\nExports SQL for the users in server \"sql2005\" and writes them to the file \"C:\\temp\\sql2005-users.sql\"\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eExport-DbaUser -SqlInstance sqlserver2014a $scred -Path C:\\temp\\users.sql -Append\nAuthenticates to sqlserver2014a using SQL Authentication. Exports all users to C:\\temp\\users.sql, and appends to the file if it exists. If not, the file will be created.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eExport-DbaUser -SqlInstance sqlserver2014a -User User1, User2 -Path C:\\temp\\users.sql\nExports ONLY users User1 and User2 from sqlsever2014a to the file  C:\\temp\\users.sql\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eExport-DbaUser -SqlInstance sqlserver2008 -User User1 -Path C:\\temp\\users.sql -DestinationVersion SQLServer2016\nExports user User1 from sqlsever2008 to the file C:\\temp\\users.sql with syntax to run on SQL Server 2016\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eExport-DbaUser -SqlInstance sqlserver2008 -Database db1,db2 -Path C:\\temp\\users.sql\nExports ONLY users from db1 and db2 database on sqlserver2008 server, to the C:\\temp\\users.sql file.\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003e$options = New-DbaScriptingOption\nPS C:\\\u003e $options.ScriptDrops = $false\r\nPS C:\\\u003e $options.WithDependencies = $true\r\nPS C:\\\u003e Export-DbaUser -SqlInstance sqlserver2008 -Database db1,db2 -Path C:\\temp\\users.sql -ScriptingOptionsObject $options\nExports ONLY users from db1 and db2 database on sqlserver2008 server, to the C:\\temp\\users.sql file.\r\nIt will not script drops but will script dependencies.\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003eExport-DbaUser -SqlInstance sqlserver2008 -Database db1,db2 -Path C:\\temp\\users.sql -ExcludeGoBatchSeparator\nExports ONLY users from db1 and db2 database on sqlserver2008 server, to the C:\\temp\\users.sql file without the \u0027GO\u0027 batch separator.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eExport-DbaUser -SqlInstance sql2005 -Path C:\\temp\\sql2005-users.sql\nExports SQL for the users in server \"sql2005\" and writes them to the file \"C:\\temp\\sql2005-users.sql\"\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eExport-DbaUser -SqlInstance sqlserver2014a $scred -Path C:\\temp\\users.sql -Append\nAuthenticates to sqlserver2014a using SQL Authentication. Exports all users to C:\\temp\\users.sql, and appends to the file if it exists. If not, the file will be created.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eExport-DbaUser -SqlInstance sqlserver2014a -User User1, User2 -Path C:\\temp\\users.sql\nExports ONLY users User1 and User2 from sqlserver2014a to the file  C:\\temp\\users.sql\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eExport-DbaUser -SqlInstance sqlserver2008 -User User1 -Path C:\\temp\\users.sql -DestinationVersion SQLServer2016\nExports user User1 from sqlserver2008 to the file C:\\temp\\users.sql with syntax to run on SQL Server 2016\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eExport-DbaUser -SqlInstance sqlserver2008 -Database db1,db2 -Path C:\\temp\\users.sql\nExports ONLY users from db1 and db2 database on sqlserver2008 server, to the C:\\temp\\users.sql file.\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003e$options = New-DbaScriptingOption\nPS C:\\\u003e $options.ScriptDrops = $false\r\nPS C:\\\u003e $options.WithDependencies = $true\r\nPS C:\\\u003e Export-DbaUser -SqlInstance sqlserver2008 -Database db1,db2 -Path C:\\temp\\users.sql -ScriptingOptionsObject $options\nExports ONLY users from db1 and db2 database on sqlserver2008 server, to the C:\\temp\\users.sql file.\r\nIt will not script drops but will script dependencies.\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003eExport-DbaUser -SqlInstance sqlserver2008 -Database db1,db2 -Path C:\\temp\\users.sql -ExcludeGoBatchSeparator\nExports ONLY users from db1 and db2 database on sqlserver2008 server, to the C:\\temp\\users.sql file without the \u0027GO\u0027 batch separator.",
         "Syntax":  "Export-DbaUser [-SqlInstance] \u003cDbaInstanceParameter\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cObject[]\u003e] [[-ExcludeDatabase] \u003cObject[]\u003e] [[-User] \u003cObject[]\u003e] [[-DestinationVersion] \u003cString\u003e] [[-Path] \u003cString\u003e] [-NoClobber] [-Append] [-EnableException] [[-ScriptingOptionsObject] \u003cScriptingOptions\u003e] [-ExcludeGoBatchSeparator] [\u003cCommonParameters\u003e]"
     },
     {
@@ -8219,7 +8227,7 @@
                    ],
         "Alias":  "",
         "Author":  "Stephen Bennett, https://sqlnotesfromtheunderground.wordpress.com/",
-        "Synopsis":  "Searches SQL Server to find user-owned objects (ie. not dbo or sa) or for any object owned by a specific user specified by the Pattern parameter.",
+        "Synopsis":  "Searches SQL Server to find user-owned objects (i.e. not dbo or sa) or for any object owned by a specific user specified by the Pattern parameter.",
         "Name":  "Find-DbaUserObject",
         "Links":  "https://dbatools.io/Find-DbaUserObject",
         "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eFind-DbaUserObject -SqlInstance DEV01 -Pattern ad\\stephen\nSearches user objects for owner ad\\stephen\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eFind-DbaUserObject -SqlInstance DEV01 -Verbose\nShows all user owned (non-sa, non-dbo) objects and verbose output",
@@ -14603,7 +14611,7 @@
         "Params":  [
                        [
                            "ComputerName",
-                           "The name of the target you would like to check",
+                           "The name of the Windows Server(s) you would like to check.",
                            "ServerInstance,SqlServer,SqlInstance",
                            false,
                            "true (ByValue)",
@@ -14706,7 +14714,7 @@
                        ],
                        [
                            "Simple",
-                           "Shows concise information including Server name, Database name, and the date the last time backups were performed",
+                           "Shows a simplified set of counters. Excludes only totals for Plancounters and BufManpagecounters",
                            "",
                            false,
                            "false",
@@ -14841,7 +14849,7 @@
         "Name":  "Get-DbaMsdtc",
         "Links":  "https://dbatools.io/Get-DbaMsdtc",
         "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaMsdtc -ComputerName srv0042\nGet DTC status for the server srv0042\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003e$Computers = (Get-Content D:\\configfiles\\SQL\\MySQLInstances.txt | % {$_.split(\u0027\\\u0027)[0]})\nPS C:\\\u003e $Computers | Get-DbaMsdtc\nGet DTC status for all the computers in a .txt file\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaMsdtc -Computername $Computers | where { $_.dtcservicestate -ne \u0027running\u0027 }\nGet DTC status for all the computers where the MSDTC Service is not running\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaMsdtc -ComputerName srv0042 | Out-Gridview\nGet DTC status for the computer srv0042 and show in a grid view",
-        "Syntax":  "Get-DbaMsdtc [[-ComputerName] \u003cDbaInstanceParameter[]\u003e] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Get-DbaMsdtc [[-ComputerName] \u003cString[]\u003e] [\u003cCommonParameters\u003e]"
     },
     {
         "CommandName":  "Get-DbaNetworkActivity",
@@ -23098,6 +23106,14 @@
                            ""
                        ],
                        [
+                           "ClusterType",
+                           "Cluster type of the Availability Group. Only supported in SQL Server 2017 and above.\r\nOptions include: External, Wsfc or None.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
                            "InputObject",
                            "Enables piped input from Get-DbaAvailabilityGroup.",
                            "",
@@ -23136,7 +23152,7 @@
         "Name":  "Join-DbaAvailabilityGroup",
         "Links":  "https://dbatools.io/Join-DbaAvailabilityGroup",
         "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaAvailabilityGroup -SqlInstance sql01 -AvailabilityGroup SharePoint | Join-DbaAvailabilityGroup -SqlInstance sql02\nJoins sql02 to the SharePoint availability group on sql01\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003e$ag = Get-DbaAvailabilityGroup -SqlInstance sql01 -AvailabilityGroup SharePoint\nPS C:\\\u003e Join-DbaAvailabilityGroup -SqlInstance sql02 -InputObject $ag\nJoins sql02 to the SharePoint availability group on sql01\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaAvailabilityGroup -SqlInstance sql01 -AvailabilityGroup SharePoint | Join-DbaAvailabilityGroup -SqlInstance sql02 -WhatIf\nShows what would happen if the command were to run. No actions are actually performed.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaAvailabilityGroup -SqlInstance sql01 -AvailabilityGroup SharePoint | Join-DbaAvailabilityGroup -SqlInstance sql02 -Confirm\nPrompts for confirmation then joins sql02 to the SharePoint availability group on sql01.",
-        "Syntax":  "Join-DbaAvailabilityGroup [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-AvailabilityGroup] \u003cString[]\u003e] [[-InputObject] \u003cAvailabilityGroup[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Join-DbaAvailabilityGroup [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-AvailabilityGroup] \u003cString[]\u003e] [[-ClusterType] \u003cString\u003e] [[-InputObject] \u003cAvailabilityGroup[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "CommandName":  "Measure-DbaBackupThroughput",
@@ -24351,7 +24367,7 @@
     },
     {
         "CommandName":  "New-DbaAvailabilityGroup",
-        "Description":  "Automates the creation of availaibility groups.\n\n* Checks prerequisites\n* Creates Availability Group and adds primary replica\n* Grants cluster permissions if necessary\n* Adds secondary replica if supplied\n* Adds databases if supplied\n* Performs backup/restore if seeding mode is manual\n* Performs backup to NUL if seeding mode is automatic\n* Adds listener to primary if supplied\n* Joins secondaries to availability group\n* Grants endpoint connect permissions to service accounts\n* Grants CreateAnyDatabase permissions if seeding mode is automatic\n* Returns Availability Group object from primary\n\nNOTE: If a backup / restore is performed, the backups will be left intact on the network share.\n\nThanks for this, Thomas Stringer! https://blogs.technet.microsoft.com/heyscriptingguy/2013/04/29/set-up-an-alwayson-availability-group-with-powershell/",
+        "Description":  "Automates the creation of availability groups.\n\n* Checks prerequisites\n* Creates Availability Group and adds primary replica\n* Grants cluster permissions if necessary\n* Adds secondary replica if supplied\n* Adds databases if supplied\n* Performs backup/restore if seeding mode is manual\n* Performs backup to NUL if seeding mode is automatic\n* Adds listener to primary if supplied\n* Joins secondaries to availability group\n* Grants endpoint connect permissions to service accounts\n* Grants CreateAnyDatabase permissions if seeding mode is automatic\n* Returns Availability Group object from primary\n\nNOTE: If a backup / restore is performed, the backups will be left intact on the network share.\n\nThanks for this, Thomas Stringer! https://blogs.technet.microsoft.com/heyscriptingguy/2013/04/29/set-up-an-alwayson-availability-group-with-powershell/",
         "Tags":  "HA",
         "Params":  [
                        [
@@ -24621,10 +24637,10 @@
                    ],
         "Alias":  "",
         "Author":  "Chrissy LeMaire (@cl), netnerds.net",
-        "Synopsis":  "Automates the creation of availaibility groups.",
+        "Synopsis":  "Automates the creation of availability groups.",
         "Name":  "New-DbaAvailabilityGroup",
         "Links":  "https://dbatools.io/New-DbaAvailabilityGroup",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eNew-DbaAvailabilityGroup -Primary sql2016a -Name SharePoint\nCreates a new availability group on sql2016a named SharePoint\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eNew-DbaAvailabilityGroup -Primary sql2016a -Name SharePoint -Secondary sql2016b\nCreates a new availability group on sql2016b named SharePoint with a secondary replica, sql2016b\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eNew-DbaAvailabilityGroup -Primary sql2017 -Name SharePoint -ClusterType None -FailoverMode Manual\nCreates a new availability group on sql2017 named SharePoint with a cluster type of non and a failover mode of manual",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eNew-DbaAvailabilityGroup -Primary sql2016a -Name SharePoint\nCreates a new availability group on sql2016a named SharePoint\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eNew-DbaAvailabilityGroup -Primary sql2016a -Name SharePoint -Secondary sql2016b\nCreates a new availability group on sql2016b named SharePoint with a secondary replica, sql2016b\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eNew-DbaAvailabilityGroup -Primary sql2016std -Name BAG1 -Basic -Confirm:$false\nCreates a basic availability group named BAG1 on sql2016std and does not confirm when setting up\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eNew-DbaAvailabilityGroup -Primary sql2016b -Name AG1 -ClusterType Wsfc -Dhcp -Database db1 -UseLastBackup\nCreates an availability group on sql2016b with the name ag1. Uses the last backups available to add the database db1 to the AG.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eNew-DbaAvailabilityGroup -Primary sql2017 -Name SharePoint -ClusterType None -FailoverMode Manual\nCreates a new availability group on sql2017 named SharePoint with a cluster type of non and a failover mode of manual\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eNew-DbaAvailabilityGroup -Primary sql1 -Secondary sql2 -Database pubs -ClusterType None -SeedingMode Automatic -FailoverMode Manual\nCreates a new availability group with a primary replica on sql1 and a secondary on sql2. Automatically adds the database pubs.\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003e$cred = Get-Credential sqladmin\nPS C:\\\u003e $params = @{\r\n            \u003e\u003e Primary = \"sql1\"\r\n            \u003e\u003e PrimarySqlCredential = $cred\r\n            \u003e\u003e Secondary = \"sql2\"\r\n            \u003e\u003e SecondarySqlCredential = $cred\r\n            \u003e\u003e Database = \"pubs\"\r\n            \u003e\u003e ClusterType = \"None\"\r\n            \u003e\u003e SeedingMode = \"Automatic\"\r\n            \u003e\u003e FailoverMode = \"Manual\"\r\n            \u003e\u003e Confirm = $false\r\n        \u003e\u003e }\r\nPS C:\\\u003e New-DbaAvailabilityGroup @params\nThis exact command was used to create an availability group on docker!",
         "Syntax":  "New-DbaAvailabilityGroup [[-Primary] \u003cDbaInstanceParameter\u003e] [[-PrimarySqlCredential] \u003cPSCredential\u003e] [[-Secondary] \u003cDbaInstanceParameter[]\u003e] [[-SecondarySqlCredential] \u003cPSCredential\u003e] [-Name] \u003cString\u003e [-DtcSupport] [[-ClusterType] \u003cString\u003e] [[-AutomatedBackupPreference] \u003cString\u003e] [[-FailureConditionLevel] \u003cString\u003e] [[-HealthCheckTimeout] \u003cInt32\u003e] [-Basic] [-DatabaseHealthTrigger] [-Passthru] [[-Database] \u003cString[]\u003e] [[-NetworkShare] \u003cString\u003e] [-UseLastBackups] [-Force] [[-AvailabilityMode] \u003cString\u003e] [[-FailoverMode] \u003cString\u003e] [[-BackupPriority] \u003cInt32\u003e] [[-ConnectionModeInPrimaryRole] \r\n\u003cString\u003e] [[-ConnectionModeInSecondaryRole] \u003cString\u003e] [[-SeedingMode] \u003cString\u003e] [[-Endpoint] \u003cString\u003e] [[-ReadonlyRoutingConnectionUrl] \u003cString\u003e] [[-Certificate] \u003cString\u003e] [[-IPAddress] \u003cIPAddress[]\u003e] [[-SubnetMask] \u003cIPAddress\u003e] [[-Port] \u003cInt32\u003e] [-Dhcp] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
@@ -26144,6 +26160,14 @@
                            "0"
                        ],
                        [
+                           "Owner",
+                           "Owner of the endpoint. Defaults to sa.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
                            "EnableException",
                            "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
                            "",
@@ -26174,7 +26198,7 @@
         "Name":  "New-DbaEndpoint",
         "Links":  "https://dbatools.io/New-DbaEndpoint",
         "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eNew-DbaEndpoint -SqlInstance localhost\nCreates all Endpoint(s) on the local default SQL Server instance\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eNew-DbaEndpoint -SqlInstance localhost, sql2016\nReturns all Endpoint(s) for the local and sql2016 SQL Server instances",
-        "Syntax":  "New-DbaEndpoint [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Name \u003cString\u003e] [-Type \u003cString\u003e] [-Protocol \u003cString\u003e] [-Role \u003cString\u003e] [-EndpointEncryption \u003cString\u003e] [-EncryptionAlgorithm \u003cString\u003e] [-Certificate \u003cString\u003e] [-Port \u003cInt32\u003e] [-SslPort \u003cInt32\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "New-DbaEndpoint [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Name \u003cString\u003e] [-Type \u003cString\u003e] [-Protocol \u003cString\u003e] [-Role \u003cString\u003e] [-EndpointEncryption \u003cString\u003e] [-EncryptionAlgorithm \u003cString\u003e] [-Certificate \u003cString\u003e] [-Port \u003cInt32\u003e] [-SslPort \u003cInt32\u003e] [-Owner \u003cString\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "CommandName":  "New-DbaLogin",
@@ -27837,7 +27861,7 @@
     },
     {
         "CommandName":  "Remove-DbaAgentJob",
-        "Description":  "Remove-DbaAgentJob removes a a job in the SQL Server Agent.",
+        "Description":  "Remove-DbaAgentJob removes a job in the SQL Server Agent.",
         "Tags":  [
                      "Agent",
                      "Job"
@@ -28090,7 +28114,7 @@
     },
     {
         "CommandName":  "Remove-DbaAgentSchedule",
-        "Description":  "Remove-DbaAgentJobSchedule removes a a job in the SQL Server Agent.",
+        "Description":  "Remove-DbaAgentJobSchedule removes a job in the SQL Server Agent.",
         "Tags":  [
                      "Agent",
                      "Job",
@@ -28251,6 +28275,89 @@
         "Links":  "https://dbatools.io/Remove-DbaAgListener",
         "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eRemove-DbaAgListener -SqlInstance sqlserver2012 -AvailabilityGroup ag1, ag2 -Confirm:$false\nRemoves the ag1 and ag2 availability groups on sqlserver2012. Does not prompt for confirmation.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaAvailabilityGroup -SqlInstance sqlserver2012 -AvailabilityGroup availabilitygroup1 | Remove-DbaAgListener\nRemoves the listeners returned from the Get-DbaAvailabilityGroup function. Prompts for confirmation.",
         "Syntax":  "Remove-DbaAgListener [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Listener] \u003cString[]\u003e] [[-AvailabilityGroup] \u003cString[]\u003e] [[-InputObject] \u003cAvailabilityGroupListener[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+    },
+    {
+        "CommandName":  "Remove-DbaAgReplica",
+        "Description":  "Removes availability group replicas from availability groups.",
+        "Tags":  [
+                     "AG",
+                     "HA",
+                     "AvailabilityGroup",
+                     "Replica"
+                 ],
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "The target SQL Server instance or instances. Server version must be SQL Server version 2012 or higher.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "SqlCredential",
+                           "Login to the SqlInstance instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "AvailabilityGroup",
+                           "The specific availability group to query.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Replica",
+                           "The replica to remove.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "InputObject",
+                           "Enables piped input from Get-DbaAgReplica.",
+                           "",
+                           false,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "WhatIf",
+                           "Shows what would happen if the command were to run. No actions are actually performed.",
+                           "wi",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Confirm",
+                           "Prompts you for confirmation before executing any changing operations within the command.",
+                           "cf",
+                           false,
+                           "false",
+                           ""
+                       ]
+                   ],
+        "Alias":  "",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
+        "Synopsis":  "Removes availability group replicas from availability groups.",
+        "Name":  "Remove-DbaAgReplica",
+        "Links":  "https://dbatools.io/Remove-DbaAgReplica",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eRemove-DbaAgReplica -SqlInstance sql2017a -AvailabilityGroup SharePoint -Replica sp1\nRemoves the sp1 replica from the SharePoint ag on sql2017a. Prompts for confirmation.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eRemove-DbaAgReplica -SqlInstance sql2017a | Select-Object *\nReturns full object properties on all availability group replicas found on sql2017a",
+        "Syntax":  "Remove-DbaAgReplica [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-AvailabilityGroup] \u003cString[]\u003e] [[-Replica] \u003cString[]\u003e] [[-InputObject] \u003cAvailabilityReplica[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "CommandName":  "Remove-DbaAvailabilityGroup",
@@ -31208,7 +31315,7 @@
                        ],
                        [
                            "AzureCredential",
-                           "The name of the SQL Server credential to be used if restoring from an Azure hosted backup",
+                           "The name of the SQL Server credential to be used if restoring from an Azure hosted backup using Storage Access Keys\r\nIf a backup path beginning http is passed in and this parameter is not specified then if a credential with a name matching the URL",
                            "",
                            false,
                            "false",
@@ -31364,7 +31471,7 @@
         "Synopsis":  "Restores a SQL Server Database from a set of backup files",
         "Name":  "Restore-DbaDatabase",
         "Links":  "https://dbatools.io/Restore-DbaDatabase",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eRestore-DbaDatabase -SqlInstance server1\\instance1 -Path \\\\server2\\backups\nScans all the backup files in \\\\server2\\backups, filters them and restores the database to server1\\instance1\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eRestore-DbaDatabase -SqlInstance server1\\instance1 -Path \\\\server2\\backups -MaintenanceSolutionBackup -DestinationDataDirectory c:\\restores\nScans all the backup files in \\\\server2\\backups$ stored in an Ola Hallengren style folder structure,\r\nfilters them and restores the database to the c:\\restores folder on server1\\instance1\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-ChildItem c:\\SQLbackups1\\, \\\\server\\sqlbackups2 | Restore-DbaDatabase -SqlInstance server1\\instance1\nTakes the provided files from multiple directories and restores them on  server1\\instance1\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003e$RestoreTime = Get-Date(\u002711:19 23/12/2016\u0027)\nPS C:\\\u003e Restore-DbaDatabase -SqlInstance server1\\instance1 -Path \\\\server2\\backups -MaintenanceSolutionBackup -DestinationDataDirectory c:\\restores -RestoreTime $RestoreTime\nScans all the backup files in \\\\server2\\backups stored in an Ola Hallengren style folder structure,\r\nfilters them and restores the database to the c:\\restores folder on server1\\instance1 up to 11:19 23/12/2016\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eRestore-DbaDatabase -SqlInstance server1\\instance1 -Path \\\\server2\\backups -DestinationDataDirectory c:\\restores -OutputScriptOnly | Select-Object -ExpandProperty Tsql | Out-File -Filepath \r\nc:\\scripts\\restore.sql\nScans all the backup files in \\\\server2\\backups stored in an Ola Hallengren style folder structure,\r\nfilters them and generate the T-SQL Scripts to restore the database to the latest point in time,\r\nand then stores the output in a file for later retrieval\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eRestore-DbaDatabase -SqlInstance server1\\instance1 -Path c:\\backups -DestinationDataDirectory c:\\DataFiles -DestinationLogDirectory c:\\LogFile\nScans all the files in c:\\backups and then restores them onto the SQL Server Instance server1\\instance1, placing data files\r\nc:\\DataFiles and all the log files into c:\\LogFiles\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003eRestore-DbaDatabase -SqlInstance server1\\instance1 -Path http://demo.blob.core.windows.net/backups/dbbackup.bak -AzureCredential MyAzureCredential\nWill restore the backup held at  http://demo.blob.core.windows.net/backups/dbbackup.bak to server1\\instance1. The connection to Azure will be made using the\r\ncredential MyAzureCredential held on instance Server1\\instance1\n-------------------------- EXAMPLE 8 --------------------------\nPS C:\\\u003e$File = Get-ChildItem c:\\backups, \\\\server1\\backups -recurse\nPS C:\\\u003e $File | Restore-DbaDatabase -SqlInstance Server1\\Instance -UseDestinationDefaultDirectories\nThis will take all of the files found under the folders c:\\backups and \\\\server1\\backups, and pipeline them into\r\nRestore-DbaDatabase. Restore-DbaDatabase will then scan all of the files, and restore all of the databases included\r\nto the latest point in time covered by their backups. All data and log files will be moved to the default SQL Server\r\nfolder for those file types as defined on the target instance.\n-------------------------- EXAMPLE 9 --------------------------\nPS C:\\\u003e$files = Get-ChildItem C:\\dbatools\\db1\nPS C:\\\u003e $files | Restore-DbaDatabase -SqlInstance server\\instance1 `\r\n\u003e\u003e -DestinationFilePrefix prefix -DatabaseName Restored  `\r\n\u003e\u003e -RestoreTime (get-date \"14:58:30 22/05/2017\") `\r\n\u003e\u003e -NoRecovery -WithReplace -StandbyDirectory C:\\dbatools\\standby\r\n\u003e\u003e\r\nPS C:\\\u003e #It\u0027s in standby so we can peek at it\r\nPS C:\\\u003e Invoke-Sqlcmd2 -ServerInstance server\\instance1 -Query \"select top 1 * from Restored.dbo.steps order by dt desc\"\r\nPS C:\\\u003e #Not quite there so let\u0027s roll on a bit:\r\nPS C:\\\u003e $files | Restore-DbaDatabase -SqlInstance server\\instance1 `\r\n\u003e\u003e -DestinationFilePrefix prefix -DatabaseName Restored `\r\n\u003e\u003e -continue -WithReplace -RestoreTime (get-date \"15:09:30 22/05/2017\") `\r\n\u003e\u003e -StandbyDirectory C:\\dbatools\\standby\r\n\u003e\u003e\r\nPS C:\\\u003e Invoke-Sqlcmd2 -ServerInstance server\\instance1 -Query \"select top 1 * from restored.dbo.steps order by dt desc\"\r\nPS C:\\\u003e Restore-DbaDatabase -SqlInstance server\\instance1 -DestinationFilePrefix prefix -DatabaseName Restored -Continue -WithReplace\nIn this example we step through the backup files held in c:\\dbatools\\db1 folder.\r\nFirst we restore the database to a point in time in standby mode. This means we can check some details in the databases\r\nWe then roll it on a further 9 minutes to perform some more checks\r\nAnd finally we continue by rolling it all the way forward to the latest point in the backup.\r\nAt each step, only the log files needed to roll the database forward are restored.\n-------------------------- EXAMPLE 10 --------------------------\nPS C:\\\u003eRestore-DbaDatabase -SqlInstance server\\instance1 -Path c:\\backups -DatabaseName example1 -NoRecovery\nPS C:\\\u003e Restore-DbaDatabase -SqlInstance server\\instance1 -Recover -DatabaseName example1\nIn this example we restore example1 database with no recovery, and then the second call is to set the database to recovery.\n-------------------------- EXAMPLE 11 --------------------------\nPS C:\\\u003e$SuspectPage = Get-DbaSuspectPage -SqlInstance server\\instance1 -Database ProdFinance\nPS C:\\\u003e Get-DbaBackupHistory - SqlInstance server\\instance1 -Database -ProdFinance -Last | Restore-DbaDatabase -PageRestore PS C:\\\u003e $SuspectPage -PageRestoreTailFolder c:\\temp -TrustDbBackupHistory \r\n-AllowContinues\nGets a list of Suspect Pages using Get-DbaSuspectPage. The uses Get-DbaBackupHistory and Restore-DbaDatabase to perform a restore of the suspect pages and bring them up to date\r\nIf server\\instance1 is Enterprise edition this will be done online, if not it will be performed offline\r\nAllowContinue is required to make sure we cope with existing files\n-------------------------- EXAMPLE 12 --------------------------\nPS C:\\\u003e$BackupHistory = Get-DbaBackupInformation -SqlInstance sql2005 -Path \\\\backups\\sql2000\\ProdDb\nPS C:\\\u003e $BackupHistory | Restore-Dbadatabase -SqlInstance sql2000 -TrustDbBackupHistory\nDue to SQL Server 2000 not returning all the backup headers we cannot restore directly. As this is an issues with the SQL engine all we can offer is the following workaround\r\nThis will use a SQL Server instance \u003e 2000 to read the headers, and then pass them in to Restore-DbaDatabase as a BackupHistory object.\n-------------------------- EXAMPLE 13 --------------------------\nPS C:\\\u003eRestore-DbaDatabase -SqlInstance server1\\instance1 -Path \"C:\\Temp\\devops_prod_full.bak\" -DatabaseName \"DevOps_DEV\" -ReplaceDbNameInFile\nPS C:\\\u003e Rename-DbaDatabase -SqlInstance server1\\instance1 -Database \"DevOps_DEV\" -LogicalName \"\u003cDBN\u003e_\u003cFT\u003e\"\nThis will restore the database from the \"C:\\Temp\\devops_prod_full.bak\" file, with the new name \"DevOps_DEV\" and store the different physical files with the new name. It will use the system default \r\nconfigured data and log locations.\r\nAfter the restore the logical names of the database files will be renamed with the \"DevOps_DEV_ROWS\" for MDF/NDF and \"DevOps_DEV_LOG\" for LDF\n-------------------------- EXAMPLE 14 --------------------------\nPS C:\\\u003e$FileStructure = @{\n\u003e\u003e \u0027database_data\u0027 = \u0027C:\\Data\\database_data.mdf\u0027\r\n\u003e\u003e \u0027database_log\u0027 = \u0027C:\\Log\\database_log.ldf\u0027\r\n\u003e\u003e }\r\n\u003e\u003e\r\nPS C:\\\u003e Restore-DbaDatabase -SqlInstance server1 -Path \\\\ServerName\\ShareName\\File -DatabaseName database -FileMapping $FileStructure\nRestores \u0027database\u0027 to \u0027server1\u0027 and moves the files to new locations. The format for the $FileStructure HashTable is the file logical name as the Key, and the new location as the Value.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eRestore-DbaDatabase -SqlInstance server1\\instance1 -Path \\\\server2\\backups\nScans all the backup files in \\\\server2\\backups, filters them and restores the database to server1\\instance1\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eRestore-DbaDatabase -SqlInstance server1\\instance1 -Path \\\\server2\\backups -MaintenanceSolutionBackup -DestinationDataDirectory c:\\restores\nScans all the backup files in \\\\server2\\backups$ stored in an Ola Hallengren style folder structure,\r\nfilters them and restores the database to the c:\\restores folder on server1\\instance1\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-ChildItem c:\\SQLbackups1\\, \\\\server\\sqlbackups2 | Restore-DbaDatabase -SqlInstance server1\\instance1\nTakes the provided files from multiple directories and restores them on  server1\\instance1\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003e$RestoreTime = Get-Date(\u002711:19 23/12/2016\u0027)\nPS C:\\\u003e Restore-DbaDatabase -SqlInstance server1\\instance1 -Path \\\\server2\\backups -MaintenanceSolutionBackup -DestinationDataDirectory c:\\restores -RestoreTime $RestoreTime\nScans all the backup files in \\\\server2\\backups stored in an Ola Hallengren style folder structure,\r\nfilters them and restores the database to the c:\\restores folder on server1\\instance1 up to 11:19 23/12/2016\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eRestore-DbaDatabase -SqlInstance server1\\instance1 -Path \\\\server2\\backups -DestinationDataDirectory c:\\restores -OutputScriptOnly | Select-Object -ExpandProperty Tsql | Out-File -Filepath \r\nc:\\scripts\\restore.sql\nScans all the backup files in \\\\server2\\backups stored in an Ola Hallengren style folder structure,\r\nfilters them and generate the T-SQL Scripts to restore the database to the latest point in time,\r\nand then stores the output in a file for later retrieval\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eRestore-DbaDatabase -SqlInstance server1\\instance1 -Path c:\\backups -DestinationDataDirectory c:\\DataFiles -DestinationLogDirectory c:\\LogFile\nScans all the files in c:\\backups and then restores them onto the SQL Server Instance server1\\instance1, placing data files\r\nc:\\DataFiles and all the log files into c:\\LogFiles\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003eRestore-DbaDatabase -SqlInstance server1\\instance1 -Path http://demo.blob.core.windows.net/backups/dbbackup.bak -AzureCredential MyAzureCredential\nWill restore the backup held at  http://demo.blob.core.windows.net/backups/dbbackup.bak to server1\\instance1. The connection to Azure will be made using the\r\ncredential MyAzureCredential held on instance Server1\\instance1\n-------------------------- EXAMPLE 8 --------------------------\nPS C:\\\u003eRestore-DbaDatabase -SqlInstance server1\\instance1 -Path http://demo.blob.core.windows.net/backups/dbbackup.bak\nWill attempt to restore the backups from http://demo.blob.core.windows.net/backups/dbbackup.bak if a SAS credential with the name http://demo.blob.core.windows.net/backups exists on server1\\instance1\n-------------------------- EXAMPLE 9 --------------------------\nPS C:\\\u003e$File = Get-ChildItem c:\\backups, \\\\server1\\backups -recurse\nPS C:\\\u003e $File | Restore-DbaDatabase -SqlInstance Server1\\Instance -UseDestinationDefaultDirectories\nThis will take all of the files found under the folders c:\\backups and \\\\server1\\backups, and pipeline them into\r\nRestore-DbaDatabase. Restore-DbaDatabase will then scan all of the files, and restore all of the databases included\r\nto the latest point in time covered by their backups. All data and log files will be moved to the default SQL Server\r\nfolder for those file types as defined on the target instance.\n-------------------------- EXAMPLE 10 --------------------------\nPS C:\\\u003e$files = Get-ChildItem C:\\dbatools\\db1\nPS C:\\\u003e $files | Restore-DbaDatabase -SqlInstance server\\instance1 `\r\n\u003e\u003e -DestinationFilePrefix prefix -DatabaseName Restored  `\r\n\u003e\u003e -RestoreTime (get-date \"14:58:30 22/05/2017\") `\r\n\u003e\u003e -NoRecovery -WithReplace -StandbyDirectory C:\\dbatools\\standby\r\n\u003e\u003e\r\nPS C:\\\u003e #It\u0027s in standby so we can peek at it\r\nPS C:\\\u003e Invoke-Sqlcmd2 -ServerInstance server\\instance1 -Query \"select top 1 * from Restored.dbo.steps order by dt desc\"\r\nPS C:\\\u003e #Not quite there so let\u0027s roll on a bit:\r\nPS C:\\\u003e $files | Restore-DbaDatabase -SqlInstance server\\instance1 `\r\n\u003e\u003e -DestinationFilePrefix prefix -DatabaseName Restored `\r\n\u003e\u003e -continue -WithReplace -RestoreTime (get-date \"15:09:30 22/05/2017\") `\r\n\u003e\u003e -StandbyDirectory C:\\dbatools\\standby\r\n\u003e\u003e\r\nPS C:\\\u003e Invoke-Sqlcmd2 -ServerInstance server\\instance1 -Query \"select top 1 * from restored.dbo.steps order by dt desc\"\r\nPS C:\\\u003e Restore-DbaDatabase -SqlInstance server\\instance1 -DestinationFilePrefix prefix -DatabaseName Restored -Continue -WithReplace\nIn this example we step through the backup files held in c:\\dbatools\\db1 folder.\r\nFirst we restore the database to a point in time in standby mode. This means we can check some details in the databases\r\nWe then roll it on a further 9 minutes to perform some more checks\r\nAnd finally we continue by rolling it all the way forward to the latest point in the backup.\r\nAt each step, only the log files needed to roll the database forward are restored.\n-------------------------- EXAMPLE 11 --------------------------\nPS C:\\\u003eRestore-DbaDatabase -SqlInstance server\\instance1 -Path c:\\backups -DatabaseName example1 -NoRecovery\nPS C:\\\u003e Restore-DbaDatabase -SqlInstance server\\instance1 -Recover -DatabaseName example1\nIn this example we restore example1 database with no recovery, and then the second call is to set the database to recovery.\n-------------------------- EXAMPLE 12 --------------------------\nPS C:\\\u003e$SuspectPage = Get-DbaSuspectPage -SqlInstance server\\instance1 -Database ProdFinance\nPS C:\\\u003e Get-DbaBackupHistory - SqlInstance server\\instance1 -Database -ProdFinance -Last | Restore-DbaDatabase -PageRestore PS C:\\\u003e $SuspectPage -PageRestoreTailFolder c:\\temp -TrustDbBackupHistory \r\n-AllowContinues\nGets a list of Suspect Pages using Get-DbaSuspectPage. The uses Get-DbaBackupHistory and Restore-DbaDatabase to perform a restore of the suspect pages and bring them up to date\r\nIf server\\instance1 is Enterprise edition this will be done online, if not it will be performed offline\r\nAllowContinue is required to make sure we cope with existing files\n-------------------------- EXAMPLE 13 --------------------------\nPS C:\\\u003e$BackupHistory = Get-DbaBackupInformation -SqlInstance sql2005 -Path \\\\backups\\sql2000\\ProdDb\nPS C:\\\u003e $BackupHistory | Restore-Dbadatabase -SqlInstance sql2000 -TrustDbBackupHistory\nDue to SQL Server 2000 not returning all the backup headers we cannot restore directly. As this is an issues with the SQL engine all we can offer is the following workaround\r\nThis will use a SQL Server instance \u003e 2000 to read the headers, and then pass them in to Restore-DbaDatabase as a BackupHistory object.\n-------------------------- EXAMPLE 14 --------------------------\nPS C:\\\u003eRestore-DbaDatabase -SqlInstance server1\\instance1 -Path \"C:\\Temp\\devops_prod_full.bak\" -DatabaseName \"DevOps_DEV\" -ReplaceDbNameInFile\nPS C:\\\u003e Rename-DbaDatabase -SqlInstance server1\\instance1 -Database \"DevOps_DEV\" -LogicalName \"\u003cDBN\u003e_\u003cFT\u003e\"\nThis will restore the database from the \"C:\\Temp\\devops_prod_full.bak\" file, with the new name \"DevOps_DEV\" and store the different physical files with the new name. It will use the system default \r\nconfigured data and log locations.\r\nAfter the restore the logical names of the database files will be renamed with the \"DevOps_DEV_ROWS\" for MDF/NDF and \"DevOps_DEV_LOG\" for LDF\n-------------------------- EXAMPLE 15 --------------------------\nPS C:\\\u003e$FileStructure = @{\n\u003e\u003e \u0027database_data\u0027 = \u0027C:\\Data\\database_data.mdf\u0027\r\n\u003e\u003e \u0027database_log\u0027 = \u0027C:\\Log\\database_log.ldf\u0027\r\n\u003e\u003e }\r\n\u003e\u003e\r\nPS C:\\\u003e Restore-DbaDatabase -SqlInstance server1 -Path \\\\ServerName\\ShareName\\File -DatabaseName database -FileMapping $FileStructure\nRestores \u0027database\u0027 to \u0027server1\u0027 and moves the files to new locations. The format for the $FileStructure HashTable is the file logical name as the Key, and the new location as the Value.",
         "Syntax":  "Restore-DbaDatabase -SqlInstance \u003cDbaInstanceParameter\u003e [-SqlCredential \u003cPSCredential\u003e] -Path \u003cObject[]\u003e [-DatabaseName \u003cObject[]\u003e] [-DestinationDataDirectory \u003cString\u003e] [-DestinationLogDirectory \u003cString\u003e] [-DestinationFileStreamDirectory \u003cString\u003e] [-RestoreTime \u003cDateTime\u003e] [-NoRecovery] [-WithReplace] [-XpDirTree] [-OutputScriptOnly] [-VerifyOnly] [-MaintenanceSolutionBackup] [-FileMapping \u003cHashtable\u003e] [-IgnoreLogBackup] [-UseDestinationDefaultDirectories] [-ReuseSourceFolderStructure] [-DestinationFilePrefix \u003cString\u003e] [-RestoredDatabaseNamePrefix \u003cString\u003e] [-TrustDbBackupHistory] \r\n[-MaxTransferSize \u003cInt32\u003e] [-BlockSize \u003cInt32\u003e] [-BufferCount \u003cInt32\u003e] [-DirectoryRecurse] [-EnableException] [-StandbyDirectory \u003cString\u003e] [-Continue] [-AzureCredential \u003cString\u003e] [-ReplaceDbNameInFile] [-DestinationFileSuffix \u003cString\u003e] [-KeepCDC] [-AllowContinue] [-GetBackupInformation \u003cString\u003e] [-StopAfterGetBackupInformation] [-SelectBackupInformation \u003cString\u003e] [-StopAfterSelectBackupInformation] [-FormatBackupInformation \u003cString\u003e] [-StopAfterFormatBackupInformation] [-TestBackupInformation \u003cString\u003e] [-StopAfterTestBackupInformation] [-StatementTimeout \u003cInt32\u003e] [-WhatIf] [-Confirm] \r\n[\u003cCommonParameters\u003e]\nRestore-DbaDatabase -SqlInstance \u003cDbaInstanceParameter\u003e [-SqlCredential \u003cPSCredential\u003e] -Path \u003cObject[]\u003e [-DatabaseName \u003cObject[]\u003e] [-OutputScriptOnly] [-TrustDbBackupHistory] [-MaxTransferSize \u003cInt32\u003e] [-BlockSize \u003cInt32\u003e] [-BufferCount \u003cInt32\u003e] [-EnableException] [-AzureCredential \u003cString\u003e] [-AllowContinue] [-GetBackupInformation \u003cString\u003e] [-StopAfterGetBackupInformation] [-SelectBackupInformation \u003cString\u003e] [-StopAfterSelectBackupInformation] [-FormatBackupInformation \u003cString\u003e] [-StopAfterFormatBackupInformation] [-TestBackupInformation \u003cString\u003e] [-StopAfterTestBackupInformation] \r\n-PageRestore \u003cObject\u003e -PageRestoreTailFolder \u003cString\u003e [-StatementTimeout \u003cInt32\u003e] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nRestore-DbaDatabase -SqlInstance \u003cDbaInstanceParameter\u003e [-SqlCredential \u003cPSCredential\u003e] [-DatabaseName \u003cObject[]\u003e] [-OutputScriptOnly] [-EnableException] [-AzureCredential \u003cString\u003e] [-Recover] [-AllowContinue] [-GetBackupInformation \u003cString\u003e] [-StopAfterGetBackupInformation] [-SelectBackupInformation \u003cString\u003e] [-StopAfterSelectBackupInformation] [-FormatBackupInformation \u003cString\u003e] [-StopAfterFormatBackupInformation] [-TestBackupInformation \u003cString\u003e] [-StopAfterTestBackupInformation] [-StatementTimeout \u003cInt32\u003e] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
@@ -31554,6 +31661,88 @@
         "Links":  "https://dbatools.io/Restore-DbaDbSnapshot",
         "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eRestore-DbaDbSnapshot -SqlInstance sql2014 -Database HR, Accounting\nRestores HR and Accounting databases using the latest snapshot available\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eRestore-DbaDbSnapshot -SqlInstance sql2014 -Database HR -Force\nRestores HR database from latest snapshot and kills any active connections in the database on sql2014.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaDbSnapshot -SqlInstance sql2016 -Database HR | Restore-DbaDbSnapshot -Force\nRestores HR database from latest snapshot and kills any active connections in the database on sql2016.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaDbSnapshot -SqlInstance sql2016 | Out-GridView -PassThru | Restore-DbaDbSnapshot\nAllows the selection of snapshots on sql2016 to restore\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eRestore-DbaDbSnapshot -SqlInstance sql2014 -Snapshot HR_snap_20161201, Accounting_snap_20161101\nRestores databases from snapshots named HR_snap_20161201 and Accounting_snap_20161101",
         "Syntax":  "Restore-DbaDbSnapshot [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cObject[]\u003e] [[-ExcludeDatabase] \u003cObject[]\u003e] [[-Snapshot] \u003cObject[]\u003e] [[-InputObject] \u003cDatabase[]\u003e] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+    },
+    {
+        "CommandName":  "Resume-DbaAgDbDataMovement",
+        "Description":  "Resumes data movement for an availability group database on a SQL Server instance.",
+        "Tags":  [
+                     "AvailabilityGroup",
+                     "HA",
+                     "AG"
+                 ],
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "The target SQL Server instance or instances. Server version must be SQL Server version 2012 or higher.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "SqlCredential",
+                           "Login to the SqlInstance instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "AvailabilityGroup",
+                           "The availability group where the database movement will be resumeed.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Database",
+                           "The database or databases to resume movement upon.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "InputObject",
+                           "Enables piping from Get-DbaAgDatabase",
+                           "",
+                           false,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "WhatIf",
+                           "Shows what would happen if the command were to run. No actions are actually performed.",
+                           "wi",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Confirm",
+                           "Prompts you for confirmation before executing any changing operations within the command.",
+                           "cf",
+                           false,
+                           "false",
+                           ""
+                       ]
+                   ],
+        "Alias":  "",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
+        "Synopsis":  "Resumes data movement for an availability group database on a SQL Server instance.",
+        "Name":  "Resume-DbaAgDbDataMovement",
+        "Links":  "https://dbatools.io/Resume-DbaAgDbDataMovement",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eResume-DbaAgDbDataMovement -SqlInstance sql2017a -AvailabilityGroup ag1 -Database db1, db2\nResumes data movement on db1 and db2 to ag1 on sql2017a. Prompts for confirmation.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaAgDatabase -SqlInstance sql2017a, sql2019 | Out-GridView -Passthru | Resume-DbaAgDbDataMovement -Confirm:$false\nResumes data movement on the selected availability group databases. Does not prompt for confirmation.",
+        "Syntax":  "Resume-DbaAgDbDataMovement [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-AvailabilityGroup] \u003cString\u003e] [[-Database] \u003cString[]\u003e] [[-InputObject] \u003cAvailabilityDatabase[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "CommandName":  "Revoke-DbaAgPermission",
@@ -32651,6 +32840,388 @@
         "Syntax":  "Set-DbaAgentSchedule [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [-Job] \u003cObject[]\u003e [-ScheduleName] \u003cString\u003e [[-NewName] \u003cString\u003e] [-Enabled] [-Disabled] [[-FrequencyType] \u003cObject\u003e] [[-FrequencyInterval] \u003cObject[]\u003e] [[-FrequencySubdayType] \u003cObject\u003e] [[-FrequencySubdayInterval] \u003cInt32\u003e] [[-FrequencyRelativeInterval] \u003cObject\u003e] [[-FrequencyRecurrenceFactor] \u003cInt32\u003e] [[-StartDate] \u003cString\u003e] [[-EndDate] \u003cString\u003e] [[-StartTime] \u003cString\u003e] [[-EndTime] \u003cString\u003e] [-EnableException] [-Force] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
+        "CommandName":  "Set-DbaAgListener",
+        "Description":  "Sets a listener property for an availability group on a SQL Server instance.\n\nBasically, only the port is settable at this time, so this command updates the listener port.",
+        "Tags":  [
+                     "AvailabilityGroup",
+                     "HA",
+                     "AG"
+                 ],
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "The target SQL Server instance or instances. Server version must be SQL Server version 2012 or higher.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "SqlCredential",
+                           "Login to the SqlInstance instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "AvailabilityGroup",
+                           "The Availability Group to which a property will be changed.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Listener",
+                           "Modify only specific listeners.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Port",
+                           "Sets the port number used to communicate with the availability group.",
+                           "",
+                           true,
+                           "false",
+                           "0"
+                       ],
+                       [
+                           "InputObject",
+                           "Enables piping from Get-DbaAvailabilityGroup",
+                           "",
+                           false,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "WhatIf",
+                           "Shows what would happen if the command were to run. No actions are actually performed.",
+                           "wi",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Confirm",
+                           "Prompts you for confirmation before executing any changing operations within the command.",
+                           "cf",
+                           false,
+                           "false",
+                           ""
+                       ]
+                   ],
+        "Alias":  "",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
+        "Synopsis":  "Sets a listener property for an availability group on a SQL Server instance.",
+        "Name":  "Set-DbaAgListener",
+        "Links":  "https://dbatools.io/Set-DbaAgListener",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eSet-DbaAgListener -SqlInstance sql2017 -AvailabilityGroup SharePoint -Port 14333\nChanges the port for the SharePoint AG Listener on sql2017. Prompts for confirmation.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaAgListener -SqlInstance sql2017 | Out-GridView -Passthru | Set-DbaAgListener -Port 1433 -Confirm:$false\nChanges the port for selected AG listeners to 1433. Does not prompt for confirmation.",
+        "Syntax":  "Set-DbaAgListener [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-AvailabilityGroup] \u003cString[]\u003e] [[-Listener] \u003cString[]\u003e] [-Port] \u003cInt32\u003e [[-InputObject] \u003cAvailabilityGroup[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+    },
+    {
+        "CommandName":  "Set-DbaAgReplica",
+        "Description":  "Sets the properties for a replica to an availability group on a SQL Server instance.\n\nAutomatically creates a database mirroring endpoint if required.",
+        "Tags":  [
+                     "AvailabilityGroup",
+                     "HA",
+                     "AG"
+                 ],
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "The target SQL Server instance or instances. Server version must be SQL Server version 2012 or higher.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "SqlCredential",
+                           "Login to the SqlInstance instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "AvailabilityGroup",
+                           "The availability group of the replica.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Replica",
+                           "The replicas to modify.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "AvailabilityMode",
+                           "Sets the availability mode of the availability group replica. Options are: AsynchronousCommit and SynchronousCommit. SynchronousCommit is default.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "FailoverMode",
+                           "Sets the failover mode of the availability group replica. Options are Automatic and Manual.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "BackupPriority",
+                           "Sets the backup priority availability group replica. Default is 50.",
+                           "",
+                           false,
+                           "false",
+                           "0"
+                       ],
+                       [
+                           "ConnectionModeInPrimaryRole",
+                           "Sets the connection intent modes of an Availability Replica in primary role.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "ConnectionModeInSecondaryRole",
+                           "Sets the connection modes of an Availability Replica in secondary role.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "SeedingMode",
+                           "Specifies how the secondary replica will be initially seeded.\nAutomatic enables direct seeding. This method will seed the secondary replica over the network. This method does not require you to backup and restore a copy of the primary database on the replica.\nManual requires you to create a backup of the database on the primary replica and manually restore that backup on the secondary replica.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "EndpointUrl",
+                           "The endpoint URL.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "ReadonlyRoutingConnectionUrl",
+                           "Sets the read only routing connection url for the availability replica.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "InputObject",
+                           "Enables piping from Get-DbaAgReplica.",
+                           "",
+                           false,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "WhatIf",
+                           "Shows what would happen if the command were to run. No actions are actually performed.",
+                           "wi",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Confirm",
+                           "Prompts you for confirmation before executing any changing operations within the command.",
+                           "cf",
+                           false,
+                           "false",
+                           ""
+                       ]
+                   ],
+        "Alias":  "",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
+        "Synopsis":  "Sets the properties for a replica to an availability group on a SQL Server instance.",
+        "Name":  "Set-DbaAgReplica",
+        "Links":  "https://dbatools.io/Set-DbaAgReplica",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eSet-DbaAgReplica -SqlInstance sql2016 -Replica sql2016 -AvailabilityGroup SharePoint -BackupPriority 5000\nSets the backup priority to 5000 for the sql2016 replica for the SharePoint availability group on sql2016\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaAgReplica -SqlInstance sql2016 | Out-GridView -Passthru | Set-DbaAgReplica -BackupPriority 5000\nSets the backup priority to 5000 for the selected availability groups.",
+        "Syntax":  "Set-DbaAgReplica [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-AvailabilityGroup] \u003cString\u003e] [[-Replica] \u003cString\u003e] [[-AvailabilityMode] \u003cString\u003e] [[-FailoverMode] \u003cString\u003e] [[-BackupPriority] \u003cInt32\u003e] [[-ConnectionModeInPrimaryRole] \u003cString\u003e] [[-ConnectionModeInSecondaryRole] \u003cString\u003e] [[-SeedingMode] \u003cString\u003e] [[-EndpointUrl] \u003cString\u003e] [[-ReadonlyRoutingConnectionUrl] \u003cString\u003e] [[-InputObject] \u003cAvailabilityReplica\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+    },
+    {
+        "CommandName":  "Set-DbaAvailabilityGroup",
+        "Description":  "Sets availability group properties on a SQL Server instance.",
+        "Tags":  [
+                     "AvailabilityGroup",
+                     "HA",
+                     "AG"
+                 ],
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "The target SQL Server instance or instances. Server version must be SQL Server version 2012 or higher.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "SqlCredential",
+                           "Login to the SqlInstance instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "AvailabilityGroup",
+                           "Only set specific availability group properties.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "AllAvailabilityGroups",
+                           "Set properties for all availability group on an instance.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "DtcSupportEnabled",
+                           "Enables DtcSupport.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "ClusterType",
+                           "Cluster type of the Availability Group. Only supported in SQL Server 2017 and above.\r\nOptions include: External, Wsfc or None.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "AutomatedBackupPreference",
+                           "Specifies how replicas in the primary role are treated in the evaluation to pick the desired replica to perform a backup.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "FailureConditionLevel",
+                           "Specifies the different conditions that can trigger an automatic failover in Availability Group.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "HealthCheckTimeout",
+                           "This setting used to specify the length of time, in milliseconds, that the SQL Server resource DLL should wait for information returned by the sp_server_diagnostics stored procedure before reporting \r\nthe Always On Failover Cluster Instance (FCI) as unresponsive.\nChanges that are made to the timeout settings are effective immediately and do not require a restart of the SQL Server resource.\nDefaults is 30000 (30 seconds).",
+                           "",
+                           false,
+                           "false",
+                           "0"
+                       ],
+                       [
+                           "BasicAvailabilityGroup",
+                           "Indicates whether the availability group is basic. Basic availability groups like pumpkin spice and uggs.\nhttps://docs.microsoft.com/en-us/sql/database-engine/availability-groups/windows/basic-availability-groups-always-on-availability-groups",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "DatabaseHealthTrigger",
+                           "Indicates whether the availability group triggers the database health.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "IsDistributedAvailabilityGroup",
+                           "Indicates whether the availability group is distributed.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "InputObject",
+                           "Enables piping from Get-DbaAvailabilityGroup.",
+                           "",
+                           false,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "WhatIf",
+                           "Shows what would happen if the command were to run. No actions are actually performed.",
+                           "wi",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Confirm",
+                           "Prompts you for confirmation before executing any changing operations within the command.",
+                           "cf",
+                           false,
+                           "false",
+                           ""
+                       ]
+                   ],
+        "Alias":  "",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
+        "Synopsis":  "Sets availability group properties on a SQL Server instance.",
+        "Name":  "Set-DbaAvailabilityGroup",
+        "Links":  "https://dbatools.io/Set-DbaAvailabilityGroup",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaAvailabilityGroup -SqlInstance sql2016 | Set-DbaAvailabilityGroup -DtcSupportEnabled\nEnables DTC for all availability groups on sql2016\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaAvailabilityGroup -SqlInstance sql2016 -AvailabilityGroup AG1 | Set-DbaAvailabilityGroup -DtcSupportEnabled:$false\nDisables DTC support for the availability group AG1\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eSet-DbaAvailabilityGroup -SqlInstance sql2016 -AvailabilityGroup AG1 -DtcSupportEnabled:$false\nDisables DTC support for the availability group AG1",
+        "Syntax":  "Set-DbaAvailabilityGroup [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-AvailabilityGroup] \u003cString[]\u003e] [-AllAvailabilityGroups] [-DtcSupportEnabled] [[-ClusterType] \u003cString\u003e] [[-AutomatedBackupPreference] \u003cString\u003e] [[-FailureConditionLevel] \u003cString\u003e] [[-HealthCheckTimeout] \u003cInt32\u003e] [-BasicAvailabilityGroup] [-DatabaseHealthTrigger] [-IsDistributedAvailabilityGroup] [[-InputObject] \u003cAvailabilityGroup[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+    },
+    {
         "CommandName":  "Set-DbaCmConnection",
         "Description":  "Configures a connection object for use in remote computer management.\nThis function will either create new records for computers that have no connection registered so far, or it will configure existing connections if already present.\n\nAs such it can be handy in making bulk-edits on connections or manually adjusting some settings.",
         "Tags":  [
@@ -33624,6 +34195,100 @@
         "Links":  "https://dbatools.io/Set-DbaDbState",
         "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eSet-DbaDbState -SqlInstance sqlserver2014a -Database HR -Offline\nSets the HR database as OFFLINE\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eSet-DbaDbState -SqlInstance sqlserver2014a -AllDatabases -Exclude HR -ReadOnly -Force\nSets all databases of the sqlserver2014a instance, except for HR, as READ_ONLY\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaDbState -SqlInstance sql2016 | Where-Object Status -eq \u0027Offline\u0027 | Set-DbaDbState -Online\nFinds all offline databases and sets them to online\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eSet-DbaDbState -SqlInstance sqlserver2014a -Database HR -SingleUser\nSets the HR database as SINGLE_USER\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eSet-DbaDbState -SqlInstance sqlserver2014a -Database HR -SingleUser -Force\nSets the HR database as SINGLE_USER, dropping all other connections (and rolling back open transactions)\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eGet-DbaDatabase -SqlInstance sqlserver2014a -Database HR | Set-DbaDbState -SingleUser -Force\nGets the databases from Get-DbaDatabase, and sets them as SINGLE_USER, dropping all other connections (and rolling back open transactions)",
         "Syntax":  "Set-DbaDbState [-SqlCredential \u003cPSCredential\u003e] [-Database \u003cObject[]\u003e] [-ExcludeDatabase \u003cObject[]\u003e] [-AllDatabases] [-ReadOnly] [-ReadWrite] [-Online] [-Offline] [-Emergency] [-Detached] [-SingleUser] [-RestrictedUser] [-MultiUser] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nSet-DbaDbState -SqlInstance \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Database \u003cObject[]\u003e] [-ExcludeDatabase \u003cObject[]\u003e] [-AllDatabases] [-ReadOnly] [-ReadWrite] [-Online] [-Offline] [-Emergency] [-Detached] [-SingleUser] [-RestrictedUser] [-MultiUser] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nSet-DbaDbState [-SqlCredential \u003cPSCredential\u003e] [-Database \u003cObject[]\u003e] [-ExcludeDatabase \u003cObject[]\u003e] [-AllDatabases] [-ReadOnly] [-ReadWrite] [-Online] [-Offline] [-Emergency] [-Detached] [-SingleUser] [-RestrictedUser] [-MultiUser] [-Force] [-EnableException] -InputObject \u003cPSObject[]\u003e [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+    },
+    {
+        "CommandName":  "Set-DbaEndpoint",
+        "Description":  "Sets endpoint properties on a SQL Server instance.",
+        "Tags":  "Endpoint",
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "The target SQL Server instance or instances.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "SqlCredential",
+                           "Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "EndPoint",
+                           "Only set specific endpoint properties.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Owner",
+                           "Change the endpoint owner.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Type",
+                           "Change the endpoint type. Options: DatabaseMirroring, ServiceBroker, Soap, TSql",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "AllEndpoints",
+                           "Set all endpoint properties on an instance.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "InputObject",
+                           "Enables piping from Get-Endpoint.",
+                           "",
+                           false,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "WhatIf",
+                           "Shows what would happen if the command were to run. No actions are actually performed.",
+                           "wi",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Confirm",
+                           "Prompts you for confirmation before executing any changing operations within the command.",
+                           "cf",
+                           false,
+                           "false",
+                           ""
+                       ]
+                   ],
+        "Alias":  "",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
+        "Synopsis":  "Sets endpoint properties on a SQL Server instance.",
+        "Name":  "Set-DbaEndpoint",
+        "Links":  "https://dbatools.io/Set-DbaEndpoint",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eSet-DbaEndpoint -SqlInstance sql2016 -AllEndpoints -Owner sa\nSets all endpoint owners to sa on sql2016\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaEndpoint -SqlInstance sql2016 -Endpoint ep1 | Set-DbaEndpoint -Type TSql\nChanges the endpoint type to tsql on endpoint ep1",
+        "Syntax":  "Set-DbaEndpoint [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-EndPoint] \u003cString[]\u003e] [[-Owner] \u003cString\u003e] [[-Type] \u003cString\u003e] [-AllEndpoints] [[-InputObject] \u003cEndpoint[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "CommandName":  "Set-DbaErrorLogConfig",
@@ -36717,6 +37382,190 @@
         "Syntax":  "Stop-DbaXESmartTarget [-InputObject] \u003cObject[]\u003e [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
+        "CommandName":  "Suspend-DbaAgDbDataMovement",
+        "Description":  "Suspends data movement for an availability group database on a SQL Server instance.",
+        "Tags":  [
+                     "AvailabilityGroup",
+                     "HA",
+                     "AG"
+                 ],
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "The target SQL Server instance or instances. Server version must be SQL Server version 2012 or higher.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "SqlCredential",
+                           "Login to the SqlInstance instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "AvailabilityGroup",
+                           "The availability group where the database movement will be suspended.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Database",
+                           "The database or databases to suspend movement upon.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "InputObject",
+                           "Enables piping from Get-DbaAgDatabase",
+                           "",
+                           false,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "WhatIf",
+                           "Shows what would happen if the command were to run. No actions are actually performed.",
+                           "wi",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Confirm",
+                           "Prompts you for confirmation before executing any changing operations within the command.",
+                           "cf",
+                           false,
+                           "false",
+                           ""
+                       ]
+                   ],
+        "Alias":  "",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
+        "Synopsis":  "Suspends data movement for an availability group database on a SQL Server instance.",
+        "Name":  "Suspend-DbaAgDbDataMovement",
+        "Links":  "https://dbatools.io/Suspend-DbaAgDbDataMovement",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eSuspend-DbaAgDbDataMovement -SqlInstance sql2017a -AvailabilityGroup ag1 -Database db1, db2\nSuspends data movement on db1 and db2 to ag1 on sql2017a. Prompts for confirmation.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaAgDatabase -SqlInstance sql2017a, sql2019 | Out-GridView -Passthru | Suspend-DbaAgDbDataMovement -Confirm:$false\nSuspends data movement on the selected availability group databases. Does not prompt for confirmation.",
+        "Syntax":  "Suspend-DbaAgDbDataMovement [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-AvailabilityGroup] \u003cString\u003e] [[-Database] \u003cString[]\u003e] [[-InputObject] \u003cAvailabilityDatabase[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+    },
+    {
+        "CommandName":  "Sync-DbaAvailabilityGroup",
+        "Description":  "Syncs depdendent objects for availability groups. Such objects include:\n\nSpConfigure\nCustomErrors\nCredentials\nDatabaseMail\nLinkedServers\nLogins\nLoginPermissions\nSystemTriggers\nDatabaseOwner\nAgentCategory\nAgentOperator\nAgentAlert\nAgentProxy\nAgentSchedule\nAgentJob\n\nNote that any of these can be excluded. For specific object exclusions (such as a single job), using the underlying Copy-Dba* command will be required.\n\nThis command does not filter by which logins are in use by the ag databases or which linked servers are used. All objects that are not excluded will be copied like hulk smash.",
+        "Tags":  "HA",
+        "Params":  [
+                       [
+                           "Primary",
+                           "The primary SQL Server instance. Server version must be SQL Server version 2012 or higher.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "PrimarySqlCredential",
+                           "Login to the primary instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Secondary",
+                           "The target SQL Server instance or instances. Server version must be SQL Server version 2012 or higher.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "SecondarySqlCredential",
+                           "Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "AvailabilityGroup",
+                           "The name of the Availability Group.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Exclude",
+                           "Exclude one or more objects to export\nSpConfigure\r\nCustomErrors\r\nCredentials\r\nDatabaseMail\r\nLinkedServers\r\nLogins\r\nLoginPermissions\r\nSystemTriggers\r\nDatabaseOwner\r\nAgentCategory\r\nAgentOperator\r\nAgentAlert\r\nAgentProxy\r\nAgentSchedule\r\nAgentJob",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "InputObject",
+                           "Enables piping from Get-DbaAvailabilityGroup.",
+                           "",
+                           false,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
+                           "Force",
+                           "If this switch is enabled, the objects will dropped and recreated on Destination.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "WhatIf",
+                           "Shows what would happen if the command were to run. No actions are actually performed.",
+                           "wi",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Confirm",
+                           "Prompts you for confirmation before executing any changing operations within the command.",
+                           "cf",
+                           false,
+                           "false",
+                           ""
+                       ]
+                   ],
+        "Alias":  "",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
+        "Synopsis":  "Syncs depdendent objects such as jobs, logins and custom errors for availability groups",
+        "Name":  "Sync-DbaAvailabilityGroup",
+        "Links":  "https://dbatools.io/Sync-DbaAvailabilityGroup",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eSync-DbaAvailabilityGroup -Primary sql2016a -AvailabilityGroup db3\nSyncs the following on all replicas found in the db3 AG:\r\nSpConfigure, CustomErrors, Credentials, DatabaseMail, LinkedServers\r\nLogins, LoginPermissions, SystemTriggers, DatabaseOwner, AgentCategory,\r\nAgentOperator, AgentAlert, AgentProxy, AgentScheduleAgentJob\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaAvailabilityGroup -SqlInstance sql2016a | Sync-DbaAvailabilityGroup -Exclude LoginPermissions, LinkedServers\nSyncs the following on all replicas found in the db3 AG:\r\nSpConfigure, CustomErrors, Credentials, DatabaseMail, Logins,\r\nSystemTriggers, DatabaseOwner, AgentCategory, AgentOperator\r\nAgentAlert, AgentProxy, AgentScheduleAgentJob\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaAvailabilityGroup -SqlInstance sql2016a | Sync-DbaAvailabilityGroup -WhatIf\nShows what would happen if the command were to run but doesn\u0027t actually perform the action.",
+        "Syntax":  "Sync-DbaAvailabilityGroup [[-Primary] \u003cDbaInstanceParameter\u003e] [[-PrimarySqlCredential] \u003cPSCredential\u003e] [[-Secondary] \u003cDbaInstanceParameter[]\u003e] [[-SecondarySqlCredential] \u003cPSCredential\u003e] [[-AvailabilityGroup] \u003cString\u003e] [[-Exclude] \u003cString[]\u003e] [[-InputObject] \u003cAvailabilityGroup[]\u003e] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+    },
+    {
         "CommandName":  "Sync-DbaLoginPermission",
         "Description":  "Syncs only SQL Server login permissions, roles, etc. Does not add or drop logins. If a matching login does not exist on the destination, the login will be skipped. Credential removal is not currently supported for this operation.",
         "Tags":  [
@@ -36775,7 +37624,7 @@
                        [
                            "EnableException",
                            "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
-                           "Silent",
+                           "",
                            false,
                            "false",
                            "False"
@@ -36803,7 +37652,7 @@
         "Name":  "Sync-DbaLoginPermission",
         "Links":  "https://dbatools.io/Sync-DbaLoginPermission",
         "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eSync-DbaLoginPermission -Source sqlserver2014a -Destination sqlcluster\nSyncs only SQL Server login permissions, roles, etc. Does not add or drop logins or users. To copy logins and their permissions, use Copy-SqlLogin.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eSync-DbaLoginPermission -Source sqlserver2014a -Destination sqlcluster -Exclude realcajun -SourceSqlCredential $scred -DestinationSqlCredential $dcred\nCopies all login permissions except for realcajun using SQL Authentication to connect to each server. If a login already exists on the destination, the permissions will not be migrated.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eSync-DbaLoginPermission -Source sqlserver2014a -Destination sqlcluster -Login realcajun, netnerds\nCopies permissions ONLY for logins netnerds and realcajun.",
-        "Syntax":  "Sync-DbaLoginPermission [-Source] \u003cDbaInstanceParameter\u003e [[-SourceSqlCredential] \u003cPSCredential\u003e] [-Destination] \u003cDbaInstanceParameter\u003e [[-DestinationSqlCredential] \u003cPSCredential\u003e] [[-Login] \u003cObject[]\u003e] [[-ExcludeLogin] \u003cObject[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Sync-DbaLoginPermission [-Source] \u003cDbaInstanceParameter\u003e [[-SourceSqlCredential] \u003cPSCredential\u003e] [-Destination] \u003cDbaInstanceParameter[]\u003e [[-DestinationSqlCredential] \u003cPSCredential\u003e] [[-Login] \u003cString[]\u003e] [[-ExcludeLogin] \u003cString[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "CommandName":  "Test-DbaBackupInformation",
