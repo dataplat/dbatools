@@ -1,6 +1,6 @@
-﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaDbFile {
-<#
+    <#
     .SYNOPSIS
         Returns detailed information about database files.
 
@@ -69,8 +69,7 @@ function Get-DbaDbFile {
         foreach ($instance in $sqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -140,8 +139,7 @@ function Get-DbaDbFile {
 
             if ($Database) {
                 $InputObject = $server.Databases | Where-Object Name -in $database
-            }
-            else {
+            } else {
                 $InputObject = $server.Databases
             }
 
@@ -161,11 +159,9 @@ function Get-DbaDbFile {
 
                 if ($version -ge 11) {
                     $query = ($sql, $sql2008, $sqlfrom, $sql2008from) -Join "`n"
-                }
-                elseif ($version -ge 9) {
+                } elseif ($version -ge 9) {
                     $query = ($sql, $sqlfrom) -Join "`n"
-                }
-                else {
+                } else {
                     $query = $sql2000
                 }
 
@@ -185,15 +181,13 @@ function Get-DbaDbFile {
                     }
                     if ($maxsize -gt -1) {
                         $maxsize = [dbasize]($result.MaxSize * 8192)
-                    }
-                    else {
+                    } else {
                         $maxsize = [dbasize]($result.MaxSize)
                     }
 
                     if ($result.VolumeFreeSpace) {
                         $VolumeFreeSpace = [dbasize]$result.VolumeFreeSpace
-                    }
-                    else {
+                    } else {
                         # to get drive free space for each drive that a database has files on
                         # when database compatibility lower than 110. Lets do this with query2
                         $query2 = @'
@@ -216,8 +210,7 @@ ON fd.Drive = LEFT(df.physical_name, 1);
                     }
                     if ($result.GrowthType -eq "Percent") {
                         $nextgrowtheventadd = [dbasize]($result.size * ($result.Growth * 0.01) * 1024)
-                    }
-                    else {
+                    } else {
                         $nextgrowtheventadd = [dbasize]($result.Growth * 8 * 1024)
                     }
                     if ( ($nextgrowtheventadd.Byte -gt ($MaxSize.Byte - $size.Byte)) -and $maxsize -gt 0 ) { [dbasize]$nextgrowtheventadd = 0 }
@@ -264,3 +257,4 @@ ON fd.Drive = LEFT(df.physical_name, 1);
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-DbaDatabaseFIle
     }
 }
+

@@ -1,5 +1,5 @@
-﻿function Test-DbaDbCompatibility {
-<#
+function Test-DbaDbCompatibility {
+    <#
     .SYNOPSIS
         Compares Database Compatibility level to Server Compatibility
 
@@ -80,8 +80,7 @@
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 10
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -114,3 +113,4 @@
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Test-DbaDatabaseCompatibility
     }
 }
+

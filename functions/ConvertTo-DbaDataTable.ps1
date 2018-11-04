@@ -1,6 +1,6 @@
-﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function ConvertTo-DbaDataTable {
-<#
+    <#
     .SYNOPSIS
         Creates a DataTable for an object.
 
@@ -144,16 +144,14 @@ function ConvertTo-DbaDataTable {
                 if ($timespantype -eq 'String') {
                     $value = $value.ToString()
                     $type = 'System.String'
-                }
-                else {
+                } else {
                     # Let's use Int64 for all other types than string.
                     # We could match the type more closely with the timespantype but that can be added in the future if needed.
                     $value = $value.$timespantype
                     $type = 'System.Int64'
                 }
                 $specialType = 'Timespan'
-            }
-            elseif ($type -eq 'Sqlcollaborative.Dbatools.Utility.Size') {
+            } elseif ($type -eq 'Sqlcollaborative.Dbatools.Utility.Size') {
                 $special = $true
                 switch ($sizetype) {
                     'Int64' {
@@ -170,10 +168,9 @@ function ConvertTo-DbaDataTable {
                     }
                 }
                 $specialType = 'Size'
-            }
-            elseif (-not ($type -in $types)) {
+            } elseif (-not ($type -in $types)) {
                 # All types which are not found in the array will be converted into strings.
-                # In this way we dont ignore it completely and it will be clear in the end why it looks as it does.
+                # In this way we don't ignore it completely and it will be clear in the end why it looks as it does.
                 $type = 'System.String'
             }
 
@@ -218,8 +215,7 @@ function ConvertTo-DbaDataTable {
                 'Timespan' {
                     if ($TimeSpanType -eq 'String') {
                         $Value.ToString()
-                    }
-                    else {
+                    } else {
                         $Value.$TimeSpanType
                     }
                 }
@@ -263,8 +259,7 @@ function ConvertTo-DbaDataTable {
                 if ($Property.MemberType -like 'ScriptProperty') {
                     $type = $Property.GetType().FullName
                 }
-            }
-            catch { $type = 'System.String' }
+            } catch { $type = 'System.String' }
 
             $converted = Convert-Type -type $type -value $property.Value -timespantype $TimeSpanType -sizetype $SizeType
 
@@ -341,8 +336,7 @@ function ConvertTo-DbaDataTable {
                 # Handle null properties, as well as properties with access errors
                 try {
                     $propValueLength = $property.value.length
-                }
-                catch {
+                } catch {
                     $propValueLength = 0
                 }
 
@@ -352,27 +346,22 @@ function ConvertTo-DbaDataTable {
                     # We might get error if we try to change the value for $property.value if it is read-only. That's why we use $converted.value instead.
                     if ($property.Name -in $specialColumns) {
                         $datarow.Item($property.Name) = Convert-SpecialType -Value $property.value -Type $specialColumnsType[$property.Name] -SizeType $SizeType -TimeSpanType $TimeSpanType
-                    }
-                    else {
+                    } else {
                         if ($property.value.ToString().length -eq 15) {
                             if ($property.value.ToString() -eq 'System.Object[]') {
                                 $value = $property.value -join ", "
-                            }
-                            elseif ($property.value.ToString() -eq 'System.String[]') {
+                            } elseif ($property.value.ToString() -eq 'System.String[]') {
                                 $value = $property.value -join ", "
-                            }
-                            else {
+                            } else {
                                 $value = $property.value
                             }
-                        }
-                        else {
+                        } else {
                             $value = $property.value
                         }
 
                         try {
                             $datarow.Item($property.Name) = $value
-                        }
-                        catch {
+                        } catch {
                             if ($property.Name -notin $columns) {
                                 try {
                                     $newColumn = Add-Column -Property $property
@@ -383,12 +372,10 @@ function ConvertTo-DbaDataTable {
                                     }
 
                                     $datarow.Item($property.Name) = $newColumn.Value
-                                }
-                                catch {
+                                } catch {
                                     Write-Message -Level Warning -Message "Failed to add property $($property.Name) from $object" -ErrorRecord $_ -Target $object
                                 }
-                            }
-                            else {
+                            } else {
                                 Write-Message -Level Warning -Message "Failed to add property $($property.Name) from $object" -ErrorRecord $_ -Target $object
                             }
                         }
@@ -411,3 +398,4 @@ function ConvertTo-DbaDataTable {
         , $datatable
     }
 }
+

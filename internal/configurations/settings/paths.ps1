@@ -16,3 +16,4 @@ Set-DbatoolsConfig -FullName 'Path.TagCache' -Value "$ModuleRoot\bin\dbatools-in
 
 # The default Path for the server list (Get-DbaServerList, etc)
 Set-DbatoolsConfig -FullName 'Path.Servers' -Value "$env:AppData\PowerShell\dbatools\servers.xml" -Initialize -Validation string -Handler { } -Description "The file in which dbatools stores the current user's server list, as managed by Get/Add/Update-DbaServerList"
+

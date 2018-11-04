@@ -1,6 +1,6 @@
-﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Watch-DbaXESession {
-<#
+    <#
     .SYNOPSIS
         Watch live XEvent Data as it happens
 
@@ -71,13 +71,11 @@ function Watch-DbaXESession {
     )
     process {
         if (-not $SqlInstance) {
-           
-        }
-        else {
+
+        } else {
             try {
                 $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential -MinimumVersion 11
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $SqlInstance -Continue
             }
             $SqlConn = $server.ConnectionContext.SqlConnectionObject
@@ -86,12 +84,12 @@ function Watch-DbaXESession {
             Write-Message -Level Verbose -Message "Getting XEvents Sessions on $SqlInstance."
             $InputObject += $XEStore.sessions | Where-Object Name -eq $Session
         }
-        
+
         foreach ($xesession in $InputObject) {
             $server = $xesession.Parent
             $sessionname = $xesession.Name
             Write-Message -Level Verbose -Message "Watching $sessionname on $($server.Name)."
-            
+
             if (-not $xesession.IsRunning -and -not $xesession.IsRunning) {
                 Stop-Function -Message "$($xesession.Name) is not running on $($server.Name)" -Continue
             }
@@ -143,18 +141,15 @@ function Watch-DbaXESession {
 
                     [PSCustomObject]($hash)
                 }
-            }
-            catch {
+            } catch {
                 Start-Sleep 1
                 $status = Get-DbaXESession -SqlInstance $server -Session $sessionname
                 if ($status.Status -ne "Running") {
                     Stop-Function -Message "$($xesession.Name) was stopped."
-                }
-                else {
+                } else {
                     Stop-Function -Message "Failure" -ErrorRecord $_ -Target $sessionname
                 }
-            }
-            finally {
+            } finally {
                 if ($xevent -is [IDisposable]) {
                     $xevent.Dispose()
                 }
@@ -162,3 +157,4 @@ function Watch-DbaXESession {
         }
     }
 }
+

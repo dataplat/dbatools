@@ -1,4 +1,4 @@
-﻿$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 
@@ -21,3 +21,12 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Read https://github.com/sqlcollaborative/dbatools/blob/development/contributing.md#tests
     for more guidence.
 #>
+Describe "Get-DbaMsdtc Integration Test" -Tag "IntegrationTests" {
+    Context "Command actually works" {
+        $results = Get-DbaMsdtc -ComputerName $env:COMPUTERNAME
+
+        It "returns results" {
+            $results.DTCServiceName | Should Not Be $null
+        }
+    }
+}

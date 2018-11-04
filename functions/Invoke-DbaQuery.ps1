@@ -1,6 +1,6 @@
-﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Invoke-DbaQuery {
-<#
+    <#
     .SYNOPSIS
         A command to run explicit T-SQL commands or files.
 
@@ -57,7 +57,7 @@ function Invoke-DbaQuery {
 
     .NOTES
         Tags: Database, Query
-        Author: Friedrich Weinmann (@FredWeinmann‏)
+        Author: Friedrich Weinmann (@FredWeinmann)
 
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
@@ -141,7 +141,7 @@ function Invoke-DbaQuery {
         Write-Message -Level Debug -Message "Bound parameters: $($PSBoundParameters.Keys -join ", ")"
 
         $splatInvokeDbaSqlAsync = @{
-            As      = $As
+            As = $As
         }
 
         if (Test-Bound -ParameterName "SqlParameters") {
@@ -199,12 +199,16 @@ function Invoke-DbaQuery {
                             "http" {
                                 $tempfile = "$env:TEMP\$temporaryFilesPrefix-$temporaryFilesCount.sql"
                                 try {
-                                    Invoke-WebRequest -Uri $item -OutFile $tempfile -ErrorAction Stop
+                                    try {
+                                        Invoke-TlsWebRequest -Uri $item -OutFile $tempfile -ErrorAction Stop
+                                    } catch {
+                                        (New-Object System.Net.WebClient).Proxy.Credentials = [System.Net.CredentialCache]::DefaultNetworkCredentials
+                                        Invoke-TlsWebRequest -Uri $item -OutFile $tempfile -ErrorAction Stop
+                                    }
                                     $files += $tempfile
                                     $temporaryFilesCount++
                                     $temporaryFiles += $tempfile
-                                }
-                                catch {
+                                } catch {
                                     Stop-Function -Message "Failed to download file $item" -ErrorRecord $_
                                     return
                                 }
@@ -212,8 +216,7 @@ function Invoke-DbaQuery {
                             default {
                                 try {
                                     $paths = Resolve-Path $item | Select-Object -ExpandProperty Path | Get-Item -ErrorAction Stop
-                                }
-                                catch {
+                                } catch {
                                     Stop-Function -Message "Failed to resolve path: $item" -ErrorRecord $_
                                     return
                                 }
@@ -257,8 +260,7 @@ function Invoke-DbaQuery {
                     $files += $newfile
                     $temporaryFilesCount++
                     $temporaryFiles += $newfile
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Failed to write sql script to temp" -ErrorRecord $_
                     return
                 }
@@ -296,18 +298,15 @@ function Invoke-DbaQuery {
                         $QueryfromFile = [System.IO.File]::ReadAllText("$filePath")
                         Invoke-DbaAsync -SQLConnection $conncontext @splatInvokeDbaSqlAsync -Query $QueryfromFile
                     }
-                }
-                else { Invoke-DbaAsync -SQLConnection $conncontext @splatInvokeDbaSqlAsync }
-            }
-            catch {
+                } else { Invoke-DbaAsync -SQLConnection $conncontext @splatInvokeDbaSqlAsync }
+            } catch {
                 Stop-Function -Message "[$db] Failed during execution" -ErrorRecord $_ -Target $server -Continue
             }
         }
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -ErrorRecord $_ -Target $instance -Continue
             }
             $conncontext = $server.ConnectionContext
@@ -323,12 +322,10 @@ function Invoke-DbaQuery {
                         $QueryfromFile = [System.IO.File]::ReadAllText("$filePath")
                         Invoke-DbaAsync -SQLConnection $conncontext @splatInvokeDbaSqlAsync -Query $QueryfromFile
                     }
-                }
-                else {
+                } else {
                     Invoke-DbaAsync -SQLConnection $conncontext @splatInvokeDbaSqlAsync
                 }
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "[$instance] Failed during execution" -ErrorRecord $_ -Target $instance -Continue
             }
         }
@@ -347,3 +344,4 @@ function Invoke-DbaQuery {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Invoke-DbaSqlQuery
     }
 }
+

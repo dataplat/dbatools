@@ -1,5 +1,5 @@
-﻿function Remove-DbaClientAlias {
-<#
+function Remove-DbaClientAlias {
+    <#
     .SYNOPSIS
         Removes a sql alias for the specified server - mimics cliconfg.exe
 
@@ -69,14 +69,14 @@
             foreach ($basekey in $basekeys) {
                 $fullKey = "$basekey\Client\ConnectTo"
                 if ((Test-Path $fullKey) -eq $false) {
+                    <# DO NOT use Write-Message as this is inside of a script block #>
                     Write-Warning "Registry key ($fullKey) does not exist. Quitting."
                     continue
                 }
 
                 if ($basekey -like "*WOW64*") {
                     $architecture = "32-bit"
-                }
-                else {
+                } else {
                     $architecture = "64-bit"
                 }
 
@@ -107,11 +107,11 @@
             if ($PSCmdlet.ShouldProcess("$($Alias -join ', ') on $computer", "Remove aliases")) {
                 try {
                     Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $scriptblock -ErrorAction Stop -Verbose:$false -ArgumentList $Alias
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Failure" -ErrorRecord $_ -Target $computer -Continue
                 }
             }
         }
     }
 }
+

@@ -1,6 +1,6 @@
-﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Stop-DbaXESession {
-<#
+    <#
     .SYNOPSIS
         Stops Extended Events sessions.
 
@@ -21,6 +21,12 @@ function Stop-DbaXESession {
 
     .PARAMETER InputObject
         Accepts the object output by Get-DbaXESession as the list of sessions to be stopped.
+
+    .PARAMETER WhatIf
+        If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
+
+    .PARAMETER Confirm
+        If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -54,7 +60,8 @@ function Stop-DbaXESession {
         Stops the sessions returned from the Get-DbaXESession function.
 
 #>
-    [CmdletBinding(DefaultParameterSetName = 'Session')]
+    [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = 'Session')]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseSingularNouns", "", Justification = "Internal functions are ignored")]
     param (
         [parameter(Position = 1, Mandatory, ParameterSetName = 'Session')]
         [parameter(Position = 1, Mandatory, ParameterSetName = 'All')]
@@ -80,7 +87,7 @@ function Stop-DbaXESession {
     begin {
         # Stop each XESession
         function Stop-XESessions {
-            [CmdletBinding()]
+            [CmdletBinding(SupportsShouldProcess)]
             param ([Microsoft.SqlServer.Management.XEvent.Session[]]$xeSessions)
 
             foreach ($xe in $xeSessions) {
@@ -88,14 +95,14 @@ function Stop-DbaXESession {
                 $session = $xe.Name
                 if ($xe.isRunning) {
                     Write-Message -Level Verbose -Message "Stopping XEvent Session $session on $instance."
-                    try {
-                        $xe.Stop()
+                    if ($Pscmdlet.ShouldProcess("$instance", "Stopping XEvent Session $session")) {
+                        try {
+                            $xe.Stop()
+                        } catch {
+                            Stop-Function -Message "Could not stop XEvent Session on $instance" -Target $session -ErrorRecord $_ -Continue
+                        }
                     }
-                    catch {
-                        Stop-Function -Message "Could not stop XEvent Session on $instance" -Target $session -ErrorRecord $_ -Continue
-                    }
-                }
-                else {
+                } else {
                     Write-Message -Level Warning -Message "$session on $instance is already stopped"
                 }
                 Get-DbaXESession -SqlInstance $xe.Parent -Session $session
@@ -105,22 +112,24 @@ function Stop-DbaXESession {
 
     process {
         if ($InputObject) {
-            Stop-XESessions $InputObject
-        }
-        else {
+            if ($Pscmdlet.ShouldProcess("Configuring XEvent Sessions to stop")) {
+                Stop-XESessions $InputObject
+            }
+        } else {
             foreach ($instance in $SqlInstance) {
                 $xeSessions = Get-DbaXESession -SqlInstance $instance -SqlCredential $SqlCredential
 
                 # Filter xesessions based on parameters
                 if ($Session) {
                     $xeSessions = $xeSessions | Where-Object { $_.Name -in $Session }
-                }
-                elseif ($AllSessions) {
+                } elseif ($AllSessions) {
                     $systemSessions = @('AlwaysOn_health', 'system_health', 'telemetry_xevents')
                     $xeSessions = $xeSessions | Where-Object { $_.Name -notin $systemSessions }
                 }
 
-                Stop-XESessions $xeSessions
+                if ($Pscmdlet.ShouldProcess("$instance", "Configuring XEvent Session $xeSessions to Stop")) {
+                    Stop-XESessions $xeSessions
+                }
             }
         }
     }

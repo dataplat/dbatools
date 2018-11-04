@@ -1,5 +1,5 @@
-﻿function Resolve-DbaNetworkName {
-<#
+function Resolve-DbaNetworkName {
+    <#
     .SYNOPSIS
         Returns information about the network connection of the target computer including NetBIOS name, IP Address, domain name and fully qualified domain name (FQDN).
 
@@ -103,8 +103,7 @@
 
             if ($Computer.IsLocalhost) {
                 $Computer = $env:COMPUTERNAME
-            }
-            else {
+            } else {
                 $Computer = $Computer.ComputerName
             }
 
@@ -114,15 +113,13 @@
                     $ipaddress = ([System.Net.Dns]::GetHostEntry($Computer)).AddressList[0].IPAddressToString
                     Write-Message -Level VeryVerbose -Message "Resolving $ipaddress using .NET.Dns GetHostByAddress"
                     $fqdn = [System.Net.Dns]::GetHostByAddress($ipaddress).HostName
-                }
-                catch {
+                } catch {
                     try {
                         Write-Message -Level VeryVerbose -Message "Resolving $Computer and IP using .NET.Dns GetHostEntry"
                         $resolved = [System.Net.Dns]::GetHostEntry($Computer)
                         $ipaddress = $resolved.AddressList[0].IPAddressToString
                         $fqdn = $resolved.HostName
-                    }
-                    catch {
+                    } catch {
                         Stop-Function -Message "DNS name not found" -Continue -InnerErrorRecord $_
                     }
                 }
@@ -131,8 +128,7 @@
                     if ($computer.ComputerName -match "\.") {
                         $dnsdomain = $computer.ComputerName.Substring($computer.ComputerName.IndexOf(".") + 1)
                         $fqdn = "$resolved.$dnsdomain"
-                    }
-                    else {
+                    } else {
                         $dnsdomain = "$env:USERDNSDOMAIN".ToLower()
                         if ($dnsdomain -match "\.") {
                             $fqdn = "$fqdn.$dnsdomain"
@@ -154,21 +150,18 @@
                     FullComputerName = $fqdn
                 }
 
-            }
-            else {
+            } else {
 
 
                 try {
                     $ipaddress = ((Test-Connection -ComputerName $Computer -Count 1 -ErrorAction Stop).Ipv4Address).IPAddressToString
-                }
-                catch {
+                } catch {
                     try {
                         if ($env:USERDNSDOMAIN) {
                             $ipaddress = ((Test-Connection -ComputerName "$Computer.$env:USERDNSDOMAIN" -Count 1 -ErrorAction SilentlyContinue).Ipv4Address).IPAddressToString
                             $Computer = "$Computer.$env:USERDNSDOMAIN"
                         }
-                    }
-                    catch {
+                    } catch {
                         $Computer = $OGComputer
                         $ipaddress = ([System.Net.Dns]::GetHostEntry($Computer)).AddressList[0].IPAddressToString
                     }
@@ -176,8 +169,7 @@
 
                 if ($ipaddress) {
                     Write-Message -Level VeryVerbose -Message "IP Address from $Computer is $ipaddress"
-                }
-                else {
+                } else {
                     Write-Message -Level VeryVerbose -Message "No IP Address returned from $Computer"
                     Write-Message -Level VeryVerbose -Message "Using .NET.Dns to resolve IP Address"
                     return (Resolve-DbaNetworkName -ComputerName $Computer -Turbo)
@@ -190,8 +182,7 @@
                             # if an alias (CNAME) is passed we should try to connect to the A name via CIM or WinRM
                             $ComputerNameIP = ([System.Net.Dns]::GetHostEntry($Computer)).AddressList[0].IPAddressToString
                             $RemoteComputer = [System.Net.Dns]::GetHostByAddress($ComputerNameIP).HostName
-                        }
-                        catch {
+                        } catch {
                             $RemoteComputer = $Computer
                         }
                         Write-Message -Level VeryVerbose -Message "Getting computer information from $RemoteComputer"
@@ -204,13 +195,11 @@
                         if (Test-Bound "Credential") {
                             $conn = Get-DbaCmObject -ClassName win32_ComputerSystem -Computer $RemoteComputer -Credential $Credential -EnableException
                             $DNSSuffix = Invoke-Command2 -Computer $RemoteComputer -ScriptBlock $ScBlock -Credential $Credential -ErrorAction Stop
-                        }
-                        else {
+                        } else {
                             $conn = Get-DbaCmObject -ClassName win32_ComputerSystem -Computer $RemoteComputer -EnableException
                             $DNSSuffix = Invoke-Command2 -Computer $RemoteComputer -ScriptBlock $ScBlock -ErrorAction Stop
                         }
-                    }
-                    catch {
+                    } catch {
                         Write-Message -Level Verbose -Message "Unable to get computer information from $Computer"
                     }
 
@@ -231,23 +220,20 @@
                             $DNSSuffix = [PSCustomObject]@{
                                 DNSDomain = $suffix
                             }
-                        }
-                        catch {
+                        } catch {
                             Stop-Function -Message "No .NET.Dns information from $Computer" -InnerErrorRecord $_ -Continue
                         }
                     }
                 }
                 if ($DNSSuffix.DNSDomain.Length -eq 0) {
                     $FullComputerName = $conn.DNSHostname
-                }
-                else {
+                } else {
                     $FullComputerName = $conn.DNSHostname + "." + $DNSSuffix.DNSDomain
                 }
                 try {
                     Write-Message -Level VeryVerbose -Message "Resolving $FullComputerName using .NET.Dns GetHostEntry"
                     $hostentry = ([System.Net.Dns]::GetHostEntry($FullComputerName)).HostName
-                }
-                catch {
+                } catch {
                     Stop-Function -Message ".NET.Dns GetHostEntry failed for $FullComputerName" -InnerErrorRecord $_
                 }
 
@@ -281,3 +267,4 @@
         }
     }
 }
+

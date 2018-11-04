@@ -1,4 +1,4 @@
-﻿$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 
@@ -21,3 +21,31 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Read https://github.com/sqlcollaborative/dbatools/blob/development/contributing.md#tests
     for more guidence.
 #>
+Describe "Get-DbaMemoryUsage Integration Test" -Tag "IntegrationTests" {
+    Context "Command actually works" {
+        $results = Get-DbaMemoryUsage -ComputerName $script:instance1
+
+        It "returns results" {
+            $results.Count -gt 0 | Should Be $true
+        }
+        It "has the correct properties" {
+            $result = $results[0]
+            $ExpectedProps = 'ComputerName,SqlInstance,CounterInstance,Counter,Pages,MemKB,MemMB'.Split(',')
+            ($result.PsObject.Properties.Name | Sort-Object) | Should Be ($ExpectedProps | Sort-Object)
+        }
+
+        $resultsSimple = Get-DbaMemoryUsage -ComputerName $script:instance1 -Simple
+        It "returns results" {
+            $resultsSimple.Count -gt 0 | Should Be $true
+        }
+
+        It "returns fewer results" {
+            $results.Count - $resultsSimple.Count -gt 0 | Should Be $true
+        }
+
+        It "Should return nothing if unable to connect to server" {
+            $result = Get-DbaMemoryUsage -ComputerName 'Melton5312' -WarningAction SilentlyContinue
+            $result | Should Be $null
+        }
+    }
+}

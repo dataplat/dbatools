@@ -1,4 +1,4 @@
-﻿function New-DbaDacProfile {
+function New-DbaDacProfile {
     <#
     .SYNOPSIS
         Creates a new Publish Profile.
@@ -28,20 +28,16 @@
     .PARAMETER Path
         The directory where you would like to save the profile xml file(s).
 
-<<<<<<< HEAD
-        .PARAMETER PublishOptions
-            Optional hashtable to set publish options. Key/value pairs in the hashtable get converted to strings of "<key>value</key>".
+    .PARAMETER WhatIf
+        If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-=======
+    .PARAMETER Confirm
+        If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
->>>>>>> 40d2e530ecc64c7d28e71cec493c2c23fd81d727
 
     .NOTES
         Tags: Dacpac
@@ -66,7 +62,7 @@
         In this example, no connections are made, and a Publish Profile XML would be created at C:\temp\localdb-MSSQLLocalDB-WorldWideImporters-publish.xml
 
 #>
-    [CmdletBinding()]
+    [CmdletBinding(SupportsShouldProcess)]
     param (
         [parameter(ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
@@ -77,7 +73,6 @@
         [string[]]$Database,
         [string]$Path = "$home\Documents",
         [string[]]$ConnectionString,
-        [hashtable]$PublishOptions,
         [switch]$EnableException
     )
     begin {
@@ -93,28 +88,15 @@
             Stop-Function -Message "Path must be a directory"
         }
 
-        function Convert-HashtableToXMLString($PublishOptions) {
-            $return = @()
-            if ($PublishOptions) {
-                $PublishOptions.GetEnumerator() | ForEach-Object {
-                    $key = $PSItem.Key.ToString()
-                    $value = $PSItem.Value.ToString()
-                    $return += "<$key>$value</$key>"
-                }
-            } 
-            $return | Out-String
-        }
-        
         function Get-Template ($db, $connstring) {
             "<?xml version=""1.0"" ?>
             <Project ToolsVersion=""14.0"" xmlns=""http://schemas.microsoft.com/developer/msbuild/2003"">
-                <PropertyGroup>
+              <PropertyGroup>
                 <TargetDatabaseName>{0}</TargetDatabaseName>
                 <TargetConnectionString>{1}</TargetConnectionString>
                 <ProfileVersionNumber>1</ProfileVersionNumber>
-                {2}
-                </PropertyGroup>
-            </Project>" -f $db[0], $connstring, $(Convert-HashtableToXMLString($PublishOptions))
+              </PropertyGroup>
+            </Project>" -f $db[0], $connstring
         }
 
         function Get-ServerName ($connstring) {
@@ -135,8 +117,7 @@
         foreach ($instance in $sqlinstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -146,26 +127,27 @@
 
         foreach ($connstring in $ConnectionString) {
             foreach ($db in $Database) {
-                $profileTemplate = Get-Template $db, $connstring
-                $instancename = Get-ServerName $connstring
+                if ($Pscmdlet.ShouldProcess($db, "Creating new DAC Profile")) {
+                    $profileTemplate = Get-Template $db, $connstring
+                    $instancename = Get-ServerName $connstring
 
-                try {
-                    $server = [DbaInstance]($instancename.ToString().Replace('--', '\'))
-                    $PublishProfile = Join-Path $Path "$($instancename.Replace('--','-'))-$db-publish.xml" -ErrorAction Stop
-                    Write-Message -Level Verbose -Message "Writing to $PublishProfile"
-                    $profileTemplate | Out-File $PublishProfile -ErrorAction Stop
-                    [pscustomobject]@{
-                        ComputerName     = $server.ComputerName
-                        InstanceName     = $server.InstanceName
-                        SqlInstance      = $server.FullName
-                        Database         = $db
-                        FileName         = $PublishProfile
-                        ConnectionString = $connstring
-                        ProfileTemplate  = $profileTemplate
-                    } | Select-DefaultView -ExcludeProperty ComputerName, InstanceName, ProfileTemplate
-                }
-                catch {
-                    Stop-Function -ErrorRecord $_ -Message "Failure" -Target $instancename -Continue
+                    try {
+                        $server = [DbaInstance]($instancename.ToString().Replace('--', '\'))
+                        $PublishProfile = Join-Path $Path "$($instancename.Replace('--','-'))-$db-publish.xml" -ErrorAction Stop
+                        Write-Message -Level Verbose -Message "Writing to $PublishProfile"
+                        $profileTemplate | Out-File $PublishProfile -ErrorAction Stop
+                        [pscustomobject]@{
+                            ComputerName     = $server.ComputerName
+                            InstanceName     = $server.InstanceName
+                            SqlInstance      = $server.FullName
+                            Database         = $db
+                            FileName         = $PublishProfile
+                            ConnectionString = $connstring
+                            ProfileTemplate  = $profileTemplate
+                        } | Select-DefaultView -ExcludeProperty ComputerName, InstanceName, ProfileTemplate
+                    } catch {
+                        Stop-Function -ErrorRecord $_ -Message "Failure" -Target $instancename -Continue
+                    }
                 }
             }
         }
@@ -174,3 +156,4 @@
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias New-DbaPublishProfile
     }
 }
+

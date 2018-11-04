@@ -1,5 +1,5 @@
-﻿function Test-DbaConnectionAuthScheme {
-<#
+function Test-DbaConnectionAuthScheme {
+    <#
     .SYNOPSIS
         Returns the transport protocol and authentication scheme of the connection. This is useful to determine if your connection is using Kerberos.
 
@@ -92,16 +92,14 @@
 
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             Write-Message -Level Verbose -Message "Getting results for the following query: $sql."
             try {
                 $results = $server.Query($sql)
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Target $server -Exception $_ -Continue
             }
 
@@ -109,8 +107,7 @@
             if ($Kerberos -or $Ntlm) {
                 if ($Ntlm) {
                     $auth = 'NTLM'
-                }
-                else {
+                } else {
                     $auth = 'Kerberos'
                 }
                 [PSCustomObject]@{
@@ -119,10 +116,10 @@
                     SqlInstance  = $results.SqlInstance
                     Result       = ($server.AuthScheme -eq $auth)
                 } | Select-DefaultView -Property SqlInstance, Result
-            }
-            else {
+            } else {
                 Select-DefaultView -InputObject $results -Property ComputerName, InstanceName, SqlInstance, Transport, AuthScheme
             }
         }
     }
 }
+

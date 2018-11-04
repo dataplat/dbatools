@@ -1,5 +1,5 @@
-﻿function Test-DbaDbCompression {
-<#
+function Test-DbaDbCompression {
+    <#
     .SYNOPSIS
         Returns tables and indexes with preferred compression setting.
     .DESCRIPTION
@@ -179,14 +179,12 @@
                 $indexSQL = '0 as [IndexID]'
                 $partitionSQL = '0 AS [Partition]'
                 $groupBySQL = 's.Name, t.Name'
-            }
-            elseif ($FilterBy -eq 'Index') {
+            } elseif ($FilterBy -eq 'Index') {
                 $sqlJoinFiltered = 'AND t.TableName = tdc.TableName COLLATE DATABASE_DEFAULT AND t.IndexID = tdc.IndexID'
                 $indexSQL = 'i.index_id as [IndexID]'
                 $partitionSQL = '0 AS [Partition]'
                 $groupBySQL = 's.Name, t.Name, i.index_id'
-            }
-            else {
+            } else {
                 $sqlJoinFiltered = 'AND t.TableName = tdc.TableName COLLATE DATABASE_DEFAULT AND t.IndexID = tdc.IndexID AND t.[Partition] = tdc.[Partition]'
                 $indexSQL = 'i.index_id as [IndexID]'
                 $partitionSQL = 'p.partition_number AS [Partition]'
@@ -238,8 +236,7 @@
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 10
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failed to process Instance $Instance" -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -592,8 +589,7 @@ IF OBJECT_ID('tempdb..##tmpEstimatePage', 'U') IS NOT NULL
                 if (Test-Bound "ExcludeDatabase") {
                     $dbs = $dbs | Where-Object Name -NotIn $ExcludeDatabase
                 }
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Unable to gather list of databases for $instance" -Target $instance -ErrorRecord $_ -Continue
             }
 
@@ -614,31 +610,31 @@ IF OBJECT_ID('tempdb..##tmpEstimatePage', 'U') IS NOT NULL
                     #Execute query against individual database and add to output
                     foreach ($row in ($server.Query($sql, $db.Name))) {
                         [pscustomobject]@{
-                            ComputerName = $server.ComputerName
-                            InstanceName = $server.ServiceName
-                            SqlInstance  = $server.DomainInstanceName
-                            Database     = $row.DBName
-                            Schema       = $row.Schema
-                            TableName    = $row.TableName
-                            IndexName    = $row.IndexName
-                            Partition    = $row.Partition
-                            IndexID      = $row.IndexID
-                            IndexType    = $row.IndexType
-                            PercentScan  = $row.PercentScan
-                            PercentUpdate = $row.PercentUpdate
-                            RowEstimatePercentOriginal = $row.RowEstimatePercentOriginal
-                            PageEstimatePercentOriginal = $row.PageEstimatePercentOriginal
+                            ComputerName                  = $server.ComputerName
+                            InstanceName                  = $server.ServiceName
+                            SqlInstance                   = $server.DomainInstanceName
+                            Database                      = $row.DBName
+                            Schema                        = $row.Schema
+                            TableName                     = $row.TableName
+                            IndexName                     = $row.IndexName
+                            Partition                     = $row.Partition
+                            IndexID                       = $row.IndexID
+                            IndexType                     = $row.IndexType
+                            PercentScan                   = $row.PercentScan
+                            PercentUpdate                 = $row.PercentUpdate
+                            RowEstimatePercentOriginal    = $row.RowEstimatePercentOriginal
+                            PageEstimatePercentOriginal   = $row.PageEstimatePercentOriginal
                             CompressionTypeRecommendation = $row.CompressionTypeRecommendation
-                            SizeCurrent  = [dbasize]($row.SizeCurrentKB * 1024)
-                            SizeRequested = [dbasize]($row.SizeRequestedKB * 1024)
-                            PercentCompression = $row.PercentCompression
+                            SizeCurrent                   = [dbasize]($row.SizeCurrentKB * 1024)
+                            SizeRequested                 = [dbasize]($row.SizeRequestedKB * 1024)
+                            PercentCompression            = $row.PercentCompression
                         }
                     }
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Unable to query $instance - $db" -Target $db -ErrorRecord $_ -Continue
                 }
             }
         }
     }
 }
+

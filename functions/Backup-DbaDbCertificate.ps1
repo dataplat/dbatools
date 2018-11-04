@@ -1,6 +1,6 @@
-﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Backup-DbaDbCertificate {
-<#
+    <#
     .SYNOPSIS
         Exports database certificates from SQL Server using SMO.
 
@@ -133,124 +133,120 @@ function Backup-DbaDbCertificate {
         [Alias('Silent')]
         [switch]$EnableException
     )
-    
+
     begin {
         if (-not $EncryptionPassword -and $DecryptionPassword) {
-            Stop-Function -Message "If you specify an decryption password, you must also specify an encryption password" -Target $DecryptionPassword
+            Stop-Function -Message "If you specify a decryption password, you must also specify an encryption password" -Target $DecryptionPassword
         }
-        
+
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Backup-DbaDatabaseCertificate
-        
+
         function export-cert ($cert) {
             $certName = $cert.Name
             $db = $cert.Parent
             $server = $db.Parent
             $instance = $server.Name
             $actualPath = $Path
-            
+
             if ($null -eq $actualPath) {
                 $actualPath = Get-SqlDefaultPaths -SqlInstance $server -filetype Data
             }
-            
+
             $actualPath = "$actualPath".TrimEnd('\')
             $fullCertName = "$actualPath\$certName$Suffix"
             $exportPathKey = "$fullCertName.pvk"
-            
+
             if (!(Test-DbaPath -SqlInstance $server -Path $actualPath)) {
                 Stop-Function -Message "$SqlInstance cannot access $actualPath" -Target $actualPath
             }
-            
+
             if ($Pscmdlet.ShouldProcess($instance, "Exporting certificate $certName from $db on $instance to $actualPath")) {
                 Write-Message -Level Verbose -Message "Exporting Certificate: $certName to $fullCertName"
                 try {
-                    
+
                     $exportPathCert = "$fullCertName.cer"
-                    
+
                     # because the password shouldn't go to memory...
                     if ($EncryptionPassword.Length -gt 0 -and $DecryptionPassword.Length -gt 0) {
-                        
+
                         Write-Message -Level Verbose -Message "Both passwords passed in. Will export both cer and pvk."
-                        
+
                         $cert.export(
                             $exportPathCert,
                             $exportPathKey,
                             [System.Runtime.InteropServices.marshal]::PtrToStringAuto([System.Runtime.InteropServices.marshal]::SecureStringToBSTR($EncryptionPassword)),
                             [System.Runtime.InteropServices.marshal]::PtrToStringAuto([System.Runtime.InteropServices.marshal]::SecureStringToBSTR($DecryptionPassword))
                         )
-                    }
-                    elseif ($EncryptionPassword.Length -gt 0 -and $DecryptionPassword.Length -eq 0) {
+                    } elseif ($EncryptionPassword.Length -gt 0 -and $DecryptionPassword.Length -eq 0) {
                         Write-Message -Level Verbose -Message "Only encryption password passed in. Will export both cer and pvk."
-                        
+
                         $cert.export(
                             $exportPathCert,
                             $exportPathKey,
                             [System.Runtime.InteropServices.marshal]::PtrToStringAuto([System.Runtime.InteropServices.marshal]::SecureStringToBSTR($EncryptionPassword))
                         )
-                    }
-                    else {
+                    } else {
                         Write-Message -Level Verbose -Message "No passwords passed in. Will export just cer."
                         $exportPathKey = "Password required to export key"
                         $cert.export($exportPathCert)
                     }
-                    
+
                     [pscustomobject]@{
-                        ComputerName = $server.ComputerName
-                        InstanceName = $server.ServiceName
-                        SqlInstance  = $server.DomainInstanceName
-                        Database     = $db.Name
-                        Certificate  = $certName
-                        Path         = $exportPathCert
-                        Key          = $exportPathKey
-                        ExportPath   = $exportPathCert
-                        ExportKey    = $exportPathKey
+                        ComputerName   = $server.ComputerName
+                        InstanceName   = $server.ServiceName
+                        SqlInstance    = $server.DomainInstanceName
+                        Database       = $db.Name
+                        Certificate    = $certName
+                        Path           = $exportPathCert
+                        Key            = $exportPathKey
+                        ExportPath     = $exportPathCert
+                        ExportKey      = $exportPathKey
                         exportPathCert = $exportPathCert
-                        exportPathKey = $exportPathKey
-                        Status       = "Success"
+                        exportPathKey  = $exportPathKey
+                        Status         = "Success"
                     } | Select-DefaultView -ExcludeProperty exportPathCert, exportPathKey, ExportPath, ExportKey
-                }
-                catch {
-                    
+                } catch {
+
                     if ($_.Exception.InnerException) {
                         $exception = $_.Exception.InnerException.ToString() -Split "System.Data.SqlClient.SqlException: "
                         $exception = ($exception[1] -Split "at Microsoft.SqlServer.Management.Common.ConnectionManager")[0]
-                    }
-                    else {
+                    } else {
                         $exception = $_.Exception
                     }
                     [pscustomobject]@{
-                        ComputerName = $server.ComputerName
-                        InstanceName = $server.ServiceName
-                        SqlInstance  = $server.DomainInstanceName
-                        Database     = $db.Name
-                        Certificate  = $certName
-                        Path         = $exportPathCert
-                        Key          = $exportPathKey
-                        ExportPath   = $exportPathCert
-                        ExportKey    = $exportPathKey
+                        ComputerName   = $server.ComputerName
+                        InstanceName   = $server.ServiceName
+                        SqlInstance    = $server.DomainInstanceName
+                        Database       = $db.Name
+                        Certificate    = $certName
+                        Path           = $exportPathCert
+                        Key            = $exportPathKey
+                        ExportPath     = $exportPathCert
+                        ExportKey      = $exportPathKey
                         exportPathCert = $exportPathCert
-                        exportPathKey = $exportPathKey
-                        Status       = "Failure: $exception"
+                        exportPathKey  = $exportPathKey
+                        Status         = "Failure: $exception"
                     } | Select-DefaultView -ExcludeProperty exportPathCert, exportPathKey, ExportPath, ExportKey
                     Stop-Function -Message "$certName from $db on $instance cannot be exported." -Continue -Target $cert -ErrorRecord $_
                 }
             }
         }
     }
-    
+
     process {
         if (Test-FunctionInterrupt) { return }
-        
+
         if ($SqlInstance) {
             $InputObject += Get-DbaDbCertificate -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database -ExcludeDatabase $ExcludeDatabase
         }
-        
+
         foreach ($cert in $InputObject) {
             if ($cert.Name.StartsWith("##")) {
                 Write-Message -Level Output -Message "Skipping system cert $cert"
-            }
-            else {
+            } else {
                 export-cert $cert
             }
         }
     }
 }
+

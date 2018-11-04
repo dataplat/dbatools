@@ -1,13 +1,13 @@
-﻿$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        $paramCount = 9
+        $paramCount = 12
         $defaultParamCount = 11
         [object[]]$params = (Get-ChildItem function:\Export-DbaDacPackage).Parameters.Keys
-        $knownParameters = 'SqlInstance','SqlCredential','Database','ExcludeDatabase','AllUserDatabases','Path','ExtendedParameters','ExtendedProperties','EnableException'
+        $knownParameters = 'SqlInstance','SqlCredential','Database','ExcludeDatabase','AllUserDatabases','Path','ExtendedParameters','ExtendedProperties','EnableException', 'Type', 'DacOption', 'Table'
         It "Should contain our specific parameters" {
             ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
         }
@@ -19,46 +19,107 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
+        $dbname = "dbatoolsci_exportdacpac"
         try {
-            $dbname = "dbatoolsci_exportdacpac"
             $server = Connect-DbaInstance -SqlInstance $script:instance1
             $null = $server.Query("Create Database [$dbname]")
             $db = Get-DbaDatabase -SqlInstance $script:instance1 -Database $dbname
-            $null = $db.Query("CREATE TABLE dbo.example (id int);
+            $null = $db.Query("CREATE TABLE dbo.example (id int, PRIMARY KEY (id));
             INSERT dbo.example
-            SELECT top 100 1
+            SELECT top 100 object_id
             FROM sys.objects")
         }
         catch { } # No idea why appveyor can't handle this
+
+        $testFolder = 'C:\Temp\dacpacs'
     }
     AfterAll {
         Remove-DbaDatabase -SqlInstance $script:instance1 -Database $dbname -Confirm:$false
     }
-
-    if ((Get-DbaDbTable -SqlInstance $script:instance1 -Database $dbname -Table example)) {
-        # Sometimes appveyor bombs
-        It "exports a dacpac" {
-            $results = Export-DbaDacPackage -SqlInstance $script:instance1 -Database $dbname
-            if (($results).Path) {
-                Remove-Item -Confirm:$false -Path ($results).Path -ErrorAction SilentlyContinue
-            }
-        }
-
-        It "exports to the correct directory" {
-            $testFolder = 'C:\Temp\dacpacs'
-            New-Item $testFolder -ItemType Directory
-
+    Context "Extract dacpac" {
+        BeforeEach {
+            New-Item $testFolder -ItemType Directory -Force
             Push-Location $testFolder
-            try {
+        }
+        AfterEach {
+            Pop-Location
+            Remove-Item $testFolder -Force -Recurse
+        }
+        if ((Get-DbaDbTable -SqlInstance $script:instance1 -Database $dbname -Table example)) {
+            # Sometimes appveyor bombs
+            It "exports a dacpac" {
+                $results = Export-DbaDacPackage -SqlInstance $script:instance1 -Database $dbname
+                $results.Path | Should -Not -BeNullOrEmpty
+                Test-Path $results.Path | Should -Be $true
+                if (($results).Path) {
+                    Remove-Item -Confirm:$false -Path ($results).Path -ErrorAction SilentlyContinue
+                }
+            }
+            It "exports to the correct directory" {
                 $relativePath = '.\'
                 $expectedPath = (Resolve-Path $relativePath).Path
-
                 $results = Export-DbaDacPackage -SqlInstance $script:instance1 -Database $dbname -Path $relativePath
                 $results.Path | Split-Path | Should -Be $expectedPath
+                Test-Path $results.Path | Should -Be $true
             }
-            finally {
-                Pop-Location
-                Remove-Item $testFolder -Force -Recurse
+            It "exports dacpac with a table list" {
+                $relativePath = '.\extract.dacpac'
+                $expectedPath = Join-Path (Get-Item .) 'extract.dacpac'
+                $results = Export-DbaDacPackage -SqlInstance $script:instance1 -Database $dbname -Path $relativePath -Table example
+                $results.Path | Should -Be $expectedPath
+                Test-Path $results.Path | Should -Be $true
+                if (($results).Path) {
+                    Remove-Item -Confirm:$false -Path ($results).Path -ErrorAction SilentlyContinue
+                }
+            }
+            It "uses EXE to extract dacpac" {
+                $exportProperties = "/p:ExtractAllTableData=True"
+                $results = Export-DbaDacPackage -SqlInstance $script:instance1 -Database $dbname -ExtendedProperties $exportProperties
+                $results.Path | Should -Not -BeNullOrEmpty
+                Test-Path $results.Path | Should -Be $true
+                if (($results).Path) {
+                    Remove-Item -Confirm:$false -Path ($results).Path -ErrorAction SilentlyContinue
+                }
+            }
+        }
+    }
+    Context "Extract bacpac" {
+        BeforeEach {
+            New-Item $testFolder -ItemType Directory -Force
+            Push-Location $testFolder
+        }
+        AfterEach {
+            Pop-Location
+            Remove-Item $testFolder -Force -Recurse
+        }
+        if ((Get-DbaDbTable -SqlInstance $script:instance1 -Database $dbname -Table example)) {
+            # Sometimes appveyor bombs
+            It "exports a bacpac" {
+                $results = Export-DbaDacPackage -SqlInstance $script:instance1 -Database $dbname -Type Bacpac
+                $results.Path | Should -Not -BeNullOrEmpty
+                Test-Path $results.Path | Should -Be $true
+                if (($results).Path) {
+                    Remove-Item -Confirm:$false -Path ($results).Path -ErrorAction SilentlyContinue
+                }
+            }
+            It "exports bacpac with a table list" {
+                $relativePath = '.\extract.bacpac'
+                $expectedPath = Join-Path (Get-Item .) 'extract.bacpac'
+                $results = Export-DbaDacPackage -SqlInstance $script:instance1 -Database $dbname -Path $relativePath -Table example -Type Bacpac
+                $results.Path | Should -Be $expectedPath
+                Test-Path $results.Path | Should -Be $true
+                if (($results).Path) {
+                    Remove-Item -Confirm:$false -Path ($results).Path -ErrorAction SilentlyContinue
+                }
+            }
+            It "uses EXE to extract bacpac" {
+                $exportProperties = "/p:TargetEngineVersion=Default"
+                $results = Export-DbaDacPackage -SqlInstance $script:instance1 -Database $dbname -ExtendedProperties $exportProperties -Type Bacpac
+                $results.Path | Should -Not -BeNullOrEmpty
+                Test-Path $results.Path | Should -Be $true
+                if (($results).Path) {
+                    Remove-Item -Confirm:$false -Path ($results).Path -ErrorAction SilentlyContinue
+                }
             }
         }
     }

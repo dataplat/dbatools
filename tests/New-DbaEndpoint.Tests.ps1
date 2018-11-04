@@ -1,4 +1,4 @@
-﻿$commandname = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+$commandname = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 
@@ -14,8 +14,13 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
             Invoke-DbaQuery -SqlInstance $script:instance2 -Query "$create"
         }
     }
-    It "creates an endpoint" {
-        $results = New-DbaEndpoint -SqlInstance $script:instance2 -Type DatabaseMirroring -Role Partner -Name Mirroring -EncryptionAlgorithm RC4 -Confirm:$false | Start-DbaEndpoint -Confirm:$false
+    $results = New-DbaEndpoint -SqlInstance $script:instance2 -Type DatabaseMirroring -Role Partner -Name Mirroring -EncryptionAlgorithm RC4 -Confirm:$false | Start-DbaEndpoint -Confirm:$false
+    
+    It "creates an endpoint of the db mirroring type" {
         $results.EndpointType | Should -Be 'DatabaseMirroring'
+    }
+    It "creates it with the right owner" {
+        $sa = Get-SaLoginName -SqlInstance $script:instance2
+        $results.Owner | Should -Be $sa
     }
 }

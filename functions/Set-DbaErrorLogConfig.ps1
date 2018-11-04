@@ -1,5 +1,5 @@
-﻿function Set-DbaErrorLogConfig {
-<#
+function Set-DbaErrorLogConfig {
+    <#
     .SYNOPSIS
         Set the configuration for the ErrorLog on a given SQL Server instance
 
@@ -73,8 +73,7 @@
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -82,11 +81,11 @@
             $currentLogSize = $server.ErrorLogSizeKb
 
             $collection = [PSCustomObject]@{
-                ComputerName              = $server.ComputerName
-                InstanceName              = $server.ServiceName
-                SqlInstance               = $server.DomainInstanceName
-                LogCount                  = $currentNumLogs
-                LogSize                   = [dbasize]($currentLogSize * 1024)
+                ComputerName = $server.ComputerName
+                InstanceName = $server.ServiceName
+                SqlInstance  = $server.DomainInstanceName
+                LogCount     = $currentNumLogs
+                LogSize      = [dbasize]($currentLogSize * 1024)
             }
             if (Test-Bound -ParameterName 'LogSize') {
                 if ($server.VersionMajor -lt 11) {
@@ -94,14 +93,12 @@
                 }
                 if ($LogSize -eq $currentLogSize) {
                     Write-Message -Level Warning -Message "The provided value for LogSize is already set to $LogSize KB on $instance"
-                }
-                else {
+                } else {
                     if ($PSCmdlet.ShouldProcess($server, "Updating log size from [$currentLogSize] to [$LogSize]")) {
                         try {
                             $server.ErrorLogSizeKb = $LogSize
                             $server.Alter()
-                        }
-                        catch {
+                        } catch {
                             Stop-Function -Message "Issue setting number of log files on $instance" -Target $instance -ErrorRecord $_ -Exception $_.Exception.InnerException.InnerException.InnerException -Continue
                         }
                     }
@@ -115,14 +112,12 @@
             if (Test-Bound -ParameterName 'LogCount') {
                 if ($LogCount -eq $currentNumLogs) {
                     Write-Message -Level Warning -Message "The provided value for LogCount is already set to $LogCount on $instance"
-                }
-                else {
+                } else {
                     if ($PSCmdlet.ShouldProcess($server, "Setting number of logs from [$currentNumLogs] to [$LogCount]")) {
                         try {
                             $server.NumberOfLogFiles = $LogCount
                             $server.Alter()
-                        }
-                        catch {
+                        } catch {
                             Stop-Function -Message "Issue setting number of log files on $instance" -Target $instance -ErrorRecord $_ -Exception $_.Exception.InnerException.InnerException.InnerException -Continue
                         }
                     }
@@ -136,3 +131,4 @@
         }
     }
 }
+

@@ -1,4 +1,4 @@
-﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Invoke-DbaXeReplay {
     <#
     .SYNOPSIS
@@ -78,7 +78,8 @@ function Invoke-DbaXeReplay {
     )
 
     begin {
-        $querycolumns = 'statement', 'batch_text'
+        #Variable marked as unused by PSScriptAnalyzer
+        #$querycolumns = 'statement', 'batch_text'
         $timestamp = (Get-Date -Format yyyyMMddHHmm)
         $temp = ([System.IO.Path]::GetTempPath()).TrimEnd("\")
         $filename = "$temp\dbatools-replay-$timestamp.sql"
@@ -97,8 +98,7 @@ function Invoke-DbaXeReplay {
                 Add-Content -Path $filename -Value $InputObject.statement
                 Add-Content -Path $filename -Value "GO"
             }
-        }
-        else {
+        } else {
             if ($InputObject.batch_text -notmatch "ALTER EVENT SESSION") {
                 Add-Content -Path $filename -Value $InputObject.batch_text
                 Add-Content -Path $filename -Value "GO"
@@ -110,27 +110,26 @@ function Invoke-DbaXeReplay {
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -ErrorRecord $_ -Target $instance -Continue
             }
 
 
             if ($Raw) {
+                Write-Message -Message "Invoking XEReplay against $instance running on $($server.name) with raw output" -Level Verbose
                 if (Test-Bound -ParameterName SqlCredential) {
                     . $sqlcmd -S $instance -i $filename -U $SqlCredential.Username -P $SqlCredential.GetNetworkCredential().Password
                     continue
-                }
-                else {
+                } else {
                     . $sqlcmd -S $instance -i $filename
                     continue
                 }
             }
 
+            Write-Message -Message "Invoking XEReplay against $instance running on $($server.name)" -Level Verbose
             if (Test-Bound -ParameterName SqlCredential) {
                 $output = . $sqlcmd -S $instance -i $filename -U $SqlCredential.Username -P $SqlCredential.GetNetworkCredential().Password
-            }
-            else {
+            } else {
                 $output = . $sqlcmd -S $instance -i $filename
             }
 
@@ -144,3 +143,4 @@ function Invoke-DbaXeReplay {
         Remove-Item -Path $filename -ErrorAction Ignore
     }
 }
+

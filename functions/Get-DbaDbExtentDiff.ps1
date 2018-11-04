@@ -1,5 +1,5 @@
-﻿function Get-DbaDbExtentDiff {
-<#
+function Get-DbaDbExtentDiff {
+    <#
     .SYNOPSIS
         What percentage of a database has changed since the last full backup
 
@@ -47,7 +47,8 @@
         Get the changes for the DBA database.
 
     .EXAMPLE
-        PS C:\> Get-DbaDbExtentDiff -SqlInstance $SQL2017N1, $SQL2017N2, $SQL2016 -Database DB01 -SqlCredential $Cred
+        PS C:\> $Cred = Get-Credential sqladmin
+        PS C:\> Get-DbaDbExtentDiff -SqlInstance SQL2017N1, SQL2017N2, SQL2016 -Database DB01 -SqlCredential $Cred
 
         Get the changes for the DB01 database on multiple servers.
 
@@ -71,8 +72,7 @@
                 $extents = $rex.Matches($f)
                 if ($extents.Count -eq 1) {
                     $res += 1
-                }
-                else {
+                } else {
                     $pages = [int]$extents[1].Groups['extent'].Value - [int]$extents[0].Groups['extent'].Value
                     $res += $pages / 8 + 1
                 }
@@ -86,8 +86,7 @@
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential -NonPooled
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -105,8 +104,7 @@
             foreach ($db in $dbs) {
                 if ($db.IsAccessible -ne $true) {
                     Write-Message -Level Verbose -Message "$db is not accessible on $instance, skipping"
-                }
-                else {
+                } else {
                     $sourcedbs += $db
                 }
             }
@@ -132,8 +130,7 @@
                         ChangedPerc    = [math]::Round($DBCCPageResults.ChangedPerc, 2)
                     }
                 }
-            }
-            else {
+            } else {
                 $MasterFilesQuery = "
                         SELECT [file_id], [size], database_id, db_name(database_id) as dbname FROM master.sys.master_files
                         WHERE [type_desc] = N'ROWS'
@@ -171,3 +168,4 @@
         }
     }
 }
+

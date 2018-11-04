@@ -1,6 +1,6 @@
-﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Test-DbaBuild {
-<#
+    <#
     .SYNOPSIS
         Returns SQL Server Build "compliance" level on a build
 
@@ -38,7 +38,7 @@ function Test-DbaBuild {
 
     .NOTES
         Tags: SqlBuild, Version
-        Author: Simone Bizzotto (@niphold) | Friedrich Weinmann (@FredWeinmann‏)
+        Author: Simone Bizzotto (@niphold) | Friedrich Weinmann (@FredWeinmann)
 
         dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
         Copyright: (c) 2018 by dbatools, licensed under MIT
@@ -154,8 +154,7 @@ function Test-DbaBuild {
             # Empty call just to make sure the buildref is updated and on the right path
             Get-DbaBuildReference -Update:$Update -EnableException:$true
             $IdxRef = Get-DbaBuildReferenceIndex
-        }
-        catch {
+        } catch {
             Stop-Function -Message "Error loading SQL build reference" -ErrorRecord $_
             return
         }
@@ -169,15 +168,13 @@ function Test-DbaBuild {
                     if ($pieceMatch.Success -ne $true) {
                         Stop-Function -Message "MaxBehind has an invalid syntax ('$piece' could not be parsed correctly)" -ErrorRecord $_
                         return
-                    }
-                    else {
+                    } else {
                         $howmany = [int]$pieceMatch.Groups['howmany'].Value
                         $what = $pieceMatch.Groups['what'].Value
                         if ($ParsedMaxBehind.ContainsKey($what)) {
                             Stop-Function -Message "The specifier $what has been already passed" -ErrorRecord $_
                             return
-                        }
-                        else {
+                        } else {
                             $ParsedMaxBehind[$what] = $howmany
                         }
                     }
@@ -185,8 +182,7 @@ function Test-DbaBuild {
                 if (-not $ParsedMaxBehind.ContainsKey('SP')) {
                     $ParsedMaxBehind['SP'] = 0
                 }
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Error parsing MaxBehind" -ErrorRecord $_
                 return
             }
@@ -200,8 +196,7 @@ function Test-DbaBuild {
         }
         if ($MinimumBuild) {
             $hiddenProps += 'MaxBehind', 'SPTarget', 'CUTarget', 'BuildTarget'
-        }
-        elseif ($MaxBehind -or $Latest) {
+        } elseif ($MaxBehind -or $Latest) {
             $hiddenProps += 'MinimumBuild'
         }
         $BuildVersions = Get-DbaBuildReference -Build $Build -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Update:$Update -EnableException:$EnableException
@@ -218,8 +213,7 @@ function Test-DbaBuild {
                 if ($inputbuild -ge $MinimumBuild) {
                     $compliant = $true
                 }
-            }
-            elseif ($MaxBehind -or $Latest) {
+            } elseif ($MaxBehind -or $Latest) {
                 $IdxVersion = $IdxRef | Where-Object Version -like "$($inputbuild.Major).$($inputbuild.Minor).*"
                 $lastsp = ''
                 $SPsAndCUs = @()
@@ -242,8 +236,7 @@ function Test-DbaBuild {
                 $targetedBuild = $SPsAndCUs[0]
                 if ($Latest) {
                     $targetedBuild = $IdxVersion[$IdxVersion.Length - 1]
-                }
-                else {
+                } else {
                     if ($ParsedMaxBehind.ContainsKey('SP')) {
                         $AllSPs = $SPsAndCUs.SP | Select-Object -Unique
                         $targetSP = $AllSPs.Length - $ParsedMaxBehind['SP'] - 1
@@ -280,8 +273,7 @@ function Test-DbaBuild {
             Add-Member -InputObject $BuildVersion -MemberType NoteProperty -Name BuildTarget -Value $targetedBuild.VersionObject
             if ($Quiet) {
                 $BuildVersion.Compliant
-            }
-            else {
+            } else {
                 $BuildVersion | Select-Object * | Select-DefaultView -ExcludeProperty $hiddenProps
             }
         }
@@ -290,3 +282,4 @@ function Test-DbaBuild {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Test-DbaSqlBuild
     }
 }
+

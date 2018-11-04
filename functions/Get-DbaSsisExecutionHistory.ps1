@@ -1,6 +1,6 @@
-﻿#ValidationTags#Messaging#
+#ValidationTags#Messaging#
 function Get-DbaSsisExecutionHistory {
-<#
+    <#
     .SYNOPSIS
         Get-DbaSsisHistory Retreives SSIS project and package execution History, and environments from one SQL Server to another.
 
@@ -29,6 +29,12 @@ function Get-DbaSsisExecutionHistory {
 
     .PARAMETER Since
         Datetime object used to narrow the results to a date
+
+    .PARAMETER WhatIf
+        If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
+
+    .PARAMETER Confirm
+        If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -65,7 +71,7 @@ function Get-DbaSsisExecutionHistory {
     [CmdletBinding()]
     param (
         [parameter(Mandatory)]
-        [DbaInstanceParameter]$SqlInstance,
+        [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [datetime]$Since,
         [ValidateSet("Created", "Running", "Cancelled", "Failed", "Pending", "Halted", "Succeeded", "Stopping", "Completed")]
@@ -73,7 +79,6 @@ function Get-DbaSsisExecutionHistory {
         [String[]]$Project,
         [String[]]$Folder,
         [String[]]$Environment,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     begin {
@@ -94,8 +99,7 @@ function Get-DbaSsisExecutionHistory {
         if ($Status) {
             $csv = ($statuses[$Status] -join ',')
             $statusq = "`n`t`tAND e.[Status] in ($csv)"
-        }
-        else {
+        } else {
             $statusq = ''
         }
 
@@ -103,14 +107,13 @@ function Get-DbaSsisExecutionHistory {
         if ($Project) {
             $projectq = "`n`t`tAND ( 1=0 "
             $i = 0
-            foreach($p in $Project){
+            foreach ($p in $Project) {
                 $i ++
                 $projectq += "`n`t`t`tOR e.[project_name] = @project$i"
-                $params.Add("project$i",$p)
+                $params.Add("project$i", $p)
             }
             $projectq += "`n`t`t)"
-        }
-        else {
+        } else {
             $projectq = ''
         }
 
@@ -118,36 +121,34 @@ function Get-DbaSsisExecutionHistory {
         if ($Folder) {
             $folderq = "`n`t`tAND ( 1=0 "
             $i = 0
-            foreach($f in $Folder){
+            foreach ($f in $Folder) {
                 $i ++
                 $folderq += "`n`t`t`tOR e.[folder_name] = @folder$i"
                 $params.Add("folder$i" , $f)
             }
             $folderq += "`n`t`t)"
-        }
-        else {
+        } else {
             $folderq = ''
         }
 
-         #construct parameterized collection predicate for environment array
-         if ($Environment) {
+        #construct parameterized collection predicate for environment array
+        if ($Environment) {
             $environmentq = "`n`t`tAND ( 1=0 "
             $i = 0
-            foreach($e in $Environment){
+            foreach ($e in $Environment) {
                 $i ++
                 $environmentq += "`n`t`t`tOR e.[environment_name] = @environment$i"
                 $params.Add("environment$i" , $e)
             }
             $environmentq += "`n`t`t)"
-        }
-        else {
+        } else {
             $environmentq = ''
         }
 
         #construct date filter for since
-        if($Since){
+        if ($Since) {
             $sinceq = "`n`t`tAND e.[start_time] >= @since"
-            $params.Add('since',$Since )
+            $params.Add('since', $Since )
         }
 
         $sql = "
@@ -201,9 +202,9 @@ function Get-DbaSsisExecutionHistory {
         "
 
         #debug verbose output
-        Write-Verbose "`nSQL statement: $sql"
+        Write-Message -Level Debug -Message "`nSQL statement: $sql"
         $paramout = ($params | Out-String)
-        Write-Verbose "`nParameters:$paramout"
+        Write-Message -Level Debug -Message "`nParameters:$paramout"
     }
 
 
@@ -218,3 +219,5 @@ function Get-DbaSsisExecutionHistory {
         }
     }
 }
+
+

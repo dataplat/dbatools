@@ -1,6 +1,6 @@
-﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function New-DbaXESmartTableWriter {
-<#
+    <#
     .SYNOPSIS
         This response type is used to write Extended Events to a database table.
 
@@ -46,6 +46,12 @@ function New-DbaXESmartTableWriter {
 
         Example: duration > 10000 AND cpu_time > 10000
 
+    .PARAMETER WhatIf
+        If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
+
+    .PARAMETER Confirm
+        If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -71,7 +77,7 @@ function New-DbaXESmartTableWriter {
         Writes Extended Events to the deadlocktracker table in dbadb on sql2017.
 
 #>
-    [CmdletBinding()]
+    [CmdletBinding(SupportsShouldProcess)]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
@@ -91,8 +97,7 @@ function New-DbaXESmartTableWriter {
     begin {
         try {
             Add-Type -Path "$script:PSModuleRoot\bin\XESmartTarget\XESmartTarget.Core.dll" -ErrorAction Stop
-        }
-        catch {
+        } catch {
             Stop-Function -Message "Could not load XESmartTarget.Core.dll" -ErrorRecord $_ -Target "XESmartTarget"
             return
         }
@@ -103,32 +108,32 @@ function New-DbaXESmartTableWriter {
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 11
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-
-            try {
-                $writer = New-Object -TypeName XESmartTarget.Core.Responses.TableAppenderResponse
-                $writer.ServerName = $server.Name
-                $writer.DatabaseName = $Database
-                $writer.TableName = $Table
-                $writer.AutoCreateTargetTable = $AutoCreateTargetTable
-                $writer.UploadIntervalSeconds = $UploadIntervalSeconds
-                if (Test-Bound -ParameterName "Event") {
-                    $writer.Events = $Event
+            if ($Pscmdlet.ShouldProcess($instance, "Creating new XESmartTableWriter")) {
+                try {
+                    $writer = New-Object -TypeName XESmartTarget.Core.Responses.TableAppenderResponse
+                    $writer.ServerName = $server.Name
+                    $writer.DatabaseName = $Database
+                    $writer.TableName = $Table
+                    $writer.AutoCreateTargetTable = $AutoCreateTargetTable
+                    $writer.UploadIntervalSeconds = $UploadIntervalSeconds
+                    if (Test-Bound -ParameterName "Event") {
+                        $writer.Events = $Event
+                    }
+                    if (Test-Bound -ParameterName "OutputColumn") {
+                        $writer.OutputColumns = $OutputColumn
+                    }
+                    if (Test-Bound -ParameterName "Filter") {
+                        $writer.Filter = $Filter
+                    }
+                    $writer
+                } catch {
+                    Stop-Function -Message "Failure" -ErrorRecord $_ -Target "XESmartTarget" -Continue
                 }
-                if (Test-Bound -ParameterName "OutputColumn") {
-                    $writer.OutputColumns = $OutputColumn
-                }
-                if (Test-Bound -ParameterName "Filter") {
-                    $writer.Filter = $Filter
-                }
-                $writer
-            }
-            catch {
-                Stop-Function -Message "Failure" -ErrorRecord $_ -Target "XESmartTarget" -Continue
             }
         }
     }
 }
+

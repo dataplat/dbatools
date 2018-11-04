@@ -1,5 +1,5 @@
-﻿function Get-DbaServerAuditSpecification {
-<#
+function Get-DbaServerAuditSpecification {
+    <#
     .SYNOPSIS
         Gets SQL Security Audit Specification information for each instance(s) of SQL Server.
 
@@ -52,15 +52,9 @@
     process {
         foreach ($instance in $SqlInstance) {
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-            }
-            catch {
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 10
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
-            }
-
-            if ($server.versionMajor -lt 10) {
-                Write-Warning "Server Audits are only supported in SQL Server 2008 and above. Quitting."
-                continue
             }
 
             foreach ($auditSpecification in $server.ServerAuditSpecifications) {
@@ -76,3 +70,4 @@
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-SqlServerAuditSpecification
     }
 }
+

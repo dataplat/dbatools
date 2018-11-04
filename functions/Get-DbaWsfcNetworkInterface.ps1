@@ -1,6 +1,6 @@
-﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaWsfcNetworkInterface {
-<#
+    <#
     .SYNOPSIS
         Gets information about one or more network adapters in a failover cluster.
 
@@ -59,3 +59,4 @@ function Get-DbaWsfcNetworkInterface {
         }
     }
 }
+

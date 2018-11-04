@@ -71,8 +71,7 @@ function Get-SqlCmdVars {
         if (Test-Path variable:$var) {
             $value = Get-Variable $var -ValueOnly
             $SqlCommandVariableValues[$var] = $value
-        }
-        else {
+        } else {
             $missingVariables += $var
         }
     }
@@ -81,3 +80,4 @@ function Get-SqlCmdVars {
         Stop-Function -Message $errorMsg -EnableException $EnableException
     }
 }
+

@@ -1,5 +1,6 @@
-﻿function Get-DbaDbRoleMember {
-<#
+#ValidationTags#CodeStyle, Messaging, FlowControl, Pipeline#
+function Get-DbaDbRoleMember {
+    <#
     .SYNOPSIS
         Get members of database roles for each instance(s) of SQL Server.
 
@@ -101,8 +102,7 @@
 
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message 'Failure' -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -151,8 +151,9 @@
                             Add-Member -Force -InputObject $user -MemberType NoteProperty -Name Database -Value $db.Name
                             Add-Member -Force -InputObject $user -MemberType NoteProperty -Name Role -Value $dbRole.Name
                             Add-Member -Force -InputObject $user -MemberType NoteProperty -Name UserName -Value $user.Name
-
-                            $user | Select-DefaultView -Property 'ComputerName', 'InstanceName', 'SqlInstance', 'Database', 'Role', 'UserName', 'Login'
+                            
+                            # Select object because Select-DefaultView causes strange behaviors when assigned to a variable (??)
+                            Select-Object -InputObject $user -Property 'ComputerName', 'InstanceName', 'SqlInstance', 'Database', 'Role', 'UserName', 'Login', 'IsSystemObject'
                         }
                     }
                 }
@@ -163,3 +164,4 @@
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Get-DbaRoleMember
     }
 }
+

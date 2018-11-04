@@ -1,5 +1,5 @@
-﻿function Get-DbaModule {
-<#
+function Get-DbaModule {
+    <#
     .SYNOPSIS
         Displays all objects in sys.sys_modules after specified modification date.  Works on SQL Server 2008 and above.
 
@@ -132,8 +132,7 @@
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential -MinimumVersion 10
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -179,3 +178,4 @@
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-DbaSqlModule
     }
 }
+

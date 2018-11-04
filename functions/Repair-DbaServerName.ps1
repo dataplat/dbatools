@@ -1,5 +1,5 @@
-﻿function Repair-DbaServerName {
-<#
+function Repair-DbaServerName {
+    <#
     .SYNOPSIS
         Renames @@SERVERNAME to match with the Windows name.
 
@@ -85,8 +85,7 @@
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -115,8 +114,7 @@
                         if (-not $AutoFix) {
                             Stop-Function -Message "Cannot proceed because some databases are involved in replication. You can run exec sp_dropdistributor @no_checks = 1 but that may be pretty dangerous. Alternatively, you can run -AutoFix to automatically fix this issue. AutoFix will also break all database mirrors."
                             return
-                        }
-                        else {
+                        } else {
                             if ($Pscmdlet.ShouldProcess("console", "Prompt will appear for confirmation to break replication.")) {
                                 $title = "You have chosen to AutoFix the blocker: replication."
                                 $message = "We can run sp_dropdistributor which will pretty much destroy replication on this server. Do you wish to continue? (Y/N)"
@@ -127,26 +125,22 @@
 
                                 if ($result -eq 1) {
                                     Stop-Function -Message "Failure" -Target $server -ErrorRecord $_ -Continue
-                                }
-                                else {
+                                } else {
                                     Write-Message -Level Output -Message "`nPerforming sp_dropdistributor @no_checks = 1."
                                     $sql = "sp_dropdistributor @no_checks = 1"
                                     Write-Message -Level Debug -Message $sql
                                     try {
                                         $null = $server.Query($sql)
-                                    }
-                                    catch {
+                                    } catch {
                                         Stop-Function -Message "Failure" -Target $server -ErrorRecord $_ -Continue
                                     }
                                 }
                             }
                         }
-                    }
-                    elseif ($Error -like '*mirror*') {
+                    } elseif ($Error -like '*mirror*') {
                         if ($AutoFix -eq $false) {
                             Stop-Function -Message "Cannot proceed because some databases are being mirrored. Stop mirroring to proceed. Alternatively, you can run -AutoFix to automatically fix this issue. AutoFix will also stop replication." -Continue
-                        }
-                        else {
+                        } else {
                             if ($Pscmdlet.ShouldProcess("console", "Prompt will appear for confirmation to break replication.")) {
                                 $title = "You have chosen to AutoFix the blocker: mirroring."
                                 $message = "We can run sp_dropdistributor which will pretty much destroy replication on this server. Do you wish to continue? (Y/N)"
@@ -157,8 +151,7 @@
 
                                 if ($result -eq 1) {
                                     Write-Message -Level Output -Message "Okay, moving on."
-                                }
-                                else {
+                                } else {
                                     Write-Message -Level Verbose -Message "Removing Mirroring"
 
                                     foreach ($database in $server.Databases) {
@@ -170,8 +163,7 @@
                                                 $database.ChangeMirroringState([Microsoft.SqlServer.Management.Smo.MirroringOption]::Off)
                                                 $database.Alter()
                                                 $database.Refresh()
-                                            }
-                                            catch {
+                                            } catch {
                                                 Stop-Function -Message "Failure" -Target $server -ErrorRecord $_
                                                 return
                                                 #throw "Could not break mirror for $dbname. Skipping."
@@ -194,8 +186,7 @@
 
             try {
                 $allsqlservices = Get-Service -ComputerName $instance.ComputerName -ErrorAction SilentlyContinue | Where-Object { $_.DisplayName -like "SQL*$instancename*" -and $_.Status -eq "Running" }
-            }
-            catch {
+            } catch {
                 Write-Message -Level Warning -Message "Can't contact $instance using Get-Service. This means the script will not be able to automatically restart SQL services."
             }
 
@@ -215,8 +206,7 @@
                 Write-Message -Level Debug -Message $sql
                 try {
                     $null = $server.Query($sql)
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Failure" -Target $server -ErrorRecord $_
                     return
                 }
@@ -226,8 +216,7 @@
 
                 try {
                     $null = $server.Query($sql)
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Failure" -Target $server -ErrorRecord $_
                     return
                 }
@@ -237,16 +226,14 @@
             if ($null -eq $allsqlservices) {
                 Write-Message -Level Warning -Message "Could not contact $($instance.ComputerName) using Get-Service. You must manually restart the SQL Server instance."
                 $needsrestart = $true
-            }
-            else {
+            } else {
                 if ($Pscmdlet.ShouldProcess($instance.ComputerName, "Rename complete! The SQL Service must be restarted to commit the changes. Would you like to restart the $instancename instance now?")) {
                     try {
                         Write-Message -Level Verbose -Message "Stopping SQL Services for the $instancename instance"
                         $allsqlservices | Stop-Service -Force -WarningAction SilentlyContinue # because it reports the wrong name
                         Write-Message -Level Verbose -Message "Starting SQL Services for the $instancename instance."
                         $allsqlservices | Where-Object { $_.DisplayName -notlike "*reporting*" } | Start-Service -WarningAction SilentlyContinue # because it reports the wrong name
-                    }
-                    catch {
+                    } catch {
                         Stop-Function -Message "Failure" -Target $server -ErrorRecord $_ -Continue
                     }
                 }
@@ -263,3 +250,4 @@
         }
     }
 }
+

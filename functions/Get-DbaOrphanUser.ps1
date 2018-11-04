@@ -1,6 +1,6 @@
-﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaOrphanUser {
-<#
+    <#
     .SYNOPSIS
         Get orphaned users.
 
@@ -73,8 +73,7 @@ function Get-DbaOrphanUser {
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-            }
-            catch {
+            } catch {
                 Write-Message -Level Warning -Message "Failed to connect to: $instance."
                 continue
             }
@@ -111,22 +110,20 @@ function Get-DbaOrphanUser {
                                     User         = $user.Name
                                 }
                             }
-                        }
-                        else {
+                        } else {
                             Write-Message -Level Verbose -Message "No orphan users found on database '$db'."
                         }
                         #reset collection
                         $UsersToWork = $null
-                    }
-                    catch {
+                    } catch {
                         Stop-Function -Message $_ -Continue
                     }
                 }
-            }
-            else {
+            } else {
                 Write-Message -Level VeryVerbose -Message "There are no databases to analyse."
             }
         }
     }
 
 }
+

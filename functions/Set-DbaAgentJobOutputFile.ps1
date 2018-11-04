@@ -1,5 +1,5 @@
-﻿function Set-DbaAgentJobOutputFile {
-<#
+function Set-DbaAgentJobOutputFile {
+    <#
     .Synopsis
         Set the output file for a step within an Agent job.
 
@@ -41,7 +41,7 @@
         License: MIT https://opensource.org/licenses/MIT
 
     .EXAMPLE
-        PS C:\> Set-DbaAgentJobOutputFile -SqlInstance SERVERNAME -JobName 'The Agent Job' -OutPutFile E:\Logs\AgentJobStepOutput.txt
+        PS C:\> Set-DbaAgentJobOutputFile -SqlInstance SERVERNAME -Job 'The Agent Job' -OutPutFile E:\Logs\AgentJobStepOutput.txt
 
         Sets the Job step for The Agent job on SERVERNAME to E:\Logs\AgentJobStepOutput.txt
 
@@ -83,8 +83,7 @@
     foreach ($instance in $sqlinstance) {
         try {
             $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
-        }
-        catch {
+        } catch {
             Write-Message -Level Warning -Message "Failed to connect to: $instance"
             continue
         }
@@ -105,13 +104,11 @@
                     Write-Message -Level Warning -Message "$Step didn't return any steps"
                     return
                 }
-            }
-            else {
+            } else {
                 if (($currentJob.JobSteps).Count -gt 1) {
                     Write-Message -Level Output -Message "Which Job Step do you wish to add output file to?"
                     $steps = $currentJob.JobSteps | Out-GridView -Title "Choose the Job Steps to add an output file to" -PassThru -Verbose
-                }
-                else {
+                } else {
                     $steps = $currentJob.JobSteps
                 }
             }
@@ -141,11 +138,11 @@
                             OutputFileName = $currentoutputfile
                         }
                     }
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Failed to add $OutputFile to $jobstep for $currentJob" -InnerErrorRecord $_ -Target $currentJob
                 }
             }
         }
     }
 }
+

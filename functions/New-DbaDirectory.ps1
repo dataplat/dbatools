@@ -1,4 +1,4 @@
-﻿function New-DbaDirectory {
+function New-DbaDirectory {
     <#
     .SYNOPSIS
         Creates new path as specified by the path variable
@@ -15,6 +15,12 @@
 
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+
+    .PARAMETER WhatIf
+        If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
+
+    .PARAMETER Confirm
+        If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -47,7 +53,7 @@
         If the SQL Server instance sqlcluster can create the path L:\MSAS12.MSSQLSERVER\OLAP it will do and return $true, if not it will return $false. Uses a SqlCredential to connect
 
 #>
-    [CmdletBinding()]
+    [CmdletBinding(SupportsShouldProcess)]
     param (
         [Parameter(Mandatory)]
         [Alias("ServerInstance", "SqlServer")]
@@ -63,8 +69,7 @@
     foreach ($instance in $SqlInstance) {
         try {
             $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
-        }
-        catch {
+        } catch {
             Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
         }
 
@@ -78,20 +83,21 @@
 
         $sql = "EXEC master.dbo.xp_create_subdir'$path'"
         Write-Message -Level Debug -Message $sql
+        if ($Pscmdlet.ShouldProcess($path, "Creating a new path on $($server.name)")) {
+            try {
+                $null = $server.Query($sql)
+                $Created = $true
+            } catch {
+                $Created = $false
+                Stop-Function -Message "Failure" -ErrorRecord $_
+            }
 
-        try {
-            $query = $server.Query($sql)
-            $Created = $true
-        }
-        catch {
-            $Created = $false
-            Stop-Function -Message "Failure" -ErrorRecord $_
-        }
-
-        [pscustomobject]@{
-            Server  = $SqlInstance
-            Path    = $Path
-            Created = $Created
+            [pscustomobject]@{
+                Server  = $SqlInstance
+                Path    = $Path
+                Created = $Created
+            }
         }
     }
 }
+

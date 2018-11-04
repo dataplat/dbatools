@@ -1,5 +1,5 @@
-﻿function Get-DbaPbmCategorySubscription {
-<#
+function Get-DbaPbmCategorySubscription {
+    <#
     .SYNOPSIS
         Returns policy category subscriptions from policy based management from an instance.
 
@@ -69,3 +69,4 @@
         }
     }
 }
+

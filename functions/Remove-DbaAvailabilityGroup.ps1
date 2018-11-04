@@ -1,6 +1,6 @@
-﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Remove-DbaAvailabilityGroup {
-<#
+    <#
     .SYNOPSIS
         Removes availability groups on a SQL Server instance.
 
@@ -16,7 +16,7 @@ function Remove-DbaAvailabilityGroup {
         After the cluster regains quorum, you will need to drop the availability group again to remove it from the WSFC cluster.
 
         For more information: https://docs.microsoft.com/en-us/sql/t-sql/statements/drop-availability-group-transact-sql
-   
+
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. Server version must be SQL Server version 2012 or higher.
 
@@ -59,12 +59,12 @@ function Remove-DbaAvailabilityGroup {
         Removes all availability groups on the sqlserver2014 instance. Prompts for confirmation.
 
     .EXAMPLE
-        PS C:\> Remove-DbaAvailabilityGroup -SqlInstance sqlserver2012 -AvailabilityGroups ag1, ag2 -Confirm:$false
+        PS C:\> Remove-DbaAvailabilityGroup -SqlInstance sqlserver2012 -AvailabilityGroup ag1, ag2 -Confirm:$false
 
         Removes the ag1 and ag2 availability groups on sqlserver2012.  Does not prompt for confirmation.
 
     .EXAMPLE
-        PS C:\> Get-DbaAvailabilityGroup -SqlInstance sqlserver2012 -AvailabilityGroups availabilitygroup1 | Remove-DbaAvailabilityGroup
+        PS C:\> Get-DbaAvailabilityGroup -SqlInstance sqlserver2012 -AvailabilityGroup availabilitygroup1 | Remove-DbaAvailabilityGroup
 
         Removes the availability groups returned from the Get-DbaAvailabilityGroup function. Prompts for confirmation.
 #>
@@ -92,17 +92,17 @@ function Remove-DbaAvailabilityGroup {
                 try {
                     $ag.Parent.Query("DROP AVAILABILITY GROUP $ag")
                     [pscustomobject]@{
-                        ComputerName = $ag.ComputerName
-                        InstanceName = $ag.InstanceName
-                        SqlInstance  = $ag.SqlInstance
+                        ComputerName      = $ag.ComputerName
+                        InstanceName      = $ag.InstanceName
+                        SqlInstance       = $ag.SqlInstance
                         AvailabilityGroup = $ag.Name
-                        Status       = "Removed"
+                        Status            = "Removed"
                     }
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
                 }
             }
         }
     }
 }
+

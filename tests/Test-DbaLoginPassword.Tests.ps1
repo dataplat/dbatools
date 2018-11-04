@@ -1,4 +1,4 @@
-﻿$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 . "$PSScriptRoot\..\internal\functions\Get-PasswordHash.ps1"
@@ -47,7 +47,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
             $newlogin.Drop()
         }
         catch {
-            # dont care
+            # don't care
         }
     }
 

@@ -1,6 +1,6 @@
-﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Add-DbaAgReplica {
-<#
+    <#
     .SYNOPSIS
         Adds a replica to an availability group on a SQL Server instance.
 
@@ -26,7 +26,7 @@ function Add-DbaAgReplica {
 
     .PARAMETER FailoverMode
         Sets the failover mode of the availability group replica. Options are Automatic and Manual. Automatic is default.
-    
+
     .PARAMETER BackupPriority
         Sets the backup priority availability group replica. Default is 50.
 
@@ -101,7 +101,7 @@ function Add-DbaAgReplica {
         [string]$Name,
         [ValidateSet('AsynchronousCommit', 'SynchronousCommit')]
         [string]$AvailabilityMode = "SynchronousCommit",
-        [ValidateSet('Automatic', 'Manual')]
+        [ValidateSet('Automatic', 'Manual', 'External')]
         [string]$FailoverMode = "Automatic",
         [int]$BackupPriority = 50,
         [ValidateSet('AllowAllConnections', 'AllowReadWriteConnections')]
@@ -127,8 +127,7 @@ function Add-DbaAgReplica {
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 11
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -165,8 +164,10 @@ function Add-DbaAgReplica {
                     $replica.EndpointUrl = $ep.Fqdn
                     $replica.FailoverMode = [Microsoft.SqlServer.Management.Smo.AvailabilityReplicaFailoverMode]::$FailoverMode
                     $replica.AvailabilityMode = [Microsoft.SqlServer.Management.Smo.AvailabilityReplicaAvailabilityMode]::$AvailabilityMode
-                    $replica.ConnectionModeInPrimaryRole = [Microsoft.SqlServer.Management.Smo.AvailabilityReplicaConnectionModeInPrimaryRole]::$ConnectionModeInPrimaryRole
-                    $replica.ConnectionModeInSecondaryRole = [Microsoft.SqlServer.Management.Smo.AvailabilityReplicaConnectionModeInSecondaryRole]::$ConnectionModeInSecondaryRole
+                    if ($server.EngineEdition -ne "Standard") {
+                        $replica.ConnectionModeInPrimaryRole = [Microsoft.SqlServer.Management.Smo.AvailabilityReplicaConnectionModeInPrimaryRole]::$ConnectionModeInPrimaryRole
+                        $replica.ConnectionModeInSecondaryRole = [Microsoft.SqlServer.Management.Smo.AvailabilityReplicaConnectionModeInSecondaryRole]::$ConnectionModeInSecondaryRole
+                    }
                     $replica.BackupPriority = $BackupPriority
 
                     if ($ReadonlyRoutingConnectionUrl) {
@@ -180,9 +181,9 @@ function Add-DbaAgReplica {
                     if ($Passthru) {
                         return $replica
                     }
-                    
+
                     $defaults = 'ComputerName', 'InstanceName', 'SqlInstance', 'AvailabilityGroup', 'Name', 'Role', 'RollupSynchronizationState', 'AvailabilityMode', 'BackupPriority', 'EndpointUrl', 'SessionTimeout', 'FailoverMode', 'ReadonlyRoutingList'
-                    
+
                     $InputObject.AvailabilityReplicas.Add($replica)
                     $agreplica = $InputObject.AvailabilityReplicas[$Name]
                     Add-Member -Force -InputObject $agreplica -MemberType NoteProperty -Name ComputerName -value $agreplica.Parent.ComputerName
@@ -190,10 +191,9 @@ function Add-DbaAgReplica {
                     Add-Member -Force -InputObject $agreplica -MemberType NoteProperty -Name SqlInstance -value $agreplica.Parent.SqlInstance
                     Add-Member -Force -InputObject $agreplica -MemberType NoteProperty -Name AvailabilityGroup -value $agreplica.Parent.Name
                     Add-Member -Force -InputObject $agreplica -MemberType NoteProperty -Name Replica -value $agreplica.Name # backwards compat
-                    
+
                     Select-DefaultView -InputObject $agreplica -Property $defaults
-                }
-                catch {
+                } catch {
                     $msg = $_.Exception.InnerException.InnerException.Message
                     if (-not $msg) {
                         $msg = $_

@@ -1,5 +1,5 @@
-﻿function Restore-DbaDatabase {
-<#
+function Restore-DbaDatabase {
+    <#
     .SYNOPSIS
         Restores a SQL Server Database from a set of backup files
 
@@ -130,7 +130,8 @@
         If a directory is specified the database(s) will be restored into a standby state, with the standby file placed into this directory (which must exist, and be writable by the target Sql Server instance)
 
     .PARAMETER AzureCredential
-        The name of the SQL Server credential to be used if restoring from an Azure hosted backup
+        The name of the SQL Server credential to be used if restoring from an Azure hosted backup using Storage Access Keys
+        If a backup path beginning http is passed in and this parameter is not specified then if a credential with a name matching the URL
 
     .PARAMETER ReplaceDbNameInFile
         If switch set and occurrence of the original database's name in a data or log file will be replace with the name specified in the DatabaseName parameter
@@ -245,6 +246,11 @@
         credential MyAzureCredential held on instance Server1\instance1
 
     .EXAMPLE
+        PS C:\> Restore-DbaDatabase -SqlInstance server1\instance1 -Path http://demo.blob.core.windows.net/backups/dbbackup.bak
+
+        Will attempt to restore the backups from http://demo.blob.core.windows.net/backups/dbbackup.bak if a SAS credential with the name http://demo.blob.core.windows.net/backups exists on server1\instance1
+
+    .EXAMPLE
         PS C:\> $File = Get-ChildItem c:\backups, \\server1\backups -recurse
         PS C:\> $File | Restore-DbaDatabase -SqlInstance Server1\Instance -UseDestinationDefaultDirectories
 
@@ -278,7 +284,7 @@
         At each step, only the log files needed to roll the database forward are restored.
 
     .EXAMPLE
-        PS C:\> Restore-DbaDatabase -SqlInstance server\instance1 -Path c:\backups -DatabaseName example1 -WithNoRecovery
+        PS C:\> Restore-DbaDatabase -SqlInstance server\instance1 -Path c:\backups -DatabaseName example1 -NoRecovery
         PS C:\> Restore-DbaDatabase -SqlInstance server\instance1 -Recover -DatabaseName example1
 
         In this example we restore example1 database with no recovery, and then the second call is to set the database to recovery.
@@ -318,75 +324,39 @@
 #>
     [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = "Restore")]
     param (
-        [parameter(Mandatory)]
-        [Alias("ServerInstance", "SqlServer")]
-        [DbaInstanceParameter]$SqlInstance,
+        [parameter(Mandatory)][Alias("ServerInstance", "SqlServer")][DbaInstanceParameter]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [parameter(Mandatory, ValueFromPipeline, ParameterSetName = "Restore")]
-        [parameter(Mandatory, ValueFromPipeline, ParameterSetName = "RestorePage")]
-        [object[]]$Path,
-        [parameter(ValueFromPipeline)]
-        [Alias("Name")]
-        [object[]]$DatabaseName,
-        [parameter(ParameterSetName = "Restore")]
-        [String]$DestinationDataDirectory,
-        [parameter(ParameterSetName = "Restore")]
-        [String]$DestinationLogDirectory,
-        [parameter(ParameterSetName = "Restore")]
-        [String]$DestinationFileStreamDirectory,
-        [parameter(ParameterSetName = "Restore")]
-        [DateTime]$RestoreTime = (Get-Date).AddYears(1),
-        [parameter(ParameterSetName = "Restore")]
-        [switch]$NoRecovery,
-        [parameter(ParameterSetName = "Restore")]
-        [switch]$WithReplace,
-        [parameter(ParameterSetName = "Restore")]
-        [Switch]$XpDirTree,
+        [parameter(Mandatory, ValueFromPipeline, ParameterSetName = "Restore")][parameter(Mandatory, ValueFromPipeline, ParameterSetName = "RestorePage")][object[]]$Path,
+        [parameter(ValueFromPipeline)][Alias("Name")][object[]]$DatabaseName,
+        [parameter(ParameterSetName = "Restore")][String]$DestinationDataDirectory,
+        [parameter(ParameterSetName = "Restore")][String]$DestinationLogDirectory,
+        [parameter(ParameterSetName = "Restore")][String]$DestinationFileStreamDirectory,
+        [parameter(ParameterSetName = "Restore")][DateTime]$RestoreTime = (Get-Date).AddYears(1),
+        [parameter(ParameterSetName = "Restore")][switch]$NoRecovery,
+        [parameter(ParameterSetName = "Restore")][switch]$WithReplace,
+        [parameter(ParameterSetName = "Restore")][Switch]$XpDirTree,
         [switch]$OutputScriptOnly,
-        [parameter(ParameterSetName = "Restore")]
-        [switch]$VerifyOnly,
-        [parameter(ParameterSetName = "Restore")]
-        [switch]$MaintenanceSolutionBackup,
-        [parameter(ParameterSetName = "Restore")]
-        [hashtable]$FileMapping,
-        [parameter(ParameterSetName = "Restore")]
-        [switch]$IgnoreLogBackup,
-        [parameter(ParameterSetName = "Restore")]
-        [switch]$UseDestinationDefaultDirectories,
-        [parameter(ParameterSetName = "Restore")]
-        [switch]$ReuseSourceFolderStructure,
-        [parameter(ParameterSetName = "Restore")]
-        [string]$DestinationFilePrefix = '',
-        [parameter(ParameterSetName = "Restore")]
-        [string]$RestoredDatabaseNamePrefix,
-        [parameter(ParameterSetName = "Restore")]
-        [parameter(ParameterSetName = "RestorePage")]
-        [switch]$TrustDbBackupHistory,
-        [parameter(ParameterSetName = "Restore")]
-        [parameter(ParameterSetName = "RestorePage")]
-        [int]$MaxTransferSize,
-        [parameter(ParameterSetName = "Restore")]
-        [parameter(ParameterSetName = "RestorePage")]
-        [int]$BlockSize,
-        [parameter(ParameterSetName = "Restore")]
-        [parameter(ParameterSetName = "RestorePage")]
-        [int]$BufferCount,
-        [parameter(ParameterSetName = "Restore")]
-        [switch]$DirectoryRecurse,
-        [switch]$EnableException ,
-        [parameter(ParameterSetName = "Restore")]
-        [string]$StandbyDirectory,
-        [parameter(ParameterSetName = "Restore")]
-        [switch]$Continue,
+        [parameter(ParameterSetName = "Restore")][switch]$VerifyOnly,
+        [parameter(ParameterSetName = "Restore")][switch]$MaintenanceSolutionBackup,
+        [parameter(ParameterSetName = "Restore")][hashtable]$FileMapping,
+        [parameter(ParameterSetName = "Restore")][switch]$IgnoreLogBackup,
+        [parameter(ParameterSetName = "Restore")][switch]$UseDestinationDefaultDirectories,
+        [parameter(ParameterSetName = "Restore")][switch]$ReuseSourceFolderStructure,
+        [parameter(ParameterSetName = "Restore")][string]$DestinationFilePrefix = '',
+        [parameter(ParameterSetName = "Restore")][string]$RestoredDatabaseNamePrefix,
+        [parameter(ParameterSetName = "Restore")][parameter(ParameterSetName = "RestorePage")][switch]$TrustDbBackupHistory,
+        [parameter(ParameterSetName = "Restore")][parameter(ParameterSetName = "RestorePage")][int]$MaxTransferSize,
+        [parameter(ParameterSetName = "Restore")][parameter(ParameterSetName = "RestorePage")][int]$BlockSize,
+        [parameter(ParameterSetName = "Restore")][parameter(ParameterSetName = "RestorePage")][int]$BufferCount,
+        [parameter(ParameterSetName = "Restore")][switch]$DirectoryRecurse,
+        [switch]$EnableException,
+        [parameter(ParameterSetName = "Restore")][string]$StandbyDirectory,
+        [parameter(ParameterSetName = "Restore")][switch]$Continue,
         [string]$AzureCredential,
-        [parameter(ParameterSetName = "Restore")]
-        [switch]$ReplaceDbNameInFile,
-        [parameter(ParameterSetName = "Restore")]
-        [string]$DestinationFileSuffix,
-        [parameter(ParameterSetName = "Recovery")]
-        [switch]$Recover,
-        [parameter(ParameterSetName = "Restore")]
-        [switch]$KeepCDC,
+        [parameter(ParameterSetName = "Restore")][switch]$ReplaceDbNameInFile,
+        [parameter(ParameterSetName = "Restore")][string]$DestinationFileSuffix,
+        [parameter(ParameterSetName = "Recovery")][switch]$Recover,
+        [parameter(ParameterSetName = "Restore")][switch]$KeepCDC,
         [switch]$AllowContinue,
         [string]$GetBackupInformation,
         [switch]$StopAfterGetBackupInformation,
@@ -396,10 +366,8 @@
         [switch]$StopAfterFormatBackupInformation,
         [string]$TestBackupInformation,
         [switch]$StopAfterTestBackupInformation,
-        [parameter(Mandatory, ParameterSetName = "RestorePage")]
-        [object]$PageRestore,
-        [parameter(Mandatory, ParameterSetName = "RestorePage")]
-        [string]$PageRestoreTailFolder,
+        [parameter(Mandatory, ParameterSetName = "RestorePage")][object]$PageRestore,
+        [parameter(Mandatory, ParameterSetName = "RestorePage")][string]$PageRestoreTailFolder,
         [int]$StatementTimeout = 0
 
     )
@@ -410,20 +378,8 @@
         #region Validation
         try {
             $RestoreInstance = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
-        }
-        catch {
+        } catch {
             Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
-            return
-        }
-        if ($RestoreInstance.VersionMajor -eq 8 -and $true -ne $TrustDbBackupHistory){
-$sql2000txt = @'
-Due to SQL Server 2000 not returning all the backup headers we cannot restore directly. As this is an issues with the SQL engine all we can offer is the following workaround
-This will use a SQL Server instance > 2000 to read the headers, and then pass them in to Restore-DbaDatabase as a BacukupHistory object:
-
-$BackupHistory = Get-DbaBackupInformation -SqlInstance sql2005 -Path \\backups\sql2000\ProdDb
-$BackupHistory | Restore-Dbadatabase -SqlInstance sql2000 -TrustDbBackupHistory
-'@
-            Stop-Function -Message "$sql2000txt" -Target $RestoreInstance
             return
         }
         if ($PSCmdlet.ParameterSetName -eq "Restore") {
@@ -482,7 +438,7 @@ $BackupHistory | Restore-Dbadatabase -SqlInstance sql2000 -TrustDbBackupHistory
             }
             if ('' -ne $StandbyDirectory) {
                 if (!(Test-DbaPath -Path $StandbyDirectory -SqlInstance $RestoreInstance)) {
-                    Stop-Function -Message "$SqlSever cannot see the specified Standby Directory $StandbyDirectory" -Target $SqlInstance
+                    Stop-Function -Message "$SqlServer cannot see the specified Standby Directory $StandbyDirectory" -Target $SqlInstance
                     return
                 }
             }
@@ -501,19 +457,17 @@ $BackupHistory | Restore-Dbadatabase -SqlInstance sql2000 -TrustDbBackupHistory
 
         }
 
-
-
         # changing statement timeout to $StatementTimeout
         if ($StatementTimeout -eq 0) {
             Write-Message -Level Verbose -Message "Changing statement timeout to infinity"
-        }
-        else {
+        } else {
             Write-Message -Level Verbose -Message "Changing statement timeout to ($StatementTimeout) minutes"
         }
         $RestoreInstance.ConnectionContext.StatementTimeout = ($StatementTimeout * 60)
         #endregion Validation
 
-        $isLocal = [dbavalidate]::IsLocalHost($SqlInstance.ComputerName)
+        #Variable marked as unused by PSScriptAnalyzer
+        #$isLocal = [dbavalidate]::IsLocalHost($SqlInstance.ComputerName)
 
         if ($UseDestinationDefaultDirectories) {
             $DefaultPath = (Get-DbaDefaultPath -SqlInstance $RestoreInstance)
@@ -525,22 +479,48 @@ $BackupHistory | Restore-Dbadatabase -SqlInstance sql2000 -TrustDbBackupHistory
         #$UseDestinationDefaultDirectories = $true
     }
     process {
-        if (Test-FunctionInterrupt) { return }
+        if (Test-FunctionInterrupt) {
+            return
+        }
+        if ($RestoreInstance.VersionMajor -eq 8 -and $true -ne $TrustDbBackupHistory) {
+            foreach ($file in $Path) {
+                $bh = Get-DbaBackupInformation -SqlInstance $RestoreInstance -Path $file
+                $bound = $PSBoundParameters
+                $bound['TrustDbBackupHistory'] = $true
+                $bound['Path'] = $bh
+                Restore-Dbadatabase @bound
+            }
+            break
+        }
         if ($PSCmdlet.ParameterSetName -like "Restore*") {
-            if ($PipeDatabaseName -eq $true) {$DatabaseName = ''}
+            if ($PipeDatabaseName -eq $true) {
+                $DatabaseName = ''
+            }
             Write-Message -message "ParameterSet  = Restore" -Level Verbose
             if ($TrustDbBackupHistory -or $path[0].GetType().ToString() -eq 'Sqlcollaborative.Dbatools.Database.BackupHistory') {
                 foreach ($f in $path) {
                     Write-Message -Level Verbose -Message "Trust Database Backup History Set"
                     if ("BackupPath" -notin $f.PSobject.Properties.name) {
                         Write-Message -Level Verbose -Message "adding BackupPath - $($_.Fullname)"
-                        $f = $f | Select-Object *, @{ Name = "BackupPath"; Expression = { $_.FullName } }
+                        $f = $f | Select-Object *, @{
+                            Name = "BackupPath"; Expression = {
+                                $_.FullName
+                            }
+                        }
                     }
                     if ("DatabaseName" -notin $f.PSobject.Properties.name) {
-                        $f = $f | Select-Object *, @{ Name = "DatabaseName"; Expression = { $_.Database } }
+                        $f = $f | Select-Object *, @{
+                            Name = "DatabaseName"; Expression = {
+                                $_.Database
+                            }
+                        }
                     }
                     if ("Database" -notin $f.PSobject.Properties.name) {
-                        $f = $f | Select-Object *, @{ Name = "Database"; Expression = { $_.DatabaseName } }
+                        $f = $f | Select-Object *, @{
+                            Name = "Database"; Expression = {
+                                $_.DatabaseName
+                            }
+                        }
                     }
                     if ("Type" -notin $f.PSobject.Properties.name) {
                         #$f = $f | Select-Object *,  @{Name="Type";Expression={"Full"}}
@@ -549,28 +529,51 @@ $BackupHistory | Restore-Dbadatabase -SqlInstance sql2000 -TrustDbBackupHistory
                         #This line until Get-DbaBackupHistory gets fixed
                         #$f = $f | Select-Object *, @{ Name = "BackupSetGUID"; Expression = { $_.BackupSetupID } }
                         #This one once it's sorted:
-                        $f = $f | Select-Object *, @{Name = "BackupSetGUID"; Expression = {$_.BackupSetID}}
-                    }
-                    if ($f.BackupPath -like 'http*' -and '' -eq $AzureCredential) {
-                        Stop-Function -Message "At least one Azure backup passed in, and no Credential supplied. Stopping"
-                        return
+                        $f = $f | Select-Object *, @{
+                            Name = "BackupSetGUID"; Expression = {
+                                $_.BackupSetID
+                            }
+                        }
                     }
 
-                    $BackupHistory += $F | Select-Object *, @{ Name = "ServerName"; Expression = { $_.SqlInstance } }, @{ Name = "BackupStartDate"; Expression = { $_.Start -as [DateTime] } }
+                    if ($f.BackupPath -like 'http*') {
+                        if ('' -ne $AzureCredential) {
+                            Write-Message -Message "At least one Azure backup passed in with a credential, assume correct" -Level Verbose
+                            Write-Message -Message "Storage Account Identity access means striped backups cannot be restore"
+                        } else {
+                            $f.BackupPath -match 'https://.*/.*/'
+                            if (Get-DbaCredential -SqlInstance $RestoreInstance -name $matches[0].trim('/') ) {
+                                Write-Message -Message "We have a SAS credential to use with $($f.BackupPath)" -Level Verbose
+                            } else {
+                                Stop-Function -Message "A URL to a backup has been passed in, but no credential can be found to access it"
+                                return
+                            }
+                        }
+                    }
+                    $BackupHistory += $F | Select-Object *, @{
+                        Name = "ServerName"; Expression = {
+                            $_.SqlInstance
+                        }
+                    }, @{
+                        Name = "BackupStartDate"; Expression = {
+                            $_.Start -as [DateTime]
+                        }
+                    }
 
                 }
-            }
-            else {
+            } else {
                 $files = @()
                 foreach ($f in $Path) {
                     if ($f -is [System.IO.FileSystemInfo]) {
                         $files += $f.fullname
-                    }
-                    else {
+                    } else {
                         $files += $f
                     }
                 }
                 Write-Message -Level Verbose -Message "Unverified input, full scans - $($files -join ';')"
+                if ($BackupHistory.GetType().ToString() -eq 'Sqlcollaborative.Dbatools.Database.BackupHistory') {
+                    $BackupHistory = @($BackupHistory)
+                }
                 $BackupHistory += Get-DbaBackupInformation -SqlInstance $RestoreInstance -SqlCredential $SqlCredential -Path $files -DirectoryRecurse:$DirectoryRecurse -MaintenanceSolution:$MaintenanceSolutionBackup -IgnoreLogBackup:$IgnoreLogBackup -AzureCredential $AzureCredential
             }
             if ($PSCmdlet.ParameterSetName -eq "RestorePage") {
@@ -580,23 +583,20 @@ $BackupHistory | Restore-Dbadatabase -SqlInstance sql2000 -TrustDbBackupHistory
                 }
                 $WithReplace = $true
             }
-        }
-        elseif ($PSCmdlet.ParameterSetName -eq "Recovery") {
+        } elseif ($PSCmdlet.ParameterSetName -eq "Recovery") {
             Write-Message -Message "$($Database.count) databases to recover" -level Verbose
             ForEach ($DataBase in $DatabaseName) {
                 if ($database -is [object]) {
                     #We've got an object, try the normal options Database, DatabaseName, Name
                     if ("Database" -in $Database.PSobject.Properties.name) {
                         [string]$DataBase = $database.Database
-                    }
-                    elseif ("DatabaseName" -in $Database.PSobject.Properties.name) {
+                    } elseif ("DatabaseName" -in $Database.PSobject.Properties.name) {
                         [string]$DataBase = $database.DatabaseName
-                    }
-                    elseif ("Name" -in $Database.PSobject.Properties.name) {
+                    } elseif ("Name" -in $Database.PSobject.Properties.name) {
                         [string]$DataBase = $database.name
                     }
                 }
-                Write-Verbose "existence - $($RestoreInstance.Databases[$DataBase].State)"
+                Write-Message -Level Verbose -Message "existence - $($RestoreInstance.Databases[$DataBase].State)"
                 if ($RestoreInstance.Databases[$DataBase].State -ne 'Existing') {
                     Write-Message -Message "$Database does not exist on $RestoreInstance" -level Warning
                     Continue
@@ -612,13 +612,11 @@ $BackupHistory | Restore-Dbadatabase -SqlInstance sql2000 -TrustDbBackupHistory
                 Write-Message -Message "Recovery Sql Query - $RecoverSql" -level verbose
                 Try {
                     $RestoreInstance.query($RecoverSql)
-                }
-                Catch {
+                } Catch {
                     $RestoreComplete = $False
                     $ExitError = $_.Exception.InnerException
                     Write-Message -Level Warning -Message "Failed to recover $Database on $RestoreInstance, `n $ExitError"
-                }
-                Finally {
+                } Finally {
                     [PSCustomObject]@{
                         SqlInstance     = $SqlInstance
                         DatabaseName    = $Database
@@ -630,7 +628,9 @@ $BackupHistory | Restore-Dbadatabase -SqlInstance sql2000 -TrustDbBackupHistory
         }
     }
     end {
-        if (Test-FunctionInterrupt) { return }
+        if (Test-FunctionInterrupt) {
+            return
+        }
         if ($PSCmdlet.ParameterSetName -like "Restore*") {
             if ($BackupHistory.Count -eq 0) {
                 Write-Message -Level Warning -Message "No backups passed through. `n This could mean the SQL instance cannot see the referenced files, the file's headers could not be read or some other issue"
@@ -669,8 +669,7 @@ $BackupHistory | Restore-Dbadatabase -SqlInstance sql2000 -TrustDbBackupHistory
             try {
                 Write-Message -Level Verbose -Message "VerifyOnly = $VerifyOnly"
                 $null = $FilteredBackupHistory | Test-DbaBackupInformation -SqlInstance $RestoreInstance -WithReplace:$WithReplace -Continue:$Continue -VerifyOnly:$VerifyOnly -EnableException:$true -OutputScriptOnly:$OutputScriptOnly
-            }
-            catch {
+            } catch {
                 Stop-Function -ErrorRecord $_ -Message "Failure" -Continue
             }
 
@@ -680,15 +679,20 @@ $BackupHistory | Restore-Dbadatabase -SqlInstance sql2000 -TrustDbBackupHistory
             if ($StopAfterTestBackupInformation) {
                 return
             }
-            $DbVerfied = ($FilteredBackupHistory | Where-Object { $_.IsVerified -eq $True } | Select-Object -Property Database -Unique).Database -join ','
+            $DbVerfied = ($FilteredBackupHistory | Where-Object {
+                    $_.IsVerified -eq $True
+                } | Select-Object -Property Database -Unique).Database -join ','
             Write-Message -Message "$DbVerfied passed testing" -Level Verbose
 
-            if (($FilteredBackupHistory | Where-Object { $_.IsVerified -eq $True }).count -lt $FilteredBackupHistory.count) {
-                $DbUnVerified = ($FilteredBackupHistory | Where-Object { $_.IsVerified -eq $False } | Select-Object -Property Database -Unique).Database -join ','
+            if (($FilteredBackupHistory | Where-Object {
+                        $_.IsVerified -eq $True
+                    }).count -lt $FilteredBackupHistory.count) {
+                $DbUnVerified = ($FilteredBackupHistory | Where-Object {
+                        $_.IsVerified -eq $False
+                    } | Select-Object -Property Database -Unique).Database -join ','
                 if ($AllowContinue) {
                     Write-Message -Message "$DbUnverified failed testing, AllowContinue set" -Level Verbose
-                }
-                else {
+                } else {
                     Stop-Function -Message "Database $DbUnverified failed testing, AllowContinue not set, exiting"
                     return
                 }
@@ -698,10 +702,10 @@ $BackupHistory | Restore-Dbadatabase -SqlInstance sql2000 -TrustDbBackupHistory
                 if (($FilteredBackupHistory.Database | select-Object -unique | Measure-Object).count -ne 1) {
                     Stop-Function -Message "Must only 1 database passed in for Page Restore. Sorry"
                     return
-                }
-                else {
+                } else {
                     $WithReplace = $false
-                    $PageDb = ($FilteredBackupHistory.Database | select-Object -unique).Database
+                    #Variable marked as unused by PSScriptAnalyzer
+                    #$PageDb = ($FilteredBackupHistory.Database | select-Object -unique).Database
                 }
             }
             Write-Message -Message "Passing in to restore" -Level Verbose
@@ -710,19 +714,20 @@ $BackupHistory | Restore-Dbadatabase -SqlInstance sql2000 -TrustDbBackupHistory
                 $TailBackup = Backup-DbaDatabase -SqlInstance $RestoreInstance -Database $DatabaseName -Type Log -BackupDirectory $PageRestoreTailFolder -Norecovery -CopyOnly
             }
             try {
-                $FilteredBackupHistory | Where-Object { $_.IsVerified -eq $true } | Invoke-DbaAdvancedRestore -SqlInstance $RestoreInstance -WithReplace:$WithReplace -RestoreTime $RestoreTime -StandbyDirectory $StandbyDirectory -NoRecovery:$NoRecovery -Continue:$Continue -OutputScriptOnly:$OutputScriptOnly -BlockSize $BlockSize -MaxTransferSize $MaxTransferSize -Buffercount $Buffercount -KeepCDC:$KeepCDC -VerifyOnly:$VerifyOnly -PageRestore $PageRestore -EnableException -AzureCredential $AzureCredential
-            }
-            catch {
+                $FilteredBackupHistory | Where-Object {
+                    $_.IsVerified -eq $true
+                } | Invoke-DbaAdvancedRestore -SqlInstance $RestoreInstance -WithReplace:$WithReplace -RestoreTime $RestoreTime -StandbyDirectory $StandbyDirectory -NoRecovery:$NoRecovery -Continue:$Continue -OutputScriptOnly:$OutputScriptOnly -BlockSize $BlockSize -MaxTransferSize $MaxTransferSize -Buffercount $Buffercount -KeepCDC:$KeepCDC -VerifyOnly:$VerifyOnly -PageRestore $PageRestore -EnableException -AzureCredential $AzureCredential
+            } catch {
                 Stop-Function -Message "Failure" -ErrorRecord $_ -Continue -Target $RestoreInstance
             }
-            if ($PSCmdlet.ParameterSetName -eq "RestorePage" ) {
-                if ($RestoreInstace.Edition -like '*Enterprise*') {
+            if ($PSCmdlet.ParameterSetName -eq "RestorePage") {
+                if ($RestoreInstance.Edition -like '*Enterprise*') {
                     Write-Message -Message "Taking Tail log backup for page restore for Enterprise" -Level Verbose
                     $TailBackup = Backup-DbaDatabase -SqlInstance $RestoreInstance -Database $DatabaseName -Type Log -BackupDirectory $PageRestoreTailFolder -Norecovery -CopyOnly
                 }
                 Write-Message -Message "Restoring Tail log backup for page restore" -Level Verbose
                 $TailBackup | Restore-DbaDatabase -SqlInstance $RestoreInstance -TrustDbBackupHistory -NoRecovery -OutputScriptOnly:$OutputScriptOnly -BlockSize $BlockSize -MaxTransferSize $MaxTransferSize -Buffercount $Buffercount -Continue
-                Restore-DbaDatabase -SqlInstance $RestoreInstance -Recover -Database $DatabaseName -OutputScriptOnly:$OutputScriptOnly
+                Restore-DbaDatabase -SqlInstance $RestoreInstance -Recover -DatabaseName $DatabaseName -OutputScriptOnly:$OutputScriptOnly
             }
 
         }

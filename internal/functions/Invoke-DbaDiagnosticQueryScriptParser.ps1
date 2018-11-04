@@ -1,4 +1,4 @@
-﻿function Invoke-DbaDiagnosticQueryScriptParser {
+function Invoke-DbaDiagnosticQueryScriptParser {
     [CmdletBinding(DefaultParameterSetName = "Default")]
 
     Param(
@@ -58,8 +58,7 @@
             $querydescription = $prev_querydescription
             $querynr = $prev_querynr
             $queryname = $prev_queryname
-        }
-        else {
+        } else {
             if (!$line.startswith("--") -and ($line.trim() -ne "") -and ($null -ne $line) -and ($line -ne "\n")) {
                 $scriptpart += $line + "`n"
             }
@@ -71,3 +70,5 @@
     $ParsedScript += $newscript
     $ParsedScript
 }
+
+

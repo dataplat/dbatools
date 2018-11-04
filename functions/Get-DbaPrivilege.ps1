@@ -1,5 +1,5 @@
-﻿function Get-DbaPrivilege {
-<#
+function Get-DbaPrivilege {
+    <#
     .SYNOPSIS
         Gets the users with local privileges on one or more computers.
 
@@ -76,6 +76,9 @@
                         $temp = ([System.IO.Path]::GetTempPath()).TrimEnd(""); secedit /export /cfg $temp\secpolByDbatools.cfg > $NULL;
                         Get-Content $temp\secpolByDbatools.cfg | Where-Object { $_ -match "SeBatchLogonRight" -or $_ -match 'SeManageVolumePrivilege' -or $_ -match 'SeLockMemoryPrivilege' }
                     }
+                    if ($Priv.count -eq 0) {
+                        Write-Message -Level Verbose -Message "No users with Batch Logon, Instant File Initialization, or Lock Pages in Memory Rights on $computer"
+                    }
 
                     Write-Message -Level Verbose -Message "Getting Batch Logon Privileges on $Computer"
                     $BL = Invoke-Command2 -Raw -ComputerName $computer -Credential $Credential -ArgumentList $ResolveSID -ScriptBlock {
@@ -83,7 +86,7 @@
                         . ([ScriptBlock]::Create($ResolveSID))
                         $temp = ([System.IO.Path]::GetTempPath()).TrimEnd("");
                         (Get-Content $temp\secpolByDbatools.cfg | Where-Object { $_ -match "SeBatchLogonRight" }).substring(20).split(",").replace("`*", "") |
-                        ForEach-Object { Convert-SIDToUserName -SID $_ }
+                            ForEach-Object { Convert-SIDToUserName -SID $_ }
                     } -ErrorAction SilentlyContinue
                     if ($BL.count -eq 0) {
                         Write-Message -Level Verbose -Message "No users with Batch Logon Rights on $computer"
@@ -95,7 +98,7 @@
                         . ([ScriptBlock]::Create($ResolveSID))
                         $temp = ([System.IO.Path]::GetTempPath()).TrimEnd("");
                         (Get-Content $temp\secpolByDbatools.cfg | Where-Object { $_ -like 'SeManageVolumePrivilege*' }).substring(26).split(",").replace("`*", "") |
-                        ForEach-Object { Convert-SIDToUserName -SID $_ }
+                            ForEach-Object { Convert-SIDToUserName -SID $_ }
                     } -ErrorAction SilentlyContinue
                     if ($ifi.count -eq 0) {
                         Write-Message -Level Verbose -Message "No users with Instant File Initialization Rights on $computer"
@@ -107,7 +110,7 @@
                         . ([ScriptBlock]::Create($ResolveSID))
                         $temp = ([System.IO.Path]::GetTempPath()).TrimEnd("");
                         (Get-Content $temp\secpolByDbatools.cfg | Where-Object { $_ -like 'SeLockMemoryPrivilege*' }).substring(24).split(",").replace("`*", "") |
-                        ForEach-Object { Convert-SIDToUserName -SID $_ }
+                            ForEach-Object { Convert-SIDToUserName -SID $_ }
                     } -ErrorAction SilentlyContinue
 
                     if ($lpim.count -eq 0) {
@@ -116,23 +119,22 @@
                     $users = @() + $BL + $ifi + $lpim | Select-Object -Unique
                     $users | ForEach-Object {
                         [PSCustomObject]@{
-                            ComputerName                           = $computer
-                            User                                   = $_
-                            LogonAsBatchPrivilege                  = $BL -contains $_
-                            InstantFileInitializationPrivilege     = $ifi -contains $_
-                            LockPagesInMemoryPrivilege             = $lpim -contains $_
+                            ComputerName                       = $computer
+                            User                               = $_
+                            LogonAsBatchPrivilege              = $BL -contains $_
+                            InstantFileInitializationPrivilege = $ifi -contains $_
+                            LockPagesInMemoryPrivilege         = $lpim -contains $_
                         }
                     }
                     Write-Message -Level Verbose -Message "Removing secpol file on $computer"
                     Invoke-Command2 -Raw -ComputerName $computer -Credential $Credential -ScriptBlock { $temp = ([System.IO.Path]::GetTempPath()).TrimEnd(""); Remove-Item $temp\secpolByDbatools.cfg -Force > $NULL }
-                }
-                else {
+                } else {
                     Write-Message -Level Warning -Message "Failed to connect to $Computer"
                 }
-            }
-            catch {
+            } catch {
                 Stop-Function -Continue -Message "Failure" -ErrorRecord $_ -Target $computer
             }
         }
     }
 }
+

@@ -1,6 +1,6 @@
-﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Remove-DbaXESmartTarget {
-<#
+    <#
     .SYNOPSIS
         Removes XESmartTarget PowerShell jobs.
 
@@ -58,10 +58,10 @@ function Remove-DbaXESmartTarget {
                 Write-Message -Level Output -Message "Removing job $id, this may take a couple minutes."
                 Get-Job -ID $InputObject.Id | Remove-Job -Force
                 Write-Message -Level Output -Message "Successfully removed $id."
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -ErrorRecord $_
             }
         }
     }
 }
+

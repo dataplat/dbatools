@@ -1,5 +1,5 @@
-﻿function New-DbaCredential {
-<#
+function New-DbaCredential {
+    <#
     .SYNOPSIS
         Creates a new SQL Server credential
 
@@ -55,9 +55,9 @@
         You will be prompted to securely enter your password, then a credential will be created in the master database on server1 if it does not exist.
 
     .EXAMPLE
-        PS C:\> New-DbaCredential -SqlInstance Server1 -Database db1 -Confirm:$false
+        PS C:\> New-DbaCredential -SqlInstance Server1 -Confirm:$false
 
-        Suppresses all prompts to install but prompts to securely enter your password and creates a credential in the 'db1' database
+        Suppresses all prompts to install but prompts to securely enter your password and creates a credential on Server1.
 
     .EXAMPLE
         PS C:\> New-DbaCredential -SqlInstance Server1 -Name AzureBackupBlobStore -Identity '<Azure Storage Account Name>' -Password (ConvertTo-SecureString '<Azure Storage Account Access Key>' -AsPlainText -Force)
@@ -108,8 +108,7 @@
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -120,8 +119,7 @@
                     if ($force) {
                         Write-Message -Level Verbose -Message "Dropping credential $name"
                         $currentcred.Drop()
-                    }
-                    else {
+                    } else {
                         Stop-Function -Message "Credential exists and Force was not specified" -Target $name -Continue
                     }
                 }
@@ -139,8 +137,7 @@
                         Add-Member -Force -InputObject $credential -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
 
                         Select-DefaultView -InputObject $credential -Property ComputerName, InstanceName, SqlInstance, Name, Identity, CreateDate, MappedClassType, ProviderName
-                    }
-                    catch {
+                    } catch {
                         Stop-Function -Message "Failed to create credential in $cred on $instance. Exception: $($_.Exception.InnerException)" -Target $credential -InnerErrorRecord $_ -Continue
                     }
                 }
@@ -148,3 +145,4 @@
         }
     }
 }
+

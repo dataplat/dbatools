@@ -1,5 +1,5 @@
-﻿function Watch-DbaUpdate {
-<#
+function Watch-DbaUpdate {
+    <#
     .SYNOPSIS
         Just for fun - checks the PowerShell Gallery every 1 hour for updates to dbatools. Notifies once per release.
 
@@ -29,7 +29,7 @@
     param()
     process {
         if (([Environment]::OSVersion).Version.Major -lt 10) {
-            Write-Warning "This command only supports Windows 10 and higher."
+            Write-Message -Level Warning -Message "This command only supports Windows 10 and higher."
             return
         }
 
@@ -66,8 +66,7 @@
                 Export-Clixml -InputObject $new -Path $file
                 Show-Notification -GalleryVersion $galleryVersion
             }
-        }
-        else {
+        } else {
             $directory = Split-Path $file
 
             if (!(Test-Path $directory)) {
@@ -79,3 +78,4 @@
         }
     }
 }
+

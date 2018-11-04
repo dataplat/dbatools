@@ -1,6 +1,6 @@
-﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Enable-DbaForceNetworkEncryption {
-<#
+    <#
     .SYNOPSIS
         Enables Force Encryption for a SQL Server instance.
 
@@ -76,8 +76,7 @@ function Enable-DbaForceNetworkEncryption {
 
             try {
                 $sqlwmi = Invoke-ManagedComputerCommand -ComputerName $resolved.FullComputerName -ScriptBlock { $wmi.Services } -Credential $Credential -ErrorAction Stop | Where-Object DisplayName -eq "SQL Server ($($instance.InstanceName))"
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failed to access $instance" -Target $instance -Continue -ErrorRecord $_
             }
 
@@ -85,8 +84,7 @@ function Enable-DbaForceNetworkEncryption {
             $vsname = ($sqlwmi.AdvancedProperties | Where-Object Name -eq VSNAME).Value
             try {
                 $instancename = $sqlwmi.DisplayName.Replace('SQL Server (', '').Replace(')', '') # Don't clown, I don't know regex :(
-            }
-            catch {
+            } catch {
                 # Probably because the instance name has been aliased or does not exist or samthin
             }
             $serviceaccount = $sqlwmi.ServiceAccount
@@ -98,8 +96,7 @@ function Enable-DbaForceNetworkEncryption {
                 if (![System.String]::IsNullOrEmpty($regroot)) {
                     $regroot = ($regroot -Split 'Value\=')[1]
                     $vsname = ($vsname -Split 'Value\=')[1]
-                }
-                else {
+                } else {
                     Stop-Function -Message "Can't find instance $vsname on $instance." -Continue -Category ObjectNotFound -Target $instance
                 }
             }
@@ -114,7 +111,8 @@ function Enable-DbaForceNetworkEncryption {
             $scriptblock = {
                 $regpath = "Registry::HKEY_LOCAL_MACHINE\$($args[0])\MSSQLServer\SuperSocketNetLib"
                 $cert = (Get-ItemProperty -Path $regpath -Name Certificate).Certificate
-                $oldvalue = (Get-ItemProperty -Path $regpath -Name ForceEncryption).ForceEncryption
+                #Variable marked as unused by PSScriptAnalyzer
+                #$oldvalue = (Get-ItemProperty -Path $regpath -Name ForceEncryption).ForceEncryption
                 Set-ItemProperty -Path $regpath -Name ForceEncryption -Value $true
                 $forceencryption = (Get-ItemProperty -Path $regpath -Name ForceEncryption).ForceEncryption
 
@@ -131,11 +129,11 @@ function Enable-DbaForceNetworkEncryption {
                 try {
                     Invoke-Command2 -ComputerName $resolved.FullComputerName -Credential $Credential -ArgumentList $regroot, $vsname, $instancename -ScriptBlock $scriptblock -ErrorAction Stop | Select-Object -Property * -ExcludeProperty PSComputerName, RunspaceId, PSShowComputerName
                     Write-Message -Level Critical -Message "Force encryption was successfully set on $($resolved.FullComputerName) for the $instancename instance. You must now restart the SQL Server for changes to take effect." -Target $instance
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Failed to connect to $($resolved.FullComputerName) using PowerShell remoting!" -ErrorRecord $_ -Target $instance -Continue
                 }
             }
         }
     }
 }
+

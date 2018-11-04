@@ -1,5 +1,5 @@
-﻿function Get-DbatoolsLog {
-<#
+function Get-DbatoolsLog {
+    <#
     .SYNOPSIS
         Returns log entries for dbatools
 
@@ -50,7 +50,7 @@
 
     .NOTES
         Tags: Debug
-        Author: Friedrich Weinmann (@FredWeinmann‏)
+        Author: Friedrich Weinmann (@FredWeinmann)
 
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
@@ -144,3 +144,4 @@
 
     }
 }
+

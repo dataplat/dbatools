@@ -1,5 +1,5 @@
-﻿function Clear-DbaPlanCache {
-<#
+function Clear-DbaPlanCache {
+    <#
     .SYNOPSIS
         Removes ad-hoc and prepared plan caches is single use plans are over defined threshold.
 
@@ -80,8 +80,7 @@
                 if ($Pscmdlet.ShouldProcess($($result.SqlInstance), "Cleared SQL Plans plan cache")) {
                     try {
                         $server = Connect-SqlInstance -SqlInstance $result.SqlInstance -SqlCredential $SqlCredential
-                    }
-                    catch {
+                    } catch {
                         Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
                     }
 
@@ -94,8 +93,7 @@
                         Status       = "Plan cache cleared"
                     }
                 }
-            }
-            else {
+            } else {
                 if ($Pscmdlet.ShouldProcess($($result.SqlInstance), "Results $($result.Size) below threshold")) {
                     [PSCustomObject]@{
                         ComputerName = $result.ComputerName
@@ -110,3 +108,4 @@
         }
     }
 }
+

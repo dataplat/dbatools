@@ -1,5 +1,5 @@
-﻿function Get-DbaTempdbUsage {
-<#
+function Get-DbaTempdbUsage {
+    <#
     .SYNOPSIS
         Gets Tempdb usage for running queries.
 
@@ -54,8 +54,7 @@
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -133,3 +132,4 @@ OPTION (RECOMPILE);"
         }
     }
 }
+

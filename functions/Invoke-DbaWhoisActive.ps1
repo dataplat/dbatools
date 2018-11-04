@@ -1,5 +1,5 @@
-﻿function Invoke-DbaWhoIsActive {
-<#
+function Invoke-DbaWhoIsActive {
+    <#
     .SYNOPSIS
         Outputs results of Adam Machanic's sp_WhoIsActive DataTable
 
@@ -195,7 +195,7 @@
         Similar to running sp_WhoIsActive @get_outer_command = 1, @find_block_leaders = 1
 
 #>
-    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "High")]
+    [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
         [Alias('ServerInstance', 'SqlServer')]
@@ -254,8 +254,7 @@
         foreach ($instance in $sqlinstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential -MinimumVersion 9
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -291,7 +290,6 @@
             }
 
             Write-Message -Level Verbose -Message "Collecting sp_whoisactive data from server: $instance"
-
             try {
                 $sqlconnection = New-Object System.Data.SqlClient.SqlConnection
                 $sqlconnection.ConnectionString = $server.ConnectionContext.ConnectionString
@@ -331,12 +329,10 @@
                 $dataadapter = New-Object system.Data.SqlClient.SqlDataAdapter($sqlcommand)
                 $dataadapter.fill($datatable) | Out-Null
                 $datatable.Tables.Rows
-            }
-            catch {
+            } catch {
                 if ($_.Exception.InnerException -Like "*Could not find*") {
                     Stop-Function -Message "sp_whoisactive not found, please install using Install-DbaWhoIsActive." -Continue
-                }
-                else {
+                } else {
                     Stop-Function -Message "Invalid query." -Continue
                 }
             }
@@ -346,3 +342,4 @@
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Show-SqlWhoIsActive -CustomMessage "Show-SqlWhoIsActive is no longer supported. Use Invoke-DbaWhoIsActive | Out-GridView for similar results."
     }
 }
+

@@ -1,11 +1,11 @@
-﻿$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
         $paramCount = 13
-        $defaultParamCount = 11
+        $defaultParamCount = 13
         [object[]]$params = (Get-ChildItem function:\New-DbaCmConnection).Parameters.Keys
         $knownParameters = 'ComputerName','Credential','UseWindowsCredentials','OverrideExplicitCredential','DisabledConnectionTypes','DisableBadCredentialCache','DisableCimPersistence','DisableCredentialAutoRegister','EnableCredentialFailover','WindowsCredentialsAreBad','CimWinRMOptions','CimDCOMOptions','EnableException'
         It "Should contain our specific parameters" {
@@ -21,3 +21,4 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Read https://github.com/sqlcollaborative/dbatools/blob/development/contributing.md#tests
     for more guidence.
 #>
+

@@ -1,11 +1,11 @@
-﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Remove-DbaAgentJob {
-<#
+    <#
     .SYNOPSIS
         Remove-DbaAgentJob removes a job.
 
     .DESCRIPTION
-        Remove-DbaAgentJob removes a a job in the SQL Server Agent.
+        Remove-DbaAgentJob removes a job in the SQL Server Agent.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
@@ -93,8 +93,7 @@ function Remove-DbaAgentJob {
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -138,8 +137,7 @@ function Remove-DbaAgentJob {
                         Name         = $currentJob.Name
                         Status       = 'Dropped'
                     }
-                }
-                catch {
+                } catch {
                     Write-Message -Level Verbose -Message "Could not drop job $job on $server"
 
                     [pscustomobject]@{
@@ -154,3 +152,4 @@ function Remove-DbaAgentJob {
         }
     }
 }
+

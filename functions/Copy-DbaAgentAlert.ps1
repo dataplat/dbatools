@@ -1,5 +1,5 @@
-﻿function Copy-DbaAgentAlert {
-<#
+function Copy-DbaAgentAlert {
+    <#
     .SYNOPSIS
         Copy-DbaAgentAlert migrates alerts from one SQL Server to another.
 
@@ -64,7 +64,7 @@
     .EXAMPLE
         PS C:\> Copy-DbaAgentAlert -Source sqlserver2014a -Destination sqlcluster -Alert PSAlert -SourceSqlCredential $cred -Force
 
-        Copies a only the alert named PSAlert from sqlserver2014a to sqlcluster using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster. If a alert with the same name exists on sqlcluster, it will be dropped and recreated because -Force was used.
+        Copies a only the alert named PSAlert from sqlserver2014a to sqlcluster using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster. If an alert with the same name exists on sqlcluster, it will be dropped and recreated because -Force was used.
 
     .EXAMPLE
         PS C:\> Copy-DbaAgentAlert -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force
@@ -91,8 +91,7 @@
         try {
             $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
             $serverAlerts = $sourceServer.JobServer.Alerts
-        }
-        catch {
+        } catch {
             Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Source
             return
         }
@@ -102,8 +101,7 @@
         foreach ($destinstance in $Destination) {
             try {
                 $destServer = Connect-SqlInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
             }
             $destAlerts = $destServer.JobServer.Alerts
@@ -111,13 +109,13 @@
             if ($IncludeDefaults -eq $true) {
                 if ($PSCmdlet.ShouldProcess($destinstance, "Creating Alert Defaults")) {
                     $copyAgentAlertStatus = [pscustomobject]@{
-                        SourceServer = $sourceServer.Name
+                        SourceServer      = $sourceServer.Name
                         DestinationServer = $destServer.Name
-                        Name         = "Alert Defaults"
-                        Type         = "Alert Defaults"
-                        Status       = $null
-                        Notes        = $null
-                        DateTime     = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
+                        Name              = "Alert Defaults"
+                        Type              = "Alert Defaults"
+                        Status            = $null
+                        Notes             = $null
+                        DateTime          = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
                     }
                     try {
                         Write-Message -Message "Creating Alert Defaults" -Level Verbose
@@ -128,8 +126,7 @@
                         $null = $destServer.Query($sql)
 
                         $copyAgentAlertStatus.Status = "Successful"
-                    }
-                    catch {
+                    } catch {
                         $copyAgentAlertStatus.Status = "Failed"
                         $copyAgentAlertStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                         Stop-Function -Message "Issue creating alert defaults." -Category InvalidOperation -ErrorRecord $_ -Target $destServer -Continue
@@ -141,13 +138,13 @@
             foreach ($serverAlert in $serverAlerts) {
                 $alertName = $serverAlert.name
                 $copyAgentAlertStatus = [pscustomobject]@{
-                    SourceServer = $sourceServer.Name
+                    SourceServer      = $sourceServer.Name
                     DestinationServer = $destServer.Name
-                    Name         = $alertName
-                    Type         = "Agent Alert"
-                    Notes        = $null
-                    Status       = $null
-                    DateTime     = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
+                    Name              = $alertName
+                    Type              = "Agent Alert"
+                    Notes             = $null
+                    Status            = $null
+                    DateTime          = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
                 }
                 if (($Alert -and $Alert -notcontains $alertName) -or ($ExcludeAlert -and $ExcludeAlert -contains $alertName)) {
                     continue
@@ -172,8 +169,7 @@
                             Write-Message -Message $sql -Level Debug
                             $null = $destServer.Query($sql)
                             $destAlerts.Refresh()
-                        }
-                        catch {
+                        } catch {
                             $copyAgentAlertStatus.Status = "Failed"
                             $copyAgentAlertStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                             Stop-Function -Message "Issue dropping/recreating alert" -Category InvalidOperation -ErrorRecord $_ -Target $destServer -Continue
@@ -217,8 +213,7 @@
 
                         $copyAgentAlertStatus.Status = "Successful"
                         $copyAgentAlertStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                    }
-                    catch {
+                    } catch {
                         $copyAgentAlertStatus.Status = "Failed"
                         $copyAgentAlertStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                         Stop-Function -Message "Issue creating alert" -Category InvalidOperation -ErrorRecord $_ -Target $destServer -Continue
@@ -235,17 +230,17 @@
                 # JobId = 00000000-0000-0000-0000-000 means the Alert does not execute/is attached to a SQL Agent Job.
                 if ($serverAlert.JobId -ne '00000000-0000-0000-0000-000000000000') {
                     $copyAgentAlertStatus = [pscustomobject]@{
-                        SourceServer = $sourceServer.Name
+                        SourceServer      = $sourceServer.Name
                         DestinationServer = $destServer.Name
-                        Name         = $alertName
-                        Type         = "Agent Alert Job Association"
-                        Notes        = "Associated with $jobName"
-                        Status       = $null
-                        DateTime     = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
+                        Name              = $alertName
+                        Type              = "Agent Alert Job Association"
+                        Notes             = "Associated with $jobName"
+                        Status            = $null
+                        DateTime          = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
                     }
                     if ($PSCmdlet.ShouldProcess($destinstance, "Adding $alertName to $jobName")) {
                         try {
-                        <# THERE needs to be validation within this block to see if the $jobName actually exists on the source server. #>
+                            <# THERE needs to be validation within this block to see if the $jobName actually exists on the source server. #>
                             Write-Message -Message "Adding $alertName to $jobName" -Level Verbose
                             $newJob = $destServer.JobServer.Jobs[$jobName]
                             $newJobId = ($newJob.JobId) -replace " ", ""
@@ -257,8 +252,7 @@
 
                             $copyAgentAlertStatus.Status = "Successful"
                             $copyAgentAlertStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                        }
-                        catch {
+                        } catch {
                             $copyAgentAlertStatus.Status = "Failed"
                             $copyAgentAlertStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                             Stop-Function -Message "Issue adding alert to job" -Category InvalidOperation -ErrorRecord $_ -Target $destServer
@@ -269,15 +263,15 @@
                 if ($PSCmdlet.ShouldProcess($destinstance, "Moving Notifications $alertName")) {
                     try {
                         $copyAgentAlertStatus = [pscustomobject]@{
-                            SourceServer = $sourceServer.Name
+                            SourceServer      = $sourceServer.Name
                             DestinationServer = $destServer.Name
-                            Name         = $alertName
-                            Type         = "Agent Alert Notification"
-                            Notes        = $null
-                            Status       = $null
-                            DateTime     = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
+                            Name              = $alertName
+                            Type              = "Agent Alert Notification"
+                            Notes             = $null
+                            Status            = $null
+                            DateTime          = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
                         }
-                        # cant add them this way, we need to modify the existing one or give all options that are supported.
+                        # can't add them this way, we need to modify the existing one or give all options that are supported.
                         foreach ($notify in $notifications) {
                             $notifyCollection = @()
                             if ($notify.UseNetSend -eq $true) {
@@ -300,8 +294,7 @@
                         }
                         $copyAgentAlertStatus.Status = "Successful"
                         $copyAgentAlertStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                    }
-                    catch {
+                    } catch {
                         $copyAgentAlertStatus.Status = "Failed"
                         $copyAgentAlertStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                         Stop-Function -Message "Issue moving notifications for the alert" -Category InvalidOperation -ErrorRecord $_ -Target $destServer
@@ -314,3 +307,4 @@
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-SqlAlert
     }
 }
+

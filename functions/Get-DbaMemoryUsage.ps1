@@ -1,6 +1,6 @@
-﻿#ValidationTags#Messaging,CodeStyle#
+#ValidationTags#Messaging,CodeStyle#
 function Get-DbaMemoryUsage {
-<#
+    <#
     .SYNOPSIS
         Get amount of memory in use by *all* SQL Server components and instances
 
@@ -19,7 +19,7 @@ function Get-DbaMemoryUsage {
         Credential object used to connect to the SQL Server as a different user
 
     .PARAMETER Simple
-        Shows concise information including Server name, Database name, and the date the last time backups were performed
+        Shows a simplified set of counters. Excludes only totals for Plancounters and BufManpagecounters
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -73,8 +73,7 @@ function Get-DbaMemoryUsage {
             $BufManpagecounters = 'Total pages'
             $SSAScounters = '(\\memory usage)'
             $SSIScounters = '(memory)'
-        }
-        else {
+        } else {
             $Memcounters = '(Total Server Memory |Target Server Memory |Connection Memory |Lock Memory |SQL Cache Memory |Optimizer Memory |Granted Workspace Memory |Cursor memory usage|Maximum Workspace)'
             $Plancounters = '(cache pages|procedure plan|ad hoc sql plan|prepared SQL Plan)'
             $BufManpagecounters = '(Free pages|Reserved pages|Stolen pages|Total pages|Database pages|target pages|extension .* pages)'
@@ -88,7 +87,8 @@ function Get-DbaMemoryUsage {
                 $BufManpagecounters,
                 $SSAScounters,
                 $SSIScounters)
-            Write-Verbose "Searching for Memory Manager Counters on $Computer"
+            <# DO NOT use Write-Message as this is inside of a script block #>
+            Write-Verbose -Message "Searching for Memory Manager Counters on $Computer"
             try {
                 $availablecounters = (Get-Counter -ListSet '*sql*:Memory Manager*' -ErrorAction SilentlyContinue).paths
                 (Get-Counter -Counter $availablecounters -ErrorAction SilentlyContinue).countersamples |
@@ -106,12 +106,12 @@ function Get-DbaMemoryUsage {
                         MemMB           = $_.cookedvalue / 1024
                     }
                 }
+            } catch {
+                <# DO NOT use Write-Message as this is inside of a script block #>
+                Write-Verbose -Message "No Memory Manager Counters on $Computer"
             }
-            catch {
-                Write-Verbose "No Memory Manager Counters on $Computer"
-            }
-
-            Write-Verbose "Searching for Plan Cache Counters on $Computer"
+            <# DO NOT use Write-Message as this is inside of a script block #>
+            Write-Verbose -Message "Searching for Plan Cache Counters on $Computer"
             try {
                 $availablecounters = (Get-Counter -ListSet '*sql*:Plan Cache*' -ErrorAction SilentlyContinue).paths
                 (Get-Counter -Counter $availablecounters -ErrorAction SilentlyContinue).countersamples |
@@ -129,12 +129,12 @@ function Get-DbaMemoryUsage {
                         MemMB           = $_.cookedvalue * 8192 / 1048576
                     }
                 }
+            } catch {
+                <# DO NOT use Write-Message as this is inside of a script block #>
+                Write-Verbose -Message "No Plan Cache Counters on $Computer"
             }
-            catch {
-                Write-Verbose "No Plan Cache Counters on $Computer"
-            }
-
-            Write-Verbose "Searching for Buffer Manager Counters on $Computer"
+            <# DO NOT use Write-Message as this is inside of a script block #>
+            Write-Verbose -Message "Searching for Buffer Manager Counters on $Computer"
             try {
                 $availablecounters = (Get-Counter -ListSet "*Buffer Manager*" -ErrorAction SilentlyContinue).paths
                 (Get-Counter -Counter $availablecounters -ErrorAction SilentlyContinue).countersamples |
@@ -152,12 +152,12 @@ function Get-DbaMemoryUsage {
                         MemMB           = $_.cookedvalue * 8192 / 1048576.0
                     }
                 }
+            } catch {
+                <# DO NOT use Write-Message as this is inside of a script block #>
+                Write-Verbose -Message "No Buffer Manager Counters on $Computer"
             }
-            catch {
-                Write-Verbose "No Buffer Manager Counters on $Computer"
-            }
-
-            Write-Verbose "Searching for SSAS Counters on $Computer"
+            <# DO NOT use Write-Message as this is inside of a script block #>
+            Write-Verbose -Message "Searching for SSAS Counters on $Computer"
             try {
                 $availablecounters = (Get-Counter -ListSet "MSAS*:Memory" -ErrorAction SilentlyContinue).paths
                 (Get-Counter -Counter $availablecounters -ErrorAction SilentlyContinue).countersamples |
@@ -175,12 +175,12 @@ function Get-DbaMemoryUsage {
                         MemMB           = $_.cookedvalue / 1024
                     }
                 }
+            } catch {
+                <# DO NOT use Write-Message as this is inside of a script block #>
+                Write-Verbose -Message "No SSAS Counters on $Computer"
             }
-            catch {
-                Write-Verbose "No SSAS Counters on $Computer"
-            }
-
-            Write-Verbose "Searching for SSIS Counters on $Computer"
+            <# DO NOT use Write-Message as this is inside of a script block #>
+            Write-Verbose -Message "Searching for SSIS Counters on $Computer"
             try {
                 $availablecounters = (Get-Counter -ListSet "*SSIS*" -ErrorAction SilentlyContinue).paths
                 (Get-Counter -Counter $availablecounters -ErrorAction SilentlyContinue).countersamples |
@@ -198,9 +198,9 @@ function Get-DbaMemoryUsage {
                         MemMB           = $_.cookedvalue / 1024 / 1024
                     }
                 }
-            }
-            catch {
-                Write-Verbose "No SSIS Counters on $Computer"
+            } catch {
+                <# DO NOT use Write-Message as this is inside of a script block #>
+                Write-Verbose -Message "No SSIS Counters on $Computer"
             }
         }
     }
@@ -212,12 +212,10 @@ function Get-DbaMemoryUsage {
                 $Computer = $reply.FullComputerName
                 try {
                     Invoke-Command2 -ComputerName $Computer -Credential $Credential -ScriptBlock $scriptblock -argumentlist $Memcounters, $Plancounters, $BufManpagecounters, $SSAScounters, $SSIScounters
-                }
-                catch {
+                } catch {
                     Stop-Function -Continue -Message "Failure" -ErrorRecord $_ -Target $computer -Continue
                 }
-            }
-            else {
+            } else {
                 Write-Message -Level Warning -Message "Can't resolve $Computer."
                 Continue
             }

@@ -1,6 +1,6 @@
-﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Export-DbaCmsRegServer {
-<#
+    <#
     .SYNOPSIS
         Exports registered servers and registered server groups to file
 
@@ -12,9 +12,6 @@ function Export-DbaCmsRegServer {
 
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
-
-    .PARAMETER Group
-        Exports a specific group.
 
     .PARAMETER CredentialPersistenceType
         Used to specify how the login and passwords are persisted. Valid values include None, PersistLoginName and PersistLoginNameAndPassword.
@@ -51,11 +48,6 @@ function Export-DbaCmsRegServer {
         Exports all Registered Server and Registered Server Groups on sql2008 to an automatically generated file name in the current directory
 
     .EXAMPLE
-        PS C:\> Export-DbaCmsRegServer -SqlInstance sql2008 -Group hr\Seattle -Path C:\temp\Seattle.xml
-
-        Exports all Registered Server and Registered Server Groups with the Seattle group within the HR group on sql2008 to C:\temp\Seattle.xml
-
-    .EXAMPLE
         PS C:\> Get-DbaCmsRegServer -SqlInstance sql2008, sql2012 | Export-DbaCmsRegServer
 
         Exports all registered servers on sql2008 and sql2012. Warning - each one will have its own individual file. Consider piping groups.
@@ -88,8 +80,7 @@ function Export-DbaCmsRegServer {
             if (-not (Test-Path $directory)) {
                 New-Item -Path $directory -ItemType Directory
             }
-        }
-        else {
+        } else {
             $timeNow = (Get-Date -uformat "%m%d%Y%H%M%S")
         }
     }
@@ -111,21 +102,18 @@ function Export-DbaCmsRegServer {
                         $Path = "$serverName-regserver-$regservername-$timeNow.xml"
                     }
                     $object.Export($Path, $CredentialPersistenceType)
-                }
-                elseif ($object -is [Microsoft.SqlServer.Management.RegisteredServers.ServerGroup]) {
+                } elseif ($object -is [Microsoft.SqlServer.Management.RegisteredServers.ServerGroup]) {
                     if ((Test-Bound -ParameterName Path -Not)) {
                         $servername = $object.SqlInstance.Replace('\', '$')
                         $regservergroup = $object.Name.Replace('\', '$')
                         $Path = "$serverName-reggroup-$regservergroup-$timeNow.xml"
                     }
                     $object.Export($Path, $CredentialPersistenceType)
-                }
-                else {
+                } else {
                     Stop-Function -Message "InputObject is not a registered server or server group" -Continue
                 }
                 Get-ChildItem $Path -ErrorAction Stop
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -ErrorRecord $_
             }
         }
@@ -135,3 +123,4 @@ function Export-DbaCmsRegServer {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Export-DbaRegisteredServer
     }
 }
+

@@ -1,4 +1,4 @@
-﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Remove-DbaDbMasterKey {
     <#
     .SYNOPSIS
@@ -47,41 +47,40 @@ function Remove-DbaDbMasterKey {
         https://dbatools.io/Remove-DbaMasterKey
 
     .EXAMPLE
-        PS C:\> Remove-DbaDbMasterKey -SqlInstance Server1
+        PS C:\> Remove-DbaDbMasterKey -SqlInstance sql2017, sql2016 -Database pubs
 
-        The master key in the master database on server1 will be removed if it exists.
+        The master key in the pubs database on sql2017 and sql2016 will be removed if it exists.
 
     .EXAMPLE
-        PS C:\> Remove-DbaDbMasterKey -SqlInstance Server1 -Database db1 -Confirm:$false
+        PS C:\> Remove-DbaDbMasterKey -SqlInstance sql2017 -Database db1 -Confirm:$false
 
         Suppresses all prompts to remove the master key in the 'db1' database and drops the key.
 
     .EXAMPLE
-        PS C:\> Get-DbaDbMasterKey -SqlInstance Server1 -Database db1 | Remove-DbaDbMasterKey -Confirm:$false
+        PS C:\> Get-DbaDbMasterKey -SqlInstance sql2017 -Database db1 | Remove-DbaDbMasterKey -Confirm:$false
 
         Suppresses all prompts to remove the master key in the 'db1' database and drops the key.
-    
+
 #>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess, ConfirmImpact = "High")]
     param (
-        [parameter(Mandatory, ParameterSetName = "instanceExplicit")]
-        [parameter(Mandatory, ParameterSetName = "instanceAll")]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [System.Management.Automation.PSCredential]$SqlCredential,
-        [parameter(Mandatory, ParameterSetName = "instanceExplicit")]
-        [object[]]$Database,
-        [parameter(ParameterSetName = "instanceAll")]
-        [object[]]$ExcludeDatabase,
-        [parameter(Mandatory, ParameterSetName = "instanceAll")]
+        [string[]]$Database,
+        [string[]]$ExcludeDatabase,
         [switch]$All,
-        [parameter(ValueFromPipeline, ParameterSetName = "collection")]
+        [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.MasterKey[]]$InputObject,
         [switch]$EnableException
     )
-    
+
     process {
         if ($SqlInstance) {
+            if (-not $Database -and -not $ExcludeDatabase -and -not $All) {
+                Stop-Function -Message "You must specify Database, ExcludeDatabase or All when using SqlInstance"
+                return
+            }
             # all does not need to be addressed in the code because it gets all the dbs if $databases is empty
             $databases = Get-DbaDatabase -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database -ExcludeDatabase $ExcludeDatabase
             if ($databases) {
@@ -90,7 +89,7 @@ function Remove-DbaDbMasterKey {
                 }
             }
         }
-        
+
         foreach ($masterkey in $InputObject) {
             $server = $masterkey.Parent.Parent
             $db = $masterkey.Parent
@@ -105,11 +104,11 @@ function Remove-DbaDbMasterKey {
                         Database     = $db.Name
                         Status       = "Master key removed"
                     }
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
                 }
             }
         }
     }
 }
+

@@ -1,5 +1,5 @@
-﻿function Test-DbaPowerPlan {
-<#
+function Test-DbaPowerPlan {
+    <#
     .SYNOPSIS
         Checks the Power Plan settings for compliance with best practices, which recommend High Performance for SQL Server.
 
@@ -85,8 +85,7 @@
 
             if (!$Credential) {
                 $cimSession = New-CimSession -ComputerName $computerResolved -ErrorAction SilentlyContinue
-            }
-            else {
+            } else {
                 $cimSession = New-CimSession -ComputerName $computerResolved -ErrorAction SilentlyContinue -Credential $Credential
             }
 
@@ -95,8 +94,7 @@
 
                 if (!$Credential) {
                     $cimSession = New-CimSession -ComputerName $computerResolved -SessionOption $sessionOption -ErrorAction SilentlyContinue
-                }
-                else {
+                } else {
                     $cimSession = New-CimSession -ComputerName $computerResolved -SessionOption $sessionOption -ErrorAction SilentlyContinue -Credential $Credential
                 }
             }
@@ -109,12 +107,10 @@
 
             try {
                 $powerPlans = Get-CimInstance -CimSession $cimSession -ClassName Win32_PowerPlan -Namespace "root\cimv2\power" -ErrorAction Stop | Select-Object ElementName, InstanceID, IsActive
-            }
-            catch {
+            } catch {
                 if ($_.Exception -match "namespace") {
                     Stop-Function -Message "Can't get Power Plan Info for $computer. Unsupported operating system." -Continue -ErrorRecord $_ -Target $computer
-                }
-                else {
+                } else {
                     Stop-Function -Message "Can't get Power Plan Info for $computer. Check logs for more details." -Continue -ErrorRecord $_ -Target $computer
                 }
             }
@@ -125,8 +121,7 @@
             if ($CustomPowerPlan.Length -gt 0) {
                 $bpPowerPlan.ElementName = $CustomPowerPlan
                 $bpPowerPlan.InstanceID = $($powerPlans | Where-Object { $_.ElementName -eq $CustomPowerPlan }).InstanceID
-            }
-            else {
+            } else {
                 $bpPowerPlan.ElementName = $($powerPlans | Where-Object { $_.InstanceID.Split('{')[1].Split('}')[0] -eq $bpPowerPlan.InstanceID }).ElementName
                 if ($null -eq $bpPowerplan.ElementName) {
                     $bpPowerPlan.ElementName = "You do not have the high performance plan installed on this machine."
@@ -141,8 +136,7 @@
 
             if ($powerPlan.InstanceID -eq $bpPowerPlan.InstanceID) {
                 $isBestPractice = $true
-            }
-            else {
+            } else {
                 $isBestPractice = $false
             }
 
@@ -155,3 +149,4 @@
         }
     }
 }
+

@@ -1,5 +1,5 @@
-﻿function New-DbaClientAlias {
-<#
+function New-DbaClientAlias {
+    <#
     .SYNOPSIS
         Creates/updates a sql alias for the specified server - mimics cliconfg.exe
 
@@ -20,6 +20,12 @@
 
     .PARAMETER Protocol
         The protocol for the connection, either TCPIP or NetBIOS. Defaults to TCPIP.
+
+    .PARAMETER WhatIf
+        If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
+
+    .PARAMETER Confirm
+        If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -54,7 +60,7 @@
         Creates a new NamedPipes alias on the local workstation called sp, which points sqlcluster\sharepoint
 
 #>
-    [CmdletBinding()]
+    [CmdletBinding(SupportsShouldProcess)]
     param (
         [DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,
         [PSCredential]$Credential,
@@ -72,7 +78,8 @@
         # This is a script block so cannot use messaging system
         $scriptblock = {
             $basekeys = "HKLM:\SOFTWARE\WOW6432Node\Microsoft\MSSQLServer", "HKLM:\SOFTWARE\Microsoft\MSSQLServer"
-            $ServerName = $args[0]
+            #Variable marked as unused by PSScriptAnalyzer
+            #$ServerName = $args[0]
             $Alias = $args[1]
             $serverstring = $args[2]
 
@@ -99,13 +106,16 @@
                     $null = New-Item -Path $connect -Force
                 }
 
+                <#
+                #Variable marked as unused by PSScriptAnalyzer
+                #Looks like it was once used for a Verbose Message
                 if ($basekey -like "*WOW64*") {
                     $architecture = "32-bit"
-                }
-                else {
+                } else {
                     $architecture = "64-bit"
                 }
-
+                #>
+                <# DO NOT use Write-Message as this is inside of a script block #>
                 # Write-Verbose "Creating/updating alias for $ComputerName for $architecture"
                 $null = New-ItemProperty -Path $connect -Name $Alias -Value $serverstring -PropertyType String -Force
             }
@@ -115,8 +125,7 @@
     process {
         if ($protocol -eq "TCPIP") {
             $serverstring = "DBMSSOCN,$ServerName"
-        }
-        else {
+        } else {
             $serverstring = "DBNMPNTW,\\$ServerName\pipe\sql\query"
         }
 
@@ -127,8 +136,7 @@
             if ($PScmdlet.ShouldProcess($computer, "Adding $alias")) {
                 try {
                     Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $scriptblock -ErrorAction Stop -ArgumentList $ServerName, $Alias, $serverstring
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Failure" -ErrorRecord $_ -Target $computer -Continue
                 }
             }
@@ -137,3 +145,4 @@
         Get-DbaClientAlias -ComputerName $computer -Credential $Credential | Where-Object AliasName -eq $Alias
     }
 }
+

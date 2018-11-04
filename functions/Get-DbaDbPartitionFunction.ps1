@@ -1,5 +1,5 @@
-﻿function Get-DbaDbPartitionFunction {
-<#
+function Get-DbaDbPartitionFunction {
+    <#
     .SYNOPSIS
         Gets database Partition Functions
 
@@ -68,8 +68,7 @@
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -111,3 +110,4 @@
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-DbaDatabasePartitionFunction
     }
 }
+

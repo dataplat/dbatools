@@ -1,5 +1,5 @@
-﻿function Get-DbaDbUdf {
-<#
+function Get-DbaDbUdf {
+    <#
     .SYNOPSIS
         Gets database User Defined Functions
 
@@ -77,8 +77,7 @@
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -120,3 +119,4 @@
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-DbaDatabaseUdf
     }
 }
+

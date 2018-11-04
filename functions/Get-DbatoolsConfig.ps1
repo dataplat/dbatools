@@ -1,5 +1,5 @@
-﻿function Get-DbatoolsConfig {
-<#
+function Get-DbatoolsConfig {
+    <#
     .SYNOPSIS
         Retrieves configuration elements by name.
 
@@ -25,7 +25,7 @@
 
     .NOTES
         Tags: Config, Module
-        Author: Friedrich Weinmann (@FredWeinmann‏)
+        Author: Friedrich Weinmann (@FredWeinmann)
 
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
@@ -67,3 +67,4 @@
     }
     Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-DbaConfig
 }
+

@@ -1,5 +1,5 @@
-﻿function Invoke-DbaDbDecryptObject {
-<#
+function Invoke-DbaDbDecryptObject {
+    <#
     .SYNOPSIS
         Invoke-DbaDbDecryptObject returns the decrypted version of an object
 
@@ -82,7 +82,7 @@
         Decrypt objects "Function1" and "Function2" and output the data to the user using a pipeline for the instance.
 
 #>
-   [CmdletBinding()]
+    [CmdletBinding()]
     param(
         [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
@@ -143,8 +143,7 @@
         # Set the encoding
         if ($EncodingType -eq 'ASCII') {
             $encoding = [System.Text.Encoding]::ASCII
-        }
-        elseif ($EncodingType -eq 'UTF8') {
+        } elseif ($EncodingType -eq 'UTF8') {
             $encoding = [System.Text.Encoding]::UTF8
         }
 
@@ -153,8 +152,7 @@
             try {
                 # Create the new destination
                 New-Item -Path $ExportDestination -ItemType Directory -Force | Out-Null
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Couldn't create destination folder $ExportDestination" -ErrorRecord $_ -Target $instance -Continue
             }
         }
@@ -177,8 +175,7 @@
             # Try to connect to instance
             try {
                 $server = New-Object Microsoft.SqlServer.Management.Smo.Server "ADMIN:$instance"
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -188,12 +185,11 @@
             # Loop through each of databases
             foreach ($db in $databaseCollection) {
                 # Get the objects
-                if($ObjectName){
+                if ($ObjectName) {
                     $storedProcedures = @($db.StoredProcedures | Where-Object {$_.Name -in $ObjectName -and $_.IsEncrypted -eq $true} | Select-Object Name, Schema, @{N = "ObjectType"; E = {'StoredProcedure'}}, @{N = "SubType"; E = {''}})
                     $functions = @($db.UserDefinedFunctions | Where-Object {$_.Name -in $ObjectName -and $_.IsEncrypted -eq $true} | Select-Object Name, Schema, @{N = "ObjectType"; E = {"UserDefinedFunction"}}, @{N = "SubType"; E = {$_.FunctionType.ToString().Trim()}})
                     $views = @($db.Views | Where-Object {$_.Name -in $ObjectName -and $_.IsEncrypted -eq $true} | Select-Object Name, Schema, @{N = "ObjectType"; E = {'View'}}, @{N = "SubType"; E = {''}})
-                }
-                else{
+                } else {
                     # Get all encrypted objects
                     $storedProcedures = @($db.StoredProcedures | Where-Object {$_.IsEncrypted -eq $true} | Select-Object Name, Schema, @{N = "ObjectType"; E = {'StoredProcedure'}}, @{N = "SubType"; E = {''}})
                     $functions = @($db.UserDefinedFunctions | Where-Object {$_.IsEncrypted -eq $true} | Select-Object Name, Schema, @{N = "ObjectType"; E = {"UserDefinedFunction"}}, @{N = "SubType"; E = {$_.FunctionType.ToString().Trim()}})
@@ -226,8 +222,7 @@
                     # Get the result of the secret query
                     try {
                         $secret = $server.Databases[$db.Name].Query($querySecret)
-                    }
-                    catch {
+                    } catch {
                         Stop-Function -Message "Couldn't retrieve secret from $instance" -ErrorRecord $_ -Target $instance -Continue
                     }
 
@@ -263,12 +258,10 @@
                         if ($queryKnownPlain) {
                             try {
                                 $knownPlain = $encoding.GetBytes(($queryKnownPlain))
-                            }
-                            catch {
+                            } catch {
                                 Stop-Function -Message "Couldn't convert the known plain to binary" -ErrorRecord $_ -Target $instance -Continue
                             }
-                        }
-                        else {
+                        } else {
                             Stop-Function -Message "Something went wrong setting up the known plain" -ErrorRecord $_ -Target $instance -Continue
                         }
 
@@ -285,8 +278,7 @@
                         # Get the result for the known encrypted
                         try {
                             $knownSecret = $server.Databases[$db.Name].Query($queryKnownSecret)
-                        }
-                        catch {
+                        } catch {
                             Stop-Function -Message "Couldn't retrieve known secret from $instance" -ErrorRecord $_ -Target $instance -Continue
                         }
 
@@ -301,8 +293,7 @@
                             # Check the export destination
                             if ($ExportDestination.EndsWith("\")) {
                                 $destinationFolder = "$ExportDestination$instance\$($db.Name)\$($object.ObjectType)\"
-                            }
-                            else {
+                            } else {
                                 $destinationFolder = "$ExportDestination\$instance\$($db.Name)\$($object.ObjectType)\"
                             }
 
@@ -311,8 +302,7 @@
                                 try {
                                     # Create the new destination
                                     New-Item -Path $destinationFolder -ItemType Directory -Force:$Force | Out-Null
-                                }
-                                catch {
+                                } catch {
                                     Stop-Function -Message "Couldn't create destination folder $destinationFolder" -ErrorRecord $_ -Target $instance -Continue
                                 }
                             }
@@ -323,8 +313,7 @@
                             # Export the result
                             try {
                                 $result | Out-File -FilePath $filePath -Force
-                            }
-                            catch {
+                            } catch {
                                 Stop-Function -Message "Couldn't export the results of $($object.Name) to $filePath" -ErrorRecord $_ -Target $instance -Continue
                             }
 
@@ -332,16 +321,16 @@
 
                         # Add the results to the custom object
                         [PSCustomObject]@{
-                                ComputerName    = $server.ComputerName
-                                InstanceName    = $server.ServiceName
-                                SqlInstance     = $server.DomainInstanceName
-                                Database        = $db.Name
-                                Type            = $object.ObjectType
-                                Schema          = $object.Schema
-                                Name            = $object.Name
-                                FullName        = "$($object.Schema).$($object.Name)"
-                                Script          = $result
-                            }
+                            ComputerName = $server.ComputerName
+                            InstanceName = $server.ServiceName
+                            SqlInstance  = $server.DomainInstanceName
+                            Database     = $db.Name
+                            Type         = $object.ObjectType
+                            Schema       = $object.Schema
+                            Name         = $object.Name
+                            FullName     = "$($object.Schema).$($object.Name)"
+                            Script       = $result
+                        }
 
                     } # end if secret
 
@@ -359,3 +348,4 @@
         Write-Message -Message "Finished decrypting data" -Level Verbose
     }
 }
+

@@ -1,5 +1,5 @@
-﻿function Get-DbaWindowsLog {
-<#
+function Get-DbaWindowsLog {
+    <#
     .SYNOPSIS
         Gets Windows Application events associated with an instance
 
@@ -38,7 +38,7 @@
 
     .NOTES
         Tags: Logging
-        Author: Drew Furgiuele | Friedrich Weinmann (@FredWeinmann‏)
+        Author: Drew Furgiuele | Friedrich Weinmann (@FredWeinmann)
 
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
@@ -54,6 +54,8 @@
         Returns all lines in the errorlogs that have event number 18456 in them
 
 #>
+    #This exists to ignore the Script Analyzer rule for Start-Runspace
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "")]
     [CmdletBinding()]
     param (
         [Parameter(ValueFromPipeline)]
@@ -174,8 +176,7 @@
                     while (-not $reader.EndOfStream) {
                         Convert-ErrorRecord -Line $reader.ReadLine()
                     }
-                }
-                catch { }
+                } catch { }
             }
             #endregion Script that processes an individual file
 
@@ -282,7 +283,8 @@
         $RunspacePool.Open()
 
         $countStarted = 0
-        $countReceived = 0
+        #Variable marked as unused by PSScriptAnalyzer
+        #$countReceived = 0
         #endregion Setup Runspace
     }
 
@@ -300,3 +302,4 @@
         $RunspacePool.Dispose()
     }
 }
+

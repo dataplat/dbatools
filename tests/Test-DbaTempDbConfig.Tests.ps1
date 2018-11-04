@@ -1,4 +1,4 @@
-﻿<#
+<#
     The below statement stays in for every test you build.
 #>
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")

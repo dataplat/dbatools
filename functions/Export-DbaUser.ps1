@@ -1,5 +1,5 @@
-﻿function Export-DbaUser {
-<#
+function Export-DbaUser {
+    <#
     .SYNOPSIS
         Exports users creation and its permissions to a T-SQL file or host.
 
@@ -79,12 +79,12 @@
     .EXAMPLE
         PS C:\> Export-DbaUser -SqlInstance sqlserver2014a -User User1, User2 -Path C:\temp\users.sql
 
-        Exports ONLY users User1 and User2 from sqlsever2014a to the file  C:\temp\users.sql
+        Exports ONLY users User1 and User2 from sqlserver2014a to the file  C:\temp\users.sql
 
     .EXAMPLE
         PS C:\> Export-DbaUser -SqlInstance sqlserver2008 -User User1 -Path C:\temp\users.sql -DestinationVersion SQLServer2016
 
-        Exports user User1 from sqlsever2008 to the file C:\temp\users.sql with syntax to run on SQL Server 2016
+        Exports user User1 from sqlserver2008 to the file C:\temp\users.sql with syntax to run on SQL Server 2016
 
     .EXAMPLE
         PS C:\> Export-DbaUser -SqlInstance sqlserver2008 -Database db1,db2 -Path C:\temp\users.sql
@@ -173,19 +173,16 @@
 
         try {
             $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
-        }
-        catch {
+        } catch {
             Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
         }
 
         if (!$database) {
             $databases = $server.Databases | Where-Object { $ExcludeDatabase -notcontains $_.Name -and $_.IsAccessible -eq $true }
-        }
-        else {
+        } else {
             if ($pipedatabase) {
                 $databases = $pipedatabase.name
-            }
-            else {
+            } else {
                 $databases = $server.Databases | Where-Object { $_.IsAccessible -eq $true -and ($database -contains $_.Name) }
             }
         }
@@ -201,8 +198,7 @@
                 if ([string]::IsNullOrEmpty($destinationVersion)) {
                     #Get compatibility level for scripting the objects
                     $scriptVersion = $db.CompatibilityLevel
-                }
-                else {
+                } else {
                     $scriptVersion = $versions[$destinationVersion]
                 }
                 $versionNameDesc = $versionName[$scriptVersion.ToString()]
@@ -222,16 +218,14 @@
 
                 if ($User.Count -eq 0) {
                     $users = $db.Users | Where-Object { $_.IsSystemObject -eq $false -and $_.Name -notlike "##*" }
-                }
-                else {
+                } else {
                     if ($pipedatabase) {
                         $users = $pipedatabase.name
-                    }
-                    else {
+                    } else {
                         $users = $db.Users | Where-Object { $User -contains $_.Name -and $_.IsSystemObject -eq $false -and $_.Name -notlike "##*" }
                     }
                 }
-                # Store roles between users so if we hit the same one we dont create it again
+                # Store roles between users so if we hit the same one we don't create it again
                 $roles = @()
                 if ($users.Count -gt 0) {
                     foreach ($dbuser in $users) {
@@ -256,8 +250,7 @@
                             foreach ($dbUserPermissionScript in $dbuser.Script($ScriptingOptionsObject)) {
                                 if ($dbuserPermissionScript.Contains("sp_addrolemember")) {
                                     $execute = "EXEC "
-                                }
-                                else {
+                                } else {
                                     $execute = ""
                                 }
                                 $outsql += "$execute$($dbUserPermissionScript.ToString())"
@@ -268,8 +261,7 @@
                                 if ($databasePermission.PermissionState -eq "GrantWithGrant") {
                                     $withGrant = " WITH GRANT OPTION"
                                     $grantDatabasePermission = 'GRANT'
-                                }
-                                else {
+                                } else {
                                     $withGrant = " "
                                     $grantDatabasePermission = $databasePermission.PermissionState.ToString().ToUpper()
                                 }
@@ -424,8 +416,7 @@
                                 if ($objectPermission.PermissionState -eq "GrantWithGrant") {
                                     $withGrant = " WITH GRANT OPTION"
                                     $grantObjectPermission = 'GRANT'
-                                }
-                                else {
+                                } else {
                                     $withGrant = " "
                                     $grantObjectPermission = $objectPermission.PermissionState.ToString().ToUpper()
                                 }
@@ -433,21 +424,18 @@
                                 $outsql += "$grantObjectPermission $($objectPermission.PermissionType) ON $object TO [$($objectPermission.Grantee)]$withGrant AS [$($objectPermission.Grantor)];"
                             }
 
-                        }
-                        catch {
+                        } catch {
                             Stop-Function -Message "This user may be using functionality from $($versionName[$db.CompatibilityLevel.ToString()]) that does not exist on the destination version ($versionNameDesc)." -Continue -InnerErrorRecord $_ -Target $db
                         }
                     }
-                }
-                else {
+                } else {
                     Write-Message -Level Output -Message "No users found on database '$db'"
                 }
 
                 #reset collection
                 $users = $null
             }
-        }
-        else {
+        } else {
             Write-Message -Level Output -Message "No users found on instance '$server'"
         }
     }
@@ -457,8 +445,7 @@
 
         if ($ExcludeGoBatchSeparator) {
             $sql = $outsql
-        }
-        else {
+        } else {
             $sql = $outsql -join "`r`nGO`r`n"
             #add the final GO
             $sql += "`r`nGO"
@@ -466,10 +453,10 @@
 
         if ($Path) {
             $sql | Out-File -Encoding UTF8 -FilePath $Path -Append:$Append -NoClobber:$NoClobber
-        }
-        else {
+        } else {
             $sql
         }
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Export-SqlUser
     }
 }
+

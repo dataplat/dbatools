@@ -1,6 +1,6 @@
-﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function New-DbaXESmartReplay {
-<#
+    <#
     .SYNOPSIS
         This response type can be used to replay execution related events to a target SQL Server instance.
 
@@ -33,6 +33,12 @@ function New-DbaXESmartReplay {
     .PARAMETER StopOnError
         If this switch is enabled, the replay will be stopped when the first error is encountered. By default, error messages are piped to the log and console output, and replay proceeds.
 
+    .PARAMETER WhatIf
+        If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
+
+    .PARAMETER Confirm
+        If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -64,7 +70,7 @@ function New-DbaXESmartReplay {
         Replays events from the 'Profiler Standard' session on sql2016 to sql2017's planning database. Does not run as a job so you can see the raw output.
 
 #>
-    [CmdletBinding()]
+    [CmdletBinding(SupportsShouldProcess)]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
@@ -81,8 +87,7 @@ function New-DbaXESmartReplay {
     begin {
         try {
             Add-Type -Path "$script:PSModuleRoot\bin\XESmartTarget\XESmartTarget.Core.dll" -ErrorAction Stop
-        }
-        catch {
+        } catch {
             Stop-Function -Message "Could not load XESmartTarget.Core.dll" -ErrorRecord $_ -Target "XESmartTarget"
             return
         }
@@ -93,32 +98,33 @@ function New-DbaXESmartReplay {
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 11
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
+            if ($Pscmdlet.ShouldProcess($instance, "Creating new XESmartReply")) {
+                Write-Message -Message "Making a New XE SmartReplay for $Event against $instance running on $($server.name)" -Level Verbose
+                try {
+                    $replay = New-Object -TypeName XESmartTarget.Core.Responses.ReplayResponse
+                    $replay.ServerName = $instance
+                    $replay.DatabaseName = $Database
+                    $replay.Events = $Event
+                    $replay.StopOnError = $StopOnError
+                    $replay.Filter = $Filter
+                    $replay.DelaySeconds = $DelaySeconds
+                    $replay.ReplayIntervalSeconds = $ReplayIntervalSeconds
 
-            try {
-                $replay = New-Object -TypeName XESmartTarget.Core.Responses.ReplayResponse
-                $replay.ServerName = $instance
-                $replay.DatabaseName = $Database
-                $replay.Events = $Event
-                $replay.StopOnError = $StopOnError
-                $replay.Filter = $Filter
-                $replay.DelaySeconds = $DelaySeconds
-                $replay.ReplayIntervalSeconds = $ReplayIntervalSeconds
+                    if ($SqlCredential) {
+                        $replay.UserName = $SqlCredential.UserName
+                        $replay.Password = $SqlCredential.GetNetworkCredential().Password
+                    }
 
-                if ($SqlCredential) {
-                    $replay.UserName = $SqlCredential.UserName
-                    $replay.Password = $SqlCredential.GetNetworkCredential().Password
+                    $replay
+                } catch {
+                    $message = $_.Exception.InnerException.InnerException | Out-String
+                    Stop-Function -Message $message -Target "XESmartTarget" -Continue
                 }
-
-                $replay
-            }
-            catch {
-                $message = $_.Exception.InnerException.InnerException | Out-String
-                Stop-Function -Message $message -Target "XESmartTarget" -Continue
             }
         }
     }
 }
+

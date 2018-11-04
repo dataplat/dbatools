@@ -1,5 +1,5 @@
-﻿function Test-DbaIdentityUsage {
-<#
+function Test-DbaIdentityUsage {
+    <#
     .SYNOPSIS
         Displays information relating to IDENTITY seed usage.  Works on SQL Server 2008 and above.
 
@@ -139,8 +139,7 @@
 
         if ($Threshold -gt 0) {
             $sql += " WHERE [PercentUsed] >= " + $Threshold + " ORDER BY [PercentUsed] DESC"
-        }
-        else {
+        } else {
             $sql += " ORDER BY [PercentUsed] DESC"
         }
     }
@@ -149,8 +148,7 @@
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 10
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -177,8 +175,7 @@
 
                 try {
                     $results = $db.Query($sql)
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Error capturing data on $db" -Target $instance -ErrorRecord $_ -Exception $_.Exception -Continue
                 }
 
@@ -209,3 +206,4 @@
         }
     }
 }
+

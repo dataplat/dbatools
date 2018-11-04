@@ -1,5 +1,5 @@
-﻿function Show-DbaDbList {
-<#
+function Show-DbaDbList {
+    <#
     .SYNOPSIS
         Shows a list of databases in a GUI.
 
@@ -38,10 +38,10 @@
         Shows a GUI list of databases using Windows Authentication to connect to the SQL Server. Returns a string of the selected database.
 
     .EXAMPLE
-        PS C:\> Show-DbaDbList -Source sqlserver2014a -SqlCredential $cred
+        PS C:\> Show-DbaDbList -SqlInstance sqlserver2014a -SqlCredential $cred
 
         Shows a GUI list of databases using SQL credentials to connect to the SQL Server. Returns a string of the selected database.
-    
+
     .EXAMPLE
         PS C:\> Show-DbaDbList -SqlInstance sqlserver2014a -DefaultDb master
 
@@ -62,8 +62,7 @@
     begin {
         try {
             Add-Type -AssemblyName PresentationFramework
-        }
-        catch {
+        } catch {
             throw "Windows Presentation Framework required but not installed"
         }
 
@@ -157,12 +156,12 @@
         [void]$stackpanel.Children.Add($image)
         [void]$stackpanel.Children.Add($textblock)
         $childitem.Header = $stackpanel
-        $databaseParent = $treeview.Items.Add($childitem)
+        #Variable marked as unused by PSScriptAnalyzer
+        #$databaseParent = $treeview.Items.Add($childitem)
 
         try {
             $databases = $sourceserver.databases.name
-        }
-        catch {
+        } catch {
             return
         }
 
@@ -201,3 +200,4 @@
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Show-DbaDatabaseList
     }
 }
+

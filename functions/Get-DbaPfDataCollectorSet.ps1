@@ -1,6 +1,6 @@
-﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaPfDataCollectorSet {
-<#
+    <#
     .SYNOPSIS
         Gets Performance Monitor Data Collector Set.
 
@@ -81,8 +81,7 @@ function Get-DbaPfDataCollectorSet {
                     if ($task) {
                         $tasks += $task
                     }
-                }
-                catch {
+                } catch {
                     $done = $true
                 }
             }
@@ -115,16 +114,14 @@ function Get-DbaPfDataCollectorSet {
                     if ($outputlocation) {
                         $dir = (Split-Path $outputlocation).Replace(':', '$')
                         $remote = "\\$env:COMPUTERNAME\$dir"
-                    }
-                    else {
+                    } else {
                         $remote = $null
                     }
 
                     if ($latestoutputlocation) {
                         $dir = ($latestoutputlocation).Replace(':', '$')
                         $remotelatest = "\\$env:COMPUTERNAME\$dir"
-                    }
-                    else {
+                    } else {
                         $remote = $null
                     }
 
@@ -166,8 +163,8 @@ function Get-DbaPfDataCollectorSet {
                         TaskObject                 = $task
                         Credential                 = $args[1]
                     }
-                }
-                catch {
+                } catch {
+                    <# DO NOT use Write-Message as this is inside of a script block #>
                     Write-Warning -Message "Issue with getting Collector Set $setname on $env:Computername : $_."
                     continue
                 }
@@ -183,10 +180,10 @@ function Get-DbaPfDataCollectorSet {
         foreach ($computer in $ComputerName.ComputerName) {
             try {
                 Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $setscript -ArgumentList $CollectorSet, $Credential -ErrorAction Stop | Select-DefaultView -Property $columns
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -ErrorRecord $_ -Target $computer -Continue
             }
         }
     }
 }
+

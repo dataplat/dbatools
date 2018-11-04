@@ -1,5 +1,5 @@
-﻿function Copy-DbaServerAuditSpecification {
-<#
+function Copy-DbaServerAuditSpecification {
+    <#
     .SYNOPSIS
         Copy-DbaServerAuditSpecification migrates server audit specifications from one SQL Server to another.
 
@@ -59,7 +59,7 @@
         Copies all server audits from sqlserver2014a to sqlcluster using Windows credentials to connect. If audits with the same name exist on sqlcluster, they will be skipped.
 
     .EXAMPLE
-        PS C:\> Copy-DbaServerAuditSpecification -Source sqlserver2014a -Destination sqlcluster -ServerAuditSpecification tg_noDbDrop -SourceSqlCredential $cred -Force
+        PS C:\> Copy-DbaServerAuditSpecification -Source sqlserver2014a -Destination sqlcluster -AuditSpecification tg_noDbDrop -SourceSqlCredential $cred -Force
 
         Copies a single audit, the tg_noDbDrop audit from sqlserver2014a to sqlcluster using SQL credentials to connect to sqlserver2014a and Windows credentials to connect to sqlcluster. If an audit specification with the same name exists on sqlcluster, it will be dropped and recreated because -Force was used.
 
@@ -87,8 +87,7 @@
     begin {
         try {
             $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -MinimumVersion 10
-        }
-        catch {
+        } catch {
             Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Source
             return
         }
@@ -105,8 +104,7 @@
         foreach ($destinstance in $Destination) {
             try {
                 $destServer = Connect-SqlInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential -MinimumVersion 10
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
             }
 
@@ -124,13 +122,13 @@
                 $auditSpecName = $auditSpec.Name
 
                 $copyAuditSpecStatus = [pscustomobject]@{
-                    SourceServer = $sourceServer.Name
+                    SourceServer      = $sourceServer.Name
                     DestinationServer = $destServer.Name
-                    Type         = "Server Audit Specification"
-                    Name         = $auditSpecName
-                    Status       = $null
-                    Notes        = $null
-                    DateTime     = [DbaDateTime](Get-Date)
+                    Type              = "Server Audit Specification"
+                    Name              = $auditSpecName
+                    Status            = $null
+                    Notes             = $null
+                    DateTime          = [DbaDateTime](Get-Date)
                 }
 
                 if ($AuditSpecification -and $auditSpecName -notin $AuditSpecification -or $auditSpecName -in $ExcludeAuditSpecification) {
@@ -155,14 +153,12 @@
                         $copyAuditSpecStatus.Status = "Skipped"
                         $copyAuditSpecStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                         continue
-                    }
-                    else {
+                    } else {
                         if ($Pscmdlet.ShouldProcess($destinstance, "Dropping server audit $auditSpecName and recreating")) {
                             try {
                                 Write-Message -Level Verbose -Message "Dropping server audit $auditSpecName"
                                 $destServer.ServerAuditSpecifications[$auditSpecName].Drop()
-                            }
-                            catch {
+                            } catch {
                                 $copyAuditSpecStatus.Status = "Failed"
                                 $copyAuditSpecStatus.Notes = (Get-ErrorMessage -Record $_)
                                 $copyAuditSpecStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
@@ -181,8 +177,7 @@
 
                         $copyAuditSpecStatus.Status = "Successful"
                         $copyAuditSpecStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                    }
-                    catch {
+                    } catch {
                         $copyAuditSpecStatus.Status = "Failed"
                         $copyAuditSpecStatus.Notes = (Get-ErrorMessage -Record $_)
                         $copyAuditSpecStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
@@ -197,3 +192,4 @@
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-SqlAuditSpecification
     }
 }
+

@@ -1,21 +1,21 @@
 #ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Remove-DbaEndpoint {
-<#
+    <#
     .SYNOPSIS
         Removes endpoints from a SQL Server instance.
-        
+
     .DESCRIPTION
         Removes endpoints from a SQL Server instance.
-        
+
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
-        
+
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
-        
+
     .PARAMETER Endpoint
         Only remove specific endpoints.
-    
+
     .PARAMETER AllEndpoints
         Remove all endpoints on an instance.
 
@@ -24,7 +24,7 @@ function Remove-DbaEndpoint {
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
-        
+
     .PARAMETER Confirm
         Prompts you for confirmation before executing any changing operations within the command.
 
@@ -32,30 +32,30 @@ function Remove-DbaEndpoint {
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-        
+
     .NOTES
         Tags: Endpoint
         Author: Chrissy LeMaire (@cl), netnerds.net
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
-        
+
     .LINK
         https://dbatools.io/Remove-DbaEndpoint
-        
+
     .EXAMPLE
         PS C:\> Remove-DbaEndpoint -SqlInstance sqlserver2012 -AllEndpoints
-        
+
         Removes all endpoints on the sqlserver2014 instance. Prompts for confirmation.
-        
+
     .EXAMPLE
-        PS C:\> Remove-DbaEndpoint -SqlInstance sqlserver2012 -DbaEndpoint endpoint1,endpoint2 -Confirm:$false
-        
+        PS C:\> Remove-DbaEndpoint -SqlInstance sqlserver2012 -Endpoint endpoint1,endpoint2 -Confirm:$false
+
         Removes the endpoint1 and endpoint2 endpoints. Does not prompt for confirmation.
-        
+
     .EXAMPLE
-        PS C:\> Get-DbaEndpoint -SqlInstance sqlserver2012 -DbaEndpoint endpoint1 | Remove-DbaEndpoint
-        
+        PS C:\> Get-DbaEndpoint -SqlInstance sqlserver2012 -Endpoint endpoint1 | Remove-DbaEndpoint
+
         Removes the endpoints returned from the Get-DbaEndpoint function. Prompts for confirmation.
 #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
@@ -76,7 +76,7 @@ function Remove-DbaEndpoint {
         foreach ($instance in $SqlInstance) {
             $InputObject += Get-DbaEndpoint -SqlInstance $instance -SqlCredential $SqlCredential -EndPoint $Endpoint
         }
-        
+
         foreach ($ep in $InputObject) {
             if ($Pscmdlet.ShouldProcess($ep.Parent.name, "Removing endpoint $ep")) {
                 try {
@@ -89,11 +89,11 @@ function Remove-DbaEndpoint {
                         Endpoint     = $ep.Name
                         Status       = "Removed"
                     }
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
                 }
             }
         }
     }
 }
+

@@ -1,4 +1,4 @@
-﻿$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 
@@ -21,3 +21,26 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Read https://github.com/sqlcollaborative/dbatools/blob/development/contributing.md#tests
     for more guidence.
 #>
+Describe "Get-DbaManagementObject Integration Test" -Tag "IntegrationTests" {
+    $results = Get-DbaManagementObject -ComputerName $env:COMPUTERNAME
+
+    It "returns results" {
+        $results.Count -gt 0 | Should Be $true
+    }
+    It "has the correct properties" {
+        $result = $results[0]
+        $ExpectedProps = 'ComputerName,Version,Loaded,LoadTemplate'.Split(',')
+        ($result.PsObject.Properties.Name | Sort-Object) | Should Be ($ExpectedProps | Sort-Object)
+    }
+
+    $results = Get-DbaManagementObject -ComputerName $env:COMPUTERNAME -VersionNumber 10
+    It "Returns the version specified" {
+        $results | Should Not Be $null
+    }
+
+    It "Should return nothing if unable to connect to server" {
+        $result = Get-DbaManagementObject -ComputerName 'Melton5312' -WarningAction SilentlyContinue
+        $result | Should Be $null
+    }
+}
+

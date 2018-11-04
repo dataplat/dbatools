@@ -1,6 +1,6 @@
-﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function New-DbaXESession {
-<#
+    <#
     .SYNOPSIS
         Creates a new XESession object - for the dogged.
 
@@ -17,6 +17,12 @@ function New-DbaXESession {
 
     .PARAMETER Name
         The Name of the session to be created.
+
+    .PARAMETER WhatIf
+        If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
+
+    .PARAMETER Confirm
+        If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -43,7 +49,7 @@ function New-DbaXESession {
         Returns a new XE Session object from sql2017 then adds an event, an action then creates it.
 
 #>
-    [CmdletBinding()]
+    [CmdletBinding(SupportsShouldProcess)]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
@@ -57,16 +63,18 @@ function New-DbaXESession {
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 11
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
-            $SqlConn = $server.ConnectionContext.SqlConnectionObject
-            $SqlStoreConnection = New-Object Microsoft.SqlServer.Management.Sdk.Sfc.SqlStoreConnection $SqlConn
-            $store = New-Object  Microsoft.SqlServer.Management.XEvent.XEStore $SqlStoreConnection
+            if ($Pscmdlet.ShouldProcess($instance, "Creating new XESession")) {
+                $SqlConn = $server.ConnectionContext.SqlConnectionObject
+                $SqlStoreConnection = New-Object Microsoft.SqlServer.Management.Sdk.Sfc.SqlStoreConnection $SqlConn
+                $store = New-Object  Microsoft.SqlServer.Management.XEvent.XEStore $SqlStoreConnection
 
-            $store.CreateSession($Name)
+                $store.CreateSession($Name)
+            }
         }
     }
 }
+

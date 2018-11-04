@@ -128,16 +128,14 @@ function New-DbaLogShippingSecondaryDatabase {
     # Try connecting to the instance
     try {
         $ServerSecondary = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
-    }
-    catch {
+    } catch {
         Stop-Function -Message "Failure" -Category ConnectionError -Target $SqlInstance -ErrorRecord $_ -Continue
     }
 
     # Try connecting to the instance
     try {
         $ServerPrimary = Connect-SqlInstance -SqlInstance $PrimaryServer -SqlCredential $PrimarySqlCredential
-    }
-    catch {
+    } catch {
         Stop-Function -Message "Failure" -Category ConnectionError -Target $PrimaryServer -ErrorRecord $_ -Continue
     }
 
@@ -161,8 +159,7 @@ function New-DbaLogShippingSecondaryDatabase {
     if ($ThresholdAlertEnabled) {
         [int]$ThresholdAlertEnabled = 1
         Write-Message -Message "Setting Threshold alert to $ThresholdAlertEnabled." -Level Verbose
-    }
-    else {
+    } else {
         [int]$ThresholdAlertEnabled = 0
         Write-Message -Message "Setting Threshold alert to $ThresholdAlertEnabled." -Level Verbose
     }
@@ -171,8 +168,7 @@ function New-DbaLogShippingSecondaryDatabase {
     if ($DisconnectUsers) {
         [int]$DisconnectUsers = 1
         Write-Message -Message "Setting disconnect users to $DisconnectUsers." -Level Verbose
-    }
-    else {
+    } else {
         [int]$DisconnectUsers = 0
         Write-Message -Message "Setting disconnect users to $DisconnectUsers." -Level Verbose
     }
@@ -182,8 +178,7 @@ function New-DbaLogShippingSecondaryDatabase {
         if ($Force) {
             [int]$DisconnectUsers = 0
             Write-Message -Message "Illegal combination of database restore mode $RestoreMode and disconnect users $DisconnectUsers. Setting it to $DisconnectUsers." -Level Warning
-        }
-        else {
+        } else {
             Stop-Function -Message "Illegal combination of database restore mode $RestoreMode and disconnect users $DisconnectUsers." -Target $SqlInstance -Continue
         }
     }
@@ -217,8 +212,7 @@ function New-DbaLogShippingSecondaryDatabase {
 
     if ($ServerSecondary.Version.Major -gt 9) {
         $Query += ",@overwrite = 1;"
-    }
-    else {
+    } else {
         $Query += ";"
     }
 
@@ -228,8 +222,7 @@ function New-DbaLogShippingSecondaryDatabase {
             Write-Message -Message "Configuring logshipping for secondary database $SecondaryDatabase on $SqlInstance." -Level Verbose
             Write-Message -Message "Executing query:`n$Query" -Level Verbose
             $ServerSecondary.Query($Query)
-        }
-        catch {
+        } catch {
             Write-Message -Message "$($_.Exception.InnerException.InnerException.InnerException.InnerException.Message)" -Level Warning
             Stop-Function -Message "Error executing the query.`n$($_.Exception.Message)`n$Query"  -ErrorRecord $_ -Target $SqlInstance -Continue
         }
@@ -238,3 +231,5 @@ function New-DbaLogShippingSecondaryDatabase {
     Write-Message -Message "Finished adding the secondary database $SecondaryDatabase to log shipping." -Level Verbose
 
 }
+
+

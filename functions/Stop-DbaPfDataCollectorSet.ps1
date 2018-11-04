@@ -1,6 +1,6 @@
-﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Stop-DbaPfDataCollectorSet {
-<#
+    <#
     .SYNOPSIS
         Stops Performance Monitor Data Collector Set.
 
@@ -23,6 +23,12 @@ function Stop-DbaPfDataCollectorSet {
 
     .PARAMETER InputObject
         Accepts the object output by Get-DbaPfDataCollectorSet via the pipeline.
+
+    .PARAMETER WhatIf
+        If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
+
+    .PARAMETER Confirm
+        If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -61,7 +67,7 @@ function Stop-DbaPfDataCollectorSet {
         Stops the 'System Correlation' Collector.
 
 #>
-    [CmdletBinding()]
+    [CmdletBinding(SupportsShouldProcess)]
     param (
         [DbaInstance[]]$ComputerName = $env:COMPUTERNAME,
         [PSCredential]$Credential,
@@ -73,7 +79,8 @@ function Stop-DbaPfDataCollectorSet {
         [switch]$EnableException
     )
     begin {
-        $sets = @()
+        #Variable marked as unused by PSScriptAnalyzer
+        #$sets = @()
         $wait = $NoWait -eq $false
 
         $setscript = {
@@ -107,14 +114,16 @@ function Stop-DbaPfDataCollectorSet {
             if ($status -ne "Running") {
                 Stop-Function -Message "$setname on $computer is already stopped." -Continue
             }
-            try {
-                Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $setscript -ArgumentList $setname, $wait -ErrorAction Stop
-            }
-            catch {
-                Stop-Function -Message "Failure stopping $setname on $computer." -ErrorRecord $_ -Target $computer -Continue
-            }
+            if ($Pscmdlet.ShouldProcess($computer, "Stoping Performance Monitor collection set")) {
+                try {
+                    Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $setscript -ArgumentList $setname, $wait -ErrorAction Stop
+                } catch {
+                    Stop-Function -Message "Failure stopping $setname on $computer." -ErrorRecord $_ -Target $computer -Continue
+                }
 
-            Get-DbaPfDataCollectorSet -ComputerName $computer -Credential $Credential -CollectorSet $setname
+                Get-DbaPfDataCollectorSet -ComputerName $computer -Credential $Credential -CollectorSet $setname
+            }
         }
     }
 }
+

@@ -1,6 +1,6 @@
-﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Start-DbaTrace {
-<#
+    <#
     .SYNOPSIS
         Starts SQL Server traces
 
@@ -18,6 +18,12 @@ function Start-DbaTrace {
 
     .PARAMETER InputObject
         Internal parameter for piping
+
+    .PARAMETER WhatIf
+        If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
+
+    .PARAMETER Confirm
+        If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -48,7 +54,7 @@ function Start-DbaTrace {
         Starts selected traces on sql2008
 
 #>
-    [CmdletBinding()]
+    [CmdletBinding(SupportsShouldProcess)]
     param (
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
@@ -78,15 +84,16 @@ function Start-DbaTrace {
             }
 
             $sql = "sp_trace_setstatus $traceid, 1"
-
-            try {
-                $server.Query($sql)
-                Get-DbaTrace -SqlInstance $server -Id $traceid
-            }
-            catch {
-                Stop-Function -Message "Failure" -ErrorRecord $_ -Target $server -Continue
-                return
+            if ($Pscmdlet.ShouldProcess($traceid, "Starting the TraceID on $server")) {
+                try {
+                    $server.Query($sql)
+                    Get-DbaTrace -SqlInstance $server -Id $traceid
+                } catch {
+                    Stop-Function -Message "Failure" -ErrorRecord $_ -Target $server -Continue
+                    return
+                }
             }
         }
     }
 }
+

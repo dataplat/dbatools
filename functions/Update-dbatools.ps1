@@ -1,6 +1,6 @@
-﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Update-Dbatools {
-<#
+    <#
     .SYNOPSIS
         Exported function. Updates dbatools. Deletes current copy and replaces it with freshest copy.
 
@@ -44,6 +44,7 @@ function Update-Dbatools {
 
 #>
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "Low")]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseSingularNouns", "", Justification = "It is the proper noun of the cmdlet")]
     param(
         [parameter(Mandatory = $false)]
         [Alias("dev", "devbranch")]
@@ -58,8 +59,7 @@ function Update-Dbatools {
         if ($PSCmdlet.ShouldProcess("development branch", "Updating dbatools")) {
             & $InstallScript -beta;
         }
-    }
-    else {
+    } else {
         Write-Message -Level Verbose -Message "Installing release version via $Installscript."
         if ($PSCmdlet.ShouldProcess("release branch", "Updating dbatools")) {
             & $InstallScript;

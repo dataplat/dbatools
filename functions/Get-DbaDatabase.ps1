@@ -1,6 +1,6 @@
-﻿#ValidationTags#CodeStyle,Messaging,FlowControl,Pipeline#
+#ValidationTags#CodeStyle,Messaging,FlowControl,Pipeline#
 function Get-DbaDatabase {
-<#
+    <#
     .SYNOPSIS
         Gets SQL Database information for each database that is present on the target instance(s) of SQL Server.
 
@@ -143,6 +143,7 @@ function Get-DbaDatabase {
 
 #>
     [CmdletBinding(DefaultParameterSetName = "Default")]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseSingularNouns", "", Justification = "Internal functions are ignored")]
     param (
         [parameter(Position = 0, Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
@@ -186,15 +187,13 @@ function Get-DbaDatabase {
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             if (!$IncludeLastUsed) {
                 $dblastused = $null
-            }
-            else {
+            } else {
                 ## Get last used information from the DMV
                 $querylastused = "WITH agg AS
                 (
@@ -236,11 +235,9 @@ function Get-DbaDatabase {
 
             if ($ExcludeAllUserDb) {
                 $DBType = @($true)
-            }
-            elseif ($ExcludeAllSystemDb) {
+            } elseif ($ExcludeAllSystemDb) {
                 $DBType = @($false)
-            }
-            else {
+            } else {
                 $DBType = @($false, $true)
             }
 
@@ -262,13 +259,11 @@ function Get-DbaDatabase {
                 try {
                     if ($server.VersionMajor -eq 8) {
                         $server.Query("SELECT *, SUSER_NAME(sid) AS [Owner] FROM master.dbo.sysdatabases")
-                    }
-                    else {
+                    } else {
                         $server.Query("SELECT *, SUSER_NAME(owner_sid) AS [Owner] FROM sys.databases")
                     }
-                }
-                catch {
-                        Stop-Function -Message "Failure" -ErrorRecord $_
+                } catch {
+                    Stop-Function -Message "Failure" -ErrorRecord $_
                 }
             }
             $backed_info = Invoke-QueryRawDatabases
@@ -280,7 +275,7 @@ function Get-DbaDatabase {
             }
 
             $inputObject = @()
-            foreach($dt in $backed_info) {
+            foreach ($dt in $backed_info) {
                 $inputObject += $server.Databases | Where-Object Name -ceq $dt.name
             }
             $inputobject = $inputObject |
@@ -301,8 +296,7 @@ function Get-DbaDatabase {
                     $dabsWithinScope = ($dabs | Where-Object End -lt $NoFullBackupSince)
 
                     $inputobject = $inputobject | Where-Object { $_.Name -in $dabsWithinScope.Database -and $_.Name -ne 'tempdb' }
-                }
-                else {
+                } else {
                     $inputObject = $inputObject | Where-Object { $_.Name -notin $dabs.Database -and $_.Name -ne 'tempdb' }
                 }
 
@@ -313,8 +307,7 @@ function Get-DbaDatabase {
                     $dabsWithinScope = ($dabs | Where-Object End -lt $NoLogBackupSince)
                     $inputobject = $inputobject |
                         Where-Object { $_.Name -in $dabsWithinScope.Database -and $_.Name -ne 'tempdb' -and $_.RecoveryModel -ne 'Simple' }
-                }
-                else {
+                } else {
                     $inputobject = $inputObject |
                         Where-Object { $_.Name -notin $dabs.Database -and $_.Name -ne 'tempdb' -and $_.RecoveryModel -ne 'Simple' }
                 }
@@ -353,8 +346,7 @@ function Get-DbaDatabase {
                     Select-DefaultView -InputObject $db -Property $defaults
                     #try { $server.Databases.Refresh() } catch {}
                 }
-            }
-            catch {
+            } catch {
                 Stop-Function -ErrorRecord $_ -Target $instance -Message "Failure. Collection may have been modified. If so, please use parens (Get-DbaDatabase ....) | when working with commands that modify the collection such as Remove-DbaDatabase." -Continue
             }
         }

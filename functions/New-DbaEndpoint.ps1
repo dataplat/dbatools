@@ -1,6 +1,6 @@
 #ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function New-DbaEndpoint {
-<#
+    <#
     .SYNOPSIS
         Creates endpoints on a SQL Server instance.
 
@@ -9,7 +9,7 @@ function New-DbaEndpoint {
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
-    
+
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
@@ -33,7 +33,7 @@ function New-DbaEndpoint {
 
     .PARAMETER Certificate
         Database certificate used for authentication.
-    
+
     .PARAMETER EndpointEncryption
         Used to specify the state of encryption on the endpoint. Defaults to required.
         Disabled
@@ -53,6 +53,9 @@ function New-DbaEndpoint {
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
 
+    .PARAMETER Owner
+        Owner of the endpoint. Defaults to sa.
+
     .PARAMETER Confirm
         Prompts you for confirmation before executing any changing operations within the command.
 
@@ -64,7 +67,7 @@ function New-DbaEndpoint {
     .NOTES
         Tags: Endpoint
         Author: Chrissy LeMaire (@cl), netnerds.net
-        dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
+        Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
@@ -101,6 +104,7 @@ function New-DbaEndpoint {
         [string]$Certificate,
         [int]$Port,
         [int]$SslPort,
+        [string]$Owner,
         [switch]$EnableException
     )
     process {
@@ -111,11 +115,14 @@ function New-DbaEndpoint {
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-
+            
+            if (-not (Test-Bound -ParameterName Owner)) {
+                $Owner = Get-SaLoginName -SqlInstance $server
+            }
+            
             if ($Certificate) {
                 $cert = Get-DbaDbCertificate -SqlInstance $server -Certificate $Certificate
                 if (-not $cert) {
@@ -126,20 +133,17 @@ function New-DbaEndpoint {
             # Thanks to https://github.com/mmessano/PowerShell/blob/master/SQL-ConfigureDatabaseMirroring.ps1
             if ($Port) {
                 $tcpPort = $port
-            }
-            else {
+            } else {
                 $thisport = (Get-DbaEndPoint -SqlInstance $server).Protocol.Tcp
                 $measure = $thisport | Measure-Object ListenerPort -Maximum
 
                 if ($thisport.ListenerPort -eq 0) {
                     $tcpPort = 5022
-                }
-                elseif ($measure.Maximum) {
+                } elseif ($measure.Maximum) {
                     $maxPort = $measure.Maximum
                     #choose a random port that is greater than the current max port
                     $tcpPort = $maxPort + (New-Object Random).Next(1, 500)
-                }
-                else {
+                } else {
                     $maxPort = 5000
                     #choose a random port that is greater than the current max port
                     $tcpPort = $maxPort + (New-Object Random).Next(1, 500)
@@ -151,6 +155,7 @@ function New-DbaEndpoint {
                     $endpoint = New-Object Microsoft.SqlServer.Management.Smo.EndPoint $server, $Name
                     $endpoint.ProtocolType = [Microsoft.SqlServer.Management.Smo.ProtocolType]::$Protocol
                     $endpoint.EndpointType = [Microsoft.SqlServer.Management.Smo.EndpointType]::$Type
+                    $endpoint.Owner = $Owner
                     if ($Protocol -eq "TCP") {
                         $endpoint.Protocol.Tcp.ListenerPort = $tcpPort
                         $endpoint.Payload.DatabaseMirroring.ServerMirroringRole = [Microsoft.SqlServer.Management.Smo.ServerMirroringRole]::$Role
@@ -166,15 +171,13 @@ function New-DbaEndpoint {
                         $outscript = $endpoint.Script()
                         $outscript = $outscript.Replace("ROLE = ALL,", "ROLE = ALL, AUTHENTICATION = CERTIFICATE $cert,")
                         $server.Query($outscript)
-                    }
-                    else {
+                    } else {
                         $null = $endpoint.Create()
                     }
 
                     $server.Endpoints.Refresh()
                     Get-DbaEndpoint -SqlInstance $server -Endpoint $name
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
                 }
             }

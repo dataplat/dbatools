@@ -1,5 +1,5 @@
-﻿function Get-DbaWaitResource {
-<#
+function Get-DbaWaitResource {
+    <#
     .SYNOPSIS
         Returns the resource being waited upon
 
@@ -41,12 +41,12 @@
         Will return an object containing; database name, data file name, schema name and the object which owns the resource
 
     .EXAMPLE
-        PS C:\> Get-DbaWaitResource -Sql Instance server2 -WaitResource 'KEY: 7:35457594073541168 (de21f92a1572)'
+        PS C:\> Get-DbaWaitResource -SqlInstance server2 -WaitResource 'KEY: 7:35457594073541168 (de21f92a1572)'
 
         Will return an object containing; database name, schema name and index name which is being waited on.
 
     .EXAMPLE
-        PS C:\> Get-DbaWaitResource -Sql Instance server2 -WaitResource 'KEY: 7:35457594073541168 (de21f92a1572)' -row
+        PS C:\> Get-DbaWaitResource -SqlInstance server2 -WaitResource 'KEY: 7:35457594073541168 (de21f92a1572)' -row
 
         Will return an object containing; database name, schema name and index name which is being waited on, and in addition the contents of the locked row at the time the command is run.
 
@@ -71,8 +71,7 @@
 
         try {
             $server = Connect-SqlInstance -SqlInstance $sqlinstance -SqlCredential $SqlCredential
-        }
-        catch {
+        } catch {
             Write-Message -Level Warning -Message "Cannot connect to $SqlInstance"
         }
 
@@ -95,8 +94,7 @@
             $ObjectIdSQL = "dbcc traceon (3604); dbcc page ($dbid,$($matches.fileID),$($matches.PageID),2) with tableresults;"
             try {
                 $ObjectID = ($server.databases[$dbname].Query($ObjectIdSQL) | Where-Object Field -eq 'Metadata: ObjectId').Value
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "You've requested a page beyond the end of the database, exiting"
                 return
             }
@@ -152,15 +150,14 @@
                 $Data = $server.databases[$dbname].query($DataSql)
                 if ($null -eq $data) {
                     Write-Message -Level warning -Message "Could not retrieve the data. It may have been deleted or moved since the wait resource value was generated"
-                }
-                else {
+                } else {
                     $output | Add-Member -Type NoteProperty -Name ObjectData -Value $Data
                     $output | Select-Object * -ExpandProperty ObjectData
                 }
-            }
-            else {
+            } else {
                 $output
             }
         }
     }
 }
+

@@ -1,6 +1,6 @@
-﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaDbMasterKey {
-<#
+    <#
     .SYNOPSIS
         Gets specified database master key
 
@@ -21,7 +21,7 @@ function Get-DbaDbMasterKey {
 
     .PARAMETER InputObject
         Database object piped in from Get-DbaDatabase
-    
+
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed
 
@@ -63,30 +63,30 @@ function Get-DbaDbMasterKey {
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
         [switch]$EnableException
     )
-    
+
     process {
         if ($SqlInstance) {
             $InputObject += Get-DbaDatabase -SqlInstance $SqlInstance -Database $Database -ExcludeDatabase $ExcludeDatabase
         }
-        
+
         foreach ($db in $InputObject) {
             if (!$db.IsAccessible) {
                 Write-Message -Level Warning -Message "Database $db on $($db.Parent) is not accessible. Skipping."
                 continue
             }
-            
+
             $masterkey = $db.MasterKey
-            
+
             if (!$masterkey) {
                 Write-Message -Message "No master key exists in the $db database on $instance" -Target $db -Level Verbose
                 continue
             }
-            
+
             Add-Member -Force -InputObject $masterkey -MemberType NoteProperty -Name ComputerName -value $db.Parent.ComputerName
             Add-Member -Force -InputObject $masterkey -MemberType NoteProperty -Name InstanceName -value $db.Parent.ServiceName
             Add-Member -Force -InputObject $masterkey -MemberType NoteProperty -Name SqlInstance -value $db.Parent.DomainInstanceName
             Add-Member -Force -InputObject $masterkey -MemberType NoteProperty -Name Database -value $db.Name
-            
+
             Select-DefaultView -InputObject $masterkey -Property ComputerName, InstanceName, SqlInstance, Database, CreateDate, DateLastModified, IsEncryptedByServer
         }
     }
@@ -94,3 +94,4 @@ function Get-DbaDbMasterKey {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-DbaDatabaseMasterKey
     }
 }
+

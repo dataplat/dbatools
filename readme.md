@@ -41,7 +41,7 @@ $old = $instance = "localhost"
 $allservers = $old, $new
 
 # Alternatively, use Registered Servers 
-$allservers = Get-DbaRegisteredServer -SqlInstance $instance
+$allservers = Get-DbaCmsRegServer -SqlInstance $instance
 
 # Need to restore a database? It can be as simple as this:
 Restore-DbaDatabase -SqlInstance $instance -Path "C:\temp\AdventureWorks2012-Full Database Backup.bak"
@@ -85,11 +85,11 @@ $startDbaMigrationSplat = @{
 Start-DbaMigration @startDbaMigrationSplat -Force | Select * | Out-GridView
 
 # Know how snapshots used to be a PITA? Now they're super easy
-New-DbaDatabaseSnapshot -SqlInstance $new -Database db1 -Name db1_snapshot
-Get-DbaDatabaseSnapshot -SqlInstance $new
+New-DbaDbSnapshot -SqlInstance $new -Database db1 -Name db1_snapshot
+Get-DbaDbSnapshot -SqlInstance $new
 Get-DbaProcess -SqlInstance $new -Database db1 | Stop-DbaProcess
 Restore-DbaFromDatabaseSnapshot -SqlInstance $new -Database db1 -Snapshot db1_snapshot
-Remove-DbaDatabaseSnapshot -SqlInstance $new -Snapshot db1_snapshot # or -Database db1
+Remove-DbaDbSnapshot -SqlInstance $new -Snapshot db1_snapshot # or -Database db1
 
 # Have you tested your last good DBCC CHECKDB? We've got a command for that
 $old | Get-DbaLastGoodCheckDb | Out-GridView
@@ -103,7 +103,7 @@ $old | Get-DbaLastGoodCheckDb | Out-GridView
 Start-Process https://dbatools.io/builds
 
 # You can use the same JSON the website uses to check the status of your own environment
-$allservers | Get-DbaSqlBuildReference
+$allservers | Get-DbaBuildReference
 
 # We evaluated 37,545 SQL Server stored procedures on 9 servers in 8.67 seconds!
 $new | Find-DbaStoredProcedure -Pattern dbatools
@@ -122,11 +122,11 @@ Get-DbaSpConfigure -SqlInstance $new | Out-GridView
 Set-DbaSpConfigure -SqlInstance $new -ConfigName XPCmdShellEnabled -Value $true
 
 # DB Cloning too!
-Invoke-DbaDatabaseClone -SqlInstance $new -Database db1 -CloneDatabase db1_clone | Out-GridView
+Invoke-DbaDbClone -SqlInstance $new -Database db1 -CloneDatabase db1_clone | Out-GridView
 
 # Read and watch XEvents
-Get-DbaXEventSession -SqlInstance $new -Session system_health | Read-DbaXEventFile
-Get-DbaXEventSession -SqlInstance $new -Session system_health | Read-DbaXEventFile | Select -ExpandProperty Fields | Out-GridView
+Get-DbaXESession -SqlInstance $new -Session system_health | Read-DbaXEFile
+Get-DbaXESession -SqlInstance $new -Session system_health | Read-DbaXEFile | Select -ExpandProperty Fields | Out-GridView
 
 # Reset-DbaAdmin
 Reset-DbaAdmin -SqlInstance $instance -Login sqladmin -Verbose
@@ -148,14 +148,14 @@ Get-DbaStartupParameter -SqlInstance $instance
 Set-DbaStartupParameter -SqlInstance $instance -SingleUser -WhatIf
 
 # Database clone
-Invoke-DbaDatabaseClone -SqlInstance $new -Database dbwithsprocs -CloneDatabase dbwithsprocs_clone
+Invoke-DbaDbClone -SqlInstance $new -Database dbwithsprocs -CloneDatabase dbwithsprocs_clone
 
 # Schema change and Pester tests
 Get-DbaSchemaChangeHistory -SqlInstance $new -Database tempdb
 
 # Get Db Free Space AND write it to table
-Get-DbaDatabaseSpace -SqlInstance $instance | Out-GridView
-Get-DbaDatabaseSpace -SqlInstance $instance -IncludeSystemDB | Out-DbaDataTable | Write-DbaDataTable -SqlInstance $instance -Database tempdb -Table DiskSpaceExample -AutoCreateTable
+Get-DbaDbSpace -SqlInstance $instance | Out-GridView
+Get-DbaDbSpace -SqlInstance $instance -IncludeSystemDB | ConvertTo-DbaDataTable | Write-DbaDataTable -SqlInstance $instance -Database tempdb -Table DiskSpaceExample -AutoCreateTable
 Invoke-Sqlcmd2 -ServerInstance $instance -Database tempdb -Query 'SELECT * FROM dbo.DiskSpaceExample' | Out-GridView
 
 # History

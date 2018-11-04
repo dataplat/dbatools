@@ -1,6 +1,6 @@
-﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaXESessionTemplate {
-<#
+    <#
     .SYNOPSIS
         Parses Extended Event XML templates. Defaults to parsing templates in the dbatools template repository (\bin\xetemplates\).
 
@@ -10,7 +10,7 @@ function Get-DbaXESessionTemplate {
         The default repository contains templates from:
         Microsoft's Templates that come with SSMS
         Jes Borland's "Everyday Extended Events" presentation and GitHub repository (https://github.com/grrlgeek/extended-events)
-        Christian Gräfe's XE Repo: https://github.com/chrgraefe/sqlscripts/blob/master/XE-Events/
+        Christian Grafe (@ChrGraefe) XE Repo: https://github.com/chrgraefe/sqlscripts/blob/master/XE-Events/
         Erin Stellato's Blog: https://www.sqlskills.com/blogs/erin/
 
         Some profile templates converted using:
@@ -93,8 +93,7 @@ function Get-DbaXESessionTemplate {
             foreach ($file in $files) {
                 try {
                     $xml = [xml](Get-Content $file)
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Failure" -ErrorRecord $_ -Target $file -Continue
                 }
 
@@ -121,8 +120,7 @@ function Get-DbaXESessionTemplate {
                                 File          = $file.Name
                             } | Select-DefaultView -ExcludeProperty File, TemplateName, Path
                         }
-                    }
-                    else {
+                    } else {
                         [pscustomobject]@{
                             Name          = $session.event_session.name
                             Category      = $session.event_session.TemplateCategory.'#text'
@@ -139,3 +137,4 @@ function Get-DbaXESessionTemplate {
         }
     }
 }
+

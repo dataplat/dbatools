@@ -1,6 +1,6 @@
-﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Find-DbaInstance {
-<#
+    <#
     .SYNOPSIS
         Search for SQL Server Instances.
 
@@ -137,7 +137,7 @@ function Find-DbaInstance {
 
     .NOTES
         Tags: Instance, Connect, SqlServer
-        Author: Scott Sutherland, 2018 NetSPI | Friedrich Weinmann (@FredWeinmann‏)
+        Author: Scott Sutherland, 2018 NetSPI | Friedrich Weinmann (@FredWeinmann)
 
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
@@ -198,6 +198,7 @@ function Find-DbaInstance {
 
 #>
     [CmdletBinding()]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseApprovedVerbs", "", Justification = "Internal functions are ignored")]
     param (
         [Parameter(Mandatory, ParameterSetName = 'Computer', ValueFromPipeline)]
         [DbaInstance[]]$ComputerName,
@@ -258,8 +259,7 @@ function Find-DbaInstance {
                 foreach ($computer in $Target) {
                     if ($computersScanned.Contains($computer.ComputerName)) {
                         continue
-                    }
-                    else {
+                    } else {
                         $null = $computersScanned.Add($computer.ComputerName)
                     }
                     Write-Message -Level Verbose -Message "Processing: $($computer)" -Target $computer -FunctionName Find-DbaInstance
@@ -271,8 +271,9 @@ function Find-DbaInstance {
                     $ports = @()
                     $browseResult = $null
                     $services = @()
-                    $serverObject = $null
-                    $browseFailed = $false
+                    #Variable marked as unused by PSScriptAnalyzer
+                    #$serverObject = $null
+                    #$browseFailed = $false
                     #endregion Null variables to prevent scope lookup on conditional existence
 
                     #region Gather data
@@ -303,9 +304,9 @@ function Find-DbaInstance {
                     if ($ScanType -band [Sqlcollaborative.Dbatools.Discovery.DbaInstanceScanType]::Browser) {
                         try {
                             $browseResult = Get-SQLInstanceBrowserUDP -ComputerName $computer -EnableException
-                        }
-                        catch {
-                            $browseFailed = $true
+                        } catch {
+                            #Variable marked as unused by PSScriptAnalyzer
+                            #$browseFailed = $true
                         }
                     }
 
@@ -341,8 +342,7 @@ function Find-DbaInstance {
                             if ($portNumber -and ($portsDetected -notcontains $portNumber)) {
                                 $portsDetected += $portNumber
                             }
-                        }
-                        catch {
+                        } catch {
                             if ($inst -and ($instanceNames -notcontains $inst)) {
                                 $instanceNames += $inst
                             }
@@ -359,12 +359,10 @@ function Find-DbaInstance {
                                     ComputerName = $computer.ComputerName
                                     Ping         = $pingReply.Status -like 'Success'
                                 }
-                            }
-                            else {
+                            } else {
                                 Write-Message -Level Verbose -Message "Computer $computer could be contacted, but no trace of an SQL Instance was found. Skipping..." -Target $computer -FunctionName Find-DbaInstance
                             }
-                        }
-                        else {
+                        } else {
                             Write-Message -Level Verbose -Message "Computer $computer could not be contacted, skipping." -Target $computer -FunctionName Find-DbaInstance
                         }
 
@@ -472,17 +470,14 @@ function Find-DbaInstance {
                                 # Remove duplicates
                                 if ($instanceHash.ContainsKey($server.DomainInstanceName)) {
                                     $toDelete += $dataSet
-                                }
-                                else {
+                                } else {
                                     $instanceHash[$server.DomainInstanceName] = $dataSet
 
                                     try {
                                         $dataSet.MachineName = $server.ComputerNamePhysicalNetBIOS
-                                    }
-                                    catch { }
+                                    } catch { }
                                 }
-                            }
-                            catch {
+                            } catch {
                                 # Error class definitions
                                 # https://docs.microsoft.com/en-us/sql/relational-databases/errors-events/database-engine-error-severities
                                 # 24 or less means an instance was found, but had some issues
@@ -550,12 +545,10 @@ function Find-DbaInstance {
                 if ($DomainController) {
                     if ($Credential) {
                         $entry = New-Object -TypeName System.DirectoryServices.DirectoryEntry -ArgumentList "LDAP://$DomainController", $Credential.UserName, $Credential.GetNetworkCredential().Password
-                    }
-                    else {
+                    } else {
                         $entry = New-Object -TypeName System.DirectoryServices.DirectoryEntry -ArgumentList "LDAP://$DomainController"
                     }
-                }
-                else {
+                } else {
                     $entry = [ADSI]''
                 }
                 $objSearcher = New-Object -TypeName System.DirectoryServices.DirectorySearcher -ArgumentList $entry
@@ -568,18 +561,15 @@ function Find-DbaInstance {
                 foreach ($computer in $results) {
                     if ($GetSPN) {
                         $computer.Properties["serviceprincipalname"] | Where-Object { $_ -like "MSSQLsvc*:*" }
-                    }
-                    else {
+                    } else {
                         if ($computer.Properties["dnshostname"]) {
                             $computer.Properties["dnshostname"][0]
-                        }
-                        else {
+                        } else {
                             $computer.Properties["name"][0]
                         }
                     }
                 }
-            }
-            catch {
+            } catch {
                 throw
             }
         }
@@ -657,12 +647,10 @@ function Find-DbaInstance {
                         #endregion Parse Output
 
                         $UDPClient.Close()
-                    }
-                    catch {
+                    } catch {
                         try {
                             $UDPClient.Close()
-                        }
-                        catch {
+                        } catch {
                         }
 
                         if ($EnableException) { throw }
@@ -706,12 +694,10 @@ function Find-DbaInstance {
                         if ($client.Connected) {
                             $client.Close()
                             New-Object -TypeName Sqlcollaborative.Dbatools.Discovery.DbaPortReport -ArgumentList $ComputerName.ComputerName, $item, $true
-                        }
-                        else {
+                        } else {
                             New-Object -TypeName Sqlcollaborative.Dbatools.Discovery.DbaPortReport -ArgumentList $ComputerName.ComputerName, $item, $false
                         }
-                    }
-                    catch {
+                    } catch {
                         New-Object -TypeName Sqlcollaborative.Dbatools.Discovery.DbaPortReport -ArgumentList $ComputerName.ComputerName, $item, $false
                     }
                 }
@@ -774,7 +760,7 @@ function Find-DbaInstance {
             function INT64-toIP {
                 param ([int64]$int)
 
-                return ([System.Net.IPAddress](([math]::truncate($int/16777216)).tostring() + "." + ([math]::truncate(($int % 16777216)/65536)).tostring() + "." + ([math]::truncate(($int % 65536)/256)).tostring() + "." + ([math]::truncate($int % 256)).tostring()))
+                return ([System.Net.IPAddress](([math]::truncate($int / 16777216)).tostring() + "." + ([math]::truncate(($int % 16777216) / 65536)).tostring() + "." + ([math]::truncate(($int % 65536) / 256)).tostring() + "." + ([math]::truncate($int % 256)).tostring()))
             }
 
             if ($Cidr) {
@@ -789,8 +775,7 @@ function Find-DbaInstance {
                 $broadcastaddr = new-object net.ipaddress (([system.net.ipaddress]::parse("255.255.255.255").address -bxor $maskaddr.address -bor $networkaddr.address))
                 $startaddr = IP-toINT64 -ip $networkaddr.ipaddresstostring
                 $endaddr = IP-toINT64 -ip $broadcastaddr.ipaddresstostring
-            }
-            else {
+            } else {
                 $startaddr = IP-toINT64 -ip $Start
                 $endaddr = IP-toINT64 -ip $End
             }
@@ -834,8 +819,7 @@ function Find-DbaInstance {
                     if ($parts[1] -match ([dbargx]::IPv4)) {
                         $mask = $parts[1]
                         $mode = 'Mask'
-                    }
-                    elseif ($parts[1] -as [int]) {
+                    } elseif ($parts[1] -as [int]) {
                         $cidr = [int]$parts[1]
 
                         if (($cidr -lt 8) -or ($cidr -gt 31)) {
@@ -843,12 +827,10 @@ function Find-DbaInstance {
                         }
 
                         $mode = 'CIDR'
-                    }
-                    else {
+                    } else {
                         throw "$IpAddress is not a valid IP Range!"
                     }
-                }
-                elseif ($IpAddress -like "*-*") {
+                } elseif ($IpAddress -like "*-*") {
                     $rangeStart = $IpAddress.Split("-")[0]
                     $rangeEnd = $IpAddress.Split("-")[1]
 
@@ -860,8 +842,7 @@ function Find-DbaInstance {
                     }
 
                     $mode = 'Range'
-                }
-                else {
+                } else {
                     if ($IpAddress -notmatch ([dbargx]::IPv4)) {
                         throw "$IpAddress is not a valid IP Address!"
                     }
@@ -939,13 +920,11 @@ function Find-DbaInstance {
                         foreach ($instance in ([System.Data.Sql.SqlDataSourceEnumerator]::Instance.GetDataSources())) {
                             if ($instance.InstanceName -ne [System.DBNull]::Value) {
                                 $steppablePipeline.Process("$($instance.Servername)\$($instance.InstanceName)")
-                            }
-                            else {
+                            } else {
                                 $steppablePipeline.Process($instance.Servername)
                             }
                         }
-                    }
-                    catch {
+                    } catch {
                         Write-Message -Level Warning -Message "Datasource enumeration failed" -ErrorRecord $_ -EnableException $EnableException.ToBool()
                     }
                 }
@@ -955,8 +934,7 @@ function Find-DbaInstance {
                 if ($DiscoveryType -band ([Sqlcollaborative.Dbatools.Discovery.DbaInstanceDiscoveryType]::Domain)) {
                     try {
                         Get-DomainSPN -DomainController $DomainController -Credential $Credential -ErrorAction Stop | Invoke-SteppablePipeline -Pipeline $steppablePipeline
-                    }
-                    catch {
+                    } catch {
                         Write-Message -Level Warning -Message "Failed to execute Service Principal Name discovery" -ErrorRecord $_ -EnableException $EnableException.ToBool()
                     }
                 }
@@ -968,8 +946,7 @@ function Find-DbaInstance {
                         foreach ($address in $IpAddress) {
                             Resolve-IPRange -IpAddress $address | Invoke-SteppablePipeline -Pipeline $steppablePipeline
                         }
-                    }
-                    else {
+                    } else {
                         Resolve-IPRange | Invoke-SteppablePipeline -Pipeline $steppablePipeline
                     }
                 }

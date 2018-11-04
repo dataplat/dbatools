@@ -1,4 +1,4 @@
-﻿function Get-Language {
+function Get-Language {
     <#
         .SYNOPSIS
             Converts Microsoft's language ID to human readable format
@@ -27,3 +27,4 @@
         Select-DefaultView -InputObject $culture -ExcludeProperty $excludeProps
     }
 }
+

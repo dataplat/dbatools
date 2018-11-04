@@ -1,6 +1,6 @@
-﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function ConvertTo-DbaXESession {
-<#
+    <#
     .SYNOPSIS
         Uses a slightly modified version of sp_SQLskills_ConvertTraceToExtendedEvents.sql to convert Traces to Extended Events.
 
@@ -95,8 +95,7 @@ function ConvertTo-DbaXESession {
             try {
                 Write-Message -Level Verbose -Message "Executing SQL in tempdb."
                 $results = $tempdb.ExecuteWithResults($sql).Tables.Rows.SqlString
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Issue creating, dropping or executing sp_SQLskills_ConvertTraceToExtendedEvents in tempdb on $server." -Target $server -ErrorRecord $_
             }
 
@@ -104,13 +103,11 @@ function ConvertTo-DbaXESession {
 
             if ($OutputScriptOnly) {
                 $results
-            }
-            else {
+            } else {
                 Write-Message -Level Verbose -Message "Creating XE Session $name."
                 try {
                     $tempdb.ExecuteNonQuery($results)
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Issue creating extended event $name on $server." -Target $server -ErrorRecord $_
                 }
                 Get-DbaXESession -SqlInstance $server -Session $name
@@ -118,3 +115,4 @@ function ConvertTo-DbaXESession {
         }
     }
 }
+

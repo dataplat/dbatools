@@ -1,5 +1,5 @@
-﻿function Remove-DbaComputerCertificate {
-<#
+function Remove-DbaComputerCertificate {
+    <#
     .SYNOPSIS
         Removes a computer certificate - useful for removing easily certs from remote computers
 
@@ -81,14 +81,14 @@
 
                 $Folder
             )
+            <# DO NOT use Write-Message as this is inside of a script block #>
             Write-Verbose "Searching Cert:\$Store\$Folder for thumbprint: $thumbprint"
             $cert = Get-ChildItem "Cert:\$store\$folder" -Recurse | Where-Object { $_.Thumbprint -eq $Thumbprint }
 
             if ($cert) {
                 $null = $cert | Remove-Item
                 $status = "Removed"
-            }
-            else {
+            } else {
                 $status = "Certificate not found in Cert:\$Store\$Folder"
             }
 
@@ -109,8 +109,7 @@
                 if ($PScmdlet.ShouldProcess("local", "Connecting to $computer to remove cert from Cert:\$Store\$Folder")) {
                     try {
                         Invoke-Command2 -ComputerName $computer -Credential $Credential -ArgumentList $thumb, $Store, $Folder -ScriptBlock $scriptblock -ErrorAction Stop
-                    }
-                    catch {
+                    } catch {
                         Stop-Function -Message $_ -ErrorRecord $_ -Target $computer -Continue
                     }
                 }
@@ -118,3 +117,4 @@
         }
     }
 }
+

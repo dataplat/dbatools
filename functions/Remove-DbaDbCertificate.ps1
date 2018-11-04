@@ -1,6 +1,6 @@
 #ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Remove-DbaDbCertificate {
-<#
+    <#
     .SYNOPSIS
         Deletes specified database certificate
 
@@ -68,13 +68,12 @@ function Remove-DbaDbCertificate {
     }
     process {
         if ($SqlInstance) {
-            Write-Warning hello
             $InputObject += Get-DbaDbCertificate -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Certificate $Certificate -Database $Database
         }
         foreach ($cert in $InputObject) {
             $db = $cert.Parent
             $server = $db.Parent
-            
+
             if ($Pscmdlet.ShouldProcess($server.Name, "Dropping the certificate named $cert for database $db")) {
                 try {
                     # erroractionprefs are not invoked for .net methods suddenly (??), so use Invoke-DbaQuery
@@ -89,11 +88,11 @@ function Remove-DbaDbCertificate {
                         Certificate  = $cert.Name
                         Status       = "Success"
                     }
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Failed to drop certificate named $($cert.Name) from $($db.Name) on $($server.Name)." -Target $smocert -ErrorRecord $_ -Continue
                 }
             }
         }
     }
 }
+

@@ -1,6 +1,6 @@
-﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaWsfcSharedVolume {
-<#
+    <#
     .SYNOPSIS
         Gets information about Cluster Shared Volumes in a failover cluster.
 
@@ -55,3 +55,4 @@ function Get-DbaWsfcSharedVolume {
         }
     }
 }
+

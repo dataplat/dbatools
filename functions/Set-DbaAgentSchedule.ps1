@@ -1,6 +1,6 @@
-﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Set-DbaAgentSchedule {
-<#
+    <#
     .SYNOPSIS
         Set-DbaAgentSchedule updates a schedule in the msdb database.
 
@@ -195,8 +195,7 @@ function Set-DbaAgentSchedule {
             if ($Force) {
                 $FrequencyRecurrenceFactor = 1
                 Write-Message -Message "Recurrence factor not set for weekly or monthly interval. Setting it to $FrequencyRecurrenceFactor." -Level Verbose
-            }
-            else {
+            } else {
                 Stop-Function -Message "The recurrence factor $FrequencyRecurrenceFactor needs to be at least on when using a weekly or monthly interval." -Target $SqlInstance
                 return
             }
@@ -206,8 +205,7 @@ function Set-DbaAgentSchedule {
         if (($FrequencySubdayType -in 2, 4) -and (-not ($FrequencySubdayInterval -ge 1 -or $FrequencySubdayInterval -le 59))) {
             Stop-Function -Message "Subday interval $FrequencySubdayInterval must be between 1 and 59 when subday type is 2, 'Seconds', 4 or 'Minutes'" -Target $SqlInstance
             return
-        }
-        elseif (($FrequencySubdayType -eq 8) -and (-not ($FrequencySubdayInterval -ge 1 -and $FrequencySubdayInterval -le 23))) {
+        } elseif (($FrequencySubdayType -eq 8) -and (-not ($FrequencySubdayInterval -ge 1 -and $FrequencySubdayInterval -le 23))) {
             Stop-Function -Message "Subday interval $FrequencySubdayInterval must be between 1 and 23 when subday type is 8 or 'Hours" -Target $SqlInstance
             return
         }
@@ -301,8 +299,7 @@ function Set-DbaAgentSchedule {
         if ($EndDate -and ($EndDate -notmatch $RegexDate)) {
             Stop-Function -Message "End date $EndDate needs to be a valid date with format yyyyMMdd" -Target $SqlInstance
             return
-        }
-        elseif ($EndDate -lt $StartDate) {
+        } elseif ($EndDate -lt $StartDate) {
             Stop-Function -Message "End date $EndDate cannot be before start date $StartDate" -Target $SqlInstance
             return
         }
@@ -318,6 +315,20 @@ function Set-DbaAgentSchedule {
             Stop-Function -Message "End time $EndTime needs to match between '000000' and '235959'" -Target $SqlInstance
             return
         }
+
+        #Format dates and times
+        if ($StartDate) {
+            $StartDate = $StartDate.Insert(6, '-').Insert(4, '-')
+        }
+        if ($EndDate) {
+            $EndDate = $EndDate.Insert(6, '-').Insert(4, '-')
+        }
+        if ($StartTime) {
+            $StartTime = $StartTime.Insert(4, ':').Insert(2, ':')
+        }
+        if ($EndTime) {
+            $EndTime = $EndTime.Insert(4, ':').Insert(2, ':')
+        }
     }
 
     process {
@@ -331,21 +342,18 @@ function Set-DbaAgentSchedule {
                 # Try connecting to the instance
                 try {
                     $Server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
                 }
 
                 # Check if the job exists
                 if ($Server.JobServer.Jobs.Name -notcontains $j) {
                     Write-Message -Message "Job $j doesn't exists on $instance" -Level Warning
-                }
-                else {
+                } else {
                     # Check if the job schedule exists
                     if ($Server.JobServer.Jobs[$j].JobSchedules.Name -notcontains $ScheduleName) {
                         Stop-Function -Message "Schedule $ScheduleName doesn't exists for job $j on $instance" -Target $instance -Continue
-                    }
-                    else {
+                    } else {
                         # Get the job schedule
                         # If for some reason the there are multiple schedules with the same name, the first on is chosen
                         $JobSchedule = $Server.JobServer.Jobs[$j].JobSchedules[$ScheduleName][0]
@@ -398,25 +406,21 @@ function Set-DbaAgentSchedule {
                         }
 
                         if ($StartDate) {
-                            $StartDate = $StartDate.Insert(6, '-').Insert(4, '-')
                             Write-Message -Message "Setting job schedule start date to $StartDate for schedule $ScheduleName" -Level Verbose
                             $JobSchedule.StartDate = $StartDate
                         }
 
                         if ($EndDate) {
-                            $EndDate = $EndDate.Insert(6, '-').Insert(4, '-')
                             Write-Message -Message "Setting job schedule end date to $EndDate for schedule $ScheduleName" -Level Verbose
                             $JobSchedule.EndDate = $EndDate
                         }
 
                         if ($StartTime) {
-                            $StartTime = $StartTime.Insert(4, ':').Insert(2, ':')
                             Write-Message -Message "Setting job schedule start time to $StartTime for schedule $ScheduleName" -Level Verbose
                             $JobSchedule.ActiveStartTimeOfDay = $StartTime
                         }
 
                         if ($EndTime) {
-                            $EndTime = $EndTime.Insert(4, ':').Insert(2, ':')
                             Write-Message -Message "Setting job schedule end time to $EndTime for schedule $ScheduleName" -Level Verbose
                             $JobSchedule.ActiveStartTimeOfDay = $EndTime
                         }
@@ -430,8 +434,7 @@ function Set-DbaAgentSchedule {
 
                                 $JobSchedule.Alter()
 
-                            }
-                            catch {
+                            } catch {
                                 Stop-Function -Message "Something went wrong changing the schedule" -Target $instance -ErrorRecord $_ -Continue
                                 return
                             }
@@ -447,3 +450,4 @@ function Set-DbaAgentSchedule {
         Write-Message -Message "Finished changing the job schedule(s)" -Level Verbose
     }
 }
+

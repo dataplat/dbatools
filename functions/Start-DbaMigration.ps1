@@ -1,5 +1,5 @@
-﻿function Start-DbaMigration {
-<#
+function Start-DbaMigration {
+    <#
     .SYNOPSIS
         Migrates SQL Server *ALL* databases, logins, database mail profiles/accounts, credentials, SQL Agent objects, linked servers,
         Central Management Server objects, server configuration settings (sp_configure), user objects in systems databases,
@@ -384,12 +384,10 @@
             if ($BackupRestore) {
                 if ($UseLastBackups) {
                     Copy-DbaDatabase -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -AllDatabases -SetSourceReadOnly:$SetSourceReadOnly -ReuseSourceFolderStructure:$ReuseSourceFolderStructure -BackupRestore -Force:$Force -NoRecovery:$NoRecovery -WithReplace:$WithReplace -IncludeSupportDbs:$IncludeSupportDbs -UseLastBackups:$UseLastBackups -Continue:$Continue
-                }
-                else {
+                } else {
                     Copy-DbaDatabase -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -AllDatabases -SetSourceReadOnly:$SetSourceReadOnly -ReuseSourceFolderStructure:$ReuseSourceFolderStructure -BackupRestore -NetworkShare $NetworkShare -Force:$Force -NoRecovery:$NoRecovery -WithReplace:$WithReplace -IncludeSupportDbs:$IncludeSupportDbs
                 }
-            }
-            else {
+            } else {
                 Copy-DbaDatabase -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -AllDatabases -SetSourceReadOnly:$SetSourceReadOnly -ReuseSourceFolderStructure:$ReuseSourceFolderStructure -DetachAttach:$DetachAttach -Reattach:$Reattach -Force:$Force -IncludeSupportDbs:$IncludeSupportDbs
             }
         }
@@ -464,3 +462,4 @@
         Write-Message -Level Verbose -Message "Total Elapsed time: $totaltime"
     }
 }
+

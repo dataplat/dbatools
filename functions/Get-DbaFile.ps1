@@ -1,4 +1,4 @@
-﻿function Get-DbaFile {
+function Get-DbaFile {
     <#
     .SYNOPSIS
         Get-DbaFile finds files in any directory specified on a remote SQL Server
@@ -63,12 +63,7 @@
         Returns the files in "E:\Dir1" and "E:Dir2" on sql2014
 
     .EXAMPLE
-        PS C:\> Get-DbaFile -SqlInstance -Path 'E:\Dir1' sql2014, sql2016 -FileType fsf, mld
-
-        Finds files in E:\Dir1 ending with ".fsf" and ".mld" for both the servers sql2014 and sql2016.
-
-    .EXAMPLE
-        PS C:\> Get-DbaFile -SqlInstance -Path 'E:\Dir1' sql2014, sql2016 -FileType fsf, mld
+        PS C:\> Get-DbaFile -SqlInstance sql2014, sql2016 -Path 'E:\Dir1' -FileType fsf, mld
 
         Finds files in E:\Dir1 ending with ".fsf" and ".mld" for both the servers sql2014 and sql2016.
 
@@ -170,11 +165,11 @@
     process {
         foreach ($instance in $SqlInstance) {
 
-            $paths = @()
+            #Variable marked as unused by PSScriptAnalyzer
+            #$paths = @()
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -203,8 +198,7 @@
                         }
                     }
                 }
-            }
-            else {
+            } else {
                 foreach ($row in $datatable) {
                     [pscustomobject]@{
                         ComputerName   = $server.ComputerName
@@ -218,3 +212,4 @@
         }
     }
 }
+

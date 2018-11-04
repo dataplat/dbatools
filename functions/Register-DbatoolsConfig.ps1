@@ -1,5 +1,5 @@
-﻿function Register-DbatoolsConfig {
-<#
+function Register-DbatoolsConfig {
+    <#
     .SYNOPSIS
         Registers an existing configuration object in registry.
 
@@ -33,7 +33,7 @@
 
     .NOTES
         Tags: Config, Module
-        Author: Friedrich Weinmann (@FredWeinmann‏)
+        Author: Friedrich Weinmann (@FredWeinmann)
 
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
@@ -56,6 +56,7 @@
 
 #>
     [CmdletBinding(DefaultParameterSetName = "Default")]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseApprovedVerbs", "", Justification = "Internal functions are ignored")]
     param (
         [Parameter(ParameterSetName = "Default", Position = 0, ValueFromPipeline)]
         [Sqlcollaborative.Dbatools.Configuration.Config[]]$Config,
@@ -122,8 +123,7 @@
                     Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\WindowsPowerShell\dbatools\Config\Enforced" -Name $Config.FullName -Value $Config.RegistryData -ErrorAction Stop
                 }
                 #endregion System Mandatory
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failed to export $($Config.FullName), to scope $Scope" -EnableException $EnableException -Target $Config -ErrorRecord $_ -FunctionName $FunctionName #-ModuleName "PSFramework" -Tag "config", "fail"
                 return
             }

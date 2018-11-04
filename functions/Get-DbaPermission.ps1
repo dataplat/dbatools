@@ -1,5 +1,5 @@
-﻿function Get-DbaPermission {
-<#
+function Get-DbaPermission {
+    <#
     .SYNOPSIS
         Get a list of Server and Database level permissions
 
@@ -216,8 +216,7 @@
 
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential -MinimumVersion 9
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -240,7 +239,7 @@
                 Write-Message -Level Verbose -Message "Processing $db on $instance."
 
                 if ($db.IsAccessible -eq $false) {
-                    Write-Warning "The database $db is not accessible. Skipping database."
+                    Write-Message -Level Warning -Message "The database $db is not accessible. Skipping database."
                     Continue
                 }
 
@@ -250,3 +249,4 @@
         }
     }
 }
+

@@ -1,5 +1,5 @@
-﻿function Copy-DbaCustomError {
-<#
+function Copy-DbaCustomError {
+    <#
     .SYNOPSIS
         Copy-DbaCustomError migrates custom errors (user defined messages), by the custom error ID, from one SQL Server to another.
 
@@ -94,8 +94,7 @@
     begin {
         try {
             $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -MinimumVersion 9
-        }
-        catch {
+        } catch {
             Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Source
             return
         }
@@ -107,8 +106,7 @@
         foreach ($destinstance in $Destination) {
             try {
                 $destServer = Connect-SqlInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential -MinimumVersion 9
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
             }
             # US has to go first
@@ -119,13 +117,13 @@
                 $language = $currentCustomError.Language.ToString()
 
                 $copyCustomErrorStatus = [pscustomobject]@{
-                    SourceServer = $sourceServer.Name
+                    SourceServer      = $sourceServer.Name
                     DestinationServer = $destServer.Name
-                    Type         = "Custom error"
-                    Name         = $currentCustomError
-                    Status       = $null
-                    Notes        = $null
-                    DateTime     = [DbaDateTime](Get-Date)
+                    Type              = "Custom error"
+                    Name              = $currentCustomError
+                    Status            = $null
+                    Notes             = $null
+                    DateTime          = [DbaDateTime](Get-Date)
                 }
 
                 if ($CustomError -and ($customErrorId -notin $CustomError -or $customErrorId -in $ExcludeCustomError)) {
@@ -140,14 +138,12 @@
 
                         Write-Message -Level Verbose -Message "Custom error $customErrorId $language exists at destination. Use -Force to drop and migrate."
                         continue
-                    }
-                    else {
+                    } else {
                         If ($Pscmdlet.ShouldProcess($destinstance, "Dropping custom error $customErrorId $language and recreating")) {
                             try {
                                 Write-Message -Level Verbose -Message "Dropping custom error $customErrorId (drops all languages for custom error $customErrorId)"
                                 $destServer.UserDefinedMessages[$customErrorId, $language].Drop()
-                            }
-                            catch {
+                            } catch {
                                 $copyCustomErrorStatus.Status = "Failed"
                                 $copyCustomErrorStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
@@ -166,8 +162,7 @@
 
                         $copyCustomErrorStatus.Status = "Successful"
                         $copyCustomErrorStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                    }
-                    catch {
+                    } catch {
                         $copyCustomErrorStatus.Status = "Failed"
                         $copyCustomErrorStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
@@ -181,3 +176,4 @@
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-SqlCustomError
     }
 }
+

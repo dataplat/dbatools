@@ -1,5 +1,5 @@
-﻿function Backup-DbaDatabase {
-<#
+function Backup-DbaDatabase {
+    <#
     .SYNOPSIS
         Backup one or more SQL Sever databases from a single SQL Server SqlInstance.
 
@@ -99,13 +99,14 @@
         If specified, the only other parameters than can be used are "NoCopyOnly", "Type", "CompressBackup", "Checksum", "Verify", "AzureCredential", "CreateFolder".
 
     .PARAMETER AzureCredential
-        The name of the credential on the SQL instance that can write to the AzureBaseUrl.
+        The name of the credential on the SQL instance that can write to the AzureBaseUrl, only needed if using Storage access keys
+        If using SAS credentials, the command will look for a credential with a name matching the AzureBaseUrl
 
     .PARAMETER NoRecovery
         This is passed in to perform a tail log backup if needed
 
     .PARAMETER BuildPath
-        By default this command will not attempt to create missing paths, this switch will change the behaviour so that it wll
+        By default this command will not attempt to create missing paths, this switch will change the behaviour so that it will
 
     .PARAMETER IgnoreFileChecks
         This switch stops the function from checking for the validity of paths. This can be useful if SQL Server only has read access to the backup area.
@@ -149,6 +150,11 @@
         Performs a full backup of all databases on the sql2016 instance to their own containers under the https://dbatoolsaz.blob.core.windows.net/azbackups/ container on Azure blog storage using the sql credential "dbatoolscred" registered on the sql2016 instance.
 
     .EXAMPLE
+        PS C:\> Backup-DbaDatabase -SqlInstance sql2016 -AzureBaseUrl https://dbatoolsaz.blob.core.windows.net/azbackups/  -Type Full
+
+        Performs a full backup of all databases on the sql2016 instance to the https://dbatoolsaz.blob.core.windows.net/azbackups/ container on Azure blog storage using the Shared Access Signature sql credential "https://dbatoolsaz.blob.core.windows.net/azbackups" registered on the sql2016 instance.
+
+    .EXAMPLE
         PS C:\> Backup-Dbadatabase -SqlInstance Server1\Prod -Database db1 -BackupDirectory \\filestore\backups\servername\instancename\dbname\backuptype -Type Full -ReplaceInName
 
         Performs a full backup of db1 into the folder \\filestore\backups\server1\prod\db1
@@ -159,7 +165,7 @@
         Performs a log backup for every database. For the database db1 this would results in backup files in \\filestore\backups\server1\prod\db1\Log\db1-log-31102018.trn
 
     .EXAMPLE
-        PS C:\> Backup-DbaDatabase -SqlInstance $script:instance1 -Database master -BackupFileName NUL
+        PS C:\> Backup-DbaDatabase -SqlInstance Sql2017 -Database master -BackupFileName NUL
 
         Performs a backup of master, but sends the output to the NUL device (ie; throws it away)
 #>
@@ -203,23 +209,21 @@
     )
 
     begin {
-        if (-not (Test-Bound 'TimeStampFormat')){
+        if (-not (Test-Bound 'TimeStampFormat')) {
             Write-Message -Message 'Setting Default timestampformat' -Level Verbose
             $TimeStampFormat = "yyyyMMddHHmm"
         }
         if ($SqlInstance.length -ne 0) {
             try {
                 $Server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential -AzureUnsupported
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Cannot connect to $SqlInstance" -ErrorRecord $_
                 return
             }
 
             if ($Database) {
                 $InputObject = $server.Databases | Where-Object Name -in $Database
-            }
-            else {
+            } else {
                 $InputObject = $server.Databases | Where-Object Name -ne 'tempdb'
             }
 
@@ -253,12 +257,19 @@
                 }
             }
             if ('' -ne $AzureBaseUrl) {
-                if ($null -eq $AzureCredential) {
-                    Stop-Function -Message "You must provide the credential name for the Azure Storage Account"
-                    return
-                }
                 $AzureBaseUrl = $AzureBaseUrl.Trim("/")
-                $FileCount = 1
+                if ('' -ne $AzureCredential) {
+                    Write-Message -Message "Azure Credential name passed in, will proceed assuming it's value" -Level Verbose
+                    $FileCount = 1
+                } else {
+                    Write-Message -Message "AzureUrl and no credential, testing for SAS credential"
+                    if (Get-DbaCredential -SqlInstance $server -Name $AzureBaseUrl) {
+                        Write-Message -Message "Found a SAS backup credental" -Level Verbose
+                    } else {
+                        Stop-Function -Message "You must provide the credential name for the Azure Storage Account"
+                        return
+                    }
+                }
                 $BackupDirectory = $AzureBaseUrl
             }
 
@@ -333,8 +344,7 @@
                     $backup.CompressionOption = 2
                 } elseif ($server.Edition -like 'Express*' -or ($server.VersionMajor -eq 10 -and $server.VersionMinor -eq 0 -and $server.Edition -notlike '*enterprise*') -or $server.VersionMajor -lt 10) {
                     Write-Message -Level Warning -Message "Compression is not supported with this version/edition of Sql Server"
-                }
-                else {
+                } else {
                     Write-Message -Level Verbose -Message "Compression enabled"
                     $backup.CompressionOption = 1
                 }
@@ -367,7 +377,7 @@
 
             $backup.CopyOnly = $copyonly
             $backup.Action = $SMOBackupType
-            if ('' -ne $AzureBaseUrl) {
+            if ('' -ne $AzureBaseUrl -and $null -ne $AzureCredential) {
                 $backup.CredentialName = $AzureCredential
             }
 
@@ -379,17 +389,15 @@
             if ('NUL' -eq $BackupFileName) {
                 $FinalBackupPath += 'NUL:'
                 $IgnoreFileChecks = $true
-            }
-            elseif ('' -ne $BackupFileName) {
+            } elseif ('' -ne $BackupFileName) {
                 $File = New-Object System.IO.FileInfo($BackupFileName)
                 $BackupFinalName = $file.Name
-                $suffix = $file.extension -Replace '^\.',''
+                $suffix = $file.extension -Replace '^\.', ''
                 if ( '' -ne (Split-Path $BackupFileName)) {
                     Write-Message -Level Verbose -Message "Fully qualified path passed in"
                     $FinalBackupPath += [IO.Path]::GetFullPath($file.DirectoryName)
                 }
-            }
-            else {
+            } else {
                 Write-Message -Level VeryVerbose -Message "Setting filename - $timestamp"
                 $BackupFinalName = "$($dbname)_$timestamp.$suffix"
             }
@@ -407,8 +415,7 @@
 
             if ($AzureBaseUrl -or $AzureCredential) {
                 $slash = "/"
-            }
-            else {
+            } else {
                 $slash = "\"
             }
             if ($FinalBackupPath.Count -gt 1) {
@@ -416,8 +423,7 @@
                 for ($i = 0; $i -lt $FinalBackupPath.Count; $i++) {
                     $FinalBackupPath[$i] = $FinalBackupPath[$i] + $slash + $($File.BaseName) + "-$($i+1)-of-$FileCount.$suffix"
                 }
-            }
-            elseif ($FinalBackupPath[0] -ne 'NUL:') {
+            } elseif ($FinalBackupPath[0] -ne 'NUL:') {
                 $FinalBackupPath[0] = $FinalBackupPath[0] + $slash + $BackupFinalName
             }
 
@@ -430,12 +436,12 @@
             }
 
             if ($True -eq $ReplaceInName) {
-                for ($i=0; $i -lt $FinalBackupPath.count; $i++){
-                    $FinalBackupPath[$i] = $FinalBackupPath[$i] -replace('dbname',$dbname)
-                    $FinalBackupPath[$i] = $FinalBackupPath[$i] -replace('instancename', $SqlInstance.InstanceName)
-                    $FinalBackupPath[$i] = $FinalBackupPath[$i] -replace('servername',$SqlInstance.ComputerName)
-                    $FinalBackupPath[$i] = $FinalBackupPath[$i] -replace('timestamp',$timestamp)
-                    $FinalBackupPath[$i] = $FinalBackupPath[$i] -replace('backuptype',$outputType)
+                for ($i = 0; $i -lt $FinalBackupPath.count; $i++) {
+                    $FinalBackupPath[$i] = $FinalBackupPath[$i] -replace ('dbname', $dbname)
+                    $FinalBackupPath[$i] = $FinalBackupPath[$i] -replace ('instancename', $SqlInstance.InstanceName)
+                    $FinalBackupPath[$i] = $FinalBackupPath[$i] -replace ('servername', $SqlInstance.ComputerName)
+                    $FinalBackupPath[$i] = $FinalBackupPath[$i] -replace ('timestamp', $timestamp)
+                    $FinalBackupPath[$i] = $FinalBackupPath[$i] -replace ('backuptype', $outputType)
                 }
             }
 
@@ -445,8 +451,7 @@
                     if (-not (Test-DbaPath -SqlInstance $server -Path $parentPath)) {
                         if (($BuildPath -eq $true) -or ($CreateFolder -eq $True)) {
                             $null = New-DbaDirectory -SqlInstance $server -Path $parentPath
-                        }
-                        else {
+                        } else {
                             $failreason += "SQL Server cannot check if $parentPath exists. You can try disabling this check with -IgnoreFileChecks"
                             $failures += $failreason
                             Write-Message -Level Warning -Message "$failreason"
@@ -471,8 +476,7 @@
                     $device = New-Object Microsoft.SqlServer.Management.Smo.BackupDeviceItem
                     if ('' -ne $AzureBaseUrl) {
                         $device.DeviceType = "URL"
-                    }
-                    else {
+                    } else {
                         $device.DeviceType = "File"
                     }
 
@@ -522,8 +526,7 @@
                             $BackupComplete = $true
                             if ($server.VersionMajor -eq '8') {
                                 $HeaderInfo = Get-BackupAncientHistory -SqlInstance $server -Database $dbname
-                            }
-                            else {
+                            } else {
                                 $HeaderInfo = Get-DbaBackupHistory -SqlInstance $server -Database $dbname -Last -IncludeCopyOnly | Sort-Object -Property End -Descending | Select-Object -First 1
                             }
                             $Verified = $false
@@ -552,8 +555,7 @@
                                 if ($verifiedResult[0] -eq "Verify successful") {
                                     $failures += $verifiedResult[0]
                                     $Verified = $true
-                                }
-                                else {
+                                } else {
                                     $failures += $verifiedResult[0]
                                     $Verified = $false
                                 }
@@ -563,8 +565,7 @@
                             $HeaderInfo | Add-Member -Type NoteProperty -Name BackupFilesCount -Value $FinalBackupPath.Count
                             if ($FinalBackupPath[0] -eq 'NUL:') {
                                 $pathresult = "NUL:"
-                            }
-                            else {
+                            } else {
                                 $pathresult = (Split-Path $FinalBackupPath | Sort-Object -Unique)
                             }
                             $HeaderInfo | Add-Member -Type NoteProperty -Name BackupFolder -Value $pathresult
@@ -573,17 +574,14 @@
                             $HeaderInfo | Add-Member -Type NoteProperty -Name Notes -Value ($failures -join (','))
                             $HeaderInfo | Add-Member -Type NoteProperty -Name Script -Value $script
                             $HeaderInfo | Add-Member -Type NoteProperty -Name Verified -Value $Verified
-                        }
-                        else {
+                        } else {
                             $backup.Script($server)
                         }
                     }
-                }
-                catch {
+                } catch {
                     if ($NoRecovery -and ($_.Exception.InnerException.InnerException.InnerException -like '*cannot be opened. It is in the middle of a restore.')) {
                         Write-Message -Message "Exception thrown by db going into restoring mode due to recovery" -Leve Verbose
-                    }
-                    else {
+                    } else {
                         Write-Progress -id $ProgressId -activity "Backup" -status "Failed" -completed
                         Stop-Function -message "Backup Failed:  $($_.Exception.Message)" -EnableException $EnableException -ErrorRecord $_ -Continue
                         $BackupComplete = $false

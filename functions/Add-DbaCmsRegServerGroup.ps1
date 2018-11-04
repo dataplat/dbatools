@@ -1,6 +1,6 @@
-﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Add-DbaCmsRegServerGroup {
-<#
+    <#
     .SYNOPSIS
         Adds registered server groups to SQL Server Central Management Server (CMS)
 
@@ -21,12 +21,6 @@ function Add-DbaCmsRegServerGroup {
 
     .PARAMETER Group
         The SQL Server Central Management Server group. If no groups are specified, the new group will be created at the root.
-
-    .PARAMETER InputObject
-        Allows results from Get-DbaCmsRegServerGroup to be piped in
-
-    .PARAMETER IncludeRegisteredServers
-        Create the registered servers within the group, too
 
     .PARAMETER InputObject
         Allows results from Get-DbaCmsRegServerGroup to be piped in
@@ -92,8 +86,7 @@ function Add-DbaCmsRegServerGroup {
         foreach ($instance in $SqlInstance) {
             if ((Test-Bound -ParameterName Group)) {
                 $InputObject += Get-DbaCmsRegServerGroup -SqlInstance $instance -SqlCredential $SqlCredential -Group $Group
-            }
-            else {
+            } else {
                 $InputObject += Get-DbaCmsRegServerGroup -SqlInstance $instance -SqlCredential $SqlCredential -Id 1
             }
         }
@@ -114,8 +107,7 @@ function Add-DbaCmsRegServerGroup {
 
                     Get-DbaCmsRegServerGroup -SqlInstance $parentserver.ServerConnection.SqlConnectionObject -Group (Get-RegServerGroupReverseParse -object $newgroup)
                     $parentserver.ServerConnection.Disconnect()
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Failed to add $reggroup on $server" -ErrorRecord $_ -Continue
                 }
             }
@@ -125,3 +117,4 @@ function Add-DbaCmsRegServerGroup {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Add-DbaRegisteredServerGroup
     }
 }
+

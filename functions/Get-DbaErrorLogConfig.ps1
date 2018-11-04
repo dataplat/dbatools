@@ -1,5 +1,5 @@
-﻿function Get-DbaErrorLogConfig {
-<#
+function Get-DbaErrorLogConfig {
+    <#
     .SYNOPSIS
         Pulls the configuration for the ErrorLog on a given SQL Server instance
 
@@ -47,8 +47,7 @@
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -56,19 +55,19 @@
             $logSize =
             if ($server.VersionMajor -ge 11) {
                 [dbasize]($server.ErrorLogSizeKb * 1024)
-            }
-            else {
+            } else {
                 $null
             }
 
             [PSCustomObject]@{
-                ComputerName       = $server.ComputerName
-                InstanceName       = $server.ServiceName
-                SqlInstance        = $server.DomainInstanceName
-                LogCount           = $numLogs
-                LogSize            = $logSize
-                LogPath            = $server.ErrorLogPath
+                ComputerName = $server.ComputerName
+                InstanceName = $server.ServiceName
+                SqlInstance  = $server.DomainInstanceName
+                LogCount     = $numLogs
+                LogSize      = $logSize
+                LogPath      = $server.ErrorLogPath
             }
         }
     }
 }
+

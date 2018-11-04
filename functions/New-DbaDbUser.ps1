@@ -1,5 +1,5 @@
-﻿function New-DbaDbUser {
-<#
+function New-DbaDbUser {
+    <#
     .SYNOPSIS
         Creates a new user for the specified database.
 
@@ -112,13 +112,11 @@
                     if ($Pscmdlet.ShouldProcess($existingUser, "Dropping existing user $($existingUser.Name) because -Force was used")) {
                         try {
                             $existingUser.Drop()
-                        }
-                        catch {
+                        } catch {
                             Stop-Function -Message "Could not remove existing user $($existingUser.Name), skipping." -Target $existingUser -ErrorRecord $_ -Exception $_.Exception.InnerException.InnerException.InnerException -Continue
                         }
                     }
-                }
-                else {
+                } else {
                     Stop-Function -Message "User $($existingUser.Name) already exists and -Force was not specified" -Target $existingUser -Continue
                 }
             }
@@ -136,13 +134,11 @@
                     if ($Pscmdlet.ShouldProcess($existingUser, "Dropping existing user $($existingUser.Name) because -Force was used")) {
                         try {
                             $existingUser.Drop()
-                        }
-                        catch {
+                        } catch {
                             Stop-Function -Message "Could not remove existing user $($existingUser.Name), skipping." -Target $existingUser -ErrorRecord $_ -Exception $_.Exception.InnerException.InnerException.InnerException -Continue
                         }
                     }
-                }
-                else {
+                } else {
                     Stop-Function -Message "User $($existingUser.Name) already exists and -Force was not specified" -Target $existingUser -Continue
                 }
             }
@@ -153,8 +149,7 @@
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -183,11 +178,10 @@
                         }
                         if ($Login.GetType().Name -eq 'Login') {
                             $smoLogin = $Login
-                        }
-                        else {
+                        } else {
                             #get the login associated with the given name.
                             $smoLogin = $server.Logins | Where-Object Name -eq $Login
-                            if ($smoLogin -eq $null) {
+                            if ($null -eq $smoLogin) {
                                 Stop-Function -Message "Invalid Login: $Login is not found on $Server" -Target $instance;
                                 return
                             }
@@ -198,8 +192,7 @@
                         if ( $PSCmdlet.ParameterSetName -eq "LoginWithNewUsername" ) {
                             $Name = $Username
                             Write-Message -Level Verbose -Message "Using UserName: $Username"
-                        }
-                        else {
+                        } else {
                             $Name = $smoLogin.Name
                             Write-Message -Level Verbose -Message "Using LoginName: $Name"
                         }
@@ -231,8 +224,7 @@
                         $smoUser.UserType = $UserType
 
                         $smoUser.Create()
-                    }
-                    catch {
+                    } catch {
                         Stop-Function -Message "Failed to add user $Name in $db to $instance"  -Category InvalidOperation -ErrorRecord $_ -Target $instance -Continue
                     }
                     $smoUser.Refresh()
@@ -250,3 +242,4 @@
         } #foreach ($instance in $SqlInstance)
     }
 }
+

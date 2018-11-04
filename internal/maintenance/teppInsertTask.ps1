@@ -1,4 +1,4 @@
-﻿$scriptBlock = {
+$scriptBlock = {
     $ModuleRoot = [Sqlcollaborative.Dbatools.dbaSystem.SystemHost]::ModuleBase
 
     $ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create([io.file]::ReadAllText("$ModuleRoot\internal\functions\Register-DbaTeppScriptblock.ps1"))), $null, $null)

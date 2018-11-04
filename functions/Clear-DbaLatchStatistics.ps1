@@ -1,5 +1,5 @@
-﻿function Clear-DbaLatchStatistics {
-<#
+function Clear-DbaLatchStatistics {
+    <#
     .SYNOPSIS
         Clears Latch Statistics
 
@@ -42,7 +42,7 @@
     .EXAMPLE
         PS C:\> Clear-DbaLatchStatistics -SqlInstance sql2008, sqlserver2012 -Confirm:$false
 
-        Clears clears latch statistics on servers sql2008 and sqlserver2012, without prompting
+        Clears latch statistics on servers sql2008 and sqlserver2012, without prompting
 
     .EXAMPLE
         PS C:\> 'sql2008','sqlserver2012' | Clear-DbaLatchStatistics
@@ -56,6 +56,7 @@
         Connects using sqladmin credential and clears latch statistics on servers sql2008 and sqlserver2012
 #>
     [CmdletBinding(ConfirmImpact = 'High', SupportsShouldProcess)]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseSingularNouns", "", Justification = "Singular Noun doesn't make sense")]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer", "SqlServers")]
@@ -70,8 +71,7 @@
 
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -79,8 +79,7 @@
                 try {
                     $server.Query("DBCC SQLPERF (N'sys.dm_os_latch_stats' , CLEAR);")
                     $status = "Success"
-                }
-                catch {
+                } catch {
                     $status = $_.Exception
                 }
 

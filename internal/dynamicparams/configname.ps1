@@ -1,4 +1,4 @@
-﻿#region Initialize Cache
+#region Initialize Cache
 if (-not [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache["configname"]) {
     [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache["configname"] = @{ }
 }
@@ -68,3 +68,4 @@ $ScriptBlock = {
 }
 Register-DbaTeppInstanceCacheBuilder -ScriptBlock $ScriptBlock
 #endregion Update Cache
+

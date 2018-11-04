@@ -1,4 +1,4 @@
-﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function New-DbaAgentJobStep {
     <#
     .SYNOPSIS
@@ -47,7 +47,7 @@ function New-DbaAgentJobStep {
         The text value van either be lowercase, uppercase or something in between as long as the text is correct.
 
     .PARAMETER OnFailStepId
-        The ID of the step in this job to execute if the step fails and OnFailAction is "GoToNextStep".
+        The ID of the step in this job to execute if the step fails and OnFailAction is "GoToStep".
 
     .PARAMETER Database
         The name of the database in which to execute a Transact-SQL step. The default is 'master'.
@@ -154,7 +154,7 @@ function New-DbaAgentJobStep {
         [int]$OnSuccessStepId = 0,
         [ValidateSet('QuitWithSuccess', 'QuitWithFailure', 'GoToNextStep', 'GoToStep')]
         [string]$OnFailAction = 'QuitWithFailure',
-        [int]$OnFailStepId,
+        [int]$OnFailStepId = 0,
         [object]$Database,
         [string]$DatabaseUser,
         [int]$RetryAttempts,
@@ -170,13 +170,13 @@ function New-DbaAgentJobStep {
 
     begin {
         # Check the parameter on success step id
-        if (($OnSuccessAction -in 'GoToStep', 'GoToNextStep') -and ($OnSuccessStepId -ge 1)) {
+        if (($OnSuccessAction -ne 'GoToStep') -and ($OnSuccessStepId -ge 1)) {
             Stop-Function -Message "Parameter OnSuccessStepId can only be used with OnSuccessAction 'GoToStep'." -Target $SqlInstance
             return
         }
 
-        # Check the parameter on success step id
-        if (($OnFailAction -in 'GoToStep', 'GoToNextStep') -and ($OnFailStepId -ge 1)) {
+        # Check the parameter on fail step id
+        if (($OnFailAction -ne 'GoToStep') -and ($OnFailStepId -ge 1)) {
             Stop-Function -Message "Parameter OnFailStepId can only be used with OnFailAction 'GoToStep'." -Target $SqlInstance
             return
         }
@@ -190,8 +190,7 @@ function New-DbaAgentJobStep {
             # Try connecting to the instance
             try {
                 $Server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -200,8 +199,7 @@ function New-DbaAgentJobStep {
                 # Check if the job exists
                 if ($Server.JobServer.Jobs.Name -notcontains $j) {
                     Write-Message -Message "Job $j doesn't exists on $instance" -Level Warning
-                }
-                else {
+                } else {
                     # Create the job step object
                     try {
                         # Get the job
@@ -212,8 +210,7 @@ function New-DbaAgentJobStep {
 
                         # Set the job where the job steps belongs to
                         $JobStep.Parent = $currentjob
-                    }
-                    catch {
+                    } catch {
                         Stop-Function -Message "Something went wrong creating the job step" -Target $instance -ErrorRecord $_ -Continue
                     }
 
@@ -223,8 +220,7 @@ function New-DbaAgentJobStep {
                         # Check if the step already exists
                         if ($Server.JobServer.Jobs[$j].JobSteps.Name -notcontains $StepName) {
                             $JobStep.Name = $StepName
-                        }
-                        elseif (($Server.JobServer.Jobs[$j].JobSteps.Name -contains $StepName) -and $Force) {
+                        } elseif (($Server.JobServer.Jobs[$j].JobSteps.Name -contains $StepName) -and $Force) {
                             Write-Message -Message "Step $StepName already exists for job. Force is used. Removing existing step" -Level Verbose
 
                             # Remove the job step based on the name
@@ -232,8 +228,7 @@ function New-DbaAgentJobStep {
 
                             # Set the name job step object
                             $JobStep.Name = $StepName
-                        }
-                        else {
+                        } else {
                             Stop-Function -Message "The step name $StepName already exists for job $j" -Target $instance -Continue
                         }
                     }
@@ -244,8 +239,7 @@ function New-DbaAgentJobStep {
                         if ($Job.JobSteps.ID -notcontains $StepId) {
                             Write-Message -Message "Setting job step step id to $StepId" -Level Verbose
                             $JobStep.ID = $StepId
-                        }
-                        elseif (($Job.JobSteps.ID -contains $StepId) -and $Force) {
+                        } elseif (($Job.JobSteps.ID -contains $StepId) -and $Force) {
                             Write-Message -Message "Step ID $StepId already exists for job. Force is used. Removing existing step" -Level Verbose
 
                             # Remove the existing job step
@@ -254,12 +248,10 @@ function New-DbaAgentJobStep {
 
                             # Set the ID job step object
                             $JobStep.ID = $StepId
-                        }
-                        else {
+                        } else {
                             Stop-Function -Message "The step id $StepId already exists for job $j" -Target $instance -Continue
                         }
-                    }
-                    else {
+                    } else {
                         # Get the job step count
                         $JobStep.ID = $Job.JobSteps.Count + 1
                     }
@@ -304,8 +296,7 @@ function New-DbaAgentJobStep {
                         if ($Server.Databases.Name -contains $Database) {
                             Write-Message -Message "Setting job step database name to $Database" -Level Verbose
                             $JobStep.DatabaseName = $Database
-                        }
-                        else {
+                        } else {
                             Stop-Function -Message "The database is not present on instance $instance." -Target $instance -Continue
                         }
                     }
@@ -316,8 +307,7 @@ function New-DbaAgentJobStep {
 
                             Write-Message -Message "Setting job step database username to $DatabaseUser" -Level Verbose
                             $JobStep.DatabaseUserName = $DatabaseUser
-                        }
-                        else {
+                        } else {
                             Stop-Function -Message "The database user is not present in the database $DatabaseName on instance $instance." -Target $instance -Continue
                         }
                     }
@@ -342,8 +332,7 @@ function New-DbaAgentJobStep {
                         if ($Server.JobServer.ProxyAccounts.Name -contains $ProxyName) {
                             Write-Message -Message "Setting job step proxy name to $ProxyName" -Level Verbose
                             $JobStep.ProxyName = $ProxyName
-                        }
-                        else {
+                        } else {
                             Stop-Function -Message "The proxy name $ProxyName doesn't exist on instance $instance." -Target $instance -Continue
                         }
                     }
@@ -362,8 +351,7 @@ function New-DbaAgentJobStep {
                             # Create the job step
                             $JobStep.Create()
                             $currentjob.Alter()
-                        }
-                        catch {
+                        } catch {
                             Stop-Function -Message "Something went wrong creating the job step" -Target $instance -ErrorRecord $_ -Continue
                         }
                     }
@@ -380,3 +368,5 @@ function New-DbaAgentJobStep {
         Write-Message -Message "Finished creating job step(s)" -Level Verbose
     }
 }
+
+

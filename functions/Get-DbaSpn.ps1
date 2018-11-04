@@ -1,6 +1,6 @@
-﻿#ValidationTags#FlowControl,Pipeline#
+#ValidationTags#FlowControl,Pipeline#
 function Get-DbaSpn {
-<#
+    <#
     .SYNOPSIS
         Returns a list of set service principal names for a given computer/AD account
 
@@ -34,7 +34,7 @@ function Get-DbaSpn {
         https://dbatools.io/Get-DbaSpn
 
     .EXAMPLE
-        PS C:\> Get-DbaSpn -ServerName SQLSERVERA -Credential ad\sqldba
+        PS C:\> Get-DbaSpn -ComputerName SQLSERVERA -Credential ad\sqldba
 
         Returns a custom object with SearchTerm (ServerName) and the SPNs that were found
 
@@ -44,12 +44,13 @@ function Get-DbaSpn {
         Returns a custom object with SearchTerm (domain account) and the SPNs that were found
 
     .EXAMPLE
-        PS C:\> Get-DbaSpn -ServerName SQLSERVERA,SQLSERVERB -Credential ad\sqldba
+        PS C:\> Get-DbaSpn -ComputerName SQLSERVERA,SQLSERVERB -Credential ad\sqldba
 
         Returns a custom object with SearchTerm (ServerName) and the SPNs that were found for multiple computers
 
 #>
     [cmdletbinding()]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseApprovedVerbs", "", Justification = "Internal functions are ignored")]
     param (
         [Parameter(Mandatory = $false, ValueFromPipeline)]
         [string[]]$ComputerName,
@@ -71,8 +72,7 @@ function Get-DbaSpn {
                 }
                 try {
                     $Result = Get-DbaADObject -ADObject $account -Type $searchfor -Credential $Credential -EnableException
-                }
-                catch {
+                } catch {
                     Write-Message -Message "AD lookup failure. This may be because the domain cannot be resolved for the SQL Server service account ($Account)." -Level Warning
                     continue
                 }
@@ -80,13 +80,11 @@ function Get-DbaSpn {
                     try {
                         $results = $Result.GetUnderlyingObject()
                         $spns = $results.Properties.servicePrincipalName
-                    }
-                    catch {
+                    } catch {
                         Write-Message -Message "The SQL Service account ($Account) has been found, but you don't have enough permission to inspect its SPNs" -Level Warning
                         continue
                     }
-                }
-                else {
+                } else {
                     Write-Message -Message "The SQL Service account ($Account) has not been found" -Level Warning
                     continue
                 }
@@ -95,13 +93,13 @@ function Get-DbaSpn {
                     if ($spn -match "\:") {
                         try {
                             $port = [int]($spn -Split "\:")[1]
-                        }
-                        catch {
+                        } catch {
                             $port = $null
                         }
-                        if ($spn -match "\/") {
-                            $serviceclass = ($spn -Split "\/")[0]
-                        }
+                        #Variable marked as unused by PSScriptAnalyzer
+                        # if ($spn -match "\/") {
+                        #     $serviceclass = ($spn -Split "\/")[0]
+                        # }
                     }
                     [pscustomobject] @{
                         Input        = $Account
@@ -148,8 +146,7 @@ function Get-DbaSpn {
                             SPN          = $spn.RequiredSPN
                         }
                     }
-                }
-                else {
+                } else {
                     [pscustomobject] @{
                         Input        = $computer
                         AccountName  = $spn.InstanceServiceAccount

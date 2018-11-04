@@ -1,5 +1,5 @@
-﻿function Get-DbatoolsConfigValue {
-<#
+function Get-DbatoolsConfigValue {
+    <#
     .SYNOPSIS
         Returns the configuration value stored under the specified name.
 
@@ -21,7 +21,7 @@
 
     .NOTES
         Tags: Config, Module
-        Author: Friedrich Weinmann (@FredWeinmann‏)
+        Author: Friedrich Weinmann (@FredWeinmann)
 
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
@@ -56,8 +56,8 @@
 
     if ($NotNull -and ($temp -eq $null)) {
         Stop-Function -Message "No Configuration Value available for $Name" -EnableException $true -Category InvalidData -Target $FullName
-    }
-    else {
+    } else {
         return $temp
     }
 }
+
