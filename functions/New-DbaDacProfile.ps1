@@ -30,7 +30,7 @@ function New-DbaDacProfile {
 
     .PARAMETER PublishOptions
         Optional hashtable to set publish options. Key/value pairs in the hashtable get converted to strings of "<key>value</key>".
-        
+
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
@@ -100,7 +100,7 @@ function New-DbaDacProfile {
                     $value = $PSItem.Value.ToString()
                     $return += "<$key>$value</$key>"
                 }
-            } 
+            }
             $return | Out-String
         }
 

@@ -29,9 +29,10 @@ Function Uninstall-DbaSqlWatch {
 
         .NOTES
             Tags: SqlWatch
-            Author: marcingminski, koglerk
+            Author: Ken K (github.com/koglerk)
             Website: https://sqlwatch.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+            Website: https://dbatools.io
+            Copyright: (c) 2018 by dbatools, licensed under MIT
             License: MIT https://opensource.org/licenses/MIT
 
         .LINK
@@ -48,16 +49,12 @@ Function Uninstall-DbaSqlWatch {
             Logs into server1\instance1 with Windows authentication and then deletes all user objects, agent jobs, and historical data associated with SqlWatch from the DBA database.
 
     #>
-    [CmdletBinding(SupportsShouldProcess = $true)]
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
     param (
         [Parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [Parameter(Mandatory)]
-        [object]$Database = "master",
-        [switch]$Force,
-        [Alias('Silent')]
+        [string]$Database = "master",
         [switch]$EnableException
     )
 
@@ -70,7 +67,7 @@ Function Uninstall-DbaSqlWatch {
         }
 
         if ((Test-Path $dacfxPath) -eq $false) {
-            Stop-Function -Message 'No usable version of Dac Fx found.' 
+            Stop-Function -Message 'No usable version of Dac Fx found.'
         } else {
             try {
                 Add-Type -Path $dacfxPath
@@ -88,11 +85,11 @@ Function Uninstall-DbaSqlWatch {
         foreach ($instance in $SqlInstance) {
 
             # get SQWATCH objects
-            $tables = Get-DbaDbTable -SqlInstance $instance -Database $Database | Where-Object {$PSItem.Name -like "sql_perf_mon_*" -or $PSItem.Name -like "logger_*" } 
+            $tables = Get-DbaDbTable -SqlInstance $instance -Database $Database | Where-Object {$PSItem.Name -like "sql_perf_mon_*" -or $PSItem.Name -like "logger_*" }
             $views = Get-DbaDbView -SqlInstance $instance -Database $Database | Where-Object {$PSItem.Name -like "vw_sql_perf_mon_*" }
             $sprocs = Get-DbaDbStoredProcedure -SqlInstance $instance -Database $Database | Where-Object {$PSItem.Name -like "sp_sql_perf_mon_*" -or $PSItem.Name -like "usp_logger_*" }
             $agentJobs = Get-DbaAgentJob -SqlInstance $instance | Where-Object { ($PSItem.Name -like "SqlWatch-*") -or ($PSItem.Name -like "DBA-PERF-*") }
-            
+
             if ($PSCmdlet.ShouldProcess($instance, "Removing SqlWatch SQL Agent jobs")) {
                 try {
                     Write-Message -Level Verbose -Message "Removing SQL Agent jobs from $instance."
@@ -109,14 +106,14 @@ Function Uninstall-DbaSqlWatch {
                     $sprocs | ForEach-Object {
                         $dropScript += "DROP PROCEDURE $($PSItem.Name);`n"
                     }
-                    if ($dropScript) { 
-                        Invoke-DbaQuery -SqlInstance $instance -Database $Database -Query $dropScript 
+                    if ($dropScript) {
+                        Invoke-DbaQuery -SqlInstance $instance -Database $Database -Query $dropScript
                     }
                 } catch {
                     Stop-Function -Message "Could not remove all SqlWatch stored procedures from $database on $instance." -ErrorRecord $_ -Target $instance -Continue
                 }
             }
-        
+
             if ($PSCmdlet.ShouldProcess($instance, "Removing SqlWatch views")) {
                 try {
                     Write-Message -Level Verbose -Message "Removing SqlWatch views from $database on $instance."
@@ -124,14 +121,14 @@ Function Uninstall-DbaSqlWatch {
                     $views | ForEach-Object {
                         $dropScript += "DROP VIEW $($PSItem.Name);`n"
                     }
-                    if ($dropScript) { 
+                    if ($dropScript) {
                         Invoke-DbaQuery -SqlInstance $instance -Database $Database -Query $dropScript
                     }
                 } catch {
                     Stop-Function -Message "Could not remove all SqlWatch views from $database on $instance." -ErrorRecord $_ -Target $instance -Continue
                 }
             }
-        
+
             if ($PSCmdlet.ShouldProcess($instance, "Removing SqlWatch tables")) {
                 try {
                     Write-Message -Level Verbose -Message "Removing foreign keys from SqlWatch tables in $database on $instance."
@@ -140,7 +137,7 @@ Function Uninstall-DbaSqlWatch {
                     }
                 } catch {
                     Stop-Function -Message "Could not remove all foreign keys from SqlWatch tables in $database on $instance." -ErrorRecord $_ -Target $instance -Continue
-                }        
+                }
 
                 try {
                     Write-Message -Level Verbose -Message "Removing SqlWatch tables from $database on $instance."
@@ -148,7 +145,7 @@ Function Uninstall-DbaSqlWatch {
                     $tables | ForEach-Object {
                         $dropScript += "DROP TABLE $($PSItem.Name);`n"
                     }
-                    if ($dropScript) { 
+                    if ($dropScript) {
                         Invoke-DbaQuery -SqlInstance $instance -Database $Database -Query $dropScript
                     }
                 } catch {
