@@ -71,13 +71,11 @@ Function Uninstall-DbaSQLWATCH {
 
         if ((Test-Path $dacfxPath) -eq $false) {
             Stop-Function -Message 'No usable version of Dac Fx found.' 
-        }
-        else {
+        } else {
             try {
                 Add-Type -Path $dacfxPath
                 Write-Message -Level Verbose -Message "Dac Fx loaded."
-            }
-            catch {
+            } catch {
                 Stop-Function -Message 'No usable version of Dac Fx found.' -ErrorRecord $_
             }
         }
@@ -99,8 +97,7 @@ Function Uninstall-DbaSQLWATCH {
                 try {
                     Write-Message -Level Verbose -Message "Removing SQL Agent jobs from $instance."
                     $agentJobs | Remove-DbaAgentJob | Out-Null
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Could not remove all SQLWATCH Agent Jobs on $instance." -ErrorRecord $_ -Target $instance -Continue
                 }
             }
@@ -115,8 +112,7 @@ Function Uninstall-DbaSQLWATCH {
                     if ($dropScript) { 
                         Invoke-DbaQuery -SqlInstance $instance -Database $Database -Query $dropScript 
                     }
-                } 
-                catch {
+                } catch {
                     Stop-Function -Message "Could not remove all SQLWATCH stored procedures from $database on $instance." -ErrorRecord $_ -Target $instance -Continue
                 }
             }
@@ -131,8 +127,7 @@ Function Uninstall-DbaSQLWATCH {
                     if ($dropScript) { 
                         Invoke-DbaQuery -SqlInstance $instance -Database $Database -Query $dropScript
                     }
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Could not remove all SQLWATCH views from $database on $instance." -ErrorRecord $_ -Target $instance -Continue
                 }
             }
@@ -143,8 +138,7 @@ Function Uninstall-DbaSQLWATCH {
                     if ($tables.ForeignKeys) {
                         $tables.ForeignKeys | ForEach-Object { $PSItem.Drop() }
                     }
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Could not remove all foreign keys from SQLWATCH tables in $database on $instance." -ErrorRecord $_ -Target $instance -Continue
                 }        
 
@@ -157,8 +151,7 @@ Function Uninstall-DbaSQLWATCH {
                     if ($dropScript) { 
                         Invoke-DbaQuery -SqlInstance $instance -Database $Database -Query $dropScript
                     }
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Could not remove all SQLWATCH tables from $database on $instance." -ErrorRecord $_ -Target $instance -Continue
                 }
             }
@@ -169,8 +162,7 @@ Function Uninstall-DbaSQLWATCH {
                     $connectionString = Connect-DbaInstance $instance | Select-Object -ExpandProperty ConnectionContext
                     $dacServices = New-Object Microsoft.SqlServer.Dac.DacServices $connectionString
                     $dacServices.Unregister($Database)
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Failed to unpublish SQLWATCH DACPAC from $database on $instance." -ErrorRecord $_
                 }
             }

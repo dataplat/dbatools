@@ -119,8 +119,7 @@ function Install-DbaSQLWATCH {
                     Write-Message -Level Verbose "Downloading $LatestReleaseUrl"
                     try {
                         Invoke-WebRequest $LatestReleaseUrl -OutFile $zipfile -ErrorAction Stop -UseBasicParsing
-                    }
-                    catch {
+                    } catch {
                         #try with default proxy and usersettings
                         (New-Object System.Net.WebClient).Proxy.Credentials = [System.Net.CredentialCache]::DefaultNetworkCredentials
                         Invoke-WebRequest $LatestReleaseUrl -OutFile $zipfile -ErrorAction Stop -UseBasicParsing
@@ -131,14 +130,12 @@ function Install-DbaSQLWATCH {
                     try {
                         New-Item -Path $LocallyCachedZip -ItemType File -Force | Out-Null
                         Copy-Item -Path $zipfile -Destination $LocallyCachedZip -Force
-                    }
-                    catch {
+                    } catch {
                         # should we stop the function if the file copy fails?
                     }
                 }
             }
-        }
-        else {
+        } else {
 
             # $LocalFile was passed, so use it
             if ($PSCmdlet.ShouldProcess($env:computername, "Copying local file to temp directory")) {
@@ -146,8 +143,7 @@ function Install-DbaSQLWATCH {
                 if ($LocalFile.EndsWith("zip")) {
                     $LocallyCachedZip = $zipfile
                     Copy-Item -Path $LocalFile -Destination $LocallyCachedZip -Force
-                }
-                else {
+                } else {
                     $LocallyCachedZip = (Join-Path -path $tempFolder -childpath "SQLWATCH.zip")
                     Copy-Item -Path $LocalFile -Destination $LocallyCachedZip -Force
                 }
@@ -165,13 +161,11 @@ function Install-DbaSQLWATCH {
             if (Get-Command -ErrorAction SilentlyContinue -Name "Expand-Archive") {
                 try {
                     Expand-Archive -Path $LocallyCachedZip -DestinationPath $LocalCacheFolder -Force
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Unable to extract $LocallyCachedZip. Archive may not be valid." -ErrorRecord $_
                     return
                 }
-            }
-            else {
+            } else {
                 # Keep it backwards compatible
                 $shell = New-Object -ComObject Shell.Application
                 $zipPackage = $shell.NameSpace($LocallyCachedZip)
@@ -199,8 +193,7 @@ function Install-DbaSQLWATCH {
                 try {
                     Write-Message -Level VeryVerbose -Message "Connecting to $instance."
                     $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Failure." -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
                 }
 
@@ -233,8 +226,7 @@ function Install-DbaSQLWATCH {
                         DeployOptions        = $PublishResults.DeployOptions
                         SqlCmdVariableValues = $PublishResults.SqlCmdVariableValues
                     } | Select-DefaultView -ExcludeProperty Dacpac, PublishXml, FullResult, DeployOptions, SqlCmdVariableValues
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "DACPAC failed to publish to $database on $instance." -ErrorRecord $_ -Target $instance -Continue
                 }
 
