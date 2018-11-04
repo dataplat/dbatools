@@ -6,7 +6,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
         $paramCount = 6
         $commonParamCount = ([System.Management.Automation.PSCmdlet]::CommonParameters).Count + 2
-        [object[]]$params = (Get-ChildItem function:\Install-DbaSQLWATCH).Parameters.Keys
+        [object[]]$params = (Get-ChildItem function:\Install-DbaSqlWatch).Parameters.Keys
         $knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'Force', 'LocalFile', 'EnableException'
         It "Should contain our specific parameters" {
             ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
@@ -18,7 +18,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 }
 
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
-    Context "Testing SQLWATCH installer" {
+    Context "Testing SqlWatch installer" {
         BeforeAll {
             $database = "dbatoolsci_sqlwatch_$(Get-Random)"
         }
@@ -27,7 +27,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             Get-DbaAgentJob -SqlInstance $script:instance2 | Where-Object {$PSItem.Name -like "DBA-PERF-*" } | Remove-DbaAgentJob
         }
 
-        $results = Install-DbaSQLWATCH -SqlInstance $script:instance2 -Database $database -Force
+        $results = Install-DbaSqlWatch -SqlInstance $script:instance2 -Database $database -Force
 
         It "Installs to specified database: $database" {
             $results[0].Database -eq $database | Should Be $true
@@ -50,7 +50,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $sprocCount | Should -BeGreaterThan 0
         }
         It "Installed SQL Agent jobs" {
-            $agentCount = (Get-DbaAgentJob -SqlInstance $instance | Where-Object {($PSItem.Name -like "SQLWATCH-*") -or ($PSItem.Name -like "DBA-PERF-*")}).Count
+            $agentCount = (Get-DbaAgentJob -SqlInstance $instance | Where-Object {($PSItem.Name -like "SqlWatch-*") -or ($PSItem.Name -like "DBA-PERF-*")}).Count
             $agentCount | Should -BeGreaterThan 0
         }
 

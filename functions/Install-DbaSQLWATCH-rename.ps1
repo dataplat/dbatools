@@ -1,11 +1,11 @@
 #ValidationTags#CodeStyle,Messaging,FlowControl,Pipeline#
-function Install-DbaSQLWATCH {
+function Install-DbaSqlWatch {
     <#
         .SYNOPSIS
-            Installs or updates SQLWATCH.
+            Installs or updates SqlWatch.
 
         .DESCRIPTION
-            Downloads, extracts and installs or updates SQLWATCH.
+            Downloads, extracts and installs or updates SqlWatch.
             https://sqlwatch.io/
 
         .PARAMETER SqlInstance
@@ -15,14 +15,14 @@ function Install-DbaSQLWATCH {
             Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
         .PARAMETER Database
-            Specifies the database to install SQLWATCH into.s
+            Specifies the database to install SqlWatch into.s
 
         .PARAMETER LocalFile
-            Specifies the path to a local file to install SQLWATCH from. This *should* be the zipfile as distributed by the maintainers.
+            Specifies the path to a local file to install SqlWatch from. This *should* be the zipfile as distributed by the maintainers.
             If this parameter is not specified, the latest version will be downloaded and installed from https://github.com/marcingminski/sqlwatch
 
         .PARAMETER Force
-            If this switch is enabled, SQLWATCH will be downloaded from the internet even if previously cached.
+            If this switch is enabled, SqlWatch will be downloaded from the internet even if previously cached.
 
         .PARAMETER Confirm
             Prompts to confirm actions
@@ -36,45 +36,45 @@ function Install-DbaSQLWATCH {
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
         .NOTES
-            Tags: SQLWATCH
+            Tags: SqlWatch
             Author: marcingminski, koglerk
             Website: https://sqlwatch.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: MIT https://opensource.org/licenses/MIT
 
         .LINK
-            https://dbatools.io/Install-DbaSQLWATCH
+            https://dbatools.io/Install-DbaSqlWatch
 
         .EXAMPLE
-            Install-DbaSQLWATCH -SqlInstance server1 -Database master
+            Install-DbaSqlWatch -SqlInstance server1 -Database master
 
-            Logs into server1 with Windows authentication and then installs SQLWATCH in the master database.
-
-        .EXAMPLE
-            Install-DbaSQLWATCH -SqlInstance server1\instance1 -Database DBA
-
-            Logs into server1\instance1 with Windows authentication and then installs SQLWATCH in the DBA database.
+            Logs into server1 with Windows authentication and then installs SqlWatch in the master database.
 
         .EXAMPLE
-            Install-DbaSQLWATCH -SqlInstance server1\instance1 -Database master -SqlCredential $cred
+            Install-DbaSqlWatch -SqlInstance server1\instance1 -Database DBA
 
-            Logs into server1\instance1 with SQL authentication and then installs SQLWATCH in the master database.
+            Logs into server1\instance1 with Windows authentication and then installs SqlWatch in the DBA database.
 
         .EXAMPLE
-            Install-DbaSQLWATCH -SqlInstance sql2016\standardrtm, sql2016\sqlexpress, sql2014
+            Install-DbaSqlWatch -SqlInstance server1\instance1 -Database master -SqlCredential $cred
 
-            Logs into sql2016\standardrtm, sql2016\sqlexpress and sql2014 with Windows authentication and then installs SQLWATCH in the master database.
+            Logs into server1\instance1 with SQL authentication and then installs SqlWatch in the master database.
+
+        .EXAMPLE
+            Install-DbaSqlWatch -SqlInstance sql2016\standardrtm, sql2016\sqlexpress, sql2014
+
+            Logs into sql2016\standardrtm, sql2016\sqlexpress and sql2014 with Windows authentication and then installs SqlWatch in the master database.
 
         .EXAMPLE
             $servers = "sql2016\standardrtm", "sql2016\sqlexpress", "sql2014"
-            $servers | Install-DbaSQLWATCH
+            $servers | Install-DbaSqlWatch
 
-            Logs into sql2016\standardrtm, sql2016\sqlexpress and sql2014 with Windows authentication and then installs SQLWATCH in the master database.
+            Logs into sql2016\standardrtm, sql2016\sqlexpress and sql2014 with Windows authentication and then installs SqlWatch in the master database.
 
         .EXAMPLE
-            Install-DbaSQLWATCH -SqlInstance sql2016 -Branch development
+            Install-DbaSqlWatch -SqlInstance sql2016 -Branch development
 
-            Installs the dev branch version of SQLWATCH in the master database on sql2016 instance.
+            Installs the dev branch version of SqlWatch in the master database on sql2016 instance.
     #>
     [CmdletBinding(SupportsShouldProcess = $true)]
     param (
@@ -93,7 +93,7 @@ function Install-DbaSQLWATCH {
 
         $DbatoolsData = Get-DbatoolsConfigValue -FullName "Path.DbatoolsData"        
         $tempFolder = ([System.IO.Path]::GetTempPath()).TrimEnd("\")
-        $zipfile = "$tempFolder\SQLWATCH.zip"
+        $zipfile = "$tempFolder\SqlWatch.zip"
 
         if ($LocalFile -eq $null -or $LocalFile.Length -eq 0) {
 
@@ -141,7 +141,7 @@ function Install-DbaSQLWATCH {
                     $LocallyCachedZip = $zipfile
                     Copy-Item -Path $LocalFile -Destination $LocallyCachedZip -Force
                 } else {
-                    $LocallyCachedZip = (Join-Path -path $tempFolder -childpath "SQLWATCH.zip")
+                    $LocallyCachedZip = (Join-Path -path $tempFolder -childpath "SqlWatch.zip")
                     Copy-Item -Path $LocalFile -Destination $LocallyCachedZip -Force
                 }
             }
@@ -167,7 +167,7 @@ function Install-DbaSQLWATCH {
                 $shell = New-Object -ComObject Shell.Application
                 $zipPackage = $shell.NameSpace($LocallyCachedZip)
                 $destinationFolder = $shell.NameSpace($LocalCacheFolder)
-                Get-ChildItem "$LocalCacheFolder\SQLWATCH.zip" | Remove-Item
+                Get-ChildItem "$LocalCacheFolder\SqlWatch.zip" | Remove-Item
                 $destinationFolder.CopyHere($zipPackage.Items())
             }
 
@@ -184,7 +184,7 @@ function Install-DbaSQLWATCH {
         }
 
         foreach ($instance in $SqlInstance) {
-            if ($PSCmdlet.ShouldProcess($instance, "Installing SQLWATCH")) {
+            if ($PSCmdlet.ShouldProcess($instance, "Installing SqlWatch")) {
                 try {
                     Write-Message -Level VeryVerbose -Message "Connecting to $instance."
                     $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
@@ -192,12 +192,12 @@ function Install-DbaSQLWATCH {
                     Stop-Function -Message "Failure." -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
                 }
 
-                Write-Message -Level Verbose -Message "Starting installing/updating SQLWATCH in $database on $instance."
+                Write-Message -Level Verbose -Message "Starting installing/updating SqlWatch in $database on $instance."
 
                 try {
 
                     # create a publish profile and publish DACPAC
-                    $DacPacPath = Get-ChildItem -Filter "SQLWATCH.dacpac" -Path $LocalCacheFolder -Recurse | Select-Object -ExpandProperty FullName
+                    $DacPacPath = Get-ChildItem -Filter "SqlWatch.dacpac" -Path $LocalCacheFolder -Recurse | Select-Object -ExpandProperty FullName
                     $PublishOptions = @{
                         RegisterDataTierApplication = $true
                     }
@@ -225,7 +225,7 @@ function Install-DbaSQLWATCH {
                     Stop-Function -Message "DACPAC failed to publish to $database on $instance." -ErrorRecord $_ -Target $instance -Continue
                 }
 
-                Write-Message -Level Verbose -Message "Finished installing/updating SQLWATCH in $database on $instance."
+                Write-Message -Level Verbose -Message "Finished installing/updating SqlWatch in $database on $instance."
             }
         }
     }

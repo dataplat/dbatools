@@ -6,7 +6,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
         $paramCount = 5
         $commonParamCount = ([System.Management.Automation.PSCmdlet]::CommonParameters).Count + 2
-        [object[]]$params = (Get-ChildItem function:\Uninstall-DbaSQLWATCH).Parameters.Keys
+        [object[]]$params = (Get-ChildItem function:\Uninstall-DbaSqlWatch).Parameters.Keys
         $knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'Force', 'EnableException'
         It "Should contain our specific parameters" {
             ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
@@ -18,10 +18,10 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 }
 
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
-    Context "Testing SQLWATCH uninstaller" {
+    Context "Testing SqlWatch uninstaller" {
         BeforeAll {
             $database = "dbatoolsci_sqlwatch_$(Get-Random)"
-            Install-DbaSQLWATCH -SqlInstance $script:instance2 -Database $database -Force
+            Install-DbaSqlWatch -SqlInstance $script:instance2 -Database $database -Force
         }
         AfterAll {
             Remove-DbaDatabase -SqlInstance $script:instance2 -Database $database -Confirm:$false
@@ -41,7 +41,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $sprocCount | Should -Be 0
         }
         It "Removed all SQL Agent jobs" {
-            $agentCount = (Get-DbaAgentJob -SqlInstance $script:instance2 | Where-Object {($PSItem.Name -like "SQLWATCH-*") -or ($PSItem.Name -like "DBA-PERF-*")}).Count
+            $agentCount = (Get-DbaAgentJob -SqlInstance $script:instance2 | Where-Object {($PSItem.Name -like "SqlWatch-*") -or ($PSItem.Name -like "DBA-PERF-*")}).Count
             $agentCount | Should -Be 0
         }
 
