@@ -175,7 +175,5 @@ Function Uninstall-DbaSQLWATCH {
                 }
             }
         }
-
     }
-    end {}
 }

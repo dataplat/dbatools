@@ -239,12 +239,7 @@ function Install-DbaSQLWATCH {
                 }
 
                 Write-Message -Level Verbose -Message "Finished installing/updating SQLWATCH in $database on $instance."
-                #notify user of location to PowerBI file
-                #$pbitLocation = Get-ChildItem $tempFolder -Recurse -include *.pbit | Select-Object -ExpandProperty Directory -Unique
-                #Write-Message -Level Output -Message "SQLWATCH installed successfully. Power BI dashboard files can be found at $($pbitLocation.FullName)"
             }
         }
     }
-
-    end {}
 }
