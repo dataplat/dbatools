@@ -21,14 +21,13 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Testing SQLWATCH installer" {
         BeforeAll {
             $database = "dbatoolsci_sqlwatch_$(Get-Random)"
-            $server = Connect-DbaInstance -SqlInstance $script:instance2
         }
         AfterAll {
-            Remove-DbaDatabase -SqlInstance $server -Database $database -Confirm:$false
-            Get-DbaAgentJob -SqlInstance $server | Where-Object {$PSItem.Name -like "DBA-PERF-*" } | Remove-DbaAgentJob
+            Remove-DbaDatabase -SqlInstance $script:instance2 -Database $database -Confirm:$false
+            Get-DbaAgentJob -SqlInstance $script:instance2 | Where-Object {$PSItem.Name -like "DBA-PERF-*" } | Remove-DbaAgentJob
         }
 
-        $results = Install-DbaSQLWATCH -SqlInstance $server -Database $database -Force
+        $results = Install-DbaSQLWATCH -SqlInstance $script:instance2 -Database $database -Force
 
         It "Installs to specified database: $database" {
             $results[0].Database -eq $database | Should Be $true
