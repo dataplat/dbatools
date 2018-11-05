@@ -15,7 +15,7 @@ function New-DbaAgentProxy {
     .PARAMETER Name
         The name of the proxy or proxies you want to create
 
-    .PARAMETER Credential
+    .PARAMETER ProxyCredential
         The associated SQL Server Credential. The credential must be created prior to creating the Proxy.
 
     .PARAMETER SubSystem
@@ -76,13 +76,13 @@ function New-DbaAgentProxy {
         https://dbatools.io/New-DbaAgentProxy
 
     .EXAMPLE
-        PS C:\> New-DbaAgentProxy -SqlInstance sql2016 -Name STIG -Credential 'PowerShell Proxy'
+        PS C:\> New-DbaAgentProxy -SqlInstance sql2016 -Name STIG -ProxyCredential 'PowerShell Proxy'
 
         Creates an Agent Proxy on sql2016 with the name STIG with the 'PowerShell Proxy' credential.
         The proxy is automatically added to the CmdExec subsystem.
 
     .EXAMPLE
-        PS C:\> New-DbaAgentProxy -SqlInstance localhost\sql2016 -Name STIG -Credential 'PowerShell Proxy' -Description "Used for auditing purposes" -Login ad\sqlstig -SubSystem CmdExec, PowerShell -ServerRole securtyadmin -MsdbRole ServerGroupAdministratorRole
+        PS C:\> New-DbaAgentProxy -SqlInstance localhost\sql2016 -Name STIG -ProxyCredential 'PowerShell Proxy' -Description "Used for auditing purposes" -Login ad\sqlstig -SubSystem CmdExec, PowerShell -ServerRole securtyadmin -MsdbRole ServerGroupAdministratorRole
 
         Creates an Agent Proxy on sql2016 with the name STIG with the 'PowerShell Proxy' credential and the following principals:
 
@@ -103,7 +103,7 @@ function New-DbaAgentProxy {
         [parameter(Mandatory)]
         [string[]]$Name,
         [parameter(Mandatory)]
-        [string[]]$Credential,
+        [string[]]$ProxyCredential,
         [ValidateSet("ActiveScripting", "AnalysisCommand", "AnalysisQuery", "CmdExec", "Distribution", "LogReader", "Merge", "PowerShell", "QueueReader", "Snapshot", "Ssis", "TransactSql")]
         [string[]]$SubSystem = "CmdExec",
         [string]$Description,
@@ -144,19 +144,19 @@ function New-DbaAgentProxy {
                     }
                 }
 
-                if (-not $server.Credentials[$Credential]) {
-                    Write-Message -Level Warning -Message "Credential '$Credential' does not exist on $instance"
+                if (-not $server.Credentials[$ProxyCredential]) {
+                    Write-Message -Level Warning -Message "Credential '$ProxyCredential' does not exist on $instance"
                     continue
                 }
 
-                if ($Pscmdlet.ShouldProcess($instance, "Adding $proxyname with the $Credential credential")) {
+                if ($Pscmdlet.ShouldProcess($instance, "Adding $proxyname with the $ProxyCredential credential")) {
                     # the new-object is stubborn and $true/$false has to be forced in
                     switch (Test-Bound $disabled) {
                         $false {
-                            $proxy = New-Object Microsoft.SqlServer.Management.Smo.Agent.ProxyAccount -ArgumentList $jobServer, $ProxyName, $Credential, $true, $Description
+                            $proxy = New-Object Microsoft.SqlServer.Management.Smo.Agent.ProxyAccount -ArgumentList $jobServer, $ProxyName, $ProxyCredential, $true, $Description
                         }
                         $true {
-                            $proxy = New-Object Microsoft.SqlServer.Management.Smo.Agent.ProxyAccount -ArgumentList $jobServer, $ProxyName, $Credential, $false, $Description
+                            $proxy = New-Object Microsoft.SqlServer.Management.Smo.Agent.ProxyAccount -ArgumentList $jobServer, $ProxyName, $ProxyCredential, $false, $Description
                         }
                     }
 
