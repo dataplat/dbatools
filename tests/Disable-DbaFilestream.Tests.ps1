@@ -1,4 +1,4 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+﻿$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 . "$PSScriptRoot\..\internal\functions\Connect-SqlInstance.ps1"
@@ -12,10 +12,10 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 				- Commands that *do not* include SupportShouldProcess, set defaultParamCount    = 11
 				- Commands that *do* include SupportShouldProcess, set defaultParamCount        = 13
 		#>
-        $paramCount = 6
+        $paramCount = 5
         $defaultParamCount = 13
-        [object[]]$params = (Get-ChildItem function:\Set-DbaFilestream).Parameters.Keys
-        $knownParameters = 'SqlInstance', 'SqlCredential', 'Credential', 'FileStreamLevel', 'Force', 'EnableException'
+        [object[]]$params = (Get-ChildItem function:\Disable-DbaFilestream).Parameters.Keys
+        $knownParameters = 'SqlInstance', 'SqlCredential', 'Credential', 'Force', 'EnableException'
         It "Should contain our specific parameters" {
             ((Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count) | Should Be $paramCount
         }
