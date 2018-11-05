@@ -10,7 +10,7 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 #>
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-            <#
+        <#
 			The $paramCount is adjusted based on the parameters your command will have.
 
 			The $defaultParamCount is adjusted based on what type of command you are writing the test for:

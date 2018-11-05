@@ -5,7 +5,7 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-            <#
+        <#
 			The $paramCount is adjusted based on the parameters your command will have.
 
 			The $defaultParamCount is adjusted based on what type of command you are writing the test for:
@@ -33,16 +33,16 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     AfterAll {
         Set-DbaFileStream -SqlInstance $script:instance1 -FileStreamLevel $OriginalFileStream.FileStreamStateId -force
     }
-    
+
     Context "Skipping 'No Change'" {
         $output = Set-DbaFileStream -SqlInstance $script:instance1 -FileStreamLevel $OriginalFileStream.FileStreamStateId -Force -WarningVariable warnvar -WarningAction silentlyContinue -ErrorVariable errvar -Erroraction silentlyContinue
         It "Should Do Nothing" {
             $output.RestartStatus | Should Be 'No restart, as no change in values'
         }
     }
-    
+
     Context "Changing FileStream Level" {
-        $NewLevel = ($OriginalFileStream.FileStreamStateId + 1) % 3 #Move it on one, but keep it less than 4 with modulo division 
+        $NewLevel = ($OriginalFileStream.FileStreamStateId + 1) % 3 #Move it on one, but keep it less than 4 with modulo division
         $null = Set-DbaFileStream -SqlInstance $script:instance1 -FileStreamLevel $NewLevel -Force -WarningVariable warnvar -WarningAction silentlyContinue -ErrorVariable errvar -Erroraction silentlyContinue
         $output = Get-DbaFileStream -SqlInstance $script:instance1
         It "Should have changed the FileStream Level" {
