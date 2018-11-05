@@ -6,7 +6,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
         $paramCount = 2
         $defaultParamCount = 11
-        [object[]]$params = (Get-ChildItem function:\Convert-Lsn).Parameters.Keys
+        [object[]]$params = (Get-ChildItem function:\Convert-DbaLSN).Parameters.Keys
         $knownParameters = 'LSN','EnableException'
         It "Should contain our specific parameters" {
             ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
@@ -19,14 +19,14 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Converts Numeric LSN to Hex"{
         $LSN = '00000000020000000024300001'
         It "Should convert to " {
-            (Convert-Lsn -Lsn $Lsn).Hexadecimal | Should -Be '00000014:000000f3:0001'
+            (Convert-DbaLSN -Lsn $Lsn).Hexadecimal | Should -Be '00000014:000000f3:0001'
         }
     }
 
     Context "Converts Hex LSN to Numeric"{
         $LSN = '00000014:000000f3:0001'
         It "Should convert to " {
-            (Convert-Lsn -Lsn $Lsn).Numeric | Should -Be 00000000020000000024300001
+            (Convert-DbaLSN -Lsn $Lsn).Numeric | Should -Be 00000000020000000024300001
         }
     }
 

@@ -516,7 +516,7 @@ function Backup-DbaDatabase {
                 try {
                     if ($Pscmdlet.ShouldProcess($server.Name, "Backing up $dbname to $humanBackupFile")) {
                         $CurrentLsn = (Read-DbaTransactionLog -SqlInstance $server -Database $dbname -RowLimit 1).'Current LSN'
-                        $NumericLSN = (Convert-Lsn -LSN $CurrentLsn).Numeric
+                        $NumericLSN = (Convert-DbaLSN -LSN $CurrentLsn).Numeric
                         if ($OutputScriptOnly -ne $True) {
                             $Filelist = @()
                             $FileList += $server.Databases[$dbname].FileGroups.Files | Select-Object @{ Name = "FileType"; Expression = { "D" } }, @{ Name = "Type"; Expression = { "D" } }, @{ Name = "LogicalName"; Expression = { $_.Name } }, @{ Name = "PhysicalName"; Expression = { $_.FileName } }
