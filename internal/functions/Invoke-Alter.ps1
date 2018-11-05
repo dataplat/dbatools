@@ -1,4 +1,4 @@
-﻿function Invoke-Alter {
+function Invoke-Alter {
     <#
         For stubborn .net objects that won't throw properly
     #>
