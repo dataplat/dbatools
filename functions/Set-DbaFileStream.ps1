@@ -9,11 +9,14 @@ function Set-DbaFileStream {
         To perform the action, the SQL Server instance must be restarted. By default we will prompt for confirmation for this action, this can be overridden with the -Force switch
     
     .PARAMETER SqlInstance
-        The Sqlinstance to change. This may be an array of instances, or passed in from the pipeline. An array of dbatools connections may also be passed in
+        The target SQL Server instance or instances. Defaults to localhost.
 
     .PARAMETER SqlCredential
-        A sql credential to be used to connect to SqlInstance. If not specified the windows credentials of the calling session will be used
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
+    .PARAMETER Credential
+        Login to the target server using alternative credentials.
+    
     .PARAMETER FileStreamLevel
         The level to of FileStream to be enabled:
         0 - FileStream disabled
@@ -51,26 +54,31 @@ function Set-DbaFileStream {
         Using this pipeline you can scan a range of SQL instances and disable filestream on only those on which it's enabled
 
     #>
-    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "High")]
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "High")]
     param(
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true, ParameterSetName = 'piped')]
-        [Alias("ServerInstance", "SqlServer")]
-        [object[]]$SqlInstance,
+        [Parameter(Mandatory, ValueFromPipeline)]
+        [DbaInstance[]]$SqlInstance,
         [PSCredential]$SqlCredential,
+        [PSCredential]$Credential,
         [ValidateSet("0", "1", "2", "Disabled", "T-Sql Only", "T-Sql and Win-32 Access")]
-        [Object]$FileStreamLevel,
-        [switch]$force,
-        [switch][Alias('Silent')]$EnableException
+        [string]$FileStreamLevel,
+        [switch]$Force,
+        [switch]$EnableException
     )
     begin {
+        $NewFileStream = $FileStreamLevel
         if ($FileStreamLevel -notin ('0', '1', '2')) {
             $NewFileStream = switch ($FileStreamLevel) {
-                "Disabled" {0}
-                "T-Sql Only" {1}
-                "T-Sql and Win-32 Access" {2}
-            } 
-        } else {
-            $NewFileStream = $FileStreamLevel
+                "Disabled" {
+                    0
+                }
+                "T-Sql Only" {
+                    1
+                }
+                "T-Sql and Win-32 Access" {
+                    2
+                }
+            }
         }
     }
     process {
@@ -83,6 +91,7 @@ function Set-DbaFileStream {
             } catch {
                 Stop-Function -Message "Failure connecting to $computer" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
+            
             $FileStreamState = [int]$server.Configuration.FilestreamAccessLevel.ConfigValue
             $OutputLookup = @{
                 0 = 'FileStream Disabled';
@@ -93,10 +102,10 @@ function Set-DbaFileStream {
             if ($FileStreamState -ne $NewFileStream) {
                 if ($force -or $PSCmdlet.ShouldProcess($instance, "Changing from `"$($OutputLookup[$FileStreamState])`" to `"$($OutputLookup[$NewFileStream])`"")) {
                     $server.Configuration.FilestreamAccessLevel.ConfigValue = $NewFileStream
-                    $server.alter()
+                    $server.Alter()
                 }
                     
-                if ($force -or $PSCmdlet.ShouldProcess($instance, "Need to restart Sql Service for change to take effect, continue?")) {
+                if ($Force -or $PSCmdlet.ShouldProcess($instance, "Need to restart Sql Service for change to take effect, continue?")) {
                     $RestartOutput = Restart-DbaService -ComputerName $server.ComputerNamePhysicalNetBIOS -InstanceName $server.InstanceName -Type Engine   
                 }
             } else {
