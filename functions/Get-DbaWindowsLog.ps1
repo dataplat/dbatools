@@ -253,7 +253,7 @@ function Get-DbaWindowsLog {
                 [DateTime]
                 $End,
 
-                [object]
+                [PSCredential]
                 $Credential,
 
                 [int]
