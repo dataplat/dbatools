@@ -19,9 +19,6 @@ function Remove-DbaCmsRegServerGroup {
     .PARAMETER InputObject
         Allows results from Get-DbaCmsRegServerGroup to be piped in
 
-    .PARAMETER Id
-        Get group by Id(s)
-
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
 
