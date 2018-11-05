@@ -24099,7 +24099,7 @@
                            ""
                        ],
                        [
-                           "Credential",
+                           "ProxyCredential",
                            "The associated SQL Server Credential. The credential must be created prior to creating the Proxy.",
                            "",
                            true,
@@ -24192,8 +24192,8 @@
         "Synopsis":  "Adds one or more proxies to SQL Server Agent",
         "Name":  "New-DbaAgentProxy",
         "Links":  "https://dbatools.io/New-DbaAgentProxy",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eNew-DbaAgentProxy -SqlInstance sql2016 -Name STIG -Credential \u0027PowerShell Proxy\u0027\nCreates an Agent Proxy on sql2016 with the name STIG with the \u0027PowerShell Proxy\u0027 credential.\r\nThe proxy is automatically added to the CmdExec subsystem.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eNew-DbaAgentProxy -SqlInstance localhost\\sql2016 -Name STIG -Credential \u0027PowerShell Proxy\u0027 -Description \"Used for auditing purposes\" -Login ad\\sqlstig -SubSystem CmdExec, PowerShell \r\n-ServerRole securtyadmin -MsdbRole ServerGroupAdministratorRole\nCreates an Agent Proxy on sql2016 with the name STIG with the \u0027PowerShell Proxy\u0027 credential and the following principals:\nLogin: ad\\sqlstig\r\nServerRole: securtyadmin\r\nMsdbRole: ServerGroupAdministratorRole\nBy default, only sysadmins have access to create job steps with proxies. This will allow 3 additional principals access:\r\nThe proxy is then added to the CmdExec and PowerShell subsystems",
-        "Syntax":  "New-DbaAgentProxy [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [-Name] \u003cString[]\u003e [-Credential] \u003cString[]\u003e [[-SubSystem] \u003cString[]\u003e] [[-Description] \u003cString\u003e] [[-Login] \u003cString[]\u003e] [[-ServerRole] \u003cString[]\u003e] [[-MsdbRole] \u003cString[]\u003e] [-Disabled] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eNew-DbaAgentProxy -SqlInstance sql2016 -Name STIG -ProxyCredential \u0027PowerShell Proxy\u0027\nCreates an Agent Proxy on sql2016 with the name STIG with the \u0027PowerShell Proxy\u0027 credential.\r\nThe proxy is automatically added to the CmdExec subsystem.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eNew-DbaAgentProxy -SqlInstance localhost\\sql2016 -Name STIG -ProxyCredential \u0027PowerShell Proxy\u0027 -Description \"Used for auditing purposes\" -Login ad\\sqlstig -SubSystem CmdExec, PowerShell \r\n-ServerRole securtyadmin -MsdbRole ServerGroupAdministratorRole\nCreates an Agent Proxy on sql2016 with the name STIG with the \u0027PowerShell Proxy\u0027 credential and the following principals:\nLogin: ad\\sqlstig\r\nServerRole: securtyadmin\r\nMsdbRole: ServerGroupAdministratorRole\nBy default, only sysadmins have access to create job steps with proxies. This will allow 3 additional principals access:\r\nThe proxy is then added to the CmdExec and PowerShell subsystems",
+        "Syntax":  "New-DbaAgentProxy [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [-Name] \u003cString[]\u003e [-ProxyCredential] \u003cString[]\u003e [[-SubSystem] \u003cString[]\u003e] [[-Description] \u003cString\u003e] [[-Login] \u003cString[]\u003e] [[-ServerRole] \u003cString[]\u003e] [[-MsdbRole] \u003cString[]\u003e] [-Disabled] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "CommandName":  "New-DbaAgentSchedule",
