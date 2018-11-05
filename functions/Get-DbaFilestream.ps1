@@ -5,7 +5,7 @@ function Get-DbaFilestream {
 
     .DESCRIPTION
         Returns the status of Filestream on specified SQL Server for both the Service and Instance levels.
-    
+
     .PARAMETER SqlInstance
         SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
 
@@ -31,7 +31,7 @@ function Get-DbaFilestream {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-    	https://dbatools.io/Get-DbaFilestream
+        https://dbatools.io/Get-DbaFilestream
 
     .EXAMPLE
         Get-DbaFilestream -SqlInstance server1\instance2
@@ -53,7 +53,7 @@ function Get-DbaFilestream {
             2 = 'FileStream enabled for T-Sql and IO streaming access'
             3 = 'FileStream enabled for T-Sql, IO streaming, and remote clients'
         }
-        
+
         $idInstanceFS = [ordered]@{
             0 = 'Disabled'
             1 = 'T-SQL access enabled'
@@ -64,21 +64,21 @@ function Get-DbaFilestream {
         foreach ($instance in $SqlInstance) {
             $computer = $instance.ComputerName
             $instanceName = $instance.InstanceName
-            
+
             <# Get Service-Level information #>
             if ($instance.IsLocalHost) {
                 $computerName = $computer
             } else {
                 $computerName = (Resolve-DbaNetworkName -ComputerName $computer -Credential $Credential).FullComputerName
             }
-            
+
             Write-Message -Level Verbose -Message "Attempting to connect to $computer"
             try {
                 $namespace = Get-DbaCmObject -EnableException -ComputerName $computerName -Namespace root\Microsoft\SQLServer -Query "SELECT NAME FROM __NAMESPACE WHERE NAME LIKE 'ComputerManagement%'" |
-                Where-Object {
+                    Where-Object {
                     (Get-DbaCmObject -EnableException -ComputerName $computerName -Namespace $("root\Microsoft\SQLServer\" + $_.Name) -ClassName FilestreamSettings).Count -gt 0
                 } | Sort-Object Name -Descending | Select-Object -First 1
-                
+
                 if ($namespace.Name) {
                     $serviceFS = Get-DbaCmObject -EnableException -ComputerName $computerName -Namespace $("root\Microsoft\SQLServer\" + $namespace.Name) -ClassName FilestreamSettings | Where-Object InstanceName -eq $instanceName | Select-Object -First 1
                 } else {
@@ -87,7 +87,7 @@ function Get-DbaFilestream {
             } catch {
                 Stop-Function -Message "Issue collecting service-level information on $computer for $instanceName" -Target $computer -ErrorRecord $_ -Continue
             }
-            
+
             <# Get Instance-Level information #>
             try {
                 Write-Message -Level Verbose -Message "Connecting to $instance."
@@ -95,30 +95,30 @@ function Get-DbaFilestream {
             } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-            
+
             try {
                 $instanceFS = Get-DbaSpConfigure -SqlInstance $server -Name FilestreamAccessLevel | Select-Object ConfiguredValue, RunningValue
             } catch {
                 Stop-Function -Message "Issue collection instance-level configuration on $instanceName" -Target $server -ErrorRecord $_ -Exception $_.Exception -Continue
             }
-            
+
             $pendingRestart = $instanceFS.ConfiguredValue -ne $instanceFS.RunningValue
-            
+
             if (($serviceFS.AccessLevel -ne 0) -and ($instanceFS.RunningValue -ne 0)) {
                 if (($serviceFS.AccessLevel -eq $instanceFS.RunningValue) -and $pendingRestart) {
                     Write-Message -Level Verbose -Message "A restart of the instance is pending before Filestream is configured."
                 }
             }
             [PsCustomObject]@{
-                ComputerName = $server.NetName
-                InstanceName = $server.ServiceName
-                SqlInstance  = $server.DomainInstanceName
-                InstanceAccess = $idInstanceFS[[int]$instanceFS.RunningValue]
-                ServiceAccess = $idServiceFS[[int]$serviceFS.AccessLevel]
-                ServiceShareName = $serviceFS.ShareName
+                ComputerName        = $server.NetName
+                InstanceName        = $server.ServiceName
+                SqlInstance         = $server.DomainInstanceName
+                InstanceAccess      = $idInstanceFS[[int]$instanceFS.RunningValue]
+                ServiceAccess       = $idServiceFS[[int]$serviceFS.AccessLevel]
+                ServiceShareName    = $serviceFS.ShareName
                 InstanceAccessLevel = $instanceFS.RunningValue
-                ServiceAccessLevel = $serviceFS.AccessLevel
-                PendingRestart = $pendingRestart
+                ServiceAccessLevel  = $serviceFS.AccessLevel
+                PendingRestart      = $pendingRestart
             } | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, InstanceAccess, ServiceAccess, ServiceShareName, PendingRestart
         }
     }

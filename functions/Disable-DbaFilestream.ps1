@@ -16,20 +16,20 @@ function Disable-DbaFileStream {
 
     .PARAMETER Credential
         Login to the target server using alternative credentials.
-    
-	.PARAMETER EnableException
+
+    .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-	.PARAMETER Force
-    	Restart SQL Instance after changes.
+    .PARAMETER Force
+        Restart SQL Instance after changes.
 
     .PARAMETER WhatIf
-    	Shows what would happen if the command runs. The command is not run.
+        Shows what would happen if the command runs. The command is not run.
 
-	.PARAMETER Confirm
-	    Prompts you for confirmation before running the command.
+    .PARAMETER Confirm
+        Prompts you for confirmation before running the command.
 
     .NOTES
         Tags: Filestream
@@ -61,7 +61,7 @@ function Disable-DbaFileStream {
     )
     begin {
         $FileStreamLevel = $level = 0
-        
+
         $OutputLookup = @{
             0 = 'Disabled'
             1 = 'FileStream enabled for T-Sql access'
@@ -76,7 +76,7 @@ function Disable-DbaFileStream {
             } catch {
                 Stop-Function -Message "Failure connecting to $computer" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-            
+
             # Server level
             if ($server.IsClustered) {
                 $nodes = Get-DbaWsfcNode -ComputerName $instance -Credential $Credential
@@ -86,24 +86,24 @@ function Disable-DbaFileStream {
             } else {
                 $result = Set-FileSystemSetting -Instance $instance -Credential $Credential -FilestreamLevel $FileStreamLevel
             }
-            
+
             # Instance level
             $filestreamstate = [int]$server.Configuration.FilestreamAccessLevel.ConfigValue
-            
+
             if ($filestreamstate -ne $level) {
                 if ($Force -or $PSCmdlet.ShouldProcess($instance, "Changing from '$($OutputLookup[$filestreamstate])' to '$($OutputLookup[$level])' at the instance level")) {
                     $null = Set-DbaSpConfigure -SqlInstance $server -Name FilestreamAccessLevel -Value $level
                 }
-                
+
                 if ($Force) {
                     $restart = Restart-DbaService -ComputerName $server.ComputerName -InstanceName $server.InstanceName -Type Engine
                 }
             } else {
                 Write-Message -Level Verbose -Message "Skipping restart as old and new FileStream values are the same"
             }
-            
+
             Get-DbaFilestream -SqlInstance $instance -SqlCredential $SqlCredential -Credential $Credential
-            
+
             if ($filestreamstate -ne $level -and -not $Force) {
                 Write-Message -Level Warning -Message "[$instance] $result"
             }
