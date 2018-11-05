@@ -1,30 +1,27 @@
 function Get-DbaFilestream {
     <#
-        .SYNOPSIS
-            Returns the status of Filestream on specified SQL Server instances
+    .SYNOPSIS
+        Returns the status of Filestream on specified SQL Server instances
 
-        .DESCRIPTION
-            Connects to the specified SQL Server instances, and returns the status of the Filestream feature
+    .DESCRIPTION
+        Connects to the specified SQL Server instances, and returns the status of the Filestream feature
 
-        .PARAMETER SqlInstance
-            SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
+    .PARAMETER SqlInstance
+        SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
 
-        .PARAMETER SqlCredential
-            Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
+    .PARAMETER SqlInstance
+        The target SQL Server instance or instances. Defaults to localhost.
 
-			$scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
+    .PARAMETER SqlCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-			Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
+    .PARAMETER Credential
+        Login to the target server using alternative credentials.
 
-            To connect as a different Windows user, run PowerShell as that user.
-
-		.PARAMETER Credential
-			Credential object used to connect to the computer as a different user.
-
-		.PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
         Tags: Filestream
@@ -33,13 +30,13 @@ function Get-DbaFilestream {
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
-		.LINK
-			https://dbatools.io/Get-DbaFilestream
+    .LINK
+    	https://dbatools.io/Get-DbaFilestream
 
-        .EXAMPLE
-            Get-DbaFilestream -SqlInstance server1\instance2
+    .EXAMPLE
+        Get-DbaFilestream -SqlInstance server1\instance2
 
-            Will return the status of Filestream configuration for the service and instance server1\instance2
+        Will return the status of Filestream configuration for the service and instance server1\instance2
     #>
     [CmdletBinding()]
     param(
@@ -98,7 +95,7 @@ function Get-DbaFilestream {
             try {
                 $instanceFS = Get-DbaSpConfigure -SqlInstance $server -ConfigName FilestreamAccessLevel | Select-Object ConfiguredValue, RunningValue
             } catch {
-                Stop-Function -Message "Issue collectin instance-level configuration on $instanceName" -Target $server -ErrorRecord $_ -Exception $_.Exception -Continue
+                Stop-Function -Message "Issue collection instance-level configuration on $instanceName" -Target $server -ErrorRecord $_ -Exception $_.Exception -Continue
             }
 
             $pendingRestart = $instanceFS.ConfiguredValue -ne $instanceFS.RunningValue
@@ -107,30 +104,25 @@ function Get-DbaFilestream {
             if ( ($serviceFS.AccessLevel -ne 0) -and ($instanceFS.RunningValue -ne 0) ) {
                 if ( ($serviceFS.AccessLevel -eq 3 -and $instanceFS.RunningValue -eq 2) -and (-not $pendingRestart) ) {
                     $isConfigured = $true
-                } elseif ( ($serviceFS.AccessLevel -eq $instanceFS.RunningValue) -and (-and $pendingRestart) ) {
+                } elseif ( ($serviceFS.AccessLevel -eq $instanceFS.RunningValue) -and (-not $pendingRestart) ) {
                     $isConfigured = $true
                 }
 
-                if ( ($serviceFS.AccessLevel -eq $instanceFS.RunningValue) -and ($pendingRestart) ) {
-                    $notesMsg = "A restart of the instance is pending before Filestream is configured."
-                } else {
-                    $notesMsg = "The serivce Access Level [$($serviceFS.AccessLevel)] does not match the instance Access Level [$($instanceFS.RunningValue)]."
+                if ( ($serviceFS.AccessLevel -eq $instanceFS.RunningValue) -and $pendingRestart) {
+                    Write-Message -Level Verbose -Message "A restart of the instance is pending before Filestream is configured."
                 }
             }
-
             [PsCustomObject]@{
-                ComputerName            = $server.NetName
-                InstanceName            = $server.ServiceName
-                SqlInstance             = $server.DomainInstanceName
-                ServiceAccessLevel      = $serviceFS.AccessLevel
-                ServiceAccessLevelDesc  = $idServiceFS[[int]$serviceFS.AccessLevel]
-                ServiceShareName        = $serviceFS.ShareName
-                InstanceAccessLevel     = $instanceFS.RunningValue
-                InstanceAccessLevelDesc = $idInstanceFS[[int]$instanceFS.RunningValue]
-                IsConfigured            = $isConfigured
-                PendingRestart          = $pendingRestart
-                Notes                   = $notesMsg
-            } | Select-DefaultView -Exclude ServiceAccessLevel, InstanceAccessLevel
+                ComputerName           = $server.NetName
+                InstanceName           = $server.ServiceName
+                SqlInstance            = $server.DomainInstanceName
+                InstanceAccessLevel    = $idInstanceFS[[int]$instanceFS.RunningValue]
+                ServiceAccessLevel     = $idServiceFS[[int]$serviceFS.AccessLevel]
+                ServiceShareName       = $serviceFS.ShareName
+                InstanceAccessLevelInt = $instanceFS.RunningValue
+                ServiceAccessLevelInt = $serviceFS.AccessLevel
+                PendingRestart = $pendingRestart
+            }
         }
     }
 }
