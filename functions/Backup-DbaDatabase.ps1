@@ -242,7 +242,7 @@ function Backup-DbaDatabase {
             }
 
             if ($InputObject.Count -gt 1 -and $BackupFileName -ne '' -and $True -ne $ReplaceInFile) {
-                Stop-Function -Message "1 BackupFile specified, but more than 1 database."  -Level Verbose
+                Stop-Function -Message "1 BackupFile specified, but more than 1 database."
                 return
             }
 
