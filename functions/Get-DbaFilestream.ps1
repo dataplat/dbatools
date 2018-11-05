@@ -120,8 +120,8 @@ function Get-DbaFilestream {
                 ServiceAccessLevel     = $idServiceFS[[int]$serviceFS.AccessLevel]
                 ServiceShareName       = $serviceFS.ShareName
                 InstanceAccessLevelInt = $instanceFS.RunningValue
-                ServiceAccessLevelInt = $serviceFS.AccessLevel
-                PendingRestart = $pendingRestart
+                ServiceAccessLevelInt  = $serviceFS.AccessLevel
+                PendingRestart         = $pendingRestart
             }
         }
     }
