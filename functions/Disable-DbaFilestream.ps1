@@ -1,4 +1,4 @@
-function Disable-DbaFileStream {
+function Disable-DbaFilestream {
     <#
     .SYNOPSIS
         Sets the status of FileStream on specified SQL Server instances both at the server level and the instance level
@@ -39,13 +39,13 @@ function Disable-DbaFileStream {
         License: MIT https://opensource.org/licenses/MIT
 
     .EXAMPLE
-        Disable-DbaFileStream -SqlInstance server1\instance2 -FileStreamLevel T-Sql Only
-        Disable-DbaFileStream -SqlInstance server1\instance2 -FileStreamLevel 1
+        Disable-DbaFilestream -SqlInstance server1\instance2 -FileStreamLevel T-Sql Only
+        Disable-DbaFilestream -SqlInstance server1\instance2 -FileStreamLevel 1
 
         These commands are functionally equivalent, both will set Filestream level on server1\instance2 to T-Sql Only
 
     .EXAMPLE
-        Get-DbaFileStream -SqlInstance server1\instance2, server5\instance5 , prod\hr | Where-Object {$_.FileSteamStateID -gt 0} | Disable-DbaFileStream -FileStreamLevel 0 -Force
+        Get-DbaFilestream -SqlInstance server1\instance2, server5\instance5 , prod\hr | Where-Object {$_.FileSteamStateID -gt 0} | Disable-DbaFilestream -FileStreamLevel 0 -Force
 
         Using this pipeline you can scan a range of SQL instances and disable filestream on only those on which it's enabled
 
