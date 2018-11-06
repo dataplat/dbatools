@@ -1,4 +1,4 @@
-function Enable-DbaFileStream {
+function Enable-DbaFilestream {
     <#
     .SYNOPSIS
         Enables FileStream on specified SQL Server instances
@@ -48,13 +48,13 @@ function Enable-DbaFileStream {
         License: MIT https://opensource.org/licenses/MIT
 
     .EXAMPLE
-        Enable-DbaFileStream -SqlInstance server1\instance2 -FileStreamLevel TSql
-        Enable-DbaFileStream -SqlInstance server1\instance2 -FileStreamLevel 1
+        Enable-DbaFilestream -SqlInstance server1\instance2 -FileStreamLevel TSql
+        Enable-DbaFilestream -SqlInstance server1\instance2 -FileStreamLevel 1
 
         These commands are functionally equivalent, both will set Filestream level on server1\instance2 to T-Sql Only
 
     .EXAMPLE
-        Get-DbaFileStream -SqlInstance server1\instance2, server5\instance5 , prod\hr | Where-Object {$_.FileSteamStateID -gt 0} | Enable-DbaFileStream -FileStreamLevel 0 -Force
+        Get-DbaFilestream -SqlInstance server1\instance2, server5\instance5 , prod\hr | Where-Object {$_.FileSteamStateID -gt 0} | Enable-DbaFilestream -FileStreamLevel 0 -Force
 
         Using this pipeline you can scan a range of SQL instances and disable filestream on only those on which it's enabled
 
