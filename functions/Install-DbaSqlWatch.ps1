@@ -15,7 +15,7 @@ function Install-DbaSqlWatch {
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
     .PARAMETER Database
-        Specifies the database to install SqlWatch into.s
+        Specifies the database to install SqlWatch into. Defaults to master. 
 
     .PARAMETER LocalFile
         Specifies the path to a local file to install SqlWatch from. This *should* be the zipfile as distributed by the maintainers.
@@ -47,7 +47,7 @@ function Install-DbaSqlWatch {
         https://dbatools.io/Install-DbaSqlWatch
 
     .EXAMPLE
-        Install-DbaSqlWatch -SqlInstance server1 -Database master
+        Install-DbaSqlWatch -SqlInstance server1
 
         Logs into server1 with Windows authentication and then installs SqlWatch in the master database.
 
@@ -57,9 +57,9 @@ function Install-DbaSqlWatch {
         Logs into server1\instance1 with Windows authentication and then installs SqlWatch in the DBA database.
 
     .EXAMPLE
-        Install-DbaSqlWatch -SqlInstance server1\instance1 -Database master -SqlCredential $cred
+        Install-DbaSqlWatch -SqlInstance server1\instance1 -Database DBA -SqlCredential $cred
 
-        Logs into server1\instance1 with SQL authentication and then installs SqlWatch in the master database.
+        Logs into server1\instance1 with SQL authentication and then installs SqlWatch in the DBA database.
 
     .EXAMPLE
         Install-DbaSqlWatch -SqlInstance sql2016\standardrtm, sql2016\sqlexpress, sql2014
