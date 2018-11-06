@@ -1,117 +1,116 @@
 #ValidationTags#CodeStyle,Messaging,FlowControl,Pipeline#
 function Install-DbaSqlWatch {
     <#
-        .SYNOPSIS
-            Installs or updates SqlWatch.
+    .SYNOPSIS
+        Installs or updates SqlWatch.
 
-        .DESCRIPTION
-            Downloads, extracts and installs or updates SqlWatch.
-            https://sqlwatch.io/
+    .DESCRIPTION
+        Downloads, extracts and installs or updates SqlWatch.
+        https://sqlwatch.io/
 
-        .PARAMETER SqlInstance
-            SQL Server name or SMO object representing the SQL Server to connect to.
+    .PARAMETER SqlInstance
+        SQL Server name or SMO object representing the SQL Server to connect to.
 
-        .PARAMETER SqlCredential
-            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+    .PARAMETER SqlCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-        .PARAMETER Database
-            Specifies the database to install SqlWatch into.s
+    .PARAMETER Database
+        Specifies the database to install SqlWatch into.s
 
-        .PARAMETER LocalFile
-            Specifies the path to a local file to install SqlWatch from. This *should* be the zipfile as distributed by the maintainers.
-            If this parameter is not specified, the latest version will be downloaded and installed from https://github.com/marcingminski/sqlwatch
+    .PARAMETER LocalFile
+        Specifies the path to a local file to install SqlWatch from. This *should* be the zipfile as distributed by the maintainers.
+        If this parameter is not specified, the latest version will be downloaded and installed from https://github.com/marcingminski/sqlwatch
 
-        .PARAMETER Force
-            If this switch is enabled, SqlWatch will be downloaded from the internet even if previously cached.
+    .PARAMETER Force
+        If this switch is enabled, SqlWatch will be downloaded from the internet even if previously cached.
 
-        .PARAMETER Confirm
-            Prompts to confirm actions
+    .PARAMETER Confirm
+        Prompts to confirm actions
 
-        .PARAMETER WhatIf
-            Shows what would happen if the command were to run. No actions are actually performed.
+    .PARAMETER WhatIf
+        Shows what would happen if the command were to run. No actions are actually performed.
 
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-        .NOTES
-            Tags: SqlWatch
-            Author: marcingminski, koglerk
-            Website: https://sqlwatch.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: MIT https://opensource.org/licenses/MIT
+    .NOTES
+        Tags: SqlWatch
+        Author: Ken K (github.com/koglerk)
+        Website: https://sqlwatch.io
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-        .LINK
-            https://dbatools.io/Install-DbaSqlWatch
+    .LINK
+        https://dbatools.io/Install-DbaSqlWatch
 
-        .EXAMPLE
-            Install-DbaSqlWatch -SqlInstance server1 -Database master
+    .EXAMPLE
+        Install-DbaSqlWatch -SqlInstance server1 -Database master
 
-            Logs into server1 with Windows authentication and then installs SqlWatch in the master database.
+        Logs into server1 with Windows authentication and then installs SqlWatch in the master database.
 
-        .EXAMPLE
-            Install-DbaSqlWatch -SqlInstance server1\instance1 -Database DBA
+    .EXAMPLE
+        Install-DbaSqlWatch -SqlInstance server1\instance1 -Database DBA
 
-            Logs into server1\instance1 with Windows authentication and then installs SqlWatch in the DBA database.
+        Logs into server1\instance1 with Windows authentication and then installs SqlWatch in the DBA database.
 
-        .EXAMPLE
-            Install-DbaSqlWatch -SqlInstance server1\instance1 -Database master -SqlCredential $cred
+    .EXAMPLE
+        Install-DbaSqlWatch -SqlInstance server1\instance1 -Database master -SqlCredential $cred
 
-            Logs into server1\instance1 with SQL authentication and then installs SqlWatch in the master database.
+        Logs into server1\instance1 with SQL authentication and then installs SqlWatch in the master database.
 
-        .EXAMPLE
-            Install-DbaSqlWatch -SqlInstance sql2016\standardrtm, sql2016\sqlexpress, sql2014
+    .EXAMPLE
+        Install-DbaSqlWatch -SqlInstance sql2016\standardrtm, sql2016\sqlexpress, sql2014
 
-            Logs into sql2016\standardrtm, sql2016\sqlexpress and sql2014 with Windows authentication and then installs SqlWatch in the master database.
+        Logs into sql2016\standardrtm, sql2016\sqlexpress and sql2014 with Windows authentication and then installs SqlWatch in the master database.
 
-        .EXAMPLE
-            $servers = "sql2016\standardrtm", "sql2016\sqlexpress", "sql2014"
-            $servers | Install-DbaSqlWatch
+    .EXAMPLE
+        $servers = "sql2016\standardrtm", "sql2016\sqlexpress", "sql2014"
+        $servers | Install-DbaSqlWatch
 
-            Logs into sql2016\standardrtm, sql2016\sqlexpress and sql2014 with Windows authentication and then installs SqlWatch in the master database.
+        Logs into sql2016\standardrtm, sql2016\sqlexpress and sql2014 with Windows authentication and then installs SqlWatch in the master database.
 
-        .EXAMPLE
-            Install-DbaSqlWatch -SqlInstance sql2016 -Branch development
+    .EXAMPLE
+        Install-DbaSqlWatch -SqlInstance sql2016 -Branch development
 
-            Installs the dev branch version of SqlWatch in the master database on sql2016 instance.
+        Installs the dev branch version of SqlWatch in the master database on sql2016 instance.
     #>
-    [CmdletBinding(SupportsShouldProcess = $true)]
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
     param (
         [Parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [object]$Database = "master",
+        [string]$Database = "master",
         [string]$LocalFile,
         [switch]$Force,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 
     begin {
 
-        $DbatoolsData = Get-DbatoolsConfigValue -FullName "Path.DbatoolsData"        
+        $DbatoolsData = Get-DbatoolsConfigValue -FullName "Path.DbatoolsData"
         $tempFolder = ([System.IO.Path]::GetTempPath()).TrimEnd("\")
         $zipfile = "$tempFolder\SqlWatch.zip"
 
         if ($LocalFile -eq $null -or $LocalFile.Length -eq 0) {
 
             if ($PSCmdlet.ShouldProcess($env:computername, "Downloading latest release from GitHub")) {
-        
+
                 # query the releases to find the latest, check and see if its cached
                 $ReleasesUrl = "https://api.github.com/repos/marcingminski/sqlwatch/releases"
                 $DownloadBase = "https://github.com/marcingminski/sqlwatch/releases/download/"
-            
+
                 Write-Message -Level Verbose -Message "Checking GitHub for the latest release."
                 $LatestReleaseUrl = (Invoke-TlsWebRequest -UseBasicParsing -Uri $ReleasesUrl | ConvertFrom-Json)[0].assets[0].browser_download_url
-            
+
                 Write-Message -Level VeryVerbose -Message "Latest release is available at $LatestReleaseUrl"
                 $LocallyCachedZip = Join-Path -Path $DbatoolsData -ChildPath $($LatestReleaseUrl -replace $DownloadBase, '');
-            
+
                 # if local cached copy exists, use it, otherwise download a new one
                 if (-not $Force) {
-                
+
                     # download from github
                     Write-Message -Level Verbose "Downloading $LatestReleaseUrl"
                     try {
@@ -136,7 +135,7 @@ function Install-DbaSqlWatch {
 
             # $LocalFile was passed, so use it
             if ($PSCmdlet.ShouldProcess($env:computername, "Copying local file to temp directory")) {
-                
+
                 if ($LocalFile.EndsWith("zip")) {
                     $LocallyCachedZip = $zipfile
                     Copy-Item -Path $LocalFile -Destination $LocallyCachedZip -Force
@@ -174,7 +173,7 @@ function Install-DbaSqlWatch {
             Write-Message -Level VeryVerbose "Deleting $LocallyCachedZip"
             Remove-Item -Path $LocallyCachedZip
         }
-        
+
     }
 
 
@@ -203,12 +202,12 @@ function Install-DbaSqlWatch {
                     }
                     $DacProfile = New-DbaDacProfile -SqlInstance $server -Database $Database -Path $LocalCacheFolder -PublishOptions $PublishOptions | Select-Object -ExpandProperty FileName
                     $PublishResults = Publish-DbaDacPackage -SqlInstance $server -Database $Database -Path $DacPacPath -PublishXml $DacProfile
-                
+
                     # parse results
                     $parens = Select-String -InputObject $PublishResults.Result -Pattern "\(([^\)]+)\)" -AllMatches
                     if ($parens.matches) {
                         $ExtractedResult = $parens.matches | Select-Object -Last 1 #| ForEach-Object { $_.value -replace '(', '' -replace ')', '' }
-                    }                
+                    }
                     [PSCustomObject]@{
                         ComputerName         = $PublishResults.ComputerName
                         InstanceName         = $PublishResults.InstanceName
