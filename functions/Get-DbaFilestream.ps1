@@ -78,12 +78,12 @@ function Get-DbaFilestream {
                 $namespace = $ognamespace | Where-Object {
                     (Get-DbaCmObject -EnableException -ComputerName $computerName -Namespace $("root\Microsoft\SQLServer\" + $_.Name) -ClassName FilestreamSettings).Count -gt 0
                 } |
-                Sort-Object Name -Descending | Select-Object -First 1
-                
+                    Sort-Object Name -Descending | Select-Object -First 1
+
                 if (-not $namespace) {
-                    $namespace = $ognamespace    
+                    $namespace = $ognamespace
                 }
-                
+
                 if ($namespace.Name) {
                     $serviceFS = Get-DbaCmObject -EnableException -ComputerName $computerName -Namespace $("root\Microsoft\SQLServer\" + $namespace.Name) -ClassName FilestreamSettings | Where-Object InstanceName -eq $instanceName | Select-Object -First 1
                 } else {
@@ -114,10 +114,10 @@ function Get-DbaFilestream {
                     Write-Message -Level Verbose -Message "A restart of the instance is pending before Filestream is configured."
                 }
             }
-            
+
             $runvalue = (Get-DbaSpConfigure -SqlInstance $server -Name FilestreamAccessLevel | Select-Object RunningValue).RunningValue
             $servicelevel = [int]$serviceFS.AccessLevel
-            
+
             [PsCustomObject]@{
                 ComputerName        = $server.NetName
                 InstanceName        = $server.ServiceName
