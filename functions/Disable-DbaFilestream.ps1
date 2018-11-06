@@ -23,17 +23,17 @@ function Disable-DbaFileStream {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .PARAMETER Force
-        Restart SQL Instance after changes.
+        Restart SQL Instance after changes. Use this parameter with care as it overrides whatif.
 
     .PARAMETER WhatIf
-        Shows what would happen if the command runs. The command is not run.
+        Shows what would happen if the command runs. The command is not run unless Force is specified.
 
     .PARAMETER Confirm
         Prompts you for confirmation before running the command.
 
     .NOTES
         Tags: Filestream
-        Author: Stuart Moore ( @napalmgram )
+        Author: Stuart Moore ( @napalmgram ) | Chrissy LeMaire ( @cl )
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
@@ -52,9 +52,11 @@ function Disable-DbaFileStream {
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "High")]
     param (
-        [Parameter(Mandatory, ValueFromPipeline)]
+        [Parameter(Mandatory, ValueFromPipelineByPropertyName)]
         [DbaInstance[]]$SqlInstance,
+        [Parameter(ValueFromPipelineByPropertyName)]
         [PSCredential]$SqlCredential,
+        [Parameter(ValueFromPipelineByPropertyName)]
         [PSCredential]$Credential,
         [switch]$Force,
         [switch]$EnableException
@@ -76,7 +78,18 @@ function Disable-DbaFileStream {
             } catch {
                 Stop-Function -Message "Failure connecting to $computer" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-
+            
+            # Instance level
+            $filestreamstate = [int]$server.Configuration.FilestreamAccessLevel.RunningValue
+            
+            if ($Force -or $PSCmdlet.ShouldProcess($instance, "Changing from '$($OutputLookup[$filestreamstate])' to '$($OutputLookup[$level])' at the instance level")) {
+                try {
+                    $null = Set-DbaSpConfigure -SqlInstance $server -Name FilestreamAccessLevel -Value $level -EnableException
+                } catch {
+                    Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
+                }
+            }
+            
             # Server level
             if ($server.IsClustered) {
                 $nodes = Get-DbaWsfcNode -ComputerName $instance -Credential $Credential
@@ -86,22 +99,11 @@ function Disable-DbaFileStream {
             } else {
                 $result = Set-FileSystemSetting -Instance $instance -Credential $Credential -FilestreamLevel $FileStreamLevel
             }
-
-            # Instance level
-            $filestreamstate = [int]$server.Configuration.FilestreamAccessLevel.ConfigValue
-
-            if ($filestreamstate -ne $level) {
-                if ($Force -or $PSCmdlet.ShouldProcess($instance, "Changing from '$($OutputLookup[$filestreamstate])' to '$($OutputLookup[$level])' at the instance level")) {
-                    $null = Set-DbaSpConfigure -SqlInstance $server -Name FilestreamAccessLevel -Value $level
-                }
-
-                if ($Force) {
-                    $restart = Restart-DbaService -ComputerName $server.ComputerName -InstanceName $server.InstanceName -Type Engine
-                }
-            } else {
-                Write-Message -Level Verbose -Message "Skipping restart as old and new FileStream values are the same"
+            
+            if ($Force) {
+                $restart = Restart-DbaService -ComputerName $instance.ComputerName -InstanceName $server.ServiceName -Type Engine -Force
             }
-
+            
             Get-DbaFilestream -SqlInstance $instance -SqlCredential $SqlCredential -Credential $Credential
 
             if ($filestreamstate -ne $level -and -not $Force) {
