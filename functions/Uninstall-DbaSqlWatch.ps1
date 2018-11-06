@@ -14,7 +14,7 @@ Function Uninstall-DbaSqlWatch {
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
     .PARAMETER Database
-        Specifies the database to install SqlWatch into.
+        Specifies the database to install SqlWatch into. Defaults to master.
 
     .PARAMETER Confirm
         Prompts to confirm actions
@@ -39,7 +39,7 @@ Function Uninstall-DbaSqlWatch {
         https://dbatools.io/Uninstall-DbaSqlWatch
 
     .EXAMPLE
-        Uninstall-DbaSqlWatch -SqlInstance server1 -Database master
+        Uninstall-DbaSqlWatch -SqlInstance server1
 
         Deletes all user objects, agent jobs, and historical data associated with SqlWatch from the master database.
 
