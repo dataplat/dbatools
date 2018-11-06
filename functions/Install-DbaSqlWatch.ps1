@@ -89,7 +89,7 @@ function Install-DbaSqlWatch {
         $tempFolder = ([System.IO.Path]::GetTempPath()).TrimEnd("\")
         $zipfile = "$tempFolder\SqlWatch.zip"
 
-        if ($LocalFile -eq $null -or $LocalFile.Length -eq 0) {
+        if (-not $LocalFile) {
 
             if ($PSCmdlet.ShouldProcess($env:computername, "Downloading latest release from GitHub")) {
 
