@@ -107,7 +107,8 @@ function Get-DbaReportingService {
                     Stop-Function -EnableException $EnableException -Message "No version Namespace on $Computer. Please note that this function is available from SQL 2005 up." -Continue
                 }
                 try {
-                    $services = Get-DbaCmObject -ComputerName $Computer -Namespace "root\Microsoft\SQLServer\ReportServer\$($namespace.Name)\$($namespaceVersion.Name)\Admin" -class MSReportServer_ConfigurationSetting -EnableException
+                    $cimQuery = "SELECT * FROM MSReportServer_ConfigurationSetting" + $searchClause
+                    $services = Get-DbaCmObject -ComputerName $Computer -Namespace "root\Microsoft\SQLServer\ReportServer\$($namespace.Name)\$($namespaceVersion.Name)\Admin" -Query $cimQuery -EnableException
                 } catch {
                     Stop-Function -EnableException $EnableException -Message "Failed to acquire services from namespace $($namespace.Name)\$($namespaceVersion.Name)." -Target $Computer -ErrorRecord $_ -Continue
                 }
