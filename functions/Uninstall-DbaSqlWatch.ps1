@@ -161,7 +161,7 @@ Function Uninstall-DbaSqlWatch {
             if ($PSCmdlet.ShouldProcess($server, "Unpublishing DACPAC")) {
                 try {
                     Write-Message -Level Verbose -Message "Unpublishing SqlWatch DACPAC from $database on $server."
-                    $connectionString = Connect-DbaInstance $server | Select-Object -ExpandProperty ConnectionContext
+                    $connectionString = $server | Select-Object -ExpandProperty ConnectionContext
                     $dacServices = New-Object Microsoft.SqlServer.Dac.DacServices $connectionString
                     $dacServices.Unregister($Database)
                 } catch {
