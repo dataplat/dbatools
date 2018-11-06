@@ -26,19 +26,19 @@ function Enable-DbaFileStream {
     .PARAMETER ShareName
         Specifies the Windows file share name to be used for storing the FILESTREAM data.
     
-	.PARAMETER EnableException
+    .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-	.PARAMETER Force
-    	Restart SQL Instance after changes.
+    .PARAMETER Force
+        Restart SQL Instance after changes.
 
     .PARAMETER WhatIf
-    	Shows what would happen if the command runs. The command is not run.
+        Shows what would happen if the command runs. The command is not run.
 
-	.PARAMETER Confirm
-	    Prompts you for confirmation before running the command.
+    .PARAMETER Confirm
+        Prompts you for confirmation before running the command.
 
     .NOTES
         Tags: Filestream
