@@ -1,22 +1,22 @@
 <#
-	The below statement stays in for every test you build.
+    The below statement stays in for every test you build.
 #>
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 
 <#
-	Unit test is required for any command added
+    Unit test is required for any command added
 #>
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
         <#
-			The $paramCount is adjusted based on the parameters your command will have.
+            The $paramCount is adjusted based on the parameters your command will have.
 
-			The $defaultParamCount is adjusted based on what type of command you are writing the test for:
-				- Commands that *do not* include SupportShouldProcess, set defaultParamCount    = 11
-				- Commands that *do* include SupportShouldProcess, set defaultParamCount        = 13
-		#>
+            The $defaultParamCount is adjusted based on what type of command you are writing the test for:
+                - Commands that *do not* include SupportShouldProcess, set defaultParamCount    = 11
+                - Commands that *do* include SupportShouldProcess, set defaultParamCount        = 13
+        #>
         $paramCount = 4
         $defaultParamCount = 11
         [object[]]$params = (Get-ChildItem function:\Get-DbaFilestream).Parameters.Keys
