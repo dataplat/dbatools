@@ -252,7 +252,7 @@ function Get-DbaService {
                         $outputServices += $service
                     }
                 }
-                if ($AdvancedProperties) {    
+                if ($AdvancedProperties) {
                     $defaults = "ComputerName", "ServiceName", "ServiceType", "InstanceName", "DisplayName", "StartName", "State", "StartMode", "Version", "SPLevel", "SkuName", "Clustered", "VSName"
                 } else {
                     $defaults = "ComputerName", "ServiceName", "ServiceType", "InstanceName", "DisplayName", "StartName", "State", "StartMode"
