@@ -331,7 +331,8 @@ function Get-DbaBackupHistory {
                                     a.software_major_version,
                                     a.DeviceType,
                                     a.is_copy_only,
-                                    a.last_recovery_fork_guid
+                                    a.last_recovery_fork_guid,
+                                    a.recovery_model
                                 FROM (SELECT
                                   RANK() OVER (ORDER BY backupset.last_lsn desc, backupset.backup_finish_date DESC) AS 'BackupSetRank',
                                   backupset.database_name AS [Database],
@@ -581,7 +582,7 @@ function Get-DbaBackupHistory {
                     $historyObject.SoftwareVersionMajor = $commonFields.Software_Major_Version
                     $historyObject.IsCopyOnly = ($commonFields.is_copy_only -eq 1)
                     $historyObject.LastRecoveryForkGuid = $commonFields.last_recovery_fork_guid
-                    $historyObject.RecoveryModel = $commonFields.Recovery_Model
+                    $historyObject.RecoveryModel = $commonFields.recovery_model
                     $historyObject
                 }
                 $groupResults | Sort-Object -Property LastLsn, Type
