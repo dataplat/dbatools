@@ -39,15 +39,19 @@ function Disable-DbaFilestream {
         License: MIT https://opensource.org/licenses/MIT
 
     .EXAMPLE
-        Disable-DbaFilestream -SqlInstance server1\instance2 -FileStreamLevel T-Sql Only
-        Disable-DbaFilestream -SqlInstance server1\instance2 -FileStreamLevel 1
+        PS C:\> Disable-DbaFilestream -SqlInstance server1\instance2
 
-        These commands are functionally equivalent, both will set Filestream level on server1\instance2 to T-Sql Only
+        Prompts for confirmation. Disables filestream on the service and instance levels.
 
     .EXAMPLE
-        Get-DbaFilestream -SqlInstance server1\instance2, server5\instance5 , prod\hr | Where-Object {$_.FileSteamStateID -gt 0} | Disable-DbaFilestream -FileStreamLevel 0 -Force
+        PS C:\> Disable-DbaFilestream -SqlInstance server1\instance2 -Confirm:$false
 
-        Using this pipeline you can scan a range of SQL instances and disable filestream on only those on which it's enabled
+        Does not prompt for confirmation. Disables filestream on the service and instance levels.
+    
+    .EXAMPLE
+        PS C:\> Get-DbaFilestream -SqlInstance server1\instance2, server5\instance5, prod\hr | Where-Object InstanceAccessLevel -gt 0 | Disable-DbaFilestream -Force
+
+        Using this pipeline you can scan a range of SQL instances and disable filestream on only those on which it's enabled.
 
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "High")]
@@ -88,7 +92,7 @@ function Disable-DbaFilestream {
                 } catch {
                     Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
                 }
-            }
+            
             
             # Server level
             if ($server.IsClustered) {
@@ -108,6 +112,7 @@ function Disable-DbaFilestream {
 
             if ($filestreamstate -ne $level -and -not $Force) {
                 Write-Message -Level Warning -Message "[$instance] $result"
+                }
             }
         }
     }
