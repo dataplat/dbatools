@@ -67,10 +67,10 @@ function Export-DbaDacPackage {
         Exports the dacpac for SharePoint_Config on sql2016 to $home\Documents\SharePoint_Config.dacpac
 
     .EXAMPLE
-        PS C:\> $options = New-DbaDacOption -Type Dacpac
+        PS C:\> $options = New-DbaDacOption -Type Dacpac -Action Export
         PS C:\> $options.ExtractAllTableData = $true
         PS C:\> $options.CommandTimeout = 0
-        PS C:\> Export-DbaDacPackage -SqlInstance sql2016 -Database DB1 -Options
+        PS C:\> Export-DbaDacPackage -SqlInstance sql2016 -Database DB1 -Options $options
 
         Uses DacOption object to set the CommandTimeout to 0 then extracts the dacpac for DB1 on sql2016 to $home\Documents\DB1.dacpac including all table data.
 
