@@ -94,24 +94,24 @@ function Disable-DbaFilestream {
                 }
             
             
-            # Server level
-            if ($server.IsClustered) {
-                $nodes = Get-DbaWsfcNode -ComputerName $instance -Credential $Credential
-                foreach ($node in $nodes.Name) {
-                    $result = Set-FileSystemSetting -Instance $node -Credential $Credential -FilestreamLevel $FileStreamLevel
+                # Server level
+                if ($server.IsClustered) {
+                    $nodes = Get-DbaWsfcNode -ComputerName $instance -Credential $Credential
+                    foreach ($node in $nodes.Name) {
+                        $result = Set-FileSystemSetting -Instance $node -Credential $Credential -FilestreamLevel $FileStreamLevel
+                    }
+                } else {
+                    $result = Set-FileSystemSetting -Instance $instance -Credential $Credential -FilestreamLevel $FileStreamLevel
                 }
-            } else {
-                $result = Set-FileSystemSetting -Instance $instance -Credential $Credential -FilestreamLevel $FileStreamLevel
-            }
             
-            if ($Force) {
-                $restart = Restart-DbaService -ComputerName $instance.ComputerName -InstanceName $server.ServiceName -Type Engine -Force
-            }
+                if ($Force) {
+                    $restart = Restart-DbaService -ComputerName $instance.ComputerName -InstanceName $server.ServiceName -Type Engine -Force
+                }
             
-            Get-DbaFilestream -SqlInstance $instance -SqlCredential $SqlCredential -Credential $Credential
+                Get-DbaFilestream -SqlInstance $instance -SqlCredential $SqlCredential -Credential $Credential
 
-            if ($filestreamstate -ne $level -and -not $Force) {
-                Write-Message -Level Warning -Message "[$instance] $result"
+                if ($filestreamstate -ne $level -and -not $Force) {
+                    Write-Message -Level Warning -Message "[$instance] $result"
                 }
             }
         }
