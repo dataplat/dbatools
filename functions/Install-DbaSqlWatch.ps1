@@ -200,20 +200,17 @@ function Install-DbaSqlWatch {
                     # parse results
                     $parens = Select-String -InputObject $PublishResults.Result -Pattern "\(([^\)]+)\)" -AllMatches
                     if ($parens.matches) {
-                        $ExtractedResult = $parens.matches | Select-Object -Last 1 #| ForEach-Object { $_.value -replace '(', '' -replace ')', '' }
+                        $ExtractedResult = $parens.matches | Select-Object -Last 1
                     }
-                    [PSCustomObject]@{
-                        ComputerName         = $PublishResults.ComputerName
-                        InstanceName         = $PublishResults.InstanceName
-                        SqlInstance          = $PublishResults.SqlInstance
-                        Database             = $PublishResults.Database
-                        Dacpac               = $PublishResults.Dacpac
-                        PublishXml           = $PublishResults.PublishXml
-                        Result               = $ExtractedResult
-                        FullResult           = $PublishResults.Result
-                        DeployOptions        = $PublishResults.DeployOptions
-                        SqlCmdVariableValues = $PublishResults.SqlCmdVariableValues
-                    } | Select-DefaultView -ExcludeProperty Dacpac, PublishXml, FullResult, DeployOptions, SqlCmdVariableValues
+
+                    $baseres = @{
+                        ComputerName = $PublishResults.ComputerName
+                        InstanceName = $PublishResults.InstanceName
+                        SqlInstance  = $PublishResults.SqlInstance
+                        Database     = $PublishResults.Database
+                        Status       = $ExtractedResult
+                    }
+                    [PSCustomObject]$baseres
                 } catch {
                     Stop-Function -Message "DACPAC failed to publish to $database on $instance." -ErrorRecord $_ -Target $instance -Continue
                 }
