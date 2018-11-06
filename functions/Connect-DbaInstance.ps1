@@ -298,8 +298,8 @@ function Connect-DbaInstance {
                 }
 
                 try {
-                    if ($null -ne $Credential.username) {
-                        $username = ($Credential.username).TrimStart("\")
+                    if ($null -ne $Credential.UserName) {
+                        $username = ($Credential.UserName).TrimStart("\")
 
                         if ($username -like "*\*") {
                             $username = $username.Split("\")[1]
@@ -321,12 +321,19 @@ function Connect-DbaInstance {
                     } elseif ($authtype -eq "Windows Authentication with Credential") {
                         # Make it connect in a natural way, hard to explain.
                         $null = $server.IsMemberOfWsfcCluster
+                        if ($server.ConnectionContext.IsOpen -eq $false) {
+                            $server.ConnectionContext.Connect()
+                        }
                     } else {
                         $server.ConnectionContext.SqlConnectionObject.Open()
                     }
                 } catch {
-                    $message = $_.Exception.InnerException.InnerException
-                    $message = $message.ToString()
+                    $originalException = $_.Exception
+                    try {
+                        $message = $originalException.InnerException.InnerException.ToString()
+                    } catch {
+                        $message = $originalException.ToString()
+                    }
                     $message = ($message -Split '-->')[0]
                     $message = ($message -Split 'at System.Data.SqlClient')[0]
                     $message = ($message -Split 'at System.Data.ProviderBase')[0]
