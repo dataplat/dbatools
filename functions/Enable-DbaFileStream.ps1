@@ -48,15 +48,15 @@ function Enable-DbaFilestream {
         License: MIT https://opensource.org/licenses/MIT
 
     .EXAMPLE
-        Enable-DbaFilestream -SqlInstance server1\instance2 -FileStreamLevel TSql
-        Enable-DbaFilestream -SqlInstance server1\instance2 -FileStreamLevel 1
+        PS C:\> Enable-DbaFilestream -SqlInstance server1\instance2 -FileStreamLevel TSql
+        PS C:\> Enable-DbaFilestream -SqlInstance server1\instance2 -FileStreamLevel 1
 
         These commands are functionally equivalent, both will set Filestream level on server1\instance2 to T-Sql Only
 
     .EXAMPLE
-        Get-DbaFilestream -SqlInstance server1\instance2, server5\instance5 , prod\hr | Where-Object {$_.FileSteamStateID -gt 0} | Enable-DbaFilestream -FileStreamLevel 0 -Force
+        PS C:\> Get-DbaFilestream -SqlInstance server1\instance2, server5\instance5, prod\hr | Where-Object InstanceAccessLevel -eq 0 | Enable-DbaFilestream -FileStreamLevel TSqlIoStreamingRemoteClient -Force
 
-        Using this pipeline you can scan a range of SQL instances and disable filestream on only those on which it's enabled
+        Using this pipeline you can scan a range of SQL instances and enable filestream on only those on which it's disabled.
 
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Medium")]
@@ -108,38 +108,38 @@ function Enable-DbaFilestream {
                 Stop-Function -Message "Failure connecting to $computer" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
             
-            # Server level
-            if ($server.IsClustered) {
-                $nodes = Get-DbaWsfcNode -ComputerName $instance
-                foreach ($node in $nodes.Name) {
-                    $result = Set-FileSystemSetting -Instance $node -Credential $Credential -ShareName $ShareName -FilestreamLevel $level
-                }
-            } else {
-                $result = Set-FileSystemSetting -Instance $instance -Credential $Credential -ShareName $ShareName -FilestreamLevel $level
-            }
-            
-            # Instance level
-            if ($level -eq 3) {
-                $level = 2
-            }
-            
             $filestreamstate = [int]$server.Configuration.FilestreamAccessLevel.ConfigValue
-
+            
             if ($Force -or $PSCmdlet.ShouldProcess($instance, "Changing from '$($OutputLookup[$filestreamstate])' to '$($OutputLookup[$level])' at the instance level")) {
+                # Server level
+                if ($server.IsClustered) {
+                    $nodes = Get-DbaWsfcNode -ComputerName $instance
+                    foreach ($node in $nodes.Name) {
+                        $result = Set-FileSystemSetting -Instance $node -Credential $Credential -ShareName $ShareName -FilestreamLevel $level
+                    }
+                } else {
+                    $result = Set-FileSystemSetting -Instance $instance -Credential $Credential -ShareName $ShareName -FilestreamLevel $level
+                }
+                
+                # Instance level
+                if ($level -eq 3) {
+                    $level = 2
+                }
+                
                 try {
                     $null = Set-DbaSpConfigure -SqlInstance $server -Name FilestreamAccessLevel -Value $level -EnableException
                 } catch {
                     Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
                 }
-            }
-            
-            if ($Force) {
-                $restart = Restart-DbaService -ComputerName $server.ComputerName -InstanceName $server.ServiceName -Type Engine -Force
-            }
-            
-            Get-DbaFilestream -SqlInstance $instance -SqlCredential $SqlCredential -Credential $Credential
-            if ($filestreamstate -ne $level -and -not $Force) {
-                Write-Message -Level Warning -Message "[$instance] $result"
+                
+                if ($Force) {
+                    $restart = Restart-DbaService -ComputerName $server.ComputerName -InstanceName $server.ServiceName -Type Engine -Force
+                }
+                
+                Get-DbaFilestream -SqlInstance $instance -SqlCredential $SqlCredential -Credential $Credential
+                if ($filestreamstate -ne $level -and -not $Force) {
+                    Write-Message -Level Warning -Message "[$instance] $result"
+                }
             }
         }
     }

@@ -34,9 +34,14 @@ function Get-DbaFilestream {
         https://dbatools.io/Get-DbaFilestream
 
     .EXAMPLE
-        Get-DbaFilestream -SqlInstance server1\instance2
+        PS C:\> Get-DbaFilestream -SqlInstance server1\instance2
 
         Will return the status of Filestream configuration for the service and instance server1\instance2
+    
+    .EXAMPLE
+        PS C:\> Get-DbaFilestream -SqlInstance server1\instance2 -SqlCredential sqladmin
+
+        Prompts for the password to the SQL Login "sqladmin" then returns the status of Filestream configuration for the service and instance server1\instance2
     #>
     [CmdletBinding()]
     param (
