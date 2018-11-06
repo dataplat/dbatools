@@ -536,7 +536,7 @@ function Find-DbaInstance {
             [CmdletBinding()]
             param (
                 [string]$DomainController,
-                [object]$Credential,
+                [Pscredential]$Credential,
                 [string]$ComputerName = "*",
                 [switch]$GetSPN
             )
