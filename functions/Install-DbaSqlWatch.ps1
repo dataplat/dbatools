@@ -38,7 +38,6 @@ function Install-DbaSqlWatch {
     .NOTES
         Tags: SqlWatch
         Author: Ken K (github.com/koglerk)
-        Website: https://sqlwatch.io
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
