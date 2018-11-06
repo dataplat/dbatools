@@ -25,7 +25,7 @@ function Get-DbaFilestream {
 
     .NOTES
         Tags: Filestream
-        Author: Stuart Moore ( @napalmgram )
+        Author: Stuart Moore ( @napalmgram ) | Chrissy LeMaire ( @cl )
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
@@ -109,17 +109,22 @@ function Get-DbaFilestream {
                     Write-Message -Level Verbose -Message "A restart of the instance is pending before Filestream is configured."
                 }
             }
+            
+            $runvalue = (Get-DbaSpConfigure -SqlInstance $server -Name FilestreamAccessLevel | Select-Object RunningValue).RunningValue
+            $servicelevel = [int]$serviceFS.AccessLevel
+            
             [PsCustomObject]@{
                 ComputerName        = $server.NetName
                 InstanceName        = $server.ServiceName
                 SqlInstance         = $server.DomainInstanceName
-                InstanceAccess      = $idInstanceFS[[int]$instanceFS.RunningValue]
-                ServiceAccess       = $idServiceFS[[int]$serviceFS.AccessLevel]
+                InstanceAccess      = $idInstanceFS[$runvalue]
+                ServiceAccess       = $idServiceFS[$servicelevel]
                 ServiceShareName    = $serviceFS.ShareName
                 InstanceAccessLevel = $instanceFS.RunningValue
                 ServiceAccessLevel  = $serviceFS.AccessLevel
-                PendingRestart      = $pendingRestart
-            } | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, InstanceAccess, ServiceAccess, ServiceShareName, PendingRestart
+                Credential          = $Credential
+                SqlCredential       = $SqlCredential
+            } | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, InstanceAccess, ServiceAccess, ServiceShareName
         }
     }
 }
