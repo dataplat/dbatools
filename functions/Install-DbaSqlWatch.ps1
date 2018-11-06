@@ -15,7 +15,7 @@ function Install-DbaSqlWatch {
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
     .PARAMETER Database
-        Specifies the database to install SqlWatch into. Defaults to master. 
+        Specifies the database to install SqlWatch into. Defaults to master.
 
     .PARAMETER LocalFile
         Specifies the path to a local file to install SqlWatch from. This *should* be the zipfile as distributed by the maintainers.
