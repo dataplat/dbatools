@@ -34,7 +34,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
         It "Returns an object with the expected properties" {
             $result = $results[0]
-            $ExpectedProps = 'SqlInstance,InstanceName,ComputerName,Dacpac,PublishXml,Database,Result,DeployOptions,SqlCmdVariableValues'.Split(',')
+            $ExpectedProps = 'SqlInstance,InstanceName,ComputerName,Database,Status'.Split(',')
             ($result.PsObject.Properties.Name | Sort-Object) | Should Be ($ExpectedProps | Sort-Object)
         }
         It "Installed tables" {
