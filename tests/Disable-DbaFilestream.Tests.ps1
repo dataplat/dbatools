@@ -31,26 +31,14 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
         $OriginalFileStream = Get-DbaFileStream -SqlInstance $script:instance1
     }
     AfterAll {
-        Set-DbaFileStream -SqlInstance $script:instance1 -FileStreamLevel $OriginalFileStream.FileStreamStateId -force
+        Set-DbaFileStream -SqlInstance $script:instance1 -FileStreamLevel $OriginalFileStream.InstanceAccessLevel -force
     }
-
-    Context "Skipping 'No Change'" {
-        $output = Set-DbaFileStream -SqlInstance $script:instance1 -FileStreamLevel $OriginalFileStream.FileStreamStateId -Force -WarningVariable warnvar -WarningAction silentlyContinue -ErrorVariable errvar -Erroraction silentlyContinue
-        It "Should Do Nothing" {
-            $output.RestartStatus | Should Be 'No restart, as no change in values'
-        }
-    }
-
+    
     Context "Changing FileStream Level" {
         $NewLevel = ($OriginalFileStream.FileStreamStateId + 1) % 3 #Move it on one, but keep it less than 4 with modulo division
-        $null = Set-DbaFileStream -SqlInstance $script:instance1 -FileStreamLevel $NewLevel -Force -WarningVariable warnvar -WarningAction silentlyContinue -ErrorVariable errvar -Erroraction silentlyContinue
-        $output = Get-DbaFileStream -SqlInstance $script:instance1
+        $results = Set-DbaFileStream -SqlInstance $script:instance1 -FileStreamLevel $NewLevel -Force -WarningVariable warnvar -WarningAction silentlyContinue -ErrorVariable errvar -Erroraction silentlyContinue
         It "Should have changed the FileStream Level" {
-            $output.FileStreamStateId | Should be $NewLevel
-        }
-        It "Should have restarted the Instance" {
-            $results = Get-DbaUptime -SqlInstance $script:instance1
-            ((get-Date) - $results.SqlStartTime).Minutes | Should BeLessThan 3
+            $results.InstanceAccessLevel | Should be $NewLevel
         }
     }
 }
