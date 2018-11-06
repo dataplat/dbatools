@@ -112,21 +112,20 @@ function Get-DbaReportingService {
 					Stop-Function -EnableException $EnableException -Message "Failed to acquire services from namespace $($namespace.Name)\$($namespaceVersion.Name)." -Target $Computer -ErrorRecord $_ -Continue
 				}
 				ForEach ($service in $services) {
-					Add-Member -Force -InputObject $service -MemberType NoteProperty -Name ComputerName -Value $Computer
-					Add-Member -Force -InputObject $service -MemberType NoteProperty -Name ServiceType -Value 'SSRS'
-					Add-Member -Force -InputObject $service -MemberType AliasProperty -Name StartName -Value WindowsServiceIdentityActual
-                    
-					try {
-						$service32 = Get-DbaCmObject -ComputerName $Computer -Namespace "root\cimv2" -Query "SELECT * FROM Win32_Service WHERE Name = '$($service.ServiceName)'" -EnableException
-					} catch {
-						Stop-Function -EnableException $EnableException -Message "Failed to acquire services32" -Target $Computer -ErrorRecord $_ -Continue
-					}
-					Add-Member -Force -InputObject $service -MemberType NoteProperty -Name State -Value $service32.State
-					Add-Member -Force -InputObject $service -MemberType NoteProperty -Name StartMode -Value $service32.StartMode
-					Add-Member -Force -InputObject $service -MemberType NoteProperty -Name DisplayName -Value $service32.DisplayName
-
-					if (!$InstanceName -or $instance -in $InstanceName) {
+					if (!$InstanceName -or $service.InstanceName -in $InstanceName) {
 						#Add other properties and methods
+						Add-Member -Force -InputObject $service -MemberType NoteProperty -Name ComputerName -Value $Computer
+						Add-Member -Force -InputObject $service -MemberType NoteProperty -Name ServiceType -Value 'SSRS'
+						Add-Member -Force -InputObject $service -MemberType AliasProperty -Name StartName -Value WindowsServiceIdentityActual
+						
+						try {
+							$service32 = Get-DbaCmObject -ComputerName $Computer -Namespace "root\cimv2" -Query "SELECT * FROM Win32_Service WHERE Name = '$($service.ServiceName)'" -EnableException
+						} catch {
+							Stop-Function -EnableException $EnableException -Message "Failed to acquire services32" -Target $Computer -ErrorRecord $_ -Continue
+						}
+						Add-Member -Force -InputObject $service -MemberType NoteProperty -Name State -Value $service32.State
+						Add-Member -Force -InputObject $service -MemberType NoteProperty -Name StartMode -Value $service32.StartMode
+						Add-Member -Force -InputObject $service -MemberType NoteProperty -Name DisplayName -Value $service32.DisplayName
 						Add-Member -Force -InputObject $service -NotePropertyName ServicePriority -NotePropertyValue 100
 						Add-Member -Force -InputObject $service -MemberType ScriptMethod -Name "Stop" -Value {
 							param ([bool]$Force = $false)

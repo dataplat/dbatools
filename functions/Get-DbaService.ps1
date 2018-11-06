@@ -149,8 +149,12 @@ function Get-DbaService {
             $Server = Resolve-DbaNetworkName -ComputerName $Computer -Credential $credential
             if ($Server.FullComputerName) {
                 $Computer = $server.FullComputerName
-                Write-Message -Level Verbose -Message "Getting SQL Reporting Server services on $Computer" -Target $Computer
-                $reportingServices = Get-DbaReportingService -ComputerName $Computer
+                $outputServices = @()
+                if (!$Type -or 'SSRS' -in $Type) {
+                    Write-Message -Level Verbose -Message "Getting SQL Reporting Server services on $Computer" -Target $Computer
+                    $reportingServices = Get-DbaReportingService -ComputerName $Computer -InstanceName $InstanceName -Credential $Credential -ServiceName $ServiceName
+                    $outputServices += $reportingServices
+                }
                 Write-Message -Level Verbose -Message "Getting SQL Server namespace on $Computer" -Target $Computer
                 try { $namespaces = Get-DbaCmObject -ComputerName $Computer -NameSpace root\Microsoft\SQLServer -Query "Select Name FROM __NAMESPACE WHERE Name Like 'ComputerManagement%'" -EnableException -Credential $credential | Sort-Object Name -Descending }
                 catch { }
@@ -172,9 +176,6 @@ function Get-DbaService {
                         }
                     }
                 }
-                $outputServices = @()
-                #add all services from the reporting namespace
-                $outputServices += $reportingServices
                 #use highest namespace available
                 $services = ($servicesTemp | Group-Object Name | ForEach-Object { $_.Group | Sort-Object Namespace -Descending | Select-Object -First 1 }).Service
                 #remove services returned by the SSRS namespace
@@ -257,7 +258,7 @@ function Get-DbaService {
                     $defaults = "ComputerName", "ServiceName", "ServiceType", "InstanceName", "DisplayName", "StartName", "State", "StartMode"
                 }
                 if ($outputServices) {
-                    Select-DefaultView -InputObject $outputServices -Property $defaults -TypeName DbaSqlService
+                    $outputServices | Select-DefaultView -Property $defaults -TypeName DbaSqlService
                 } else {
                     Stop-Function -Message "No services found in relevant namespaces on $Computer. Please note that this function is available from SQL 2005 up."
                 }
