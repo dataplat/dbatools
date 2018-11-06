@@ -28,15 +28,15 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 <#
 Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
-        $OriginalFileStream = Get-DbaFileStream -SqlInstance $script:instance1
+        $OriginalFileStream = Get-DbaFilestream -SqlInstance $script:instance1
     }
     AfterAll {
-        Set-DbaFileStream -SqlInstance $script:instance1 -FileStreamLevel $OriginalFileStream.InstanceAccessLevel -force
+        Set-DbaFilestream -SqlInstance $script:instance1 -FileStreamLevel $OriginalFileStream.InstanceAccessLevel -force
     }
     
     Context "Changing FileStream Level" {
         $NewLevel = ($OriginalFileStream.FileStreamStateId + 1) % 3 #Move it on one, but keep it less than 4 with modulo division
-        $results = Set-DbaFileStream -SqlInstance $script:instance1 -FileStreamLevel $NewLevel -Force -WarningVariable warnvar -WarningAction silentlyContinue -ErrorVariable errvar -Erroraction silentlyContinue
+        $results = Set-DbaFilestream -SqlInstance $script:instance1 -FileStreamLevel $NewLevel -Force -WarningVariable warnvar -WarningAction silentlyContinue -ErrorVariable errvar -Erroraction silentlyContinue
         It "Should have changed the FileStream Level" {
             $results.InstanceAccessLevel | Should be $NewLevel
         }
