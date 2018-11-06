@@ -6,12 +6,12 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
         <#
-			The $paramCount is adjusted based on the parameters your command will have.
+            The $paramCount is adjusted based on the parameters your command will have.
 
-			The $defaultParamCount is adjusted based on what type of command you are writing the test for:
-				- Commands that *do not* include SupportShouldProcess, set defaultParamCount    = 11
-				- Commands that *do* include SupportShouldProcess, set defaultParamCount        = 13
-		#>
+            The $defaultParamCount is adjusted based on what type of command you are writing the test for:
+                - Commands that *do not* include SupportShouldProcess, set defaultParamCount    = 11
+                - Commands that *do* include SupportShouldProcess, set defaultParamCount        = 13
+        #>
         $paramCount = 7
         $defaultParamCount = 13
         [object[]]$params = (Get-ChildItem function:\Enable-DbaFilestream).Parameters.Keys
