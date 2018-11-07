@@ -81,17 +81,19 @@ function Install-DbaSqlWatch {
         [switch]$Force,
         [switch]$EnableException
     )
-
     begin {
-
+        $stepCounter = 0
+        $totalSteps = 3
+        $activity = "Installing SQLWatch"
+        
         $DbatoolsData = Get-DbatoolsConfigValue -FullName "Path.DbatoolsData"
         $tempFolder = ([System.IO.Path]::GetTempPath()).TrimEnd("\")
         $zipfile = "$tempFolder\SqlWatch.zip"
 
         if (-not $LocalFile) {
-
             if ($PSCmdlet.ShouldProcess($env:computername, "Downloading latest release from GitHub")) {
-
+                Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Downloading latest release from GitHub"
+                
                 # query the releases to find the latest, check and see if its cached
                 $ReleasesUrl = "https://api.github.com/repos/marcingminski/sqlwatch/releases"
                 $DownloadBase = "https://github.com/marcingminski/sqlwatch/releases/download/"
@@ -142,7 +144,6 @@ function Install-DbaSqlWatch {
 
         # expand the zip file
         if ($PSCmdlet.ShouldProcess($env:computername, "Unpacking zipfile")) {
-
             Write-Message -Level VeryVerbose "Unblocking $LocallyCachedZip"
             Unblock-File $LocallyCachedZip -ErrorAction SilentlyContinue
             $LocalCacheFolder = Split-Path $LocallyCachedZip -Parent
@@ -167,32 +168,30 @@ function Install-DbaSqlWatch {
             Write-Message -Level VeryVerbose "Deleting $LocallyCachedZip"
             Remove-Item -Path $LocallyCachedZip
         }
-
     }
-
-
     process {
         if (Test-FunctionInterrupt) {
             return
         }
 
         foreach ($instance in $SqlInstance) {
-            if ($PSCmdlet.ShouldProcess($instance, "Installing SqlWatch")) {
+            if ($PSCmdlet.ShouldProcess($instance, "Installing SqlWatch on $Database")) {
                 try {
                     $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
                 } catch {
                     Stop-Function -Message "Failure." -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
                 }
-
-                Write-Message -Level Verbose -Message "Starting installing/updating SqlWatch in $database on $instance."
+                
+                Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Starting installing/updating SqlWatch in $database on $instance"
 
                 try {
-
                     # create a publish profile and publish DACPAC
                     $DacPacPath = Get-ChildItem -Filter "SqlWatch.dacpac" -Path $LocalCacheFolder -Recurse | Select-Object -ExpandProperty FullName
                     $PublishOptions = @{
                         RegisterDataTierApplication = $true
                     }
+                    
+                    Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Publishing SqlWatch dacpac to $database on $instance"
                     $DacProfile = New-DbaDacProfile -SqlInstance $server -Database $Database -Path $LocalCacheFolder -PublishOptions $PublishOptions | Select-Object -ExpandProperty FileName
                     $PublishResults = Publish-DbaDacPackage -SqlInstance $server -Database $Database -Path $DacPacPath -PublishXml $DacProfile
 
@@ -201,15 +200,14 @@ function Install-DbaSqlWatch {
                     if ($parens.matches) {
                         $ExtractedResult = $parens.matches | Select-Object -Last 1
                     }
-
-                    $baseres = @{
+                    
+                    [PSCustomObject]@{
                         ComputerName = $PublishResults.ComputerName
                         InstanceName = $PublishResults.InstanceName
                         SqlInstance  = $PublishResults.SqlInstance
                         Database     = $PublishResults.Database
                         Status       = $ExtractedResult
                     }
-                    [PSCustomObject]$baseres
                 } catch {
                     Stop-Function -Message "DACPAC failed to publish to $database on $instance." -ErrorRecord $_ -Target $instance -Continue
                 }
