@@ -1,4 +1,4 @@
-function Get-DbaSqlMemoryCondition {
+function Get-DbaBufferUsage {
     <#
     .SYNOPSIS
         Determine the memory conditions from SQL Server ring buffers.
