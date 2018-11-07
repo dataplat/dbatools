@@ -63,6 +63,7 @@ function Invoke-DbaXeReplay {
 
 #>
     [Cmdletbinding()]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseOutputTypeCorrectly", "", Justification = "PSSA Rule Ignored by BOH")]
     param (
         [Parameter(Mandatory)]
         [Alias("ServerInstance", "SqlServer")]
