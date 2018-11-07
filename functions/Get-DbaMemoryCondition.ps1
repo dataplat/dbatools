@@ -1,4 +1,4 @@
-function Get-DbaBufferUsage {
+function Get-DbaMemoryCondition {
     <#
     .SYNOPSIS
         Determine the memory conditions from SQL Server ring buffers.
@@ -23,21 +23,20 @@ function Get-DbaBufferUsage {
     .NOTES
         Tags: Memory
         Author: IJeb Reitsma
-
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaSqlMemoryCondition
+        https://dbatools.io/Get-DbaMemoryCondition
 
     .EXAMPLE
-        PS C:\> Get-DbaSqlMemoryCondition -SqlInstance sqlserver2014a
+        PS C:\> Get-DbaMemoryCondition -SqlInstance sqlserver2014a
 
         Returns the memory conditions for the selected instance
 
     .EXAMPLE
-        PS C:\> Get-DbaCmsRegServer -SqlInstance sqlserver2014a -Group GroupName | Get-DbaSqlMemoryCondition | Out-GridView
+        PS C:\> Get-DbaCmsRegServer -SqlInstance sqlserver2014a -Group GroupName | Get-DbaMemoryCondition | Out-GridView
 
         Returns the memory conditions for a group of servers from SQL Server Central Management Server (CMS). Send output to GridView.
 #>
