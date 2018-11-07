@@ -26,7 +26,6 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
         AfterAll {
             Remove-DbaDatabase -SqlInstance $script:instance2 -Database $database -Confirm:$false
-            Get-DbaAgentJob -SqlInstance $script:instance2 | Where-Object {$PSItem.Name -like "DBA-PERF-*" } | Remove-DbaAgentJob
         }
 
         It "Removed all tables" {
