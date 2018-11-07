@@ -127,11 +127,11 @@ function Stop-DbaService {
                     Type         = 'Agent'
                 }
                 if ($Credential) { $serviceParams.Credential = $Credential }
-                if ($EnableException) { $serviceParams.Silent = $EnableException }
+                if ($EnableException) { $serviceParams.EnableException = $EnableException }
                 $processArray += @(Get-DbaService @serviceParams)
             }
         }
-        if ($PSCmdlet.ShouldProcess("$ProcessArray", "Stoping Service")) {
+        if ($PSCmdlet.ShouldProcess("$ProcessArray", "Stopping Service")) {
             if ($processArray) {
                 Update-ServiceStatus -InputObject $processArray -Action 'stop' -Timeout $Timeout -EnableException $EnableException
             } else {
