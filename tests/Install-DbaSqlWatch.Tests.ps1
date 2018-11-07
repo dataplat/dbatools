@@ -23,7 +23,6 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $database = "master"
         }
         AfterAll {
-            Remove-DbaDatabase -SqlInstance $script:instance2 -Database $database -Confirm:$false
             Get-DbaAgentJob -SqlInstance $script:instance2 | Where-Object {$PSItem.Name -like "DBA-PERF-*" } | Remove-DbaAgentJob
         }
 
