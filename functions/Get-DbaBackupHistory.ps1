@@ -245,6 +245,9 @@ function Get-DbaBackupHistory {
 
             if ($last) {
                 foreach ($db in $databases) {
+                    if ($since) {
+                        $sinceSqlFilter = "AND backupset.backup_finish_date >= '$($Since.ToString("yyyy-MM-ddTHH:mm:ss"))'"
+                    }
                     $forkCheckSql = "
                         SELECT
                             database_name,
@@ -256,6 +259,7 @@ function Get-DbaBackupHistory {
                             count(1) as 'backupcount'
                         FROM msdb.dbo.backupset
                         WHERE database_name='$($db.name)'
+                        $sinceSqlFilter
                         GROUP by database_name, last_recovery_fork_guid
                         "
 
@@ -269,7 +273,7 @@ function Get-DbaBackupHistory {
                     }
                     #Get the full and build upwards
                     $allBackups = @()
-                    $allBackups += $fullDb = Get-DbaBackupHistory -SqlInstance $server -Database $db.Name -LastFull -raw:$Raw -DeviceType $DeviceType -IncludeCopyOnly:$IncludeCopyOnly
+                    $allBackups += $fullDb = Get-DbaBackupHistory -SqlInstance $server -Database $db.Name -LastFull -raw:$Raw -DeviceType $DeviceType -IncludeCopyOnly:$IncludeCopyOnly -Since $since
                     $diffDb = Get-DbaBackupHistory -SqlInstance $server -Database $db.Name -LastDiff -raw:$Raw -DeviceType $DeviceType -IncludeCopyOnly:$IncludeCopyOnly
                     if ($diffDb.LastLsn -gt $fullDb.LastLsn -and $diffDb.DatabaseBackupLSN -eq $fullDb.CheckPointLSN ) {
                         Write-Message -Level Verbose -Message "Valid Differential backup "
@@ -306,34 +310,41 @@ function Get-DbaBackupHistory {
                 $sql = ""
                 foreach ($db in $databases) {
                     Write-Message -Level Verbose -Message "Processing $($db.name)" -Target $db
+                    if ($since) {
+                        $sinceSqlFilter = "AND backupset.backup_finish_date >= '$($Since.ToString("yyyy-MM-ddTHH:mm:ss"))'"
+                    }
                     $forkCheckSql = "
-                    SELECT
-                        database_name,
-                        MIN(database_backup_lsn) as 'FirstLsn',
-                        MAX(database_backup_lsn) as 'FinalLsn',
-                        MIN(backup_start_date) as 'MinDate',
-                        MAX(backup_finish_date) as 'MaxDate',
-                        last_recovery_fork_guid 'RecFork',
-                        count(1) as 'backupcount'
-                    FROM msdb.dbo.backupset
-                    WHERE database_name='$($db.name)'
-                    GROUP by database_name, last_recovery_fork_guid
+                        SELECT
+                            database_name,
+                            MIN(database_backup_lsn) as 'FirstLsn',
+                            MAX(database_backup_lsn) as 'FinalLsn',
+                            MIN(backup_start_date) as 'MinDate',
+                            MAX(backup_finish_date) as 'MaxDate',
+                            last_recovery_fork_guid 'RecFork',
+                            count(1) as 'backupcount'
+                        FROM msdb.dbo.backupset
+                        WHERE database_name='$($db.name)'
+                        $sinceSqlFilter
+                        GROUP by database_name, last_recovery_fork_guid
                     "
 
-                $results = $server.ConnectionContext.ExecuteWithResults($forkCheckSql).Tables.Rows
-                if ($results.count -gt 1){
-                    Write-Message -Message "Found backups from multiple recovery forks for $($db.name) on $($server.name), this may affect your results" -Level Warning
-                    foreach ($result in $results){
-                        Write-Message -Message "Between $($result.MinDate)/$($result.FirstLsn) and $($result.MaxDate)/$($result.FinalLsn) $($result.name) was on Recovery Fork GUID $($result.RecFork) ($($result.backupcount) backups)"   -Level Warning
-                    }
+                    $results = $server.ConnectionContext.ExecuteWithResults($forkCheckSql).Tables.Rows
+                    if ($results.count -gt 1){
+                        Write-Message -Message "Found backups from multiple recovery forks for $($db.name) on $($server.name), this may affect your results" -Level Warning
+                        foreach ($result in $results){
+                            Write-Message -Message "Between $($result.MinDate)/$($result.FirstLsn) and $($result.MaxDate)/$($result.FinalLsn) $($result.name) was on Recovery Fork GUID $($result.RecFork) ($($result.backupcount) backups)"   -Level Warning
+                        }
 
-                }
+                    }
                     $whereCopyOnly = $null
                     if ($true -ne $IncludeCopyOnly) {
                         $whereCopyOnly = " AND is_copy_only='0' "
                     }
                     if ($deviceTypeFilter) {
                         $devTypeFilterWhere = "AND mediafamily.device_type $deviceTypeFilterRight"
+                    }
+                    if ($since) {
+                        $sinceSqlFilter = "AND backupset.backup_finish_date >= '$($Since.ToString("yyyy-MM-ddTHH:mm:ss"))'"
                     }
                     # recap for future editors (as this has been discussed over and over):
                     #   - original editors (from hereon referred as "we") rank over backupset.last_lsn desc, backupset.backup_finish_date desc for a good reason: DST
@@ -443,6 +454,7 @@ function Get-DbaBackupHistory {
                                 WHERE backupset.database_name = '$($db.Name)' $whereCopyOnly
                                 AND (type = '$first' OR type = '$second')
                                 $devTypeFilterWhere
+                                $sinceSqlFilter
                                 ) AS a
                                 WHERE a.BackupSetRank = 1
                                 ORDER BY a.Type;
