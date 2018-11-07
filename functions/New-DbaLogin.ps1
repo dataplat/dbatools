@@ -110,6 +110,7 @@ function New-DbaLogin {
 
 #>
     [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = "Password", ConfirmImpact = "Low")]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingPlainTextForPassword", "", Justification = "For Parameters Password and MapToCredential")]
     param (
         [parameter(Mandatory, Position = 1)]
         [Alias("ServerInstance", "SqlServer")]

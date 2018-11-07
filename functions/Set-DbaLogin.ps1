@@ -144,6 +144,7 @@ function Set-DbaLogin {
 #>
 
     [CmdletBinding(SupportsShouldProcess)]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingPlainTextForPassword", "", Justification = "For Parameter Password")]
     param (
         [Alias('ServerInstance', 'SqlServer')]
         [DbaInstanceParameter[]]$SqlInstance,
