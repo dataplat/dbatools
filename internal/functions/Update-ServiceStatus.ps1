@@ -206,7 +206,7 @@ function Update-ServiceStatus {
             if ($serviceComputerGroup) {
                 try {
                     $serviceComputerGroup | Invoke-Parallel -ScriptBlock $svcControlBlock -Throttle 50 -ImportVariables | ForEach-Object {
-                        if ($_.ServiceExitCode -ne 0) {
+                        if ($_.ServiceExitCode) {
                             $target = "$($_.Service.ServiceName) on $($_.Service.ComputerName)"
                             Write-Message -Level Warning -Message "($target) $($_.Service.Message)" -Target $target
                             if ($_.Service.ServiceType -eq 'Engine' -and $_.ServiceExitCode -eq 3) {

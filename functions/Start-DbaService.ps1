@@ -96,7 +96,7 @@ function Start-DbaService {
             if ($InstanceName) { $serviceParams.InstanceName = $InstanceName }
             if ($Type) { $serviceParams.Type = $Type }
             if ($Credential) { $serviceParams.Credential = $Credential }
-            if ($EnableException) { $serviceParams.Silent = $EnableException }
+            if ($EnableException) { $serviceParams.EnableException = $EnableException }
             $InputObject = Get-DbaService @serviceParams
         }
     }
