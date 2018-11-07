@@ -145,8 +145,7 @@ function Get-DbaBackupHistory {
         [switch]$IncludeCopyOnly,
         [Parameter(ParameterSetName = "NoLast")]
         [switch]$Force,
-        [Parameter(ParameterSetName = "NoLast")]
-        [DateTime]$Since,
+        [DateTime]$Since = (Get-Date '01/01/1970'),
         [Parameter(ParameterSetName = "Last")]
         [switch]$Last,
         [Parameter(ParameterSetName = "Last")]
@@ -273,7 +272,7 @@ function Get-DbaBackupHistory {
                     }
                     #Get the full and build upwards
                     $allBackups = @()
-                    $allBackups += $fullDb = Get-DbaBackupHistory -SqlInstance $server -Database $db.Name -LastFull -raw:$Raw -DeviceType $DeviceType -IncludeCopyOnly:$IncludeCopyOnly -Since $since
+                    $allBackups += $fullDb = Get-DbaBackupHistory -SqlInstance $server -Database $db.Name -LastFull -raw:$Raw -DeviceType $DeviceType -IncludeCopyOnly:$IncludeCopyOnly -Since:$since
                     $diffDb = Get-DbaBackupHistory -SqlInstance $server -Database $db.Name -LastDiff -raw:$Raw -DeviceType $DeviceType -IncludeCopyOnly:$IncludeCopyOnly
                     if ($diffDb.LastLsn -gt $fullDb.LastLsn -and $diffDb.DatabaseBackupLSN -eq $fullDb.CheckPointLSN ) {
                         Write-Message -Level Verbose -Message "Valid Differential backup "
