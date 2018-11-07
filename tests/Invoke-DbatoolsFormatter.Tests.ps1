@@ -48,14 +48,15 @@ function Get-DbaStub {
         Write-Message -Level Verbose "stub"
     }
 }
-
 '@
 
     Context "formatting actually works" {
         $temppath = Join-Path $TestDrive 'somefile.ps1'
-        Set-Content -Value $content -Path $temppath
+        ## Set-Content adds a newline...WriteAllText() doesn't
+        #Set-Content -Value $content -Path $temppath
+        [System.IO.File]::WriteAllText($temppath, $content)
         Invoke-DbatoolsFormatter -Path $temppath
-        $newcontent = Get-Content -Path $temppath | Out-String
+        $newcontent = [System.IO.File]::ReadAllText($temppath)
         <#
         write-host -fore cyan "w $($wantedContent | convertto-json)"
         write-host -fore cyan "n $($newcontent | convertto-json)"
