@@ -67,7 +67,7 @@ function Publish-DbaDacPackage {
     .EXAMPLE
         PS C:\> $options = New-DbaDacOption -Type Dacpac -Action Publish
         PS C:\> $options.DeployOptions.DropObjectsNotInSource = $true
-        PS C:\> Publish-DbaDacPackage -SqlInstance sql2016 -Database DB1 -Options $options -Path c:\temp\db.dacpac
+        PS C:\> Publish-DbaDacPackage -SqlInstance sql2016 -Database DB1 -DacOption $options -Path c:\temp\db.dacpac
 
         Uses DacOption object to set Deployment Options and updates DB1 database on sql2016 from the db.dacpac dacpac file, dropping objects that are missing from source
 
@@ -120,6 +120,7 @@ function Publish-DbaDacPackage {
         [string]$OutputPath = "$home\Documents",
         [switch]$IncludeSqlCmdVars,
         [Parameter(ParameterSetName = 'Obj')]
+        [Alias("Option")]
         [object]$DacOption,
         [switch]$EnableException,
         [String]$DacFxPath
