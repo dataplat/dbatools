@@ -56,6 +56,7 @@ function Test-DbaSpn {
 
 #>
     [cmdletbinding()]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseOutputTypeCorrectly", "", Justification = "PSSA Rule Ignored by BOH")]
     param (
         [Parameter(Mandatory, ValueFromPipeline)]
         [DbaInstance[]]$ComputerName,
