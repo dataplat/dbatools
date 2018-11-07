@@ -20,14 +20,14 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Testing SqlWatch installer" {
         BeforeAll {
-            $database = "dbatoolsci_sqlwatch_$(Get-Random)"
+            $database = "master"
         }
         AfterAll {
             Remove-DbaDatabase -SqlInstance $script:instance2 -Database $database -Confirm:$false
             Get-DbaAgentJob -SqlInstance $script:instance2 | Where-Object {$PSItem.Name -like "DBA-PERF-*" } | Remove-DbaAgentJob
         }
 
-        $results = Install-DbaSqlWatch -SqlInstance $script:instance2 -Database $database -Force
+        $results = Install-DbaSqlWatch -SqlInstance $script:instance2 -Database $database
 
         It "Installs to specified database: $database" {
             $results[0].Database -eq $database | Should Be $true
