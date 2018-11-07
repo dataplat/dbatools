@@ -6,7 +6,7 @@ function Get-DbaSqlMemoryCondition {
     .DESCRIPTION
         The information from SQL Server ring buffers can be used to determine the memory conditions on the server when paging occurs.
 
-        This command is based on query provided by Microsoft support.
+        This command is based on a query provided by Microsoft support.
         Reference KB article: https://support.microsoft.com/en-us/help/918483/how-to-reduce-paging-of-buffer-pool-memory-in-the-64-bit-version-of-sq
 
     .PARAMETER SqlInstance
@@ -32,12 +32,12 @@ function Get-DbaSqlMemoryCondition {
         https://dbatools.io/Get-DbaSqlMemoryCondition
 
     .EXAMPLE
-        PS C:\> Get-DbaDbMemoryUsage -SqlInstance sqlserver2014a
+        PS C:\> Get-DbaSqlMemoryCondition -SqlInstance sqlserver2014a
 
         Returns the memory conditions for the selected instance
 
     .EXAMPLE
-        PS C:\> Get-DbaCmsRegServer -SqlInstance sqlserver2014a -Group Other | Get-DbaSqlMemoryCondition | Out-GridView
+        PS C:\> Get-DbaCmsRegServer -SqlInstance sqlserver2014a -Group GroupName | Get-DbaSqlMemoryCondition | Out-GridView
 
         Returns the memory conditions for a group of servers from SQL Server Central Management Server (CMS). Send output to GridView.
 #>
@@ -51,29 +51,44 @@ function Get-DbaSqlMemoryCondition {
     )
 
     begin {
-        $sql = "SELECT CONVERT (varchar(30), GETDATE(), 121) as [Runtime],
-            DATEADD (ms, -1 * (sys.ms_ticks - a.[RecordTime]), GETDATE()) AS [NotificationTime],
-            a.* , sys.ms_ticks AS [CurrentTime]
-            FROM 
-            (SELECT x.value('(//Record/ResourceMonitor/Notification)[1]', 'varchar(30)') AS [NotificationType], 
-            x.value('(//Record/MemoryRecord/MemoryUtilization)[1]', 'bigint') AS [MemoryUtilizationPercent], 
-            x.value('(//Record/MemoryRecord/TotalPhysicalMemory)[1]', 'bigint') / 1024 AS [TotalPhysicalMemoryMB], 
-            x.value('(//Record/MemoryRecord/AvailablePhysicalMemory)[1]', 'bigint') / 1024 AS [AvailablePhysicalMemoryMB], 
-            x.value('(//Record/MemoryRecord/TotalPageFile)[1]', 'bigint') / 1024 AS [TotalPageFileMB], 
-            x.value('(//Record/MemoryRecord/AvailablePageFile)[1]', 'bigint') / 1024 AS [AvailablePageFileMB], 
-            x.value('(//Record/MemoryRecord/TotalVirtualAddressSpace)[1]', 'bigint') / 1024 AS [TotalVirtualAddressSpaceMB], 
-            x.value('(//Record/MemoryRecord/AvailableVirtualAddressSpace)[1]', 'bigint') / 1024 AS [AvailableVirtualAddressSpaceMB], 
-            x.value('(//Record/MemoryNode/@id)[1]', 'bigint') AS [NodeId], 
-            x.value('(//Record/MemoryNode/ReservedMemory)[1]', 'bigint') / 1024 AS [SQLReservedMemoryMB], 
-            x.value('(//Record/MemoryNode/CommittedMemory)[1]', 'bigint') / 1024 AS [SQLCommittedMemoryMB], 
-            x.value('(//Record/@id)[1]', 'bigint') AS [RecordId], 
-            x.value('(//Record/@type)[1]', 'varchar(30)') AS [Type], 
-            x.value('(//Record/ResourceMonitor/Indicators)[1]', 'bigint') AS [Indicators], 
-            x.value('(//Record/@time)[1]', 'bigint') AS [RecordTime]
-            FROM (SELECT CAST (record as xml) FROM sys.dm_os_ring_buffers 
-            WHERE ring_buffer_type = 'RING_BUFFER_RESOURCE_MONITOR') AS R(x)) a 
-            CROSS JOIN sys.dm_os_sys_info sys
-            ORDER BY a.[RecordTime] ASC"
+        $sql = "SELECT CONVERT (varchar(30), GETDATE(), 121) as Runtime,
+	DATEADD (ms, -1 * (sys.ms_ticks - a.[RecordTime]), GETDATE()) AS NotificationTime,  
+	[NotificationType], 
+	[MemoryUtilizationPercent], 
+	[TotalPhysicalMemoryKB], 
+	[AvailablePhysicalMemoryKB], 
+	[TotalPageFileKB], 
+	[AvailablePageFileKB], 
+	[TotalVirtualAddressSpaceKB], 
+	[AvailableVirtualAddressSpaceKB], 
+	[NodeId],
+	[SQLReservedMemoryKB], 
+	[SQLCommittedMemoryKB], 
+	[RecordId], 
+	[Type], 
+	[Indicators], 
+	[RecordTime],	
+	sys.ms_ticks AS [CurrentTime]
+	FROM 
+	(SELECT x.value('(//Record/ResourceMonitor/Notification)[1]', 'varchar(30)') AS [NotificationType], 
+	x.value('(//Record/MemoryRecord/MemoryUtilization)[1]', 'bigint') AS [MemoryUtilizationPercent], 
+	x.value('(//Record/MemoryRecord/TotalPhysicalMemory)[1]', 'bigint') AS [TotalPhysicalMemoryKB], 
+	x.value('(//Record/MemoryRecord/AvailablePhysicalMemory)[1]', 'bigint') AS [AvailablePhysicalMemoryKB], 
+	x.value('(//Record/MemoryRecord/TotalPageFile)[1]', 'bigint') AS [TotalPageFileKB], 
+	x.value('(//Record/MemoryRecord/AvailablePageFile)[1]', 'bigint') AS [AvailablePageFileKB], 
+	x.value('(//Record/MemoryRecord/TotalVirtualAddressSpace)[1]', 'bigint') AS [TotalVirtualAddressSpaceKB], 
+	x.value('(//Record/MemoryRecord/AvailableVirtualAddressSpace)[1]', 'bigint') AS [AvailableVirtualAddressSpaceKB], 
+	x.value('(//Record/MemoryNode/@id)[1]', 'bigint') AS [NodeId], 
+	x.value('(//Record/MemoryNode/ReservedMemory)[1]', 'bigint') AS [SQLReservedMemoryKB], 
+	x.value('(//Record/MemoryNode/CommittedMemory)[1]', 'bigint') AS [SQLCommittedMemoryKB], 
+	x.value('(//Record/@id)[1]', 'bigint') AS [RecordId], 
+	x.value('(//Record/@type)[1]', 'varchar(30)') AS [Type], 
+	x.value('(//Record/ResourceMonitor/Indicators)[1]', 'bigint') AS [Indicators], 
+	x.value('(//Record/@time)[1]', 'bigint') AS [RecordTime]
+	FROM (SELECT CAST (record as xml) FROM sys.dm_os_ring_buffers 
+	WHERE ring_buffer_type = 'RING_BUFFER_RESOURCE_MONITOR') AS R(x)) a 
+CROSS JOIN sys.dm_os_sys_info sys
+ORDER BY a.[RecordTime] ASC"
     }
     process {
         foreach ($instance in $SqlInstance) {
@@ -97,15 +112,15 @@ function Get-DbaSqlMemoryCondition {
                     NotificationTime               = $row.NotificationTime
                     NotificationType               = $row.NotificationType   
                     MemoryUtilizationPercent       = $row.MemoryUtilizationPercent
-                    TotalPhysicalMemoryMB          = $row.TotalPhysicalMemoryMB
-                    AvailablePhysicalMemoryMB      = $row.AvailablePhysicalMemoryMB
-                    TotalPageFileMB                = $row.TotalPageFileMB
-                    AvailablePageFileMB            = $row.AvailablePageFileMB
-                    TotalVirtualAddressSpaceMB     = $row.TotalVirtualAddressSpaceMB
-                    AvailableVirtualAddressSpaceMB = $row.AvailableVirtualAddressSpaceMB
+                    TotalPhysicalMemory            = [dbasize]$row.TotalPhysicalMemoryKB * 1024
+                    AvailablePhysicalMemory        = [dbasize]$row.AvailablePhysicalMemoryKB * 1024
+                    TotalPageFile                  = [dbasize]$row.TotalPageFileKB * 1024
+                    AvailablePageFile              = [dbasize]$row.AvailablePageFileKB * 1024
+                    TotalVirtualAddressSpace       = [dbasize]$row.TotalVirtualAddressSpaceKB * 1024
+                    AvailableVirtualAddressSpace   = [dbasize]$row.AvailableVirtualAddressSpaceKB * 1024
                     NodeId                         = $row.NodeId
-                    SQLReservedMemoryMB            = $row.SQLReservedMemoryMB
-                    SQLCommittedMemoryMB           = $row.SQLCommittedMemoryMB
+                    SQLReservedMemory              = [dbasize]$row.SQLReservedMemoryKB * 1024
+                    SQLCommittedMemory             = [dbasize]$row.SQLCommittedMemoryKB * 1024
                     RecordId                       = $row.RecordId
                     Type                           = $row.Type
                     Indicators                     = $row.Indicators
