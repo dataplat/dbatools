@@ -302,7 +302,7 @@ function Publish-DbaDacPackage {
                         Write-Message -Level Verbose -Message "Executing Bacpac import."
                         $dacServices.ImportBacpac($bacPackage, $dbname, $options, $null)
                     }
-                } catch {
+                } catch [Microsoft.SqlServer.Dac.DacServicesException] {
                     $message = Get-ErrorMessage -Record $_ 
                     Stop-Function -Message "Deployment failed - $($message)" -ErrorRecord $_ -Continue
                 } finally {
