@@ -34,7 +34,7 @@ function Get-DbaBackupHistory {
     .PARAMETER Since
         Specifies a DateTime object to use as the starting point for the search for backups.
 
-    .PARAMETER RecoveryForkGUID
+    .PARAMETER RecoveryFork
         Specifies the Recovery Fork you want backup history for
 
     .PARAMETER Last
