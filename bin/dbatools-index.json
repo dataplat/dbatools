@@ -9626,6 +9626,14 @@
                            "",
                            false,
                            "false",
+                           "(Get-Date \u002701/01/1970\u0027)"
+                       ],
+                       [
+                           "RecoveryFork",
+                           "Specifies the Recovery Fork you want backup history for",
+                           "",
+                           false,
+                           "false",
                            ""
                        ],
                        [
@@ -9706,8 +9714,8 @@
         "Synopsis":  "Returns backup history details for databases on a SQL Server.",
         "Name":  "Get-DbaBackupHistory",
         "Links":  "https://dbatools.io/Get-DbaBackupHistory",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaBackupHistory -SqlInstance SqlInstance2014a\nReturns server name, database, username, backup type, date for all database backups still in msdb history on SqlInstance2014a. This may return many rows; consider using filters that are included in \r\nother examples.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003e$cred = Get-Credential sqladmin\nGet-DbaBackupHistory -SqlInstance SqlInstance2014a -SqlCredential $cred\nDoes the same as above but connect to SqlInstance2014a as SQL user \"sqladmin\"\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaBackupHistory -SqlInstance SqlInstance2014a -Database db1, db2 -Since \u00272016-07-01 10:47:00\u0027\nReturns backup information only for databases db1 and db2 on SqlInstance2014a since July 1, 2016 at 10:47 AM.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014, pubs -Force | Format-Table\nReturns information only for AdventureWorks2014 and pubs and formats the results as a table.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eGet-DbaBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014 -Last\nReturns information about the most recent full, differential and log backups for AdventureWorks2014 on sql2014.\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eGet-DbaBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014 -Last -DeviceType Disk\nReturns information about the most recent full, differential and log backups for AdventureWorks2014 on sql2014, but only for backups to disk.\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003eGet-DbaBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014 -Last -DeviceType 148,107\nReturns information about the most recent full, differential and log backups for AdventureWorks2014 on sql2014, but only for backups with device_type 148 and 107.\n-------------------------- EXAMPLE 8 --------------------------\nPS C:\\\u003eGet-DbaBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014 -LastFull\nReturns information about the most recent full backup for AdventureWorks2014 on sql2014.\n-------------------------- EXAMPLE 9 --------------------------\nPS C:\\\u003eGet-DbaBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014 -Type Full\nReturns information about all Full backups for AdventureWorks2014 on sql2014.\n-------------------------- EXAMPLE 10 --------------------------\nPS C:\\\u003eGet-DbaCmsRegServer -SqlInstance sql2016 | Get-DbaBackupHistory\nReturns database backup information for every database on every server listed in the Central Management Server on sql2016.\n-------------------------- EXAMPLE 11 --------------------------\nPS C:\\\u003eGet-DbaBackupHistory -SqlInstance SqlInstance2014a, sql2016 -Force\nReturns detailed backup history for all databases on SqlInstance2014a and sql2016.",
-        "Syntax":  "Get-DbaBackupHistory -SqlInstance \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Database \u003cObject[]\u003e] [-ExcludeDatabase \u003cObject[]\u003e] [-IncludeCopyOnly] [-DeviceType \u003cString[]\u003e] [-Raw] [-LastLsn \u003cBigInteger\u003e] [-Type \u003cString[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]\nGet-DbaBackupHistory -SqlInstance \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Database \u003cObject[]\u003e] [-ExcludeDatabase \u003cObject[]\u003e] [-IncludeCopyOnly] [-Force] [-Since \u003cDateTime\u003e] [-DeviceType \u003cString[]\u003e] [-Raw] [-LastLsn \u003cBigInteger\u003e] [-Type \u003cString[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]\nGet-DbaBackupHistory -SqlInstance \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Database \u003cObject[]\u003e] [-ExcludeDatabase \u003cObject[]\u003e] [-IncludeCopyOnly] [-Last] [-LastFull] [-LastDiff] [-LastLog] [-DeviceType \u003cString[]\u003e] [-Raw] [-LastLsn \u003cBigInteger\u003e] [-Type \u003cString[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaBackupHistory -SqlInstance SqlInstance2014a\nReturns server name, database, username, backup type, date for all database backups still in msdb history on SqlInstance2014a. This may return many rows; consider using filters that are included in \r\nother examples.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003e$cred = Get-Credential sqladmin\nGet-DbaBackupHistory -SqlInstance SqlInstance2014a -SqlCredential $cred\nDoes the same as above but connect to SqlInstance2014a as SQL user \"sqladmin\"\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaBackupHistory -SqlInstance SqlInstance2014a -Database db1, db2 -Since \u00272016-07-01 10:47:00\u0027\nReturns backup information only for databases db1 and db2 on SqlInstance2014a since July 1, 2016 at 10:47 AM.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014, pubs -Force | Format-Table\nReturns information only for AdventureWorks2014 and pubs and formats the results as a table.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eGet-DbaBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014 -Last\nReturns information about the most recent full, differential and log backups for AdventureWorks2014 on sql2014.\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eGet-DbaBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014 -Last -DeviceType Disk\nReturns information about the most recent full, differential and log backups for AdventureWorks2014 on sql2014, but only for backups to disk.\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003eGet-DbaBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014 -Last -DeviceType 148,107\nReturns information about the most recent full, differential and log backups for AdventureWorks2014 on sql2014, but only for backups with device_type 148 and 107.\n-------------------------- EXAMPLE 8 --------------------------\nPS C:\\\u003eGet-DbaBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014 -LastFull\nReturns information about the most recent full backup for AdventureWorks2014 on sql2014.\n-------------------------- EXAMPLE 9 --------------------------\nPS C:\\\u003eGet-DbaBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014 -Type Full\nReturns information about all Full backups for AdventureWorks2014 on sql2014.\n-------------------------- EXAMPLE 10 --------------------------\nPS C:\\\u003eGet-DbaCmsRegServer -SqlInstance sql2016 | Get-DbaBackupHistory\nReturns database backup information for every database on every server listed in the Central Management Server on sql2016.\n-------------------------- EXAMPLE 11 --------------------------\nPS C:\\\u003eGet-DbaBackupHistory -SqlInstance SqlInstance2014a, sql2016 -Force\nReturns detailed backup history for all databases on SqlInstance2014a and sql2016.\n-------------------------- EXAMPLE 12 --------------------------\nPS C:\\\u003eGet-DbaBackupHistory -SqlInstance sql2016 -Database db1 -RecoveryFork 38e5e84a-3557-4643-a5d5-eed607bef9c6 -Last\nIf db1 has multiple recovery forks, specifying the RecoveryFork GUID will restrict the search to that fork.",
+        "Syntax":  "Get-DbaBackupHistory -SqlInstance \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Database \u003cObject[]\u003e] [-ExcludeDatabase \u003cObject[]\u003e] [-IncludeCopyOnly] [-Since \u003cDateTime\u003e] [-RecoveryFork \u003cString\u003e] [-DeviceType \u003cString[]\u003e] [-Raw] [-LastLsn \u003cBigInteger\u003e] [-Type \u003cString[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]\nGet-DbaBackupHistory -SqlInstance \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Database \u003cObject[]\u003e] [-ExcludeDatabase \u003cObject[]\u003e] [-IncludeCopyOnly] [-Force] [-Since \u003cDateTime\u003e] [-RecoveryFork \u003cString\u003e] [-DeviceType \u003cString[]\u003e] [-Raw] [-LastLsn \u003cBigInteger\u003e] [-Type \u003cString[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]\nGet-DbaBackupHistory -SqlInstance \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Database \u003cObject[]\u003e] [-ExcludeDatabase \u003cObject[]\u003e] [-IncludeCopyOnly] [-Since \u003cDateTime\u003e] [-RecoveryFork \u003cString\u003e] [-Last] [-LastFull] [-LastDiff] [-LastLog] [-DeviceType \u003cString[]\u003e] [-Raw] [-LastLsn \u003cBigInteger\u003e] [-Type \u003cString[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
         "CommandName":  "Get-DbaBackupInformation",
@@ -14892,6 +14900,44 @@
         "Links":  "https://dbatools.io/Get-DbaMaxMemory",
         "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaMaxMemory -SqlInstance sqlcluster,sqlserver2012\nGet memory settings for all servers within the SQL Server Central Management Server \"sqlcluster\".\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaMaxMemory -SqlInstance sqlcluster | Where-Object { $_.SqlMaxMB -gt $_.TotalMB }\nFind all servers in Server Central Management Server that have \u0027Max Server Memory\u0027 set to higher than the total memory of the server (think 2147483647)\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eFind-DbaInstance -ComputerName localhost | Get-DbaMaxMemory | Format-Table -AutoSize\nScans localhost for instances using the browser service, traverses all instances and displays memory settings in a formatted table.",
         "Syntax":  "Get-DbaMaxMemory [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
+    },
+    {
+        "CommandName":  "Get-DbaMemoryCondition",
+        "Description":  "The information from SQL Server ring buffers can be used to determine the memory conditions on the server when paging occurs.\n\nThis command is based on a query provided by Microsoft support.\nReference KB article: https://support.microsoft.com/en-us/help/918483/how-to-reduce-paging-of-buffer-pool-memory-in-the-64-bit-version-of-sq",
+        "Tags":  "Memory",
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "The target SQL Server instance or instances.",
+                           "ServerInstance,SqlServer,SqlServers",
+                           true,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
+                           "SqlCredential",
+                           "Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential).",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ]
+                   ],
+        "Alias":  "",
+        "Author":  "IJeb Reitsma",
+        "Synopsis":  "Determine the memory conditions from SQL Server ring buffers.",
+        "Name":  "Get-DbaMemoryCondition",
+        "Links":  "https://dbatools.io/Get-DbaMemoryCondition",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaMemoryCondition -SqlInstance sqlserver2014a\nReturns the memory conditions for the selected instance\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaCmsRegServer -SqlInstance sqlserver2014a -Group GroupName | Get-DbaMemoryCondition | Out-GridView\nReturns the memory conditions for a group of servers from SQL Server Central Management Server (CMS). Send output to GridView.",
+        "Syntax":  "Get-DbaMemoryCondition [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
         "CommandName":  "Get-DbaMemoryUsage",
@@ -20372,6 +20418,84 @@
         "Syntax":  "Install-DbaMaintenanceSolution [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cObject\u003e] [[-BackupLocation] \u003cString\u003e] [[-CleanupTime] \u003cInt32\u003e] [[-OutputFileDirectory] \u003cString\u003e] [-ReplaceExisting] [-LogToTable] [[-Solution] \u003cString\u003e] [-InstallJobs] [[-LocalFile] \u003cString\u003e] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
+        "CommandName":  "Install-DbaSqlWatch",
+        "Description":  "Downloads, extracts and installs or updates SqlWatch.\nhttps://sqlwatch.io/",
+        "Tags":  "SqlWatch",
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "SQL Server name or SMO object representing the SQL Server to connect to.",
+                           "",
+                           true,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
+                           "SqlCredential",
+                           "Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Database",
+                           "Specifies the database to install SqlWatch into. Defaults to master.",
+                           "",
+                           false,
+                           "false",
+                           "master"
+                       ],
+                       [
+                           "LocalFile",
+                           "Specifies the path to a local file to install SqlWatch from. This *should* be the zipfile as distributed by the maintainers.\r\nIf this parameter is not specified, the latest version will be downloaded and installed from https://github.com/marcingminski/sqlwatch",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Force",
+                           "If this switch is enabled, SqlWatch will be downloaded from the internet even if previously cached.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "WhatIf",
+                           "Shows what would happen if the command were to run. No actions are actually performed.",
+                           "wi",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Confirm",
+                           "Prompts to confirm actions",
+                           "cf",
+                           false,
+                           "false",
+                           ""
+                       ]
+                   ],
+        "Alias":  "",
+        "Author":  "Ken K (github.com/koglerk)",
+        "Synopsis":  "Installs or updates SqlWatch.",
+        "Name":  "Install-DbaSqlWatch",
+        "Links":  "https://dbatools.io/Install-DbaSqlWatch",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eInstall-DbaSqlWatch -SqlInstance server1\nLogs into server1 with Windows authentication and then installs SqlWatch in the master database.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eInstall-DbaSqlWatch -SqlInstance server1\\instance1 -Database DBA\nLogs into server1\\instance1 with Windows authentication and then installs SqlWatch in the DBA database.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eInstall-DbaSqlWatch -SqlInstance server1\\instance1 -Database DBA -SqlCredential $cred\nLogs into server1\\instance1 with SQL authentication and then installs SqlWatch in the DBA database.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eInstall-DbaSqlWatch -SqlInstance sql2016\\standardrtm, sql2016\\sqlexpress, sql2014\nLogs into sql2016\\standardrtm, sql2016\\sqlexpress and sql2014 with Windows authentication and then installs SqlWatch in the master database.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003e$servers = \"sql2016\\standardrtm\", \"sql2016\\sqlexpress\", \"sql2014\"\n$servers | Install-DbaSqlWatch\nLogs into sql2016\\standardrtm, sql2016\\sqlexpress and sql2014 with Windows authentication and then installs SqlWatch in the master database.",
+        "Syntax":  "Install-DbaSqlWatch [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString\u003e] [[-LocalFile] \u003cString\u003e] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+    },
+    {
         "CommandName":  "Install-DbaWatchUpdate",
         "Description":  "Adds the scheduled task to support Watch-DbaUpdate.",
         "Tags":  "Module",
@@ -25739,6 +25863,14 @@
                            ""
                        ],
                        [
+                           "PublishOptions",
+                           "Optional hashtable to set publish options. Key/value pairs in the hashtable get converted to strings of \"\u003ckey\u003evalue\u003c/key\u003e\".",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
                            "EnableException",
                            "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
                            "",
@@ -25769,7 +25901,7 @@
         "Name":  "New-DbaDacProfile",
         "Links":  "https://dbatools.io/New-DbaDacProfile",
         "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eNew-DbaDacProfile -SqlInstance sql2017 -SqlCredential ad\\sqldba -Database WorldWideImporters -Path C:\\temp\nIn this example, a prompt will appear for alternative credentials, then a connection will be made to sql2017. Using that connection,\r\nthe ConnectionString will be extracted and used within the Publish Profile XML file which will be created at C:\\temp\\sql2017-WorldWideImporters-publish.xml\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eNew-DbaDacProfile -Database WorldWideImporters -Path C:\\temp -ConnectionString \"SERVER=(localdb)\\MSSQLLocalDB;Integrated Security=True;Database=master\"\nIn this example, no connections are made, and a Publish Profile XML would be created at C:\\temp\\localdb-MSSQLLocalDB-WorldWideImporters-publish.xml",
-        "Syntax":  "New-DbaDacProfile [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [-Database] \u003cString[]\u003e [[-Path] \u003cString\u003e] [[-ConnectionString] \u003cString[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "New-DbaDacProfile [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [-Database] \u003cString[]\u003e [[-Path] \u003cString\u003e] [[-ConnectionString] \u003cString[]\u003e] [[-PublishOptions] \u003cHashtable\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "CommandName":  "New-DbaDbCertificate",
@@ -27848,6 +27980,14 @@
                            "False"
                        ],
                        [
+                           "RowLimit",
+                           "Will limit the number of rows returned from the transaction log",
+                           "",
+                           false,
+                           "false",
+                           "0"
+                       ],
+                       [
                            "EnableException",
                            "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
                            "Silent",
@@ -27862,7 +28002,7 @@
         "Name":  "Read-DbaTransactionLog",
         "Links":  null,
         "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003e$Log = Read-DbaTransactionLog -SqlInstance sql2016 -Database MyDatabase\nWill read the contents of the transaction log of MyDatabase on SQL Server Instance sql2016 into the local PowerShell object $Log\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003e$Log = Read-DbaTransactionLog -SqlInstance sql2016 -Database MyDatabase -IgnoreLimit\nWill read the contents of the transaction log of MyDatabase on SQL Server Instance sql2016 into the local PowerShell object $Log, ignoring the recommendation of not returning more that 0.5GB of log",
-        "Syntax":  "Read-DbaTransactionLog [-SqlInstance] \u003cDbaInstanceParameter\u003e [-SqlCredential \u003cPSCredential\u003e] -Database \u003cObject\u003e [-IgnoreLimit] [-EnableException] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Read-DbaTransactionLog [-SqlInstance] \u003cDbaInstanceParameter\u003e [-SqlCredential \u003cPSCredential\u003e] -Database \u003cObject\u003e [-IgnoreLimit] [-RowLimit \u003cInt32\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
         "CommandName":  "Read-DbaXEFile",
@@ -31165,7 +31305,7 @@
                            "",
                            false,
                            "false",
-                           "30"
+                           "60"
                        ],
                        [
                            "Credential",
@@ -36606,7 +36746,7 @@
                            "",
                            false,
                            "false",
-                           "30"
+                           "60"
                        ],
                        [
                            "Credential",
@@ -37319,7 +37459,7 @@
                            "",
                            false,
                            "false",
-                           "30"
+                           "60"
                        ],
                        [
                            "Credential",
@@ -40192,6 +40332,68 @@
         "Links":  "https://dbatools.io/Test-DbaWindowsLogin",
         "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eTest-DbaWindowsLogin -SqlInstance Dev01\nTests all logins in the current Active Directory domain that are either disabled or do not exist on the SQL Server instance Dev01\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eTest-DbaWindowsLogin -SqlInstance Dev01 -FilterBy GroupsOnly | Select-Object -Property *\nTests all Active Directory groups that have logins on Dev01, and shows all information for those logins\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eTest-DbaWindowsLogin -SqlInstance Dev01 -IgnoreDomains testdomain\nTests all Domain logins excluding any that are from the testdomain",
         "Syntax":  "Test-DbaWindowsLogin [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Login \u003cObject[]\u003e] [-ExcludeLogin \u003cObject[]\u003e] [-FilterBy \u003cString\u003e] [-IgnoreDomains \u003cString[]\u003e] [-Detailed] [-EnableException] [\u003cCommonParameters\u003e]"
+    },
+    {
+        "CommandName":  "Uninstall-DbaSqlWatch",
+        "Description":  "Deletes all user objects, agent jobs, and historical data associated with SqlWatch.",
+        "Tags":  "SqlWatch",
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "SQL Server name or SMO object representing the SQL Server to connect to.",
+                           "",
+                           true,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
+                           "SqlCredential",
+                           "Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Database",
+                           "Specifies the database to install SqlWatch into. Defaults to master.",
+                           "",
+                           false,
+                           "false",
+                           "master"
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "WhatIf",
+                           "Shows what would happen if the command were to run. No actions are actually performed.",
+                           "wi",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Confirm",
+                           "Prompts to confirm actions",
+                           "cf",
+                           false,
+                           "false",
+                           ""
+                       ]
+                   ],
+        "Alias":  "",
+        "Author":  "Ken K (github.com/koglerk)",
+        "Synopsis":  "Uninstalls SqlWatch.",
+        "Name":  "Uninstall-DbaSqlWatch",
+        "Links":  "https://dbatools.io/Uninstall-DbaSqlWatch",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eUninstall-DbaSqlWatch -SqlInstance server1\nDeletes all user objects, agent jobs, and historical data associated with SqlWatch from the master database.",
+        "Syntax":  "Uninstall-DbaSqlWatch [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "CommandName":  "Uninstall-DbaWatchUpdate",

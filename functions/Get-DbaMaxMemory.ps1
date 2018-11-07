@@ -79,4 +79,3 @@ function Get-DbaMaxMemory {
         }
     }
 }
-
