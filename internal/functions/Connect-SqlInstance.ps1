@@ -117,7 +117,7 @@ function Connect-SqlInstance {
                 $server.ConnectionContext.Connect()
             } elseif ($authtypeSMO -eq "Windows Authentication with Credential") {
                 # Make it connect in a natural way, hard to explain.
-                $null = $server.IsMemberOfWsfcCluster
+                $null = $server.Information.Version
                 if ($server.ConnectionContext.IsOpen -eq $false) {
                     $server.ConnectionContext.Connect()
                 }
