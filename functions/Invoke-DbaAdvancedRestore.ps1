@@ -102,6 +102,7 @@ function Invoke-DbaAdvancedRestore {
 
 #>
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "Low")]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingPlainTextForPassword", "", Justification = "For Parameter AzureCredential")]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
         [Object[]]$BackupHistory,

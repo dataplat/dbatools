@@ -128,6 +128,7 @@ function Test-DbaLastBackup {
 
 #>
     [CmdletBinding(SupportsShouldProcess = $true)]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingPlainTextForPassword", "", Justification = "For Paramters DestinationCredential and AzureCredential")]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer", "Source")]
