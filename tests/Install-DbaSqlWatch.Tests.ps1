@@ -20,7 +20,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Testing SqlWatch installer" {
         BeforeAll {
-            $database = "master"
+            $database = "dbatoolsci_sqlwatch"
         }
         AfterAll {
             Uninstall-DbaSqlWatch -SqlInstance $script:instance2 -Database $database
