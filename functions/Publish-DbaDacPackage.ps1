@@ -303,7 +303,7 @@ function Publish-DbaDacPackage {
                         $dacServices.ImportBacpac($bacPackage, $dbname, $options, $null)
                     }
                 } catch [Microsoft.SqlServer.Dac.DacServicesException] {
-                    $message = Get-ErrorMessage -Record $_ 
+                    $message = Get-ErrorMessage -Record $_
                     Stop-Function -Message "Deployment failed - $($message)" -ErrorRecord $_ -Continue
                 } finally {
                     Unregister-Event -SourceIdentifier "msg"
