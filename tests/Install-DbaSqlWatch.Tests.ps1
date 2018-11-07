@@ -23,7 +23,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $database = "master"
         }
         AfterAll {
-            Get-DbaAgentJob -SqlInstance $script:instance2 | Where-Object {$PSItem.Name -like "DBA-PERF-*" } | Remove-DbaAgentJob
+            Uninstall-DbaSqlWatch -SqlInstance $script:instance2 -Database $database
         }
 
         $results = Install-DbaSqlWatch -SqlInstance $script:instance2 -Database $database
