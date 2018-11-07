@@ -24,9 +24,6 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             Install-DbaSqlWatch -SqlInstance $script:instance2 -Database $database
             Uninstall-DbaSqlWatch -SqlInstance $script:instance2 -Database $database
         }
-        AfterAll {
-            Remove-DbaDatabase -SqlInstance $script:instance2 -Database $database -Confirm:$false
-        }
 
         It "Removed all tables" {
             $tableCount = (Get-DbaDbTable -SqlInstance $script:instance2 -Database $Database | Where-Object {($PSItem.Name -like "sql_perf_mon_*") -or ($PSItem.Name -like "logger_*")}).Count
