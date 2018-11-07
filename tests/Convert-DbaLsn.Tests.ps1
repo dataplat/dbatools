@@ -4,10 +4,10 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        $paramCount = 6
+        $paramCount = 2
         $defaultParamCount = 11
-        [object[]]$params = (Get-ChildItem function:\Read-DbaTransactionLog).Parameters.Keys
-        $knownParameters = 'SqlInstance','SqlCredential','Database','IgnoreLimit','EnableException','RowLimit'
+        [object[]]$params = (Get-ChildItem function:\Convert-DbaLSN).Parameters.Keys
+        $knownParameters = 'LSN','EnableException'
         It "Should contain our specific parameters" {
             ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
         }
@@ -15,6 +15,22 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
             $params.Count - $defaultParamCount | Should Be $paramCount
         }
     }
+
+    Context "Converts Numeric LSN to Hex"{
+        $LSN = '00000000020000000024300001'
+        It "Should convert to " {
+            (Convert-DbaLSN -Lsn $Lsn).Hexadecimal | Should -Be '00000014:000000f3:0001'
+        }
+    }
+
+    Context "Converts Hex LSN to Numeric"{
+        $LSN = '00000014:000000f3:0001'
+        It "Should convert to " {
+            (Convert-DbaLSN -Lsn $Lsn).Numeric | Should -Be 00000000020000000024300001
+        }
+    }
+
+
 }
 <#
     Integration test should appear below and are custom to the command you are writing.
