@@ -43,7 +43,7 @@ function Get-DbaStub {
 
         .DESCRIPTION
             Using
-#>
+    #>
     process {
         Write-Message -Level Verbose "stub"
     }
