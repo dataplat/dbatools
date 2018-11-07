@@ -42,11 +42,6 @@ Function Uninstall-DbaSqlWatch {
         Uninstall-DbaSqlWatch -SqlInstance server1
 
         Deletes all user objects, agent jobs, and historical data associated with SqlWatch from the master database.
-
-    .EXAMPLE
-        Install-DbaSqlWatch -SqlInstance server1\instance1 -Database DBA
-
-        Logs into server1\instance1 with Windows authentication and then deletes all user objects, agent jobs, and historical data associated with SqlWatch from the DBA database.
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
     param (
@@ -89,7 +84,7 @@ Function Uninstall-DbaSqlWatch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
-            # get SQWATCH objects
+            # get SqlWatch objects
             $tables = Get-DbaDbTable -SqlInstance $server -Database $Database | Where-Object {$PSItem.Name -like "sql_perf_mon_*" -or $PSItem.Name -like "logger_*" }
             $views = Get-DbaDbView -SqlInstance $server -Database $Database | Where-Object {$PSItem.Name -like "vw_sql_perf_mon_*" }
             $sprocs = Get-DbaDbStoredProcedure -SqlInstance $server -Database $Database | Where-Object {$PSItem.Name -like "sp_sql_perf_mon_*" -or $PSItem.Name -like "usp_logger_*" }
