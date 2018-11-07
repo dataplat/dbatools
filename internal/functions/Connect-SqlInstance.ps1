@@ -111,12 +111,16 @@ function Connect-SqlInstance {
     #region Input Object was a server object
     if ($ConvertedSqlInstance.InputObject.GetType() -eq [Microsoft.SqlServer.Management.Smo.Server]) {
         $server = $ConvertedSqlInstance.InputObject
+        $authtypeSMO = $SqlCredential.UserName -like '*\*'
         if ($server.ConnectionContext.IsOpen -eq $false) {
             if ($NonPooled) {
                 $server.ConnectionContext.Connect()
-            } elseif ($authtype -eq "Windows Authentication with Credential") {
+            } elseif ($authtypeSMO -eq "Windows Authentication with Credential") {
                 # Make it connect in a natural way, hard to explain.
-                $null = $server.IsMemberOfWsfcCluster
+                $null = $server.Information.Version
+                if ($server.ConnectionContext.IsOpen -eq $false) {
+                    $server.ConnectionContext.Connect()
+                }
             } else {
                 $server.ConnectionContext.SqlConnectionObject.Open()
             }
@@ -158,8 +162,8 @@ function Connect-SqlInstance {
     try {
         $server.ConnectionContext.ConnectTimeout = [Sqlcollaborative.Dbatools.Connection.ConnectionHost]::SqlConnectionTimeout
 
-        if ($null -ne $SqlCredential.Username) {
-            $username = ($SqlCredential.Username).TrimStart("\")
+        if ($null -ne $SqlCredential.UserName) {
+            $username = ($SqlCredential.UserName).TrimStart("\")
 
             if ($username -like "*\*") {
                 $username = $username.Split("\")[1]
@@ -182,7 +186,10 @@ function Connect-SqlInstance {
             $server.ConnectionContext.Connect()
         } elseif ($authtype -eq "Windows Authentication with Credential") {
             # Make it connect in a natural way, hard to explain.
-            $null = $server.IsMemberOfWsfcCluster
+            $null = $server.Information.Version
+            if ($server.ConnectionContext.IsOpen -eq $false) {
+                $server.ConnectionContext.Connect()
+            }
         } else {
             $server.ConnectionContext.SqlConnectionObject.Open()
         }
