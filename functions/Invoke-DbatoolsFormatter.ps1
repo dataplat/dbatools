@@ -83,7 +83,7 @@ function Invoke-DbatoolsFormatter {
             foreach ($line in $content.Split("`n")) {
                 $realContent += $line.TrimEnd()
             }
-            [System.IO.File]::WriteAllLines($realPath, $realContent, $Utf8NoBomEncoding)
+            [System.IO.File]::WriteAllText($realPath, ($realContent -Join "`r`n"), $Utf8NoBomEncoding)
         }
     }
 }
