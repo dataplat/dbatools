@@ -149,7 +149,13 @@ function Get-DbaService {
             $Server = Resolve-DbaNetworkName -ComputerName $Computer -Credential $credential
             if ($Server.FullComputerName) {
                 $Computer = $server.FullComputerName
-                Write-Message -Level VeryVerbose -Message "Getting SQL Server namespace on $Computer" -Target $Computer
+                $outputServices = @()
+                if (!$Type -or 'SSRS' -in $Type) {
+                    Write-Message -Level Verbose -Message "Getting SQL Reporting Server services on $Computer" -Target $Computer
+                    $reportingServices = Get-DbaReportingService -ComputerName $Computer -InstanceName $InstanceName -Credential $Credential -ServiceName $ServiceName
+                    $outputServices += $reportingServices
+                }
+                Write-Message -Level Verbose -Message "Getting SQL Server namespace on $Computer" -Target $Computer
                 try { $namespaces = Get-DbaCmObject -ComputerName $Computer -NameSpace root\Microsoft\SQLServer -Query "Select Name FROM __NAMESPACE WHERE Name Like 'ComputerManagement%'" -EnableException -Credential $credential | Sort-Object Name -Descending }
                 catch { }
                 if ($namespaces) {
@@ -166,93 +172,95 @@ function Get-DbaService {
                                 }
                             }
                         } catch {
-                            Write-Message -Level Verbose -EnableException $EnableException.ToBool() -Message "Failed to acquire services from namespace $($namespace.Name)." -Target $Computer -ErrorRecord $_
+                            Write-Message -Level Verbose -Message "Failed to acquire services from namespace $($namespace.Name)." -Target $Computer -ErrorRecord $_
                         }
                     }
+                }
+                #use highest namespace available
+                $services = ($servicesTemp | Group-Object Name | ForEach-Object { $_.Group | Sort-Object Namespace -Descending | Select-Object -First 1 }).Service
+                #remove services returned by the SSRS namespace
+                $services = $services | Where-Object ServiceName -notin $reportingServices.ServiceName
+                #Add custom properties and methods to the service objects
+                ForEach ($service in $services) {
+                    Add-Member -Force -InputObject $service -MemberType NoteProperty -Name ComputerName -Value $service.HostName
+                    Add-Member -Force -InputObject $service -MemberType NoteProperty -Name ServiceType -Value ($ServiceIdMap | Where-Object { $_.Id -contains $service.SQLServiceType }).Name
+                    Add-Member -Force -InputObject $service -MemberType NoteProperty -Name State -Value $(switch ($service.State) { 1 { 'Stopped' } 2 { 'Start Pending' }  3 { 'Stop Pending' } 4 { 'Running' } })
+                    Add-Member -Force -InputObject $service -MemberType NoteProperty -Name StartMode -Value $(switch ($service.StartMode) { 1 { 'Unknown' } 2 { 'Automatic' }  3 { 'Manual' } 4 { 'Disabled' } })
 
-                    $services = ($servicesTemp | Group-Object Name | ForEach-Object { $_.Group | Sort-Object Namespace -Descending | Select-Object -First 1 }).Service
-
-                    if ($services) {
-                        Write-Message -Level Verbose -Message "Creating output objects"
-                        ForEach ($service in $services) {
-                            Add-Member -Force -InputObject $service -MemberType NoteProperty -Name ComputerName -Value $service.HostName
-                            Add-Member -Force -InputObject $service -MemberType NoteProperty -Name ServiceType -Value ($ServiceIdMap | Where-Object { $_.Id -contains $service.SQLServiceType }).Name
-                            Add-Member -Force -InputObject $service -MemberType NoteProperty -Name State -Value $(switch ($service.State) { 1 { 'Stopped' } 2 { 'Start Pending' }  3 { 'Stop Pending' } 4 { 'Running' } })
-                            Add-Member -Force -InputObject $service -MemberType NoteProperty -Name StartMode -Value $(switch ($service.StartMode) { 1 { 'Unknown' } 2 { 'Automatic' }  3 { 'Manual' } 4 { 'Disabled' } })
-
-                            if ($service.ServiceName -in ("MSSQLSERVER", "SQLSERVERAGENT", "ReportServer", "MSSQLServerOLAPService")) {
-                                $instance = "MSSQLSERVER"
-                            } else {
-                                if ($service.ServiceType -in @("Agent", "Engine", "SSRS", "SSAS")) {
-                                    if ($service.ServiceName.indexof('$') -ge 0) {
-                                        $instance = $service.ServiceName.split('$')[1]
-                                    } else {
-                                        $instance = "Unknown"
-                                    }
-                                } else {
-                                    $instance = ""
-                                }
-                            }
-                            $priority = switch ($service.ServiceType) {
-                                "Engine" { 200 }
-                                default { 100 }
-                            }
-                            #If only specific instances are selected
-                            if (!$InstanceName -or $instance -in $InstanceName) {
-                                #Add other properties and methods
-                                Add-Member -Force -InputObject $service -NotePropertyName InstanceName -NotePropertyValue $instance
-                                Add-Member -Force -InputObject $service -NotePropertyName ServicePriority -NotePropertyValue $priority
-                                Add-Member -Force -InputObject $service -MemberType ScriptMethod -Name "Stop" -Value {
-                                    param ([bool]$Force = $false)
-                                    Stop-DbaService -InputObject $this -Force:$Force
-                                }
-                                Add-Member -Force -InputObject $service -MemberType ScriptMethod -Name "Start" -Value { Start-DbaService -InputObject $this }
-                                Add-Member -Force -InputObject $service -MemberType ScriptMethod -Name "Restart" -Value {
-                                    param ([bool]$Force = $false)
-                                    Restart-DbaService -InputObject $this -Force:$Force
-                                }
-                                Add-Member -Force -InputObject $service -MemberType ScriptMethod -Name "ChangeStartMode" -Value {
-                                    param (
-                                        [parameter(Mandatory)]
-                                        [string]$Mode
-                                    )
-                                    $supportedModes = @("Automatic", "Manual", "Disabled")
-                                    if ($Mode -notin $supportedModes) {
-                                        Stop-Function -Message ("Incorrect mode '$Mode'. Use one of the following values: {0}" -f ($supportedModes -join ' | ')) -EnableException $false -FunctionName 'Get-DbaService'
-                                        Return
-                                    }
-                                    Set-ServiceStartMode -InputObject $this -Mode $Mode -ErrorAction Stop
-                                    $this.StartMode = $Mode
-                                }
-
-                                if ($AdvancedProperties) {
-                                    $namespaceValue = $service.CimClass.ToString().ToUpper().Replace(":SQLSERVICE", "").Replace("ROOT/MICROSOFT/SQLSERVER/", "")
-                                    $serviceAdvancedProperties = Get-DbaCmObject -ComputerName $Computer -Namespace "root\Microsoft\SQLServer\$($namespaceValue)" -Query "SELECT * FROM SqlServiceAdvancedProperty WHERE ServiceName = '$($service.ServiceName)'"
-
-                                    Add-Member -Force -InputObject $service -MemberType NoteProperty -Name Version -Value ($serviceAdvancedProperties | Where-Object PropertyName -eq 'VERSION' ).PropertyStrValue
-                                    Add-Member -Force -InputObject $service -MemberType NoteProperty -Name SPLevel -Value ($serviceAdvancedProperties | Where-Object PropertyName -eq 'SPLEVEL' ).PropertyNumValue
-                                    Add-Member -Force -InputObject $service -MemberType NoteProperty -Name SkuName -Value ($serviceAdvancedProperties | Where-Object PropertyName -eq 'SKUNAME' ).PropertyStrValue
-
-                                    $ClusterServiceTypeList = @(1, 2, 5, 7)
-                                    if ($ClusterServiceTypeList -contains $service.SQLServiceType) {
-                                        Add-Member -Force -InputObject $service -MemberType NoteProperty -Name Clustered -Value ($serviceAdvancedProperties | Where-Object PropertyName -eq 'CLUSTERED' ).PropertyNumValue
-                                        Add-Member -Force -InputObject $service -MemberType NoteProperty -Name VSName -Value ($serviceAdvancedProperties | Where-Object PropertyName -eq 'VSNAME' ).PropertyStrValue
-                                    } else {
-                                        Add-Member -Force -InputObject $service -MemberType NoteProperty -Name Clustered -Value ''
-                                        Add-Member -Force -InputObject $service -MemberType NoteProperty -Name VSName -Value ''
-                                    }
-                                    $defaults = "ComputerName", "ServiceName", "ServiceType", "InstanceName", "DisplayName", "StartName", "State", "StartMode", "Version", "SPLevel", "SkuName", "Clustered", "VSName"
-                                } else {
-                                    $defaults = "ComputerName", "ServiceName", "ServiceType", "InstanceName", "DisplayName", "StartName", "State", "StartMode"
-                                }
-                                Select-DefaultView -InputObject $service -Property $defaults -TypeName DbaSqlService
-                            }
-                        }
+                    if ($service.ServiceName -in ("MSSQLSERVER", "SQLSERVERAGENT", "ReportServer", "MSSQLServerOLAPService")) {
+                        $instance = "MSSQLSERVER"
                     } else {
-                        Stop-Function -EnableException $EnableException -Message "No Sql Services found on $Computer" -Continue
+                        if ($service.ServiceType -in @("Agent", "Engine", "SSRS", "SSAS")) {
+                            if ($service.ServiceName.indexof('$') -ge 0) {
+                                $instance = $service.ServiceName.split('$')[1]
+                            } else {
+                                $instance = "Unknown"
+                            }
+                        } else {
+                            $instance = ""
+                        }
                     }
+                    $priority = switch ($service.ServiceType) {
+                        "Engine" { 200 }
+                        default { 100 }
+                    }
+                    #If only specific instances are selected
+                    if (!$InstanceName -or $instance -in $InstanceName) {
+                        #Add other properties and methods
+                        Add-Member -Force -InputObject $service -NotePropertyName InstanceName -NotePropertyValue $instance
+                        Add-Member -Force -InputObject $service -NotePropertyName ServicePriority -NotePropertyValue $priority
+                        Add-Member -Force -InputObject $service -MemberType ScriptMethod -Name "Stop" -Value {
+                            param ([bool]$Force = $false)
+                            Stop-DbaService -InputObject $this -Force:$Force
+                        }
+                        Add-Member -Force -InputObject $service -MemberType ScriptMethod -Name "Start" -Value { Start-DbaService -InputObject $this }
+                        Add-Member -Force -InputObject $service -MemberType ScriptMethod -Name "Restart" -Value {
+                            param ([bool]$Force = $false)
+                            Restart-DbaService -InputObject $this -Force:$Force
+                        }
+                        Add-Member -Force -InputObject $service -MemberType ScriptMethod -Name "ChangeStartMode" -Value {
+                            param (
+                                [parameter(Mandatory)]
+                                [string]$Mode
+                            )
+                            $supportedModes = @("Automatic", "Manual", "Disabled")
+                            if ($Mode -notin $supportedModes) {
+                                Stop-Function -Message ("Incorrect mode '$Mode'. Use one of the following values: {0}" -f ($supportedModes -join ' | ')) -EnableException $false -FunctionName 'Get-DbaService'
+                                Return
+                            }
+                            Set-ServiceStartMode -InputObject $this -Mode $Mode -ErrorAction Stop
+                            $this.StartMode = $Mode
+                        }
+
+                        if ($AdvancedProperties) {
+                            $namespaceValue = $service.CimClass.ToString().ToUpper().Replace(":SQLSERVICE", "").Replace("ROOT/MICROSOFT/SQLSERVER/", "")
+                            $serviceAdvancedProperties = Get-DbaCmObject -ComputerName $Computer -Namespace "root\Microsoft\SQLServer\$($namespaceValue)" -Query "SELECT * FROM SqlServiceAdvancedProperty WHERE ServiceName = '$($service.ServiceName)'"
+
+                            Add-Member -Force -InputObject $service -MemberType NoteProperty -Name Version -Value ($serviceAdvancedProperties | Where-Object PropertyName -eq 'VERSION' ).PropertyStrValue
+                            Add-Member -Force -InputObject $service -MemberType NoteProperty -Name SPLevel -Value ($serviceAdvancedProperties | Where-Object PropertyName -eq 'SPLEVEL' ).PropertyNumValue
+                            Add-Member -Force -InputObject $service -MemberType NoteProperty -Name SkuName -Value ($serviceAdvancedProperties | Where-Object PropertyName -eq 'SKUNAME' ).PropertyStrValue
+
+                            $ClusterServiceTypeList = @(1, 2, 5, 7)
+                            if ($ClusterServiceTypeList -contains $service.SQLServiceType) {
+                                Add-Member -Force -InputObject $service -MemberType NoteProperty -Name Clustered -Value ($serviceAdvancedProperties | Where-Object PropertyName -eq 'CLUSTERED' ).PropertyNumValue
+                                Add-Member -Force -InputObject $service -MemberType NoteProperty -Name VSName -Value ($serviceAdvancedProperties | Where-Object PropertyName -eq 'VSNAME' ).PropertyStrValue
+                            } else {
+                                Add-Member -Force -InputObject $service -MemberType NoteProperty -Name Clustered -Value ''
+                                Add-Member -Force -InputObject $service -MemberType NoteProperty -Name VSName -Value ''
+                            }
+                        }
+                        $outputServices += $service
+                    }
+                }
+                if ($AdvancedProperties) {
+                    $defaults = "ComputerName", "ServiceName", "ServiceType", "InstanceName", "DisplayName", "StartName", "State", "StartMode", "Version", "SPLevel", "SkuName", "Clustered", "VSName"
                 } else {
-                    Stop-Function -EnableException $EnableException -Message "No ComputerManagement Namespace on $Computer. Please note that this function is available from SQL 2005 up." -Continue
+                    $defaults = "ComputerName", "ServiceName", "ServiceType", "InstanceName", "DisplayName", "StartName", "State", "StartMode"
+                }
+                if ($outputServices) {
+                    $outputServices | Select-DefaultView -Property $defaults -TypeName DbaSqlService
+                } else {
+                    Stop-Function -Message "No services found in relevant namespaces on $Computer. Please note that this function is available from SQL 2005 up."
                 }
             } else {
                 Stop-Function -EnableException $EnableException -Message "Failed to connect to $Computer" -Continue
