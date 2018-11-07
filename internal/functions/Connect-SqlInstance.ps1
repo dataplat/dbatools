@@ -12,25 +12,25 @@ function Connect-SqlInstance {
         - Smo Linked Server objects
 
         Related Docs, Pull Requests and Issues:
-        
+
     Connect commands and alt Windows Credential fix
     https://github.com/sqlcollaborative/dbatools/pull/3835
-    
+
     Connect-*Instance, fix errors with Windows logins
     https://github.com/sqlcollaborative/dbatools/pull/4426
-    
+
     Invoke-DbaSqlQuery fails to use proper Windows credentials
     https://github.com/sqlcollaborative/dbatools/issues/3780
 
     Fixed auth issue
     https://github.com/sqlcollaborative/dbatools/pull/3809
-    
+
     Connecting to an Instance of SQL Server
     https://docs.microsoft.com/en-us/sql/relational-databases/server-management-objects-smo/create-program/connecting-to-an-instance-of-sql-server
-    
+
     SQL Server Connection Pooling (ADO.NET)
     https://docs.microsoft.com/en-us/dotnet/framework/data/adonet/sql-server-connection-pooling
-    
+
     .PARAMETER SqlInstance
         The SQL Server instance to restore to.
 
@@ -134,7 +134,7 @@ function Connect-SqlInstance {
         $authtypeSMO = $SqlCredential.UserName -like '*\*'
         if ($server.ConnectionContext.IsOpen -eq $false) {
             if ($NonPooled) {
-                # When the Connect method is called, the connection is not automatically released. 
+                # When the Connect method is called, the connection is not automatically released.
                 # The Disconnect method must be called explicitly to release the connection to the connection pool.
                 # https://docs.microsoft.com/en-us/sql/relational-databases/server-management-objects-smo/create-program/disconnecting-from-an-instance-of-sql-server
                 $server.ConnectionContext.Connect()
@@ -142,14 +142,14 @@ function Connect-SqlInstance {
                 # Make it connect in a natural way, hard to explain.
                 # See https://docs.microsoft.com/en-us/sql/relational-databases/server-management-objects-smo/create-program/connecting-to-an-instance-of-sql-server
                 $null = $server.Information.Version
-                
+
                 # Sometimes, however, the above may not connect as promised. Force it.
                 # See https://github.com/sqlcollaborative/dbatools/pull/4426
                 if ($server.ConnectionContext.IsOpen -eq $false) {
                     $server.ConnectionContext.Connect()
                 }
             } else {
-                # SqlConnectionObject.Open() enables connection pooling does not support 
+                # SqlConnectionObject.Open() enables connection pooling does not support
                 # alternative Windows Credentials and passes default credentials
                 # See https://github.com/sqlcollaborative/dbatools/pull/3809
                 $server.ConnectionContext.SqlConnectionObject.Open()
@@ -171,7 +171,7 @@ function Connect-SqlInstance {
                 Invoke-TEPPCacheUpdate -ScriptBlock $scriptBlock
             }
         }
-        
+
         # Make ComputerName easily available in the server object
         if (-not $server.ComputerName) {
             $parsedcomputername = $server.NetName
@@ -195,7 +195,7 @@ function Connect-SqlInstance {
 
         if ($null -ne $SqlCredential.UserName) {
             $username = ($SqlCredential.UserName).TrimStart("\")
-            
+
             if ($username -like "*\*") {
                 $domain, $login = $username.Split("\")
                 $authtype = "Windows Authentication with Credential"
@@ -216,10 +216,10 @@ function Connect-SqlInstance {
             }
         }
     } catch { }
-    
+
     try {
         if ($NonPooled) {
-            # When the Connect method is called, the connection is not automatically released. 
+            # When the Connect method is called, the connection is not automatically released.
             # The Disconnect method must be called explicitly to release the connection to the connection pool.
             # https://docs.microsoft.com/en-us/sql/relational-databases/server-management-objects-smo/create-program/disconnecting-from-an-instance-of-sql-server
             $server.ConnectionContext.Connect()
@@ -227,14 +227,14 @@ function Connect-SqlInstance {
             # Make it connect in a natural way, hard to explain.
             # See https://docs.microsoft.com/en-us/sql/relational-databases/server-management-objects-smo/create-program/connecting-to-an-instance-of-sql-server
             $null = $server.Information.Version
-            
+
             # Sometimes, however, the above may not connect as promised. Force it.
             # See https://github.com/sqlcollaborative/dbatools/pull/4426
             if ($server.ConnectionContext.IsOpen -eq $false) {
                 $server.ConnectionContext.Connect()
             }
         } else {
-            # SqlConnectionObject.Open() enables connection pooling does not support 
+            # SqlConnectionObject.Open() enables connection pooling does not support
             # alternative Windows Credentials and passes default credentials
             # See https://github.com/sqlcollaborative/dbatools/pull/3809
             $server.ConnectionContext.SqlConnectionObject.Open()
