@@ -124,6 +124,7 @@ function Get-DbaBackupInformation {
 
 #>
     [CmdletBinding( DefaultParameterSetName = "Create")]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingPlainTextForPassword", "", Justification = "For Parameter AzureCredential")]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
         [object[]]$Path,
@@ -278,7 +279,7 @@ function Get-DbaBackupInformation {
             }
 
             $groupdetails = $FileDetails | Group-Object -Property BackupSetGUID
-            
+
             foreach ($Group in $GroupDetails) {
                 $dblsn = $group.Group[0].DatabaseBackupLSN
                 if (-not $dblsn) {
