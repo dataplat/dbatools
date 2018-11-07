@@ -126,8 +126,7 @@ ORDER BY a.[RecordTime] ASC"
                     Indicators                     = $row.Indicators
                     RecordTime                     = $row.RecordTime
                     CurrentTime                    = $row.CurrentTime
-
-                } | Select-Object
+                }
             }
         }
     }
