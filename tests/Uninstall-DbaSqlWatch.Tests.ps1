@@ -22,6 +22,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         BeforeAll {
             $database = "master"
             Install-DbaSqlWatch -SqlInstance $script:instance2 -Database $database
+            Uninstall-DbaSqlWatch -SqlInstance $script:instance2 -Database $database
         }
         AfterAll {
             Remove-DbaDatabase -SqlInstance $script:instance2 -Database $database -Confirm:$false
