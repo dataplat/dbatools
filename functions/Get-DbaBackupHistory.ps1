@@ -133,6 +133,11 @@ function Get-DbaBackupHistory {
 
         Returns detailed backup history for all databases on SqlInstance2014a and sql2016.
 
+    .EXAMPLE
+        PS C:\> Get-DbaBackupHistory -SqlInstance sql2016 -Database db1 -RecoveryFork 38e5e84a-3557-4643-a5d5-eed607bef9c6 -Last
+
+        If db1 has multiple recovery forks, specifying the RecoveryFork GUID will restrict the search to that fork.
+
 #>
     [CmdletBinding(DefaultParameterSetName = "Default")]
     param (
