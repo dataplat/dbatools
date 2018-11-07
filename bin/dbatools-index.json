@@ -5161,6 +5161,76 @@
         "Syntax":  "Disable-DbaAgHadr [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-Credential] \u003cPSCredential\u003e] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
+        "CommandName":  "Disable-DbaFilestream",
+        "Description":  "Connects to the specified SQL Server instances, and sets the status of the FileStream feature to the required value\n\nTo perform the action, the SQL Server instance must be restarted. By default we will prompt for confirmation for this action, this can be overridden with the -Force switch",
+        "Tags":  "Filestream",
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "The target SQL Server instance or instances. Defaults to localhost.",
+                           "",
+                           true,
+                           "true (ByPropertyName)",
+                           ""
+                       ],
+                       [
+                           "SqlCredential",
+                           "Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)",
+                           "",
+                           false,
+                           "true (ByPropertyName)",
+                           ""
+                       ],
+                       [
+                           "Credential",
+                           "Login to the target server using alternative credentials.",
+                           "",
+                           false,
+                           "true (ByPropertyName)",
+                           ""
+                       ],
+                       [
+                           "Force",
+                           "Restart SQL Instance after changes. Use this parameter with care as it overrides whatif.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "WhatIf",
+                           "Shows what would happen if the command runs. The command is not run unless Force is specified.",
+                           "wi",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Confirm",
+                           "Prompts you for confirmation before running the command.",
+                           "cf",
+                           false,
+                           "false",
+                           ""
+                       ]
+                   ],
+        "Alias":  "",
+        "Author":  "Stuart Moore ( @napalmgram ) | Chrissy LeMaire ( @cl )",
+        "Synopsis":  "Sets the status of FileStream on specified SQL Server instances both at the server level and the instance level",
+        "Name":  "Disable-DbaFilestream",
+        "Links":  null,
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eDisable-DbaFilestream -SqlInstance server1\\instance2\nPrompts for confirmation. Disables filestream on the service and instance levels.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eDisable-DbaFilestream -SqlInstance server1\\instance2 -Confirm:$false\nDoes not prompt for confirmation. Disables filestream on the service and instance levels.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaFilestream -SqlInstance server1\\instance2, server5\\instance5, prod\\hr | Where-Object InstanceAccessLevel -gt 0 | Disable-DbaFilestream -Force\nUsing this pipeline you can scan a range of SQL instances and disable filestream on only those on which it\u0027s enabled.",
+        "Syntax":  "Disable-DbaFilestream [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Credential] \u003cPSCredential\u003e] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+    },
+    {
         "CommandName":  "Disable-DbaForceNetworkEncryption",
         "Description":  "Disables Force Encryption for a SQL Server instance. Note that this requires access to the Windows Server, not the SQL instance itself.\n\nThis setting is found in Configuration Manager.",
         "Tags":  "Certificate",
@@ -5412,6 +5482,92 @@
         "Links":  "https://dbatools.io/Enable-DbaAgHadr",
         "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eEnable-DbaAgHadr -SqlInstance sql2016\nSets Hadr service to enabled for the instance sql2016 but changes will not be applied until the next time the server restarts.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eEnable-DbaAgHadr -SqlInstance sql2016 -Force\nSets Hadr service to enabled for the instance sql2016, and restart the service to apply the change.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eEnable-DbaAgHadr -SqlInstance sql2012\\dev1 -Force\nSets Hadr service to disabled for the instance dev1 on sq2012, and restart the service to apply the change.",
         "Syntax":  "Enable-DbaAgHadr [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-Credential] \u003cPSCredential\u003e] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+    },
+    {
+        "CommandName":  "Enable-DbaFilestream",
+        "Description":  "Connects to the specified SQL Server instances, and Enables the FileStream feature to the required value\n\nTo perform the action, the SQL Server instance must be restarted. By default we will prompt for confirmation for this action, this can be overridden with the -Force switch",
+        "Tags":  "Filestream",
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "The target SQL Server instance or instances. Defaults to localhost.",
+                           "",
+                           true,
+                           "true (ByPropertyName)",
+                           ""
+                       ],
+                       [
+                           "SqlCredential",
+                           "Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)",
+                           "",
+                           false,
+                           "true (ByPropertyName)",
+                           ""
+                       ],
+                       [
+                           "Credential",
+                           "Login to the target server using alternative credentials.",
+                           "",
+                           false,
+                           "true (ByPropertyName)",
+                           ""
+                       ],
+                       [
+                           "FileStreamLevel",
+                           "The level to of FileStream to be enabled:\r\n1 or TSql - T-Sql Access Only\r\n2 or TSqlIoStreaming - T-Sql and Win32 access enabled\r\n3 or TSqlIoStreamingRemoteClient T-Sql, Win32 and Remote access enabled",
+                           "",
+                           false,
+                           "false",
+                           "1"
+                       ],
+                       [
+                           "ShareName",
+                           "Specifies the Windows file share name to be used for storing the FILESTREAM data.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Force",
+                           "Restart SQL Instance after changes. Use this parameter with care as it overrides whatif.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "WhatIf",
+                           "Shows what would happen if the command runs. The command is not run unless Force is specified.",
+                           "wi",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Confirm",
+                           "Prompts you for confirmation before running the command.",
+                           "cf",
+                           false,
+                           "false",
+                           ""
+                       ]
+                   ],
+        "Alias":  "",
+        "Author":  "Stuart Moore ( @napalmgram ) | Chrissy LeMaire ( @cl )",
+        "Synopsis":  "Enables FileStream on specified SQL Server instances",
+        "Name":  "Enable-DbaFilestream",
+        "Links":  null,
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eEnable-DbaFilestream -SqlInstance server1\\instance2 -FileStreamLevel TSql\nPS C:\\\u003e Enable-DbaFilestream -SqlInstance server1\\instance2 -FileStreamLevel 1\nThese commands are functionally equivalent, both will set Filestream level on server1\\instance2 to T-Sql Only\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaFilestream -SqlInstance server1\\instance2, server5\\instance5, prod\\hr | Where-Object InstanceAccessLevel -eq 0 | Enable-DbaFilestream -FileStreamLevel TSqlIoStreamingRemoteClient -Force\nUsing this pipeline you can scan a range of SQL instances and enable filestream on only those on which it\u0027s disabled.",
+        "Syntax":  "Enable-DbaFilestream [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Credential] \u003cPSCredential\u003e] [[-FileStreamLevel] \u003cString\u003e] [[-ShareName] \u003cString\u003e] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "CommandName":  "Enable-DbaForceNetworkEncryption",
@@ -5998,7 +6154,7 @@
         "Synopsis":  "Exports a dacpac from a server.",
         "Name":  "Export-DbaDacPackage",
         "Links":  "https://dbatools.io/Export-DbaDacPackage",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eExport-DbaDacPackage -SqlInstance sql2016 -Database SharePoint_Config\nExports the dacpac for SharePoint_Config on sql2016 to $home\\Documents\\SharePoint_Config.dacpac\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003e$options = New-DbaDacOption -Type Dacpac\nPS C:\\\u003e $options.ExtractAllTableData = $true\r\nPS C:\\\u003e $options.CommandTimeout = 0\r\nPS C:\\\u003e Export-DbaDacPackage -SqlInstance sql2016 -Database DB1 -Options\nUses DacOption object to set the CommandTimeout to 0 then extracts the dacpac for DB1 on sql2016 to $home\\Documents\\DB1.dacpac including all table data.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eExport-DbaDacPackage -SqlInstance sql2016 -AllUserDatabases -ExcludeDatabase \"DBMaintenance\",\"DBMonitoring\" C:\\temp\nExports dacpac packages for all USER databases, excluding \"DBMaintenance\" \u0026 \"DBMonitoring\", on sql2016 and saves them to C:\\temp\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003e$moreparams = \"/OverwriteFiles:$true /Quiet:$true\"\nPS C:\\\u003e Export-DbaDacPackage -SqlInstance sql2016 -Database SharePoint_Config -Path C:\\temp -ExtendedParameters $moreparams\nUsing extended parameters to over-write the files and performs the extraction in quiet mode. Uses command line instead of SMO behind the scenes.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eExport-DbaDacPackage -SqlInstance sql2016 -Database SharePoint_Config\nExports the dacpac for SharePoint_Config on sql2016 to $home\\Documents\\SharePoint_Config.dacpac\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003e$options = New-DbaDacOption -Type Dacpac -Action Export\nPS C:\\\u003e $options.ExtractAllTableData = $true\r\nPS C:\\\u003e $options.CommandTimeout = 0\r\nPS C:\\\u003e Export-DbaDacPackage -SqlInstance sql2016 -Database DB1 -Options $options\nUses DacOption object to set the CommandTimeout to 0 then extracts the dacpac for DB1 on sql2016 to $home\\Documents\\DB1.dacpac including all table data.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eExport-DbaDacPackage -SqlInstance sql2016 -AllUserDatabases -ExcludeDatabase \"DBMaintenance\",\"DBMonitoring\" C:\\temp\nExports dacpac packages for all USER databases, excluding \"DBMaintenance\" \u0026 \"DBMonitoring\", on sql2016 and saves them to C:\\temp\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003e$moreparams = \"/OverwriteFiles:$true /Quiet:$true\"\nPS C:\\\u003e Export-DbaDacPackage -SqlInstance sql2016 -Database SharePoint_Config -Path C:\\temp -ExtendedParameters $moreparams\nUsing extended parameters to over-write the files and performs the extraction in quiet mode. Uses command line instead of SMO behind the scenes.",
         "Syntax":  "Export-DbaDacPackage -SqlInstance \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Database \u003cObject[]\u003e] [-ExcludeDatabase \u003cObject[]\u003e] [-AllUserDatabases] [-Path \u003cString\u003e] [-DacOption \u003cObject\u003e] [-Type \u003cString\u003e] [-Table \u003cString[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]\nExport-DbaDacPackage -SqlInstance \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Database \u003cObject[]\u003e] [-ExcludeDatabase \u003cObject[]\u003e] [-AllUserDatabases] [-Path \u003cString\u003e] [-ExtendedParameters \u003cString\u003e] [-ExtendedProperties \u003cString\u003e] [-Type \u003cString\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
@@ -13881,6 +14037,52 @@
         "Links":  "https://dbatools.io/Get-DbaFile",
         "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaFile -SqlInstance sqlserver2014a -Path E:\\Dir1\nLogs into the SQL Server \"sqlserver2014a\" using Windows credentials and searches E:\\Dir for all files\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaFile -SqlInstance sqlserver2014a -SqlCredential $cred -Path \u0027E:\\sql files\u0027\nLogs into the SQL Server \"sqlserver2014a\" using alternative credentials and returns all files in \u0027E:\\sql files\u0027\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003e$all = Get-DbaDefaultPath -SqlInstance sql2014\nPS C:\\\u003e Get-DbaFile -SqlInstance sql2014 -Path $all.Data, $all.Log, $all.Backup -Depth 3\nReturns the files in the default data, log and backup directories on sql2014, 3 directories deep (recursively).\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaFile -SqlInstance sql2014 -Path \u0027E:\\Dir1\u0027, \u0027E:\\Dir2\u0027\nReturns the files in \"E:\\Dir1\" and \"E:Dir2\" on sql2014\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eGet-DbaFile -SqlInstance sql2014, sql2016 -Path \u0027E:\\Dir1\u0027 -FileType fsf, mld\nFinds files in E:\\Dir1 ending with \".fsf\" and \".mld\" for both the servers sql2014 and sql2016.",
         "Syntax":  "Get-DbaFile [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Path] \u003cString[]\u003e] [[-FileType] \u003cString[]\u003e] [[-Depth] \u003cInt32\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
+    },
+    {
+        "CommandName":  "Get-DbaFilestream",
+        "Description":  "Returns the status of Filestream on specified SQL Server for both the Service and Instance levels.",
+        "Tags":  "Filestream",
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.",
+                           "",
+                           false,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
+                           "SqlCredential",
+                           "Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Credential",
+                           "Login to the target Windows server using alternative credentials.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ]
+                   ],
+        "Alias":  "",
+        "Author":  "Stuart Moore ( @napalmgram ) | Chrissy LeMaire ( @cl )",
+        "Synopsis":  "Returns the status of Filestream on specified SQL Server for both the Service and Instance levels.",
+        "Name":  "Get-DbaFilestream",
+        "Links":  "https://dbatools.io/Get-DbaFilestream",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaFilestream -SqlInstance server1\\instance2\nWill return the status of Filestream configuration for the service and instance server1\\instance2\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaFilestream -SqlInstance server1\\instance2 -SqlCredential sqladmin\nPrompts for the password to the SQL Login \"sqladmin\" then returns the status of Filestream configuration for the service and instance server1\\instance2",
+        "Syntax":  "Get-DbaFilestream [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Credential] \u003cPSCredential\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
         "CommandName":  "Get-DbaForceNetworkEncryption",
@@ -27314,7 +27516,7 @@
                        [
                            "DacOption",
                            "Export options for a corresponding export type. Can be created by New-DbaDacOption -Type Dacpac | Bacpac",
-                           "",
+                           "Option",
                            false,
                            "false",
                            ""
@@ -27341,7 +27543,7 @@
         "Synopsis":  "The Publish-DbaDacPackage command takes a dacpac which is the output from an SSDT project and publishes it to a database. Changing the schema to match the dacpac and also to run any scripts in the dacpac (pre/post deploy scripts).",
         "Name":  "Publish-DbaDacPackage",
         "Links":  "https://dbatools.io/Publish-DbaDacPackage",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003e$options = New-DbaDacOption -Type Dacpac -Action Publish\nPS C:\\\u003e $options.DeployOptions.DropObjectsNotInSource = $true\r\nPS C:\\\u003e Publish-DbaDacPackage -SqlInstance sql2016 -Database DB1 -Options $options -Path c:\\temp\\db.dacpac\nUses DacOption object to set Deployment Options and updates DB1 database on sql2016 from the db.dacpac dacpac file, dropping objects that are missing from source\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003ePublish-DbaDacPackage -SqlInstance sql2017 -Database WideWorldImporters -Path C:\\temp\\sql2016-WideWorldImporters.dacpac -PublishXml C:\\temp\\sql2016-WideWorldImporters-publish.xml\nUpdates WideWorldImporters on sql2017 from the sql2016-WideWorldImporters.dacpac using the sql2016-WideWorldImporters-publish.xml publish profile\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eNew-DbaDacProfile -SqlInstance sql2016 -Database db2 -Path C:\\temp\nPS C:\\\u003e Export-DbaDacPackage -SqlInstance sql2016 -Database db2 | Publish-DbaDacPackage -PublishXml C:\\temp\\sql2016-db2-publish.xml -Database db1, db2 -SqlInstance sql2017\nCreates a publish profile at C:\\temp\\sql2016-db2-publish.xml, exports the .dacpac to $home\\Documents\\sql2016-db2.dacpac\r\nthen publishes it to the sql2017 server database db2\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003e$loc = \"C:\\Users\\bob\\source\\repos\\Microsoft.Data.Tools.Msbuild\\lib\\net46\\Microsoft.SqlServer.Dac.dll\"\nPS C:\\\u003e Publish-DbaDacPackage -SqlInstance \"local\" -Database WideWorldImporters -Path C:\\temp\\WideWorldImporters.dacpac -PublishXml C:\\temp\\WideWorldImporters.publish.xml -DacFxPath $loc\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003ePublish-DbaDacPackage -SqlInstance sql2017 -Database WideWorldImporters -Path C:\\temp\\sql2016-WideWorldImporters.dacpac -PublishXml C:\\temp\\sql2016-WideWorldImporters-publish.xml \r\n-GenerateDeploymentScript -ScriptOnly\nDoes not deploy the changes, but will generate the deployment script that would be executed against WideWorldImporters.\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003ePublish-DbaDacPackage -SqlInstance sql2017 -Database WideWorldImporters -Path C:\\temp\\sql2016-WideWorldImporters.dacpac -PublishXml C:\\temp\\sql2016-WideWorldImporters-publish.xml \r\n-GenerateDeploymentReport -ScriptOnly\nDoes not deploy the changes, but will generate the deployment report that would be executed against WideWorldImporters.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003e$options = New-DbaDacOption -Type Dacpac -Action Publish\nPS C:\\\u003e $options.DeployOptions.DropObjectsNotInSource = $true\r\nPS C:\\\u003e Publish-DbaDacPackage -SqlInstance sql2016 -Database DB1 -DacOption $options -Path c:\\temp\\db.dacpac\nUses DacOption object to set Deployment Options and updates DB1 database on sql2016 from the db.dacpac dacpac file, dropping objects that are missing from source\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003ePublish-DbaDacPackage -SqlInstance sql2017 -Database WideWorldImporters -Path C:\\temp\\sql2016-WideWorldImporters.dacpac -PublishXml C:\\temp\\sql2016-WideWorldImporters-publish.xml\nUpdates WideWorldImporters on sql2017 from the sql2016-WideWorldImporters.dacpac using the sql2016-WideWorldImporters-publish.xml publish profile\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eNew-DbaDacProfile -SqlInstance sql2016 -Database db2 -Path C:\\temp\nPS C:\\\u003e Export-DbaDacPackage -SqlInstance sql2016 -Database db2 | Publish-DbaDacPackage -PublishXml C:\\temp\\sql2016-db2-publish.xml -Database db1, db2 -SqlInstance sql2017\nCreates a publish profile at C:\\temp\\sql2016-db2-publish.xml, exports the .dacpac to $home\\Documents\\sql2016-db2.dacpac\r\nthen publishes it to the sql2017 server database db2\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003e$loc = \"C:\\Users\\bob\\source\\repos\\Microsoft.Data.Tools.Msbuild\\lib\\net46\\Microsoft.SqlServer.Dac.dll\"\nPS C:\\\u003e Publish-DbaDacPackage -SqlInstance \"local\" -Database WideWorldImporters -Path C:\\temp\\WideWorldImporters.dacpac -PublishXml C:\\temp\\WideWorldImporters.publish.xml -DacFxPath $loc\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003ePublish-DbaDacPackage -SqlInstance sql2017 -Database WideWorldImporters -Path C:\\temp\\sql2016-WideWorldImporters.dacpac -PublishXml C:\\temp\\sql2016-WideWorldImporters-publish.xml \r\n-GenerateDeploymentScript -ScriptOnly\nDoes not deploy the changes, but will generate the deployment script that would be executed against WideWorldImporters.\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003ePublish-DbaDacPackage -SqlInstance sql2017 -Database WideWorldImporters -Path C:\\temp\\sql2016-WideWorldImporters.dacpac -PublishXml C:\\temp\\sql2016-WideWorldImporters-publish.xml \r\n-GenerateDeploymentReport -ScriptOnly\nDoes not deploy the changes, but will generate the deployment report that would be executed against WideWorldImporters.",
         "Syntax":  "Publish-DbaDacPackage [-SqlInstance \u003cDbaInstanceParameter[]\u003e] [-SqlCredential \u003cPSCredential\u003e] -Path \u003cString\u003e -Database \u003cString[]\u003e [-ConnectionString \u003cString[]\u003e] [-ScriptOnly] [-Type \u003cString\u003e] [-OutputPath \u003cString\u003e] [-IncludeSqlCmdVars] [-DacOption \u003cObject\u003e] [-EnableException] [-DacFxPath \u003cString\u003e] [\u003cCommonParameters\u003e]\nPublish-DbaDacPackage [-SqlInstance \u003cDbaInstanceParameter[]\u003e] [-SqlCredential \u003cPSCredential\u003e] -Path \u003cString\u003e -PublishXml \u003cString\u003e -Database \u003cString[]\u003e [-ConnectionString \u003cString[]\u003e] [-GenerateDeploymentScript] [-GenerateDeploymentReport] [-ScriptOnly] [-Type \u003cString\u003e] [-OutputPath \u003cString\u003e] [-IncludeSqlCmdVars] [-EnableException] [-DacFxPath \u003cString\u003e] [\u003cCommonParameters\u003e]"
     },
     {
@@ -35325,22 +35527,14 @@
                        [
                            "SqlInstance",
                            "The target SQL Server instance or instances.",
-                           "ServerInstance,SqlServer",
+                           "",
                            true,
                            "true (ByValue)",
                            ""
                        ],
                        [
-                           "SqlCredential",
-                           "Credential object used to connect to the SQL Server instance as a different user",
-                           "",
-                           false,
-                           "false",
-                           ""
-                       ],
-                       [
                            "Credential",
-                           "Credential object used to connect to the Windows server itself as a different user",
+                           "Credential object used to connect to the Windows server itself as a different user (like SQL Configuration Manager)",
                            "",
                            false,
                            "false",
@@ -35365,7 +35559,7 @@
                        [
                            "EnableException",
                            "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
-                           "Silent",
+                           "",
                            false,
                            "false",
                            "False"
@@ -35392,8 +35586,8 @@
         "Synopsis":  "Changes the TCP port used by the specified SQL Server.",
         "Name":  "Set-DbaTcpPort",
         "Links":  "https://dbatools.io/Set-DbaTcpPort",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eSet-DbaTcpPort -SqlInstance SqlInstance2014a -Port 1433\nSets the port number 1433 for all IP Addresses on the default instance on SqlInstance2014a\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eSet-DbaTcpPort -SqlInstance winserver\\sqlexpress -IpAddress 192.168.1.22 -Port 1433\nSets the port number 1433 for IP 192.168.1.22 on the sqlexpress instance on winserver\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eSet-DbaTcpPort -SqlInstance \u0027SQLDB2014A\u0027 ,\u0027SQLDB2016B\u0027 -port 1337\nSets the port number 1337 for all IP Addresses on SqlInstance SQLDB2014A and SQLDB2016B",
-        "Syntax":  "Set-DbaTcpPort [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Credential] \u003cPSCredential\u003e] [-Port] \u003cInt32\u003e [[-IpAddress] \u003cIPAddress[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eSet-DbaTcpPort -SqlInstance sql2017 -Port 1433\nSets the port number 1433 for all IP Addresses on the default instance on sql2017. Prompts for confirmation.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eSet-DbaTcpPort -SqlInstance winserver\\sqlexpress -IpAddress 192.168.1.22 -Port 1433 -Confirm:$false\nSets the port number 1433 for IP 192.168.1.22 on the sqlexpress instance on winserver. Does not prompt for confirmation.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eSet-DbaTcpPort -SqlInstance sql2017, sql2019 -port 1337 -Credential ad\\dba\nSets the port number 1337 for all IP Addresses on SqlInstance sql2017 and sql2019 using the credentials for ad\\dba. Prompts for confirmation.",
+        "Syntax":  "Set-DbaTcpPort [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-Credential] \u003cPSCredential\u003e] [-Port] \u003cInt32\u003e [[-IpAddress] \u003cIPAddress[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "CommandName":  "Set-DbaTempdbConfig",
