@@ -46,6 +46,10 @@
     .PARAMETER BackupVolume 
             BackupVolume will hold the volume letter of the Backup disc. if left empty, it will default to C, unless there is a drive named like Backup
 
+    .PARAMETER InstallFolder
+            InstallFolder will hold the driveletter and subsequent folders (if any) of your installation media. The input must point to the location where the
+            setup.exe is located.
+
     .PARAMETER PerformVolumeMaintenance 
             PerformVolumeMaintenance will set the policy for grant or deny this right to the SQL Server service account.
 
@@ -90,6 +94,8 @@
         [string]$Role,
         [ValidateSet("Python", "R", "Python and R")]
         [string]$StatsAndMl,
+        [ValidateSet("Windows", "Mixed Mode")]
+        [string]$Authentication,
         [string]$AppVolume, 
         [string]$DataVolume, 
         [string]$LogVolume, 
@@ -98,8 +104,6 @@
         [string]$InstallFolder,
         [switch]$PerformVolumeMaintenance,
         [switch]$SaveFile,
-        [ValidateSet("Windows", "Mixed Mode")]
-        [string]$Authentication,
         [switch]$EnableException
     )
 
@@ -115,7 +119,7 @@
 
     # Check if the edition of SQL Server supports Python and R. Introduced in SQL 2016, it should not be allowed in earlier installations.
 
-    if ( $null -eq $StatsAndMl -or $StatsAndMl -ne '' ) {
+    if ( $null -ne $StatsAndMl -or $StatsAndMl -ne '' ) {
         $Array = "2016", "2017", "2019"
 
         if ($Version -notin $Array ) {
@@ -126,18 +130,24 @@
 
     Copy-Item "$script:PSModuleRoot\bin\installtemplate\$version\$Edition\Configuration$version.ini" -Destination "$script:PSModuleRoot\bin\installtemplate\"
 
+    # Get the content of the copied ini file to use. 
+
     $configini = Get-Content "$script:PSModuleRoot\bin\installtemplate\Configuration$version.ini"
 
     # Let the user set the Service Account for SQL Server. This does imply that the user has been created.
 
     $SqlServerAccount = Get-CimInstance -ClassName Win32_UserAccount  | Out-GridView -title 'Please select the Service Account for your Sql Server instance.' -PassThru | Select-Object -ExpandProperty Name
 
+    # If the users selects the mixed mode authentication, ask the user to enter the password for SA.
+
     if ($Authentication -eq "Mixed Mode") {
         $SAPassW = [PsCredential](Get-Credential -UserName "SA"  -Message "Please Enter the SA Password.")
     }
     
     # Get the installation folder of SQL Server. if the user didn't choose a specific folder, the autosearch will commence. It will take some time!
-    #To limit the number of results, the search exludes the Windows
+    # To limit the number of results, the search exludes the Windows, program files, program data and users directories. 
+    # If the user added the folder where the installation disc or files are located, the input is somewhat sanitized to allow multiple sorts of entry.
+    # The user is expected to add the complete folder structure!
 
     if ($InstallFolder::IsNullOrEmpty()) {
         
@@ -157,11 +167,11 @@
     }
 
     if ($SetupFile.Length -eq 1) {
-        $SetupFile = $SetupFile + ':\SQLEXPR_x64_ENU\SETUP.EXE'
+        $SetupFile = $SetupFile + ':\SETUP.EXE'
         Write-Message -Level Verbose -Message 'Setup will start from ' + $SetupFile
     } 
     else {
-        $SetupFile = $SetupFile + '\SQLEXPR_x64_ENU\SETUP.EXE'
+        $SetupFile = $SetupFile + '\SETUP.EXE'
         Write-Message -Level Verbose -Message 'Setup will start from ' + $SetupFile
     }
 
