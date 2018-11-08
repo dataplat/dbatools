@@ -92,7 +92,7 @@ function Restart-DbaService {
         [parameter(ValueFromPipeline, Mandatory, ParameterSetName = "Service")]
         [Alias("ServiceCollection")]
         [object[]]$InputObject,
-        [int]$Timeout = 30,
+        [int]$Timeout = 60,
         [PSCredential]$Credential,
         [switch]$Force,
         [Alias('Silent')]
