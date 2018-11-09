@@ -176,7 +176,10 @@ function Get-DbaWindowsLog {
                     while (-not $reader.EndOfStream) {
                         Convert-ErrorRecord -Line $reader.ReadLine()
                     }
-                } catch { }
+                } catch {
+                    # here to avoid an empty catch
+                    $null = 1
+                }
             }
             #endregion Script that processes an individual file
 

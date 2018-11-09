@@ -1270,7 +1270,8 @@ function Import-DbaCsvToSql {
             $null = $bulkCopy.close(); $bulkcopy.dispose();
             $null = $reader.close(); $null = $reader.dispose()
         } catch {
-
+            #here to avoid an empty catch
+            $null = 1
         }
 
         # Delete all the temp files

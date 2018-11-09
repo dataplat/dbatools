@@ -219,13 +219,21 @@ function Get-DbaUserPermission {
 
                 #Create objects in active database
                 Write-Message -Level Verbose -Message "Creating objects"
-                try { $db.ExecuteNonQuery($sql) } catch {} # sometimes it complains about not being able to drop the stig schema if the person Ctrl-C'd before.
+                try { $db.ExecuteNonQuery($sql)
+                } catch {
+                    # here to avoid an empty catch
+                    $null = 1
+                } # sometimes it complains about not being able to drop the stig schema if the person Ctrl-C'd before.
 
                 #Grab permissions data
                 if (-not $serverDT) {
                     Write-Message -Level Verbose -Message "Building data table for server objects"
 
-                    try { $serverDT = $db.Query($serverSQL) } catch { }
+                    try { $serverDT = $db.Query($serverSQL)
+                    } catch {
+                        # here to avoid an empty catch
+                        $null = 1
+                    }
 
                     foreach ($row in $serverDT) {
                         [PSCustomObject]@{
@@ -250,7 +258,11 @@ function Get-DbaUserPermission {
                 }
 
                 Write-Message -Level Verbose -Message "Building data table for $db objects"
-                try { $dbDT = $db.Query($dbSQL) } catch { }
+                try { $dbDT = $db.Query($dbSQL)
+                } catch {
+                    # here to avoid an empty catch
+                    $null = 1
+                }
 
                 foreach ($row in $dbDT) {
                     [PSCustomObject]@{
@@ -275,7 +287,11 @@ function Get-DbaUserPermission {
 
                 #Delete objects
                 Write-Message -Level Verbose -Message "Deleting objects"
-                try { $db.ExecuteNonQuery($endSQL) } catch { }
+                try { $db.ExecuteNonQuery($endSQL)
+                } catch {
+                    # here to avoid an empty catch
+                    $null = 1
+                }
                 $sql = $sql.Replace($db.Name, "<TARGETDB>")
 
                 #Sashay Away

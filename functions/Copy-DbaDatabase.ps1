@@ -355,6 +355,8 @@ function Copy-DbaDatabase {
                         $allrows = $fttable.Tables[0].rows
                     } catch {
                         # Nothing, it's just not enabled
+                        # here to avoid an empty catch
+                        $null = 1
                     }
 
                     foreach ($ftc in $allrows) {

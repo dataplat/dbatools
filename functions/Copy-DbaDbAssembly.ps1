@@ -104,7 +104,10 @@ function Copy-DbaDbAssembly {
                 foreach ($assembly in $userAssemblies) {
                     $sourceAssemblies += $assembly
                 }
-            } catch { }
+            } catch {
+                #here to avoid an empty catch
+                $null = 1
+            }
         }
     }
     process {
@@ -125,7 +128,10 @@ function Copy-DbaDbAssembly {
                     foreach ($assembly in $userAssemblies) {
                         $destAssemblies += $assembly
                     }
-                } catch { }
+                } catch {
+                    #here to avoid an empty catch
+                    $null = 1
+                }
             }
             foreach ($currentAssembly in $sourceAssemblies) {
                 $assemblyName = $currentAssembly.Name
