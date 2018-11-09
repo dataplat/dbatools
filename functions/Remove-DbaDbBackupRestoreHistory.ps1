@@ -67,7 +67,7 @@ function Remove-DbaDbBackupRestoreHistory {
         PS C:\> Get-DbaDatabase -SqlInstance sql2016 | Remove-DbaDbBackupRestoreHistory -WhatIf
 
         Remove complete backup and restore history for all databases on SQL Server sql2016
-    #>
+       #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
     param (
         [DbaInstanceParameter[]]$SqlInstance,
@@ -83,7 +83,7 @@ function Remove-DbaDbBackupRestoreHistory {
     begin {
         $odt = (Get-Date).AddDays(-$KeepDays)
     }
-    
+
     process {
         foreach ($instance in $SqlInstance) {
             try {
@@ -105,7 +105,7 @@ function Remove-DbaDbBackupRestoreHistory {
                 $InputObject += $server.Databases | Where-Object { $_.Name -in $Database }
             }
         }
-        
+
         foreach ($db in $InputObject) {
             try {
                 $servername = $db.Parent.Name
