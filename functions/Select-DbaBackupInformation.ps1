@@ -29,7 +29,7 @@ function Select-DbaBackupInformation {
         Sets IgnoreDiffs, and also filters databases to only those within the ContinuePoints object, or the ContinuePoints object AND DatabaseName if both specified
 
     .PARAMETER LastRestoreType
-        The Output of Get-DbaRestoreHistory -last
+        The Output of Get-DbaDbRestoreHistory -last
         This is used to check the last type of backup to a database to see if a differential backup can be restored
 
     .PARAMETER EnableException

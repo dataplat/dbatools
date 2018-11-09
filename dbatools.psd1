@@ -11,7 +11,7 @@
     RootModule             = 'dbatools.psm1'
 
     # Version number of this module.
-    ModuleVersion          = '0.9.504'
+    ModuleVersion          = '0.9.507'
 
     # ID used to uniquely identify this module
     GUID                   = '9d139310-ce45-41ce-8e8b-d76335aa1789'
@@ -130,7 +130,7 @@
         'Test-DbaJobOwner',
         'Set-DbaJobOwner',
         'Test-DbaDbVirtualLogFile',
-        'Get-DbaRestoreHistory',
+        'Get-DbaDbRestoreHistory',
         'Get-DbaTcpPort',
         'Test-DbaDbCompatibility',
         'Test-DbaDbCollation',
@@ -568,7 +568,8 @@
         'Sync-DbaAvailabilityGroup',
         'Install-DbaSqlWatch',
         'Uninstall-DbaSqlWatch',
-        'Get-DbaMemoryCondition'
+        'Get-DbaMemoryCondition',
+        'Remove-DbaDbBackupRestoreHistory'
     )
 
     # Cmdlets to export from this module
@@ -751,7 +752,8 @@
     'Invoke-DbaLogShipping',
     'Invoke-DbaLogShippingRecovery',
     'Test-DbaLogShippingStatus',
-    'Get-DbaRoleMember'
+    'Get-DbaRoleMember',
+    'Get-DbaRestoreHistory'
 
     # List of all modules packaged with this module
     ModuleList             = @()

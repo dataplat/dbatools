@@ -193,7 +193,6 @@ function Sync-DbaAvailabilityGroup {
             $secondaries = $ag.SecondaryServer
             
             $stepCounter = 0
-            $totalSteps = 15
             $activity = "Syncing availability group $AvailabilityGroup"
             
             if (-not $secondaries) {
@@ -206,21 +205,21 @@ function Sync-DbaAvailabilityGroup {
             
             if ($Exclude -notcontains "SpConfigure") {
                 if ($PSCmdlet.ShouldProcess("Syncing SQL Server Configuration from $primaryserver to $secondaryservers")) {
-                    Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Syncing SQL Server Configuration"
+                    Write-ProgressHelper -Activity $activity -StepNumber ($stepCounter++) -Message "Syncing SQL Server Configuration"
                     Copy-DbaSpConfigure -Source $server -Destination $secondaries
                 }
             }
             
             if ($Exclude -notcontains "Logins") {
                 if ($PSCmdlet.ShouldProcess("Syncing logins from $primaryserver to $secondaryservers")) {
-                    Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Syncing logins"
+                    Write-ProgressHelper -Activity $activity -StepNumber ($stepCounter++) -Message "Syncing logins"
                     Copy-DbaLogin -Source $server -Destination $secondaries -Force:$Force
                 }
             }
             
             if ($Exclude -notcontains "DatabaseOwner") {
                 if ($PSCmdlet.ShouldProcess("Updating database owners to match newly migrated logins from $primaryserver to $secondaryservers")) {
-                    Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Updating database owners to match newly migrated logins"
+                    Write-ProgressHelper -Activity $activity -StepNumber ($stepCounter++) -Message "Updating database owners to match newly migrated logins"
                     foreach ($sec in $secondaries) {
                         $null = Update-SqlDbOwner -Source $server -Destination $sec
                     }
@@ -229,42 +228,42 @@ function Sync-DbaAvailabilityGroup {
             
             if ($Exclude -notcontains "CustomErrors") {
                 if ($PSCmdlet.ShouldProcess("Syncing custom errors (user defined messages) from $primaryserver to $secondaryservers")) {
-                    Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Syncing custom errors (user defined messages)"
+                    Write-ProgressHelper -Activity $activity -StepNumber ($stepCounter++) -Message "Syncing custom errors (user defined messages)"
                     Copy-DbaCustomError -Source $server -Destination $secondaries -Force:$Force
                 }
             }
             
             if ($Exclude -notcontains "Credentials") {
                 if ($PSCmdlet.ShouldProcess("Syncing SQL credentials from $primaryserver to $secondaryservers")) {
-                    Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Syncing SQL credentials"
+                    Write-ProgressHelper -Activity $activity -StepNumber ($stepCounter++) -Message "Syncing SQL credentials"
                     Copy-DbaCredential -Source $server -Destination $secondaries -Force:$Force
                 }
             }
             
             if ($Exclude -notcontains "DatabaseMail") {
                 if ($PSCmdlet.ShouldProcess("Syncing database mail from $primaryserver to $secondaryservers")) {
-                    Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Syncing database mail"
+                    Write-ProgressHelper -Activity $activity -StepNumber ($stepCounter++) -Message "Syncing database mail"
                     Copy-DbaDbMail -Source $server -Destination $secondaries -Force:$Force
                 }
             }
             
             if ($Exclude -notcontains "LinkedServers") {
                 if ($PSCmdlet.ShouldProcess("Syncing linked servers from $primaryserver to $secondaryservers")) {
-                    Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Syncing linked servers"
+                    Write-ProgressHelper -Activity $activity -StepNumber ($stepCounter++) -Message "Syncing linked servers"
                     Copy-DbaLinkedServer -Source $server -Destination $secondaries -Force:$Force
                 }
             }
             
             if ($Exclude -notcontains "SystemTriggers") {
                 if ($PSCmdlet.ShouldProcess("Syncing System Triggers from $primaryserver to $secondaryservers")) {
-                    Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Syncing System Triggers"
+                    Write-ProgressHelper -Activity $activity -StepNumber ($stepCounter++) -Message "Syncing System Triggers"
                     Copy-DbaServerTrigger -Source $server -Destination $secondaries -Force:$Force
                 }
             }
             
             if ($Exclude -notcontains "AgentCategory") {
                 if ($PSCmdlet.ShouldProcess("Syncing Agent Categories from $primaryserver to $secondaryservers")) {
-                    Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Syncing Agent Categories"
+                    Write-ProgressHelper -Activity $activity -StepNumber ($stepCounter++) -Message "Syncing Agent Categories"
                     Copy-DbaAgentCategory -Source $server -Destination $secondaries -Force:$force
                     $secondaries.JobServer.JobCategories.Refresh()
                     $secondaries.JobServer.OperatorCategories.Refresh()
@@ -274,7 +273,7 @@ function Sync-DbaAvailabilityGroup {
             
             if ($Exclude -notcontains "AgentOperator") {
                 if ($PSCmdlet.ShouldProcess("Syncing Agent Operators from $primaryserver to $secondaryservers")) {
-                    Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Syncing Agent Operators"
+                    Write-ProgressHelper -Activity $activity -StepNumber ($stepCounter++) -Message "Syncing Agent Operators"
                     Copy-DbaAgentOperator -Source $server -Destination $secondaries -Force:$force
                     $secondaries.JobServer.Operators.Refresh()
                 }
@@ -282,7 +281,7 @@ function Sync-DbaAvailabilityGroup {
             
             if ($Exclude -notcontains "AgentAlert") {
                 if ($PSCmdlet.ShouldProcess("Syncing Agent Alerts from $primaryserver to $secondaryservers")) {
-                    Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Syncing Agent Alerts"
+                    Write-ProgressHelper -Activity $activity -StepNumber ($stepCounter++) -Message "Syncing Agent Alerts"
                     Copy-DbaAgentAlert -Source $server -Destination $secondaries -Force:$force -IncludeDefaults
                     $secondaries.JobServer.Alerts.Refresh()
                 }
@@ -290,7 +289,7 @@ function Sync-DbaAvailabilityGroup {
             
             if ($Exclude -notcontains "AgentProxy") {
                 if ($PSCmdlet.ShouldProcess("Syncing Agent Proxy Accounts from $primaryserver to $secondaryservers")) {
-                    Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Syncing Agent Proxy Accounts"
+                    Write-ProgressHelper -Activity $activity -StepNumber ($stepCounter++) -Message "Syncing Agent Proxy Accounts"
                     Copy-DbaAgentProxyAccount -Source $server -Destination $secondaries -Force:$force
                     $secondaries.JobServer.ProxyAccounts.Refresh()
                 }
@@ -298,7 +297,7 @@ function Sync-DbaAvailabilityGroup {
             
             if ($Exclude -notcontains "AgentSchedule") {
                 if ($PSCmdlet.ShouldProcess("Syncing Agent Schedules from $primaryserver to $secondaryservers")) {
-                    Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Syncing Agent Schedules"
+                    Write-ProgressHelper -Activity $activity -StepNumber ($stepCounter++) -Message "Syncing Agent Schedules"
                     Copy-DbaAgentSharedSchedule -Source $server -Destination $secondaries -Force:$force
                     $secondaries.JobServer.SharedSchedules.Refresh()
                     $secondaries.JobServer.Refresh()
@@ -308,14 +307,14 @@ function Sync-DbaAvailabilityGroup {
             
             if ($Exclude -notcontains "AgentJob") {
                 if ($PSCmdlet.ShouldProcess("Syncing Agent Jobs from $primaryserver to $secondaryservers")) {
-                    Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Syncing Agent Jobs"
+                    Write-ProgressHelper -Activity $activity -StepNumber ($stepCounter++) -Message "Syncing Agent Jobs"
                     Copy-DbaAgentJob -Source $server -Destination $secondaries -Force:$force
                 }
             }
             
             if ($Exclude -notcontains "LoginPermissions") {
                 if ($PSCmdlet.ShouldProcess("Syncing login permissions from $primaryserver to $secondaryservers")) {
-                    Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Syncing login permissions"
+                    Write-ProgressHelper -Activity $activity -StepNumber ($stepCounter++) -Message "Syncing login permissions"
                     Sync-DbaLoginPermission -Source $server -Destination $secondaries
                 }
             }

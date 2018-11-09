@@ -115,7 +115,6 @@ function Get-DbaReportingService {
                 ForEach ($service in $services) {
                     if (!$InstanceName -or $service.InstanceName -in $InstanceName) {
                         #Add other properties and methods
-                        Add-Member -Force -InputObject $service -MemberType NoteProperty -Name ComputerName -Value $Computer
                         Add-Member -Force -InputObject $service -MemberType NoteProperty -Name ServiceType -Value 'SSRS'
                         Add-Member -Force -InputObject $service -MemberType AliasProperty -Name StartName -Value WindowsServiceIdentityActual
 
@@ -124,8 +123,13 @@ function Get-DbaReportingService {
                         } catch {
                             Stop-Function -EnableException $EnableException -Message "Failed to acquire services32" -Target $Computer -ErrorRecord $_ -Continue
                         }
+                        Add-Member -Force -InputObject $service -MemberType NoteProperty -Name ComputerName -Value $service32.SystemName
                         Add-Member -Force -InputObject $service -MemberType NoteProperty -Name State -Value $service32.State
-                        Add-Member -Force -InputObject $service -MemberType NoteProperty -Name StartMode -Value $service32.StartMode
+                        $startMode = switch ($service32.StartMode) {
+                            Auto { 'Automatic' } #Replacing for consistency to match other SQL Services
+                            default { $_ }
+                        }
+                        Add-Member -Force -InputObject $service -MemberType NoteProperty -Name StartMode -Value $startMode
                         Add-Member -Force -InputObject $service -MemberType NoteProperty -Name DisplayName -Value $service32.DisplayName
                         Add-Member -Force -InputObject $service -NotePropertyName ServicePriority -NotePropertyValue 100
                         Add-Member -Force -InputObject $service -MemberType ScriptMethod -Name "Stop" -Value {

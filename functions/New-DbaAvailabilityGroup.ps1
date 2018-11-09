@@ -255,8 +255,6 @@ function New-DbaAvailabilityGroup {
     )
     process {
         $stepCounter = $wait = 0
-        $totalSteps = 10
-        $activity = "Adding new availability group $name"
         
         if ($Force -and $Secondary -and (-not $NetworkShare -and -not $UseLastBackups) -and ($SeedingMode -ne 'Automatic')) {
             Stop-Function -Message "NetworkShare or UseLastBackups is required when Force is used"
@@ -280,7 +278,7 @@ function New-DbaAvailabilityGroup {
             return
         }
         
-        Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Checking perquisites"
+        Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Checking perquisites"
         
         # Don't reuse $server here, it fails
         if (Get-DbaAvailabilityGroup -SqlInstance $Primary -SqlCredential $PrimarySqlCredential -AvailabilityGroup $Name) {
@@ -377,7 +375,7 @@ function New-DbaAvailabilityGroup {
             }
         }
         
-        Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Creating availability group named $Name on $Primary"
+        Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Creating availability group named $Name on $Primary"
         
         # Start work
         if ($Pscmdlet.ShouldProcess($Primary, "Setting up availability group named $Name and adding primary replica")) {
@@ -427,7 +425,7 @@ function New-DbaAvailabilityGroup {
         
         # Add cluster permissions
         if ($ClusterType -eq 'Wsfc') {
-            Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Adding endpoint connect permissions"
+            Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Adding endpoint connect permissions"
             
             foreach ($second in $secondaries) {
                 if ($Pscmdlet.ShouldProcess($Primary, "Adding cluster permissions for availability group named $Name")) {
@@ -448,7 +446,7 @@ function New-DbaAvailabilityGroup {
         }
         
         # Add replicas
-        Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Adding secondary replicas"
+        Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Adding secondary replicas"
         
         foreach ($second in $secondaries) {
             if ($Pscmdlet.ShouldProcess($second.Name, "Adding replica to availability group named $Name")) {
@@ -474,7 +472,7 @@ function New-DbaAvailabilityGroup {
         }
         
         # Add databases
-        Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Adding databases"
+        Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Adding databases"
         
         $allbackups = @{
         }
@@ -521,7 +519,7 @@ function New-DbaAvailabilityGroup {
         }
         
         # Add listener
-        Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Adding listener"
+        Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Adding listener"
         
         if ($IPAddress) {
             if ($Pscmdlet.ShouldProcess($Primary, "Adding static IP listener for $Name to the Primary replica")) {
@@ -537,7 +535,7 @@ function New-DbaAvailabilityGroup {
             }
         }
         
-        Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Joining availability group"
+        Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Joining availability group"
         
         foreach ($second in $secondaries) {
             if ($Pscmdlet.ShouldProcess("Joining $($second.Name) to $Name")) {
@@ -550,7 +548,7 @@ function New-DbaAvailabilityGroup {
             }
         }
         
-        Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Granting permissions on availability group, this may take a moment"
+        Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Granting permissions on availability group, this may take a moment"
         
         # Grant permissions, but first, get all necessary service accounts
         $primaryserviceaccount = $server.ServiceAccount.Trim()

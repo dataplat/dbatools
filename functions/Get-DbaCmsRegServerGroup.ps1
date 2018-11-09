@@ -114,7 +114,10 @@ function Get-DbaCmsRegServerGroup {
                                 Write-Message -Level Verbose -Message "Added $($thisgroup.Name)"
                                 $groups += $thisgroup
                             }
-                        } catch { }
+                        } catch {
+                            # here to avoid an empty catch
+                            $null = 1
+                        }
                     }
                 }
             } else {

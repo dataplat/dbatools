@@ -157,7 +157,10 @@ function Get-DbaService {
                 }
                 Write-Message -Level Verbose -Message "Getting SQL Server namespace on $Computer" -Target $Computer
                 try { $namespaces = Get-DbaCmObject -ComputerName $Computer -NameSpace root\Microsoft\SQLServer -Query "Select Name FROM __NAMESPACE WHERE Name Like 'ComputerManagement%'" -EnableException -Credential $credential | Sort-Object Name -Descending }
-                catch { }
+                catch {
+                    # here to avoid an empty catch
+                    $null = 1
+                }
                 if ($namespaces) {
                     $servicesTemp = @()
 
