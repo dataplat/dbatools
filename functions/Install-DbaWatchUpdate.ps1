@@ -64,6 +64,8 @@ function Install-DbaWatchUpdate {
                 $null = Register-ScheduledTask -Principal $principal -TaskName 'dbatools version check' -Action $action -Trigger $trigger -Settings $settings -ErrorAction Stop
             } catch {
                 # keep moving
+                # here to avoid an empty catch
+                $null = 1
             }
         }
 
