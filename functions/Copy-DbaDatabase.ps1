@@ -695,10 +695,9 @@ function Copy-DbaDatabase {
         $sourceNetBios = $sourceServer.ComputerName
 
         Write-Message -Level Verbose -Message "Ensuring user databases exist (counting databases)."
-        $dbTotal = $sourceServer.Databases.Count
-
-        if ($dbTotal -le 4) {
-            Stop-Function -Message "No user databases to migrate. Quitting."
+        
+        if ($sourceserver.Databases.IsSystemObject -notcontains $false) {
+            Stop-Function -Message "No user databases to migrate"
             return
         }
 
