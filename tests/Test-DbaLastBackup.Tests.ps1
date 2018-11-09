@@ -87,7 +87,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         $results1 = Restore-DbaDatabase -SqlInstance $script:instance1 -Database smalltestrest -Path $script:appveyorlabrepo\sql2008-backups\db2\FULL\SQL2008_db2_FULL_20170518_041738.bak -ReplaceDbNameInFile
         Backup-DbaDatabase -SqlInstance $script:instance1 -Database smalltestrest
 
-        $results = Test-DbaLastBackup -SqlInstance $script:instance1 -Databases bigtestrest, smalltestrest -CopyFile -CopyPath c:\temp -MaxSize 3 -Prefix testlast
+        $results = Test-DbaLastBackup -SqlInstance $script:instance1 -Database bigtestrest, smalltestrest -CopyFile -CopyPath c:\temp -MaxSize 3 -Prefix testlast
         $fileresult = Get-ChildItem c:\temp | Where-Object {$_.name -like '*bigtestrest'}
         It "Should have skipped bigtestrest and tested smalltestrest" {
             $results[0].RestoreResult | Should -BeLike '*exceeds the specified maximum*'
@@ -100,6 +100,6 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             ($null -eq $fileresult) | Should -Be $true
         }
 
-        Get-DbaDatabase -SqlInstance $script:instance1 -Databases  bigtestrest, smalltestrest | Remove-DbaDatabase -confirm:$false
+        Get-DbaDatabase -SqlInstance $script:instance1 -Database  bigtestrest, smalltestrest | Remove-DbaDatabase -confirm:$false
     }
 }
