@@ -63,7 +63,7 @@ function Get-DbaUserPermission {
         Check server and database permissions on server sql2008 for only the TestDB database,
         including public and guest grants, and sys schema objects.
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Position = 0, Mandatory, ValueFromPipeline)]
@@ -219,7 +219,8 @@ function Get-DbaUserPermission {
 
                 #Create objects in active database
                 Write-Message -Level Verbose -Message "Creating objects"
-                try { $db.ExecuteNonQuery($sql)
+                try {
+                    $db.ExecuteNonQuery($sql)
                 } catch {
                     # here to avoid an empty catch
                     $null = 1
@@ -229,7 +230,8 @@ function Get-DbaUserPermission {
                 if (-not $serverDT) {
                     Write-Message -Level Verbose -Message "Building data table for server objects"
 
-                    try { $serverDT = $db.Query($serverSQL)
+                    try {
+                        $serverDT = $db.Query($serverSQL)
                     } catch {
                         # here to avoid an empty catch
                         $null = 1
@@ -258,7 +260,8 @@ function Get-DbaUserPermission {
                 }
 
                 Write-Message -Level Verbose -Message "Building data table for $db objects"
-                try { $dbDT = $db.Query($dbSQL)
+                try {
+                    $dbDT = $db.Query($dbSQL)
                 } catch {
                     # here to avoid an empty catch
                     $null = 1
@@ -287,7 +290,8 @@ function Get-DbaUserPermission {
 
                 #Delete objects
                 Write-Message -Level Verbose -Message "Deleting objects"
-                try { $db.ExecuteNonQuery($endSQL)
+                try {
+                    $db.ExecuteNonQuery($endSQL)
                 } catch {
                     # here to avoid an empty catch
                     $null = 1
@@ -302,4 +306,3 @@ function Get-DbaUserPermission {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-DbaUserLevelPermission
     }
 }
-
