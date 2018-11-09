@@ -449,7 +449,8 @@ function Write-DbaDataTable {
             try {
                 $null = $server.Databases
             } catch {
-                #do nothing
+                # here to avoid an empty catch
+                $null = 1
             }
         }
         $databaseObject = $server.Databases[$databaseName]
