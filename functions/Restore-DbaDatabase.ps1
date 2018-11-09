@@ -697,7 +697,8 @@ function Restore-DbaDatabase {
                     $_.IsVerified -eq $true
                 } | Invoke-DbaAdvancedRestore -SqlInstance $RestoreInstance -WithReplace:$WithReplace -RestoreTime $RestoreTime -StandbyDirectory $StandbyDirectory -NoRecovery:$NoRecovery -Continue:$Continue -OutputScriptOnly:$OutputScriptOnly -BlockSize $BlockSize -MaxTransferSize $MaxTransferSize -Buffercount $Buffercount -KeepCDC:$KeepCDC -VerifyOnly:$VerifyOnly -PageRestore $PageRestore -EnableException -AzureCredential $AzureCredential
             } catch {
-                Stop-Function -Message "Failure" -ErrorRecord $_ -Continue -Target $RestoreInstance
+                $msg = Get-ErrorMessage -Record $_
+                Stop-Function -Message $msg -ErrorRecord $_ -Continue -Target $RestoreInstance
             }
             if ($PSCmdlet.ParameterSetName -eq "RestorePage") {
                 if ($RestoreInstance.Edition -like '*Enterprise*') {
