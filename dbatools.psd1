@@ -130,7 +130,7 @@
         'Test-DbaJobOwner',
         'Set-DbaJobOwner',
         'Test-DbaDbVirtualLogFile',
-        'Get-DbaRestoreHistory',
+        'Get-DbaDbRestoreHistory',
         'Get-DbaTcpPort',
         'Test-DbaDbCompatibility',
         'Test-DbaDbCollation',
@@ -751,7 +751,8 @@
     'Invoke-DbaLogShipping',
     'Invoke-DbaLogShippingRecovery',
     'Test-DbaLogShippingStatus',
-    'Get-DbaRoleMember'
+    'Get-DbaRoleMember',
+    'Get-DbaRestoreHistory'
 
     # List of all modules packaged with this module
     ModuleList             = @()

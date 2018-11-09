@@ -921,6 +921,10 @@ $script:renames = @(
     @{
         "AliasName"  = "Get-DbaRoleMember"
         "Definition" = "Get-DbaDbRoleMember"
+    },
+    @{
+        "AliasName"  = "Get-DbaRestoreHistory"
+        "Definition" = "Get-DbaDbRestoreHistory"
     }
 )
 
