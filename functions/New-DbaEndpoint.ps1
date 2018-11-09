@@ -178,7 +178,8 @@ function New-DbaEndpoint {
                     $server.Endpoints.Refresh()
                     Get-DbaEndpoint -SqlInstance $server -Endpoint $name
                 } catch {
-                    Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
+                    $msg = Get-ErrorMessage -Record $_
+                    Stop-Function -Message $msg -ErrorRecord $_ -Continue
                 }
             }
         }
