@@ -93,10 +93,10 @@ function Invoke-DbaDbMirroring {
         Performs a bunch of checks to ensure the pubs database on sql2017a
         can be mirrored from sql2017a to sql2017b. Logs in to sql2019 and sql2017a
         using Windows credentials and sql2017b using a SQL credential.
-    
+
         Prompts for confirmation for most changes. To avoid confirmation, use -Confirm:$false or
         use the syntax in the second example.
-    
+
     .EXAMPLE
         PS C:\> $params = @{
         >> Primary = 'sql2017a'
@@ -133,7 +133,7 @@ function Invoke-DbaDbMirroring {
 
         Mirrors pubs on sql2017a to sql2017b and uses the last full and logs from sql2017a to seed. Doesn't prompt for confirmation.
 
-#>
+    #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
     param (
         [DbaInstanceParameter]$Primary,
@@ -163,55 +163,55 @@ function Invoke-DbaDbMirroring {
             Stop-Function -Message "Database is required when Primary is specified"
             return
         }
-        
+
         if ($Force -and (-not $NetworkShare -and -not $UseLastBackups)) {
             Stop-Function -Message "NetworkShare or UseLastBackups is required when Force is used"
             return
         }
-        
+
         if ($Primary) {
             $InputObject += Get-DbaDatabase -SqlInstance $Primary -SqlCredential $PrimarySqlCredential -Database $Database
         }
-        
+
         foreach ($primarydb in $InputObject) {
             $stepCounter = 0
             $Primary = $source = $primarydb.Parent
-            
+
             try {
                 $dest = Connect-SqlInstance -SqlInstance $Mirror -SqlCredential $MirrorSqlCredential
-                
+
                 if ($Witness) {
                     $witserver = Connect-SqlInstance -SqlInstance $Witness -SqlCredential $WitnessSqlCredential
                 }
             } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-            
+
             $dbName = $primarydb.Name
-            
+
             Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Validating mirror setup"
             # Thanks to https://github.com/mmessano/PowerShell/blob/master/SQL-ConfigureDatabaseMirroring.ps1 for the tips
-            
+
             $validation = Invoke-DbMirrorValidation @params
-            
+
             if ((Test-Bound -ParameterName NetworkShare) -and -not $validation.AccessibleShare) {
                 Stop-Function -Continue -Message "Cannot access $NetworkShare from $($dest.Name)"
             }
-            
+
             if (-not $validation.EditionMatch) {
                 Stop-Function -Continue -Message "This mirroring configuration is not supported. Because the principal server instance, $source, is $($source.EngineEdition) Edition, the mirror server instance must also be $($source.EngineEdition) Edition."
             }
-            
+
             if ($validation.MirroringStatus -ne "None") {
                 Stop-Function -Continue -Message "Cannot setup mirroring on database ($dbname) due to its current mirroring state: $($primarydb.MirroringStatus)"
             }
-            
+
             if ($primarydb.Status -ne "Normal") {
                 Stop-Function -Continue -Message "Cannot setup mirroring on database ($dbname) due to its current state: $($primarydb.Status)"
             }
-            
+
             Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Setting recovery model for $dbName on $($source.Name) to Full"
-            
+
             if ($primarydb.RecoveryModel -ne "Full") {
                 if ((Test-Bound -ParameterName UseLastBackups)) {
                     Stop-Function -Continue -Message "$dbName not set to full recovery. UseLastBackups cannot be used."
@@ -219,7 +219,7 @@ function Invoke-DbaDbMirroring {
                     Set-DbaDbRecoveryModel -SqlInstance $source -Database $primarydb.Name -RecoveryModel Full
                 }
             }
-            
+
             Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Copying $dbName from primary to mirror"
             if (-not $validation.DatabaseExistsOnMirror -or $Force) {
                 if ($UseLastBackups) {
@@ -241,16 +241,16 @@ function Invoke-DbaDbMirroring {
                         }
                     }
                 }
-                
+
                 if ($NetworkShare) {
                     Write-Message -Level Verbose -Message "Backups still exist on $NetworkShare"
                 }
             }
-            
+
             $mirrordb = Get-DbaDatabase -SqlInstance $dest -Database $dbName
-            
+
             Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Copying $dbName from primary to witness"
-            
+
             if ($Witness -and (-not $validation.DatabaseExistsOnWitness -or $Force)) {
                 if (-not $allbackups) {
                     if ($UseLastBackups) {
@@ -263,7 +263,7 @@ function Invoke-DbaDbMirroring {
                         }
                     }
                 }
-                
+
                 if ($Pscmdlet.ShouldProcess("$Witness", "Restoring full and log backups of $primarydb from $Primary")) {
                     try {
                         $null = $allbackups | Restore-DbaDatabase -SqlInstance $Witness -SqlCredential $WitnessSqlCredential -WithReplace -NoRecovery -TrustDbBackupHistory -EnableException
@@ -273,24 +273,24 @@ function Invoke-DbaDbMirroring {
                     }
                 }
             }
-            
+
             $primaryendpoint = Get-DbaEndpoint -SqlInstance $source | Where-Object EndpointType -eq DatabaseMirroring
             $mirrorendpoint = Get-DbaEndpoint -SqlInstance $dest | Where-Object EndpointType -eq DatabaseMirroring
-            
+
             if (-not $primaryendpoint) {
                 Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Setting up endpoint for primary"
                 $primaryendpoint = New-DbaEndpoint -SqlInstance $source -Type DatabaseMirroring -Role Partner -Name Mirroring -EncryptionAlgorithm RC4
                 $null = $primaryendpoint | Stop-DbaEndpoint
                 $null = $primaryendpoint | Start-DbaEndpoint
             }
-            
+
             if (-not $mirrorendpoint) {
                 Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Setting up endpoint for mirror"
                 $mirrorendpoint = New-DbaEndpoint -SqlInstance $dest -Type DatabaseMirroring -Role Partner -Name Mirroring -EncryptionAlgorithm RC4
                 $null = $mirrorendpoint | Stop-DbaEndpoint
                 $null = $mirrorendpoint | Start-DbaEndpoint
             }
-            
+
             if ($witserver) {
                 Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Setting up endpoint for witness"
                 $witnessendpoint = Get-DbaEndpoint -SqlInstance $witserver | Where-Object EndpointType -eq DatabaseMirroring
@@ -300,11 +300,11 @@ function Invoke-DbaDbMirroring {
                     $null = $witnessendpoint | Start-DbaEndpoint
                 }
             }
-            
+
             Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Granting permissions to service account"
-            
+
             $serviceaccounts = $source.ServiceAccount, $dest.ServiceAccount, $witserver.ServiceAccount | Select-Object -Unique
-            
+
             foreach ($account in $serviceaccounts) {
                 if ($Pscmdlet.ShouldProcess("primary, mirror and witness (if specified)", "Creating login $account and granting CONNECT ON ENDPOINT")) {
                     $null = New-DbaLogin -SqlInstance $source -Login $account -WarningAction SilentlyContinue
@@ -321,28 +321,28 @@ function Invoke-DbaDbMirroring {
                     }
                 }
             }
-            
+
             Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Starting endpoints if necessary"
             try {
                 $null = $primaryendpoint, $mirrorendpoint, $witnessendpoint | Start-DbaEndpoint -EnableException
             } catch {
                 Stop-Function -Continue -Message "Failure" -ErrorRecord $_
             }
-            
+
             try {
                 Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Setting up partner for mirror"
                 $null = $mirrordb | Set-DbaDbMirror -Partner $primaryendpoint.Fqdn -EnableException
             } catch {
                 Stop-Function -Continue -Message "Failure on mirror" -ErrorRecord $_
             }
-            
+
             try {
                 Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Setting up partner for primary"
                 $null = $primarydb | Set-DbaDbMirror -Partner $mirrorendpoint.Fqdn -EnableException
             } catch {
                 Stop-Function -Continue -Message "Failure on primary" -ErrorRecord $_
             }
-            
+
             try {
                 if ($witnessendpoint) {
                     $null = $primarydb | Set-DbaDbMirror -Witness $witnessendpoint.Fqdn -EnableException
@@ -350,14 +350,14 @@ function Invoke-DbaDbMirroring {
             } catch {
                 Stop-Function -Continue -Message "Failure with the new last part" -ErrorRecord $_
             }
-            
+
             if ($Pscmdlet.ShouldProcess("console", "Showing results")) {
                 $results = [pscustomobject]@{
-                    Primary = $Primary
-                    Mirror  = $Mirror -join ", "
-                    Witness = $Witness
+                    Primary  = $Primary
+                    Mirror   = $Mirror -join ", "
+                    Witness  = $Witness
                     Database = $primarydb.Name
-                    Status  = "Success"
+                    Status   = "Success"
                 }
                 if ($Witness) {
                     $results | Select-DefaultView -Property Primary, Mirror, Witness, Database, Status

@@ -529,7 +529,7 @@ function Backup-DbaDatabase {
                             if ($server.VersionMajor -eq '8') {
                                 $HeaderInfo = Get-BackupAncientHistory -SqlInstance $server -Database $dbname
                             } else {
-                                $HeaderInfo = Get-DbaBackupHistory -SqlInstance $server -Database $dbname -Last -IncludeCopyOnly -LastLsn $NumericLsn | Sort-Object -Property End -Descending | Select-Object -First 1
+                                $HeaderInfo = Get-DbaBackupHistory -SqlInstance $server -Database $dbname -Last -IncludeCopyOnly -LastLsn $NumericLsn -WarningAction SilentlyContinue | Sort-Object -Property End -Descending | Select-Object -First 1
                             }
                             $Verified = $false
                             if ($Verify) {
@@ -585,7 +585,8 @@ function Backup-DbaDatabase {
                         Write-Message -Message "Exception thrown by db going into restoring mode due to recovery" -Leve Verbose
                     } else {
                         Write-Progress -id $ProgressId -activity "Backup" -status "Failed" -completed
-                        Stop-Function -message "Backup Failed:  $($_.Exception.Message)" -EnableException $EnableException -ErrorRecord $_ -Continue
+                        $msg = Get-ErrorMessage -Record $_
+                        Stop-Function -message "Backup Failed:  $msg" -ErrorRecord $_ -Continue
                         $BackupComplete = $false
                     }
                 }
