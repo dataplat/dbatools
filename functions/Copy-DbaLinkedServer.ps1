@@ -109,7 +109,10 @@ function Copy-DbaLinkedServer {
                 try {
                     $destServer.LinkedServers.Refresh()
                     $destServer.LinkedServers.LinkedServerLogins.Refresh()
-                } catch { }
+                } catch {
+                    #here to avoid an empty catch
+                    $null = 1
+                }
 
                 $linkedServerName = $currentLinkedServer.Name
                 $linkedServerDataSource = $currentLinkedServer.DataSource

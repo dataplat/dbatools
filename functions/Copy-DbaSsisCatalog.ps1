@@ -412,6 +412,8 @@ function Copy-DbaSsisCatalog {
                     $destinationFolders.Alter()
                 } catch {
                     # Sometimes it says Alter() doesn't exist
+                    # here to avoid an empty catch
+                    $null = 1
                 }
                 $destinationFolders.Refresh()
             }

@@ -117,7 +117,10 @@ function New-DbatoolsSupportPackage {
 
                 # Cut results to the limit and return them
                 return $lines[$int .. $z]
-            } catch { }
+            } catch {
+                # here to avoid an empty catch
+                $null = 1
+            }
         }
         #endregion Helper functions
     }

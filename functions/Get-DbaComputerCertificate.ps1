@@ -92,6 +92,8 @@ function Get-DbaComputerCertificate {
                     Get-ChildItem "Cert:\$Store\$Folder" -Recurse | Where-Object Thumbprint -in $Thumbprint
                 } catch {
                     # don't care - there's a weird issue with remoting where an exception gets thrown for no apparent reason
+                    # here to avoid an empty catch
+                    $null = 1
                 }
             } else {
                 try {
@@ -100,6 +102,8 @@ function Get-DbaComputerCertificate {
                     Get-ChildItem "Cert:\$Store\$Folder" -Recurse | Where-Object { "$($_.EnhancedKeyUsageList)" -match '1\.3\.6\.1\.5\.5\.7\.3\.1' }
                 } catch {
                     # still don't care
+                    # here to avoid an empty catch
+                    $null = 1
                 }
             }
         }
