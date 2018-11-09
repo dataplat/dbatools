@@ -26,7 +26,7 @@ function Find-DbaDbUnusedIndex {
 
     .PARAMETER InputObject
         Enables piping from Get-DbaDatabase
-    
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -47,7 +47,7 @@ function Find-DbaDbUnusedIndex {
         PS C:\> Find-DbaDbUnusedIndex -SqlInstance sql2016 -Database db1, db2
 
         Finds unused databases on db1 and db2 on sql2016
-    
+
     .EXAMPLE
         PS C:\> Find-DbaDbUnusedIndex -SqlInstance sql2016 -SqlCredential $cred
 
@@ -58,7 +58,7 @@ function Find-DbaDbUnusedIndex {
 
         Finds unused databases on all databases on sql2016
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(ValueFromPipeline)]
@@ -115,29 +115,29 @@ function Find-DbaDbUnusedIndex {
                 AND user_lookups = 0
                 AND i.type_desc NOT IN ('HEAP', 'CLUSTERED COLUMNSTORE')"
     }
-    
+
     process {
         if ($SqlInstance) {
             $InputObject += Get-DbaDatabase -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database -ExcludeDatabase $ExcludeDatabase
         }
-        
+
         foreach ($db in $InputObject) {
             if ($db.Parent.Databases[$db].IsAccessible -eq $false) {
                 Write-Message -Level Warning -Message "Database [$db] is not accessible."
                 continue
             }
-            
+
             $server = $db.Parent
             $instance = $server.Name
-            
+
             if ($server.VersionMajor -lt 9) {
                 Stop-Function -Message "This function does not support versions lower than SQL Server 2005 (v9)." -Continue
             }
-            
+
             $lastRestart = $server.Databases['tempdb'].CreateDate
             $endDate = Get-Date -Date $lastRestart
             $diffDays = (New-TimeSpan -Start $endDate -End (Get-Date)).Days
-            
+
             if ($diffDays -le 6) {
                 if ($IgnoreUptime) {
                     Write-Message -Level Verbose -Message "The SQL Service was restarted on $lastRestart, which is not long enough for a solid evaluation."
@@ -145,24 +145,24 @@ function Find-DbaDbUnusedIndex {
                     Stop-Function -Message "The SQL Service on $instance was restarted on $lastRestart, which is not long enough for a solid evaluation." -Continue
                 }
             }
-            
+
             <#
                 Validate if server version is:
                     - sql 2012 and if have SP3 CU3 (Build 6537) or higher
                     - sql 2014 and if have SP2 (Build 5000) or higher
                 If the major version is the same but the build is lower, throws the message
             #>
-            
+
             if (($server.VersionMajor -eq 11 -and $server.BuildNumber -lt 6537) -or ($server.VersionMajor -eq 12 -and $server.BuildNumber -lt 5000)) {
                 Stop-Function -Message "This SQL version has a known issue. Rebuilding an index clears any existing row entry from sys.dm_db_index_usage_stats for that index.`r`nPlease refer to connect item: https://support.microsoft.com/en-us/help/3160407/fix-sys-dm-db-index-usage-stats-missing-information-after-index-rebuil" -Continue
             }
-            
+
             if ($diffDays -le 33) {
                 Write-Message -Level Verbose -Message "The SQL Service on $instance was restarted on $lastRestart, which may not be long enough for a solid evaluation."
             }
-            
+
             try {
-               $db.Query($sql)
+                $db.Query($sql)
             } catch {
                 Stop-Function -Message "Issue gathering indexes" -Category InvalidOperation -ErrorRecord $_ -Target $db
             }
