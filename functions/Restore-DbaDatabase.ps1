@@ -571,7 +571,7 @@ function Restore-DbaDatabase {
                 $WithReplace = $true
             }
         } elseif ($PSCmdlet.ParameterSetName -eq "Recovery") {
-            Write-Message -Message "$($Database.Сount) databases to recover" -level Verbose
+            Write-Message -Message "$($Database.Count) databases to recover" -level Verbose
             ForEach ($Database in $DatabaseName) {
                 if ($Database -is [object]) {
                     #We've got an object, try the normal options Database, DatabaseName, Name
