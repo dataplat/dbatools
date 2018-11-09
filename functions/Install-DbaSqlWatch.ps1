@@ -83,7 +83,7 @@ function Install-DbaSqlWatch {
     )
     begin {
         $stepCounter = 0
-        
+
         $DbatoolsData = Get-DbatoolsConfigValue -FullName "Path.DbatoolsData"
         $tempFolder = ([System.IO.Path]::GetTempPath()).TrimEnd("\")
         $zipfile = "$tempFolder\SqlWatch.zip"
@@ -91,7 +91,6 @@ function Install-DbaSqlWatch {
         if (-not $LocalFile) {
             if ($PSCmdlet.ShouldProcess($env:computername, "Downloading latest release from GitHub")) {
                 Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Downloading latest release from GitHub"
-                
                 # query the releases to find the latest, check and see if its cached
                 $ReleasesUrl = "https://api.github.com/repos/marcingminski/sqlwatch/releases"
                 $DownloadBase = "https://github.com/marcingminski/sqlwatch/releases/download/"
@@ -122,6 +121,8 @@ function Install-DbaSqlWatch {
                         Copy-Item -Path $zipfile -Destination $LocallyCachedZip -Force
                     } catch {
                         # should we stop the function if the file copy fails?
+                        # here to avoid an empty catch
+                        $null = 1
                     }
                 }
             }
@@ -182,6 +183,7 @@ function Install-DbaSqlWatch {
                 
                 Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Starting installing/updating SqlWatch in $database on $instance"
 
+
                 try {
                     # create a publish profile and publish DACPAC
                     $DacPacPath = Get-ChildItem -Filter "SqlWatch.dacpac" -Path $LocalCacheFolder -Recurse | Select-Object -ExpandProperty FullName
@@ -198,7 +200,7 @@ function Install-DbaSqlWatch {
                     if ($parens.matches) {
                         $ExtractedResult = $parens.matches | Select-Object -Last 1
                     }
-                    
+
                     [PSCustomObject]@{
                         ComputerName = $PublishResults.ComputerName
                         InstanceName = $PublishResults.InstanceName
