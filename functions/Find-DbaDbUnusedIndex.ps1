@@ -1,5 +1,5 @@
 #ValidationTags#CodeStyle,Messaging,FlowControl,Pipeline#
-function Find-DbaUnusedIndex {
+function Find-DbaDbUnusedIndex {
     <#
     .SYNOPSIS
         Find unused indexes
@@ -41,20 +41,20 @@ function Find-DbaUnusedIndex {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Find-DbaUnusedIndex
+        https://dbatools.io/Find-DbaDbUnusedIndex
 
     .EXAMPLE
-        PS C:\> Find-DbaUnusedIndex -SqlInstance sql2016 -Database db1, db2
+        PS C:\> Find-DbaDbUnusedIndex -SqlInstance sql2016 -Database db1, db2
 
         Finds unused databases on db1 and db2 on sql2016
     
     .EXAMPLE
-        PS C:\> Find-DbaUnusedIndex -SqlInstance sql2016 -SqlCredential $cred
+        PS C:\> Find-DbaDbUnusedIndex -SqlInstance sql2016 -SqlCredential $cred
 
         Finds unused databases on db1 and db2 on sql2016 using SQL Authentication to connect to the server
 
     .EXAMPLE
-        PS C:\> Get-DbaDatabase -SqlInstance sql2016 | Find-DbaUnusedIndex
+        PS C:\> Get-DbaDatabase -SqlInstance sql2016 | Find-DbaDbUnusedIndex
 
         Finds unused databases on all databases on sql2016
 
