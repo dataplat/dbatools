@@ -11602,17 +11602,17 @@
         "Syntax":  "Get-DbaDbMail [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
-        "CommandName":  "Get-DbaDBMailAccount",
+        "CommandName":  "Get-DbaDbMailAccount",
         "Description":  "Gets database mail accounts from SQL Server",
         "Tags":  [
                      "DatabaseMail",
-                     "DBMail",
+                     "DbMail",
                      "Mail"
                  ],
         "Params":  [
                        [
                            "SqlInstance",
-                           "TThe target SQL Server instance or instances.",
+                           "The target SQL Server instance or instances.",
                            "ServerInstance,SqlServer",
                            false,
                            "false",
@@ -11644,7 +11644,7 @@
                        ],
                        [
                            "InputObject",
-                           "Accepts pipeline input from Get-DbaDBMail",
+                           "Accepts pipeline input from Get-DbaDbMail",
                            "",
                            false,
                            "true (ByValue)",
@@ -11662,10 +11662,10 @@
         "Alias":  "",
         "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Gets database mail accounts from SQL Server",
-        "Name":  "Get-DbaDBMailAccount",
+        "Name":  "Get-DbaDbMailAccount",
         "Links":  "https://dbatools.io/Get-DbaDbMailAccount",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaDBMailAccount -SqlInstance sql01\\sharepoint\nReturns DBMail accounts on sql01\\sharepoint\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaDBMailAccount -SqlInstance sql01\\sharepoint -Account \u0027The DBA Team\u0027\nReturns The DBA Team DBMail account from sql01\\sharepoint\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaDBMailAccount -SqlInstance sql01\\sharepoint | Select *\nReturns the DBMail accounts on sql01\\sharepoint then return a bunch more columns\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003e$servers = \"sql2014\",\"sql2016\", \"sqlcluster\\sharepoint\"\nPS C:\\\u003e $servers | Get-DbaDBMail | Get-DbaDBMailAccount\nReturns the db DBMail accounts for \"sql2014\",\"sql2016\" and \"sqlcluster\\sharepoint\"",
-        "Syntax":  "Get-DbaDBMailAccount [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Account] \u003cString[]\u003e] [[-ExcludeAccount] \u003cString[]\u003e] [[-InputObject] \u003cSqlMail[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaDbMailAccount -SqlInstance sql01\\sharepoint\nReturns Database Mail accounts on sql01\\sharepoint\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaDbMailAccount -SqlInstance sql01\\sharepoint -Account \u0027The DBA Team\u0027\nReturns The DBA Team Database Mail account from sql01\\sharepoint\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaDbMailAccount -SqlInstance sql01\\sharepoint | Select *\nReturns the Database Mail accounts on sql01\\sharepoint then return a bunch more columns\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003e$servers = \"sql2014\",\"sql2016\", \"sqlcluster\\sharepoint\"\nPS C:\\\u003e $servers | Get-DbaDbMail | Get-DbaDbMailAccount\nReturns the Database Mail accounts for \"sql2014\",\"sql2016\" and \"sqlcluster\\sharepoint\"",
+        "Syntax":  "Get-DbaDbMailAccount [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Account] \u003cString[]\u003e] [[-ExcludeAccount] \u003cString[]\u003e] [[-InputObject] \u003cSqlMail[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
         "CommandName":  "Get-DbaDbMailConfig",
@@ -12520,6 +12520,88 @@
         "Links":  "https://dbatools.io/Get-DbaDbRecoveryModel",
         "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaDbRecoveryModel -SqlInstance sql2014 -RecoveryModel BulkLogged -Verbose\nGets all databases on SQL Server instance sql2014 having RecoveryModel set to BulkLogged.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaDbRecoveryModel -SqlInstance sql2014 -Database TestDB\nGets recovery model information for TestDB. If TestDB does not exist on the instance nothing is returned.",
         "Syntax":  "Get-DbaDbRecoveryModel [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-RecoveryModel] \u003cString[]\u003e] [[-Database] \u003cObject[]\u003e] [[-ExcludeDatabase] \u003cObject[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
+    },
+    {
+        "CommandName":  "Get-DbaDbRestoreHistory",
+        "Description":  "By default, this command will return the server name, database, username, restore type, date, from file and to files.\n\nThanks to https://www.mssqltips.com/SqlInstancetip/1724/when-was-the-last-time-your-sql-server-database-was-restored/ for the query and https://sqlstudies.com/2016/07/27/when-was-this-database-restored/ for the idea.",
+        "Tags":  [
+                     "DisasterRecovery",
+                     "Backup",
+                     "Restore"
+                 ],
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "Specifies the SQL Server instance(s) to operate on. Requires SQL Server 2005 or higher.",
+                           "ServerInstance,SqlServer",
+                           true,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
+                           "SqlCredential",
+                           "Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)",
+                           "Credential",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Database",
+                           "Specifies the database(s) to process. Options for this list are auto-populated from the server. If unspecified, all databases will be processed.",
+                           "Databases",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "ExcludeDatabase",
+                           "Specifies the database(s) to exclude from processing. Options for this list are auto-populated from the server.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Since",
+                           "Specifies a datetime to use as the starting point for searching backup history.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Force",
+                           "Deprecated.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "Last",
+                           "If this switch is enabled, the last restore action performed on each database is returned.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "Silent",
+                           false,
+                           "false",
+                           "False"
+                       ]
+                   ],
+        "Alias":  "Get-DbaRestoreHistory",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
+        "Synopsis":  "Returns restore history details for databases on a SQL Server.",
+        "Name":  "Get-DbaDbRestoreHistory",
+        "Links":  "https://dbatools.io/Get-DbaDbRestoreHistory",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaDbRestoreHistory -SqlInstance sql2016\nReturns server name, database, username, restore type, date for all restored databases on sql2016.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaDbRestoreHistory -SqlInstance sql2016 -Database db1, db2 -Since \u00272016-07-01 10:47:00\u0027\nReturns restore information only for databases db1 and db2 on sql2016 since July 1, 2016 at 10:47 AM.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaDbRestoreHistory -SqlInstance sql2014, sql2016 -Exclude db1\nReturns restore information for all databases except db1 on sql2014 and sql2016.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003e$cred = Get-Credential sqladmin\nPS C:\\\u003e Get-DbaDbRestoreHistory -SqlInstance sql2014 -Database AdventureWorks2014, pubs -SqlCredential $cred | Format-Table\nReturns database restore information for AdventureWorks2014 and pubs database on sql2014, connects using SQL Authentication via sqladmin account. Formats the data as a table.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eGet-DbaCmsRegServer -SqlInstance sql2016 | Get-DbaDbRestoreHistory\nReturns database restore information for every database on every server listed in the Central Management Server on sql2016.",
+        "Syntax":  "Get-DbaDbRestoreHistory [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cObject[]\u003e] [[-ExcludeDatabase] \u003cObject[]\u003e] [[-Since] \u003cDateTime\u003e] [-Force] [-Last] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
         "CommandName":  "Get-DbaDbRoleMember",
@@ -16715,88 +16797,6 @@
         "Links":  "https://dbatools.io/Get-DbaResourceGovernor",
         "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaResourceGovernor -SqlInstance sql2016\nGets the resource governor object of the SqlInstance sql2016\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003e\u0027Sql1\u0027,\u0027Sql2/sqlexpress\u0027 | Get-DbaResourceGovernor\nGets the resource governor object on Sql1 and Sql2/sqlexpress instances",
         "Syntax":  "Get-DbaResourceGovernor [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
-    },
-    {
-        "CommandName":  "Get-DbaRestoreHistory",
-        "Description":  "By default, this command will return the server name, database, username, restore type, date, from file and to files.\n\nThanks to https://www.mssqltips.com/SqlInstancetip/1724/when-was-the-last-time-your-sql-server-database-was-restored/ for the query and https://sqlstudies.com/2016/07/27/when-was-this-database-restored/ for the idea.",
-        "Tags":  [
-                     "DisasterRecovery",
-                     "Backup",
-                     "Restore"
-                 ],
-        "Params":  [
-                       [
-                           "SqlInstance",
-                           "Specifies the SQL Server instance(s) to operate on. Requires SQL Server 2005 or higher.",
-                           "ServerInstance,SqlServer",
-                           true,
-                           "true (ByValue)",
-                           ""
-                       ],
-                       [
-                           "SqlCredential",
-                           "Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)",
-                           "Credential",
-                           false,
-                           "false",
-                           ""
-                       ],
-                       [
-                           "Database",
-                           "Specifies the database(s) to process. Options for this list are auto-populated from the server. If unspecified, all databases will be processed.",
-                           "Databases",
-                           false,
-                           "false",
-                           ""
-                       ],
-                       [
-                           "ExcludeDatabase",
-                           "Specifies the database(s) to exclude from processing. Options for this list are auto-populated from the server.",
-                           "",
-                           false,
-                           "false",
-                           ""
-                       ],
-                       [
-                           "Since",
-                           "Specifies a datetime to use as the starting point for searching backup history.",
-                           "",
-                           false,
-                           "false",
-                           ""
-                       ],
-                       [
-                           "Force",
-                           "Deprecated.",
-                           "",
-                           false,
-                           "false",
-                           "False"
-                       ],
-                       [
-                           "Last",
-                           "If this switch is enabled, the last restore action performed on each database is returned.",
-                           "",
-                           false,
-                           "false",
-                           "False"
-                       ],
-                       [
-                           "EnableException",
-                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
-                           "Silent",
-                           false,
-                           "false",
-                           "False"
-                       ]
-                   ],
-        "Alias":  "",
-        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
-        "Synopsis":  "Returns restore history details for databases on a SQL Server.",
-        "Name":  "Get-DbaRestoreHistory",
-        "Links":  "https://dbatools.io/Get-DbaRestoreHistory",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaRestoreHistory -SqlInstance sql2016\nReturns server name, database, username, restore type, date for all restored databases on sql2016.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaRestoreHistory -SqlInstance sql2016 -Database db1, db2 -Since \u00272016-07-01 10:47:00\u0027\nReturns restore information only for databases db1 and db2 on sql2016 since July 1, 2016 at 10:47 AM.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaRestoreHistory -SqlInstance sql2014, sql2016 -Exclude db1\nReturns restore information for all databases except db1 on sql2014 and sql2016.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003e$cred = Get-Credential sqladmin\nPS C:\\\u003e Get-DbaRestoreHistory -SqlInstance sql2014 -Database AdventureWorks2014, pubs -SqlCredential $cred | Format-Table\nReturns database restore information for AdventureWorks2014 and pubs database on sql2014, connects using SQL Authentication via sqladmin account. Formats the data as a table.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eGet-DbaCmsRegServer -SqlInstance sql2016 | Get-DbaRestoreHistory\nReturns database restore information for every database on every server listed in the Central Management Server on sql2016.",
-        "Syntax":  "Get-DbaRestoreHistory [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cObject[]\u003e] [[-ExcludeDatabase] \u003cObject[]\u003e] [[-Since] \u003cDateTime\u003e] [-Force] [-Last] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
         "CommandName":  "Get-DbaRgClassifierFunction",
@@ -22165,7 +22165,7 @@
         "Synopsis":  "Automates the creation of database mirrors.",
         "Name":  "Invoke-DbaDbMirroring",
         "Links":  "https://dbatools.io/Invoke-DbaDbMirroring",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003e$params = @{\n\u003e\u003e Primary = \u0027sql2017a\u0027\r\n\u003e\u003e Mirror = \u0027sql2017b\u0027\r\n\u003e\u003e MirrorSqlCredential = \u0027sqladmin\u0027\r\n\u003e\u003e Witness = \u0027sql2019\u0027\r\n\u003e\u003e Database = \u0027pubs\u0027\r\n\u003e\u003e NetworkShare = \u0027\\\\nas\\sql\\share\u0027\r\n\u003e\u003e }\r\n\u003e\u003e\r\nPS C:\\\u003e Invoke-DbaDbMirror @params\nPerforms a bunch of checks to ensure the pubs database on sql2017a\r\ncan be mirrored from sql2017a to sql2017b. Logs in to sql2019 and sql2017a\r\nusing Windows credentials and sql2017b using a SQL credential.\nPrompts for confirmation for most changes. To avoid confirmation, use -Confirm:$false or\r\nuse the syntax in the second example.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003e$params = @{\n\u003e\u003e Primary = \u0027sql2017a\u0027\r\n\u003e\u003e Mirror = \u0027sql2017b\u0027\r\n\u003e\u003e MirrorSqlCredential = \u0027sqladmin\u0027\r\n\u003e\u003e Witness = \u0027sql2019\u0027\r\n\u003e\u003e Database = \u0027pubs\u0027\r\n\u003e\u003e NetworkShare = \u0027\\\\nas\\sql\\share\u0027\r\n\u003e\u003e Force = $true\r\n\u003e\u003e Confirm = $false\r\n\u003e\u003e }\r\n\u003e\u003e\r\nPS C:\\\u003e Invoke-DbaDbMirror @params\nPerforms a bunch of checks to ensure the pubs database on sql2017a\r\ncan be mirrored from sql2017a to sql2017b. Logs in to sql2019 and sql2017a\r\nusing Windows credentials and sql2017b using a SQL credential.\nDrops existing pubs database on Mirror and Witness and restores them with\r\na fresh backup.\nDoes all the things in the decription, does not prompt for confirmation.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003e$map = @{ \u0027database_data\u0027 = \u0027M:\\Data\\database_data.mdf\u0027 \u0027database_log\u0027 = \u0027L:\\Log\\database_log.ldf\u0027 }\nPS C:\\\u003e Get-ChildItem \\\\nas\\seed | Restore-DbaDatabase -SqlInstance sql2017b -FileMapping $map -NoRecovery\r\nPS C:\\\u003e Get-DbaDatabase -SqlInstance sql2017a -Database pubs | Invoke-DbaDbMirroring -Mirror sql2017b -Confirm:$false\nRestores backups from sql2017a to a specific file struture on sql2017b then creates mirror with no prompts for confirmation.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaDatabase -SqlInstance sql2017a -Database pubs |\n\u003e\u003e Invoke-DbaDbMirroring -Mirror sql2017b -UseLastBackups -Confirm:$false\nMirrors pubs on sql2017a to sql2017b and uses the last full and logs from sql2017a to seed.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003e$params = @{\n\u003e\u003e Primary = \u0027sql2017a\u0027\r\n\u003e\u003e Mirror = \u0027sql2017b\u0027\r\n\u003e\u003e MirrorSqlCredential = \u0027sqladmin\u0027\r\n\u003e\u003e Witness = \u0027sql2019\u0027\r\n\u003e\u003e Database = \u0027pubs\u0027\r\n\u003e\u003e NetworkShare = \u0027\\\\nas\\sql\\share\u0027\r\n\u003e\u003e }\r\n\u003e\u003e\r\nPS C:\\\u003e Invoke-DbaDbMirror @params\nPerforms a bunch of checks to ensure the pubs database on sql2017a\r\ncan be mirrored from sql2017a to sql2017b. Logs in to sql2019 and sql2017a\r\nusing Windows credentials and sql2017b using a SQL credential.\nPrompts for confirmation for most changes. To avoid confirmation, use -Confirm:$false or\r\nuse the syntax in the second example.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003e$params = @{\n\u003e\u003e Primary = \u0027sql2017a\u0027\r\n\u003e\u003e Mirror = \u0027sql2017b\u0027\r\n\u003e\u003e MirrorSqlCredential = \u0027sqladmin\u0027\r\n\u003e\u003e Witness = \u0027sql2019\u0027\r\n\u003e\u003e Database = \u0027pubs\u0027\r\n\u003e\u003e NetworkShare = \u0027\\\\nas\\sql\\share\u0027\r\n\u003e\u003e Force = $true\r\n\u003e\u003e Confirm = $false\r\n\u003e\u003e }\r\n\u003e\u003e\r\nPS C:\\\u003e Invoke-DbaDbMirror @params\nPerforms a bunch of checks to ensure the pubs database on sql2017a\r\ncan be mirrored from sql2017a to sql2017b. Logs in to sql2019 and sql2017a\r\nusing Windows credentials and sql2017b using a SQL credential.\nDrops existing pubs database on Mirror and Witness and restores them with\r\na fresh backup.\nDoes all the things in the decription, does not prompt for confirmation.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003e$map = @{ \u0027database_data\u0027 = \u0027M:\\Data\\database_data.mdf\u0027 \u0027database_log\u0027 = \u0027L:\\Log\\database_log.ldf\u0027 }\nPS C:\\\u003e Get-ChildItem \\\\nas\\seed | Restore-DbaDatabase -SqlInstance sql2017b -FileMapping $map -NoRecovery\r\nPS C:\\\u003e Get-DbaDatabase -SqlInstance sql2017a -Database pubs | Invoke-DbaDbMirroring -Mirror sql2017b -Confirm:$false\nRestores backups from sql2017a to a specific file struture on sql2017b then creates mirror with no prompts for confirmation.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaDatabase -SqlInstance sql2017a -Database pubs |\n\u003e\u003e Invoke-DbaDbMirroring -Mirror sql2017b -UseLastBackups -Confirm:$false\nMirrors pubs on sql2017a to sql2017b and uses the last full and logs from sql2017a to seed. Doesn\u0027t prompt for confirmation.",
         "Syntax":  "Invoke-DbaDbMirroring [[-Primary] \u003cDbaInstanceParameter\u003e] [[-PrimarySqlCredential] \u003cPSCredential\u003e] [-Mirror] \u003cDbaInstanceParameter[]\u003e [[-MirrorSqlCredential] \u003cPSCredential\u003e] [[-Witness] \u003cDbaInstanceParameter\u003e] [[-WitnessSqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString[]\u003e] [[-NetworkShare] \u003cString\u003e] [[-InputObject] \u003cDatabase[]\u003e] [-UseLastBackups] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
@@ -32284,7 +32284,7 @@
                        ],
                        [
                            "LastRestoreType",
-                           "The Output of Get-DbaRestoreHistory -last\r\nThis is used to check the last type of backup to a database to see if a differential backup can be restored",
+                           "The Output of Get-DbaDbRestoreHistory -last\r\nThis is used to check the last type of backup to a database to see if a differential backup can be restored",
                            "",
                            false,
                            "false",
@@ -40205,7 +40205,7 @@
     },
     {
         "CommandName":  "Test-DbaTempdbConfig",
-        "Description":  "Evaluates tempdb against a set of rules to match best practices. The rules are:\n\n* TF 1118 enabled - Is Trace Flag 1118 enabled (See KB328551).\n* File Count - Does the count of data files in tempdb match the number of logical cores, up to 8?\n* File Growth - Are any files set to have percentage growth? Best practice is all files have an explicit growth value.\n* File Location - Is tempdb located on the C:\\? Best practice says to locate it elsewhere.\n* File MaxSize Set (optional) - Do any files have a max size value? Max size could cause tempdb problems if it isn\u0027t allowed to grow.\n\nOther rules can be added at a future date.",
+        "Description":  "Evaluates tempdb against a set of rules to match best practices. The rules are:\n\n* TF 1118 enabled - Is Trace Flag 1118 enabled (See KB328551).\n* File Count - Does the count of data files in tempdb match the number of logical cores, up to 8?\n* File Growth - Are any files set to have percentage growth? Best practice is all files have an explicit growth value.\n* File Location - Is tempdb located on the C:\\? Best practice says to locate it elsewhere.\n* File MaxSize Set (optional) - Do any files have a max size value? Max size could cause tempdb problems if it isn\u0027t allowed to grow.\n* Data File Size Equal - Are the sizes of all the tempdb data files the same?\n\nOther rules can be added at a future date.",
         "Tags":  [
                      "tempdb",
                      "configuration"
@@ -40216,7 +40216,7 @@
                            "The target SQL Server instance or instances. SQL Server 2005 and higher are supported.",
                            "ServerInstance,SqlServer",
                            true,
-                           "false",
+                           "true (ByValue)",
                            ""
                        ],
                        [
@@ -40249,7 +40249,7 @@
         "Synopsis":  "Evaluates tempdb against several rules to match best practices.",
         "Name":  "Test-DbaTempdbConfig",
         "Links":  "https://dbatools.io/Test-DbaTempdbConfig",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eTest-DbaTempdbConfig -SqlInstance localhost\nChecks tempdb on the localhost machine.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eTest-DbaTempdbConfig -SqlInstance localhost | Select-Object *\nChecks tempdb on the localhost machine. All rest results are shown.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eTest-DbaTempdbConfig -SqlInstance localhost\nChecks tempdb on the localhost machine.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eTest-DbaTempdbConfig -SqlInstance localhost | Select-Object *\nChecks tempdb on the localhost machine. All rest results are shown.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaCmsRegServer -SqlInstance sqlserver2014a | Test-DbaTempdbConfig | Select-Object * | Out-GridView\nChecks tempdb configuration for a group of servers from SQL Server Central Management Server (CMS). Output includes all columns. Send output to GridView.",
         "Syntax":  "Test-DbaTempdbConfig [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [-Detailed] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
@@ -40902,7 +40902,7 @@
         "Synopsis":  "Writes data to a SQL Server Table.",
         "Name":  "Write-DbaDataTable",
         "Links":  "https://dbatools.io/Write-DbaDataTable",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003e$DataTable = Import-Csv C:\\temp\\customers.csv | ConvertTo-DbaDataTable\nPS C:\\\u003e Write-DbaDataTable -SqlInstance sql2014 -InputObject $DataTable -Table mydb.dbo.customers\nPerforms a bulk insert of all the data in customers.csv into database mydb, schema dbo, table customers. A progress bar will be shown as rows are inserted. If the destination table does not exist, \r\nthe import will be halted.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003e$DataTable = Import-Csv C:\\temp\\customers.csv | ConvertTo-DbaDataTable\nPS C:\\\u003e $DataTable | Write-DbaDataTable -SqlInstance sql2014 -Table mydb.dbo.customers\nPerforms a row by row insert of the data in customers.csv. This is significantly slower than a bulk insert and will not show a progress bar.\r\nThis method is not recommended. Use -InputObject instead.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003e$DataTable = Import-Csv C:\\temp\\customers.csv | ConvertTo-DbaDataTable\nPS C:\\\u003e Write-DbaDataTable -SqlInstance sql2014 -InputObject $DataTable -Table mydb.dbo.customers -AutoCreateTable\nPerforms a bulk insert of all the data in customers.csv. If mydb.dbo.customers does not exist, it will be created with inefficient but forgiving DataTypes.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003e$DataTable = Import-Csv C:\\temp\\customers.csv | ConvertTo-DbaDataTable\nPS C:\\\u003e Write-DbaDataTable -SqlInstance sql2014 -InputObject $DataTable -Table mydb.dbo.customers -Truncate\nPerforms a bulk insert of all the data in customers.csv. Prior to importing into mydb.dbo.customers, the user is informed that the table will be truncated and asks for confirmation. The user is \r\nprompted again to perform the import.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003e$DataTable = Import-Csv C:\\temp\\customers.csv | ConvertTo-DbaDataTable\nPS C:\\\u003e Write-DbaDataTable -SqlInstance sql2014 -InputObject $DataTable -Database mydb -Table customers -KeepNulls\nPerforms a bulk insert of all the data in customers.csv into mydb.dbo.customers. Because Schema was not specified, dbo was used. NULL values in the destination table will be preserved.\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003e$passwd = ConvertTo-SecureString \"P@ssw0rd\" -AsPlainText -Force\nPS C:\\\u003e $AzureCredential = New-Object System.Management.Automation.PSCredential(\"AzureAccount\"),$passwd)\r\nPS C:\\\u003e $DataTable = Import-Csv C:\\temp\\customers.csv | ConvertTo-DbaDataTable\r\nPS C:\\\u003e Write-DbaDataTable -SqlInstance AzureDB.database.windows.net -InputObject $DataTable -Database mydb -Table customers -KeepNulls -Credential $AzureCredential -BulkCopyTimeOut 300\nThis performs the same operation as the previous example, but against a SQL Azure Database instance using the required credentials.\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003e$process = Get-Process | ConvertTo-DbaDataTable\nPS C:\\\u003e Write-DbaDataTable -InputObject $process -SqlInstance sql2014 -Table \"[[DbName]]].[Schema.With.Dots].[`\"[Process]]`\"]\" -AutoCreateTable\nCreates a table based on the Process object with over 60 columns, converted from PowerShell data types to SQL Server data types. After the table is created a bulk insert is performed to add process \r\ninformation into the table\r\nWrites the results of Get-Process to a table named: \"[Process]\" in schema named: Schema.With.Dots in database named: [DbName]\r\nThe Table name, Schema name and Database name must be wrapped in square brackets [ ]\r\nSpecial charcters like \" must be escaped by a ` charcter.\r\nIn addition any actual instance of the ] character must be escaped by being duplicated.\nThis is an example of the type conversion in action. All process properties are converted, including special types like TimeSpan. Script properties are resolved before the type conversion starts \r\nthanks to ConvertTo-DbaDataTable.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003e$DataTable = Import-Csv C:\\temp\\customers.csv\nPS C:\\\u003e Write-DbaDataTable -SqlInstance sql2014 -InputObject $DataTable -Table mydb.dbo.customers\nPerforms a bulk insert of all the data in customers.csv into database mydb, schema dbo, table customers. A progress bar will be shown as rows are inserted. If the destination table does not exist, \r\nthe import will be halted.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003e$DataTable = Import-Csv C:\\temp\\customers.csv\nPS C:\\\u003e $DataTable | Write-DbaDataTable -SqlInstance sql2014 -Table mydb.dbo.customers\nPerforms a row by row insert of the data in customers.csv. This is significantly slower than a bulk insert and will not show a progress bar.\r\nThis method is not recommended. Use -InputObject instead.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003e$DataTable = Import-Csv C:\\temp\\customers.csv\nPS C:\\\u003e Write-DbaDataTable -SqlInstance sql2014 -InputObject $DataTable -Table mydb.dbo.customers -AutoCreateTable -Confirm\nPerforms a bulk insert of all the data in customers.csv. If mydb.dbo.customers does not exist, it will be created with inefficient but forgiving DataTypes.\nPrompts for confirmation before a variety of steps.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003e$DataTable = Import-Csv C:\\temp\\customers.csv\nPS C:\\\u003e Write-DbaDataTable -SqlInstance sql2014 -InputObject $DataTable -Table mydb.dbo.customers -Truncate\nPerforms a bulk insert of all the data in customers.csv. Prior to importing into mydb.dbo.customers, the user is informed that the table will be truncated and asks for confirmation. The user is \r\nprompted again to perform the import.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003e$DataTable = Import-Csv C:\\temp\\customers.csv\nPS C:\\\u003e Write-DbaDataTable -SqlInstance sql2014 -InputObject $DataTable -Database mydb -Table customers -KeepNulls\nPerforms a bulk insert of all the data in customers.csv into mydb.dbo.customers. Because Schema was not specified, dbo was used. NULL values in the destination table will be preserved.\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003e$passwd = ConvertTo-SecureString \"P@ssw0rd\" -AsPlainText -Force\nPS C:\\\u003e $AzureCredential = New-Object System.Management.Automation.PSCredential(\"AzureAccount\"),$passwd)\r\nPS C:\\\u003e $DataTable = Import-Csv C:\\temp\\customers.csv\r\nPS C:\\\u003e Write-DbaDataTable -SqlInstance AzureDB.database.windows.net -InputObject $DataTable -Database mydb -Table customers -KeepNulls -Credential $AzureCredential -BulkCopyTimeOut 300\nThis performs the same operation as the previous example, but against a SQL Azure Database instance using the required credentials.\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003e$process = Get-Process\nPS C:\\\u003e Write-DbaDataTable -InputObject $process -SqlInstance sql2014 -Table \"[[DbName]]].[Schema.With.Dots].[`\"[Process]]`\"]\" -AutoCreateTable\nCreates a table based on the Process object with over 60 columns, converted from PowerShell data types to SQL Server data types. After the table is created a bulk insert is performed to add process \r\ninformation into the table\r\nWrites the results of Get-Process to a table named: \"[Process]\" in schema named: Schema.With.Dots in database named: [DbName]\r\nThe Table name, Schema name and Database name must be wrapped in square brackets [ ]\r\nSpecial charcters like \" must be escaped by a ` charcter.\r\nIn addition any actual instance of the ] character must be escaped by being duplicated.\nThis is an example of the type conversion in action. All process properties are converted, including special types like TimeSpan. Script properties are resolved before the type conversion starts \r\nthanks to ConvertTo-DbaDataTable.",
         "Syntax":  "Write-DbaDataTable [-SqlInstance] \u003cDbaInstanceParameter\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cObject\u003e] -InputObject \u003cObject\u003e [-Table] \u003cString\u003e [[-Schema] \u003cString\u003e] [-BatchSize \u003cInt32\u003e] [-NotifyAfter \u003cInt32\u003e] [-AutoCreateTable] [-NoTableLock] [-CheckConstraints] [-FireTriggers] [-KeepIdentity] [-KeepNulls] [-Truncate] [-bulkCopyTimeOut \u003cInt32\u003e] [-RegularUser] [-EnableException] [-UseDynamicStringLength] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     }
 ]
