@@ -20,10 +20,13 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Testing SqlWatch installer" {
         BeforeAll {
-            $database = "dbatoolsci_sqlwatch"
+            $database = "dbatoolsci_sqlwatch_$(Get-Random)"
+            $server = Connect-DbaInstance -SqlInstance $script:instance2
+            $server.Query("CREATE DATABASE $database")
         }
         AfterAll {
             Uninstall-DbaSqlWatch -SqlInstance $script:instance2 -Database $database
+            Remove-DbaDatabase -SqlInstance $script:instance2 -Database $database -Confirm:$false
         }
 
         $results = Install-DbaSqlWatch -SqlInstance $script:instance2 -Database $database

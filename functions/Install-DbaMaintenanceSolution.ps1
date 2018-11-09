@@ -373,6 +373,8 @@ function Install-DbaMaintenanceSolution {
         try {
             $server.ConnectionContext.Disconnect()
         } catch {
+            # here to avoid an empty catch
+            $null = 1
         }
 
         Write-Message -Level Output -Message "Installation complete."

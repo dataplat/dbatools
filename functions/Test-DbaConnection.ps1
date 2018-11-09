@@ -125,11 +125,9 @@ function Test-DbaConnection {
                     $tcp.Connect($baseaddress, 1433)
                     $tcp.Close()
                     $tcp.Dispose()
-                    #Variable marked as unused by PSScriptAnalyzer, need to be in PSCustomObject?
-                    #$sqlport = $true
                 } catch {
-                    #Variable marked as unused by PSScriptAnalyzer, need to be in PSCustomObject?
-                    #$sqlport = $false
+                    # here to avoid an empty catch
+                    $null = 1
                 }
             }
 
