@@ -54,8 +54,8 @@ function Test-DbaLastBackup {
     .PARAMETER CopyPath
         Specifies a path relative to the SQL Server to copy backups when CopyFile is specified. If not specified will use destination default backup location. If destination SQL Server is not local, admin UNC paths will be utilized for the copy.
 
-    .PARAMETER MaxMB
-        Databases larger than this value will not be restored.
+    .PARAMETER MaxSize
+        Max size in MB. Databases larger than this value will not be restored.
 
     .PARAMETER AzureCredential
         The name of the SQL Server credential on the destination instance that holds the key to the azure storage account.
@@ -122,7 +122,7 @@ function Test-DbaLastBackup {
         Skips the DBCC CHECKDB check. This can help speed up the tests but makes it less tested. The test restores will remain on the server.
 
     .EXAMPLE
-        PS C:\> Test-DbaLastBackup -SqlInstance sql2016 -DataDirectory E:\bigdrive -LogDirectory L:\bigdrive -MaxMB 10240
+        PS C:\> Test-DbaLastBackup -SqlInstance sql2016 -DataDirectory E:\bigdrive -LogDirectory L:\bigdrive -MaxSize 10240
 
         Restores data and log files to alternative locations and only restores databases that are smaller than 10 GB.
 
@@ -154,7 +154,8 @@ function Test-DbaLastBackup {
         [switch]$NoDrop,
         [switch]$CopyFile,
         [string]$CopyPath,
-        [int]$MaxMB,
+        [Alias("MaxMB")]
+        [int]$MaxSize,
         [switch]$IncludeCopyOnly,
         [switch]$IgnoreLogBackup,
         [string]$AzureCredential,
@@ -162,7 +163,9 @@ function Test-DbaLastBackup {
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
         [switch]$EnableException
     )
-    
+    begin {
+        Test-DbaDeprecation -DeprecatedOn "1.0" -Parameter 'MaxMB'
+    }
     process {
         if ($SqlInstance) {
             $InputObject += Get-DbaDatabase -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database -ExcludeDatabase $ExcludeDatabase
@@ -174,7 +177,8 @@ function Test-DbaLastBackup {
             }
             
             $sourceserver = $db.Parent
-            $instance = $source = $db.Parent.Name
+            $source = $db.Parent.Name
+            $instance = [DbaInstanceParameter]$source
             $copysuccess = $true
             $dbname = $db.Name
             
@@ -199,7 +203,7 @@ function Test-DbaLastBackup {
             
             if ($CopyPath) {
                 $testpath = Test-DbaPath -SqlInstance $destserver -Path $CopyPath
-                if (!$testpath) {
+                if (-not $testpath) {
                     Stop-Function -Message "$destserver cannot access $CopyPath." -Continue
                 }
             } else {
@@ -339,10 +343,9 @@ function Test-DbaLastBackup {
                 $fileexists = $true
                 $ogdbname = $dbname
                 $restorelist = Read-DbaBackupHeader -SqlInstance $destserver -Path $lastbackup[0].Path -AzureCredential $AzureCredential
-                $mb = $restorelist.BackupSizeMB
                 
-                if ($MaxMB -gt 0 -and $MaxMB -lt $mb) {
-                    $success = "The backup size for $dbname ($mb MB) exceeds the specified maximum size ($MaxMB MB)."
+                if ($MaxSize -and $MaxSize -lt $restorelist.BackupSizeMB) {
+                    $success = "The backup size for $dbname ($mb MB) exceeds the specified maximum size ($MaxSize MB)."
                     $dbccresult = "Skipped"
                 } else {
                     $dbccElapsed = $restoreElapsed = $startRestore = $endRestore = $startDbcc = $endDbcc = $null
@@ -429,6 +432,7 @@ function Test-DbaLastBackup {
                         Write-Message -Level Warning -Message "$dbname was not dropped."
                     }
                 }
+                
                 if ($CopyFile) {
                     Write-Message -Level Verbose -Message "Removing copied backup file from $destination."
                     try {
