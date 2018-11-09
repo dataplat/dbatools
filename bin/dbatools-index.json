@@ -29443,6 +29443,84 @@
         "Syntax":  "Remove-DbaDatabaseSafely [-SqlInstance] \u003cDbaInstanceParameter\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cObject[]\u003e] [[-Destination] \u003cDbaInstanceParameter\u003e] [[-DestinationCredential] \u003cPSCredential\u003e] [-NoDbccCheckDb] [-BackupFolder] \u003cString\u003e [[-CategoryName] \u003cString\u003e] [[-JobOwner] \u003cString\u003e] [-AllDatabases] [[-BackupCompression] \u003cString\u003e] [-ReuseSourceFolderStructure] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
+        "CommandName":  "Remove-DbaDbBackupRestoreHistory",
+        "Description":  "Reduces the size of the backup and restore history tables by deleting the entries for backup sets.\n\nCan be used at server level, in this case a retention period -KeepDays can be set (default is 30 days).\nCan also be used at database level, in this case the complete history for the database(s) is deleted.\n\nThe backup and restore history tables reside in the msdb database.\n\nTo periodically remove old data from backup and restore history tables it is recommended to schedule the agent job sp_delete_backuphistory from the\nSQL Server Maintenance Solution created by Ola Hallengren (https://ola.hallengren.com).",
+        "Tags":  "Delete",
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "The target SQL Server instance or instances. You must have sysadmin access and server version must be SQL Server version 2000 or higher.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "SqlCredential",
+                           "Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "KeepDays",
+                           "The number of days of history to keep. Defaults to 30 days.",
+                           "",
+                           false,
+                           "false",
+                           "30"
+                       ],
+                       [
+                           "Database",
+                           "The database(s) to process. If unspecified, all databases will be processed.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "InputObject",
+                           "Enables piped input from Get-DbaDatabase",
+                           "",
+                           false,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "WhatIf",
+                           "Shows what would happen if the command were to run. No actions are actually performed.",
+                           "wi",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Confirm",
+                           "Prompts you for confirmation before executing any changing operations within the command.",
+                           "cf",
+                           false,
+                           "false",
+                           ""
+                       ]
+                   ],
+        "Alias":  "",
+        "Author":  "IJeb Reitsma",
+        "Synopsis":  "Reduces the size of the backup and restore history tables by deleting old entries for backup sets.",
+        "Name":  "Remove-DbaDbBackupRestoreHistory",
+        "Links":  "https://dbatools.io/Remove-DbaDbBackupRestoreHistory",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eRemove-DbaDbBackupRestoreHistory -SqlInstance sql2016\nPrompts for confirmation then deletes backup and restore history on SQL Server sql2016 older than 30 days (default period)\nPS C:\\\u003e Remove-DbaDbBackupRestoreHistory -SqlInstance sql2016 -KeepDays 100 -Confirm:$false\nRemove backup and restore history on SQL Server sql2016 older than 100 days. Does not prompt for confirmation.\nPS C:\\\u003e Remove-DbaDbBackupRestoreHistory -SqlInstance sql2016 -Database db1\nPrompts for confirmation then deletes all backup and restore history for database db1 on SQL Server sql2016\nPS C:\\\u003e Get-DbaDatabase -SqlInstance sql2016 | Remove-DbaDbBackupRestoreHistory -WhatIf\nRemove complete backup and restore history for all databases on SQL Server sql2016",
+        "Syntax":  "Remove-DbaDbBackupRestoreHistory [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-KeepDays] \u003cInt32\u003e] [[-Database] \u003cString[]\u003e] [[-InputObject] \u003cDatabase[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+    },
+    {
         "CommandName":  "Remove-DbaDbCertificate",
         "Description":  "Deletes specified database certificate",
         "Tags":  "Certificate",
