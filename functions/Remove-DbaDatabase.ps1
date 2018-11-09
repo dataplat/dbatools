@@ -135,7 +135,8 @@ function Remove-DbaDatabase {
                 } catch {
                     try {
                         if ($Pscmdlet.ShouldProcess("$db on $server", "SMO drop")) {
-                            $server.databases[$dbname].Drop()
+                            $dbname = $db.Name
+                            $db.Parent.databases[$dbname].Drop()
                             $server.Refresh()
 
                             [pscustomobject]@{
@@ -162,4 +163,3 @@ function Remove-DbaDatabase {
         }
     }
 }
-
