@@ -67,6 +67,7 @@ function ConvertTo-DbaDataTable {
 
 #>
     [CmdletBinding()]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseOutputTypeCorrectly", "", Justification = "PSSA Rule Ignored by BOH")]
     [OutputType([System.Object[]])]
     param (
         [Parameter(Position = 0,
