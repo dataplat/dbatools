@@ -1,16 +1,13 @@
+#ValidationTags#CodeStyle,Messaging,FlowControl,Pipeline#
 function Find-DbaUnusedIndex {
     <#
     .SYNOPSIS
-        Find Unused indexes
+        Find unused indexes
 
     .DESCRIPTION
         This command will help you to find Unused indexes on a database or a list of databases
 
-        Also tells how much space you can save by dropping the index.
-        We show the type of compression so you can make a more considered decision.
         For now only supported for CLUSTERED and NONCLUSTERED indexes
-
-        You can select the indexes you want to drop on the grid view and by clicking OK the drop statement will be generated.
 
     .PARAMETER SqlInstance
         The SQL Server you want to check for unused indexes.
@@ -24,24 +21,12 @@ function Find-DbaUnusedIndex {
     .PARAMETER ExcludeDatabase
         Specifies the database(s) to exclude from processing. Options for this list are auto-populated from the server.
 
-    .PARAMETER Path
-        Specifies the full path of a file to write the DROP statements to.
-
-    .PARAMETER NoClobber
-        If this switch is enabled, the output file will not be overwritten.
-
-    .PARAMETER Append
-        If this switch is enabled, content will be appended to the output file.
-
     .PARAMETER IgnoreUptime
         Less than 7 days uptime can mean that analysis of unused indexes is unreliable, and normally no results will be returned. By setting this option results will be returned even if the Instance has been running for less that 7 days.
 
-    .PARAMETER WhatIf
-        If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
-
-    .PARAMETER Confirm
-        If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
-
+    .PARAMETER InputObject
+        Enables piping from Get-DbaDatabase
+    
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -59,62 +44,42 @@ function Find-DbaUnusedIndex {
         https://dbatools.io/Find-DbaUnusedIndex
 
     .EXAMPLE
-        PS C:\> Find-DbaUnusedIndex -SqlInstance sql2005 -Path C:\temp\sql2005-UnusedIndexes.sql
+        PS C:\> Find-DbaUnusedIndex -SqlInstance sql2016 -Database db1, db2
 
-        Generates the SQL statements to drop the selected unused indexes on server "sql2005". The statements are written to the file "C:\temp\sql2005-UnusedIndexes.sql"
+        Finds unused databases on db1 and db2 on sql2016
+    
+    .EXAMPLE
+        PS C:\> Find-DbaUnusedIndex -SqlInstance sql2016 -SqlCredential $cred
+
+        Finds unused databases on db1 and db2 on sql2016 using SQL Authentication to connect to the server
 
     .EXAMPLE
-        PS C:\> Find-DbaUnusedIndex -SqlInstance sql2005 -Path C:\temp\sql2005-UnusedIndexes.sql -Append
+        PS C:\> Get-DbaDatabase -SqlInstance sql2016 | Find-DbaUnusedIndex
 
-        Generates the SQL statements to drop the selected unused indexes on server "sql2005". The statements are written to the file "C:\temp\sql2005-UnusedIndexes.sql", appending if the file already exists.
-
-    .EXAMPLE
-        PS C:\> Find-DbaUnusedIndex -SqlInstance sqlserver2016 -SqlCredential $cred
-
-        Generates the SQL statements to drop the selected unused indexes on server "sqlserver2016", using SQL Authentication to connect to the database.
-
-    .EXAMPLE
-        PS C:\> Find-DbaUnusedIndex -SqlInstance sqlserver2016 -Database db1, db2
-
-        Generates the SQL Statement to drop the selected unused indexes in databases db1 & db2 on server "sqlserver2016".
-
-    .EXAMPLE
-        PS C:\> Find-DbaUnusedIndex -SqlInstance sqlserver2016
-
-        Generates the SQL statements to drop the selected unused indexes on all user databases.
-
-    .EXAMPLE
-        PS C:\> Fine-DbaUnusedIndex -SqlInstance sqlserver2016 -IgnoreUptime
-
-        Generates the SQL statements to drop the selected unused indexes on all user databases even if the instance has been online for less than 7 days.
-        Note that results may not have enough detail for all indexes, so care should be taken when using them or the generated scripts. Best practice is to allow a full week to capture the majority of index use cases
+        Finds unused databases on all databases on sql2016
 
 #>
-    [CmdletBinding(SupportsShouldProcess = $true)]
+    [CmdletBinding()]
     param (
-        [parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
+        [parameter(ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [Alias("Databases")]
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
-        [Alias("OutFile", "FilePath")]
-        [string]$Path,
         [switch]$NoClobber,
         [switch]$Append,
         [switch]$IgnoreUptime,
-        [switch][Alias('Silent')]
-        $EnableException
+        [Parameter(ValueFromPipeline)]
+        [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
+        [switch]$EnableException
     )
-
     begin {
-
         # Support Compression 2008+
-        $unusedQuery = "
-        SELECT DB_NAME(database_id) AS 'DatabaseName'
-        ,s.name AS 'SchemaName'
-        ,t.name AS 'TableName'
+        $sql = "SELECT  SERVERPROPERTY('MachineName') AS ComputerName,
+        ISNULL(SERVERPROPERTY('InstanceName'), 'MSSQLSERVER') AS InstanceName,
+        SERVERPROPERTY('ServerName') AS SqlInstance, DB_NAME(database_id) AS 'Database'
+        ,s.name AS 'Schema'
+        ,t.name AS 'Table'
         ,i.object_id AS ObjectId
         ,i.name AS 'IndexName'
         ,i.index_id as 'IndexId'
@@ -149,135 +114,61 @@ function Find-DbaUnusedIndex {
                 AND user_scans = 0
                 AND user_lookups = 0
                 AND i.type_desc NOT IN ('HEAP', 'CLUSTERED COLUMNSTORE')"
-
-        if ($Path.Length -gt 0) {
-            if ($Path -notlike "*\*") {
-                $Path = ".\$Path"
-            }
-            $directory = Split-Path $Path
-            $exists = Test-Path $directory
-
-            if ($exists -eq $false) {
-                Stop-Function -Message "Parent directory $directory does not exist."
-                return
-            }
-        }
-
-        $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential -MinimumVersion 9
     }
+    
     process {
-        if (Test-FunctionInterrupt) { return }
-
-        if ($server.VersionMajor -lt 9) {
-            Stop-Function -Message "This function does not support versions lower than SQL Server 2005 (v9)."
-            return
+        if ($SqlInstance) {
+            $InputObject += Get-DbaDatabase -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database -ExcludeDatabase $ExcludeDatabase
         }
-
-        $lastRestart = $server.Databases['tempdb'].CreateDate
-        $endDate = Get-Date -Date $lastRestart
-        $diffDays = (New-TimeSpan -Start $endDate -End (Get-Date)).Days
-
-        if ($diffDays -le 6) {
-            if ($IgnoreUptime -ne $true) {
-                Stop-Function -Message "The SQL Service was restarted on $lastRestart, which is not long enough for a solid evaluation."
-                return
-            } else {
-                Write-Message -Level Warning -Message "The SQL Service was restarted on $lastRestart, which is not long enough for a solid evaluation."
+        
+        foreach ($db in $InputObject) {
+            if ($db.Parent.Databases[$db].IsAccessible -eq $false) {
+                Write-Message -Level Warning -Message "Database [$db] is not accessible."
+                continue
             }
-        }
-
-        <#
-            Validate if server version is:
-                - sql 2012 and if have SP3 CU3 (Build 6537) or higher
-                - sql 2014 and if have SP2 (Build 5000) or higher
-            If the major version is the same but the build is lower, throws the message
-        #>
-        if (
-            ($server.VersionMajor -eq 11 -and $server.BuildNumber -lt 6537) `
-                -or ($server.VersionMajor -eq 12 -and $server.BuildNumber -lt 5000)
-        ) {
-            Stop-Function -Message "This SQL version has a known issue. Rebuilding an index clears any existing row entry from sys.dm_db_index_usage_stats for that index.`r`nPlease refer to connect item: https://support.microsoft.com/en-us/help/3160407/fix-sys-dm-db-index-usage-stats-missing-information-after-index-rebuil"
-            return
-        }
-
-        if ($diffDays -le 33) {
-            Write-Message -Level Warning -Message "The SQL Service was restarted on $lastRestart, which may not be long enough for a solid evaluation."
-        }
-
-        if ($pipedatabase.Length -gt 0) {
-            $database = $pipedatabase.name
-        }
-
-        if ($database.Count -eq 0) {
-            $database = ($server.Databases | Where-Object { $_.IsSystemObject -eq 0 -and $_.IsAccessible }).Name
-        }
-
-        if ($database.Count -gt 0) {
-            foreach ($db in $database) {
-                if ($ExcludeDatabase -contains $db -or $null -eq $server.Databases[$db]) {
-                    continue
-                }
-                if ($server.Databases[$db].IsAccessible -eq $false) {
-                    Write-Message -Level Warning -Message "Database [$db] is not accessible."
-                    continue
-                }
-                try {
-                    Write-Message -Level Output -Message "Getting indexes from database '$db'."
-
-                    $sql = $unusedQuery
-
-                    $unusedIndex = $server.Databases[$db].ExecuteWithResults($sql)
-
-                    $scriptGenerated = $false
-
-                    if ($unusedIndex.Tables[0].Rows.Count -gt 0) {
-                        $indexesToDrop = $unusedIndex.Tables[0]
-
-                        if ($indexesToDrop.Count -gt 0 -or !([string]::IsNullOrEmpty($indexesToDrop))) {
-
-                            foreach ($index in $indexesToDrop) {
-                                if ($Path.Length -gt 0) {
-                                    Write-Message -Level Output -Message "Exporting $($index.TableName).$($index.IndexName)"
-                                    $sqlout += "USE [$($index.DatabaseName)]`r`n"
-                                    $sqlout += "GO`r`n"
-                                    $sqlout += "IF EXISTS (SELECT 1 FROM sys.indexes WHERE [object_id] = OBJECT_ID('$($index.SchemaName).$($index.TableName)') AND name = '$($index.IndexName)')`r`n"
-                                    $sqlout += "DROP INDEX $($index.SchemaName).$($index.TableName).$($index.IndexName)`r`n"
-                                    $sqlout += "GO`r`n`r`n"`
-
-                                }
-                            }
-
-                            if ($Path.Length -gt 0) {
-                                $sqlout | Out-File -FilePath $Path -Append:$Append -NoClobber:$NoClobber
-                            } else {
-                                $indexesToDrop
-                            }
-
-                            $scriptGenerated = $true
-                        }
-                    } else {
-                        Write-Message -Level Output -Message "No Unused indexes found!"
-                    }
-                } catch {
-                    Stop-Function -Message "Issue gathering indexes" -Category InvalidOperation -ErrorRecord $_ -Target $db
+            
+            $server = $db.Parent
+            $instance = $server.Name
+            
+            if ($server.VersionMajor -lt 9) {
+                Stop-Function -Message "This function does not support versions lower than SQL Server 2005 (v9)." -Continue
+            }
+            
+            $lastRestart = $server.Databases['tempdb'].CreateDate
+            $endDate = Get-Date -Date $lastRestart
+            $diffDays = (New-TimeSpan -Start $endDate -End (Get-Date)).Days
+            
+            if ($diffDays -le 6) {
+                if ($IgnoreUptime) {
+                    Write-Message -Level Verbose -Message "The SQL Service was restarted on $lastRestart, which is not long enough for a solid evaluation."
+                } else {
+                    Stop-Function -Message "The SQL Service on $instance was restarted on $lastRestart, which is not long enough for a solid evaluation." -Continue
                 }
             }
-
-            if ($scriptGenerated) {
-                Write-Message -Level Warning -Message "Confirm the generated script before execute!"
+            
+            <#
+                Validate if server version is:
+                    - sql 2012 and if have SP3 CU3 (Build 6537) or higher
+                    - sql 2014 and if have SP2 (Build 5000) or higher
+                If the major version is the same but the build is lower, throws the message
+            #>
+            
+            if (($server.VersionMajor -eq 11 -and $server.BuildNumber -lt 6537) -or ($server.VersionMajor -eq 12 -and $server.BuildNumber -lt 5000)) {
+                Stop-Function -Message "This SQL version has a known issue. Rebuilding an index clears any existing row entry from sys.dm_db_index_usage_stats for that index.`r`nPlease refer to connect item: https://support.microsoft.com/en-us/help/3160407/fix-sys-dm-db-index-usage-stats-missing-information-after-index-rebuil" -Continue
             }
-            if ($Path.Length -gt 0) {
-                Write-Message -Level Output -Message "Script generated to $Path"
+            
+            if ($diffDays -le 33) {
+                Write-Message -Level Verbose -Message "The SQL Service on $instance was restarted on $lastRestart, which may not be long enough for a solid evaluation."
             }
-        } else {
-            Write-Message -Level Output -Message "There are no databases to analyse."
+            
+            try {
+               $db.Query($sql)
+            } catch {
+                Stop-Function -Message "Issue gathering indexes" -Category InvalidOperation -ErrorRecord $_ -Target $db
+            }
         }
     }
     end {
-        if (Test-FunctionInterrupt) {
-            return
-        }
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Get-SqlUnusedIndex
     }
 }
-
