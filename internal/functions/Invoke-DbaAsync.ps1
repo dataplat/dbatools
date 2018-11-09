@@ -174,8 +174,9 @@ function Invoke-DbaAsync {
 
             $ds = New-Object system.Data.DataSet
             $da = New-Object system.Data.SqlClient.SqlDataAdapter($cmd)
-
+            
             if ($MessagesToOutput) {
+                $save = [System.Management.Automation.Runspaces.Runspace]::DefaultRunspace
                 $pool = [RunspaceFactory]::CreateRunspacePool(1, [int]$env:NUMBER_OF_PROCESSORS + 1)
                 $pool.ApartmentState = "MTA"
                 $pool.Open()
@@ -227,6 +228,7 @@ function Invoke-DbaAsync {
                 }
                 $pool.Close()
                 $pool.Dispose()
+                [System.Management.Automation.Runspaces.Runspace]::DefaultRunspace = $save
             } else {
                 #Following EventHandler is used for PRINT and RAISERROR T-SQL statements. Executed when -Verbose parameter specified by caller and no -MessageToOutput
                 if ($PSBoundParameters.Verbose) {
