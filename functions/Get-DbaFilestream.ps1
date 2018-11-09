@@ -1,3 +1,4 @@
+#ValidationTags#CodeStyle,Messaging,FlowControl,Pipeline#
 function Get-DbaFilestream {
     <#
     .SYNOPSIS
