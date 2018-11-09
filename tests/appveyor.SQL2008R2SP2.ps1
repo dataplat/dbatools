@@ -1,9 +1,6 @@
 $indent = '...'
 Write-Host -Object "$indent Running $PSCommandpath" -ForegroundColor DarkGreen
-#$dbatools_serialimport = $true
-Start-Sleep 5
-Import-Module C:\github\dbatools\dbatools.psd1
-Start-Sleep 5
+Import-Module C:\github\dbatools\dbatools.psm1 -Force
 
 # This script spins up the 2008R2SP2 instance and the relative setup
 
@@ -48,3 +45,4 @@ foreach ($file in (Get-ChildItem C:\github\appveyor-lab\sql2008-startup\*.sql -R
     Invoke-Sqlcmd2 -ServerInstance $sqlinstance -InputFile $file
 }
 
+Import-Module C:\github\dbatools\dbatools.psm1 -Force
