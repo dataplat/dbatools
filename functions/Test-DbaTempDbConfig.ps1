@@ -11,6 +11,7 @@ function Test-DbaTempdbConfig {
         * File Growth - Are any files set to have percentage growth? Best practice is all files have an explicit growth value.
         * File Location - Is tempdb located on the C:\? Best practice says to locate it elsewhere.
         * File MaxSize Set (optional) - Do any files have a max size value? Max size could cause tempdb problems if it isn't allowed to grow.
+        * Data File Size Equal - Are the sizes of all the tempdb data files the same?
 
         Other rules can be added at a future date.
 
@@ -51,10 +52,14 @@ function Test-DbaTempdbConfig {
 
         Checks tempdb on the localhost machine. All rest results are shown.
 
+    .EXAMPLE
+        PS C:\> Get-DbaCmsRegServer -SqlInstance sqlserver2014a | Test-DbaTempdbConfig | Select-Object * | Out-GridView
+
+        Checks tempdb configuration for a group of servers from SQL Server Central Management Server (CMS). Output includes all columns. Send output to GridView.
 #>
     [CmdletBinding()]
     param (
-        [parameter(Mandatory)]
+        [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstance[]]$SqlInstance,
         [PSCredential]$SqlCredential,
@@ -64,11 +69,11 @@ function Test-DbaTempdbConfig {
     )
     begin {
         Test-DbaDeprecation -DeprecatedOn 1.0.0 -Parameter Detailed
-
-        $result = @()
     }
     process {
         foreach ($instance in $SqlInstance) {
+            $result = @()
+
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
             } catch {
@@ -230,6 +235,36 @@ function Test-DbaTempdbConfig {
 
             Write-Message -Level Verbose -Message "MaxSize values evaluated."
 
+            #Test Data File Size Equal
+            $distinctCountSizeDataFiles = ($dataFiles | Group-Object -Property Size  | Measure-Object).Count
+
+            if ($distinctCountSizeDataFiles -eq 1) {
+                $equalSizeDataFiles = $true
+            } else {
+                $equalSizeDataFiles = $false
+            }
+
+            $value = [PSCustomObject]@{
+                ComputerName   = $server.ComputerName
+                InstanceName   = $server.ServiceName
+                SqlInstance    = $server.DomainInstanceName
+                Rule           = 'Data File Size Equal'
+                Recommended    = $true
+                CurrentSetting = $equalSizeDataFiles
+            }
+
+            if ($value.Recommended -ne $value.CurrentSetting -and $null -ne $value.Recommended) {
+                $isBestPractice = $false
+            } else {
+                $isBestPractice = $true
+            }
+
+            Add-Member -Force -InputObject $value -MemberType NoteProperty -Name IsBestPractice -Value $isBestPractice
+            Add-Member -Force -InputObject $value -MemberType NoteProperty -Name Notes -Value "Consider creating equally sized data files."
+            $result += $value
+
+            Write-Message -Level Verbose -Message "Data File Size Equal evaluated."
+
             Select-DefaultView -InputObject $result -Property ComputerName, InstanceName, SqlInstance, Rule, Recommended, IsBestPractice
         }
     }
@@ -238,4 +273,3 @@ function Test-DbaTempdbConfig {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Test-DbaTempDbConfiguration
     }
 }
-
