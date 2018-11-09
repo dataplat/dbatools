@@ -16,6 +16,10 @@ function Join-DbaAvailabilityGroup {
     .PARAMETER AvailabilityGroup
         The availability group to join.
 
+    .PARAMETER ClusterType
+        Cluster type of the Availability Group. Only supported in SQL Server 2017 and above.
+        Options include: External, Wsfc or None.
+
     .PARAMETER InputObject
         Enables piped input from Get-DbaAvailabilityGroup.
 
@@ -66,31 +70,44 @@ function Join-DbaAvailabilityGroup {
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string[]]$AvailabilityGroup,
+        [ValidateSet('External', 'Wsfc', 'None')]
+        [string]$ClusterType,
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.AvailabilityGroup[]]$InputObject,
         [switch]$EnableException
     )
     process {
+        
         if ($InputObject) {
             $AvailabilityGroup += $InputObject.Name
+            if (-not $ClusterType) {
+                $tempclustertype = ($InputObject | Select-Object -First 1).ClusterType
+                if ($tempclustertype) {
+                    $ClusterType = $tempclustertype
+                }
+            }
         }
-
+        
         if (-not $AvailabilityGroup) {
             Stop-Function -Message "No availability group to add"
             return
         }
-
+        
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
             } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-
+            
             foreach ($ag in $AvailabilityGroup) {
                 if ($Pscmdlet.ShouldProcess($server.Name, "Joining $ag")) {
                     try {
-                        $server.JoinAvailabilityGroup($ag)
+                        if ($ClusterType -and $server.VersionMajor -ge 14) {
+                            $server.Query("ALTER AVAILABILITY GROUP $ag JOIN WITH (CLUSTER_TYPE = $ClusterType)")
+                        } else {
+                            $server.JoinAvailabilityGroup($ag)
+                        }
                     } catch {
                         Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
                     }

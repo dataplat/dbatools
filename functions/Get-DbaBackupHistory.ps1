@@ -34,6 +34,9 @@ function Get-DbaBackupHistory {
     .PARAMETER Since
         Specifies a DateTime object to use as the starting point for the search for backups.
 
+    .PARAMETER RecoveryFork
+        Specifies the Recovery Fork you want backup history for
+
     .PARAMETER Last
         If this switch is enabled, the most recent full chain of full, diff and log backup sets is returned.
 
@@ -130,6 +133,11 @@ function Get-DbaBackupHistory {
 
         Returns detailed backup history for all databases on SqlInstance2014a and sql2016.
 
+    .EXAMPLE
+        PS C:\> Get-DbaBackupHistory -SqlInstance sql2016 -Database db1 -RecoveryFork 38e5e84a-3557-4643-a5d5-eed607bef9c6 -Last
+
+        If db1 has multiple recovery forks, specifying the RecoveryFork GUID will restrict the search to that fork.
+
 #>
     [CmdletBinding(DefaultParameterSetName = "Default")]
     param (
@@ -145,8 +153,9 @@ function Get-DbaBackupHistory {
         [switch]$IncludeCopyOnly,
         [Parameter(ParameterSetName = "NoLast")]
         [switch]$Force,
-        [Parameter(ParameterSetName = "NoLast")]
-        [DateTime]$Since,
+        [DateTime]$Since = (Get-Date '01/01/1970'),
+        [ValidateScript( {($_ -match '^(\{){0,1}[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}(\}){0,1}$') -or ('' -eq $_)})]
+        [string]$RecoveryFork,
         [Parameter(ParameterSetName = "Last")]
         [switch]$Last,
         [Parameter(ParameterSetName = "Last")]
@@ -245,11 +254,42 @@ function Get-DbaBackupHistory {
 
             if ($last) {
                 foreach ($db in $databases) {
+                    if ($since) {
+                        $sinceSqlFilter = "AND backupset.backup_finish_date >= '$($Since.ToString("yyyy-MM-ddTHH:mm:ss"))'"
+                    }
+                    if ($RecoveryFork) {
+                        $recoveryForkSqlFilter = "AND backupset.last_recovery_fork_guid ='$RecoveryFork'"
+                    }
+                    if ((Get-PsCallStack)[1].Command -notlike 'Get-DbaBackupHistory*') {
+                        $forkCheckSql = "
+                                SELECT
+                                    database_name,
+                                    MIN(database_backup_lsn) as 'FirstLsn',
+                                    MAX(database_backup_lsn) as 'FinalLsn',
+                                    MIN(backup_start_date) as 'MinDate',
+                                    MAX(backup_finish_date) as 'MaxDate',
+                                    last_recovery_fork_guid 'RecFork',
+                                    count(1) as 'backupcount'
+                                FROM msdb.dbo.backupset
+                                WHERE database_name='$($db.name)'
+                                $sinceSqlFilter
+                                $recoveryForkSqlFilter
+                                GROUP by database_name, last_recovery_fork_guid
+                                "
 
+                        $results = $server.ConnectionContext.ExecuteWithResults($forkCheckSql).Tables.Rows
+                        if ($results.count -gt 1) {
+                            Write-Message -Message "Found backups from multiple recovery forks for $($db.name) on $($server.name), this may affect your results" -Level Warning
+                            foreach ($result in $results) {
+                                Write-Message -Message "Between $($result.MinDate)/$($result.FirstLsn) and $($result.MaxDate)/$($result.FinalLsn) $($result.name) was on Recovery Fork GUID $($result.RecFork) ($($result.backupcount) backups)"   -Level Warning
+                            }
+
+                        }
+                    }
                     #Get the full and build upwards
                     $allBackups = @()
-                    $allBackups += $fullDb = Get-DbaBackupHistory -SqlInstance $server -Database $db.Name -LastFull -raw:$Raw -DeviceType $DeviceType -IncludeCopyOnly:$IncludeCopyOnly
-                    $diffDb = Get-DbaBackupHistory -SqlInstance $server -Database $db.Name -LastDiff -raw:$Raw -DeviceType $DeviceType -IncludeCopyOnly:$IncludeCopyOnly
+                    $allBackups += $fullDb = Get-DbaBackupHistory -SqlInstance $server -Database $db.Name -LastFull -raw:$Raw -DeviceType $DeviceType -IncludeCopyOnly:$IncludeCopyOnly -Since:$since -RecoveryFork $RecoveryFork
+                    $diffDb = Get-DbaBackupHistory -SqlInstance $server -Database $db.Name -LastDiff -raw:$Raw -DeviceType $DeviceType -IncludeCopyOnly:$IncludeCopyOnly -Since:$since -RecoveryFork $RecoveryFork
                     if ($diffDb.LastLsn -gt $fullDb.LastLsn -and $diffDb.DatabaseBackupLSN -eq $fullDb.CheckPointLSN ) {
                         Write-Message -Level Verbose -Message "Valid Differential backup "
                         $allBackups += $diffDb
@@ -262,7 +302,7 @@ function Get-DbaBackupHistory {
                             continue
                         }
                     }
-                    $allBackups += Get-DbaBackupHistory -SqlInstance $server -Database $db.Name -raw:$raw -DeviceType $DeviceType -LastLsn $tlogStartDsn -IncludeCopyOnly:$IncludeCopyOnly | Where-Object {
+                    $allBackups += Get-DbaBackupHistory -SqlInstance $server -Database $db.Name -raw:$raw -DeviceType $DeviceType -LastLsn $tlogStartDsn -IncludeCopyOnly:$IncludeCopyOnly -Since:$since -RecoveryFork $RecoveryFork | Where-Object {
                         $_.Type -eq 'Log' -and [bigint]$_.LastLsn -gt [bigint]$tlogStartDsn -and [bigint]$_.DatabaseBackupLSN -eq [bigint]$fullDb.CheckPointLSN -and $_.LastRecoveryForkGuid -eq $fullDb.LastRecoveryForkGuid
                     }
                     #This line does the output for -Last!!!
@@ -285,12 +325,47 @@ function Get-DbaBackupHistory {
                 $sql = ""
                 foreach ($db in $databases) {
                     Write-Message -Level Verbose -Message "Processing $($db.name)" -Target $db
+                    if ($since) {
+                        $sinceSqlFilter = "AND backupset.backup_finish_date >= '$($Since.ToString("yyyy-MM-ddTHH:mm:ss"))'"
+                    }
+                    if ($RecoveryFork) {
+                        $recoveryForkSqlFilter = "AND backupset.last_recovery_fork_guid ='$RecoveryFork'"
+                    }
+                    if ((Get-PsCallStack)[1].Command -notlike 'Get-DbaBackupHistory*') {
+                        $forkCheckSql = "
+                            SELECT
+                                database_name,
+                                MIN(database_backup_lsn) as 'FirstLsn',
+                                MAX(database_backup_lsn) as 'FinalLsn',
+                                MIN(backup_start_date) as 'MinDate',
+                                MAX(backup_finish_date) as 'MaxDate',
+                                last_recovery_fork_guid 'RecFork',
+                                count(1) as 'backupcount'
+                            FROM msdb.dbo.backupset
+                            WHERE database_name='$($db.name)'
+                            $sinceSqlFilter
+                            $recoveryForkSqlFilter
+                            GROUP by database_name, last_recovery_fork_guid
+                        "
+
+                        $results = $server.ConnectionContext.ExecuteWithResults($forkCheckSql).Tables.Rows
+                        if ($results.count -gt 1) {
+                            Write-Message -Message "Found backups from multiple recovery forks for $($db.name) on $($server.name), this may affect your results" -Level Warning
+                            foreach ($result in $results) {
+                                Write-Message -Message "Between $($result.MinDate)/$($result.FirstLsn) and $($result.MaxDate)/$($result.FinalLsn) $($result.name) was on Recovery Fork GUID $($result.RecFork) ($($result.backupcount) backups)"   -Level Warning
+                            }
+
+                        }
+                    }
                     $whereCopyOnly = $null
                     if ($true -ne $IncludeCopyOnly) {
                         $whereCopyOnly = " AND is_copy_only='0' "
                     }
                     if ($deviceTypeFilter) {
                         $devTypeFilterWhere = "AND mediafamily.device_type $deviceTypeFilterRight"
+                    }
+                    if ($since) {
+                        $sinceSqlFilter = "AND backupset.backup_finish_date >= '$($Since.ToString("yyyy-MM-ddTHH:mm:ss"))'"
                     }
                     # recap for future editors (as this has been discussed over and over):
                     #   - original editors (from hereon referred as "we") rank over backupset.last_lsn desc, backupset.backup_finish_date desc for a good reason: DST
@@ -331,7 +406,8 @@ function Get-DbaBackupHistory {
                                     a.software_major_version,
                                     a.DeviceType,
                                     a.is_copy_only,
-                                    a.last_recovery_fork_guid
+                                    a.last_recovery_fork_guid,
+                                    a.recovery_model
                                 FROM (SELECT
                                   RANK() OVER (ORDER BY backupset.last_lsn desc, backupset.backup_finish_date DESC) AS 'BackupSetRank',
                                   backupset.database_name AS [Database],
@@ -399,6 +475,8 @@ function Get-DbaBackupHistory {
                                 WHERE backupset.database_name = '$($db.Name)' $whereCopyOnly
                                 AND (type = '$first' OR type = '$second')
                                 $devTypeFilterWhere
+                                $sinceSqlFilter
+                                $recoveryForkSqlFilter
                                 ) AS a
                                 WHERE a.BackupSetRank = 1
                                 ORDER BY a.Type;
@@ -581,7 +659,7 @@ function Get-DbaBackupHistory {
                     $historyObject.SoftwareVersionMajor = $commonFields.Software_Major_Version
                     $historyObject.IsCopyOnly = ($commonFields.is_copy_only -eq 1)
                     $historyObject.LastRecoveryForkGuid = $commonFields.last_recovery_fork_guid
-                    $historyObject.RecoveryModel = $commonFields.Recovery_Model
+                    $historyObject.RecoveryModel = $commonFields.recovery_model
                     $historyObject
                 }
                 $groupResults | Sort-Object -Property LastLsn, Type
@@ -589,4 +667,3 @@ function Get-DbaBackupHistory {
         }
     }
 }
-

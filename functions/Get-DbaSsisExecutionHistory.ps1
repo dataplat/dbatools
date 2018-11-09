@@ -202,9 +202,9 @@ function Get-DbaSsisExecutionHistory {
         "
 
         #debug verbose output
-        Write-Verbose "`nSQL statement: $sql"
+        Write-Message -Level Debug -Message "`nSQL statement: $sql"
         $paramout = ($params | Out-String)
-        Write-Verbose "`nParameters:$paramout"
+        Write-Message -Level Debug -Message "`nParameters:$paramout"
     }
 
 

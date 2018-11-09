@@ -67,6 +67,7 @@ function ConvertTo-DbaDataTable {
 
 #>
     [CmdletBinding()]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseOutputTypeCorrectly", "", Justification = "PSSA Rule Ignored by BOH")]
     [OutputType([System.Object[]])]
     param (
         [Parameter(Position = 0,
@@ -170,7 +171,7 @@ function ConvertTo-DbaDataTable {
                 $specialType = 'Size'
             } elseif (-not ($type -in $types)) {
                 # All types which are not found in the array will be converted into strings.
-                # In this way we dont ignore it completely and it will be clear in the end why it looks as it does.
+                # In this way we don't ignore it completely and it will be clear in the end why it looks as it does.
                 $type = 'System.String'
             }
 

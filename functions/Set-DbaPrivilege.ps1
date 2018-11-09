@@ -105,8 +105,10 @@ function Convert-UserNameToSID ([string] `$Acc ) {
                                         if ($BLline -notmatch $SID) {
                                             (Get-Content $tempfile) -replace "SeBatchLogonRight = ", "SeBatchLogonRight = *$SID," |
                                                 Set-Content $tempfile
+                                            <# DO NOT use Write-Message as this is inside of a script block #>
                                             Write-Verbose "Added $acc to Batch Logon Privileges on $env:ComputerName"
                                         } else {
+                                            <# DO NOT use Write-Message as this is inside of a script block #>
                                             Write-Warning "$acc already has Batch Logon Privilege on $env:ComputerName"
                                         }
                                     }
@@ -118,8 +120,10 @@ function Convert-UserNameToSID ([string] `$Acc ) {
                                         if ($IFIline -notmatch $SID) {
                                             (Get-Content $tempfile) -replace "SeManageVolumePrivilege = ", "SeManageVolumePrivilege = *$SID," |
                                                 Set-Content $tempfile
+                                            <# DO NOT use Write-Message as this is inside of a script block #>
                                             Write-Verbose "Added $acc to Instant File Initialization Privileges on $env:ComputerName"
                                         } else {
+                                            <# DO NOT use Write-Message as this is inside of a script block #>
                                             Write-Warning "$acc already has Instant File Initialization Privilege on $env:ComputerName"
                                         }
                                     }
@@ -131,8 +135,10 @@ function Convert-UserNameToSID ([string] `$Acc ) {
                                         if ($LPIMline -notmatch $SID) {
                                             (Get-Content $tempfile) -replace "SeLockMemoryPrivilege = ", "SeLockMemoryPrivilege = *$SID," |
                                                 Set-Content $tempfile
+                                            <# DO NOT use Write-Message as this is inside of a script block #>
                                             Write-Verbose "Added $acc to Lock Pages in Memory Privileges on $env:ComputerName"
                                         } else {
+                                            <# DO NOT use Write-Message as this is inside of a script block #>
                                             Write-Warning "$acc already has Lock Pages in Memory Privilege on $env:ComputerName"
                                         }
                                     }

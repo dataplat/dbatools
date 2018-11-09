@@ -71,6 +71,7 @@ function Measure-DbaDiskSpaceRequirement {
 
 #>
     [CmdletBinding()]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseOutputTypeCorrectly", "", Justification = "PSSA Rule Ignored by BOH")]
     param(
         [Parameter(Mandatory, ValueFromPipelineByPropertyName = $true)]
         [DbaInstanceParameter]$Source,
@@ -217,7 +218,7 @@ function Measure-DbaDiskSpaceRequirement {
 
         foreach ($sourceFile in $sourceFiles) {
             foreach ($destFile in $destFiles) {
-                if ($found = ($sourceFile.Name -eq $destFile.Name)) {
+                if (($found = ($sourceFile.Name -eq $destFile.Name))) {
                     # Files found on both sides
                     [PSCustomObject]@{
                         SourceComputerName      = $sourceServer.ComputerName

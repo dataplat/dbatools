@@ -65,6 +65,7 @@ function Test-DbaBackupInformation {
 
 #>
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "Low")]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseOutputTypeCorrectly", "", Justification = "PSSA Rule Ignored by BOH")]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
         [object[]]$BackupHistory,
@@ -160,7 +161,7 @@ function Test-DbaBackupInformation {
             $allpaths = $DbHistory | Select-Object -ExpandProperty FullName
             $allpaths_validity = Test-DbaPath -SqlInstance $RestoreInstance -Path $allpaths
             foreach ($path in $allpaths_validity) {
-                if ($path.FileExists -eq $false) {
+                if ($path.FileExists -eq $false -and ($path.FilePath -notlike 'http*')) {
                     Write-Message -Message "Backup File $($path.FilePath) cannot be read by $($RestoreInstance.Name). Does the service account ($($RestoreInstance.ServiceAccount)) have permission?" -Level Warning
                     $VerificationErrors++
                 }

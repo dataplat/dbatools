@@ -99,13 +99,14 @@ function Backup-DbaDatabase {
         If specified, the only other parameters than can be used are "NoCopyOnly", "Type", "CompressBackup", "Checksum", "Verify", "AzureCredential", "CreateFolder".
 
     .PARAMETER AzureCredential
-        The name of the credential on the SQL instance that can write to the AzureBaseUrl.
+        The name of the credential on the SQL instance that can write to the AzureBaseUrl, only needed if using Storage access keys
+        If using SAS credentials, the command will look for a credential with a name matching the AzureBaseUrl
 
     .PARAMETER NoRecovery
         This is passed in to perform a tail log backup if needed
 
     .PARAMETER BuildPath
-        By default this command will not attempt to create missing paths, this switch will change the behaviour so that it wll
+        By default this command will not attempt to create missing paths, this switch will change the behaviour so that it will
 
     .PARAMETER IgnoreFileChecks
         This switch stops the function from checking for the validity of paths. This can be useful if SQL Server only has read access to the backup area.
@@ -147,6 +148,11 @@ function Backup-DbaDatabase {
         PS C:\> Backup-DbaDatabase -SqlInstance sql2016 -AzureBaseUrl https://dbatoolsaz.blob.core.windows.net/azbackups/ -AzureCredential dbatoolscred -Type Full -CreateFolder
 
         Performs a full backup of all databases on the sql2016 instance to their own containers under the https://dbatoolsaz.blob.core.windows.net/azbackups/ container on Azure blog storage using the sql credential "dbatoolscred" registered on the sql2016 instance.
+
+    .EXAMPLE
+        PS C:\> Backup-DbaDatabase -SqlInstance sql2016 -AzureBaseUrl https://dbatoolsaz.blob.core.windows.net/azbackups/  -Type Full
+
+        Performs a full backup of all databases on the sql2016 instance to the https://dbatoolsaz.blob.core.windows.net/azbackups/ container on Azure blog storage using the Shared Access Signature sql credential "https://dbatoolsaz.blob.core.windows.net/azbackups" registered on the sql2016 instance.
 
     .EXAMPLE
         PS C:\> Backup-Dbadatabase -SqlInstance Server1\Prod -Database db1 -BackupDirectory \\filestore\backups\servername\instancename\dbname\backuptype -Type Full -ReplaceInName
@@ -236,7 +242,7 @@ function Backup-DbaDatabase {
             }
 
             if ($InputObject.Count -gt 1 -and $BackupFileName -ne '' -and $True -ne $ReplaceInFile) {
-                Stop-Function -Message "1 BackupFile specified, but more than 1 database."  -Level Verbose
+                Stop-Function -Message "1 BackupFile specified, but more than 1 database."
                 return
             }
 
@@ -251,12 +257,19 @@ function Backup-DbaDatabase {
                 }
             }
             if ('' -ne $AzureBaseUrl) {
-                if ($null -eq $AzureCredential) {
-                    Stop-Function -Message "You must provide the credential name for the Azure Storage Account"
-                    return
-                }
                 $AzureBaseUrl = $AzureBaseUrl.Trim("/")
-                $FileCount = 1
+                if ('' -ne $AzureCredential) {
+                    Write-Message -Message "Azure Credential name passed in, will proceed assuming it's value" -Level Verbose
+                    $FileCount = 1
+                } else {
+                    Write-Message -Message "AzureUrl and no credential, testing for SAS credential"
+                    if (Get-DbaCredential -SqlInstance $server -Name $AzureBaseUrl) {
+                        Write-Message -Message "Found a SAS backup credental" -Level Verbose
+                    } else {
+                        Stop-Function -Message "You must provide the credential name for the Azure Storage Account"
+                        return
+                    }
+                }
                 $BackupDirectory = $AzureBaseUrl
             }
 
@@ -364,7 +377,7 @@ function Backup-DbaDatabase {
 
             $backup.CopyOnly = $copyonly
             $backup.Action = $SMOBackupType
-            if ('' -ne $AzureBaseUrl) {
+            if ('' -ne $AzureBaseUrl -and $null -ne $AzureCredential) {
                 $backup.CredentialName = $AzureCredential
             }
 
@@ -502,6 +515,8 @@ function Backup-DbaDatabase {
 
                 try {
                     if ($Pscmdlet.ShouldProcess($server.Name, "Backing up $dbname to $humanBackupFile")) {
+                        $CurrentLsn = (Read-DbaTransactionLog -SqlInstance $server -Database $dbname -RowLimit 1).'Current LSN'
+                        $NumericLSN = (Convert-DbaLSN -LSN $CurrentLsn).Numeric
                         if ($OutputScriptOnly -ne $True) {
                             $Filelist = @()
                             $FileList += $server.Databases[$dbname].FileGroups.Files | Select-Object @{ Name = "FileType"; Expression = { "D" } }, @{ Name = "Type"; Expression = { "D" } }, @{ Name = "LogicalName"; Expression = { $_.Name } }, @{ Name = "PhysicalName"; Expression = { $_.FileName } }
@@ -514,7 +529,7 @@ function Backup-DbaDatabase {
                             if ($server.VersionMajor -eq '8') {
                                 $HeaderInfo = Get-BackupAncientHistory -SqlInstance $server -Database $dbname
                             } else {
-                                $HeaderInfo = Get-DbaBackupHistory -SqlInstance $server -Database $dbname -Last -IncludeCopyOnly | Sort-Object -Property End -Descending | Select-Object -First 1
+                                $HeaderInfo = Get-DbaBackupHistory -SqlInstance $server -Database $dbname -Last -IncludeCopyOnly -LastLsn $NumericLsn | Sort-Object -Property End -Descending | Select-Object -First 1
                             }
                             $Verified = $false
                             if ($Verify) {
@@ -584,4 +599,3 @@ function Backup-DbaDatabase {
         }
     }
 }
-

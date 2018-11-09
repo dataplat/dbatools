@@ -164,6 +164,7 @@ function Copy-DbaDatabase {
 
 #>
     [CmdletBinding(DefaultParameterSetName = "DbBackup", SupportsShouldProcess = $true)]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseOutputTypeCorrectly", "", Justification = "PSSA Rule Ignored by BOH")]
     param (
         [parameter(Mandatory = $false)]
         [DbaInstanceParameter]$Source,
@@ -616,7 +617,10 @@ function Copy-DbaDatabase {
                 if ($detachresult) {
 
                     $transfer = Start-SqlFileTransfer $fileStructure $dbName
-                    if ($transfer -eq $false) { Write-Warning "Could not copy files."; return "Could not copy files." }
+                    if ($transfer -eq $false) {
+                        Write-Message -Level Verbose -Message "Could not copy files."
+                        return "Could not copy files."
+                    }
                     $attachresult = Mount-SqlDatabase $destServer $destDbName $destfilestructure $dbOwner
 
                     if ($attachresult -eq $true) {

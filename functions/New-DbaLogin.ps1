@@ -110,6 +110,7 @@ function New-DbaLogin {
 
 #>
     [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = "Password", ConfirmImpact = "Low")]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingPlainTextForPassword", "", Justification = "For Parameters Password and MapToCredential")]
     param (
         [parameter(Mandatory, Position = 1)]
         [Alias("ServerInstance", "SqlServer")]
@@ -314,7 +315,7 @@ function New-DbaLogin {
                 }
 
                 #verify if login exists on the server
-                if ($existingLogin = $server.Logins[$loginName]) {
+                if (($existingLogin = $server.Logins[$loginName])) {
                     if ($force) {
                         if ($Pscmdlet.ShouldProcess($existingLogin, "Dropping existing login $loginName on $instance because -Force was used")) {
                             try {

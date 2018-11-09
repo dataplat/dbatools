@@ -20,6 +20,9 @@ $TestsRunGroups = @{
     )
     # do not run on appveyor
     "appveyor_disabled" = @(
+        # takes too long
+        'Install-DbaSqlWatch',
+        'Uninstall-DbaSqlWatch',
         # a bug in SMO prevents availability group scripting :(
         'Export-DbaAvailabilityGroup',
         'Get-DbaCpuRingBuffer',
@@ -28,7 +31,9 @@ $TestsRunGroups = @{
         'Remove-DbaAvailabilityGroup',
         'Remove-DbaAgDatabase',
         'New-DbaAvailabilityGroup',
-        'Export-DbaDacPackage'
+        'Export-DbaDacPackage',
+        'Set-DbaAgReplica',
+        'Test-DbaOptimizeForAdHoc'
     )
     # do not run everywhere
     "disabled"                  = @()

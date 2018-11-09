@@ -199,6 +199,7 @@ function Find-DbaInstance {
 #>
     [CmdletBinding()]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseApprovedVerbs", "", Justification = "Internal functions are ignored")]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseOutputTypeCorrectly", "", Justification = "PSSA Rule Ignored by BOH")]
     param (
         [Parameter(Mandatory, ParameterSetName = 'Computer', ValueFromPipeline)]
         [DbaInstance[]]$ComputerName,
@@ -536,7 +537,7 @@ function Find-DbaInstance {
             [CmdletBinding()]
             param (
                 [string]$DomainController,
-                [object]$Credential,
+                [Pscredential]$Credential,
                 [string]$ComputerName = "*",
                 [switch]$GetSPN
             )

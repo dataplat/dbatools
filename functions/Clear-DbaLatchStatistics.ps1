@@ -42,7 +42,7 @@ function Clear-DbaLatchStatistics {
     .EXAMPLE
         PS C:\> Clear-DbaLatchStatistics -SqlInstance sql2008, sqlserver2012 -Confirm:$false
 
-        Clears clears latch statistics on servers sql2008 and sqlserver2012, without prompting
+        Clears latch statistics on servers sql2008 and sqlserver2012, without prompting
 
     .EXAMPLE
         PS C:\> 'sql2008','sqlserver2012' | Clear-DbaLatchStatistics

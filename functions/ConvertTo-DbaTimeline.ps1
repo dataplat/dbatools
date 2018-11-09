@@ -57,6 +57,7 @@ function ConvertTo-DbaTimeline {
 
 #>
     [CmdletBinding()]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseOutputTypeCorrectly", "", Justification = "PSSA Rule Ignored by BOH")]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
         [object[]]$InputObject,
@@ -184,7 +185,7 @@ function ConvertTo-DbaTimeline {
                 format: 'dd/MM HH:mm',
             },
         }
-        // Autosize chart. It would not be enough to just count rows and expand based on row height as there can be overlappig rows.
+        // Autosize chart. It would not be enough to just count rows and expand based on row height as there can be overlapping rows.
         // this will draw the chart, get the size of the underlying div and apply that size to the parent container and redraw:
         chart.draw(dataTable, options);
         // get the size of the chold div:

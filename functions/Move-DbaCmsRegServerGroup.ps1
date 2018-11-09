@@ -16,17 +16,14 @@ function Move-DbaCmsRegServerGroup {
     .PARAMETER Group
         Specifies one or more groups to include from SQL Server Central Management Server.
 
+    .PARAMETER NewGroup
+        The new location.
+
     .PARAMETER InputObject
         Allows results from Get-DbaCmsRegServerGroup to be piped in
 
-    .PARAMETER Id
-        Get group by Id(s)
-
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
-
-    .PARAMETER NewGroup
-        The new location.
 
     .PARAMETER Confirm
         Prompts you for confirmation before executing any changing operations within the command.

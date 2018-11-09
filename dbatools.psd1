@@ -11,7 +11,7 @@
     RootModule             = 'dbatools.psm1'
 
     # Version number of this module.
-    ModuleVersion          = '0.9.491'
+    ModuleVersion          = '0.9.504'
 
     # ID used to uniquely identify this module
     GUID                   = '9d139310-ce45-41ce-8e8b-d76335aa1789'
@@ -400,7 +400,8 @@
         'Invoke-DbaQuery',
         'Remove-DbaLogin',
         'Get-DbaFileStream',
-        'Set-DbaFileStream',
+        'Enable-DbaFileStream',
+        'Disable-DbaFileStream',
         'Get-DbaAgentJobCategory',
         'New-DbaAgentJobCategory',
         'Remove-DbaAgentJobCategory',
@@ -448,7 +449,7 @@
         'Remove-DbaPfDataCollectorCounter',
         'Get-DbaPfAvailableCounter',
         'Get-DbaXESmartTarget',
-        'Remove-DbaXESmartTarget'
+        'Remove-DbaXESmartTarget',
         'Stop-DbaXESmartTarget',
         'Get-DbaCmsRegServerGroup',
         'New-DbaDbUser',
@@ -556,7 +557,18 @@
         'Get-DbaDbCompatibility',
         'Set-DbaDbCompatibility',
         'New-DbaDacOption',
-        'Invoke-DbatoolsFormatter'
+        'Invoke-DbatoolsFormatter',
+        'Remove-DbaAgReplica',
+        'Resume-DbaAgDbDataMovement',
+        'Set-DbaAgListener',
+        'Set-DbaAgReplica',
+        'Set-DbaAvailabilityGroup',
+        'Set-DbaEndpoint',
+        'Suspend-DbaAgDbDataMovement',
+        'Sync-DbaAvailabilityGroup',
+        'Install-DbaSqlWatch',
+        'Uninstall-DbaSqlWatch',
+        'Get-DbaMemoryCondition'
     )
 
     # Cmdlets to export from this module

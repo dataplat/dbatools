@@ -130,7 +130,8 @@ function Restore-DbaDatabase {
         If a directory is specified the database(s) will be restored into a standby state, with the standby file placed into this directory (which must exist, and be writable by the target Sql Server instance)
 
     .PARAMETER AzureCredential
-        The name of the SQL Server credential to be used if restoring from an Azure hosted backup
+        The name of the SQL Server credential to be used if restoring from an Azure hosted backup using Storage Access Keys
+        If a backup path beginning http is passed in and this parameter is not specified then if a credential with a name matching the URL
 
     .PARAMETER ReplaceDbNameInFile
         If switch set and occurrence of the original database's name in a data or log file will be replace with the name specified in the DatabaseName parameter
@@ -245,6 +246,11 @@ function Restore-DbaDatabase {
         credential MyAzureCredential held on instance Server1\instance1
 
     .EXAMPLE
+        PS C:\> Restore-DbaDatabase -SqlInstance server1\instance1 -Path http://demo.blob.core.windows.net/backups/dbbackup.bak
+
+        Will attempt to restore the backups from http://demo.blob.core.windows.net/backups/dbbackup.bak if a SAS credential with the name http://demo.blob.core.windows.net/backups exists on server1\instance1
+
+    .EXAMPLE
         PS C:\> $File = Get-ChildItem c:\backups, \\server1\backups -recurse
         PS C:\> $File | Restore-DbaDatabase -SqlInstance Server1\Instance -UseDestinationDefaultDirectories
 
@@ -317,6 +323,7 @@ function Restore-DbaDatabase {
 
 #>
     [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = "Restore")]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingPlainTextForPassword", "", Justification = "For Parameter AzureCredential")]
     param (
         [parameter(Mandatory)][Alias("ServerInstance", "SqlServer")][DbaInstanceParameter]$SqlInstance,
         [PSCredential]$SqlCredential,
@@ -431,7 +438,7 @@ function Restore-DbaDatabase {
             }
             if ('' -ne $StandbyDirectory) {
                 if (!(Test-DbaPath -Path $StandbyDirectory -SqlInstance $RestoreInstance)) {
-                    Stop-Function -Message "$SqlSever cannot see the specified Standby Directory $StandbyDirectory" -Target $SqlInstance
+                    Stop-Function -Message "$SqlServer cannot see the specified Standby Directory $StandbyDirectory" -Target $SqlInstance
                     return
                 }
             }
@@ -516,9 +523,20 @@ function Restore-DbaDatabase {
                             }
                         }
                     }
-                    if ($f.BackupPath -like 'http*' -and '' -eq $AzureCredential) {
-                        Stop-Function -Message "At least one Azure backup passed in, and no Credential supplied. Stopping"
-                        return
+
+                    if ($f.BackupPath -like 'http*') {
+                        if ('' -ne $AzureCredential) {
+                            Write-Message -Message "At least one Azure backup passed in with a credential, assume correct" -Level Verbose
+                            Write-Message -Message "Storage Account Identity access means striped backups cannot be restore"
+                        } else {
+                            $f.BackupPath -match 'https://.*/.*/'
+                            if (Get-DbaCredential -SqlInstance $RestoreInstance -name $matches[0].trim('/') ) {
+                                Write-Message -Message "We have a SAS credential to use with $($f.BackupPath)" -Level Verbose
+                            } else {
+                                Stop-Function -Message "A URL to a backup has been passed in, but no credential can be found to access it"
+                                return
+                            }
+                        }
                     }
                     $BackupHistory += $F | Select-Object *, @{
                         Name = "ServerName"; Expression = {
@@ -565,16 +583,14 @@ function Restore-DbaDatabase {
                         [string]$Database = $Database.name
                     }
                 }
-                Write-Verbose "existence - $($RestoreInstance.Databases[$Database].State)"
-                if ($RestoreInstance.Databases[$Database].State -ne 'Existing') {
+                Write-Message -Level Verbose -Message "existence - $($RestoreInstance.Databases[$DataBase].State)"
+                if ($RestoreInstance.Databases[$DataBase].State -ne 'Existing') {
                     Write-Message -Message "$Database does not exist on $RestoreInstance" -level Warning
                     Continue
-
                 }
                 if ($RestoreInstance.Databases[$Database].Status -ne "Restoring") {
                     Write-Message -Message "$Database on $RestoreInstance is not in a Restoring State" -Level Warning
                     Continue
-
                 }
                 $RestoreComplete = $true
                 $RecoverSql = "RESTORE DATABASE $Database WITH RECOVERY"
@@ -684,7 +700,7 @@ function Restore-DbaDatabase {
                 Stop-Function -Message "Failure" -ErrorRecord $_ -Continue -Target $RestoreInstance
             }
             if ($PSCmdlet.ParameterSetName -eq "RestorePage") {
-                if ($RestoreInstace.Edition -like '*Enterprise*') {
+                if ($RestoreInstance.Edition -like '*Enterprise*') {
                     Write-Message -Message "Taking Tail log backup for page restore for Enterprise" -Level Verbose
                     $TailBackup = Backup-DbaDatabase -SqlInstance $RestoreInstance -Database $DatabaseName -Type Log -BackupDirectory $PageRestoreTailFolder -Norecovery -CopyOnly
                 }

@@ -87,6 +87,7 @@ function Get-DbaComputerCertificate {
 
             if ($Thumbprint) {
                 try {
+                    <# DO NOT use Write-Message as this is inside of a script block #>
                     Write-Verbose "Searching Cert:\$Store\$Folder"
                     Get-ChildItem "Cert:\$Store\$Folder" -Recurse | Where-Object Thumbprint -in $Thumbprint
                 } catch {
@@ -94,6 +95,7 @@ function Get-DbaComputerCertificate {
                 }
             } else {
                 try {
+                    <# DO NOT use Write-Message as this is inside of a script block #>
                     Write-Verbose "Searching Cert:\$Store\$Folder"
                     Get-ChildItem "Cert:\$Store\$Folder" -Recurse | Where-Object { "$($_.EnhancedKeyUsageList)" -match '1\.3\.6\.1\.5\.5\.7\.3\.1' }
                 } catch {
