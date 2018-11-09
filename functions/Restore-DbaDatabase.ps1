@@ -571,7 +571,7 @@ function Restore-DbaDatabase {
                 $WithReplace = $true
             }
         } elseif ($PSCmdlet.ParameterSetName -eq "Recovery") {
-            Write-Message -Message "$($Database.Сount) databases to recover" -level Verbose
+            Write-Message -Message "$($Database.Count) databases to recover" -level Verbose
             ForEach ($Database in $DatabaseName) {
                 if ($Database -is [object]) {
                     #We've got an object, try the normal options Database, DatabaseName, Name
@@ -697,7 +697,8 @@ function Restore-DbaDatabase {
                     $_.IsVerified -eq $true
                 } | Invoke-DbaAdvancedRestore -SqlInstance $RestoreInstance -WithReplace:$WithReplace -RestoreTime $RestoreTime -StandbyDirectory $StandbyDirectory -NoRecovery:$NoRecovery -Continue:$Continue -OutputScriptOnly:$OutputScriptOnly -BlockSize $BlockSize -MaxTransferSize $MaxTransferSize -Buffercount $Buffercount -KeepCDC:$KeepCDC -VerifyOnly:$VerifyOnly -PageRestore $PageRestore -EnableException -AzureCredential $AzureCredential
             } catch {
-                Stop-Function -Message "Failure" -ErrorRecord $_ -Continue -Target $RestoreInstance
+                $msg = Get-ErrorMessage -Record $_
+                Stop-Function -Message $msg -ErrorRecord $_ -Continue -Target $RestoreInstance
             }
             if ($PSCmdlet.ParameterSetName -eq "RestorePage") {
                 if ($RestoreInstance.Edition -like '*Enterprise*') {
@@ -708,7 +709,6 @@ function Restore-DbaDatabase {
                 $TailBackup | Restore-DbaDatabase -SqlInstance $RestoreInstance -TrustDbBackupHistory -NoRecovery -OutputScriptOnly:$OutputScriptOnly -BlockSize $BlockSize -MaxTransferSize $MaxTransferSize -Buffercount $Buffercount -Continue
                 Restore-DbaDatabase -SqlInstance $RestoreInstance -Recover -DatabaseName $DatabaseName -OutputScriptOnly:$OutputScriptOnly
             }
-
         }
     }
 }
