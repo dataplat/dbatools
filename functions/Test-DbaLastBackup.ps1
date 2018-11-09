@@ -68,7 +68,10 @@ function Test-DbaLastBackup {
 
     .PARAMETER Prefix
         The database is restored as "dbatools-testrestore-$databaseName" by default. You can change dbatools-testrestore to whatever you would like using this parameter.
-
+    
+    .PARAMETER InputObject
+        Enables piping from Get-DbaDatabase
+    
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
