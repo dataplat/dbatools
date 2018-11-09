@@ -6,7 +6,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
         $defaultParamCount = 13
         [object[]]$params = (Get-ChildItem function:\Test-DbaLastBackup).Parameters.Keys
-        $knownParameters = 'SqlInstance','SqlCredential','Database','ExcludeDatabase','Destination','DestinationCredential','DataDirectory','LogDirectory','Prefix','VerifyOnly','NoCheck','NoDrop','CopyFile','CopyPath','MaxSize','IncludeCopyOnly','IgnoreLogBackup','AzureCredential', 'InputObject', 'EnableException'
+        $knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'Destination', 'DestinationCredential', 'DataDirectory', 'LogDirectory', 'Prefix', 'VerifyOnly', 'NoCheck', 'NoDrop', 'CopyFile', 'CopyPath', 'MaxSize', 'IncludeCopyOnly', 'IgnoreLogBackup', 'AzureCredential', 'InputObject', 'EnableException'
         $paramCount = $knownParameters.Count
         It "Should contain our specific parameters" {
             ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
@@ -87,9 +87,9 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         $results1 = Restore-DbaDatabase -SqlInstance $script:instance1 -Database smalltestrest -Path $script:appveyorlabrepo\sql2008-backups\db2\FULL\SQL2008_db2_FULL_20170518_041738.bak -ReplaceDbNameInFile
         Backup-DbaDatabase -SqlInstance $script:instance1 -Database smalltestrest
 
-        $results = Test-DbaLastBackup -SqlInstance $script:instance1 -Databases bigtestrest,smalltestrest -CopyFile -CopyPath c:\temp -MaxSize 3 -Prefix testlast
+        $results = Test-DbaLastBackup -SqlInstance $script:instance1 -Databases bigtestrest, smalltestrest -CopyFile -CopyPath c:\temp -MaxSize 3 -Prefix testlast
         $fileresult = Get-ChildItem c:\temp | Where-Object {$_.name -like '*bigtestrest'}
-        It "Should have skipped bigtestrest and tested smalltestrest"{
+        It "Should have skipped bigtestrest and tested smalltestrest" {
             $results[0].RestoreResult | Should -BeLike '*exceeds the specified maximum*'
             $results[0].DbccResult | Should -Be 'Skipped'
             $results[1].RestoreResult | Should -Be 'Success'
@@ -100,6 +100,6 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             ($null -eq $fileresult) | Should -Be $true
         }
 
-        Get-DbaDatabase -SqlInstance $script:instance1 -Databases  bigtestrest,smalltestrest | Remove-DbaDatabase -confirm:$false
+        Get-DbaDatabase -SqlInstance $script:instance1 -Databases  bigtestrest, smalltestrest | Remove-DbaDatabase -confirm:$false
     }
 }
