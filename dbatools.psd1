@@ -119,7 +119,7 @@
         'Test-DbaTempdbConfig',
         'Repair-DbaOrphanUser',
         'Remove-DbaOrphanUser',
-        'Find-DbaUnusedIndex',
+        'Find-DbaDbUnusedIndex',
         'Test-DbaDiskAllocation',
         'Test-DbaPowerPlan',
         'Set-DbaPowerPlan',
