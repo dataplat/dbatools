@@ -83,8 +83,6 @@ function Install-DbaSqlWatch {
     )
     begin {
         $stepCounter = 0
-        $totalSteps = 3
-        $activity = "Installing SQLWatch"
         
         $DbatoolsData = Get-DbatoolsConfigValue -FullName "Path.DbatoolsData"
         $tempFolder = ([System.IO.Path]::GetTempPath()).TrimEnd("\")
@@ -92,7 +90,7 @@ function Install-DbaSqlWatch {
 
         if (-not $LocalFile) {
             if ($PSCmdlet.ShouldProcess($env:computername, "Downloading latest release from GitHub")) {
-                Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Downloading latest release from GitHub"
+                Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Downloading latest release from GitHub"
                 
                 # query the releases to find the latest, check and see if its cached
                 $ReleasesUrl = "https://api.github.com/repos/marcingminski/sqlwatch/releases"
@@ -182,7 +180,7 @@ function Install-DbaSqlWatch {
                     Stop-Function -Message "Failure." -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
                 }
                 
-                Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Starting installing/updating SqlWatch in $database on $instance"
+                Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Starting installing/updating SqlWatch in $database on $instance"
 
                 try {
                     # create a publish profile and publish DACPAC
@@ -191,7 +189,7 @@ function Install-DbaSqlWatch {
                         RegisterDataTierApplication = $true
                     }
                     
-                    Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Publishing SqlWatch dacpac to $database on $instance"
+                    Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Publishing SqlWatch dacpac to $database on $instance"
                     $DacProfile = New-DbaDacProfile -SqlInstance $server -Database $Database -Path $LocalCacheFolder -PublishOptions $PublishOptions | Select-Object -ExpandProperty FileName
                     $PublishResults = Publish-DbaDacPackage -SqlInstance $server -Database $Database -Path $DacPacPath -PublishXml $DacProfile
 

@@ -157,8 +157,6 @@ function Invoke-DbaDbMirroring {
         $null = $params.Remove('Force')
         $null = $params.Remove('Confirm')
         $null = $params.Remove('Whatif')
-        $totalSteps = 12
-        $Activity = "Setting up mirroring"
     }
     process {
         if ((Test-Bound -ParameterName Primary) -and (Test-Bound -Not -ParameterName Database)) {
@@ -189,7 +187,7 @@ function Invoke-DbaDbMirroring {
 
             $dbName = $primarydb.Name
 
-            Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Validating mirror setup"
+            Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Validating mirror setup"
             # Thanks to https://github.com/mmessano/PowerShell/blob/master/SQL-ConfigureDatabaseMirroring.ps1 for the tips
 
             $validation = Invoke-DbMirrorValidation @params
@@ -210,7 +208,7 @@ function Invoke-DbaDbMirroring {
                 Stop-Function -Continue -Message "Cannot setup mirroring on database ($dbname) due to its current state: $($primarydb.Status)"
             }
 
-            Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Setting recovery model for $dbName on $($source.Name) to Full"
+            Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Setting recovery model for $dbName on $($source.Name) to Full"
 
             if ($primarydb.RecoveryModel -ne "Full") {
                 if ((Test-Bound -ParameterName UseLastBackups)) {
@@ -220,7 +218,7 @@ function Invoke-DbaDbMirroring {
                 }
             }
 
-            Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Copying $dbName from primary to mirror"
+            Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Copying $dbName from primary to mirror"
 
             if (-not $validation.DatabaseExistsOnMirror -or $Force) {
                 if ($UseLastBackups) {
@@ -249,7 +247,7 @@ function Invoke-DbaDbMirroring {
 
             $mirrordb = Get-DbaDatabase -SqlInstance $dest -Database $dbName
 
-            Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Copying $dbName from primary to witness"
+            Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Copying $dbName from primary to witness"
 
             if ($Witness -and (-not $validation.DatabaseExistsOnWitness -or $Force)) {
                 if (-not $allbackups) {
@@ -282,21 +280,21 @@ function Invoke-DbaDbMirroring {
             $mirrorendpoint = Get-DbaEndpoint -SqlInstance $dest | Where-Object EndpointType -eq DatabaseMirroring
 
             if (-not $primaryendpoint) {
-                Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Setting up endpoint for primary"
+                Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Setting up endpoint for primary"
                 $primaryendpoint = New-DbaEndpoint -SqlInstance $source -Type DatabaseMirroring -Role Partner -Name Mirroring -EncryptionAlgorithm RC4
                 $null = $primaryendpoint | Stop-DbaEndpoint
                 $null = $primaryendpoint | Start-DbaEndpoint
             }
 
             if (-not $mirrorendpoint) {
-                Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Setting up endpoint for mirror"
+                Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Setting up endpoint for mirror"
                 $mirrorendpoint = New-DbaEndpoint -SqlInstance $dest -Type DatabaseMirroring -Role Partner -Name Mirroring -EncryptionAlgorithm RC4
                 $null = $mirrorendpoint | Stop-DbaEndpoint
                 $null = $mirrorendpoint | Start-DbaEndpoint
             }
 
             if ($witserver) {
-                Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Setting up endpoint for witness"
+                Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Setting up endpoint for witness"
                 $witnessendpoint = Get-DbaEndpoint -SqlInstance $witserver | Where-Object EndpointType -eq DatabaseMirroring
                 if (-not $witnessendpoint) {
                     $witnessendpoint = New-DbaEndpoint -SqlInstance $witserver -Type DatabaseMirroring -Role Witness -Name Mirroring -EncryptionAlgorithm RC4
@@ -305,7 +303,7 @@ function Invoke-DbaDbMirroring {
                 }
             }
 
-            Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Granting permissions to service account"
+            Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Granting permissions to service account"
 
             $serviceaccounts = $source.ServiceAccount, $dest.ServiceAccount, $witserver.ServiceAccount | Select-Object -Unique
 
@@ -326,7 +324,7 @@ function Invoke-DbaDbMirroring {
                 }
             }
 
-            Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Starting endpoints if necessary"
+            Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Starting endpoints if necessary"
             try {
                 $null = $primaryendpoint, $mirrorendpoint, $witnessendpoint | Start-DbaEndpoint -EnableException
             } catch {
@@ -334,14 +332,14 @@ function Invoke-DbaDbMirroring {
             }
 
             try {
-                Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Setting up partner for mirror"
+                Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Setting up partner for mirror"
                 $null = $mirrordb | Set-DbaDbMirror -Partner $primaryendpoint.Fqdn -EnableException
             } catch {
                 Stop-Function -Continue -Message "Failure on mirror" -ErrorRecord $_
             }
 
             try {
-                Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Setting up partner for primary"
+                Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Setting up partner for primary"
                 $null = $primarydb | Set-DbaDbMirror -Partner $mirrorendpoint.Fqdn -EnableException
             } catch {
                 Stop-Function -Continue -Message "Failure on primary" -ErrorRecord $_
@@ -372,4 +370,3 @@ function Invoke-DbaDbMirroring {
         }
     }
 }
-
