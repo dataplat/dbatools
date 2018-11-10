@@ -66,8 +66,6 @@ function Find-DbaDbUnusedIndex {
         [PSCredential]$SqlCredential,
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
-        [switch]$NoClobber,
-        [switch]$Append,
         [switch]$IgnoreUptime,
         [Parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
