@@ -62,6 +62,7 @@ function Set-DbaPowerPlan {
         [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer", "SqlInstance")]
         [object[]]$ComputerName,
+        [PSCredential]$Credential,
         [ValidateSet('High Performance', 'Balanced', 'Power saver')]
         [string]$PowerPlan = 'High Performance',
         [string]$CustomPowerPlan,
@@ -73,62 +74,83 @@ function Set-DbaPowerPlan {
         if ($CustomPowerPlan.Length -gt 0) {
             $PowerPlan = $CustomPowerPlan
         }
-
         function Set-DbaPowerPlanInternal {
             [CmdletBinding(SupportsShouldProcess)]
-            param($server)
+            param(
+                [object]$Computer,
+                [PSCredential]$Credential
+            )
 
             try {
-                Write-Message -Level Verbose -Message "Testing connection to $server and resolving IP address."
-                $ipaddr = (Test-Connection $server -Count 1 -ErrorAction SilentlyContinue).Ipv4Address | Select-Object -First 1
+                Write-Message -Level Verbose -Message "Testing connection to $Computer and resolving IP address."
+                #$ipaddr = (Test-Connection $server -Count 1 -ErrorAction SilentlyContinue).Ipv4Address | Select-Object -First 1
+                $server = Resolve-DbaNetworkName -ComputerName $Computer -Credential $Credential
 
+                $computerResolved = $server.FullComputerName
             } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $server
                 return
             }
 
+            $splatDbaCmObject = @{
+                ComputerName    = $computerResolved
+            }
+            if (Test-Bound "Credential") {
+                $splatDbaCmObject["Credential"] = $Credential
+            }
+
             try {
-                Write-Message -Level Verbose -Message "Getting Power Plan information from $server."
-                $query = "Select ElementName from Win32_PowerPlan WHERE IsActive = 'true'"
-                $currentplan = Get-WmiObject -Namespace Root\CIMV2\Power -ComputerName $ipaddr -Query $query -ErrorAction SilentlyContinue
-                $currentplan = $currentplan.ElementName
+                Write-Message -Level Verbose -Message "Getting Power Plan information from $computer."
+                $powerPlan = Get-DbaCmObject @splatDbaCmObject -ClassName Win32_PowerPlan -Namespace "root\cimv2\power"  | Where-Object IsActive -eq 'True'
+                $currentplan = $powerPlan.ElementName
             } catch {
-                Stop-Function -Message "Can't connect to WMI on $server." -Category ConnectionError -ErrorRecord $_ -Target $server
-                return
+                if ($_.Exception -match "namespace") {
+                    Stop-Function -Message "Can't get Power Plan Info for $computer. Unsupported operating system." -Continue -ErrorRecord $_ -Target $computer
+                } else {
+                    Stop-Function -Message "Can't get Power Plan Info for $computer. Check logs for more details." -Continue -ErrorRecord $_ -Target $computer
+                }
             }
 
             if ($null -eq $currentplan) {
                 # the try/catch above isn't working, so make it silent and handle it here.
-                Stop-Function -Message "Cannot get Power Plan for $server." -Category ConnectionError -ErrorRecord $_ -Target $server
+                Stop-Function -Message "Cannot get Power Plan for $computer." -Category ConnectionError -ErrorRecord $_ -Target $server
                 return
             }
 
             $planinfo = [PSCustomObject]@{
-                Server            = $server
+                Server            = $computer
                 PreviousPowerPlan = $currentplan
                 ActivePowerPlan   = $PowerPlan
             }
             if ($Pscmdlet.ShouldProcess($PowerPlan, "Setting Powerplan on $server")) {
                 if ($PowerPlan -ne $currentplan) {
-                    if ($Pscmdlet.ShouldProcess($server, "Changing Power Plan from $CurrentPlan to $PowerPlan")) {
-                        try {
+                    if ($Pscmdlet.ShouldProcess($Computer, "Changing Power Plan from $CurrentPlan to $PowerPlan")) {
+                        Write-Message -Level Verbose -Message "Creating CIMSession on $computer over WSMan"
+                        $CIMsession = New-CimSession -ComputerName $Computer -ErrorAction SilentlyContinue -Credential $Credential
+                        if ( -not $CIMSession ) {
+                            Write-Message -Level Verbose -Message "Creating CIMSession on $computer over WSMan failed. Creating CIMSession on $computer over DCom"
+                            $CIMsession = New-CimSession -ComputerName $Computer -SessionOption $sessionoption -ErrorAction SilentlyContinue -Credential $Credential
+                        }
+                        if ( $CIMSession ) {
                             Write-Message -Level Verbose -Message "Setting Power Plan to $PowerPlan."
-                            $null = (Get-WmiObject -Name root\cimv2\power -ComputerName $ipaddr -Class Win32_PowerPlan -Filter "ElementName='$PowerPlan'").Activate()
-                        } catch {
-                            Stop-Function -Message "Couldn't set Power Plan on $server." -Category ConnectionError -ErrorRecord $_ -Target $server
+                            $p = Get-CimInstance -Name root\cimv2\power -Class win32_PowerPlan -Filter "ElementName = 'High performance'"  -CimSession $CIMSession
+                            Invoke-CimMethod -InputObject $p[0] -MethodName Activate -CimSession $cim
+
+                        } #if CIMSession
+                        else {
+                            Stop-Function -Message "Couldn't set Power Plan on $Computer." -Category ConnectionError -ErrorRecord $_ -Target $Computer
                             return
                         }
                     }
                 } else {
-                    if ($Pscmdlet.ShouldProcess($server, "Stating power plan is already set to $PowerPlan, won't change.")) {
-                        Write-Message -Level Verbose -Message "PowerPlan on $server is already set to $PowerPlan. Skipping."
+                    if ($Pscmdlet.ShouldProcess($Computer, "Stating power plan is already set to $PowerPlan, won't change.")) {
+                        Write-Message -Level Verbose -Message "PowerPlan on $Computer is already set to $PowerPlan. Skipping."
                     }
                 }
 
                 return $planinfo
             }
         }
-
 
         $collection = New-Object System.Collections.ArrayList
         $processed = New-Object System.Collections.ArrayList
@@ -156,7 +178,7 @@ function Set-DbaPowerPlan {
                 continue
             }
 
-            $data = Set-DbaPowerPlanInternal $server
+            $data = Set-DbaPowerPlanInternal -Computer $server -Credential $Credential
 
             if ($data.Count -gt 1) {
                 $data.GetEnumerator() | ForEach-Object { $null = $collection.Add($_) }
