@@ -280,7 +280,7 @@ function Get-DbaWindowsLog {
         #region Setup Runspace
         [Collections.Arraylist]$RunspaceCollection = @()
         $InitialSessionState = [System.Management.Automation.Runspaces.InitialSessionState]::CreateDefault()
-        $save = [System.Management.Automation.Runspaces.Runspace]::DefaultRunspace
+        $defaultrunspace = [System.Management.Automation.Runspaces.Runspace]::DefaultRunspace
         $RunspacePool = [RunspaceFactory]::CreateRunspacePool($InitialSessionState)
         $RunspacePool.SetMinRunspaces(1) | Out-Null
         if ($MaxThreads -gt 0) { $null = $RunspacePool.SetMaxRunspaces($MaxThreads) }
@@ -304,6 +304,6 @@ function Get-DbaWindowsLog {
         Receive-Runspace -Wait
         $RunspacePool.Close()
         $RunspacePool.Dispose()
-        [System.Management.Automation.Runspaces.Runspace]::DefaultRunspace = $save
+        [System.Management.Automation.Runspaces.Runspace]::DefaultRunspace = $defaultrunspace
     }
 }
