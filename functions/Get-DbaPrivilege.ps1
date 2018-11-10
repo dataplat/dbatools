@@ -1,4 +1,4 @@
-function Get-DbaPrivilege {
+﻿function Get-DbaPrivilege {
     <#
     .SYNOPSIS
         Gets the users with local privileges on one or more computers.
@@ -85,8 +85,12 @@ function Get-DbaPrivilege {
                         param ($ResolveSID)
                         . ([ScriptBlock]::Create($ResolveSID))
                         $temp = ([System.IO.Path]::GetTempPath()).TrimEnd("");
-                        (Get-Content $temp\secpolByDbatools.cfg | Where-Object { $_ -match "SeBatchLogonRight" }).substring(20).split(",").replace("`*", "") |
-                            ForEach-Object { Convert-SIDToUserName -SID $_ }
+                        $blEntries = (Get-Content $temp\secpolByDbatools.cfg | Where-Object { $_ -like "SeBatchLogonRight*" })
+                        
+                        if($null -ne $blEntries) {
+                            $blEntries.substring(20).split(",").replace("`*", "") | ForEach-Object { Convert-SIDToUserName -SID $_ }
+                        }
+                        
                     } -ErrorAction SilentlyContinue
                     if ($BL.count -eq 0) {
                         Write-Message -Level Verbose -Message "No users with Batch Logon Rights on $computer"
@@ -97,8 +101,12 @@ function Get-DbaPrivilege {
                         param ($ResolveSID)
                         . ([ScriptBlock]::Create($ResolveSID))
                         $temp = ([System.IO.Path]::GetTempPath()).TrimEnd("");
-                        (Get-Content $temp\secpolByDbatools.cfg | Where-Object { $_ -like 'SeManageVolumePrivilege*' }).substring(26).split(",").replace("`*", "") |
-                            ForEach-Object { Convert-SIDToUserName -SID $_ }
+                        $ifiEntries = (Get-Content $temp\secpolByDbatools.cfg | Where-Object { $_ -like 'SeManageVolumePrivilege*' })
+                        
+                        if($null -ne $ifiEntries) {
+                            $ifiEntries.substring(26).split(",").replace("`*", "") | ForEach-Object { Convert-SIDToUserName -SID $_ }
+                        }
+                        
                     } -ErrorAction SilentlyContinue
                     if ($ifi.count -eq 0) {
                         Write-Message -Level Verbose -Message "No users with Instant File Initialization Rights on $computer"
@@ -109,8 +117,11 @@ function Get-DbaPrivilege {
                         param ($ResolveSID)
                         . ([ScriptBlock]::Create($ResolveSID))
                         $temp = ([System.IO.Path]::GetTempPath()).TrimEnd("");
-                        (Get-Content $temp\secpolByDbatools.cfg | Where-Object { $_ -like 'SeLockMemoryPrivilege*' }).substring(24).split(",").replace("`*", "") |
-                            ForEach-Object { Convert-SIDToUserName -SID $_ }
+                        $lpimEntries = (Get-Content $temp\secpolByDbatools.cfg | Where-Object { $_ -like 'SeLockMemoryPrivilege*' })
+
+                        if($null -ne $lpimEntries) {
+                            $lpimEntries.substring(24).split(",").replace("`*", "") |ForEach-Object { Convert-SIDToUserName -SID $_ }
+                        }
                     } -ErrorAction SilentlyContinue
 
                     if ($lpim.count -eq 0) {
@@ -137,4 +148,3 @@ function Get-DbaPrivilege {
         }
     }
 }
-
