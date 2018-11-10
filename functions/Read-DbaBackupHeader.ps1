@@ -190,6 +190,7 @@ function Read-DbaBackupHeader {
 
         #Setup initial session state
         $InitialSessionState = [System.Management.Automation.Runspaces.InitialSessionState]::CreateDefault()
+        $defaultrunspace = [System.Management.Automation.Runspaces.Runspace]::DefaultRunspace
         #Create Runspace pool, min - 1, max - 10 sessions: there is internal SQL Server queue for the restore operations. 10 threads seem to perform best
         $runspacePool = [runspacefactory]::CreateRunspacePool(1, 10, $InitialSessionState, $Host)
         $runspacePool.Open()
@@ -277,6 +278,7 @@ function Read-DbaBackupHeader {
         }
         #Close the runspace pool
         $runspacePool.Close()
+        [System.Management.Automation.Runspaces.Runspace]::DefaultRunspace = $defaultrunspace
     }
 }
 
