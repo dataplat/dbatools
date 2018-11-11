@@ -1,4 +1,4 @@
-﻿function Get-DbaPrivilege {
+function Get-DbaPrivilege {
     <#
     .SYNOPSIS
         Gets the users with local privileges on one or more computers.
@@ -45,7 +45,7 @@
 
         Gets the local privileges on computers sql1 and sql2, and shows them in a grid view.
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(ValueFromPipeline)]
@@ -86,11 +86,11 @@
                         . ([ScriptBlock]::Create($ResolveSID))
                         $temp = ([System.IO.Path]::GetTempPath()).TrimEnd("");
                         $blEntries = (Get-Content $temp\secpolByDbatools.cfg | Where-Object { $_ -like "SeBatchLogonRight*" })
-                        
-                        if($null -ne $blEntries) {
+
+                        if ($null -ne $blEntries) {
                             $blEntries.substring(20).split(",").replace("`*", "") | ForEach-Object { Convert-SIDToUserName -SID $_ }
                         }
-                        
+
                     } -ErrorAction SilentlyContinue
                     if ($BL.count -eq 0) {
                         Write-Message -Level Verbose -Message "No users with Batch Logon Rights on $computer"
@@ -102,11 +102,11 @@
                         . ([ScriptBlock]::Create($ResolveSID))
                         $temp = ([System.IO.Path]::GetTempPath()).TrimEnd("");
                         $ifiEntries = (Get-Content $temp\secpolByDbatools.cfg | Where-Object { $_ -like 'SeManageVolumePrivilege*' })
-                        
-                        if($null -ne $ifiEntries) {
+
+                        if ($null -ne $ifiEntries) {
                             $ifiEntries.substring(26).split(",").replace("`*", "") | ForEach-Object { Convert-SIDToUserName -SID $_ }
                         }
-                        
+
                     } -ErrorAction SilentlyContinue
                     if ($ifi.count -eq 0) {
                         Write-Message -Level Verbose -Message "No users with Instant File Initialization Rights on $computer"
@@ -119,7 +119,7 @@
                         $temp = ([System.IO.Path]::GetTempPath()).TrimEnd("");
                         $lpimEntries = (Get-Content $temp\secpolByDbatools.cfg | Where-Object { $_ -like 'SeLockMemoryPrivilege*' })
 
-                        if($null -ne $lpimEntries) {
+                        if ($null -ne $lpimEntries) {
                             $lpimEntries.substring(24).split(",").replace("`*", "") |ForEach-Object { Convert-SIDToUserName -SID $_ }
                         }
                     } -ErrorAction SilentlyContinue
