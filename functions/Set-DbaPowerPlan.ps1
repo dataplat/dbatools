@@ -58,7 +58,7 @@ function Set-DbaPowerPlan {
 
         Sets the Power Plan to the custom power plan called "Maximum Performance". Skips it if its already set.
 
-    #>
+       #>
     [CmdletBinding(SupportsShouldProcess)]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseOutputTypeCorrectly", "", Justification = "PSSA Rule Ignored by BOH")]
     param (
@@ -97,7 +97,7 @@ function Set-DbaPowerPlan {
             }
 
             $splatDbaCmObject = @{
-                ComputerName = $computerResolved
+                ComputerName    = $computerResolved
                 EnableException = $true
             }
             if (Test-Bound "Credential") {
