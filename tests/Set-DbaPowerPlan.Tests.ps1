@@ -4,10 +4,17 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        $paramCount = 4
-        $defaultParamCount = 13
-        [object[]]$params = (Get-ChildItem function:\Set-DbaPowerPlan).Parameters.Keys
-        $knownParameters = 'ComputerName','PowerPlan','CustomPowerPlan','EnableException'
+        $knownParameters = 'ComputerName', 'Credential','PowerPlan','CustomPowerPlan','EnableException'
+        $paramCount = $knownParameters.Count
+        $SupportShouldProcess = $true
+        if ($SupportShouldProcess) {
+            $defaultParamCount = 13
+        }
+        else {
+            $defaultParamCount = 11
+        }
+        $command = Get-Command -Name $CommandName
+        [object[]]$params = $command.Parameters.Keys
         It "Should contain our specific parameters" {
             ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
         }
@@ -16,6 +23,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         }
     }
 }
+
 <#
     Integration test should appear below and are custom to the command you are writing.
     Read https://github.com/sqlcollaborative/dbatools/blob/development/contributing.md#tests

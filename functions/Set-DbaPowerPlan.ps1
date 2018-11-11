@@ -55,7 +55,7 @@ function Set-DbaPowerPlan {
 
         Sets the Power Plan to the custom power plan called "Maximum Performance". Skips it if its already set.
 
-#>
+    #>
     [CmdletBinding(SupportsShouldProcess)]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseOutputTypeCorrectly", "", Justification = "PSSA Rule Ignored by BOH")]
     param (
@@ -92,7 +92,7 @@ function Set-DbaPowerPlan {
             }
 
             $splatDbaCmObject = @{
-                ComputerName    = $computerResolved
+                ComputerName = $computerResolved
             }
             if (Test-Bound "Credential") {
                 $splatDbaCmObject["Credential"] = $Credential
@@ -162,8 +162,7 @@ function Set-DbaPowerPlan {
                 if (($server -match 'ComputerName\=') -and ($server -match 'ActivePowerPlan\=')) {
                     Write-Message -Level Verbose -Message "Matched that value was piped from Test-DbaPowerPlan."
                     $server = $server.ComputerName.FullName
-                }
-                else {
+                } else {
                     Stop-Function -Message "Unknown object $server" -Category ConnectionError -ErrorRecord $_ -Target $ComputerName
                     return
                 }
@@ -174,7 +173,7 @@ function Set-DbaPowerPlan {
             } else {
                 continue
             }
-             Write-Message -Level Verbose -Message "Calling Set-DbaPowerPlanInternal for $server"
+            Write-Message -Level Verbose -Message "Calling Set-DbaPowerPlanInternal for $server"
             $data = Set-DbaPowerPlanInternal -Computer $server -Credential $Credential
 
             if ($data.Count -gt 1) {
