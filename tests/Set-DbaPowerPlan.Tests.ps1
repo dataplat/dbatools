@@ -34,7 +34,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         It "Should return result for the server" {
             $results = Set-DbaPowerPlan -ComputerName $env:COMPUTERNAME
             $results | Should Not Be Null
-            $results.ReturnValue | Should Be $true
+            $results.ReturnValue -eq $true | Should Be $true
         }
         It "Should skip if already set" {
             $results = Set-DbaPowerPlan -ComputerName $env:COMPUTERNAME
@@ -44,7 +44,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         It "Should return result for the server when setting defined PowerPlan" {
             $results = Set-DbaPowerPlan -ComputerName $env:COMPUTERNAME -PowerPlan Balanced
             $results | Should Not Be Null
-            $results.ReturnValue | Should Be $true
+            $results.ReturnValue -eq $true | Should Be $true
         }
         It "Should return result for the server when using CustomPowerPlan" {
             $results = Set-DbaPowerPlan -ComputerName $env:COMPUTERNAME -CustomPowerPlan Balanced
@@ -54,7 +54,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         It "Should accept Piped input from Test-DbaPowerPlan" {
             $results = Test-DbaPowerPlan -ComputerName $env:COMPUTERNAME | Set-DbaPowerPlan
             $results | Should Not Be Null
-            $results.ReturnValue | Should Be $true
+            $results.ReturnValue -eq $true | Should Be $true
         }
     }
 }
