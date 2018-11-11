@@ -49,7 +49,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         It "Should accept Piped input from Test-DbaPowerPlan" {
             $results = Test-DbaPowerPlan -ComputerName $env:COMPUTERNAME | Set-DbaPowerPlan
             $results | Should Not Be Null
-            $results.ReturnValue -eq $true | Should Be $true
+            $results.ActivePowerPlan -eq 'High Performance' | Should Be $true
         }
         It "Should return result for the server when using CustomPowerPlan" {
             $results = Set-DbaPowerPlan -ComputerName $env:COMPUTERNAME -CustomPowerPlan Balanced
