@@ -260,7 +260,7 @@ function Get-DbaBackupHistory {
                     if ($RecoveryFork) {
                         $recoveryForkSqlFilter = "AND backupset.last_recovery_fork_guid ='$RecoveryFork'"
                     }
-                    if ((Get-PsCallStack)[1].Command -notlike 'Get-DbaBackupHistory*') {
+                    if ($null -eq (Get-PsCallStack)[1].Command) {
                         $forkCheckSql = "
                                 SELECT
                                     database_name,
