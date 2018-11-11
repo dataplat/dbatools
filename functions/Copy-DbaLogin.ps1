@@ -31,6 +31,9 @@ function Copy-DbaLogin {
     .PARAMETER ExcludeSystemLogin
         If this switch is enabled, NT SERVICE accounts will be skipped.
 
+    .PARAMETER ExcludePermissionSync
+        Skips permission syncs
+    
     .PARAMETER SyncOnly
         If this switch is enabled, only SQL Server login permissions, roles, etc. will be synced. Logins and users will not be added or dropped.  If a matching Login does not exist on the destination, the Login will be skipped.
         Credential removal is not currently supported for this parameter.
@@ -145,7 +148,7 @@ function Copy-DbaLogin {
         [hashtable]$LoginRenameHashtable,
         [switch]$KillActiveConnection,
         [switch]$Force,
-        [Alias('Silent')]
+        [switch]$ExcludePermissionSync,
         [switch]$EnableException
     )
 
@@ -452,10 +455,13 @@ function Copy-DbaLogin {
                         }
                     }
                 }
-                if ($Pscmdlet.ShouldProcess($destinstance, "Updating SQL login $userName permissions")) {
-                    Update-SqlPermission -sourceserver $sourceServer -sourcelogin $sourceLogin -destserver $destServer -destlogin $destLogin
+                
+                if (-not $ExcludePermissionSync) {
+                    if ($Pscmdlet.ShouldProcess($destinstance, "Updating SQL login $userName permissions")) {
+                        Update-SqlPermission -sourceserver $sourceServer -sourcelogin $sourceLogin -destserver $destServer -destlogin $destLogin
+                    }
                 }
-
+                
                 if ($LoginRenameHashtable.Keys -contains $userName) {
                     $NewLogin = $LoginRenameHashtable[$userName]
 
