@@ -18,15 +18,22 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
     Context "Converts Numeric LSN to Hex"{
         $LSN = '00000000020000000024300001'
-        It "Should convert to " {
+        It "Should convert to 00000014:000000f3:0001" {
+            (Convert-DbaLSN -Lsn $Lsn).Hexadecimal | Should -Be '00000014:000000f3:0001'
+        }
+    }
+
+    Context "Converts Numeric LSN to Hex without leading 0s"{
+        $LSN = '20000000024300001'
+        It "Should convert to 00000014:000000f3:0001" {
             (Convert-DbaLSN -Lsn $Lsn).Hexadecimal | Should -Be '00000014:000000f3:0001'
         }
     }
 
     Context "Converts Hex LSN to Numeric"{
         $LSN = '00000014:000000f3:0001'
-        It "Should convert to " {
-            (Convert-DbaLSN -Lsn $Lsn).Numeric | Should -Be 00000000020000000024300001
+        It "Should convert to 20000000024300001" {
+            (Convert-DbaLSN -Lsn $Lsn).Numeric | Should -Be 20000000024300001
         }
     }
 
