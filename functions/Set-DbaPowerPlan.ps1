@@ -15,6 +15,9 @@ function Set-DbaPowerPlan {
     .PARAMETER ComputerName
         The server(s) to set the Power Plan on.
 
+    .PARAMETER Credential
+        Specifies a PSCredential object to use in authenticating to the server(s), instead of the current user account.
+
     .PARAMETER PowerPlan
         Specifies the Power Plan that you wish to use. Valid options for this match the Windows default Power Plans of "Power Saver", "Balanced", and "High Performance".
 
