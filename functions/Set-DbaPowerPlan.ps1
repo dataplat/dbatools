@@ -82,8 +82,7 @@ function Set-DbaPowerPlan {
             )
 
             try {
-                Write-Message -Level Verbose -Message "Testing connection to $Computer and resolving IP address."
-                #$ipaddr = (Test-Connection $server -Count 1 -ErrorAction SilentlyContinue).Ipv4Address | Select-Object -First 1
+                Write-Message -Level Verbose -Message "Testing connection to $Computer"
                 $server = Resolve-DbaNetworkName -ComputerName $Computer -Credential $Credential
 
                 $computerResolved = $server.FullComputerName
@@ -101,8 +100,8 @@ function Set-DbaPowerPlan {
 
             try {
                 Write-Message -Level Verbose -Message "Getting Power Plan information from $computer."
-                $powerPlan = Get-DbaCmObject @splatDbaCmObject -ClassName Win32_PowerPlan -Namespace "root\cimv2\power"  | Where-Object IsActive -eq 'True'
-                $currentplan = $powerPlan.ElementName
+                $currentplan = Get-DbaCmObject @splatDbaCmObject -ClassName Win32_PowerPlan -Namespace "root\cimv2\power"  | Where-Object IsActive -eq 'True'
+                $currentplan = $currentplan.ElementName
             } catch {
                 if ($_.Exception -match "namespace") {
                     Stop-Function -Message "Can't get Power Plan Info for $computer. Unsupported operating system." -Continue -ErrorRecord $_ -Target $computer
@@ -133,8 +132,8 @@ function Set-DbaPowerPlan {
                         }
                         if ( $CIMSession ) {
                             Write-Message -Level Verbose -Message "Setting Power Plan to $PowerPlan."
-                            $p = Get-CimInstance -Name root\cimv2\power -Class win32_PowerPlan -Filter "ElementName = 'High performance'"  -CimSession $CIMSession
-                            Invoke-CimMethod -InputObject $p[0] -MethodName Activate -CimSession $cim
+                            $p = Get-CimInstance -Name root\cimv2\power -Class win32_PowerPlan -Filter "ElementName = '$PowerPlan'"  -CimSession $CIMSession
+                            Invoke-CimMethod -InputObject $p[0] -MethodName Activate -CimSession $CIMSession
 
                         } #if CIMSession
                         else {
@@ -157,19 +156,17 @@ function Set-DbaPowerPlan {
     }
 
     process {
-        foreach ($server in $ComputerName) {
-            if ($server -match 'Server\=') {
-                Write-Message -Level Verbose -Message "Matched that value was piped from Test-DbaPowerPlan."
-                # I couldn't properly unwrap the output from  Test-DbaPowerPlan so here goes.
-                $lol = $server.Split("\;")[0]
-                $lol = $lol.TrimEnd("\}")
-                $lol = $lol.TrimStart("\@\{Server")
-                # There was some kind of parsing bug here, don't clown
-                $server = $lol.TrimStart("\=")
-            }
 
-            if ($server -match '\\') {
-                $server = $server.Split('\\')[0]
+        foreach ($server in $ComputerName) {
+            if (($server.GetType()).Name -eq 'PSCustomObject') {
+                if (($server -match 'ComputerName\=') -and ($server -match 'ActivePowerPlan\=')) {
+                    Write-Message -Level Verbose -Message "Matched that value was piped from Test-DbaPowerPlan."
+                    $server = $server.ComputerName.FullName
+                }
+                else {
+                    Stop-Function -Message "Unknown object $server" -Category ConnectionError -ErrorRecord $_ -Target $ComputerName
+                    return
+                }
             }
 
             if ($server -notin $processed) {
@@ -177,7 +174,7 @@ function Set-DbaPowerPlan {
             } else {
                 continue
             }
-
+             Write-Message -Level Verbose -Message "Calling Set-DbaPowerPlanInternal for $server"
             $data = Set-DbaPowerPlanInternal -Computer $server -Credential $Credential
 
             if ($data.Count -gt 1) {
@@ -194,4 +191,3 @@ function Set-DbaPowerPlan {
         }
     }
 }
-
