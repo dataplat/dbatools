@@ -189,7 +189,7 @@ function Set-DbaPowerPlan {
                 continue
             }
             Write-Message -Level Verbose -Message "Calling Set-DbaPowerPlanInternal for $server"
-            $data = Set-DbaPowerPlanInternal -Computer $server -Credential $Credential
+            $data = Set-DbaPowerPlanInternal -server $server -Credential $Credential
 
             if ($data.Count -gt 1) {
                 $data.GetEnumerator() | ForEach-Object { $null = $collection.Add($_) }
