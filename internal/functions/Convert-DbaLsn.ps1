@@ -17,7 +17,7 @@ function Convert-DbaLSN {
         Will return object $Output with the following value
         $Output.HexLSN = 0000002f:000044aa:002b
         $Output.NumbericLSN =
-    #>
+       #>
     [CmdletBinding()]
     param(
         [string]$LSN,
@@ -36,9 +36,9 @@ function Convert-DbaLSN {
 
     } elseif ($LSN -match '^[0-9]{15}[0-9]+$') {
         Write-Message -Message 'Numeric LSN passed in, converting to Hexadecimal' -Level Verbose
-        $sect1 = '{0:x}' -f [System.Convert]::ToString($LSN.Substring(0, $LSN.length-15), 16).PadLeft(8,'0')
-        $sect2 = '{0:x}' -f [System.Convert]::ToString($LSN.Substring($lsn.length-14, 9), 16).PadLeft(8, '0')
-        $sect3 = '{0:x}' -f [System.Convert]::ToString($LSN.Substring($lsn.length-5, 5), 16).PadLeft(4, '0')
+        $sect1 = '{0:x}' -f [System.Convert]::ToString($LSN.Substring(0, $LSN.length - 15), 16).PadLeft(8, '0')
+        $sect2 = '{0:x}' -f [System.Convert]::ToString($LSN.Substring($lsn.length - 14, 9), 16).PadLeft(8, '0')
+        $sect3 = '{0:x}' -f [System.Convert]::ToString($LSN.Substring($lsn.length - 5, 5), 16).PadLeft(4, '0')
         $Numeric = $LSN
         $Hexadecimal = $sect1 + ':' + $sect2 + ':' + $sect3
     } else {
