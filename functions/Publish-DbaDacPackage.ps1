@@ -281,8 +281,7 @@ function Publish-DbaDacPackage {
                     Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $server -Continue
                 }
                 try {
-                    $global:output = @()
-                    Register-ObjectEvent -InputObject $dacServices -EventName "Message" -SourceIdentifier "msg" -Action { $global:output += $EventArgs.Message.Message } | Out-Null
+                    $null = $output = Register-ObjectEvent -InputObject $dacServices -EventName "Message" -SourceIdentifier "msg" -Action { $EventArgs.Message.Message }
                     #Perform proper action depending on the Type
                     if ($Type -eq 'Dacpac') {
                         if ($ScriptOnly) {
@@ -318,7 +317,7 @@ function Publish-DbaDacPackage {
                             Write-Message -Level Verbose -Message "Master database change script - $($result.MasterDbScript)."
                         }
                     }
-                    $resultoutput = ($global:output -join "`r`n" | Out-String).Trim()
+                    $resultoutput = ($output.output -join "`r`n" | Out-String).Trim()
                     if ($resultoutput -match "Failed" -and ($options.GenerateDeploymentReport -or $options.GenerateDeploymentScript)) {
                         Write-Message -Level Warning -Message "Seems like the attempt to publish/script may have failed. If scripts have not generated load dacpac into Visual Studio to check SQL is valid."
                     }
