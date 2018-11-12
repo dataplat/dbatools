@@ -4124,9 +4124,17 @@
                            "False"
                        ],
                        [
+                           "ExcludePermissionSync",
+                           "Skips permission syncs",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
                            "EnableException",
                            "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
-                           "Silent",
+                           "",
                            false,
                            "false",
                            "False"
@@ -4154,7 +4162,7 @@
         "Name":  "Copy-DbaLogin",
         "Links":  "https://dbatools.io/Copy-DbaLogin",
         "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eCopy-DbaLogin -Source sqlserver2014a -Destination sqlcluster -Force\nCopies all logins from Source Destination. If a SQL Login on Source exists on the Destination, the Login on Destination will be dropped and recreated.\nIf active connections are found for a login, the copy of that Login will fail as it cannot be dropped.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eCopy-DbaLogin -Source sqlserver2014a -Destination sqlcluster -Force -KillActiveConnection\nCopies all logins from Source Destination. If a SQL Login on Source exists on the Destination, the Login on Destination will be dropped and recreated.\nIf any active connections are found they will be killed.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eCopy-DbaLogin -Source sqlserver2014a -Destination sqlcluster -ExcludeLogin realcajun -SourceSqlCredential $scred -DestinationSqlCredential $dcred\nCopies all Logins from Source to Destination except for realcajun using SQL Authentication to connect to both instances.\nIf a Login already exists on the destination, it will not be migrated.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eCopy-DbaLogin -Source sqlserver2014a -Destination sqlcluster -Login realcajun, netnerds -force\nCopies ONLY Logins netnerds and realcajun. If Login realcajun or netnerds exists on Destination, the existing Login(s) will be dropped and recreated.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eCopy-DbaLogin -Source sqlserver2014a -Destination sqlcluster -SyncOnly\nSyncs only SQL Server login permissions, roles, etc. Does not add or drop logins or users.\nIf a matching Login does not exist on Destination, the Login will be skipped.\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eCopy-DbaLogin -LoginRenameHashtable @{ \"OldUser\" = \"newlogin\" } -Source $Sql01 -Destination Localhost -SourceSqlCredential $sqlcred\nCopies OldUser and then renames it to newlogin.\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003eGet-DbaLogin -SqlInstance sql2016 | Out-GridView -Passthru | Copy-DbaLogin -Destination sql2017\nDisplays all available logins on sql2016 in a grid view, then copies all selected logins to sql2017.",
-        "Syntax":  "Copy-DbaLogin [-SourceSqlCredential \u003cPSCredential\u003e] -Destination \u003cDbaInstanceParameter[]\u003e [-DestinationSqlCredential \u003cPSCredential\u003e] [-Login \u003cObject[]\u003e] [-ExcludeLogin \u003cObject[]\u003e] [-ExcludeSystemLogin] [-SyncOnly] [-LoginRenameHashtable \u003cHashtable\u003e] [-KillActiveConnection] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nCopy-DbaLogin -Source \u003cDbaInstanceParameter\u003e [-SourceSqlCredential \u003cPSCredential\u003e] -Destination \u003cDbaInstanceParameter[]\u003e [-DestinationSqlCredential \u003cPSCredential\u003e] [-Login \u003cObject[]\u003e] [-ExcludeLogin \u003cObject[]\u003e] [-ExcludeSystemLogin] [-SyncOnly] [-SyncSaName] [-LoginRenameHashtable \u003cHashtable\u003e] [-KillActiveConnection] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nCopy-DbaLogin [-SourceSqlCredential \u003cPSCredential\u003e] -Destination \u003cDbaInstanceParameter[]\u003e [-DestinationSqlCredential \u003cPSCredential\u003e] [-Login \u003cObject[]\u003e] [-ExcludeLogin \u003cObject[]\u003e] [-ExcludeSystemLogin] [-SyncOnly] [-SyncSaName] [-LoginRenameHashtable \u003cHashtable\u003e] [-KillActiveConnection] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nCopy-DbaLogin [-SourceSqlCredential \u003cPSCredential\u003e] -Destination \u003cDbaInstanceParameter[]\u003e [-DestinationSqlCredential \u003cPSCredential\u003e] [-Login \u003cObject[]\u003e] [-ExcludeLogin \u003cObject[]\u003e] [-ExcludeSystemLogin] [-SyncOnly] -OutFile \u003cString\u003e [-LoginRenameHashtable \u003cHashtable\u003e] [-KillActiveConnection] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nCopy-DbaLogin [-SourceSqlCredential \u003cPSCredential\u003e] -Destination \u003cDbaInstanceParameter[]\u003e [-DestinationSqlCredential \u003cPSCredential\u003e] [-Login \u003cObject[]\u003e] [-ExcludeLogin \u003cObject[]\u003e] [-ExcludeSystemLogin] [-SyncOnly] [-InputObject \u003cObject\u003e] [-LoginRenameHashtable \u003cHashtable\u003e] [-KillActiveConnection] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Copy-DbaLogin [-SourceSqlCredential \u003cPSCredential\u003e] -Destination \u003cDbaInstanceParameter[]\u003e [-DestinationSqlCredential \u003cPSCredential\u003e] [-Login \u003cObject[]\u003e] [-ExcludeLogin \u003cObject[]\u003e] [-ExcludeSystemLogin] [-SyncOnly] [-LoginRenameHashtable \u003cHashtable\u003e] [-KillActiveConnection] [-Force] [-ExcludePermissionSync] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nCopy-DbaLogin -Source \u003cDbaInstanceParameter\u003e [-SourceSqlCredential \u003cPSCredential\u003e] -Destination \u003cDbaInstanceParameter[]\u003e [-DestinationSqlCredential \u003cPSCredential\u003e] [-Login \u003cObject[]\u003e] [-ExcludeLogin \u003cObject[]\u003e] [-ExcludeSystemLogin] [-SyncOnly] [-SyncSaName] [-LoginRenameHashtable \u003cHashtable\u003e] [-KillActiveConnection] [-Force] [-ExcludePermissionSync] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nCopy-DbaLogin [-SourceSqlCredential \u003cPSCredential\u003e] -Destination \u003cDbaInstanceParameter[]\u003e [-DestinationSqlCredential \u003cPSCredential\u003e] [-Login \u003cObject[]\u003e] [-ExcludeLogin \u003cObject[]\u003e] [-ExcludeSystemLogin] [-SyncOnly] [-SyncSaName] [-LoginRenameHashtable \u003cHashtable\u003e] [-KillActiveConnection] [-Force] [-ExcludePermissionSync] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nCopy-DbaLogin [-SourceSqlCredential \u003cPSCredential\u003e] -Destination \u003cDbaInstanceParameter[]\u003e [-DestinationSqlCredential \u003cPSCredential\u003e] [-Login \u003cObject[]\u003e] [-ExcludeLogin \u003cObject[]\u003e] [-ExcludeSystemLogin] [-SyncOnly] -OutFile \u003cString\u003e [-LoginRenameHashtable \u003cHashtable\u003e] [-KillActiveConnection] [-Force] [-ExcludePermissionSync] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nCopy-DbaLogin [-SourceSqlCredential \u003cPSCredential\u003e] -Destination \u003cDbaInstanceParameter[]\u003e [-DestinationSqlCredential \u003cPSCredential\u003e] [-Login \u003cObject[]\u003e] [-ExcludeLogin \u003cObject[]\u003e] [-ExcludeSystemLogin] [-SyncOnly] [-InputObject \u003cObject\u003e] [-LoginRenameHashtable \u003cHashtable\u003e] [-KillActiveConnection] [-Force] [-ExcludePermissionSync] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "CommandName":  "Copy-DbaPolicyManagement",
@@ -7619,6 +7627,76 @@
         "Syntax":  "Find-DbaDbGrowthEvent [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cObject[]\u003e] [[-ExcludeDatabase] \u003cObject[]\u003e] [[-EventType] \u003cString\u003e] [[-FileType] \u003cString\u003e] [-UseLocalTime] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
+        "CommandName":  "Find-DbaDbUnusedIndex",
+        "Description":  "This command will help you to find Unused indexes on a database or a list of databases\n\nFor now only supported for CLUSTERED and NONCLUSTERED indexes",
+        "Tags":  "Index",
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "The SQL Server you want to check for unused indexes.",
+                           "",
+                           false,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
+                           "SqlCredential",
+                           "Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Database",
+                           "The database(s) to process. Options for this list are auto-populated from the server. If unspecified, all databases will be processed.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "ExcludeDatabase",
+                           "Specifies the database(s) to exclude from processing. Options for this list are auto-populated from the server.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "IgnoreUptime",
+                           "Less than 7 days uptime can mean that analysis of unused indexes is unreliable, and normally no results will be returned. By setting this option results will be returned even if the Instance has been \r\nrunning for less that 7 days.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "InputObject",
+                           "Enables piping from Get-DbaDatabase",
+                           "",
+                           false,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ]
+                   ],
+        "Alias":  "Find-SqlUnusedIndex",
+        "Author":  "Aaron Nelson (@SQLvariant), SQLvariant.com",
+        "Synopsis":  "Find unused indexes",
+        "Name":  "Find-DbaDbUnusedIndex",
+        "Links":  "https://dbatools.io/Find-DbaDbUnusedIndex",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eFind-DbaDbUnusedIndex -SqlInstance sql2016 -Database db1, db2\nFinds unused databases on db1 and db2 on sql2016\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eFind-DbaDbUnusedIndex -SqlInstance sql2016 -SqlCredential $cred\nFinds unused databases on db1 and db2 on sql2016 using SQL Authentication to connect to the server\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaDatabase -SqlInstance sql2016 | Find-DbaDbUnusedIndex\nFinds unused databases on all databases on sql2016",
+        "Syntax":  "Find-DbaDbUnusedIndex [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cObject[]\u003e] [[-ExcludeDatabase] \u003cObject[]\u003e] [-IgnoreUptime] [[-InputObject] \u003cDatabase[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
+    },
+    {
         "CommandName":  "Find-DbaDisabledIndex",
         "Description":  "This command will help you to find disabled indexes on a database or a list of databases.",
         "Tags":  "Index",
@@ -8240,108 +8318,6 @@
         "Links":  "https://dbatools.io/Find-DbaTrigger",
         "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eFind-DbaTrigger -SqlInstance DEV01 -Pattern whatever\nSearches all user databases triggers for \"whatever\" in the text body\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eFind-DbaTrigger -SqlInstance sql2016 -Pattern \u0027\\w+@\\w+\\.\\w+\u0027\nSearches all databases for all triggers that contain a valid email pattern in the text body\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eFind-DbaTrigger -SqlInstance DEV01 -Database MyDB -Pattern \u0027some string\u0027 -Verbose\nSearches in \"mydb\" database triggers for \"some string\" in the text body\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eFind-DbaTrigger -SqlInstance sql2016 -Database MyDB -Pattern RUNTIME -IncludeSystemObjects\nSearches in \"mydb\" database triggers for \"runtime\" in the text body",
         "Syntax":  "Find-DbaTrigger [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Database \u003cObject[]\u003e] [-ExcludeDatabase \u003cObject[]\u003e] -Pattern \u003cString\u003e [-TriggerLevel \u003cString\u003e] [-IncludeSystemObjects] [-IncludeSystemDatabases] [-EnableException] [\u003cCommonParameters\u003e]"
-    },
-    {
-        "CommandName":  "Find-DbaUnusedIndex",
-        "Description":  "This command will help you to find Unused indexes on a database or a list of databases\n\nAlso tells how much space you can save by dropping the index.\nWe show the type of compression so you can make a more considered decision.\nFor now only supported for CLUSTERED and NONCLUSTERED indexes\n\nYou can select the indexes you want to drop on the grid view and by clicking OK the drop statement will be generated.",
-        "Tags":  "Index",
-        "Params":  [
-                       [
-                           "SqlInstance",
-                           "The SQL Server you want to check for unused indexes.",
-                           "ServerInstance,SqlServer",
-                           true,
-                           "true (ByValue)",
-                           ""
-                       ],
-                       [
-                           "SqlCredential",
-                           "Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)",
-                           "",
-                           false,
-                           "false",
-                           ""
-                       ],
-                       [
-                           "Database",
-                           "The database(s) to process. Options for this list are auto-populated from the server. If unspecified, all databases will be processed.",
-                           "Databases",
-                           false,
-                           "false",
-                           ""
-                       ],
-                       [
-                           "ExcludeDatabase",
-                           "Specifies the database(s) to exclude from processing. Options for this list are auto-populated from the server.",
-                           "",
-                           false,
-                           "false",
-                           ""
-                       ],
-                       [
-                           "Path",
-                           "Specifies the full path of a file to write the DROP statements to.",
-                           "OutFile,FilePath",
-                           false,
-                           "false",
-                           ""
-                       ],
-                       [
-                           "NoClobber",
-                           "If this switch is enabled, the output file will not be overwritten.",
-                           "",
-                           false,
-                           "false",
-                           "False"
-                       ],
-                       [
-                           "Append",
-                           "If this switch is enabled, content will be appended to the output file.",
-                           "",
-                           false,
-                           "false",
-                           "False"
-                       ],
-                       [
-                           "IgnoreUptime",
-                           "Less than 7 days uptime can mean that analysis of unused indexes is unreliable, and normally no results will be returned. By setting this option results will be returned even if the Instance has been \r\nrunning for less that 7 days.",
-                           "",
-                           false,
-                           "false",
-                           "False"
-                       ],
-                       [
-                           "EnableException",
-                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
-                           "Silent",
-                           false,
-                           "false",
-                           "False"
-                       ],
-                       [
-                           "WhatIf",
-                           "If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.",
-                           "wi",
-                           false,
-                           "false",
-                           ""
-                       ],
-                       [
-                           "Confirm",
-                           "If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.",
-                           "cf",
-                           false,
-                           "false",
-                           ""
-                       ]
-                   ],
-        "Alias":  "Find-SqlUnusedIndex",
-        "Author":  "Aaron Nelson (@SQLvariant), SQLvariant.com",
-        "Synopsis":  "Find Unused indexes",
-        "Name":  "Find-DbaUnusedIndex",
-        "Links":  "https://dbatools.io/Find-DbaUnusedIndex",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eFind-DbaUnusedIndex -SqlInstance sql2005 -Path C:\\temp\\sql2005-UnusedIndexes.sql\nGenerates the SQL statements to drop the selected unused indexes on server \"sql2005\". The statements are written to the file \"C:\\temp\\sql2005-UnusedIndexes.sql\"\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eFind-DbaUnusedIndex -SqlInstance sql2005 -Path C:\\temp\\sql2005-UnusedIndexes.sql -Append\nGenerates the SQL statements to drop the selected unused indexes on server \"sql2005\". The statements are written to the file \"C:\\temp\\sql2005-UnusedIndexes.sql\", appending if the file already exists.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eFind-DbaUnusedIndex -SqlInstance sqlserver2016 -SqlCredential $cred\nGenerates the SQL statements to drop the selected unused indexes on server \"sqlserver2016\", using SQL Authentication to connect to the database.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eFind-DbaUnusedIndex -SqlInstance sqlserver2016 -Database db1, db2\nGenerates the SQL Statement to drop the selected unused indexes in databases db1 \u0026 db2 on server \"sqlserver2016\".\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eFind-DbaUnusedIndex -SqlInstance sqlserver2016\nGenerates the SQL statements to drop the selected unused indexes on all user databases.\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eFine-DbaUnusedIndex -SqlInstance sqlserver2016 -IgnoreUptime\nGenerates the SQL statements to drop the selected unused indexes on all user databases even if the instance has been online for less than 7 days.\r\nNote that results may not have enough detail for all indexes, so care should be taken when using them or the generated scripts. Best practice is to allow a full week to capture the majority of index \r\nuse cases",
-        "Syntax":  "Find-DbaUnusedIndex [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cObject[]\u003e] [[-ExcludeDatabase] \u003cObject[]\u003e] [[-Path] \u003cString\u003e] [-NoClobber] [-Append] [-IgnoreUptime] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "CommandName":  "Find-DbaUserObject",
@@ -10036,7 +10012,7 @@
     },
     {
         "CommandName":  "Get-DbaCmObject",
-        "Description":  "This function centralizes all requests for information retrieved from Get-WmiObject or Get-CimInstance.\nIt uses different protocols as available in this order:\n- Cim over WinRM\n- Cim over DCOM\n- Wmi\n- Wmi over PowerShell Remoting\nIt remembers channels that didn\u0027t work and will henceforth avoid them. It remembers invalid credentials and will avoid reusing them.\nMuch of its behavior can be configured using Test-DbaWmConnection.",
+        "Description":  "This function centralizes all requests for information retrieved from Get-WmiObject or Get-CimInstance.\nIt uses different protocols as available in this order:\n- Cim over WinRM\n- Cim over DCOM\n- Wmi\n- Wmi over PowerShell Remoting\nIt remembers channels that didn\u0027t work and will henceforth avoid them. It remembers invalid credentials and will avoid reusing them.\nMuch of its behavior can be configured using Test-DbaCmConnection.",
         "Tags":  [
                      "ComputerManagement",
                      "CIM"
@@ -16949,7 +16925,7 @@
     },
     {
         "CommandName":  "Get-DbaRunningJob",
-        "Description":  "This function returns agent jobs that active on the SQL Server instance when calling the command. The information is gathered the SMO JobServer.jobs.",
+        "Description":  "This function returns agent jobs that active on the SQL Server instance when calling the command",
         "Tags":  [
                      "Agent",
                      "Job"
@@ -16957,24 +16933,32 @@
         "Params":  [
                        [
                            "SqlInstance",
-                           "The target SQL Server instance or instances.",
-                           "ServerInstance,SqlServer,SqlServers",
-                           true,
+                           "The target SQL Server instance or instances",
+                           "",
+                           false,
                            "true (ByValue)",
                            ""
                        ],
                        [
                            "SqlCredential",
                            "Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)",
-                           "Credential",
+                           "",
                            false,
                            "false",
                            ""
                        ],
                        [
+                           "InputObject",
+                           "Enables piped input from Get-DbaAgentJob",
+                           "",
+                           false,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
                            "EnableException",
                            "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
-                           "Silent",
+                           "",
                            false,
                            "false",
                            "False"
@@ -16982,11 +16966,11 @@
                    ],
         "Alias":  "",
         "Author":  "Stephen Bennett, https://sqlnotesfromtheunderground.wordpress.com/",
-        "Synopsis":  "Returns all non-idle Agent jobs running on the server.",
+        "Synopsis":  "Returns all non-idle Agent jobs running on the server",
         "Name":  "Get-DbaRunningJob",
         "Links":  "https://dbatools.io/Get-DbaRunningJob",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaRunningJob -SqlInstance localhost\nReturns any active jobs on localhost.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaRunningJob -SqlInstance localhost\nReturns output of any active jobs on localhost.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003e\u0027localhost\u0027,\u0027localhost\\namedinstance\u0027 | Get-DbaRunningJob\nReturns all active jobs on multiple instances piped into the function.",
-        "Syntax":  "Get-DbaRunningJob [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaRunningJob -SqlInstance sql2017\nReturns any active jobs on sql2017\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaAgentJob -SqlInstance sql2017, sql2019 | Get-DbaRunningJob\nReturns all active jobs on multiple instances piped into the function.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003e$servers | Get-DbaRunningJob\nReturns all active jobs on multiple instances piped into the function.",
+        "Syntax":  "Get-DbaRunningJob [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-InputObject] \u003cJob[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
         "CommandName":  "Get-DbaSchemaChangeHistory",
@@ -35272,6 +35256,14 @@
                            ""
                        ],
                        [
+                           "Credential",
+                           "Specifies a PSCredential object to use in authenticating to the server(s), instead of the current user account.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
                            "PowerPlan",
                            "Specifies the Power Plan that you wish to use. Valid options for this match the Windows default Power Plans of \"Power Saver\", \"Balanced\", and \"High Performance\".",
                            "",
@@ -35318,7 +35310,7 @@
         "Name":  "Set-DbaPowerPlan",
         "Links":  "https://dbatools.io/Set-DbaPowerPlan",
         "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eSet-DbaPowerPlan -ComputerName sqlserver2014a\nSets the Power Plan to High Performance. Skips it if its already set.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eSet-DbaPowerPlan -ComputerName sqlcluster -CustomPowerPlan \u0027Maximum Performance\u0027\nSets the Power Plan to the custom power plan called \"Maximum Performance\". Skips it if its already set.",
-        "Syntax":  "Set-DbaPowerPlan [-ComputerName] \u003cObject[]\u003e [[-PowerPlan] \u003cString\u003e] [[-CustomPowerPlan] \u003cString\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Set-DbaPowerPlan [-ComputerName] \u003cObject[]\u003e [[-Credential] \u003cPSCredential\u003e] [[-PowerPlan] \u003cString\u003e] [[-CustomPowerPlan] \u003cString\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "CommandName":  "Set-DbaPrivilege",
@@ -39343,15 +39335,15 @@
                        [
                            "SqlInstance",
                            "The target SQL Server instance or instances. Unlike many of the other commands, you cannot specify more than one server.",
-                           "ServerInstance,SqlServer,Source",
-                           true,
-                           "true (ByValue)",
+                           "",
+                           false,
+                           "false",
                            ""
                        ],
                        [
                            "SqlCredential",
                            "Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)",
-                           "Credential",
+                           "",
                            false,
                            "false",
                            ""
@@ -39359,7 +39351,7 @@
                        [
                            "Database",
                            "The database backups to test. If -Database is not provided, all database backups will be tested.",
-                           "Databases",
+                           "",
                            false,
                            "false",
                            ""
@@ -39453,9 +39445,9 @@
                            ""
                        ],
                        [
+                           "MaxSize",
+                           "Max size in MB. Databases larger than this value will not be restored.",
                            "MaxMB",
-                           "Databases larger than this value will not be restored.",
-                           "",
                            false,
                            "false",
                            "0"
@@ -39485,9 +39477,17 @@
                            ""
                        ],
                        [
+                           "InputObject",
+                           "Enables piping from Get-DbaDatabase",
+                           "",
+                           false,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
                            "EnableException",
                            "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
-                           "Silent",
+                           "",
                            false,
                            "false",
                            "False"
@@ -39514,8 +39514,8 @@
         "Synopsis":  "Quickly and easily tests the last set of full backups for a server.",
         "Name":  "Test-DbaLastBackup",
         "Links":  "https://dbatools.io/Test-DbaLastBackup",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eTest-DbaLastBackup -SqlInstance sql2016\nDetermines the last full backup for ALL databases, attempts to restore all databases (with a different name and file structure), then performs a DBCC CHECKDB. Once the test is complete, the test \r\nrestore will be dropped.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eTest-DbaLastBackup -SqlInstance sql2016 -Database master\nDetermines the last full backup for master, attempts to restore it, then performs a DBCC CHECKDB.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eTest-DbaLastBackup -SqlInstance sql2016 -Database model, master -VerifyOnly\nSkips performing an action restore of the database and simply verifies the backup using VERIFYONLY option of the restore.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eTest-DbaLastBackup -SqlInstance sql2016 -NoCheck -NoDrop\nSkips the DBCC CHECKDB check. This can help speed up the tests but makes it less tested. The test restores will remain on the server.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eTest-DbaLastBackup -SqlInstance sql2016 -DataDirectory E:\\bigdrive -LogDirectory L:\\bigdrive -MaxMB 10240\nRestores data and log files to alternative locations and only restores databases that are smaller than 10 GB.\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eTest-DbaLastBackup -SqlInstance sql2014 -Destination sql2016 -CopyFile\nCopies the backup files for sql2014 databases to sql2016 default backup locations and then attempts restore from there.\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003eTest-DbaLastBackup -SqlInstance sql2014 -Destination sql2016 -CopyFile -CopyPath \"\\\\BackupShare\\TestRestore\\\"\nCopies the backup files for sql2014 databases to sql2016 default backup locations and then attempts restore from there.",
-        "Syntax":  "Test-DbaLastBackup [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cObject[]\u003e] [[-ExcludeDatabase] \u003cObject[]\u003e] [[-Destination] \u003cDbaInstanceParameter\u003e] [[-DestinationCredential] \u003cObject\u003e] [[-DataDirectory] \u003cString\u003e] [[-LogDirectory] \u003cString\u003e] [[-Prefix] \u003cString\u003e] [-VerifyOnly] [-NoCheck] [-NoDrop] [-CopyFile] [[-CopyPath] \u003cString\u003e] [[-MaxMB] \u003cInt32\u003e] [-IncludeCopyOnly] [-IgnoreLogBackup] [[-AzureCredential] \u003cString\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eTest-DbaLastBackup -SqlInstance sql2016\nDetermines the last full backup for ALL databases, attempts to restore all databases (with a different name and file structure), then performs a DBCC CHECKDB. Once the test is complete, the test \r\nrestore will be dropped.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eTest-DbaLastBackup -SqlInstance sql2016 -Database SharePoint_Config\nDetermines the last full backup for SharePoint_Config, attempts to restore it, then performs a DBCC CHECKDB.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaDatabase -SqlInstance sql2016, sql2017 |Test-DbaLastBackup\nTests every database backup on sql2016 and sql2017\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaDatabase -SqlInstance sql2016, sql2017 -Database SharePoint_Config |Test-DbaLastBackup\nTests the database backup for the SharePoint_Config database on sql2016 and sql2017\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eTest-DbaLastBackup -SqlInstance sql2016 -Database model, master -VerifyOnly\nSkips performing an action restore of the database and simply verifies the backup using VERIFYONLY option of the restore.\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eTest-DbaLastBackup -SqlInstance sql2016 -NoCheck -NoDrop\nSkips the DBCC CHECKDB check. This can help speed up the tests but makes it less tested. The test restores will remain on the server.\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003eTest-DbaLastBackup -SqlInstance sql2016 -DataDirectory E:\\bigdrive -LogDirectory L:\\bigdrive -MaxSize 10240\nRestores data and log files to alternative locations and only restores databases that are smaller than 10 GB.\n-------------------------- EXAMPLE 8 --------------------------\nPS C:\\\u003eTest-DbaLastBackup -SqlInstance sql2014 -Destination sql2016 -CopyFile\nCopies the backup files for sql2014 databases to sql2016 default backup locations and then attempts restore from there.\n-------------------------- EXAMPLE 9 --------------------------\nPS C:\\\u003eTest-DbaLastBackup -SqlInstance sql2014 -Destination sql2016 -CopyFile -CopyPath \"\\\\BackupShare\\TestRestore\\\"\nCopies the backup files for sql2014 databases to sql2016 default backup locations and then attempts restore from there.",
+        "Syntax":  "Test-DbaLastBackup [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cObject[]\u003e] [[-ExcludeDatabase] \u003cObject[]\u003e] [[-Destination] \u003cDbaInstanceParameter\u003e] [[-DestinationCredential] \u003cObject\u003e] [[-DataDirectory] \u003cString\u003e] [[-LogDirectory] \u003cString\u003e] [[-Prefix] \u003cString\u003e] [-VerifyOnly] [-NoCheck] [-NoDrop] [-CopyFile] [[-CopyPath] \u003cString\u003e] [[-MaxSize] \u003cInt32\u003e] [-IncludeCopyOnly] [-IgnoreLogBackup] [[-AzureCredential] \u003cString\u003e] [[-InputObject] \u003cDatabase[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "CommandName":  "Test-DbaLinkedServerConnection",
