@@ -14593,7 +14593,7 @@
     },
     {
         "CommandName":  "Get-DbaLinkedServer",
-        "Description":  "Retrieves information about each linked server on the instance",
+        "Description":  "Retrieves information about each linked server on the instance(s).",
         "Tags":  [
                      "LinkedServer",
                      "Linked"
@@ -14642,10 +14642,10 @@
                    ],
         "Alias":  "",
         "Author":  "Stephen Bennett, https://sqlnotesfromtheunderground.wordpress.com/",
-        "Synopsis":  "Gets all linked servers and summary of information from the sql servers listed",
+        "Synopsis":  "Gets all linked servers and a summary of information from the linked servers listed.",
         "Name":  "Get-DbaLinkedServer",
         "Links":  "https://dbatools.io/Get-DbaLinkedServer",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaLinkedServer -SqlInstance DEV01\nReturns all Linked Servers for the SQL Server instance DEV01",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaLinkedServer -SqlInstance DEV01\nReturns all linked servers for the SQL Server instance DEV01\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaCmsRegServer -SqlInstance DEV01 -Group SQLDEV | Get-DbaLinkedServer | Out-GridView\nReturns all linked servers for a group of servers from SQL Server Central Management Server (CMS). Send output to GridView.",
         "Syntax":  "Get-DbaLinkedServer [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-LinkedServer] \u003cObject[]\u003e] [[-ExcludeLinkedServer] \u003cObject[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
@@ -35309,7 +35309,7 @@
         "Synopsis":  "Sets the SQL Server OS\u0027s Power Plan.",
         "Name":  "Set-DbaPowerPlan",
         "Links":  "https://dbatools.io/Set-DbaPowerPlan",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eSet-DbaPowerPlan -ComputerName sqlserver2014a\nSets the Power Plan to High Performance. Skips it if its already set.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eSet-DbaPowerPlan -ComputerName sqlcluster -CustomPowerPlan \u0027Maximum Performance\u0027\nSets the Power Plan to the custom power plan called \"Maximum Performance\". Skips it if its already set.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eSet-DbaPowerPlan -ComputerName sqlserver2014a\nSets the Power Plan to High Performance. Skips it if its already set.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003e\u0027Server1\u0027, \u0027Server2\u0027 | Set-DbaPowerPlan -PowerPlaN Balanced\nSets the Power Plan to Balanced for Server1 and Server2. Skips it if its already set.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003e$cred = Get-Credential \u0027Domain\\User\u0027\nPS C:\\\u003e Set-DbaPowerPlan -ComputerName sqlserver2014a -Credential $cred\nConnects using alternative Windows credential and sets the Power Plan to High Performance. Skips it if its already set.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eSet-DbaPowerPlan -ComputerName sqlcluster -CustomPowerPlan \u0027Maximum Performance\u0027\nSets the Power Plan to the custom power plan called \"Maximum Performance\". Skips it if its already set.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eTest-DbaPowerPlan -ComputerName sqlcluster | Set-DbaPowerPlan\nTests the Power Plan on sqlcluster and sets the Power Plan to High Performance. Skips it if its already set.",
         "Syntax":  "Set-DbaPowerPlan [-ComputerName] \u003cObject[]\u003e [[-Credential] \u003cPSCredential\u003e] [[-PowerPlan] \u003cString\u003e] [[-CustomPowerPlan] \u003cString\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
