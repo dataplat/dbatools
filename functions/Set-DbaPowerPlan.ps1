@@ -74,7 +74,7 @@ function Set-DbaPowerPlan {
 
         Tests the Power Plan on sqlcluster and sets the Power Plan to High Performance. Skips it if its already set.
 
-       #>
+          #>
     [CmdletBinding(SupportsShouldProcess)]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseOutputTypeCorrectly", "", Justification = "PSSA Rule Ignored by BOH")]
     param (
