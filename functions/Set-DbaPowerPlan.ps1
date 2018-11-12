@@ -54,11 +54,26 @@ function Set-DbaPowerPlan {
         Sets the Power Plan to High Performance. Skips it if its already set.
 
     .EXAMPLE
+        PS C:\> 'Server1', 'Server2' | Set-DbaPowerPlan -PowerPlaN Balanced
+
+        Sets the Power Plan to Balanced for Server1 and Server2. Skips it if its already set.
+
+    .EXAMPLE
+        PS C:\> $cred = Get-Credential 'Domain\User'
+        PS C:\> Set-DbaPowerPlan -ComputerName sqlserver2014a -Credential $cred
+
+        Connects using alternative Windows credential and sets the Power Plan to High Performance. Skips it if its already set.
+
+    .EXAMPLE
         PS C:\> Set-DbaPowerPlan -ComputerName sqlcluster -CustomPowerPlan 'Maximum Performance'
 
         Sets the Power Plan to the custom power plan called "Maximum Performance". Skips it if its already set.
 
-       #>
+    .EXAMPLE
+        PS C:\> Test-DbaPowerPlan -ComputerName sqlcluster | Set-DbaPowerPlan
+
+        Tests the Power Plan on sqlcluster and sets the Power Plan to High Performance. Skips it if its already set.
+#>
     [CmdletBinding(SupportsShouldProcess)]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseOutputTypeCorrectly", "", Justification = "PSSA Rule Ignored by BOH")]
     param (
@@ -86,6 +101,9 @@ function Set-DbaPowerPlan {
                 [PSCredential]$Credential
             )
 
+            if (Test-Bound -ParameterName Credential) {
+                $IncludeCred = $true
+            }
             try {
                 Write-Message -Level Verbose -Message "Testing connection to $server"
                 $computerResolved = Resolve-DbaNetworkName -ComputerName $server -Credential $Credential
@@ -100,7 +118,7 @@ function Set-DbaPowerPlan {
                 ComputerName    = $computerResolved
                 EnableException = $true
             }
-            if (Test-Bound "Credential") {
+            if ($IncludeCred) {
                 $splatDbaCmObject["Credential"] = $Credential
             }
 
@@ -131,11 +149,19 @@ function Set-DbaPowerPlan {
                 if ($powerPlanRequested -ne $currentplan) {
                     if ($Pscmdlet.ShouldProcess($server, "Changing Power Plan from $CurrentPlan to $powerPlanRequested")) {
                         Write-Message -Level Verbose -Message "Creating CIMSession on $server over WSMan"
-                        $cimSession = New-CimSession -ComputerName $server -ErrorAction SilentlyContinue -Credential $Credential
+                        if ($IncludeCred) {
+                            $cimSession = New-CimSession -ComputerName $server -ErrorAction SilentlyContinue -Credential $Credential
+                        } else {
+                            $cimSession = New-CimSession -ComputerName $server -ErrorAction SilentlyContinue
+                        }
                         if ( -not $cimSession ) {
                             Write-Message -Level Verbose -Message "Creating CIMSession on $server over WSMan failed. Creating CIMSession on $server over DCom"
                             $sessionOption = New-CimSessionOption -Protocol DCom
-                            $cimSession = New-CimSession -ComputerName $server -SessionOption $sessionoption -ErrorAction SilentlyContinue -Credential $Credential
+                            if ($IncludeCred) {
+                                $cimSession = New-CimSession -ComputerName $server -SessionOption $sessionoption -ErrorAction SilentlyContinue -Credential $Credential
+                            } else {
+                                $cimSession = New-CimSession -ComputerName $server -SessionOption $sessionoption -ErrorAction SilentlyContinue
+                            }
                         }
                         if ( $cimSession ) {
                             Write-Message -Level Verbose -Message "Setting Power Plan to $powerPlanRequested."
@@ -189,7 +215,11 @@ function Set-DbaPowerPlan {
                 continue
             }
             Write-Message -Level Verbose -Message "Calling Set-DbaPowerPlanInternal for $server"
-            $data = Set-DbaPowerPlanInternal -server $server -Credential $Credential
+            if (Test-Bound -ParameterName Credential) {
+                $data = Set-DbaPowerPlanInternal -server $server -Credential $Credential
+            } else {
+                $data = Set-DbaPowerPlanInternal -server $server
+            }
 
             if ($data.Count -gt 1) {
                 $data.GetEnumerator() | ForEach-Object { $null = $collection.Add($_) }
