@@ -133,8 +133,7 @@ function Set-DbaAvailabilityGroup {
                     $ag
                 }
             } catch {
-                $message = Get-ErrorMessage -Record $_
-                Stop-Function -Message $message -ErrorRecord $_ -Continue
+                Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
             }
         }
     }
