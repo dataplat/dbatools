@@ -224,8 +224,8 @@ function Export-DbaDacPackage {
                     } else {
                         $opts = $DacOption
                     }
-                    $global:output = @()
-                    Register-ObjectEvent -InputObject $dacSvc -EventName "Message" -SourceIdentifier "msg" -Action { $global:output += $EventArgs.Message.Message } | Out-Null
+
+                    $null = $output = Register-ObjectEvent -InputObject $dacSvc -EventName "Message" -SourceIdentifier "msg" -Action { $EventArgs.Message.Message }
 
                     if ($Type -eq 'Dacpac') {
                         Write-Message -Level Verbose -Message "Initiating Dacpac extract to $currentFileName"
@@ -248,7 +248,7 @@ function Export-DbaDacPackage {
                             Unregister-Event -SourceIdentifier "msg"
                         }
                     }
-                    $finalResult = ($global:output -join "`r`n" | Out-String).Trim()
+                    $finalResult = ($output.output -join "`r`n" | Out-String).Trim()
                 } elseif ($PsCmdlet.ParameterSetName -eq 'CMD') {
                     if ($Type -eq 'Dacpac') { $action = 'Extract' }
                     elseif ($Type -eq 'Bacpac') { $action = 'Export' }
