@@ -82,7 +82,7 @@ function Copy-DbaSsisCatalog {
 
         Deploy entire SSIS catalog to an instance without a destination catalog. User prompts for creating the catalog on Destination will be bypassed.
 
-#>
+    #>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess)]
     param (
         [parameter(Mandatory)]
@@ -122,7 +122,6 @@ function Copy-DbaSsisCatalog {
                 throw "No Integration Services service was found on the destination, please ensure the feature is installed and running."
             }
         }
-
         function Invoke-ProjectDeployment {
             param (
                 [String]$Project,
@@ -143,7 +142,9 @@ function Copy-DbaSsisCatalog {
                 $cmd.Parameters.Add("@project_name", $Project) | out-null;
                 [byte[]]$results = $cmd.ExecuteScalar();
                 if ($null -ne $results) {
-                    $destFolder = $destinationFolders | Where-Object { $_.Name -eq $Folder }
+                    $destFolder = $destinationFolders | Where-Object {
+                        $_.Name -eq $Folder
+                    }
                     $deployedProject = $destFolder.DeployProject($Project, $results)
                     if ($deployedProject.Status -ne "Success") {
                         Stop-Function -Message "An error occurred deploying project $Project." -Target $Project -Continue
@@ -168,7 +169,9 @@ function Copy-DbaSsisCatalog {
             )
             if ($Pscmdlet.ShouldProcess($folder, "Creating new Catalog Folder")) {
                 if ($Force) {
-                    $remove = $destinationFolders | Where-Object { $_.Name -eq $Folder }
+                    $remove = $destinationFolders | Where-Object {
+                        $_.Name -eq $Folder
+                    }
                     $envs = $remove.Environments.Name
                     foreach ($e in $envs) {
                         $remove.Environments[$e].Drop()
@@ -196,13 +199,17 @@ function Copy-DbaSsisCatalog {
                 [Switch]$Force
             )
             if ($Pscmdlet.ShouldProcess($folder, "Creating new Environment Folder")) {
-                $envDestFolder = $destinationFolders | Where-Object { $_.Name -eq $Folder }
+                $envDestFolder = $destinationFolders | Where-Object {
+                    $_.Name -eq $Folder
+                }
                 if ($force) {
                     $envDestFolder.Environments[$Environment].Drop()
                     $envDestFolder.Alter()
                     $envDestFolder.Refresh()
                 }
-                $srcEnv = ($sourceFolders | Where-Object { $_.Name -eq $Folder }).Environments[$Environment]
+                $srcEnv = ($sourceFolders | Where-Object {
+                        $_.Name -eq $Folder
+                    }).Environments[$Environment]
                 $targetEnv = New-Object "$ISNamespace.EnvironmentInfo" ($envDestFolder, $srcEnv.Name, $srcEnv.Description)
                 foreach ($var in $srcEnv.Variables) {
                     if ($var.Value.ToString() -eq "") {
@@ -244,8 +251,6 @@ function Copy-DbaSsisCatalog {
             }
         }
 
-        $ISNamespace = "Microsoft.SqlServer.Management.IntegrationServices"
-
         try {
             $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -MinimumVersion 11
         } catch {
@@ -254,13 +259,15 @@ function Copy-DbaSsisCatalog {
         }
 
         try {
-            $sourceSSIS = New-Object "$ISNamespace.IntegrationServices" $sourceServer
+            $sourceSSIS = New-Object Microsoft.SqlServer.Management.IntegrationServices.IntegrationServices $sourceServer
         } catch {
             Stop-Function -Message "There was an error connecting to the source integration services." -Target $sourceServer -ErrorRecord $_
             return
         }
 
-        $sourceCatalog = $sourceSSIS.Catalogs | Where-Object { $_.Name -eq "SSISDB" }
+        $sourceCatalog = $sourceSSIS.Catalogs | Where-Object {
+            $_.Name -eq "SSISDB"
+        }
         if (!$sourceCatalog) {
             Stop-Function -Message "The source SSISDB catalog on $Source does not exist."
             return
@@ -268,7 +275,9 @@ function Copy-DbaSsisCatalog {
         $sourceFolders = $sourceCatalog.Folders
     }
     process {
-        if (Test-FunctionInterrupt) { return }
+        if (Test-FunctionInterrupt) {
+            return
+        }
         foreach ($destinstance in $Destination) {
             try {
                 $destinationConnection = Connect-SqlInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential -MinimumVersion 1
@@ -283,12 +292,14 @@ function Copy-DbaSsisCatalog {
             }
 
             try {
-                $destinationSSIS = New-Object "$ISNamespace.IntegrationServices" $destinationConnection
+                $destinationSSIS = New-Object Microsoft.SqlServer.Management.IntegrationServices.IntegrationServices $destinationConnection
             } catch {
                 Stop-Function -Message "There was an error connecting to the destination integration services." -Target $destinationCon -ErrorRecord $_
             }
 
-            $destinationCatalog = $destinationSSIS.Catalogs | Where-Object { $_.Name -eq "SSISDB" }
+            $destinationCatalog = $destinationSSIS.Catalogs | Where-Object {
+                $_.Name -eq "SSISDB"
+            }
             $destinationFolders = $destinationCatalog.Folders
 
             if (!$destinationCatalog) {
@@ -345,7 +356,9 @@ function Copy-DbaSsisCatalog {
                     }
 
                     $destinationSSIS.Refresh()
-                    $destinationCatalog = $destinationSSIS.Catalogs | Where-Object { $_.Name -eq "SSISDB" }
+                    $destinationCatalog = $destinationSSIS.Catalogs | Where-Object {
+                        $_.Name -eq "SSISDB"
+                    }
                     $destinationFolders = $destinationCatalog.Folders
                 } else {
                     throw "The destination SSISDB catalog does not exist."
@@ -353,7 +366,9 @@ function Copy-DbaSsisCatalog {
             }
             if ($folder) {
                 if ($sourceFolders.Name -contains $folder) {
-                    $srcFolder = $sourceFolders | Where-Object { $_.Name -eq $folder }
+                    $srcFolder = $sourceFolders | Where-Object {
+                        $_.Name -eq $folder
+                    }
                     if ($destinationFolders.Name -contains $folder) {
                         if (!$force) {
                             Write-Message -Level Warning -Message "Integration services catalog folder $folder exists at destination. Use -Force to drop and recreate."
@@ -419,13 +434,17 @@ function Copy-DbaSsisCatalog {
             }
 
             if ($folder) {
-                $sourceFolders = $sourceFolders | Where-Object { $_.Name -eq $folder }
+                $sourceFolders = $sourceFolders | Where-Object {
+                    $_.Name -eq $folder
+                }
                 if (!$sourceFolders) {
                     throw "The source folder $folder does not exist in the source Integration Services catalog."
                 }
             }
             if ($project) {
-                $folderDeploy = $sourceFolders | Where-Object { $_.Projects.Name -eq $project }
+                $folderDeploy = $sourceFolders | Where-Object {
+                    $_.Projects.Name -eq $project
+                }
                 if (!$folderDeploy) {
                     throw "The project $project cannot be found in the source Integration Services catalog."
                 } else {
@@ -454,7 +473,9 @@ function Copy-DbaSsisCatalog {
             }
 
             if ($environment) {
-                $folderDeploy = $sourceFolders | Where-Object { $_.Environments.Name -eq $environment }
+                $folderDeploy = $sourceFolders | Where-Object {
+                    $_.Environments.Name -eq $environment
+                }
                 if (!$folderDeploy) {
                     throw "The environment $environment cannot be found in the source Integration Services catalog."
                 } else {
@@ -516,5 +537,3 @@ function Copy-DbaSsisCatalog {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-SqlSsisCatalog
     }
 }
-
-
