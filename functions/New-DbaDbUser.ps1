@@ -237,9 +237,8 @@ function New-DbaDbUser {
                 }
 
                 #Display Results
-                Get-DbaDbUser -SqlInstance $server.Name -Database $db.Name | Where-Object name -eq $smoUser.Name
-            } #foreach ($db in $databases)
-        } #foreach ($instance in $SqlInstance)
+                Get-DbaDbUser -SqlInstance $instance -SqlCredential $sqlcredential -Database $db.Name | Where-Object name -eq $smoUser.Name
+            }
+        }
     }
 }
-

@@ -180,6 +180,8 @@ function Invoke-Parallel {
         [switch] $Quiet = $false
     )
     begin {
+        # save default runspace
+        $defaultrunspace = [System.Management.Automation.Runspaces.Runspace]::DefaultRunspace
         #No max queue specified?  Estimate one.
         #We use the script scope to resolve an odd PowerShell 2 issue where MaxQueue isn't seen later in the function
         if ( -not $PSBoundParameters.ContainsKey('MaxQueue') ) {
@@ -548,7 +550,6 @@ function Invoke-Parallel {
             #collect garbage
             [gc]::Collect()
         }
+        [System.Management.Automation.Runspaces.Runspace]::DefaultRunspace = $defaultrunspace
     }
 }
-
-
