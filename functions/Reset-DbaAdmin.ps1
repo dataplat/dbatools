@@ -86,6 +86,7 @@ function Reset-DbaAdmin {
 
 #>
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "High")]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingWMICmdlet", "", Justification = "Using Get-WmiObject for client backwards compatibilty")]
     param (
         [Parameter(Mandatory)]
         [Alias("ServerInstance", "SqlServer")]
