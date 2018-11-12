@@ -236,8 +236,7 @@ function Invoke-DbaDbMirroring {
                         try {
                             $null = $allbackups | Restore-DbaDatabase -SqlInstance $mirrorinstance -SqlCredential $MirrorSqlCredential -WithReplace -NoRecovery -TrustDbBackupHistory -EnableException
                         } catch {
-                            $msg = Get-ErrorMessage -Record $_
-                            Stop-Function -Message $msg -ErrorRecord $_ -Target $dest -Continue
+                            Stop-Function -Message "Failure" -ErrorRecord $_ -Target $dest -Continue
                         }
                     }
                 }
@@ -268,8 +267,7 @@ function Invoke-DbaDbMirroring {
                     try {
                         $null = $allbackups | Restore-DbaDatabase -SqlInstance $Witness -SqlCredential $WitnessSqlCredential -WithReplace -NoRecovery -TrustDbBackupHistory -EnableException
                     } catch {
-                        $msg = Get-ErrorMessage -Record $_
-                        Stop-Function -Message $msg -ErrorRecord $_ -Target $witserver -Continue
+                        Stop-Function -Message "Failure" -ErrorRecord $_ -Target $witserver -Continue
                     }
                 }
             }
