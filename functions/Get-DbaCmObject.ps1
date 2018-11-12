@@ -69,6 +69,7 @@ function Get-DbaCmObject {
 
 #>
     [CmdletBinding(DefaultParameterSetName = "Class")]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingWMICmdlet", "", Justification = "Using Get-WmiObject is used as a fallback for gathering information")]
     param (
         [Parameter(Mandatory, Position = 0, ParameterSetName = "Class")]
         [Alias('Class')]
