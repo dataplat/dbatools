@@ -277,7 +277,7 @@ function Copy-DbaSsisCatalog {
             }
 
             try {
-                Get-RemoteIntegrationService -Computer $destinstance
+                Get-RemoteIntegrationService -Computer $destinstance.ComputerName
             } catch {
                 Stop-Function -Message "An error occurred when checking the destination for Integration Services. Is Integration Services installed?" -Target $destinstance -ErrorRecord $_
             }
