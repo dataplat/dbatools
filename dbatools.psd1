@@ -11,7 +11,7 @@
     RootModule             = 'dbatools.psm1'
 
     # Version number of this module.
-    ModuleVersion          = '0.9.507'
+    ModuleVersion          = '0.9.508'
 
     # ID used to uniquely identify this module
     GUID                   = '9d139310-ce45-41ce-8e8b-d76335aa1789'
@@ -119,7 +119,7 @@
         'Test-DbaTempdbConfig',
         'Repair-DbaOrphanUser',
         'Remove-DbaOrphanUser',
-        'Find-DbaUnusedIndex',
+        'Find-DbaDbUnusedIndex',
         'Test-DbaDiskAllocation',
         'Test-DbaPowerPlan',
         'Set-DbaPowerPlan',
@@ -399,9 +399,9 @@
         'Copy-DbaDbTableData',
         'Invoke-DbaQuery',
         'Remove-DbaLogin',
-        'Get-DbaFileStream',
-        'Enable-DbaFileStream',
-        'Disable-DbaFileStream',
+        'Get-DbaFilestream',
+        'Enable-DbaFilestream',
+        'Disable-DbaFilestream',
         'Get-DbaAgentJobCategory',
         'New-DbaAgentJobCategory',
         'Remove-DbaAgentJobCategory',
