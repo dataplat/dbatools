@@ -19,11 +19,11 @@ function Set-DbaMaxMemory {
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-    .PARAMETER MaxMB
-        Specifies the max megabytes
+    .PARAMETER Max
+        Specifies the max megabytes ()
 
-    .PARAMETER Collection
-        A collection returned by Test-DbaMaxMemory
+    .PARAMETER InputObject
+        A InputObject returned by Test-DbaMaxMemory
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -50,80 +50,63 @@ function Set-DbaMaxMemory {
     .EXAMPLE
         PS C:\> Set-DbaMaxMemory sqlserver1
 
-        Set max memory to the recommended MB on just one server named "sqlserver1"
+        Set max memory to the recommended  on just one server named "sqlserver1"
 
     .EXAMPLE
-        PS C:\> Set-DbaMaxMemory -SqlInstance sqlserver1 -MaxMB 2048
+        PS C:\> Set-DbaMaxMemory -SqlInstance sqlserver1 -Max 2048
 
-        Explicitly max memory to 2048 MB on just one server, "sqlserver1"
+        Explicitly max memory to 2048  on just one server, "sqlserver1"
 
     .EXAMPLE
-        PS C:\> Get-DbaCmsRegServer -SqlInstance sqlserver | Test-DbaMaxMemory | Where-Object { $_.SqlMaxMB -gt $_.TotalMB } | Set-DbaMaxMemory
+        PS C:\> Get-DbaCmsRegServer -SqlInstance sqlserver | Test-DbaMaxMemory | Where-Object { $_.MaxValue -gt $_.Total } | Set-DbaMaxMemory
 
         Find all servers in SQL Server Central Management Server that have Max SQL memory set to higher than the total memory
         of the server (think 2147483647), then pipe those to Set-DbaMaxMemory and use the default recommendation.
 
 #>
-    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'Medium')]
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Medium')]
     param (
-        [Parameter (Mandatory = $false)]
-        [Alias("ServerInstance", "SqlServer", "SqlServers", "ComputerName")]
         [DbaInstanceParameter[]]$SqlInstance,
-        [Alias("Credential")]
         [PSCredential]$SqlCredential,
-        [Parameter (Mandatory = $false)]
-        [int]$MaxMB,
-        [Parameter(ValueFromPipeline = $True)]
-		[PSCustomObject[]]$Collection,
-        [Alias('Silent')]
+        [int]$Max,
+        [Parameter(ValueFromPipeline)]
+        [PSCustomObject[]]$InputObject,
         [switch]$EnableException
     )
     begin {
-        if ($MaxMB -eq 0) {
+        if ($Max -eq 0) {
             $UseRecommended = $true
         }
     }
     process {
-        if (Test-FunctionInterrupt) { return }
-
-        foreach ($instance in $SqlInstance) {
-            try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-            } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
-            }
-
-            if (!(Test-SqlSa -SqlInstance $server -SqlCredential $SqlCredential)) {
-                Stop-Function -Message "Not a sysadmin on $server. Skipping." -Category PermissionDenied -ErrorRecord $_ -Target $server -Continue
-            }
-
-            try {
-                $currentServer = Test-DbaMaxMemory -SqlInstance $server
-                Add-Member -Force -InputObject $currentServer -NotePropertyName OldMaxValue -NotePropertyValue 0
-                $currentServer.OldMaxValue = $currentServer.SqlMaxMB
-            } catch {
-                Stop-Function -Message "Issue collecting memory information on $server" -Target $server -ErrorRecord $_ -InnerException $_.Exception -Continue
-            }
-
+        if ($SqlInstance) {
+            $InputObject += Test-DbaMaxMemory -SqlInstance $SqlInstance -SqlCredential $SqlCredential
+        }
+        
+        foreach ($result in $InputObject) {
+            $server = $result.Server
+            Add-Member -Force -InputObject $result -NotePropertyName PreviousMaxValue -NotePropertyValue $result.MaxValue
+            
             try {
                 if ($UseRecommended) {
-                    Write-Message -Level Verbose -Message "Change $server SQL Server Max Memory from $($currentServer.SqlMaxMB) to $($currentServer.RecommendedMB) MB"
-
-                    if ($currentServer.RecommendedMB -eq 0 -or $null -eq $currentServer.RecommendedMB) {
-                        $maxMem = (Test-DbaMaxMemory -SqlInstance $server).RecommendedMB
+                    Write-Message -Level Verbose -Message "Change $server SQL Server Max Memory from $($result.MaxValue) to $($result.RecommendedValue) "
+                    
+                    if ($result.RecommendedValue -eq 0 -or $null -eq $result.RecommendedValue) {
+                        $maxMem = $result.RecommendedValue
                         Write-Message -Level VeryVerbose -Message "Max memory recommended: $maxMem"
                         $server.Configuration.MaxServerMemory.ConfigValue = $maxMem
                     } else {
-                        $server.Configuration.MaxServerMemory.ConfigValue = $currentServer.RecommendedMB
+                        $server.Configuration.MaxServerMemory.ConfigValue = $result.RecommendedValue
                     }
                 } else {
-                    Write-Message -Level Verbose -Message "Change $server SQL Server Max Memory from $($currentServer.SqlMaxMB) to $MaxMB MB"
-                    $server.Configuration.MaxServerMemory.ConfigValue = $MaxMB
+                    Write-Message -Level Verbose -Message "Change $server SQL Server Max Memory from $($result.MaxValue) to $Max "
+                    $server.Configuration.MaxServerMemory.ConfigValue = $Max
                 }
-                if ($PSCmdlet.ShouldProcess($server, "Change Max Memory from $($currentServer.OldMaxValue) to $($server.Configuration.MaxServerMemory.ConfigValue)")) {
+                
+                if ($PSCmdlet.ShouldProcess($server.Name, "Change Max Memory from $($result.PreviousMaxValue) to $($server.Configuration.MaxServerMemory.ConfigValue)")) {
                     try {
                         $server.Configuration.Alter()
-                        $currentServer.SqlMaxMB = $server.Configuration.MaxServerMemory.ConfigValue
+                        $result.MaxValue = $server.Configuration.MaxServerMemory.ConfigValue
                     } catch {
                         Stop-Function -Message "Failed to apply configuration change for $server" -ErrorRecord $_ -Target $server -Continue
                     }
@@ -131,14 +114,9 @@ function Set-DbaMaxMemory {
             } catch {
                 Stop-Function -Message "Could not modify Max Server Memory for $server" -ErrorRecord $_ -Target $server -Continue
             }
-
-            Add-Member -InputObject $currentServer -Force -MemberType NoteProperty -Name CurrentMaxValue -Value $currentServer.SqlMaxMB
-            Select-DefaultView -InputObject $currentServer -Property ComputerName, InstanceName, SqlInstance, TotalMB, OldMaxValue, CurrentMaxValue
+            
+            Add-Member -InputObject $result -Force -MemberType NoteProperty -Name MaxValue -Value $result.MaxValue
+            Select-DefaultView -InputObject $result -Property ComputerName, InstanceName, SqlInstance, Total, MaxValue, PreviousMaxValue
         }
-
-        foreach ($item in $Collection) {
-            Set-DbaMaxMemory -SqlInstance ($item.SqlInstance) -MaxMB ($item.RecommendedMB)
-        }
-
     }
 }
