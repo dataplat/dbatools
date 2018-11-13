@@ -33,7 +33,8 @@ $TestsRunGroups = @{
         'New-DbaAvailabilityGroup',
         'Export-DbaDacPackage',
         'Set-DbaAgReplica',
-        'Test-DbaOptimizeForAdHoc'
+        'Test-DbaOptimizeForAdHoc',
+        'Test-DbaRecoveryModel'
     )
     # do not run everywhere
     "disabled"                  = @()
