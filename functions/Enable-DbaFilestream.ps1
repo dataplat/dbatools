@@ -88,7 +88,8 @@ function Enable-DbaFilestream {
                 }
             }
         }
-        $level = $finallevel = [int]$FileStreamLevel
+        # = $finallevel removed as it was identified as a unused variable
+        $level = [int]$FileStreamLevel
         $OutputLookup = @{
             0 = 'Disabled'
             1 = 'FileStream enabled for T-Sql access'
@@ -134,7 +135,8 @@ function Enable-DbaFilestream {
                 }
 
                 if ($Force) {
-                    $restart = Restart-DbaService -ComputerName $server.ComputerName -InstanceName $server.ServiceName -Type Engine -Force
+                    #$restart replaced with $null as it was identified as a unused variable
+                    $null = Restart-DbaService -ComputerName $server.ComputerName -InstanceName $server.ServiceName -Type Engine -Force
                 }
 
                 Get-DbaFilestream -SqlInstance $instance -SqlCredential $SqlCredential -Credential $Credential

@@ -180,6 +180,7 @@ function Import-DbaCsvToSql {
     [CmdletBinding(DefaultParameterSetName = "Default")]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseSingularNouns", "", Justification = "Internal functions are ignored")]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingPlainTextForPassword", "", Justification = "For Parameters SQLCredential and SQLCredentialPath")]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseDeclaredVarsMoreThanAssignments", "line", Justification ="Variable line is used, False Positive on line 330")]
     param (
         [string[]]$Csv,
         [Parameter(Mandatory)]
@@ -1129,7 +1130,8 @@ function Import-DbaCsvToSql {
                                         }
                                         $colnum++
                                     }
-                                    $newrow = $datatable.Rows.Add($row)
+                                    #$newrow replaced with $null as it was identified as a unused variable
+                                    $null = $datatable.Rows.Add($row)
                                 } catch {
                                     Write-Warning "The following line ($i) is causing issues:"
                                     Write-Output $line.Replace($InternalDelimiter, "`n")

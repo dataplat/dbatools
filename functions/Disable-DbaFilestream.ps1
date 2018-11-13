@@ -106,7 +106,8 @@ function Disable-DbaFilestream {
                 }
 
                 if ($Force) {
-                    $restart = Restart-DbaService -ComputerName $instance.ComputerName -InstanceName $server.ServiceName -Type Engine -Force
+                    #$restart replaced with $null as it was identified as a unused variable
+                    $null = Restart-DbaService -ComputerName $instance.ComputerName -InstanceName $server.ServiceName -Type Engine -Force
                 }
 
                 Get-DbaFilestream -SqlInstance $instance -SqlCredential $SqlCredential -Credential $Credential
