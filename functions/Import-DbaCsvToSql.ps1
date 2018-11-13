@@ -176,11 +176,11 @@ function Import-DbaCsvToSql {
 
         Imports the entire comma-delimited housing.csv located in the directory R:\To Import on FileServer using the administrative share to the SQL "markets" database on a SQL Server named sql001.
 
-#>
+    #>
     [CmdletBinding(DefaultParameterSetName = "Default")]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseSingularNouns", "", Justification = "Internal functions are ignored")]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingPlainTextForPassword", "", Justification = "For Parameters SQLCredential and SQLCredentialPath")]
-    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseDeclaredVarsMoreThanAssignments", "line", Justification ="Variable line is used, False Positive on line 330")]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseDeclaredVarsMoreThanAssignments", "line", Justification = "Variable line is used, False Positive on line 330")]
     param (
         [string[]]$Csv,
         [Parameter(Mandatory)]
