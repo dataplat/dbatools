@@ -104,7 +104,8 @@ try {
 catch {
     #try with default proxy and usersettings
     Write-LocalMessage -Message "Probably using a proxy for internet access, trying default proxy settings"
-    $wc = (New-Object System.Net.WebClient).Proxy.Credentials = [System.Net.CredentialCache]::DefaultNetworkCredentials
+    $wc = (New-Object System.Net.WebClient)
+    $wc.Proxy.Credentials = [System.Net.CredentialCache]::DefaultNetworkCredentials
     $wc.DownloadFile($url, $zipfile)
 }
 
