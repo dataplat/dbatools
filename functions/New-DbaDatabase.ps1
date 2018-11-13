@@ -1,150 +1,138 @@
 function New-DbaDatabase {
     <#
-.SYNOPSIS
-New-DbaADatabase creates a new database
+    .SYNOPSIS
+        Creates a new database
 
-.DESCRIPTION
-New-DbaDatabase creates a new database with a single user filegroup, and the PRIMARY filegroup reserved for system objects.
-It allows creation with multiple files, and sets all growth settings to be fixed size rather than percentage growth.
+    .DESCRIPTION
+        New-DbaDatabase creates a new database with a single user filegroup, and the PRIMARY filegroup reserved for system objects.
+        It allows creation with multiple files, and sets all growth settings to be fixed size rather than percentage growth.
 
-.PARAMETER SqlInstance
-The SQL server instances to be connected to; can be passed in via the pipeline.
+    .PARAMETER SqlInstance
+        The target SQL Server instance or instances. Alternatively, you can provide a ConnectionString.
 
-.PARAMETER PsCredential
-Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
-$scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
-To connect as a different Windows user, run PowerShell as that user.
+    .PARAMETER SqlCredential
+        Allows you to login to servers using alternative logins instead Integrated, accepts Credential object created by Get-Credential
 
-.PARAMETER DatabaseName
-The name of the new database to be created.
+    .PARAMETER Name
+        The name of the new database to be created.
 
-.PARAMETER NumberOfFilesInUserFilegroup
-The number of files to create in the user filegroup for the database.  Default is 1.
+    .PARAMETER NumberOfFilesInUserFilegroup
+        The number of files to create in the user filegroup for the database. Default is 1.
 
-.PARAMETER UseDefaultFileLocations
-True/False, if true will use the default file locations for data and log files on the SQL Server instance, if false, these are specified
-in the $NonDefaultFileLocation and $NonDefaultLogLocation parameters.
+    .PARAMETER DefaultDataFilePath
+        The location that data files will be placed if UseDefaultFileLocations is set to false.
 
-.PARAMETER NonDefaultFileLocation
-The location that data files will be placed if UseDefaultFileLocations is set to false.
+    .PARAMETER DefaultLogFilePath
+        The location the log file will be placed if UseDefaultFileLocations is set to False.
 
-.PARAMETER NonDefaultLogLocation
-The location the log file will be placed if UseDefaultFileLocations is set to False.
+    .PARAMETER Collation
+        The Database collation, if not supplied the default server collation will be used.
 
-.PARAMETER Collation
-The Database collation, if not supplied the default server collation will be used.
+    .PARAMETER RecoveryModel
+        The recovery model for the database, if not supplied the recovery model from the Model database will be used.
 
-.PARAMETER RecoveryModel
-The recovery model for the database, if not supplied the recovery model from the Model database will be used.
+    .PARAMETER Owner
+        The login that will be used as the database owner, if not supplied Sa wil be used.
 
-.PARAMETER DatabaseOwner
-The login that will be used as the database owner, if not supplied Sa wil be used.
+    .PARAMETER UserDataFileSize
+        The size in MB of the files to be added to the user filegroup. Each file added will be created with this size setting.
 
-.PARAMETER UserDataFileSize
-The size in MB of the files to be added to the user filegroup.  Each file added will be created with this size setting.
+    .PARAMETER UserDataFileMaxSize
+        The maximum permitted size in MB for the user data files to grow to. Each file added will be created with this max size setting.
 
-.PARAMETER UserDataFileMaxSize
-The maximum permitted size in MB for the user data files to grow to. Each file added will be created with this max size setting.
+    .PARAMETER UserDataFileGrowth
+        The amount in MB that the user files will be set to autogrow by. Use 0 for no growth allowed. Each file added will be created
+        with this growth setting.
 
-.PARAMETER UserDataFileGrowth
-The amount in MB that the user files will be set to autogrow by.  Use 0 for no growth allowed. Each file added will be created
-with this growth setting.
+    .PARAMETER LogSize
+        The size in MB that the Transaction log will be created.
 
-.PARAMETER LogSize
-The size in MB that the Transaction log will be created.
+    .PARAMTER LogGrowth
+        The amount in MB that the log file will be set to autogrow by.
 
-.PARAMTER LogGrowth
-The amount in MB that the log file will be set to autogrow by.
+    .PARAMETER PrimaryFileSize
+        The size in MB for the Primary file. If this is less than the primary file size for the Model database, then the Model size will be used
+        instead. Default is 10MB.
 
-.PARAMETER PrimaryFileSize
-The size in MB for the Primary file.  If this is less than the primary file size for the Model database, then the Model size will be used
-instead.
-Default is 10MB.
+    .PARAMETER PrimaryFileGrowth
+        The size in MB that the Primary file will autogrow by. Default is 10MB
 
-.PARAMETER PrimaryFileGrowth
-The size in MB that the Primary file will autogrow by.
-Default is 10MB
+    .PARAMETER PrimaryFileMaxSize
+        The maximum permitted size in MB for the Primary File. If this is less the primary file size for the Model database, then the Model size
+        will be used instead.
 
-.PARAMETER PrimaryFileMaxSize
-The maximum permitted size in MB for the Primary File.  If this is less the primary file size for the Model database, then the Model size
-will be used instead.
+    .PARAMETER Force
+        The force parameter will ignore some errors in the parameters and assume defaults.
 
-.PARAMETER Force
-The force parameter will ignore some errors in the parameters and assume defaults.
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-.PARAMETER Silent
-Use this switch to disable any kind of verbose messages
+    .NOTES
+        Tags: Database
+        Author: Matthew Darwin (@evoDBA, naturalselectiondba.wordpress.com)
 
-.NOTES
-Original Author: Matthew Darwin (@evoDBA, naturalselectiondba.wordpress.com)
-Tags: Database
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
+    
+    .LINK
+        https://dbatools.io/New-DbaDatabase
 
-Website: https://dbatools.io
-Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+    .EXAMPLE
+        New-DbaDatabase -SqlInstance sql1 -Name TestDatabase -UserDataFileSize 128 -UserDataFileMaxSize 1024 -UserDataFileGrowth 128  -LogSize 128 -LogGrowth 128
+    
+        Minimum required parameters; creates a database named TestDatabase on instance sql1 with a user filegroup with a single file of 128MB
 
-.LINK
-https://dbatools.io/New-DbaAgentJob
+    .EXAMPLE
+        New-DbaDatabase -SqlInstance sql1, sql2, sql3 -Name 'MultiDatabaseTest' -UserDataFileSize 20 -UserDataFileGrowth 20 `
+        -LogSize 20 -LogGrowth 20
+        Creates a database named MultiDatabaseTest on instances sql1,sql2 and sql3
 
-.EXAMPLE
-New-DbaDatabase -SqlInstance sql1 -DatabaseName 'TestDatabase' -UserDataFileSize 128 -UserDataFileMaxSize 1024 -UserDataFileGrowth 128 `
--LogSize 128 -LogGrowth 128
-Minimum required parameters; creates a database named TestDatabase on instance sql1 with a user filegroup with a single file of 128MB
-
-.EXAMPLE
-New-DbaDatabase -SqlInstance sql1, sql2, sql3 -DatabaseName 'MultiDatabaseTest' -UserDataFileSize 20 -UserDataFileGrowth 20 `
--LogSize 20 -LogGrowth 20
-Creates a database named MultiDatabaseTest on instances sql1,sql2 and sql3
-
-.EXAMPLE
-New-DbaDatabase -SqlInstance sql1 -DatabaseName 'NonDefaultLocationTest' -NumberFilesInUserFilegroup 2 -$UseDefaultFileLocations $False `
--NonDefaultFileLocation "C:\DBATools" -NonDefaultLogLocation "C:\DBATools"
-Creates a database named NonDefaultLogLocation in the C:\DBATools directory, with 2 files in the user filegroup.
+    .EXAMPLE
+        New-DbaDatabase -SqlInstance sql1 -Name 'NonDefaultLocationTest' -NumberFilesInUserFilegroup 2 -$UseDefaultFileLocations $False `
+        -DefaultDataFilePath "C:\DBATools" -DefaultLogFilePath "C:\DBATools"
+        Creates a database named DefaultLogFilePath in the C:\DBATools directory, with 2 files in the user filegroup.
 
     #>
 
-    [cmdletbinding(SupportsShouldProcess = $true, ConfirmImpact = "Low")]
+    [cmdletbinding(SupportsShouldProcess, ConfirmImpact = "Low")]
     Param
     (
         # set variables for the database
-        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
-        [Alias("ServerInstance", "SqlServer")]
-        [DbaInstanceParameter[]]$SqlInstance
-        , [PSCredential]$SqlCredential
-        , [parameter(Mandatory = $true)]
-        [string]$DatabaseName
-        , [double]$NumberOfFilesInUserFilegroup = 1
-
+        [parameter(Mandatory, ValueFromPipeline)]
+        [DbaInstanceParameter[]]$SqlInstance,
+        [PSCredential]$SqlCredential,
+        [parameter(Mandatory)]
+        [string]$Name,
+        [double]$NumberOfFilesInUserFilegroup = 1,
         # optional db variables
-        , [boolean]$UseDefaultFileLocations = $true
-        , [string]$NonDefaultFileLocation
-        , [string]$NonDefaultLogLocation
-        , [string]$Collation
-        , [string]$RecoveryModel
-        , [string]$DatabaseOwner = "sa"
-
+        [switch]$UseDefaultFileLocations,
+        [switch]$DefaultDataFilePath,
+        [string]$DefaultLogFilePath,
+        [string]$Collation,
+        [string]$RecoveryModel,
+        [string]$Owner,
         #set the user data size, maxsize and growth
-        , [double]$UserDataFileSize
-        , [double]$USerDataFileMaxSize
-        , [double]$UserDataFileGrowth #use 0 for no growth
-
+        [double]$UserDataFileSize,
+        [double]$UserDataFileMaxSize,
+        [double]$UserDataFileGrowth, # use 0 for no growth
         #set the log size and growth
-        , [double]$LogSize
-        , [double]$LogGrowth
-
+        [double]$LogSize,
+        [double]$LogGrowth,
         #set the primary file size in MB (will be converted to kb later)
-        , [double]$PrimaryFileSize = 10
-        , [double]$PrimaryFileGrowth = 10
-        , [double]$PrimaryFileMaxSize = 100
-
-        #Switches
-        , [switch]$Force
-        , [switch]$Silent
+        [double]$PrimaryFileSize = 10,
+        [double]$PrimaryFileGrowth = 10,
+        [double]$PrimaryFileMaxSize = 100,
+        [switch]$Force,
+        [switch]$EnableException
     )
-
+    
     begin {
+        $UseDefaultFileLocations = $true
         #Check file directories passed in if not using defaults
-        if ($UseDefaultFileLocations -eq $false -and ($NonDefaultFileLocation -eq $Null -or $NonDefaultLogLocation -eq $Null)) {
+        if ($UseDefaultFileLocations -eq $false -and ($DefaultDataFilePath -eq $Null -or $DefaultLogFilePath -eq $Null)) {
             Stop-Function -Message "Non Default file locations selected, but are not supplied" -Category InvalidData -ErrorRecord $_
             return
         }
@@ -172,8 +160,6 @@ Creates a database named NonDefaultLogLocation in the C:\DBATools directory, wit
             Stop-Function -Message "PrimaryFileGrowth of $PrimaryFileGrowth is greater than the PrimaryFileMaxSize setting of $PrimaryFileMaxSize" -Category InvalidData `
                 -ErrorRecord $_
         }
-
-
     }
 
 
@@ -181,34 +167,29 @@ Creates a database named NonDefaultLogLocation in the C:\DBATools directory, wit
 
         if (Test-FunctionInterrupt) { return }
 
-        foreach ($Instance in $SqlInstance) {
-
-            #Verbose message to show the server
-            Write-Message -message "Connecting to server $Instance" -Level Verbose
-
-            #instantiate the sql server object
+        foreach ($instance in $SqlInstance) {
             try {
-                $SQLServer = Connect-SqlInstance -SqlInstance $Instance -SqlCredential $SqlCredential
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
             } catch {
-                Stop-Function -Message "Failure connecting to $Instance" -Category ConnectionError -ErrorRecord $_ -Target $Instance -Continue
+                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-
+            
             #check to see if the database already exists.
-            if ($SQLServer.Databases[$DatabaseName].Name -ne $Null) {
-                Stop-Function -Message "Database $DatabaseName already exists on $Instance" -Target $Instance -Continue
+            if ($server.Databases[$Name].Name -ne $Null) {
+                Stop-Function -Message "Database $Name already exists on $instance" -Target $instance -Continue
             }
 
             # if we are using the default file locations, get them from the server
             if ($UseDefaultFileLocations -eq $true) {
                 #get the default file locations; if the master is in the default location we use that path as the default file will not be set
-                $LocalDataDrive = if ($SQLServer.DefaultFile -eq [DBNULL]::value)
-                {$SQLServer.MasterDBPath}
+                $LocalDataDrive = if ($server.DefaultFile -eq [DBNULL]::value)
+                {$server.MasterDBPath}
                 else
-                {$SQLServer.DefaultFile}
-                $LocalLogDrive = $SQLServer.DefaultLog
+                {$server.DefaultFile}
+                $LocalLogDrive = $server.DefaultLog
             } elseif ($UseDefaultFileLocations -eq $false) {
-                $LocalDataDrive = $NonDefaultFileLocation
-                $LocanewlLogDrive = $NonDefaultLogLocation
+                $LocalDataDrive = $DefaultDataFilePath
+                $LocanewlLogDrive = $DefaultLogFilePath
             }
 
             #create the file locations if they do not already exist
@@ -218,7 +199,7 @@ Creates a database named NonDefaultLogLocation in the C:\DBATools directory, wit
                     new-item -path $LocalDataDrive -ItemType Directory
                 }
             } catch {
-                Stop-Function -Message "Error creating user file directory $LocalDataDrive" -Target $Instance -Continue
+                Stop-Function -Message "Error creating user file directory $LocalDataDrive" -Target $instance -Continue
             }
 
             #create the log file locations if they do not already exist
@@ -228,7 +209,7 @@ Creates a database named NonDefaultLogLocation in the C:\DBATools directory, wit
                     new-item -path $LocalLogDrive -ItemType Directory
                 }
             } catch {
-                Stop-Function -Message "Error creating log file directory $LocalLogDrive" -Target $Instance -Continue
+                Stop-Function -Message "Error creating log file directory $LocalLogDrive" -Target $instance -Continue
             }
 
             #output message in verbose mode
@@ -237,10 +218,10 @@ Creates a database named NonDefaultLogLocation in the C:\DBATools directory, wit
             #create the new db object
 
             try {
-                write-message -message "Creating smo object for new database $DatabaseName" -level verbose
-                $NewDB = New-Object Microsoft.SqlServer.Management.Smo.Database($SQLServer, $DatabaseName)
+                write-message -message "Creating smo object for new database $Name" -level verbose
+                $NewDB = New-Object Microsoft.SqlServer.Management.Smo.Database($server, $Name)
             } catch {
-                Stop-Function -Message "Error creating database object for $DatabaseName on server $Sqlserver" -ErrorRecord $_ -Target $Instance -Continue
+                Stop-Function -Message "Error creating database object for $Name on server $server" -ErrorRecord $_ -Target $instance -Continue
             }
 
             #add the primary filegroup and a primary file
@@ -254,13 +235,13 @@ Creates a database named NonDefaultLogLocation in the C:\DBATools directory, wit
 
             #add the primary file
             try {
-                $PrimaryFileName = $DatabaseName + "_PRIMARY"
+                $PrimaryFileName = $Name + "_PRIMARY"
                 Write-Message -message "Creating file name $PrimaryFileName in filegroup PRIMARY" -level verbose
 
                 #check the size of the modeldev file; if larger than our $PrimaryFileSize setting use that instead
-                if ($SQLServer.Databases["Model"].FileGroups["PRIMARY"].Files["modeldev"].Size -gt ($PrimaryFileSize * 1024)) {
+                if ($server.Databases["Model"].FileGroups["PRIMARY"].Files["modeldev"].Size -gt ($PrimaryFileSize * 1024)) {
                     write-message -message "Model database modeldev larger than our the PrimaryFileSize so using modeldev size for Primary file" -level verbose
-                    $PrimaryFileSize = ($SQLServer.Databases["Model"].FileGroups["PRIMARY"].Files["modeldev"].Size / 1024)
+                    $PrimaryFileSize = ($server.Databases["Model"].FileGroups["PRIMARY"].Files["modeldev"].Size / 1024)
                     if ($PrimaryFileSize -gt $PrimaryFileMaxSize) {
                         write-message -message "Resetting Primary File Max size to be the new Primary File Size setting" -level verbose
                         $PrimaryFileMaxSize = $PrimaryFileSize
@@ -284,7 +265,7 @@ Creates a database named NonDefaultLogLocation in the C:\DBATools directory, wit
 
             #add the user data file group
             try {
-                $UserFilegroupName = $DatabaseName + "_MainData"
+                $UserFilegroupName = $Name + "_MainData"
                 write-Message -message "Creating user filegroup $UserFileGroupName" -level Verbose
 
                 $UserFG = new-object Microsoft.SqlServer.Management.Smo.Filegroup($NewDB, $UserFilegroupName)
@@ -305,11 +286,11 @@ Creates a database named NonDefaultLogLocation in the C:\DBATools directory, wit
                     Write-Message -message "Creating file name $UserFileName in filegroup $UserFileGroupName" -Level Verbose
                     #create the smo object for the file
                     $UserFile = new-object Microsoft.SQLServer.Management.Smo.Datafile($UserFG, $UserFileName)
-                    $UserFile.FileName = $LocalDataDrive + "\" + $USerFileName + ".ndf"
+                    $UserFile.FileName = $LocalDataDrive + "\" + $UserFileName + ".ndf"
                     $UserFile.Size = ($UserDataFileSize * 1024)
                     $UserFile.GrowthType = "KB"
                     $UserFile.Growth = ($UserDataFileGrowth * 1024)
-                    $UserFile.MaxSize = ($USerDataFileMaxSize * 1024)
+                    $UserFile.MaxSize = ($UserDataFileMaxSize * 1024)
                     #add the file to the filegroup
                     $UserFG.Files.Add($UserFile)
                 } catch {
@@ -321,13 +302,13 @@ Creates a database named NonDefaultLogLocation in the C:\DBATools directory, wit
 
             #now create the log file
             try {
-                $LogName = $DatabaseName + "_Log"
+                $LogName = $Name + "_Log"
                 write-message -message "Creating log $LogName" -level verbose
 
                 #check the size of the modellog file; if larger than our $LogSize setting use that instead
-                if ($SQLServer.Databases["Model"].LogFiles["modellog"].Size -gt ($LogSize * 1024)) {
+                if ($server.Databases["Model"].LogFiles["modellog"].Size -gt ($LogSize * 1024)) {
                     write-message -message "Model database modellog larger than our the LogSize so using modellog size for Log file size" -level verbose
-                    $LogSize = ($SQLServer.Databases["Model"].LogFiles["modellog"].Size / 1024)
+                    $LogSize = ($server.Databases["Model"].LogFiles["modellog"].Size / 1024)
 
                 }
 
@@ -362,8 +343,8 @@ Creates a database named NonDefaultLogLocation in the C:\DBATools directory, wit
             }
 
             #we should now be able to create the db, and run any other config settings afterwards
-            Write-Message -message "Creating Database $DatabaseName" -level verbose
-            if ($PSCmdlet.ShouldProcess($instance, "Creating the database $DatabaseName on instance $instance")) {
+            Write-Message -message "Creating Database $Name" -level verbose
+            if ($PSCmdlet.ShouldProcess($instance, "Creating the database $Name on instance $instance")) {
                 try {
                     $NewDb.Create()
                 } catch {
@@ -376,18 +357,18 @@ Creates a database named NonDefaultLogLocation in the C:\DBATools directory, wit
                         $Exception = $Exception.InnerException
                     }
 
-                    Stop-Function -Message "Error creating Database $DatabaseName on server $SqlInstance; Error messages: $CreateDBException" `
+                    Stop-Function -Message "Error creating Database $Name on server $SqlInstance; Error messages: $CreateDBException" `
                         -ErrorRecord $_ -Target $instance -Continue
                 }
 
 
                 #now do post db creation work, set the dbowner and set the default filegroup
                 #Set the owner
-                Write-Message -message "Setting database owner to $DatabaseOwner" -level verbose
+                Write-Message -message "Setting database owner to $Owner" -level verbose
                 try {
-                    $NewDB.SetOwner($DatabaseOwner)
+                    $NewDB.SetOwner($Owner)
                 } catch {
-                    Stop-Function -Message "Error setting Database Owner to $DatabaseOwner" -ErrorRecord $_ -Target $instance -Continue
+                    Stop-Function -Message "Error setting Database Owner to $Owner" -ErrorRecord $_ -Target $instance -Continue
                 }
 
                 #set the user filegroup to be the default
@@ -401,7 +382,7 @@ Creates a database named NonDefaultLogLocation in the C:\DBATools directory, wit
             }
 
             #Write completed message
-            Write-Message -message "Completed creating database $DatabaseName on server $Instance" -level Output
+            Write-Message -message "Completed creating database $Name on server $instance" -level Output
         }
 
     }
