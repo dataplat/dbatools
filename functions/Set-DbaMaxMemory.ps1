@@ -16,11 +16,14 @@ function Set-DbaMaxMemory {
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
 
+    .PARAMETER SqlCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+
     .PARAMETER MaxMB
         Specifies the max megabytes
 
-    .PARAMETER SqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+    .PARAMETER Collection
+        A collection returned by Test-DbaMaxMemory
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -57,28 +60,25 @@ function Set-DbaMaxMemory {
     .EXAMPLE
         PS C:\> Get-DbaCmsRegServer -SqlInstance sqlserver | Test-DbaMaxMemory | Where-Object { $_.SqlMaxMB -gt $_.TotalMB } | Set-DbaMaxMemory
 
-        Find all servers in SQL Server Central Management server that have Max SQL memory set to higher than the total memory
+        Find all servers in SQL Server Central Management Server that have Max SQL memory set to higher than the total memory
         of the server (think 2147483647), then pipe those to Set-DbaMaxMemory and use the default recommendation.
 
 #>
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'Medium')]
     param (
-        [Parameter(Position = 0)]
+        [Parameter (Mandatory = $false)]
         [Alias("ServerInstance", "SqlServer", "SqlServers", "ComputerName")]
         [DbaInstanceParameter[]]$SqlInstance,
         [Alias("Credential")]
         [PSCredential]$SqlCredential,
-        [Parameter(Position = 1)]
+        [Parameter (Mandatory = $false)]
         [int]$MaxMB,
+        [Parameter(ValueFromPipeline = $True)]
+		[PSCustomObject[]]$Collection,
         [Alias('Silent')]
         [switch]$EnableException
     )
     begin {
-        if ((Test-Bound -Not -Parameter SqlInstance) -and (Test-Bound -Not -Parameter Collection)) {
-            Stop-Function -Category InvalidArgument -Message "You must specify a server list source using -SqlInstance or you can pipe results from Test-DbaMaxMemory"
-            return
-        }
-
         if ($MaxMB -eq 0) {
             $UseRecommended = $true
         }
@@ -135,6 +135,10 @@ function Set-DbaMaxMemory {
             Add-Member -InputObject $currentServer -Force -MemberType NoteProperty -Name CurrentMaxValue -Value $currentServer.SqlMaxMB
             Select-DefaultView -InputObject $currentServer -Property ComputerName, InstanceName, SqlInstance, TotalMB, OldMaxValue, CurrentMaxValue
         }
+
+        foreach ($item in $Collection) {
+            Set-DbaMaxMemory -SqlInstance ($item.SqlInstance) -MaxMB ($item.RecommendedMB)
+        }
+
     }
 }
-
