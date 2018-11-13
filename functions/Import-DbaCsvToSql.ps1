@@ -432,7 +432,7 @@ function Import-DbaCsvToSql {
                 .OUTPUTS
                     Creates new table
             #>
-
+            [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "")]
             param (
                 [Parameter(Mandatory)]
                 [string[]]$Csv,

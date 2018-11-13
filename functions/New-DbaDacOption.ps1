@@ -20,6 +20,12 @@ function New-DbaDacOption {
     .PARAMETER PublishXml
         Specifies the publish profile which will include options and sqlCmdVariables.
 
+    .PARAMETER WhatIf
+        If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
+
+    .PARAMETER Confirm
+        If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -52,6 +58,7 @@ function New-DbaDacOption {
         Uses DacOption object to set Deployment Options and publish the db.dacpac dacpac file as DB1 on sql2016
 
 #>
+    [CmdletBinding(SupportsShouldProcess)]
     Param (
         [ValidateSet('Dacpac', 'Bacpac')]
         [string]$Type = 'Dacpac',
@@ -61,44 +68,46 @@ function New-DbaDacOption {
         [string]$PublishXml,
         [switch]$EnableException
     )
-    $dacfxPath = "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Dac.dll"
-    if ((Test-Path $dacfxPath) -eq $false) {
-        Stop-Function -Message 'Dac Fx library not found.' -EnableException $EnableException
-        return
-    } else {
-        try {
-            Add-Type -Path $dacfxPath
-            Write-Message -Level Verbose -Message "Dac Fx loaded."
-        } catch {
-            Stop-Function -Message 'No usable version of Dac Fx found.' -ErrorRecord $_
+    if ($PScmdlet.ShouldProcess("$type", "Creating New DacOptions of $action")) {
+        $dacfxPath = "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Dac.dll"
+        if ((Test-Path $dacfxPath) -eq $false) {
+            Stop-Function -Message 'Dac Fx library not found.' -EnableException $EnableException
             return
-        }
-    }
-    # Pick proper option object depending on type and action
-    if ($Action -eq 'Export') {
-        if ($Type -eq 'Dacpac') {
-            New-Object -TypeName Microsoft.SqlServer.Dac.DacExtractOptions
-        } elseif ($Type -eq 'Bacpac') {
-            New-Object -TypeName Microsoft.SqlServer.Dac.DacExportOptions
-        }
-    } elseif ($Action -eq 'Publish') {
-        if ($Type -eq 'Dacpac') {
-            $output = New-Object -TypeName Microsoft.SqlServer.Dac.PublishOptions
-            if ($PublishXml) {
-                try {
-                    $dacProfile = [Microsoft.SqlServer.Dac.DacProfile]::Load($PublishXml)
-                    $output.DeployOptions = $dacProfile.DeployOptions
-                } catch {
-                    Stop-Function -Message "Could not load profile." -ErrorRecord $_
-                    return
-                }
-            } else {
-                $output.DeployOptions = New-Object -TypeName Microsoft.SqlServer.Dac.DacDeployOptions
+        } else {
+            try {
+                Add-Type -Path $dacfxPath
+                Write-Message -Level Verbose -Message "Dac Fx loaded."
+            } catch {
+                Stop-Function -Message 'No usable version of Dac Fx found.' -ErrorRecord $_
+                return
             }
-            $output.GenerateDeploymentScript = $false
-            $output
-        } elseif ($Type -eq 'Bacpac') {
-            New-Object -TypeName Microsoft.SqlServer.Dac.DacImportOptions
+        }
+        # Pick proper option object depending on type and action
+        if ($Action -eq 'Export') {
+            if ($Type -eq 'Dacpac') {
+                New-Object -TypeName Microsoft.SqlServer.Dac.DacExtractOptions
+            } elseif ($Type -eq 'Bacpac') {
+                New-Object -TypeName Microsoft.SqlServer.Dac.DacExportOptions
+            }
+        } elseif ($Action -eq 'Publish') {
+            if ($Type -eq 'Dacpac') {
+                $output = New-Object -TypeName Microsoft.SqlServer.Dac.PublishOptions
+                if ($PublishXml) {
+                    try {
+                        $dacProfile = [Microsoft.SqlServer.Dac.DacProfile]::Load($PublishXml)
+                        $output.DeployOptions = $dacProfile.DeployOptions
+                    } catch {
+                        Stop-Function -Message "Could not load profile." -ErrorRecord $_
+                        return
+                    }
+                } else {
+                    $output.DeployOptions = New-Object -TypeName Microsoft.SqlServer.Dac.DacDeployOptions
+                }
+                $output.GenerateDeploymentScript = $false
+                $output
+            } elseif ($Type -eq 'Bacpac') {
+                New-Object -TypeName Microsoft.SqlServer.Dac.DacImportOptions
+            }
         }
     }
 }
