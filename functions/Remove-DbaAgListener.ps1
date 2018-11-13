@@ -70,11 +70,11 @@ function Remove-DbaAgListener {
                 return
             }
         }
-        
+
         if ($SqlInstance) {
             $InputObject += Get-DbaAgListener -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Listener $Listener
         }
-        
+
         foreach ($aglistener in $InputObject) {
             if ($Pscmdlet.ShouldProcess($aglistener.Parent.Parent.Name, "Removing availability group listener $aglistener")) {
                 try {

@@ -180,7 +180,7 @@ function Install-DbaSqlWatch {
                 } catch {
                     Stop-Function -Message "Failure." -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
                 }
-                
+
                 Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Starting installing/updating SqlWatch in $database on $instance"
 
 
@@ -190,7 +190,7 @@ function Install-DbaSqlWatch {
                     $PublishOptions = @{
                         RegisterDataTierApplication = $true
                     }
-                    
+
                     Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Publishing SqlWatch dacpac to $database on $instance"
                     $DacProfile = New-DbaDacProfile -SqlInstance $server -Database $Database -Path $LocalCacheFolder -PublishOptions $PublishOptions | Select-Object -ExpandProperty FileName
                     $PublishResults = Publish-DbaDacPackage -SqlInstance $server -Database $Database -Path $DacPacPath -PublishXml $DacProfile
