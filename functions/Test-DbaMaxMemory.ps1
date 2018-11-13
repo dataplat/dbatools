@@ -49,7 +49,7 @@ function Test-DbaMaxMemory {
 
         Find all servers in CMS that have Max SQL memory set to higher than the total memory of the server (think 2147483647) and set it to recommended value.
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
@@ -109,16 +109,16 @@ function Test-DbaMaxMemory {
             }
 
             $recommendedMax = $recommendedMax / $instanceCount
-            
+
             [pscustomobject]@{
-                ComputerName = $server.ComputerName
-                InstanceName = $server.ServiceName
-                SqlInstance  = $server.DomainInstanceName
-                InstanceCount = $instanceCount
-                Total      = [int]$totalMemory
-                MaxValue     = [int]$maxMemory
+                ComputerName     = $server.ComputerName
+                InstanceName     = $server.ServiceName
+                SqlInstance      = $server.DomainInstanceName
+                InstanceCount    = $instanceCount
+                Total            = [int]$totalMemory
+                MaxValue         = [int]$maxMemory
                 RecommendedValue = [int]$recommendedMax
-                Server       = $server # This will allowing piping a non-connected object
+                Server           = $server # This will allowing piping a non-connected object
             } | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, InstanceCount, Total, MaxValue, RecommendedValue
         }
     }

@@ -63,7 +63,7 @@ function Set-DbaMaxMemory {
         Find all servers in SQL Server Central Management Server that have Max SQL memory set to higher than the total memory
         of the server (think 2147483647), then pipe those to Set-DbaMaxMemory and use the default recommendation.
 
-#>
+    #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Medium')]
     param (
         [DbaInstanceParameter[]]$SqlInstance,
@@ -82,15 +82,15 @@ function Set-DbaMaxMemory {
         if ($SqlInstance) {
             $InputObject += Test-DbaMaxMemory -SqlInstance $SqlInstance -SqlCredential $SqlCredential
         }
-        
+
         foreach ($result in $InputObject) {
             $server = $result.Server
             Add-Member -Force -InputObject $result -NotePropertyName PreviousMaxValue -NotePropertyValue $result.MaxValue
-            
+
             try {
                 if ($UseRecommended) {
                     Write-Message -Level Verbose -Message "Change $server SQL Server Max Memory from $($result.MaxValue) to $($result.RecommendedValue) "
-                    
+
                     if ($result.RecommendedValue -eq 0 -or $null -eq $result.RecommendedValue) {
                         $maxMem = $result.RecommendedValue
                         Write-Message -Level VeryVerbose -Message "Max memory recommended: $maxMem"
@@ -102,7 +102,7 @@ function Set-DbaMaxMemory {
                     Write-Message -Level Verbose -Message "Change $server SQL Server Max Memory from $($result.MaxValue) to $Max "
                     $server.Configuration.MaxServerMemory.ConfigValue = $Max
                 }
-                
+
                 if ($PSCmdlet.ShouldProcess($server.Name, "Change Max Memory from $($result.PreviousMaxValue) to $($server.Configuration.MaxServerMemory.ConfigValue)")) {
                     try {
                         $server.Configuration.Alter()
@@ -114,7 +114,7 @@ function Set-DbaMaxMemory {
             } catch {
                 Stop-Function -Message "Could not modify Max Server Memory for $server" -ErrorRecord $_ -Target $server -Continue
             }
-            
+
             Add-Member -InputObject $result -Force -MemberType NoteProperty -Name MaxValue -Value $result.MaxValue
             Select-DefaultView -InputObject $result -Property ComputerName, InstanceName, SqlInstance, Total, MaxValue, PreviousMaxValue
         }
