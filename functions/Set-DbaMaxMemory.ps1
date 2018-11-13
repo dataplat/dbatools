@@ -20,7 +20,7 @@ function Set-DbaMaxMemory {
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
     .PARAMETER Max
-        Specifies the max megabytes ()
+        Specifies the max megabytes (MB)
 
     .PARAMETER InputObject
         A InputObject returned by Test-DbaMaxMemory
@@ -50,12 +50,12 @@ function Set-DbaMaxMemory {
     .EXAMPLE
         PS C:\> Set-DbaMaxMemory sqlserver1
 
-        Set max memory to the recommended  on just one server named "sqlserver1"
+        Set max memory to the recommended on just one server named "sqlserver1"
 
     .EXAMPLE
         PS C:\> Set-DbaMaxMemory -SqlInstance sqlserver1 -Max 2048
 
-        Explicitly max memory to 2048  on just one server, "sqlserver1"
+        Explicitly set max memory to 2048 on just one server, "sqlserver1"
 
     .EXAMPLE
         PS C:\> Get-DbaCmsRegServer -SqlInstance sqlserver | Test-DbaMaxMemory | Where-Object { $_.MaxValue -gt $_.Total } | Set-DbaMaxMemory

@@ -5,7 +5,9 @@ function Get-DbaMaxMemory {
         Gets the 'Max Server Memory' configuration setting and the memory of the server.  Works on SQL Server 2000-2014.
 
     .DESCRIPTION
-        This command retrieves the SQL Server 'Max Server Memory' configuration setting as well as the total  physical installed on the server.
+        This command retrieves the SQL Server 'Max Server Memory' configuration setting as well as the total physical installed on the server.
+    
+        Results are turned in megabytes (MB).
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
@@ -32,7 +34,7 @@ function Get-DbaMaxMemory {
     .EXAMPLE
         PS C:\> Get-DbaMaxMemory -SqlInstance sqlcluster, sqlserver2012
 
-        Get memory settings for instances "sqlcluster" and "sqlserver2012"
+        Get memory settings for instances "sqlcluster" and "sqlserver2012". Returns results in megabytes (MB).
 
     .EXAMPLE
         PS C:\> Get-DbaCmsRegServer -SqlInstance sqlcluster | Get-DbaMaxMemory | Where-Object { $_.MaxValue -gt $_.Total }
