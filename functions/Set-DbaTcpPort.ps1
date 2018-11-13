@@ -70,7 +70,7 @@ function Set-DbaTcpPort {
         [IpAddress[]]$IpAddress,
         [switch]$EnableException
     )
-    
+
     begin {
         if (-not $IpAddress) {
             $IpAddress = '0.0.0.0'
@@ -86,7 +86,7 @@ function Set-DbaTcpPort {
             $port = $args[2]
             $IpAddress = $args[3]
             $sqlinstanceName = $args[4]
-            
+
             $wmi = New-Object Microsoft.SqlServer.Management.Smo.Wmi.ManagedComputer $computername
             $wmiinstance = $wmi.ServerInstances | Where-Object {
                 $_.Name -eq $wmiinstancename
@@ -100,7 +100,7 @@ function Set-DbaTcpPort {
             $tcpport = $IpAddress.IpAddressProperties | Where-Object {
                 $_.Name -eq 'TcpPort'
             }
-            
+
             $oldport = $tcpport.Value
             try {
                 $tcpport.value = $port
@@ -129,11 +129,11 @@ function Set-DbaTcpPort {
         if (Test-FunctionInterrupt) {
             return
         }
-        
+
         foreach ($instance in $SqlInstance) {
             $wmiinstancename = $instance.InstanceName
             $computerName = $instance.ComputerName
-            
+
             if ($Pscmdlet.ShouldProcess($computerName, "Setting port to $Port for $wmiinstancename")) {
                 try {
                     $computerName = $instance.ComputerName

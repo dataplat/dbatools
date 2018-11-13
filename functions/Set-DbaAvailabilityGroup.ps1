@@ -49,7 +49,7 @@ function Set-DbaAvailabilityGroup {
 
     .PARAMETER IsDistributedAvailabilityGroup
         Indicates whether the availability group is distributed.
-    
+
     .PARAMETER InputObject
         Enables piping from Get-DbaAvailabilityGroup.
 
@@ -76,20 +76,20 @@ function Set-DbaAvailabilityGroup {
 
     .EXAMPLE
         PS C:\> Get-DbaAvailabilityGroup -SqlInstance sql2016 | Set-DbaAvailabilityGroup -DtcSupportEnabled
-    
+
         Enables DTC for all availability groups on sql2016
 
        .EXAMPLE
         PS C:\> Get-DbaAvailabilityGroup -SqlInstance sql2016 -AvailabilityGroup AG1 | Set-DbaAvailabilityGroup -DtcSupportEnabled:$false
-    
+
         Disables DTC support for the availability group AG1
-    
+
         .EXAMPLE
         PS C:\> Set-DbaAvailabilityGroup -SqlInstance sql2016 -AvailabilityGroup AG1 -DtcSupportEnabled:$false
-    
+
         Disables DTC support for the availability group AG1
 #>
-    
+
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Medium')]
     param (
         [DbaInstanceParameter[]]$SqlInstance,
@@ -120,7 +120,7 @@ function Set-DbaAvailabilityGroup {
             $InputObject += Get-DbaAvailabilityGroup -SqlInstance $SqlInstance -SqlCredential $SqlCredential -AvailabilityGroup $AvailabilityGroup
         }
         $props = "Name", "AutomatedBackupPreference", "BasicAvailabilityGroup", "ClusterType", "DatabaseHealthTrigger", "DtcSupportEnabled", "FailureConditionLevel", "HealthCheckTimeout", "IsDistributedAvailabilityGroup"
-        
+
         foreach ($ag in $InputObject) {
             try {
                 if ($Pscmdlet.ShouldProcess($ag.Parent.Name, "Seting properties on $ag")) {
