@@ -64,7 +64,7 @@ function Test-DbaDiskAllocation {
         Scans all disks not hosting SQL Server data or log files on server sqlserver2014a for best practice allocation unit size.
 
 #>
-    [CmdletBinding(SupportsShouldProcess = $true)]
+    [CmdletBinding(SupportsShouldProcess)]
     [OutputType("System.Collections.ArrayList", "System.Boolean")]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
@@ -213,12 +213,14 @@ function Test-DbaDiskAllocation {
 
             Write-Message -Level Verbose -Message "Getting Power Plan information from $Computer"
 
-            $data = Get-AllDiskAllocation $computer
+            if ($PScmdlet.ShouldProcess("$computer", "Getting Disk Allocation")) {
+                $data = Get-AllDiskAllocation $computer
 
-            if ($data.Count -gt 1) {
-                $data.GetEnumerator()
-            } else {
-                $data
+                if ($data.Count -gt 1) {
+                    $data.GetEnumerator()
+                } else {
+                    $data
+                }
             }
         }
     }
