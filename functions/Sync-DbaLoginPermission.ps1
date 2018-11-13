@@ -85,46 +85,46 @@ function Sync-DbaLoginPermission {
                 [array]$Logins,
                 [array]$Exclude
             )
-            
+
             try {
                 $sa = Get-SqlSaLogin -SqlInstance $destServer -ErrorAction Stop
             } catch {
                 $sa = "sa"
             }
-            
+
             foreach ($sourceLogin in $sourceServer.Logins) {
-                
+
                 $username = $sourceLogin.Name
                 $currentLogin = $sourceServer.ConnectionContext.TrueLogin
-                
+
                 if (!$Login -and $currentLogin -eq $username) {
                     Write-Message -Level Verbose -Message "Sync does not modify the permissions of the current user. Skipping."
                     continue
                 }
-                
+
                 if ($null -ne $Logins -and $Logins -notcontains $username) {
                     continue
                 }
-                
+
                 if ($Exclude -contains $username -or $username.StartsWith("##") -or $username -eq $sa) {
                     continue
                 }
-                
+
                 $serverName = Resolve-NetBiosName $sourceServer
                 $userBase = ($username.Split("\")[0]).ToLower()
-                
+
                 if ($serverName -eq $userBase -or $username.StartsWith("NT ")) {
                     continue
                 }
-                
+
                 if ($null -eq ($destLogin = $destServer.Logins.Item($username))) {
                     continue
                 }
-                
+
                 Update-SqlPermission -SourceServer $sourceServer -SourceLogin $sourceLogin -DestServer $destServer -DestLogin $destLogin
             }
         }
-        
+
         try {
             $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $sqlcredential
             if ((Test-Bound -ParameterName Login)) {
@@ -137,14 +137,14 @@ function Sync-DbaLoginPermission {
     }
     process {
         if (Test-FunctionInterrupt) { return }
-        
+
         foreach ($dest in $Destination) {
             try {
                 $destServer = Connect-SqlInstance -SqlInstance $dest -SqlCredential $DestinationSqlCredential -MinimumVersion 8
             } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $dest -Continue
             }
-            
+
             if ($PSCmdlet.ShouldProcess("Syncing Logins $Login")) {
                 Sync-Only -SourceServer $sourceServer -DestServer $destServer -Logins $Login -Exclude $ExcludeLogin
             }

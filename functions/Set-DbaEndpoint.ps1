@@ -12,13 +12,13 @@ function Set-DbaEndpoint {
 
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
-    
+
     .PARAMETER Owner
         Change the endpoint owner.
 
     .PARAMETER Type
         Change the endpoint type. Options: DatabaseMirroring, ServiceBroker, Soap, TSql
-    
+
     .PARAMETER Endpoint
         Only set specific endpoint properties.
 
@@ -74,7 +74,7 @@ function Set-DbaEndpoint {
         [Microsoft.SqlServer.Management.Smo.Endpoint[]]$InputObject,
         [switch]$EnableException
     )
-    
+
     process {
         if ((Test-Bound -ParameterName SqlInstance) -And (Test-Bound -Not -ParameterName Endpoint, AllEndpoints)) {
             Stop-Function -Message "You must specify AllEndpoints or Endpoint when using the SqlInstance parameter."
@@ -83,7 +83,7 @@ function Set-DbaEndpoint {
         foreach ($instance in $SqlInstance) {
             $InputObject += Get-DbaEndpoint -SqlInstance $instance -SqlCredential $SqlCredential -EndPoint $Endpoint
         }
-        
+
         $props = "Owner", "Type"
         foreach ($ep in $InputObject) {
             try {
