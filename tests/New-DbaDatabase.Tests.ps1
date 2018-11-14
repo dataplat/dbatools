@@ -19,18 +19,21 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     Context "commands work as expected" {
+        $null = Get-DbaProcess -SqlInstance $script:instance2, $script:instance3 | Where-Object Program -match dbatools | Stop-DbaProcess -Confirm:$false
         $results = New-DbaDatabase -SqlInstance $script:instance2
         It "creates one new randomly named database" {
             $results.Name | Should -Match random
             $results | Remove-DbaDatabase -Confirm:$false
         }
         
+        $null = Get-DbaProcess -SqlInstance $script:instance2, $script:instance3 | Where-Object Program -match dbatools | Stop-DbaProcess -Confirm:$false
         $results = New-DbaDatabase -SqlInstance $script:instance2, $script:instance3 -Name dbatoolsci_newdb
         It "creates one new database on two servers" {
             $results.Name | Should -Be 'dbatoolsci_newdb', 'dbatoolsci_newdb'
             $results | Remove-DbaDatabase -Confirm:$false
         }
         
+        $null = Get-DbaProcess -SqlInstance $script:instance2, $script:instance3 | Where-Object Program -match dbatools | Stop-DbaProcess -Confirm:$false
         $results = New-DbaDatabase -SqlInstance $script:instance2, $script:instance3 -Name dbatoolsci_newdb1, dbatoolsci_newdb2
         It "creates two new databases on two servers" {
             $results.Name | Should -Contain dbatoolsci_newdb1
