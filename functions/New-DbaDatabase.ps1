@@ -128,23 +128,6 @@ function New-DbaDatabase {
     )
     
     begin {
-        if ($SecondaryFilesize -gt $SecondaryFileMaxSize) {
-            Stop-Function -Message "SecondaryFilesize of $SecondaryFilesize is greater than the SecondaryFileMaxSize setting of $SecondaryFileMaxSize" -Category InvalidData -ErrorRecord $_
-        }
-        
-        if ($SecondaryFileGrowth -gt $SecondaryFileGrowth) {
-            Stop-Function -Message "SecondaryFileGrowth of $SecondaryFileGrowth is greater than the SecondaryFileMaxSize setting of $SecondaryFileMaxSize" -Category InvalidData -ErrorRecord $_
-        }
-        
-        
-        if ($PrimaryFilesize -gt $PrimaryFileMaxSize) {
-            Stop-Function -Message "PrimaryFilesize of $PrimaryFilesize is greater than the PrimaryFileMaxSize setting of $PrimaryFileMaxSize" -Category InvalidData -ErrorRecord $_
-        }
-        
-        if ($PrimaryFileGrowth -gt $PrimaryFileMaxSize) {
-            Stop-Function -Message "PrimaryFileGrowth of $PrimaryFileGrowth is greater than the PrimaryFileMaxSize setting of $PrimaryFileMaxSize" -Category InvalidData -ErrorRecord $_
-        }
-        
         # do some checks to see if the advanced config settings will be invoked
         if (Test-Bound -ParameterName DataFilePath, LogFilePath, DefaultFileGroup) {
             $advancedconfig = $true
