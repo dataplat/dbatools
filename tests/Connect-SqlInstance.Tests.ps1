@@ -11,9 +11,9 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 
     #Cleanup
 
-    $results = Invoke-Sqlcmd2 -ServerInstance $script:instance1 -Query "IF EXISTS (SELECT * FROM sys.server_principals WHERE name = '$login') EXEC sp_who '$login'"
+    $results = Invoke-DbaQuery -SqlInstance $script:instance1 -Query "IF EXISTS (SELECT * FROM sys.server_principals WHERE name = '$login') EXEC sp_who '$login'"
     foreach ($spid in $results.spid) {
-        Invoke-Sqlcmd2 -ServerInstance $script:instance1 -Query "kill $spid"
+        Invoke-DbaQuery -SqlInstance $script:instance1 -Query "kill $spid"
     }
 
     if ($l = $server.logins[$login]) {
@@ -35,10 +35,10 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $s.Name | Should Be $script:instance1
         }
         It "Should return existing process running under the new login and kill it" {
-            $results = Invoke-Sqlcmd2 -ServerInstance $script:instance1 -Query "IF EXISTS (SELECT * FROM sys.server_principals WHERE name = '$login') EXEC sp_who '$login'"
+            $results = Invoke-DbaQuery -SqlInstance $script:instance1 -Query "IF EXISTS (SELECT * FROM sys.server_principals WHERE name = '$login') EXEC sp_who '$login'"
             $results | Should Not BeNullOrEmpty
             foreach ($spid in $results.spid) {
-                { Invoke-Sqlcmd2 -ServerInstance $script:instance1 -Query "kill $spid" -ErrorAction Stop} | Should Not Throw
+                { Invoke-DbaQuery -SqlInstance $script:instance1 -Query "kill $spid" -ErrorAction Stop} | Should Not Throw
             }
         }
     }
