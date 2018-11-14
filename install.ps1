@@ -23,6 +23,15 @@ catch {
     Write-LocalMessage -Message "dbatools was not installed by the PowerShell Gallery, continuing with web install."
 }
 
+$currentVersionTls = [Net.ServicePointManager]::SecurityProtocol
+$currentSupportableTls = [Math]::Max($currentVersionTls.value__, [Net.SecurityProtocolType]::Tls.value__)
+$availableTls = [enum]::GetValues('Net.SecurityProtocolType') | Where-Object {
+    $_ -gt $currentSupportableTls
+}
+$availableTls | ForEach-Object {
+    [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor $_
+}
+
 $dbatools_copydllmode = $true
 $module = Import-Module -Name dbatools -ErrorAction SilentlyContinue
 $localpath = $module.ModuleBase
@@ -100,13 +109,17 @@ $zipfile = "$temp\dbatools.zip"
 Write-LocalMessage -Message "Downloading archive from github"
 try {
     (New-Object System.Net.WebClient).DownloadFile($url, $zipfile)
-}
-catch {
-    #try with default proxy and usersettings
-    Write-LocalMessage -Message "Probably using a proxy for internet access, trying default proxy settings"
-    $wc = (New-Object System.Net.WebClient)
-    $wc.Proxy.Credentials = [System.Net.CredentialCache]::DefaultNetworkCredentials
-    $wc.DownloadFile($url, $zipfile)
+}catch {
+    try {
+        #try with default proxy and usersettings
+        Write-LocalMessage -Message "Probably using a proxy for internet access, trying default proxy settings"
+        $wc = (New-Object System.Net.WebClient)
+        $wc.Proxy.Credentials = [System.Net.CredentialCache]::DefaultNetworkCredentials
+        $wc.DownloadFile($url, $zipfile)
+    } catch {
+        Write-Warning "Error downloading file :( $_"
+        return
+    }
 }
 
 # Unblock if there's a block
@@ -170,4 +183,5 @@ dbatools v $((Get-Module dbatools).Version)
 
 "@
 }
+[Net.ServicePointManager]::SecurityProtocol = $currentVersionTls
 Write-LocalMessage -Message "`n`nIf you experience any function missing errors after update, please restart PowerShell or reload your profile."
