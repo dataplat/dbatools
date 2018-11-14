@@ -46,7 +46,7 @@ function Copy-DbaDbTableData {
 
     .PARAMETER AutoCreateTable
         Creates the destination table if it does not already exist, based off of the "Export..." script of the source table.
-    
+
     .PARAMETER BatchSize
         The BatchSize for the import defaults to 5000.
 
@@ -153,7 +153,7 @@ function Copy-DbaDbTableData {
         Copies all the data from table [Schema].[Table] in database dbatools_from on sql1 to table [dbo].[Table.Copy] in database dbatools_dest on sql2
         Keeps identity columns and Nulls, truncates the destination and processes in BatchSize of 10000.
 
-    #>
+       #>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
     param (
         [Alias("ServerInstance", "SqlServer", "Source")]
@@ -180,11 +180,11 @@ function Copy-DbaDbTableData {
         [Microsoft.SqlServer.Management.Smo.Table[]]$InputObject,
         [switch]$EnableException
     )
-    
+
     begin {
         # Getting the total rows copied is a challenge. Use SqlBulkCopyExtension.
         # http://stackoverflow.com/questions/1188384/sqlbulkcopy-row-count-when-complete
-        
+
         $sourcecode = 'namespace System.Data.SqlClient {
             using Reflection;
 
@@ -200,11 +200,11 @@ function Copy-DbaDbTableData {
                 }
             }
         }'
-        
+
         Add-Type -ReferencedAssemblies System.Data.dll -TypeDefinition $sourcecode -ErrorAction SilentlyContinue
         $bulkCopyOptions = 0
         $options = "TableLock", "CheckConstraints", "FireTriggers", "KeepIdentity", "KeepNulls", "Default"
-        
+
         foreach ($option in $options) {
             $optionValue = Get-Variable $option -ValueOnly -ErrorAction SilentlyContinue
             if ($option -eq "TableLock" -and (!$NoTableLock)) {
@@ -215,36 +215,36 @@ function Copy-DbaDbTableData {
             }
         }
     }
-    
+
     process {
         if ((Test-Bound -Not -ParameterName Table, SqlInstance) -and (Test-Bound -Not -ParameterName InputObject)) {
             Stop-Function -Message "You must pipe in a table or specify SqlInstance, Database and Table."
             return
         }
-        
+
         if ($SqlInstance) {
             if ((Test-Bound -Not -ParameterName Database)) {
                 Stop-Function -Message "Database is required when passing a SqlInstance" -Target $Table
                 return
             }
-            
+
             if ((Test-Bound -Not -ParameterName Destination, DestinationDatabase, DestinationTable)) {
                 Stop-Function -Message "Cannot copy $Table into itself. One of destination Server, Database or Table must be specified " -Target $Table
                 return
             }
-            
+
             try {
                 $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
             } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $SqlInstance
                 return
             }
-            
+
             if ($Database -notin $server.Databases.Name) {
                 Stop-Function -Message "Database $Database doesn't exist on $server"
                 return
             }
-            
+
             try {
                 foreach ($tbl in $Table) {
                     $dbTable = Get-DbaDbTable -SqlInstance $server -Table $tbl -Database $Database -EnableException -Verbose:$false
@@ -259,23 +259,23 @@ function Copy-DbaDbTableData {
                 return
             }
         }
-        
+
         foreach ($sqltable in $InputObject) {
             $Database = $sqltable.Parent.Name
             $server = $sqltable.Parent.Parent
-            
+
             if ((Test-Bound -Not -ParameterName DestinationDatabase)) {
                 $DestinationDatabase = $Database
             }
-            
+
             if ((Test-Bound -Not -ParameterName DestinationTable)) {
                 $DestinationTable = '[' + $sqltable.Schema + '].[' + $sqltable.Name + ']'
             }
-            
+
             if (-not $Destination) {
                 $Destination = $server
             }
-            
+
             foreach ($destinationserver in $Destination) {
                 try {
                     $destServer = Connect-SqlInstance -SqlInstance $destinationserver -SqlCredential $DestinationSqlCredential
@@ -283,17 +283,20 @@ function Copy-DbaDbTableData {
                     Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $destinationserver
                     return
                 }
-                
+
                 if ($DestinationDatabase -notin $destServer.Databases.Name) {
                     Stop-Function -Message "Database $DestinationDatabase doesn't exist on $destServer"
                     return
                 }
-                
+
                 $desttable = Get-DbaDbTable -SqlInstance $destServer -Table $DestinationTable -Database $DestinationDatabase -Verbose:$false | Select-Object -First 1
                 if (-not $desttable) {
                     if ($AutoCreateTable) {
                         try {
                             $tablescript = $sqltable | Export-DbaScript -Passthru | Out-String
+                            $tablescript = $tablescript.Replace($sqltable.Name, $DestinationTable)
+                            $tablescript
+                            return
                             Invoke-DbaQuery -SqlInstance $destServer -Database $DestinationDatabase -Query "$tablescript" -EnableException # add some string assurance there
                             $desttable = Get-DbaDbTable -SqlInstance $destinationserver -SqlCredential $DestinationSqlCredential -Table $DestinationTable -Database $DestinationDatabase -Verbose:$false | Select-Object -First 1
                         } catch {
@@ -304,18 +307,18 @@ function Copy-DbaDbTableData {
                         Stop-Function -Message "Table $tbl cannot be found in $database. Use -AutoCreateTable to automatically create the table on the destination." -Continue
                     }
                 }
-                
+
                 $connstring = $destServer.ConnectionContext.ConnectionString
-                
+
                 $fqtnfrom = "$($server.Databases[$Database]).$sqltable"
                 $fqtndest = "$($destServer.Databases[$DestinationDatabase]).$desttable"
-                
+
                 if ($fqtndest -eq $fqtnfrom -and $server.Name -eq $destServer.Name) {
                     Stop-Function -Message "Cannot copy $fqtnfrom on $($server.Name) into $fqtndest on ($destServer.Name). Source and Destination must be different " -Target $Table
                     return
                 }
-                
-                
+
+
                 if (Test-Bound -ParameterName Query -Not) {
                     $Query = "SELECT * FROM $fqtnfrom"
                 }
@@ -337,15 +340,15 @@ function Copy-DbaDbTableData {
                         $bulkCopy.BatchSize = $BatchSize
                         $bulkCopy.NotifyAfter = $NotifyAfter
                         $bulkCopy.BulkCopyTimeOut = $BulkCopyTimeOut
-                        
+
                         $elapsed = [System.Diagnostics.Stopwatch]::StartNew()
                         # Add RowCount output
-                        $bulkCopy.Add_SqlRowsCopied({
+                        $bulkCopy.Add_SqlRowsCopied( {
                                 $RowsPerSec = [math]::Round($args[1].RowsCopied / $elapsed.ElapsedMilliseconds * 1000.0, 1)
                                 Write-Progress -id 1 -activity "Inserting rows" -Status ([System.String]::Format("{0} rows ({1} rows/sec)", $args[1].RowsCopied, $RowsPerSec))
                             })
                     }
-                    
+
                     if ($Pscmdlet.ShouldProcess($destServer, "Writing rows to $fqtndest")) {
                         $reader = $cmd.ExecuteReader()
                         $bulkCopy.WriteToServer($reader)
@@ -355,20 +358,20 @@ function Copy-DbaDbTableData {
                         if ($rowCount -is [int]) {
                             Write-Progress -id 1 -activity "Inserting rows" -status "Complete" -Completed
                         }
-                        
+
                         $bulkCopy.Close()
                         $bulkCopy.Dispose()
                         $reader.Close()
-                        
+
                         [pscustomobject]@{
-                            SourceInstance = $server.Name
-                            SourceDatabase = $Database
-                            SourceTable    = $sqltable.Name
+                            SourceInstance      = $server.Name
+                            SourceDatabase      = $Database
+                            SourceTable         = $sqltable.Name
                             DestinationInstance = $destServer.name
                             DestinationDatabase = $DestinationDatabase
-                            DestinationTable = $desttable.Name
-                            RowsCopied     = $rowstotal
-                            Elapsed        = [prettytimespan]$elapsed.Elapsed
+                            DestinationTable    = $desttable.Name
+                            RowsCopied          = $rowstotal
+                            Elapsed             = [prettytimespan]$elapsed.Elapsed
                         }
                     }
                 } catch {
