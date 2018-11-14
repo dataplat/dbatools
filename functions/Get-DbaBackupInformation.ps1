@@ -122,7 +122,7 @@ function Get-DbaBackupInformation {
 
         As we know we are dealing with an Ola Hallengren style backup folder from the MaintenanceSolution switch, when IgnoreLogBackup is also included we can ignore the LOG folder to skip any scanning of log backups. Note this also means they WON'T be restored
 
-#>
+    #>
     [CmdletBinding( DefaultParameterSetName = "Create")]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingPlainTextForPassword", "", Justification = "For Parameter AzureCredential")]
     param (
@@ -348,4 +348,3 @@ function Get-DbaBackupInformation {
         $groupResults | Sort-Object -Property End -Descending
     }
 }
-

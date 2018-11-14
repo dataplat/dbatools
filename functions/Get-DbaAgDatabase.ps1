@@ -57,7 +57,7 @@ function Get-DbaAgDatabase {
 
         Returns the database Sharepoint_Config found in the availability group SharePoint on server sqlcluster
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [DbaInstanceParameter[]]$SqlInstance,
@@ -90,4 +90,3 @@ function Get-DbaAgDatabase {
         }
     }
 }
-

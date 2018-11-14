@@ -7,7 +7,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         $paramCount = 7
         $defaultParamCount = 13
         [object[]]$params = (Get-ChildItem function:\Sync-DbaLoginPermission).Parameters.Keys
-        $knownParameters = 'Source','SourceSqlCredential','Destination','DestinationSqlCredential','Login','ExcludeLogin','EnableException'
+        $knownParameters = 'Source', 'SourceSqlCredential', 'Destination', 'DestinationSqlCredential', 'Login', 'ExcludeLogin', 'EnableException'
         It "Should contain our specific parameters" {
             ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
         }
@@ -18,10 +18,10 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 }
 
 Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
-    BeforeAll{
+    BeforeAll {
         $tempguid = [guid]::newguid();
         $DBUserName = "dbatoolssci_$($tempguid.guid)"
-$CreateTestUser = @"
+        $CreateTestUser = @"
 CREATE LOGIN [$DBUserName]
     WITH PASSWORD = '$($tempguid.guid)';
 USE Master;
@@ -31,15 +31,15 @@ GRANT VIEW ANY DEFINITION to [$DBUserName];
 "@
         Invoke-DbaQuery -SqlInstance $script:instance2 -Query $CreateTestUser -Database master
 
-#This is used later in the test
-$CreateTestLogin = @"
+        #This is used later in the test
+        $CreateTestLogin = @"
 CREATE LOGIN [$DBUserName]
     WITH PASSWORD = '$($tempguid.guid)';
 "@
     }
-    AfterAll{
+    AfterAll {
         $DropTestUser = "DROP LOGIN [$DBUserName]"
-        Invoke-DbaQuery -SqlInstance $script:instance2,$script:instance3 -Query $DropTestUser -Database master
+        Invoke-DbaQuery -SqlInstance $script:instance2, $script:instance3 -Query $DropTestUser -Database master
     }
 
     Context "Verifying command output" {

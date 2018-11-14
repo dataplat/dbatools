@@ -71,7 +71,7 @@ function Remove-DbaDbUser {
 
         Drops user1 from all databases it exists in on server 'sqlserver2014'.
 
-#>
+    #>
 
     [CmdletBinding(DefaultParameterSetName = 'User', SupportsShouldProcess = $true)]
     param (
@@ -233,5 +233,3 @@ function Remove-DbaDbUser {
     }
 
 }
-
-

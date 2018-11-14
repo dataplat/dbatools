@@ -39,7 +39,7 @@ function Register-DbaMaintenanceTask {
 
         .EXAMPLE
             PS C:\> Register-DbaMaintenanceTask -Name 'value1' -ScriptBlock $ScriptBlock -Once
-    #>
+       #>
 
     [CmdletBinding()]
     param (
@@ -102,4 +102,3 @@ function Register-DbaMaintenanceTask {
     }
     #endregion New Task
 }
-

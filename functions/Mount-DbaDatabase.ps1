@@ -65,7 +65,7 @@ function Mount-DbaDatabase {
 
         Shows what would happen if the command were executed (without actually performing the command)
 
-#>
+    #>
     [CmdletBinding(SupportsShouldProcess)]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
@@ -152,4 +152,3 @@ function Mount-DbaDatabase {
         }
     }
 }
-

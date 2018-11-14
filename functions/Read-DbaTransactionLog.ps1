@@ -50,7 +50,7 @@ function Read-DbaTransactionLog {
 
         Will read the contents of the transaction log of MyDatabase on SQL Server Instance sql2016 into the local PowerShell object $Log, ignoring the recommendation of not returning more that 0.5GB of log
 
-#>
+    #>
     [CmdletBinding(DefaultParameterSetName = "Default")]
     param (
         [parameter(Position = 0, Mandatory)]
@@ -111,4 +111,3 @@ function Read-DbaTransactionLog {
     $server.Query($sql, $Database)
 
 }
-

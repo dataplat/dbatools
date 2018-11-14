@@ -7,7 +7,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         $paramCount = 4
         $defaultParamCount = 13
         [object[]]$params = (Get-ChildItem function:\Remove-DbaClientAlias).Parameters.Keys
-        $knownParameters = 'ComputerName','Credential','Alias','EnableException'
+        $knownParameters = 'ComputerName', 'Credential', 'Alias', 'EnableException'
         It "Should contain our specific parameters" {
             ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
         }
@@ -83,7 +83,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             }
 
             $defaultParamValues = $PSDefaultParameterValues
-            $PSDefaultParameterValues=@{"*:WarningVariable"="+buffer"}
+            $PSDefaultParameterValues = @{"*:WarningVariable" = "+buffer"}
 
             $null = Remove-DbaClientAlias -Alias 'dbatoolscialias5' -WarningAction 'SilentlyContinue'
 

@@ -11,4 +11,3 @@ function Get-ResourceState ($state) {
         130 { "Offline Pending" }
     }
 }
-

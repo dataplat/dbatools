@@ -9,7 +9,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         $paramCount = 7
         $defaultParamCount = 11
         [object[]]$params = (Get-ChildItem function:\Get-DbaCredential).Parameters.Keys
-        $knownParameters = 'SqlInstance','SqlCredential','Name','ExcludeName','Identity','ExcludeIdentity','EnableException'
+        $knownParameters = 'SqlInstance', 'SqlCredential', 'Name', 'ExcludeName', 'Identity', 'ExcludeIdentity', 'EnableException'
         It "Should contain our specific parameters" {
             ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
         }
@@ -36,8 +36,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     AfterAll {
         try {
             (Get-DbaCredential -SqlInstance $script:instance2 -Identity dbatoolsci_thor, dbatoolsci_thorsmomma -ErrorAction Stop -WarningAction SilentlyContinue).Drop()
-        }
-        catch { }
+        } catch { }
 
         foreach ($login in $logins) {
             $null = Invoke-Command2 -ScriptBlock { net user $args /delete *>&1 } -ArgumentList $login -ComputerName $script:instance2

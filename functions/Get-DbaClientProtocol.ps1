@@ -52,7 +52,7 @@ function Get-DbaClientProtocol {
         Disables the VIA ClientNetworkProtocol on computer sql2.
         If successful, return code 0 is shown.
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(ValueFromPipeline)]
@@ -99,4 +99,3 @@ function Get-DbaClientProtocol {
         } #foreach computer
     }
 }
-

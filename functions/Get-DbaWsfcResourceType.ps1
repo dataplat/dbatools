@@ -36,7 +36,7 @@ function Get-DbaWsfcResourceType {
 
         Gets resource type information from the failover cluster cluster01
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(ValueFromPipeline)]
@@ -54,4 +54,3 @@ function Get-DbaWsfcResourceType {
         }
     }
 }
-

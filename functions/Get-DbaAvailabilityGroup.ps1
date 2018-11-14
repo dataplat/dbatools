@@ -62,7 +62,7 @@ function Get-DbaAvailabilityGroup {
 
         Returns true/false if the server, sqlserver2014a, is the primary replica for AG-a Availability Group.
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
@@ -108,5 +108,3 @@ function Get-DbaAvailabilityGroup {
         }
     }
 }
-
-

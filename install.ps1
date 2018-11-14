@@ -18,8 +18,7 @@ try {
     Update-Module dbatools -Erroraction Stop
     Write-LocalMessage -Message "Updated using the PowerShell Gallery"
     return
-}
-catch {
+} catch {
     Write-LocalMessage -Message "dbatools was not installed by the PowerShell Gallery, continuing with web install."
 }
 
@@ -38,8 +37,7 @@ $localpath = $module.ModuleBase
 
 if ($null -eq $localpath) {
     $localpath = "$HOME\Documents\WindowsPowerShell\Modules\dbatools"
-}
-else {
+} else {
     Write-LocalMessage -Message "Updating current install"
 }
 
@@ -51,13 +49,11 @@ try {
                 Write-LocalMessage -Message "Looks like this installer is run from your GitHub Repo, defaulting to psmodulepath"
                 $path = $localpath
             }
-        }
-        else {
+        } else {
             $path = $localpath
         }
     }
-}
-catch {
+} catch {
     $path = $localpath
 }
 
@@ -88,8 +84,7 @@ if (!(Test-Path -Path $path)) {
     try {
         Write-LocalMessage -Message "Creating directory: $path"
         New-Item -Path $path -ItemType Directory | Out-Null
-    }
-    catch {
+    } catch {
         throw "Can't create $Path. You may need to Run as Administrator: $_"
     }
 }
@@ -97,8 +92,7 @@ if (!(Test-Path -Path $path)) {
 if ($beta) {
     $url = 'https://dbatools.io/devzip'
     $branch = "development"
-}
-else {
+} else {
     $url = 'https://dbatools.io/zip'
     $branch = "master"
 }
@@ -109,7 +103,7 @@ $zipfile = "$temp\dbatools.zip"
 Write-LocalMessage -Message "Downloading archive from github"
 try {
     (New-Object System.Net.WebClient).DownloadFile($url, $zipfile)
-}catch {
+} catch {
     try {
         #try with default proxy and usersettings
         Write-LocalMessage -Message "Probably using a proxy for internet access, trying default proxy settings"
@@ -142,8 +136,7 @@ Copy-Item -Path "$Path\*" -Destination "$temp\dbatools-old" -ErrorAction Stop
 try {
     Write-LocalMessage -Message "2) Cleaning up installation directory"
     Remove-Item "$Path\*" -Recurse -Force -ErrorAction Stop
-}
-catch {
+} catch {
     Write-LocalMessage -Message @"
 Failed to clean up installation directory, rolling back update.
 This usually has one of two causes:
@@ -173,8 +166,7 @@ if (Get-Module dbatools) {
 
 Please restart PowerShell before working with dbatools.
 "@
-}
-else {
+} else {
     Import-Module "$path\dbatools.psd1" -Force
     Write-LocalMessage @"
 

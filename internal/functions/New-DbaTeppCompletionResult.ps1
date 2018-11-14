@@ -26,7 +26,7 @@ function global:New-DbaTeppCompletionResult {
             New-DbaTeppCompletionResult -CompletionText 'master' -ToolTip 'master'
 
             Returns a CompletionResult with the text and tooltip 'master'
-    #>
+       #>
     param (
         [Parameter(Position = 0, ValueFromPipelineByPropertyName = $true, Mandatory, ValueFromPipeline)]
         [ValidateNotNullOrEmpty()]
@@ -77,4 +77,3 @@ function global:New-DbaTeppCompletionResult {
 }
 
 (Get-Item Function:\New-DbaTeppCompletionResult).Visibility = "Private"
-

@@ -4,13 +4,12 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tags "UnitTests" {
     Context "Validate parameters" {
-        $knownParameters = 'SqlInstance','SqlCredential','Name','ServerName','Group','ExcludeGroup','Id','IncludeSelf','ExcludeCmsServer','ResolveNetworkName','EnableException'
+        $knownParameters = 'SqlInstance', 'SqlCredential', 'Name', 'ServerName', 'Group', 'ExcludeGroup', 'Id', 'IncludeSelf', 'ExcludeCmsServer', 'ResolveNetworkName', 'EnableException'
         $SupportShouldProcess = $false
         $paramCount = $knownParameters.Count
         if ($SupportShouldProcess) {
             $defaultParamCount = 13
-        }
-        else {
+        } else {
             $defaultParamCount = 11
         }
         $command = Get-Command -Name $CommandName
@@ -38,7 +37,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $regSrvName = "dbatoolsci-server12"
             $regSrvDesc = "dbatoolsci-server123"
 
-            <# Create that first group #>
+            <# Create that first group            #>
             $newGroup = New-Object Microsoft.SqlServer.Management.RegisteredServers.ServerGroup($dbStore, $group)
             $newGroup.Create()
             $dbStore.Refresh()
@@ -94,4 +93,3 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         # Property Comparisons will come later when we have the commands
     }
 }
-

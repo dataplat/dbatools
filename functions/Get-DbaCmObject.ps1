@@ -67,7 +67,7 @@ function Get-DbaCmObject {
         Retrieves the common operating system information from the server sql2014.
         It will use the Credentials stored in $cred to connect, unless they are known to not work, in which case they will default to windows credentials (unless another default has been set).
 
-#>
+    #>
     [CmdletBinding(DefaultParameterSetName = "Class")]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingWMICmdlet", "", Justification = "Using Get-WmiObject is used as a fallback for gathering information")]
     param (
@@ -371,4 +371,3 @@ function Get-DbaCmObject {
         }
     }
 }
-

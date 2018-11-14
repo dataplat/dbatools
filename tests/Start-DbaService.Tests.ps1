@@ -8,7 +8,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         $paramCount = 7
         $defaultParamCount = 13
         [object[]]$params = (Get-ChildItem function:\Start-DbaService).Parameters.Keys
-        $knownParameters = 'ComputerName','InstanceName','Type','InputObject','Timeout','Credential','EnableException'
+        $knownParameters = 'ComputerName', 'InstanceName', 'Type', 'InputObject', 'Timeout', 'Credential', 'EnableException'
         It "Should contain our specific parameters" {
             ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
         }
@@ -29,8 +29,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         #Stop services using native cmdlets
         if ($instanceName -eq 'MSSQLSERVER') {
             $serviceName = "SQLSERVERAGENT"
-        }
-        else {
+        } else {
             $serviceName = "SqlAgent`$$instanceName"
         }
         Get-Service -ComputerName $computerName -Name $serviceName | Stop-Service -WarningAction SilentlyContinue | Out-Null
@@ -47,8 +46,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         #Stop services using native cmdlets
         if ($instanceName -eq 'MSSQLSERVER') {
             $serviceName = "SQLSERVERAGENT", "MSSQLSERVER"
-        }
-        else {
+        } else {
             $serviceName = "SqlAgent`$$instanceName", "MsSql`$$instanceName"
         }
         foreach ($sn in $servicename) { Get-Service -ComputerName $computerName -Name $sn | Stop-Service -WarningAction SilentlyContinue | Out-Null }

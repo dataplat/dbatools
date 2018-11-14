@@ -22,7 +22,7 @@ function Start-DbaRunspace {
         PS C:\> Start-DbaRunspace -Name 'mymodule.maintenance'
 
         Starts the runspace registered under the name 'mymodule.maintenance'
-#>
+    #>
     [CmdletBinding()]
     param (
         [Parameter(ValueFromPipeline)]
@@ -64,5 +64,3 @@ function Start-DbaRunspace {
         }
     }
 }
-
-

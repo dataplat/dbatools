@@ -153,7 +153,7 @@ function Write-DbaDataTable {
 
         This is an example of the type conversion in action. All process properties are converted, including special types like TimeSpan. Script properties are resolved before the type conversion starts thanks to ConvertTo-DbaDataTable.
 
-#>
+    #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
     param (
         [Parameter(Position = 0, Mandatory)]
@@ -668,4 +668,3 @@ function Write-DbaDataTable {
         Test-DbaDeprecation -DeprecatedOn 1.0.0 -Parameter RegularUser
     }
 }
-

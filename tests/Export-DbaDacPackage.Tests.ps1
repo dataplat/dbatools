@@ -7,7 +7,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         $paramCount = 12
         $defaultParamCount = 11
         [object[]]$params = (Get-ChildItem function:\Export-DbaDacPackage).Parameters.Keys
-        $knownParameters = 'SqlInstance','SqlCredential','Database','ExcludeDatabase','AllUserDatabases','Path','ExtendedParameters','ExtendedProperties','EnableException', 'Type', 'DacOption', 'Table'
+        $knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'AllUserDatabases', 'Path', 'ExtendedParameters', 'ExtendedProperties', 'EnableException', 'Type', 'DacOption', 'Table'
         It "Should contain our specific parameters" {
             ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
         }
@@ -28,8 +28,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             INSERT dbo.example
             SELECT top 100 object_id
             FROM sys.objects")
-        }
-        catch { } # No idea why appveyor can't handle this
+        } catch { } # No idea why appveyor can't handle this
 
         $testFolder = 'C:\Temp\dacpacs'
     }

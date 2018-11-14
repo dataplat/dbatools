@@ -8,9 +8,8 @@ function Get-RegServerGroupReverseParse ($object) {
             $object = $object.Parent
         }
         until ($object.Name -eq 'DatabaseEngineServerGroup')
-        
+
         [array]::Reverse($name)
         $name -join '\'
     }
 }
-

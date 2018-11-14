@@ -80,7 +80,7 @@ function Get-DbaCmsRegServer {
 
         Returns a list of servers in the HR and sub-group Development from the CMS on sqlserver2014a.
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
@@ -202,4 +202,3 @@ function Get-DbaCmsRegServer {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Get-DbaRegisteredServer
     }
 }
-

@@ -7,7 +7,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         $paramCount = 9
         $defaultParamCount = 13
         [object[]]$params = (Get-ChildItem function:\Copy-DbaLinkedServer).Parameters.Keys
-        $knownParameters = 'Source','SourceSqlCredential','Destination','DestinationSqlCredential','LinkedServer','ExcludeLinkedServer','UpgradeSqlClient','Force','EnableException'
+        $knownParameters = 'Source', 'SourceSqlCredential', 'Destination', 'DestinationSqlCredential', 'LinkedServer', 'ExcludeLinkedServer', 'UpgradeSqlClient', 'Force', 'EnableException'
         It "Should contain our specific parameters" {
             ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
         }
@@ -35,8 +35,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         try {
             $server1.Query($dropsql)
             $server2.Query($dropsql)
-        }
-        catch {}
+        } catch {}
     }
 
     Context "Copy linked server with the same properties" {

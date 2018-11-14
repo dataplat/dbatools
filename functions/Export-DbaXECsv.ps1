@@ -39,7 +39,7 @@ function Export-DbaXECsv {
 
         Writes Extended Events data to the file "C:\temp\events.csv".
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
@@ -152,4 +152,3 @@ function Export-DbaXECsv {
         }
     }
 }
-

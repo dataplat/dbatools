@@ -56,7 +56,7 @@ function Remove-DbaAgentJobCategory {
 
         Remove multiple job categories from the multiple instances.
 
-#>
+    #>
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "Low")]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
@@ -116,4 +116,3 @@ function Remove-DbaAgentJobCategory {
     }
 
 }
-

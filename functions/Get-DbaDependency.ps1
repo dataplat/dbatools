@@ -51,7 +51,7 @@ function Get-DbaDependency {
 
         Returns everything that depends on the "Customers" table
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [Parameter(ValueFromPipeline)]
@@ -250,4 +250,3 @@ function Get-DbaDependency {
         }
     }
 }
-

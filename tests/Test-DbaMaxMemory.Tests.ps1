@@ -40,7 +40,7 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
                     ComputerName = "SQL2016"
                     InstanceName = "MSSQLSERVER"
                     SqlInstance  = "SQL2016"
-                    Total      = 4096
+                    Total        = 4096
                     MaxValue     = 2147483647
                 }
             }

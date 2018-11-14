@@ -217,7 +217,7 @@ function Start-DbaMigration {
 
         Migrate databases using detach/copy/attach. Reattach at source and set source databases read-only. Also migrates everything else.
 
-#>
+    #>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
     param (
         [parameter(Position = 1, Mandatory)]
@@ -462,4 +462,3 @@ function Start-DbaMigration {
         Write-Message -Level Verbose -Message "Total Elapsed time: $totaltime"
     }
 }
-

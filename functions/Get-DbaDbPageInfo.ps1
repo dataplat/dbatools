@@ -57,7 +57,7 @@ function Get-DbaDbPageInfo {
 
         Returns page information for the testdb on all $servers
 
-#>
+    #>
     [CmdLetBinding()]
     param (
         [Alias("ServerInstance", "SqlServer")]
@@ -135,4 +135,3 @@ function Get-DbaDbPageInfo {
         }
     }
 }
-

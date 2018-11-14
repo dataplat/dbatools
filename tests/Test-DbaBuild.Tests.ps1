@@ -10,11 +10,11 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
             The $defaultParamCount is adjusted based on what type of command you are writing the test for:
                 - Commands that *do not* include SupportShouldProcess, set defaultParamCount    = 11
                 - Commands that *do* include SupportShouldProcess, set defaultParamCount        = 13
-        #>
+               #>
         $paramCount = 9
         $defaultParamCount = 11
         [object[]]$params = (Get-ChildItem function:\Test-DbaBuild).Parameters.Keys
-        $knownParameters = 'Build','MinimumBuild','MaxBehind','Latest','SqlInstance','SqlCredential','Update','Quiet','EnableException'
+        $knownParameters = 'Build', 'MinimumBuild', 'MaxBehind', 'Latest', 'SqlInstance', 'SqlCredential', 'Update', 'Quiet', 'EnableException'
         It "Should contain our specific parameters" {
             ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
         }

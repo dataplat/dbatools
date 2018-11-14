@@ -87,7 +87,7 @@ function New-DbaLogShippingPrimaryDatabase {
         .EXAMPLE
             New-DbaLogShippingPrimaryDatabase -SqlInstance sql1 -Database DB1 -BackupDirectory D:\data\logshipping -BackupJob LSBackup_DB1 -BackupRetention 4320 -BackupShare "\\sql1\logshipping" -BackupThreshold 60 -CompressBackup -HistoryRetention 14420 -MonitorServer sql1 -ThresholdAlertEnabled
 
-    #>
+       #>
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "Low")]
 
     param (
@@ -252,4 +252,3 @@ function New-DbaLogShippingPrimaryDatabase {
     Write-Message -Message "Finished adding the primary database $Database to log shipping." -Level Verbose
 
 }
-

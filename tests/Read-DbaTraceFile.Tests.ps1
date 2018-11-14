@@ -7,7 +7,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         $paramCount = 15
         $defaultParamCount = 11
         [object[]]$params = (Get-ChildItem function:\Read-DbaTraceFile).Parameters.Keys
-        $knownParameters = 'SqlInstance','SqlCredential','Path','Database','Login','Spid','EventClass','ObjectType','ErrorId','EventSequence','TextData','ApplicationName','ObjectName','Where','EnableException'
+        $knownParameters = 'SqlInstance', 'SqlCredential', 'Path', 'Database', 'Login', 'Spid', 'EventClass', 'ObjectType', 'ErrorId', 'EventSequence', 'TextData', 'ApplicationName', 'ObjectName', 'Where', 'EnableException'
         It "Should contain our specific parameters" {
             ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
         }
@@ -83,5 +83,5 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             mock Write-Message {"Path Does Not Exist"} -module dbatools
             (Read-DbaTraceFile -SqlInstance "$script:Instance2" ) | Should -Be "Failure"
         }
-        }
+    }
 }

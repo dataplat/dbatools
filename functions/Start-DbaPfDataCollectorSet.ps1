@@ -66,7 +66,7 @@ function Start-DbaPfDataCollectorSet {
 
         Starts the 'System Correlation' Collector.
 
-#>
+    #>
     [CmdletBinding(SupportsShouldProcess)]
     param (
         [DbaInstance[]]$ComputerName = $env:COMPUTERNAME,
@@ -126,4 +126,3 @@ function Start-DbaPfDataCollectorSet {
         }
     }
 }
-

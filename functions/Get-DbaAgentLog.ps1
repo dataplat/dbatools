@@ -47,7 +47,7 @@ function Get-DbaAgentLog {
 
         Returns the most recent SQL Agent error logs for "sql2014","sql2016" and "sqlcluster\sharepoint"
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [Parameter(ValueFromPipeline)]
@@ -104,4 +104,3 @@ function Get-DbaAgentLog {
         }
     }
 }
-

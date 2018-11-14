@@ -168,7 +168,7 @@ function Backup-DbaDatabase {
         PS C:\> Backup-DbaDatabase -SqlInstance Sql2017 -Database master -BackupFileName NUL
 
         Performs a backup of master, but sends the output to the NUL device (ie; throws it away)
-#>
+    #>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess)]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingPlainTextForPassword", "")] #For AzureCredential
     param (

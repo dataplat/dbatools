@@ -75,7 +75,7 @@ function Get-DbaWaitStatistic {
 
         Displays the output then loads the associated sqlskills website for each result. Opens one tab per unique URL.
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
@@ -905,7 +905,3 @@ function Get-DbaWaitStatistic {
         }
     }
 }
-
-
-
-

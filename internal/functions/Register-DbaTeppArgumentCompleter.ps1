@@ -27,7 +27,7 @@ function Register-DbaTeppArgumentCompleter {
             Register-DbaTeppArgumentCompleter -Command Get-DbaBackupHistory -Parameter Database
 
             Registers the "Database" parameter of the Get-DbaBackupHistory to receive Database-Tepp
-    #>
+       #>
     [CmdletBinding()]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingEmptyCatchBlock", "")]
     param (
@@ -83,5 +83,3 @@ function Register-DbaTeppArgumentCompleter {
         }
     }
 }
-
-

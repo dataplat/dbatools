@@ -67,7 +67,7 @@ function Export-DbaRepServerSetting {
 
         Exports the replication settings on sql2017 to the file C:\temp\replication.sql
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [Alias("ServerInstance", "SqlServer")]
@@ -122,4 +122,3 @@ function Export-DbaRepServerSetting {
         }
     }
 }
-

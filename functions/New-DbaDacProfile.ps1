@@ -64,7 +64,7 @@ function New-DbaDacProfile {
 
         In this example, no connections are made, and a Publish Profile XML would be created at C:\temp\localdb-MSSQLLocalDB-WorldWideImporters-publish.xml
 
-#>
+    #>
     [CmdletBinding(SupportsShouldProcess)]
     param (
         [parameter(ValueFromPipeline)]
@@ -173,4 +173,3 @@ function New-DbaDacProfile {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias New-DbaPublishProfile
     }
 }
-

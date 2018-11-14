@@ -7,7 +7,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         $paramCount = 3
         $defaultParamCount = 11
         [object[]]$params = (Get-ChildItem function:\Get-DbaBackupDevice).Parameters.Keys
-        $knownParameters = 'SqlInstance','SqlCredential','EnableException'
+        $knownParameters = 'SqlInstance', 'SqlCredential', 'EnableException'
         It "Should contain our specific parameters" {
             ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
         }
@@ -21,4 +21,3 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Read https://github.com/sqlcollaborative/dbatools/blob/development/contributing.md#tests
     for more guidence.
 #>
-
