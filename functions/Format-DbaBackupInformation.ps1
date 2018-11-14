@@ -48,10 +48,13 @@ function Format-DbaBackupInformation {
 
     .PARAMETER FileMapping
         A hashtable that can be used to move specific files to a location.
-        $FileMapping = @{'DataFile1'='c:\restoredfiles\Datafile1.mdf';'DataFile3'='d:\DataFile3.mdf'}
+        `$FileMapping = @{'DataFile1'='c:\restoredfiles\Datafile1.mdf';'DataFile3'='d:\DataFile3.mdf'}`
         And files not specified in the mapping will be restored to their original location
         This Parameter is exclusive with DestinationDataDirectory
         If specified, this will override any other file renaming/relocation options.
+
+    .PARAMETER PathSep
+        By default is Windows's style (`\`) but you can pass also, e.g., `/` for Unix's style paths
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -91,7 +94,7 @@ function Format-DbaBackupInformation {
 
         This example changes the location that SQL Server will look for the backups. This is useful if you've moved the backups to a different location
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
@@ -107,6 +110,7 @@ function Format-DbaBackupInformation {
         [string]$RebaseBackupFolder,
         [switch]$Continue,
         [hashtable]$FileMapping,
+        [string]$PathSep = '\',
         [switch]$EnableException
     )
     begin {
@@ -123,24 +127,24 @@ function Format-DbaBackupInformation {
                 Write-Message -Message "ReplacemenDatabaseName is $($ReplaceDatabaseName.Gettype().ToString()) - $ReplaceDatabaseName" -level Verbose
             }
         }
-        if ((Test-Bound -Parameter DataFileDirectory) -and $DataFileDirectory[-1] -eq '\' ) {
-            $DataFileDirectory = $DataFileDirectory.substring(0, $DataFileDirectory.length - 1)
+        if ((Test-Bound -Parameter DataFileDirectory) -and $DataFileDirectory.EndsWith($PathSep)) {
+            $DataFileDirectory = $DataFileDirectory -Replace '.$'
         }
-        if ((Test-Bound -Parameter DestinationFileStreamDirectory) -and $DestinationFileStreamDirectory[-1] -eq '\' ) {
-            $DestinationFileStreamDirectory = $DestinationFileStreamDirectory.substring(0, $DestinationFileStreamDirectory.length - 1)
+        if ((Test-Bound -Parameter DestinationFileStreamDirectory) -and $DestinationFileStreamDirectory.EndsWith($PathSep) ) {
+            $DestinationFileStreamDirectory = $DestinationFileStreamDirectory -Replace '.$'
         }
-        if ((Test-Bound -Parameter LogFileDirectory) -and $LogFileDirectory[-1] -eq '\' ) {
-            $LogFileDirectory = $LogFileDirectory.substring(0, $LogFileDirectory.length - 1)
+        if ((Test-Bound -Parameter LogFileDirectory) -and $LogFileDirectory.EndsWith($PathSep) ) {
+            $LogFileDirectory = $LogFileDirectory -Replace '.$'
         }
-        if ((Test-Bound -Parameter RebaseBackupFolder) -and $RebaseBackupFolder[-1] -eq '\' ) {
-            $RebaseBackupFolder = $RebaseBackupFolder.substring(0, $RebaseBackupFolder.length - 1)
+        if ((Test-Bound -Parameter RebaseBackupFolder) -and $RebaseBackupFolder.EndsWith($PathSep) ) {
+            $RebaseBackupFolder = $RebaseBackupFolder -Replace '.$'
         }
     }
 
 
     process {
 
-        ForEach ($History in $BackupHistory) {
+        foreach ($History in $BackupHistory) {
             if ("OriginalDatabase" -notin $History.PSobject.Properties.name) {
                 $History | Add-Member -Name 'OriginalDatabase' -Type NoteProperty -Value $History.Database
             }
@@ -154,7 +158,7 @@ function Format-DbaBackupInformation {
             if ("IsVerified" -notin $History.PSobject.Properties.name) {
                 $History | Add-Member -Name 'IsVerified' -Type NoteProperty -Value $False
             }
-            Switch ($History.Type) {
+            switch ($History.Type) {
                 'Full' {$History.Type = 'Database'}
                 'Differential' {$History.Type = 'Database Differential'}
                 'Log' {$History.Type = 'Transaction Log'}
@@ -202,7 +206,7 @@ function Format-DbaBackupInformation {
                             }
                         }
 
-                        $_.PhysicalName = $RestoreDir + "\" + $DatabaseFilePrefix + $Pname.BaseName + $DatabaseFileSuffix + $pname.extension
+                        $_.PhysicalName = $RestoreDir + $PathSep + $DatabaseFilePrefix + $Pname.BaseName + $DatabaseFileSuffix + $Pname.extension
                         Write-Message -Message "PhysicalName = $($_.PhysicalName) " -Level Verbose
                     }
                 }
@@ -212,7 +216,7 @@ function Format-DbaBackupInformation {
 
                 for ($j = 0; $j -lt $History.fullname.count; $j++) {
                     $file = [System.IO.FileInfo]($History.fullname[$j])
-                    $History.fullname[$j] = $RebaseBackupFolder + "\" + $file.BaseName + $file.Extension
+                    $History.fullname[$j] = $RebaseBackupFolder + $PathSep + $file.BaseName + $file.Extension
                 }
 
             }
