@@ -5,6 +5,7 @@ function New-DbaDatabase {
 
     .DESCRIPTION
         New-DbaDatabase creates a new database with a single Secondary filegroup, and the PRIMARY filegroup reserved for system objects.
+    
         It allows creation with multiple files, and sets all growth settings to be fixed size rather than percentage growth.
 
     .PARAMETER SqlInstance
