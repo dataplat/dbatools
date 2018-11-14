@@ -59,7 +59,7 @@ function Enable-DbaFilestream {
 
         Using this pipeline you can scan a range of SQL instances and enable filestream on only those on which it's disabled.
 
-    #>
+       #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Medium")]
     param (
         [Parameter(Mandatory, ValueFromPipelineByPropertyName)]

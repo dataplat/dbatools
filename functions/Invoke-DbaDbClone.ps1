@@ -61,7 +61,7 @@ function Invoke-DbaDbClone {
 
         Updates the statistics of mydb then clones to myclone and myclone2
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Position = 0)]
@@ -226,4 +226,3 @@ function Invoke-DbaDbClone {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Invoke-DbaDatabaseClone
     }
 }
-

@@ -8,7 +8,7 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
         <#
             Get commands, Default count = 11
             Commands with SupportShouldProcess = 13
-        #>
+               #>
         $defaultParamCount = 11
         [object[]]$params = (Get-ChildItem function:\Get-DbaAvailabilityGroup).Parameters.Keys
         $knownParameters = 'SqlInstance', 'SqlCredential', 'AvailabilityGroup', 'IsPrimary', 'EnableException'
@@ -34,7 +34,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
             $results = Get-DbaAvailabilityGroup -SqlInstance $script:instance3
             $results.AvailabilityGroup | Should -Contain $agname
         }
-        
+
         It "returns a single result" {
             $results = Get-DbaAvailabilityGroup -SqlInstance $script:instance3 -AvailabilityGroup $agname
             $results.AvailabilityGroup | Should -Be $agname

@@ -50,7 +50,7 @@ function Get-DbaXESessionTargetFile {
 
         Returns the Target Files for the system_health session on sql2016.
 
-#>
+    #>
     [CmdletBinding(DefaultParameterSetName = "Default")]
     param (
         [parameter(ValueFromPipeline, ParameterSetName = "instance", Mandatory)]
@@ -89,4 +89,3 @@ function Get-DbaXESessionTargetFile {
         }
     }
 }
-

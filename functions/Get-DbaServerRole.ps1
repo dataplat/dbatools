@@ -45,7 +45,7 @@ function Get-DbaServerRole {
 
         Outputs the server-level role(s) that are not fixed roles on sql2017a instance.
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [Parameter(Position = 0, Mandatory, ValueFromPipeline)]
@@ -91,4 +91,3 @@ function Get-DbaServerRole {
         }
     }
 }
-

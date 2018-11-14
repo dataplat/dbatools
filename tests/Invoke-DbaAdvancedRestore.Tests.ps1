@@ -7,7 +7,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         $paramCount = 17
         $defaultParamCount = 13
         [object[]]$params = (Get-ChildItem function:\Invoke-DbaAdvancedRestore).Parameters.Keys
-        $knownParameters = 'BackupHistory','SqlInstance','SqlCredential','OutputScriptOnly','VerifyOnly','RestoreTime','StandbyDirectory','NoRecovery','MaxTransferSize','BlockSize','BufferCount','Continue','AzureCredential','WithReplace','KeepCDC','PageRestore','EnableException'
+        $knownParameters = 'BackupHistory', 'SqlInstance', 'SqlCredential', 'OutputScriptOnly', 'VerifyOnly', 'RestoreTime', 'StandbyDirectory', 'NoRecovery', 'MaxTransferSize', 'BlockSize', 'BufferCount', 'Continue', 'AzureCredential', 'WithReplace', 'KeepCDC', 'PageRestore', 'EnableException'
         It "Should contain our specific parameters" {
             ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
         }
@@ -21,4 +21,3 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Read https://github.com/sqlcollaborative/dbatools/blob/development/contributing.md#tests
     for more guidence.
 #>
-

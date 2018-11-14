@@ -20,7 +20,7 @@ function Test-FunctionInterrupt {
             if (Test-FunctionInterrupt) { return }
 
             The calling function will stop if this function returns true.
-    #>
+       #>
     [CmdletBinding()]
     param (
 
@@ -31,4 +31,3 @@ function Test-FunctionInterrupt {
 
     return $false
 }
-

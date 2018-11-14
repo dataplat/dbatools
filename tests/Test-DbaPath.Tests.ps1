@@ -56,9 +56,9 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             ($results | Where-Object FilePath -eq $trueTest).FileExists | Should Be $true
             ($results | Where-Object FilePath -eq $falseTest).FileExists | Should Be $false
         }
-        $results = Test-DbaPath -SqlInstance $script:instance2,$script:instance1 -Path $falseTest
+        $results = Test-DbaPath -SqlInstance $script:instance2, $script:instance1 -Path $falseTest
         It "Should return multiple results when passed multiple instances" {
-            foreach($result in $results) {
+            foreach ($result in $results) {
                 $result.FileExists | Should Be $false
             }
             ($results.SqlInstance | Sort-Object -Unique).Count | Should Be 2
@@ -76,4 +76,3 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
     }
 }
-

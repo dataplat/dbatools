@@ -42,7 +42,7 @@ function Clear-DbaConnectionPool {
 
         Clears all connection pools on workstation27.
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [Parameter(ValueFromPipeline)]

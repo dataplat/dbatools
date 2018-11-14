@@ -290,7 +290,7 @@ function Invoke-Sqlcmd2 {
         [ValidateNotNullOrEmpty()]
         [System.Data.SqlClient.SQLConnection]$SQLConnection
     )
-    
+
     process {
         Write-Message -Level Warning -Message "This command is no longer supported. Please use Invoke-DbaQuery instead."
     }

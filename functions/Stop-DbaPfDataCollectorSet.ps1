@@ -66,7 +66,7 @@ function Stop-DbaPfDataCollectorSet {
 
         Stops the 'System Correlation' Collector.
 
-#>
+    #>
     [CmdletBinding(SupportsShouldProcess)]
     param (
         [DbaInstance[]]$ComputerName = $env:COMPUTERNAME,
@@ -126,4 +126,3 @@ function Stop-DbaPfDataCollectorSet {
         }
     }
 }
-

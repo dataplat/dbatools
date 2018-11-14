@@ -7,7 +7,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         $paramCount = 20
         $defaultParamCount = 13
         [object[]]$params = (Get-ChildItem function:\Copy-DbaDbTableData).Parameters.Keys
-        $knownParameters = 'SqlInstance','SqlCredential','Destination','DestinationSqlCredential','Database','DestinationDatabase','Table','Query','BatchSize','NotifyAfter','DestinationTable','NoTableLock','CheckConstraints','FireTriggers','KeepIdentity','KeepNulls','Truncate','bulkCopyTimeOut','InputObject','EnableException'
+        $knownParameters = 'SqlInstance', 'SqlCredential', 'Destination', 'DestinationSqlCredential', 'Database', 'DestinationDatabase', 'Table', 'Query', 'BatchSize', 'NotifyAfter', 'DestinationTable', 'NoTableLock', 'CheckConstraints', 'FireTriggers', 'KeepIdentity', 'KeepNulls', 'Truncate', 'bulkCopyTimeOut', 'InputObject', 'EnableException'
         It "Should contain our specific parameters" {
             ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
         }
@@ -95,4 +95,3 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         $result | Should Be $null
     }
 }
-

@@ -7,7 +7,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         $paramCount = 22
         $defaultParamCount = 11
         [object[]]$params = (Get-ChildItem function:\Import-DbaCsvToSql).Parameters.Keys
-        $knownParameters = 'Csv','SqlInstance','SqlCredential','Table','Schema','Truncate','Delimiter','SingleColumn','FirstRowColumns','Turbo','Safe','First','Query','BatchSize','NotifyAfter','TableLock','CheckConstraints','FireTriggers','KeepIdentity','KeepNulls','shellswitch','SqlCredentialPath'
+        $knownParameters = 'Csv', 'SqlInstance', 'SqlCredential', 'Table', 'Schema', 'Truncate', 'Delimiter', 'SingleColumn', 'FirstRowColumns', 'Turbo', 'Safe', 'First', 'Query', 'BatchSize', 'NotifyAfter', 'TableLock', 'CheckConstraints', 'FireTriggers', 'KeepIdentity', 'KeepNulls', 'shellswitch', 'SqlCredentialPath'
         It "Should contain our specific parameters" {
             ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
         }
@@ -21,4 +21,3 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Read https://github.com/sqlcollaborative/dbatools/blob/development/contributing.md#tests
     for more guidence.
 #>
-

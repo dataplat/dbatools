@@ -60,7 +60,7 @@ function New-DbaDbMasterKey {
 
         Suppresses all prompts to install but prompts in th console to securely enter your password and creates a master key in the 'db1' database
 
-#>
+    #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "High")]
     param (
         [DbaInstanceParameter[]]$SqlInstance,
@@ -112,4 +112,3 @@ function New-DbaDbMasterKey {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias New-DbaDatabaseMasterKey
     }
 }
-

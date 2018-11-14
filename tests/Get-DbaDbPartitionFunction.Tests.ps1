@@ -7,7 +7,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         $paramCount = 5
         $defaultParamCount = 11
         [object[]]$params = (Get-ChildItem function:\Get-DbaDbPartitionFunction).Parameters.Keys
-        $knownParameters = 'SqlInstance','SqlCredential','Database','ExcludeDatabase','EnableException'
+        $knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'EnableException'
         It "Should contain our specific parameters" {
             ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
         }
@@ -18,13 +18,13 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 }
 
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
-    BeforeAll{
+    BeforeAll {
         $tempguid = [guid]::newguid();
         $PFName = "dbatoolssci_$($tempguid.guid)"
         $CreateTestPartitionFunction = "CREATE PARTITION FUNCTION [$PFName] (int)  AS RANGE LEFT FOR VALUES (1, 100, 1000, 10000, 100000);"
         Invoke-DbaQuery -SqlInstance $script:instance2 -Query $CreateTestPartitionFunction -Database master
     }
-    AfterAll{
+    AfterAll {
         $DropTestPartitionFunction = "DROP PARTITION FUNCTION [$PFName];"
         Invoke-DbaQuery -SqlInstance $script:instance2 -Query $DropTestPartitionFunction -Database master
     }
@@ -33,11 +33,11 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         $results1 = Get-DbaDbPartitionFunction -SqlInstance $script:instance2 -Database master | Select-Object *
         $results2 = Get-DbaDbPartitionFunction -SqlInstance $script:instance2
 
-        It "Should execute and return results"{
+        It "Should execute and return results" {
             $results2 | Should -Not -Be $null
         }
 
-        It "Should execute against Master and return results"{
+        It "Should execute against Master and return results" {
             $results1 | Should -Not -Be $null
         }
 

@@ -64,7 +64,7 @@ function New-DbaConnectionStringBuilder {
 
         Returns a connection string builder that can be used to connect to the local sql server instance on the default port.
 
-#>
+    #>
     [CmdletBinding(SupportsShouldProcess)]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingPlainTextForPassword", "")]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingUserNameAndPassWordParams", "")]
@@ -133,4 +133,3 @@ function New-DbaConnectionStringBuilder {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias New-DbaSqlConnectionStringBuilder
     }
 }
-

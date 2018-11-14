@@ -108,7 +108,7 @@ function Sync-DbaAvailabilityGroup {
         PS C:\> Get-DbaAvailabilityGroup -SqlInstance sql2016a | Sync-DbaAvailabilityGroup -WhatIf
 
         Shows what would happen if the command were to run but doesn't actually perform the action.
-#>
+    #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Medium')]
     param (
         [DbaInstanceParameter]$Primary,

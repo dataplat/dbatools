@@ -52,7 +52,7 @@ function New-DbaSsisCatalog {
 
         Creates the SSIS Catalog on server DEV01 with the specified password.
 
-#>
+    #>
     [CmdletBinding(SupportsShouldProcess = $true)]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
@@ -120,4 +120,3 @@ function New-DbaSsisCatalog {
         }
     }
 }
-

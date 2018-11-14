@@ -60,7 +60,7 @@ function Rename-DbaLogin {
 
         WhatIf Example
 
-#>
+    #>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
     param (
         [parameter(Mandatory)]
@@ -151,4 +151,3 @@ function Rename-DbaLogin {
         }
     }
 }
-

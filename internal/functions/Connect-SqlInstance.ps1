@@ -54,7 +54,7 @@ function Connect-SqlInstance {
         Connect-SqlInstance -SqlInstance sql2014
 
         Connect to the Server sql2014 with native credentials.
-    #>
+       #>
     [CmdletBinding()]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidDefaultValueSwitchParameter", "")]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingEmptyCatchBlock", "")]
@@ -348,4 +348,3 @@ function Connect-SqlInstance {
     return $server
     #endregion Input Object was anything else
 }
-

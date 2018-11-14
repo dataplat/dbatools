@@ -87,4 +87,3 @@ $ScriptBlock = {
 }
 
 Register-DbaTeppScriptblock -ScriptBlock $ScriptBlock -Name "tag"
-

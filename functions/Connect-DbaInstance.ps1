@@ -168,7 +168,7 @@ function Connect-DbaInstance {
 
         Connects with ReadOnly ApplicationIntent.
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [Parameter(Mandatory, ValueFromPipeline)]
@@ -389,4 +389,3 @@ function Connect-DbaInstance {
         }
     }
 }
-

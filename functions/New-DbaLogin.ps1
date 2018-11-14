@@ -108,7 +108,7 @@ function New-DbaLogin {
 
         Creates a new Windows Authentication backed login on sql1. The login will be part of the public server role.
 
-#>
+    #>
     [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = "Password", ConfirmImpact = "Low")]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingPlainTextForPassword", "", Justification = "For Parameters Password and MapToCredential")]
     param (
@@ -455,4 +455,3 @@ function New-DbaLogin {
         }
     }
 }
-

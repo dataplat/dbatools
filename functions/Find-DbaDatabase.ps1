@@ -58,7 +58,7 @@ function Find-DbaDatabase {
 
         Returns all database from the SqlInstances that have the same Service Broker GUID with a detailed output
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [Parameter(Mandatory, ValueFromPipeline)]
@@ -130,4 +130,3 @@ function Find-DbaDatabase {
         }
     }
 }
-

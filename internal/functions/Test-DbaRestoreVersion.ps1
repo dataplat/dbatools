@@ -34,7 +34,7 @@ function Test-DbaRestoreVersion {
 
         Checks that the Restore chain in $FilteredFiles is compatible with the SQL Server version of server1\instance1
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Mandatory)]
@@ -90,6 +90,3 @@ function Test-DbaRestoreVersion {
     }
     return $True
 }
-
-
-

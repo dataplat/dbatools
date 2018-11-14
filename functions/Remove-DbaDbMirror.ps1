@@ -57,7 +57,7 @@ function Remove-DbaDbMirror {
 
         Returns all Endpoint(s) for the local and sql2016 SQL Server instances
 
-#>
+    #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
     param (
         [DbaInstanceParameter[]]$SqlInstance,
@@ -104,4 +104,3 @@ function Remove-DbaDbMirror {
         }
     }
 }
-

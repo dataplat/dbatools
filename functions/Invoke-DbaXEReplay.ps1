@@ -61,7 +61,7 @@ function Invoke-DbaXeReplay {
         Runs all batch_text for sql_batch_completed against tempdb on sql2017 and sql2016.
 
 
-#>
+    #>
     [Cmdletbinding()]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseOutputTypeCorrectly", "", Justification = "PSSA Rule Ignored by BOH")]
     param (
@@ -144,4 +144,3 @@ function Invoke-DbaXeReplay {
         Remove-Item -Path $filename -ErrorAction Ignore
     }
 }
-

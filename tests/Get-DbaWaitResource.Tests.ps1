@@ -7,7 +7,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         $paramCount = 5
         $defaultParamCount = 11
         [object[]]$params = (Get-ChildItem function:\Get-DbaWaitResource).Parameters.Keys
-        $knownParameters = 'SqlInstance','SqlCredential','WaitResource','Row','EnableException'
+        $knownParameters = 'SqlInstance', 'SqlCredential', 'WaitResource', 'Row', 'EnableException'
         It "Should contain our specific parameters" {
             ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
         }
@@ -40,7 +40,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 
     }
 
-    Context "Test getting a Page resource"{
+    Context "Test getting a Page resource" {
         $PageSql = "
             Create table #TmpIndex(
                 PageFiD int,
@@ -66,25 +66,25 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             select @pageid=PagePid from #TmpIndex where PageType=10
             select 'PAGE: '+convert(varchar(3),DB_ID())+':1:'+convert(varchar(15),@pageid)
         "
-       $page =  (Invoke-DbaQuery -SqlInstance $script:instance1 -Database $WaitResourceDB -Query $Pagesql).Column1
-       $file = Get-DbaDbFile -SqlInstance $script:instance1 -Database $WaitResourceDB | Where-Object TypeDescription -eq 'ROWS'
-       $results = Get-DbaWaitResource -SqlInstance $script:instance1 -WaitResource $page
-       It "Should return databasename $WaitResourceDB" {
-           $results.DatabaseName | Should Be $WaitResourceDB
-       }
+        $page = (Invoke-DbaQuery -SqlInstance $script:instance1 -Database $WaitResourceDB -Query $Pagesql).Column1
+        $file = Get-DbaDbFile -SqlInstance $script:instance1 -Database $WaitResourceDB | Where-Object TypeDescription -eq 'ROWS'
+        $results = Get-DbaWaitResource -SqlInstance $script:instance1 -WaitResource $page
+        It "Should return databasename $WaitResourceDB" {
+            $results.DatabaseName | Should Be $WaitResourceDB
+        }
 
-       It "Should return physical filename" {
-           $results.DataFilePath | Should Be $file.PhysicalName
-       }
-       It "Should return the correct filename" {
-           $results.DatafileName | Should Be $file.LogicalName
-       }
-       It "Should return ObjectName waittest" {
-           $results.ObjectName | Should be 'waittest'
-       }
-       It "Should return the correct object type" {
-           $Results.ObjectType | Should Be 'USER_TABLE'
-       }
+        It "Should return physical filename" {
+            $results.DataFilePath | Should Be $file.PhysicalName
+        }
+        It "Should return the correct filename" {
+            $results.DatafileName | Should Be $file.LogicalName
+        }
+        It "Should return ObjectName waittest" {
+            $results.ObjectName | Should be 'waittest'
+        }
+        It "Should return the correct object type" {
+            $Results.ObjectType | Should Be 'USER_TABLE'
+        }
     }
 
     Context "Deciphering a KEY WaitResource" {
@@ -117,7 +117,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         It "Should return indexname is idx_pester" {
             $resultskey.IndexName | Should Be 'idx_pester'
         }
-        It "Should return ObjectName keytest"{
+        It "Should return ObjectName keytest" {
             $resultskey.ObjectName | Should Be 'Keytest'
         }
         It "SHould return col1 is 1" {

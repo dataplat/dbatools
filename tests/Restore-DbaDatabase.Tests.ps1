@@ -7,7 +7,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         $paramCount = 45
         $defaultParamCount = 13
         [object[]]$params = (Get-ChildItem function:\Restore-DbaDatabase).Parameters.Keys
-        $knownParameters = 'SqlInstance','SqlCredential','Path','DatabaseName','DestinationDataDirectory','DestinationLogDirectory','DestinationFileStreamDirectory','RestoreTime','NoRecovery','WithReplace','XpDirTree','OutputScriptOnly','VerifyOnly','MaintenanceSolutionBackup','FileMapping','IgnoreLogBackup','useDestinationDefaultDirectories','ReuseSourceFolderStructure','DestinationFilePrefix','RestoredDatabaseNamePrefix','TrustDbBackupHistory','MaxTransferSize','BlockSize','BufferCount','DirectoryRecurse','EnableException','StandbyDirectory','Continue','AzureCredential','ReplaceDbNameInFile','DestinationFileSuffix','Recover','KeepCDC','AllowContinue','GetBackupInformation','StopAfterGetBackupInformation','SelectBackupInformation','StopAfterSelectBackupInformation','FormatBackupInformation','StopAfterFormatBackupInformation','TestBackupInformation','StopAfterTestBackupInformation','PageRestore','PageRestoreTailFolder','StatementTimeout'
+        $knownParameters = 'SqlInstance', 'SqlCredential', 'Path', 'DatabaseName', 'DestinationDataDirectory', 'DestinationLogDirectory', 'DestinationFileStreamDirectory', 'RestoreTime', 'NoRecovery', 'WithReplace', 'XpDirTree', 'OutputScriptOnly', 'VerifyOnly', 'MaintenanceSolutionBackup', 'FileMapping', 'IgnoreLogBackup', 'useDestinationDefaultDirectories', 'ReuseSourceFolderStructure', 'DestinationFilePrefix', 'RestoredDatabaseNamePrefix', 'TrustDbBackupHistory', 'MaxTransferSize', 'BlockSize', 'BufferCount', 'DirectoryRecurse', 'EnableException', 'StandbyDirectory', 'Continue', 'AzureCredential', 'ReplaceDbNameInFile', 'DestinationFileSuffix', 'Recover', 'KeepCDC', 'AllowContinue', 'GetBackupInformation', 'StopAfterGetBackupInformation', 'SelectBackupInformation', 'StopAfterSelectBackupInformation', 'FormatBackupInformation', 'StopAfterFormatBackupInformation', 'TestBackupInformation', 'StopAfterTestBackupInformation', 'PageRestore', 'PageRestoreTailFolder', 'StatementTimeout'
         It "Should contain our specific parameters" {
             ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
         }
@@ -443,7 +443,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         It "Should have left the db in a norecovery state" {
             (Get-DbaDatabase -SqlInstance $script:instance2 -Database ft1).Status | Should Be "Restoring"
         }
-        $Results2  = Restore-DbaDatabase -SqlInstance $script:instance2 -Path $script:appveyorlabrepo\sql2008-backups\ft1\ -Continue
+        $Results2 = Restore-DbaDatabase -SqlInstance $script:instance2 -Path $script:appveyorlabrepo\sql2008-backups\ft1\ -Continue
         It "Should Have restored the database cleanly" {
             ($results.RestoreComplete -contains $false) | Should be $False
             (($results | Measure-Object).count -gt 0) | Should be $True
@@ -465,7 +465,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         It "Should have left the db in a norecovery state" {
             (Get-DbaDatabase -SqlInstance $script:instance2 -Database contest).Status | Should Be "Restoring"
         }
-        $Results2  = Restore-DbaDatabase -SqlInstance $script:instance2 -DatabaseName contest -Path $script:appveyorlabrepo\sql2008-backups\ft1\ -Continue
+        $Results2 = Restore-DbaDatabase -SqlInstance $script:instance2 -DatabaseName contest -Path $script:appveyorlabrepo\sql2008-backups\ft1\ -Continue
         It "Should Have restored the database cleanly" {
             ($results2.RestoreComplete -contains $false) | Should be $False
             (($results2 | Measure-Object).count -gt 0) | Should be $True
@@ -477,7 +477,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
 
     Context "Continue Restore with multiple databases" {
         AfterAll {
-           $null = Get-DbaDatabase -SqlInstance $script:instance2 -ExcludeAllSystemDb | Remove-DbaDatabase -Confirm:$false
+            $null = Get-DbaDatabase -SqlInstance $script:instance2 -ExcludeAllSystemDb | Remove-DbaDatabase -Confirm:$false
         }
         $files = @()
         $files += Get-ChildItem $script:appveyorlabrepo\sql2008-backups\db1\FULL\
@@ -493,7 +493,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         $files = @()
         $files += Get-ChildItem $script:appveyorlabrepo\sql2008-backups\db1\ -Recurse
         $files += Get-ChildItem $script:appveyorlabrepo\sql2008-backups\dbareports\ -Recurse
-        $Results2  = $files | ?{$_.PsIsContainer -eq $false} | Restore-DbaDatabase -SqlInstance $script:instance2 -Continue
+        $Results2 = $files | ? {$_.PsIsContainer -eq $false} | Restore-DbaDatabase -SqlInstance $script:instance2 -Continue
         It "Should Have restored the database cleanly" {
             ($results2.RestoreComplete -contains $false) | Should be $False
             (($results2 | Measure-Object).count -gt 0) | Should be $True
@@ -800,7 +800,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         }
     }
 
-    Context "Don't try to create/test folders with OutputScriptOnly (Issue 4046)"{
+    Context "Don't try to create/test folders with OutputScriptOnly (Issue 4046)" {
         $null = Restore-DbaDatabase -SqlInstance $script:instance2 -Path $script:appveyorlabrepo\RestoreTimeClean\RestoreTimeClean.bak -DestinationDataDirectory g:\DoesNtExist -OutputScriptOnly -WarningVariable warnvar
         It "Should not raise a warning" {
             ('' -eq $warnvar) | Should -Be $True
@@ -811,7 +811,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         Context "Restores From Azure using SAS" {
             BeforeAll {
                 $server = Connect-DbaInstance -SqlInstance $script:instance2
-                if (Get-DbaCredential -SqlInstance $script:instance2 -Name "[$script:azureblob]" ){
+                if (Get-DbaCredential -SqlInstance $script:instance2 -Name "[$script:azureblob]" ) {
                     $sql = "DROP CREDENTIAL [$script:azureblob]"
                     $server.Query($sql)
                 }
@@ -848,7 +848,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
                 Get-DbaDatabase -SqlInstance $script:instance2 -Database "dbatoolsci_azure" | Remove-DbaDatabase -Confirm:$false
             }
             It "Should restore cleanly" {
-                $results = @("$script:azureblob/az-1.bak","$script:azureblob/az-2.bak","$script:azureblob/az-3.bak") | Restore-DbaDatabase -SqlInstance $script:instance2 -DatabaseName azstripetest  -WithReplace -ReplaceDbNameInFile
+                $results = @("$script:azureblob/az-1.bak", "$script:azureblob/az-2.bak", "$script:azureblob/az-3.bak") | Restore-DbaDatabase -SqlInstance $script:instance2 -DatabaseName azstripetest  -WithReplace -ReplaceDbNameInFile
                 $results.RestoreComplete | Should Be $True
             }
         }

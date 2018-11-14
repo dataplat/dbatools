@@ -68,7 +68,7 @@ function Copy-DbaAgentServer {
 
         Shows what would happen if the command were executed.
 
-#>
+    #>
     [cmdletbinding(SupportsShouldProcess = $true)]
     param (
         [parameter(Mandatory)]
@@ -172,4 +172,3 @@ function Copy-DbaAgentServer {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-DbaSqlServerAgent
     }
 }
-

@@ -91,7 +91,7 @@ function Test-DbaBuild {
 
         Integrate with other cmdlets to have builds checked for all your registered servers on sqlserver2014a
 
-#>
+    #>
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "")]
     [CmdletBinding()]
     param (
@@ -282,4 +282,3 @@ function Test-DbaBuild {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Test-DbaSqlBuild
     }
 }
-

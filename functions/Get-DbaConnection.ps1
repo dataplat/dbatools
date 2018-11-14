@@ -35,7 +35,7 @@ function Get-DbaConnection {
 
         Returns client connection information from sql2016 and sql2017
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
@@ -78,4 +78,3 @@ function Get-DbaConnection {
         }
     }
 }
-

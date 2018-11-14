@@ -35,7 +35,7 @@ function Get-DbaErrorLogConfig {
 
         Returns error log configuration for server2017 and server2014
 
-#>
+    #>
     [cmdletbinding()]
     param (
         [Parameter(ValueFromPipeline, Mandatory)]
@@ -70,4 +70,3 @@ function Get-DbaErrorLogConfig {
         }
     }
 }
-

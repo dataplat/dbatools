@@ -4,13 +4,12 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tags "UnitTests" {
     Context "Validate parameters" {
-        $knownParameters = 'SqlInstance','SqlCredential','Endpoint', 'InputObject', 'EnableException'
+        $knownParameters = 'SqlInstance', 'SqlCredential', 'Endpoint', 'InputObject', 'EnableException'
         $SupportShouldProcess = $false
         $paramCount = $knownParameters.Count
         if ($SupportShouldProcess) {
             $defaultParamCount = 13
-        }
-        else {
+        } else {
             $defaultParamCount = 11
         }
         $command = Get-Command -Name $CommandName

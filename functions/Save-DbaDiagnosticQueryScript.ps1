@@ -34,7 +34,7 @@ function Save-DbaDiagnosticQueryScript {
         Downloads the most recent version of all Glenn Berry DMV scripts to the specified location.
         If Path is not specified, the "My Documents" location will be used.
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [System.IO.FileInfo]$Path = [Environment]::GetFolderPath("mydocuments"),
@@ -102,4 +102,3 @@ function Save-DbaDiagnosticQueryScript {
         }
     }
 }
-
