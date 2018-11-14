@@ -65,6 +65,7 @@ Register-DbaTeppArgumentCompleter -Command $names -Parameter Session -Name Sessi
 Register-DbaTeppArgumentCompleter -Command $names -Parameter Snapshot -Name Snapshot -All
 Register-DbaTeppArgumentCompleter -Command $names -Parameter SqlInstance -Name SqlInstance -All
 Register-DbaTeppArgumentCompleter -Command $names -Parameter InstanceProperty -Name InstanceProperty -All
+Register-DbaTeppArgumentCompleter -Command $names -Parameter PowerPlan -Name PowerPlan -All
 #endregion Automatic TEPP by parameter name
 
 #region Explicit TEPP
