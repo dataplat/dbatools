@@ -7,7 +7,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         $paramCount = 13
         $defaultParamCount = 11
         [object[]]$params = (Get-ChildItem function:\Invoke-DbaQuery).Parameters.Keys
-        $knownParameters = 'SqlInstance','SqlCredential','Database','Query','QueryTimeout','File','SqlObject','As','SqlParameters','AppendServerInstance','MessagesToOutput','InputObject','EnableException'
+        $knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'Query', 'QueryTimeout', 'File', 'SqlObject', 'As', 'SqlParameters', 'AppendServerInstance', 'MessagesToOutput', 'InputObject', 'EnableException'
         It "Should contain our specific parameters" {
             ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
         }
@@ -104,7 +104,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         foreach ($result in $results) {
             $result.TestColumn | Should -Be 'hello'
         }
-    }#>
+    }    #>
     It "supports queries with GO statements" {
         $Query = @'
 SELECT DB_NAME() as dbname

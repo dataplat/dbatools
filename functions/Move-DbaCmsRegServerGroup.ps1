@@ -56,7 +56,7 @@ function Move-DbaCmsRegServerGroup {
 
         Moves the Development group within HR to the Web group
 
-#>
+    #>
     [CmdletBinding(SupportsShouldProcess)]
     param (
         [Alias("ServerInstance", "SqlServer")]
@@ -121,4 +121,3 @@ function Move-DbaCmsRegServerGroup {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Move-DbaRegisteredServerGroup
     }
 }
-

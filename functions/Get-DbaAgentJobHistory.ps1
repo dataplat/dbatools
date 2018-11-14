@@ -101,7 +101,7 @@ function Get-DbaAgentJobHistory {
 
         Gets all jobs with the name that match the regex pattern "backup" and then gets the job history from those. You can also use -Like *backup* in this example.
 
-#>
+    #>
     [CmdletBinding(DefaultParameterSetName = "Default")]
     param (
         [parameter(Mandatory, ValueFromPipeline, ParameterSetName = "Server")]
@@ -304,4 +304,3 @@ function Get-DbaAgentJobHistory {
         }
     }
 }
-

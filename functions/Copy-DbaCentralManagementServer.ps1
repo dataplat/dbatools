@@ -72,7 +72,7 @@ function Copy-DbaCentralManagementServer {
 
         If SwitchServerName is not specified, "sqlcluster" will be skipped.
 
-#>
+    #>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
     param (
         [parameter(Mandatory)]
@@ -318,4 +318,3 @@ function Copy-DbaCentralManagementServer {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-SqlCentralManagementServer
     }
 }
-

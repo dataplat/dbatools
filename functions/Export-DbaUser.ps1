@@ -106,7 +106,7 @@ function Export-DbaUser {
         Exports ONLY users from db1 and db2 database on sqlserver2008 server, to the C:\temp\users.sql file without the 'GO' batch separator.
 
 
-#>
+    #>
     [CmdletBinding(DefaultParameterSetName = "Default")]
     [OutputType([String])]
     param (
@@ -459,4 +459,3 @@ function Export-DbaUser {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Export-SqlUser
     }
 }
-

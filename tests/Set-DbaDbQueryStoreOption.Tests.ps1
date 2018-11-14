@@ -7,7 +7,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         $paramCount = 13
         $defaultParamCount = 13
         [object[]]$params = (Get-ChildItem function:\Set-DbaDbQueryStoreOption).Parameters.Keys
-        $knownParameters = 'SqlInstance','SqlCredential','Database','ExcludeDatabase','AllDatabases','State','FlushInterval','CollectionInterval','MaxSize','CaptureMode','CleanupMode','StaleQueryThreshold','EnableException'
+        $knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'AllDatabases', 'State', 'FlushInterval', 'CollectionInterval', 'MaxSize', 'CaptureMode', 'CleanupMode', 'StaleQueryThreshold', 'EnableException'
         It "Should contain our specific parameters" {
             ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
         }
@@ -30,8 +30,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
                 It "should warn" {
                     $warning | Should Not Be $null
                 }
-            }
-            else {
+            } else {
                 It "should return some valid results" {
                     $result = $results | Where-Object Database -eq msdb
                     $result.ActualState | Should Be 'Off'

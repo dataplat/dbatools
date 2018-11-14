@@ -62,7 +62,7 @@ function Get-DbaQueryExecutionTime {
 
         Return the top 100 slowest stored procedures or statements on server sql2008 for only the TestDB database, limiting results to queries with more than 200 total executions and an execution time over 1000ms or higher.
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Position = 0, Mandatory, ValueFromPipeline)]
@@ -235,4 +235,3 @@ function Get-DbaQueryExecutionTime {
         }
     }
 }
-

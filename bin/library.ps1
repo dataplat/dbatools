@@ -39,8 +39,7 @@ if (([System.Management.Automation.PSTypeName]'Sqlcollaborative.Dbatools.Configu
     # No need to load the library again, if the module was once already imported.
     Write-Verbose -Message "Library already loaded, will not load again"
     $ImportLibrary = $false
-}
-else {
+} else {
     Write-Verbose -Message "Library not present already, will import"
     $ImportLibrary = $true
 }
@@ -54,8 +53,7 @@ if ($ImportLibrary) {
         if ($script:strictSecurityMode) {
             if (Test-Path -Path "$libraryBase\dbatools.dll") {
                 Add-Type -Path "$libraryBase\dbatools.dll" -ErrorAction Stop
-            }
-            else {
+            } else {
                 throw "Library not found, terminating!"
             }
         }
@@ -70,17 +68,14 @@ if ($ImportLibrary) {
                     Write-Verbose -Message "Found library, trying to copy & import"
                     if ($libraryBase -ne $script:DllRoot) { Copy-Item -Path "$libraryBase\dbatools.dll" -Destination $script:DllRoot -Force -ErrorAction Stop }
                     Add-Type -Path "$script:DllRoot\dbatools.dll" -ErrorAction Stop
-                }
-                catch {
+                } catch {
                     Write-Verbose -Message "Failed to copy&import, attempting to import straight from the module directory"
                     Add-Type -Path "$libraryBase\dbatools.dll" -ErrorAction Stop
                 }
                 Write-Verbose -Message "Total duration: $((Get-Date) - $start)"
-            }
-            elseif ($hasProject) {
+            } elseif ($hasProject) {
                 . Import-ModuleFile "$($script:PSModuleRoot)\bin\build-project.ps1"
-            }
-            else {
+            } else {
                 throw "No valid dbatools library found! Check your module integrity"
             }
         }
@@ -89,8 +84,7 @@ if ($ImportLibrary) {
         Update-TypeData -TypeName "Sqlcollaborative.Dbatools.dbaSystem.DbatoolsException" -SerializationDepth 2 -ErrorAction Ignore
         Update-TypeData -TypeName "Sqlcollaborative.Dbatools.dbaSystem.DbatoolsExceptionRecord" -SerializationDepth 2 -ErrorAction Ignore
         #endregion PowerShell TypeData
-    }
-    catch {
+    } catch {
         #region Warning
         Write-Warning @'
 Dear User,
@@ -139,4 +133,3 @@ If the issues continue to persist, please Remove-Item '$script:PSModuleRoot\bin\
 "@
 }
 #endregion Version Warning
-

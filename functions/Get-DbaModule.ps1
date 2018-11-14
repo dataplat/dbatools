@@ -67,7 +67,7 @@ function Get-DbaModule {
 
         Return all modules on server sql2008 for all databases that are triggers, views or scalar functions.
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [Parameter(Mandatory, ValueFromPipeline)]
@@ -178,4 +178,3 @@ function Get-DbaModule {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-DbaSqlModule
     }
 }
-

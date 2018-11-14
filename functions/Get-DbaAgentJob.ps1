@@ -68,7 +68,7 @@ function Get-DbaAgentJob {
 
         Find all of your Jobs from SQL Server instances in the $servers collection, select the jobs you want to start then see jobs would start if you ran Start-DbaAgentJob
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Position = 0, Mandatory, ValueFromPipeline)]
@@ -113,4 +113,3 @@ function Get-DbaAgentJob {
         }
     }
 }
-

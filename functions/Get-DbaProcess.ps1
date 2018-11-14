@@ -73,7 +73,7 @@ function Get-DbaProcess {
 
         Shows information about the processes that were initiated by hosts (computers/clients) workstationx and server 1000.
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
@@ -201,4 +201,3 @@ function Get-DbaProcess {
         }
     }
 }
-

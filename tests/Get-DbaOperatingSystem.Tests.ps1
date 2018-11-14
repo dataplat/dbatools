@@ -9,8 +9,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         $SupportShouldProcess = $false
         if ($SupportShouldProcess) {
             $defaultParamCount = 13
-        }
-        else {
+        } else {
             $defaultParamCount = 11
         }
         $command = Get-Command -Name $CommandName
@@ -36,10 +35,10 @@ Describe "Get-DbaOperatingSystem Integration Test" -Tag "IntegrationTests" {
     $props = 'ComputerName', 'Manufacturer', 'Organization',
     'Architecture', 'Build', 'Version', 'InstallDate', 'LastBootTime', 'LocalDateTime',
     'BootDevice', 'TimeZone', 'TimeZoneDaylight', 'TimeZoneStandard', 'TotalVisibleMemory',
-    'OSVersion', 'SPVersion', 'PowerShellVersion', 'SystemDevice', 'SystemDrive','WindowsDirectory',
-    'PagingFileSize','FreePhysicalMemory','TotalVirtualMemory','FreeVirtualMemory','ActivePowerPlan',
-    'Status','Language','LanguageId','LanguageKeyboardLayoutId','LanguageTwoLetter','LanguageThreeLetter'
-    'LanguageAlias','LanguageNative','CodeSet','CountryCode','Locale','IsWsfc'
+    'OSVersion', 'SPVersion', 'PowerShellVersion', 'SystemDevice', 'SystemDrive', 'WindowsDirectory',
+    'PagingFileSize', 'FreePhysicalMemory', 'TotalVirtualMemory', 'FreeVirtualMemory', 'ActivePowerPlan',
+    'Status', 'Language', 'LanguageId', 'LanguageKeyboardLayoutId', 'LanguageTwoLetter', 'LanguageThreeLetter'
+    'LanguageAlias', 'LanguageNative', 'CodeSet', 'CountryCode', 'Locale', 'IsWsfc'
 
     <#
         FreePhysicalMemory: units = KB
@@ -47,7 +46,7 @@ Describe "Get-DbaOperatingSystem Integration Test" -Tag "IntegrationTests" {
         TimeZoneStandard: StandardName from win32_timezone
         TimeZoneDaylight: DaylightName from win32_timezone
         TimeZone: Caption from win32_timezone
-    #>
+       #>
     Context "Validate standard output" {
         foreach ($prop in $props) {
             $p = $result.PSObject.Properties[$prop]
@@ -62,4 +61,3 @@ Describe "Get-DbaOperatingSystem Integration Test" -Tag "IntegrationTests" {
         }
     }
 }
-

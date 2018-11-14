@@ -39,7 +39,7 @@ function Get-DbaTempdbUsage {
 
         Gets tempdb usage for localhost\SQLDEV2K14
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
@@ -132,4 +132,3 @@ OPTION (RECOMPILE);"
         }
     }
 }
-

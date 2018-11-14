@@ -53,7 +53,7 @@ function Remove-DbaCmsRegServerGroup {
 
         Removes the Development subgroup within the HR group on sql2012 and turns off all prompting
 
-#>
+    #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
     param (
         [Alias("ServerInstance", "SqlServer")]
@@ -98,4 +98,3 @@ function Remove-DbaCmsRegServerGroup {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Remove-DbaRegisteredServerGroup
     }
 }
-

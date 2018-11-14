@@ -7,7 +7,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         $paramCount = 6
         $defaultParamCount = 11
         [object[]]$params = (Get-ChildItem function:\Get-DbaDbUser).Parameters.Keys
-        $knownParameters = 'SqlInstance','SqlCredential','Database','ExcludeDatabase','ExcludeSystemUser','EnableException'
+        $knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'ExcludeSystemUser', 'EnableException'
         It "Should contain our specific parameters" {
             ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
         }
@@ -18,10 +18,10 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 }
 
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
-    BeforeAll{
+    BeforeAll {
         $tempguid = [guid]::newguid();
         $DBUserName = "dbatoolssci_$($tempguid.guid)"
-$CreateTestUser = @"
+        $CreateTestUser = @"
 CREATE LOGIN [$DBUserName]
     WITH PASSWORD = '$($tempguid.guid)';
 USE Master;
@@ -30,7 +30,7 @@ CREATE USER [$DBUserName] FOR LOGIN [$DBUserName]
 "@
         Invoke-DbaQuery -SqlInstance $script:instance2 -Query $CreateTestUser -Database master
     }
-    AfterAll{
+    AfterAll {
         $DropTestUser = "DROP User [$DBUserName];"
         Invoke-DbaQuery -SqlInstance $script:instance2 -Query $DropTestUser -Database master
     }
@@ -39,11 +39,11 @@ CREATE USER [$DBUserName] FOR LOGIN [$DBUserName]
         $results1 = Get-DbaDbUser -SqlInstance $script:instance2 -Database master | Where-object {$_.name -eq "$DBUserName"} | Select-Object *
         $results2 = Get-DbaDbUser -SqlInstance $script:instance2
 
-        It "Should execute and return results"{
+        It "Should execute and return results" {
             $results2 | Should -Not -Be $null
         }
 
-        It "Should execute against Master and return results"{
+        It "Should execute against Master and return results" {
             $results1 | Should -Not -Be $null
         }
 

@@ -24,9 +24,9 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
                     param($query)
                     if ($query -eq "SELECT DB_NAME(database_id) AS Name, physical_name AS PhysicalName FROM sys.master_files") {
                         return @(
-                        @{ "Name"         = "master"
-                           "PhysicalName" = "C:\temp\master.mdf"
-                        }
+                            @{ "Name"          = "master"
+                                "PhysicalName" = "C:\temp\master.mdf"
+                            }
                         )
                     }
                 }
@@ -70,9 +70,9 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
                     param($query)
                     if ($query -eq "SELECT DB_NAME(database_id) AS Name, physical_name AS PhysicalName FROM sys.master_files") {
                         return @(
-                        @{ "Name"         = "master"
-                           "PhysicalName" = "C:\temp\master.mdf"
-                        }
+                            @{ "Name"          = "master"
+                                "PhysicalName" = "C:\temp\master.mdf"
+                            }
                         )
                     }
                 }
@@ -116,9 +116,9 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
                     param($query)
                     if ($query -eq "SELECT DB_NAME(database_id) AS Name, physical_name AS PhysicalName FROM sys.master_files") {
                         return @(
-                        @{ "Name"         = "master"
-                           "PhysicalName" = "C:\temp\master.mdf"
-                        }
+                            @{ "Name"          = "master"
+                                "PhysicalName" = "C:\temp\master.mdf"
+                            }
                         )
                     }
                 }
@@ -162,9 +162,9 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
                     param($query)
                     if ($query -eq "SELECT DB_NAME(database_id) AS Name, physical_name AS PhysicalName FROM sys.master_files") {
                         return @(
-                        @{ "Name"         = "master"
-                           "PhysicalName" = "C:\temp\master.mdf"
-                        }
+                            @{ "Name"          = "master"
+                                "PhysicalName" = "C:\temp\master.mdf"
+                            }
                         )
                     }
                 }
@@ -208,9 +208,9 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
                     param($query)
                     if ($query -eq "SELECT DB_NAME(database_id) AS Name, physical_name AS PhysicalName FROM sys.master_files") {
                         return @(
-                        @{ "Name"         = "master"
-                           "PhysicalName" = "C:\temp\master.mdf"
-                        }
+                            @{ "Name"          = "master"
+                                "PhysicalName" = "C:\temp\master.mdf"
+                            }
                         )
                     }
                 }

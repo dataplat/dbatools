@@ -46,7 +46,7 @@ function Get-DbaNetworkActivity {
 
         Gets the Current traffic on every Network Interface on computers sql1 and sql2, and shows them in a grid view.
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(ValueFromPipeline)]
@@ -89,4 +89,3 @@ function Get-DbaNetworkActivity {
         } #foreach computer
     } #PROCESS
 } #function
-

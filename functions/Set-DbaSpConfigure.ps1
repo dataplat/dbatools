@@ -66,7 +66,7 @@ function Set-DbaSpConfigure {
 
         Returns information on the action that would be performed. No actual change will be made.
 
-#>
+    #>
     [CmdletBinding(SupportsShouldProcess)]
     param (
         [Alias("ServerInstance", "SqlServer")]
@@ -129,4 +129,3 @@ function Set-DbaSpConfigure {
         }
     }
 }
-

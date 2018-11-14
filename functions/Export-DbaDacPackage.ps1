@@ -84,7 +84,7 @@ function Export-DbaDacPackage {
         PS C:\> Export-DbaDacPackage -SqlInstance sql2016 -Database SharePoint_Config -Path C:\temp -ExtendedParameters $moreparams
 
         Using extended parameters to over-write the files and performs the extraction in quiet mode. Uses command line instead of SMO behind the scenes.
-#>
+    #>
     [CmdletBinding(DefaultParameterSetName = 'SMO')]
     param
     (

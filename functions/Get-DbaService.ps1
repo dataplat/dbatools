@@ -88,7 +88,7 @@ function Get-DbaService {
 
         Calls a Restart method for each Engine service on computer sql1.
 
-#>
+    #>
     [CmdletBinding(DefaultParameterSetName = "Search")]
     param (
         [parameter(ValueFromPipeline, Position = 1)]
@@ -274,4 +274,3 @@ function Get-DbaService {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-DbaSqlService
     }
 }
-

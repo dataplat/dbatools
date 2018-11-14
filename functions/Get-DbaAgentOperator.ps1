@@ -54,7 +54,7 @@ function Get-DbaAgentOperator {
 
         Returns all the SQL Agent operators on ServerA and ServerB, except the Dba3 operator.
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Position = 0, Mandatory, ValueFromPipeline)]
@@ -120,4 +120,3 @@ function Get-DbaAgentOperator {
         }
     }
 }
-

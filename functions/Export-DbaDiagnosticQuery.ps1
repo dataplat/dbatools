@@ -53,7 +53,7 @@ function Export-DbaDiagnosticQuery {
 
         Converts output from Invoke-DbaDiagnosticQuery to Excel worksheet(s) in the Documents folder
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
@@ -176,4 +176,3 @@ function Export-DbaDiagnosticQuery {
         }
     }
 }
-

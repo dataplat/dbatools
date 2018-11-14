@@ -66,7 +66,7 @@ function New-DbaDbCertificate {
 
         Suppresses all prompts to install but prompts to securely enter your password and creates a certificate in the 'db1' database
 
-#>
+    #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
     param (
         [DbaInstanceParameter[]]$SqlInstance,
@@ -140,4 +140,3 @@ function New-DbaDbCertificate {
         }
     }
 }
-

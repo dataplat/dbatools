@@ -41,7 +41,7 @@ function Remove-DbaCmConnection {
 
         Clears the entire connection cache.
 
-#>
+    #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
     param (
         [Parameter(ValueFromPipeline, Mandatory)]
@@ -74,4 +74,3 @@ function Remove-DbaCmConnection {
         Write-Message -Level InternalComment -Message "Ending"
     }
 }
-

@@ -73,7 +73,7 @@ function Copy-DbaExtendedEvent {
 
         Copies only the Extended Events named CheckQueries and MonitorUserDefinedException from sqlserver2014a to sqlcluster.
 
-#>
+    #>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
     param (
         [parameter(Mandatory)]
@@ -192,4 +192,3 @@ function Copy-DbaExtendedEvent {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-SqlExtendedEvent
     }
 }
-

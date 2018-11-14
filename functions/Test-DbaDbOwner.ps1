@@ -54,7 +54,7 @@ function Test-DbaDbOwner {
 
         Returns all databases where the owner does not match 'DOMAIN\account'.
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Mandatory)]
@@ -128,4 +128,3 @@ function Test-DbaDbOwner {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Test-DbaDatabaseOwner
     }
 }
-

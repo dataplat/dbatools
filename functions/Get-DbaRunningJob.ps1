@@ -47,7 +47,7 @@ function Get-DbaRunningJob {
 
         Returns all active jobs on multiple instances piped into the function.
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(ValueFromPipeline)]

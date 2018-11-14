@@ -61,7 +61,7 @@ function Stop-DbaAgentJob {
 
         Stops the cdc.DBWithCDC_capture SQL Agent Job on sql2016
 
-#>
+    #>
     [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = "Default")]
     param (
         [parameter(Mandatory, ParameterSetName = "Instance")]
@@ -129,4 +129,3 @@ function Stop-DbaAgentJob {
         }
     }
 }
-

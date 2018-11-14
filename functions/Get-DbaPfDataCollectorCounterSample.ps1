@@ -87,7 +87,7 @@ function Get-DbaPfDataCollectorCounterSample {
 
         Gets a single sample for all counters for the 'System Correlation' CollectorSet.
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [DbaInstance[]]$ComputerName = $env:COMPUTERNAME,
@@ -196,4 +196,3 @@ function Get-DbaPfDataCollectorCounterSample {
         }
     }
 }
-

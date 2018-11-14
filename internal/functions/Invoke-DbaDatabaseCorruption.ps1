@@ -50,7 +50,7 @@ function Invoke-DbaDbCorruption {
       .EXAMPLE
       Invoke-DbaDbCorruption -SqlInstance sql2016 -Database containeddb -Table Customers -Confirm:$false
       Does not prompt and immediately corrupts table customers in database containeddb on the sql2016 instance (by putting database into single user mode, writing to garbage to its first non-iam page, and returning it to multi-user.)
-  #>
+     #>
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'High')]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
@@ -183,5 +183,3 @@ function Invoke-DbaDbCorruption {
         }
     }
 }
-
-

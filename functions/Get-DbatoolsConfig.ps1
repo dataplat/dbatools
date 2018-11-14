@@ -41,7 +41,7 @@ function Get-DbatoolsConfig {
 
         Retrieve all configuration elements from all modules, even hidden ones.
 
-#>
+    #>
     [CmdletBinding(DefaultParameterSetName = "FullName")]
     param (
         [Parameter(ParameterSetName = "FullName", Position = 0)]
@@ -67,4 +67,3 @@ function Get-DbatoolsConfig {
     }
     Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-DbaConfig
 }
-

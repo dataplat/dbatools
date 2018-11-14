@@ -7,7 +7,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         $paramCount = 5
         $defaultParamCount = 13
         [object[]]$params = (Get-ChildItem function:\New-DbaSsisCatalog).Parameters.Keys
-        $knownParameters = 'SqlInstance','SqlCredential','Password','SsisCatalog','EnableException'
+        $knownParameters = 'SqlInstance', 'SqlCredential', 'Password', 'SsisCatalog', 'EnableException'
         It "Should contain our specific parameters" {
             ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
         }
@@ -32,8 +32,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
                 if (-not $env:APPVEYOR_REPO_BRANCH) {
                     Write-Warning "$warn"
                 }
-            }
-            else {
+            } else {
                 It "uses the specified database" {
                     $results.SsisCatalog | Should Be $database
                 }

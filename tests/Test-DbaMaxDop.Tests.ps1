@@ -32,19 +32,19 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     AfterAll {
         Get-DbaDatabase -SqlInstance $script:instance2 -Database $db1 | Remove-DbaDatabase -Confirm:$false
     }
-    
+
     # Just not messin with this in appveyor
     if ($setupright) {
         Context "Command works on SQL Server 2016 or higher instances" {
             $results = Test-DbaMaxDop -SqlInstance $script:instance2
-            
+
             It "Should have correct properties" {
                 $ExpectedProps = 'ComputerName,InstanceName,SqlInstance,Database,DatabaseMaxDop,CurrentInstanceMaxDop,RecommendedMaxDop,Notes'.Split(',')
                 foreach ($result in $results) {
                     ($result.PSStandardMembers.DefaultDIsplayPropertySet.ReferencedPropertyNames | Sort-Object) | Should Be ($ExpectedProps | Sort-Object)
                 }
             }
-            
+
             It "Should have only one result for database name of dbatoolsci_testMaxDop" {
                 @($results | Where-Object Database -eq dbatoolsci_testMaxDop).Count | Should Be 1
             }

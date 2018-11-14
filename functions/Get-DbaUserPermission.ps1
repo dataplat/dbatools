@@ -63,7 +63,7 @@ function Get-DbaUserPermission {
         Check server and database permissions on server sql2008 for only the TestDB database,
         including public and guest grants, and sys schema objects.
 
-    #>
+       #>
     [CmdletBinding()]
     param (
         [parameter(Position = 0, Mandatory, ValueFromPipeline)]

@@ -59,7 +59,7 @@ function Get-DbaDbMemoryUsage {
         PS C:\> Get-DbaMemoryUsage -SqlInstance sql2 -IncludeSystemDb -Exclude 'master','model','msdb','ResourceDb'
 
         Returns the buffer pool consumption for all user databases and tempdb database
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Position = 0, Mandatory, ValueFromPipeline)]
@@ -137,4 +137,3 @@ function Get-DbaDbMemoryUsage {
         }
     }
 }
-

@@ -57,7 +57,7 @@ function Test-DbaDeprecatedFeature {
 
         Check deprecated features on server sql2008 for only the TestDB database
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [Alias("ServerInstance", "SqlServer", "SqlServers")]
@@ -105,4 +105,3 @@ function Test-DbaDeprecatedFeature {
         }
     }
 }
-

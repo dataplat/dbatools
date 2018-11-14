@@ -28,7 +28,7 @@ function Get-TableNameParts {
         Get-TableNameParts '[Bad. Name]]].[Schema.With.Dots]]].[Another .Silly]] Name..]'
 
         Parses a three-part name into its constitute parts. Uses square brackets to enclose special characters.
-#>
+    #>
     param (
         [string]$Table
     )
@@ -106,4 +106,3 @@ function Get-TableNameParts {
         return $fqtns
     }
 }
-

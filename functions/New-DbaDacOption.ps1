@@ -57,7 +57,7 @@ function New-DbaDacOption {
 
         Uses DacOption object to set Deployment Options and publish the db.dacpac dacpac file as DB1 on sql2016
 
-#>
+    #>
     [CmdletBinding(SupportsShouldProcess)]
     Param (
         [ValidateSet('Dacpac', 'Bacpac')]
@@ -111,5 +111,3 @@ function New-DbaDacOption {
         }
     }
 }
-
-

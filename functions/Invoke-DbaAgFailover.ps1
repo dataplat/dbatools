@@ -57,7 +57,7 @@ function Invoke-DbaAgFailover {
         PS C:\> Invoke-DbaAgFailover -SqlInstance sql2017 -AvailabilityGroup SharePoint -Force
 
         Forcefully (with potential data loss) fails over the SharePoint AG on sql2017. Prompts for confirmation.
-#>
+    #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
     param (
         [parameter(Mandatory)]
@@ -97,4 +97,3 @@ function Invoke-DbaAgFailover {
         }
     }
 }
-

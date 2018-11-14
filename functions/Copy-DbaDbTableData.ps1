@@ -150,7 +150,7 @@ function Copy-DbaDbTableData {
         Copies all the data from table [Schema].[Table] in database dbatools_from on sql1 to table [dbo].[Table.Copy] in database dbatools_dest on sql2
         Keeps identity columns and Nulls, truncates the destination and processes in BatchSize of 10000.
 
-#>
+    #>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
     param (
         [Alias("ServerInstance", "SqlServer", "Source")]
@@ -251,7 +251,7 @@ function Copy-DbaDbTableData {
                         continue
                     }
                 }
-                
+
             } catch {
                 Stop-Function -Message "Unable to determine source table : $Table"
                 return
@@ -373,4 +373,3 @@ function Copy-DbaDbTableData {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-DbaTableData
     }
 }
-

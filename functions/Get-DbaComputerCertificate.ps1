@@ -53,7 +53,7 @@ function Get-DbaComputerCertificate {
 
         Gets computer certificates on sql2016 that match thumbprints 8123472E32AB412ED4288888B83811DB8F504DED or 04BFF8B3679BB01A986E097868D8D494D70A46D6
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(ValueFromPipeline)]
@@ -120,4 +120,3 @@ function Get-DbaComputerCertificate {
         }
     }
 }
-

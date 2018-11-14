@@ -9,8 +9,7 @@ Describe "$CommandName Unit Tests" -Tags "UnitTests" {
         $paramCount = $knownParameters.Count
         if ($SupportShouldProcess) {
             $defaultParamCount = 13
-        }
-        else {
+        } else {
             $defaultParamCount = 11
         }
         $command = Get-Command -Name $CommandName
@@ -31,8 +30,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
         $db = Get-DbaDatabase -SqlInstance $script:instance2 -Database msdb
         if (($db.Tables['dbm_monitor_data'].Name)) {
             $putback = $true
-        }
-        else {
+        } else {
             $null = Add-DbaDbMirrorMonitor -SqlInstance $script:instance2 -WarningAction SilentlyContinue
         }
     }

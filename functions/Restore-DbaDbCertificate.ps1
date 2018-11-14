@@ -57,7 +57,7 @@ function Restore-DbaDbCertificate {
 
         Restores the DatabaseTDE certificate to Server1 and uses the MasterKey to encrypt the private key.
 
-#>
+    #>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess, ConfirmImpact = "High")]
     param (
         [Parameter(Mandatory)]
@@ -122,4 +122,3 @@ function Restore-DbaDbCertificate {
 
     }
 }
-
