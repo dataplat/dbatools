@@ -81,7 +81,6 @@ function Set-DbaPowerPlan {
         [Alias("ServerInstance", "SqlServer", "SqlInstance")]
         [object[]]$ComputerName,
         [PSCredential]$Credential,
-        [ValidateSet('High Performance', 'Balanced', 'Power saver')]
         [string]$PowerPlan = 'High Performance',
         [string]$CustomPowerPlan,
         [switch][Alias('Silent')]
@@ -170,11 +169,11 @@ function Set-DbaPowerPlan {
                             if ($cimInstance) {
                                 $cimResult = Invoke-CimMethod -InputObject $cimInstance[0] -MethodName Activate -CimSession $cimSession
                                 if (!$cimResult) {
-                                    Stop-Function -Message "Couldn't set the reqested Power Plan '$powerPlanRequested' on $server." -Category ConnectionError -Target $server
+                                    Stop-Function -Message "Couldn't set the requested Power Plan '$powerPlanRequested' on $server." -Category ConnectionError -Target $server
                                     return
                                 }
                             } else {
-                                Stop-Function -Message "Couldn't find the reqested Power Plan '$powerPlanRequested' on $server." -Category ConnectionError -Target $server
+                                Stop-Function -Message "Couldn't find the requested Power Plan '$powerPlanRequested' on $server." -Category ConnectionError -Target $server
                                 return
                             }
                         } else {
