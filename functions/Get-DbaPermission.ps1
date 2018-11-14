@@ -67,7 +67,7 @@ function Get-DbaPermission {
 
         Returns a custom object with permissions for the master database.
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
@@ -249,4 +249,3 @@ function Get-DbaPermission {
         }
     }
 }
-

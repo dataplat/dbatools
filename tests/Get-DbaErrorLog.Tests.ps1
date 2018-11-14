@@ -7,7 +7,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         $paramCount = 8
         $defaultParamCount = 11
         [object[]]$params = (Get-ChildItem function:\Get-DbaErrorLog).Parameters.Keys
-        $knownParameters = 'SqlInstance','SqlCredential','LogNumber','Source','Text','After','Before','EnableException'
+        $knownParameters = 'SqlInstance', 'SqlCredential', 'LogNumber', 'Source', 'Text', 'After', 'Before', 'EnableException'
         It "Should contain our specific parameters" {
             ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
         }
@@ -38,8 +38,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $sqlCred = New-Object System.Management.Automation.PSCredential($login, $pwd)
             try {
                 Connect-DbaInstance -SqlInstance $script:instance1 -Credential $sqlCred -ErrorVariable $whatever
-            }
-            catch {}
+            } catch {}
         }
         It "Has the correct default properties" {
             $expectedProps = 'ComputerName,InstanceName,SqlInstance,LogDate,Source,Text'.Split(',')

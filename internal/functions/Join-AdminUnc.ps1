@@ -2,7 +2,7 @@ function Join-AdminUnc {
     <#
     .SYNOPSIS
     Internal function. Parses a path to make it an admin UNC.
-#>
+    #>
     [CmdletBinding()]
     param (
         [Parameter(Mandatory)]
@@ -24,5 +24,3 @@ function Join-AdminUnc {
         return $newpath
     } else { return }
 }
-
-

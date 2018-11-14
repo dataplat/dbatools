@@ -2,7 +2,7 @@ function Test-SqlLoginAccess {
     <#
     .SYNOPSIS
         Internal function. Ensures login has access on SQL Server.
-#>
+    #>
     [CmdletBinding()]
     param (
         [Parameter(Mandatory)]
@@ -31,5 +31,3 @@ function Test-SqlLoginAccess {
     }
     return $true
 }
-
-

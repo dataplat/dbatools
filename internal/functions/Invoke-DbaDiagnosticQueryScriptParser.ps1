@@ -70,5 +70,3 @@ function Invoke-DbaDiagnosticQueryScriptParser {
     $ParsedScript += $newscript
     $ParsedScript
 }
-
-

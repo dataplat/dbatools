@@ -53,7 +53,7 @@ function Get-DbaXESessionTarget {
 
         Return only the package0.event_file target for the system_health session on sql2016.
 
-#>
+    #>
     [CmdletBinding(DefaultParameterSetName = "Default")]
     param (
         [parameter(ValueFromPipeline, ParameterSetName = "instance", Mandatory)]
@@ -129,4 +129,3 @@ function Get-DbaXESessionTarget {
         Get-Target -Sessions $InputObject -Session $Session -Target $Target
     }
 }
-

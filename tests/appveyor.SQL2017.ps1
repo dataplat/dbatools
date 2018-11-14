@@ -49,8 +49,7 @@ $computername = $server.NetName
 $servicename = $server.ServiceName
 if ($servicename -eq 'MSSQLSERVER') {
     $instancename = "$computername"
-}
-else {
+} else {
     $instancename = "$computername\$servicename"
 }
 

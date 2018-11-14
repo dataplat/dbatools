@@ -7,7 +7,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         $paramCount = 7
         $defaultParamCount = 13
         [object[]]$params = (Get-ChildItem function:\Copy-DbaBackupDevice).Parameters.Keys
-        $knownParameters = 'Source','SourceSqlCredential','Destination','DestinationSqlCredential','BackupDevice','Force','EnableException'
+        $knownParameters = 'Source', 'SourceSqlCredential', 'Destination', 'DestinationSqlCredential', 'BackupDevice', 'Force', 'EnableException'
         It "Should contain our specific parameters" {
             ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
         }
@@ -33,8 +33,7 @@ if (-not $env:appveyor) {
                 $server1 = Connect-DbaInstance -SqlInstance $script:instance2
                 try {
                     $server1.Query("EXEC master.dbo.sp_dropdevice @logicalname = N'$devicename'")
-                }
-                catch {
+                } catch {
                     # don't care
                 }
             }
@@ -44,8 +43,7 @@ if (-not $env:appveyor) {
                 It "warns if it has a problem moving (issue for local to local)" {
                     $warn -match "backup device to destination" | Should Be $true
                 }
-            }
-            else {
+            } else {
                 It "should report success" {
                     $results.Status | Should Be "Successful"
                 }

@@ -7,7 +7,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         $paramCount = 14
         $defaultParamCount = 11
         [object[]]$params = (Get-ChildItem function:\Format-DbaBackupInformation).Parameters.Keys
-        $knownParameters = 'BackupHistory','ReplaceDatabaseName','ReplaceDbNameInFile','DataFileDirectory','LogFileDirectory','DestinationFileStreamDirectory','DatabaseNamePrefix','DatabaseFilePrefix','DatabaseFileSuffix','RebaseBackupFolder','Continue','FileMapping','PathSep','EnableException'
+        $knownParameters = 'BackupHistory', 'ReplaceDatabaseName', 'ReplaceDbNameInFile', 'DataFileDirectory', 'LogFileDirectory', 'DestinationFileStreamDirectory', 'DatabaseNamePrefix', 'DatabaseFilePrefix', 'DatabaseFileSuffix', 'RebaseBackupFolder', 'Continue', 'FileMapping', 'PathSep', 'EnableException'
         It "Should contain our specific parameters" {
             ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
         }
@@ -146,16 +146,16 @@ Describe "$CommandName Integration Tests" -Tags 'IntegrationTests' {
         $History = Get-DbaBackupInformation -Import -Path $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\ContinuePointTest.xml
         $History += Get-DbaBackupInformation -Import -Path $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\RestoreTimeClean.xml
         $Output = Format-DbaBackupInformation -BackupHistory $History -RebaseBackupFolder 'c:\backups'
-         It "Should not have changed the default path separator" {
+        It "Should not have changed the default path separator" {
             ($Output | Select-Object -ExpandProperty FullName | split-path | Where-Object {$_ -eq 'c:\backups'}).count | Should Be $History.count
         }
-         $Output = Format-DbaBackupInformation -BackupHistory $History -RebaseBackupFolder 'c:\backups' -PathSep '\'
-         It "Should not have changed the default path separator even when passed explicitely" {
+        $Output = Format-DbaBackupInformation -BackupHistory $History -RebaseBackupFolder 'c:\backups' -PathSep '\'
+        It "Should not have changed the default path separator even when passed explicitely" {
             ($Output | Select-Object -ExpandProperty FullName | split-path | Where-Object {$_ -eq 'c:\backups'}).count | Should Be $History.count
         }
-         $Output = Format-DbaBackupInformation -BackupHistory $History -RebaseBackupFolder '/opt/mssql/backups' -PathSep '/'
-         It "Should have changed the path separator as instructed" {
-            $result = $Output | Select-Object -ExpandProperty FullName | ForEach-Object { $all=$_.Split('/'); $all[0..($all.Length-2)] -Join '/'}
+        $Output = Format-DbaBackupInformation -BackupHistory $History -RebaseBackupFolder '/opt/mssql/backups' -PathSep '/'
+        It "Should have changed the path separator as instructed" {
+            $result = $Output | Select-Object -ExpandProperty FullName | ForEach-Object { $all = $_.Split('/'); $all[0..($all.Length - 2)] -Join '/'}
             ($result | Where-Object {$_ -eq '/opt/mssql/backups'}).count | Should Be $History.count
         }
     }

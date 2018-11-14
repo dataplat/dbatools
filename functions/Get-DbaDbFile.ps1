@@ -50,7 +50,7 @@ function Get-DbaDbFile {
 
         Will return an object containing all file groups and their contained files for the Impromptu and Trading databases on the sql2016 SQL Server instance
 
-#>
+    #>
     [CmdletBinding(DefaultParameterSetName = "Default")]
     param (
         [parameter(ParameterSetName = "Pipe", Mandatory, ValueFromPipeline)]
@@ -208,7 +208,7 @@ ON fd.Drive = LEFT(df.physical_name, 1);
                             $free = $disks | Where-Object {
                                 $_.drive -eq $result.PhysicalName.Substring(0, 1)
                             } | Select-Object $MbFreeColName
-                            
+
                             $VolumeFreeSpace = [dbasize](($free.MB_Free) * 1024 * 1024)
                         }
                     }
@@ -261,4 +261,3 @@ ON fd.Drive = LEFT(df.physical_name, 1);
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-DbaDatabaseFIle
     }
 }
-

@@ -57,7 +57,7 @@ function Get-SqlCmdVars {
             $dacProfile = [Microsoft.SqlServer.Dac.DacProfile]::Load($publishXml)
             Get-SqlCmdVars $dacProfile.DeployOptions.SqlCommandVariableValues -EnableException
         "
-    #>
+       #>
     [CmdletBinding()]
     param
     (
@@ -80,4 +80,3 @@ function Get-SqlCmdVars {
         Stop-Function -Message $errorMsg -EnableException $EnableException
     }
 }
-

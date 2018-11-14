@@ -8,7 +8,7 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
         <#
             Get commands, Default count = 11
             Commands with SupportShouldProcess = 13
-        #>
+               #>
         $defaultParamCount = 13
         [object[]]$params = (Get-ChildItem function:\New-DbaAvailabilityGroup).Parameters.Keys
         $knownParameters = 'Primary', 'PrimarySqlCredential', 'Secondary', 'SecondarySqlCredential', 'Name', 'DtcSupport', 'ClusterType', 'AutomatedBackupPreference', 'FailureConditionLevel', 'HealthCheckTimeout', 'Basic', 'DatabaseHealthTrigger', 'Passthru', 'Database', 'NetworkShare', 'UseLastBackups', 'Force', 'AvailabilityMode', 'FailoverMode', 'BackupPriority', 'ConnectionModeInPrimaryRole', 'ConnectionModeInSecondaryRole', 'SeedingMode', 'Endpoint', 'ReadonlyRoutingConnectionUrl', 'Certificate', 'IPAddress', 'SubnetMask', 'Port', 'Dhcp', 'EnableException'
@@ -41,7 +41,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     }
     Context "adds an ag" {
         It "returns an ag with a db" {
-            $results  = New-DbaAvailabilityGroup -Primary $script:instance3 -Name $agname -ClusterType None -FailoverMode Manual -Database $dbname -Confirm:$false -Certificate dbatoolsci_AGCert
+            $results = New-DbaAvailabilityGroup -Primary $script:instance3 -Name $agname -ClusterType None -FailoverMode Manual -Database $dbname -Confirm:$false -Certificate dbatoolsci_AGCert
             $results.AvailabilityDatabases.Name | Should -Be $dbname
         }
     }

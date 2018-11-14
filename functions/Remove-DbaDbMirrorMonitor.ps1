@@ -42,7 +42,7 @@ function Remove-DbaDbMirrorMonitor {
 
         Stops and deletes the mirroring monitor job for all the databases on sql2008 and sql2012.
 
-#>
+    #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Low')]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
@@ -73,4 +73,3 @@ function Remove-DbaDbMirrorMonitor {
         }
     }
 }
-

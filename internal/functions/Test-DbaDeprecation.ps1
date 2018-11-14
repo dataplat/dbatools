@@ -52,7 +52,7 @@ function Test-DbaDeprecation {
 
             Will - once per session - complain if the alias 'Copy-SqlDatabase' is used.
             Will cause tests to fail, if it's still in the code after release 1.0.0.0.
-    #>
+       #>
     [CmdletBinding()]
     param (
         [Parameter(Mandatory)]

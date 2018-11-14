@@ -50,7 +50,7 @@ function New-DbatoolsSupportPackage {
 
         Creates a large support pack in order to help us troubleshoot stuff.
 
-#>
+    #>
     [CmdletBinding(SupportsShouldProcess)]
     param (
         [string]
@@ -192,4 +192,3 @@ This will make it easier for us to troubleshoot and you won't be sending us the 
         Write-Message -Level InternalComment -Message "Ending"
     }
 }
-

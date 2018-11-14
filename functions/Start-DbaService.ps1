@@ -71,7 +71,7 @@ function Start-DbaService {
 
         Starts the SQL Server related services of type "SSRS" (Reporting Services) on computers in the variable MyServers.
 
-#>
+    #>
     [CmdletBinding(DefaultParameterSetName = "Server", SupportsShouldProcess = $true)]
     param (
         [Parameter(ParameterSetName = "Server", Position = 1)]
@@ -116,4 +116,3 @@ function Start-DbaService {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Start-DbaSqlService
     }
 }
-

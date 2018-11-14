@@ -59,7 +59,7 @@ function Test-DbaWindowsLogin {
 
         Tests all Domain logins excluding any that are from the testdomain
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Position = 0, Mandatory, ValueFromPipeline)]
@@ -286,4 +286,3 @@ function Test-DbaWindowsLogin {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Test-DbaValidLogin
     }
 }
-

@@ -9,8 +9,7 @@ Describe "$CommandName Unit Tests" -Tags "UnitTests" {
         $paramCount = $knownParameters.Count
         if ($SupportShouldProcess) {
             $defaultParamCount = 13
-        }
-        else {
+        } else {
             $defaultParamCount = 11
         }
         $command = Get-Command -Name $CommandName
@@ -32,8 +31,8 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         $inst2CurrentMaxValue = (Get-DbaMaxMemory -SqlInstance $script:instance2).MaxValue
     }
     AfterAll {
-       $null = Set-DbaMaxMemory -SqlInstance $script:instance1 -Max $inst1CurrentMaxValue
-       $null = Set-DbaMaxMemory -SqlInstance $script:instance2 -Max $inst2CurrentMaxValue
+        $null = Set-DbaMaxMemory -SqlInstance $script:instance1 -Max $inst1CurrentMaxValue
+        $null = Set-DbaMaxMemory -SqlInstance $script:instance2 -Max $inst2CurrentMaxValue
     }
     Context "Connects to multiple instances" {
         $results = Set-DbaMaxMemory -SqlInstance $script:instance1, $script:instance2 -Max 1024

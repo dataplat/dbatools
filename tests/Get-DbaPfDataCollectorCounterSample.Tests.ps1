@@ -7,7 +7,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         $paramCount = 11
         $defaultParamCount = 11
         [object[]]$params = (Get-ChildItem function:\Get-DbaPfDataCollectorCounterSample).Parameters.Keys
-        $knownParameters = 'ComputerName','Credential','CollectorSet','Collector','Counter','Continuous','ListSet','MaxSamples','SampleInterval','InputObject','EnableException'
+        $knownParameters = 'ComputerName', 'Credential', 'CollectorSet', 'Collector', 'Counter', 'Continuous', 'ListSet', 'MaxSamples', 'SampleInterval', 'InputObject', 'EnableException'
         It "Should contain our specific parameters" {
             ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
         }
@@ -29,4 +29,3 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
     }
 }
-

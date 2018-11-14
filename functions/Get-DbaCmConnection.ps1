@@ -43,7 +43,7 @@ function Get-DbaCmConnection {
 
         List all cached connection that use a username containing "charles" as default or override credentials.
 
-#>
+    #>
     [CmdletBinding()]
     param
     (
@@ -73,4 +73,3 @@ function Get-DbaCmConnection {
         Write-Message -Level InternalComment -Message "Ending"
     }
 }
-

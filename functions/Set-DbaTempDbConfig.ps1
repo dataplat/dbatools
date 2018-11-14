@@ -91,7 +91,7 @@ function Set-DbaTempdbConfig {
 
         Returns the T-SQL script representing tempdb configuration.
 
-#>
+    #>
     [CmdletBinding(SupportsShouldProcess = $true)]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseOutputTypeCorrectly", "", Justification = "PSSA Rule Ignored by BOH")]
     param (
@@ -267,4 +267,3 @@ function Set-DbaTempdbConfig {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Set-DbaTempDbConfiguration
     }
 }
-

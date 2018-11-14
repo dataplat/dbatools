@@ -50,7 +50,7 @@ function Get-DbaWaitResource {
 
         Will return an object containing; database name, schema name and index name which is being waited on, and in addition the contents of the locked row at the time the command is run.
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Mandatory)]
@@ -160,4 +160,3 @@ function Get-DbaWaitResource {
         }
     }
 }
-

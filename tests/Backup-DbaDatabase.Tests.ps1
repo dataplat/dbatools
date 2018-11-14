@@ -7,7 +7,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         $paramCount = 29
         $defaultParamCount = 13
         [object[]]$params = (Get-ChildItem function:\Backup-DbaDatabase).Parameters.Keys
-        $knownParameters = 'SqlInstance','SqlCredential','Database','ExcludeDatabase','BackupDirectory','BackupFileName','ReplaceInName','CopyOnly','Type','InputObject','CreateFolder','FileCount','CompressBackup','Checksum','Verify','MaxTransferSize','BlockSize','BufferCount','AzureBaseUrl','AzureCredential','NoRecovery','BuildPath','WithFormat','Initialize','SkipTapeHeader','TimeStampFormat','IgnoreFileChecks','OutputScriptOnly','EnableException'
+        $knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'BackupDirectory', 'BackupFileName', 'ReplaceInName', 'CopyOnly', 'Type', 'InputObject', 'CreateFolder', 'FileCount', 'CompressBackup', 'Checksum', 'Verify', 'MaxTransferSize', 'BlockSize', 'BufferCount', 'AzureBaseUrl', 'AzureCredential', 'NoRecovery', 'BuildPath', 'WithFormat', 'Initialize', 'SkipTapeHeader', 'TimeStampFormat', 'IgnoreFileChecks', 'OutputScriptOnly', 'EnableException'
         It "Should contain our specific parameters" {
             ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
         }
@@ -71,10 +71,10 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 
     Context "Should take path and filename" {
         $results = Backup-DbaDatabase -SqlInstance $script:instance1 -BackupDirectory $DestBackupDir -Database master -BackupFileName 'PesterTest.bak'
-        It "Should report it has backed up to the path with the correct name"{
+        It "Should report it has backed up to the path with the correct name" {
             $results.Fullname | Should -BeLike "$DestBackupDir*PesterTest.bak"
         }
-        It "Should have backed up to the path with the correct name"{
+        It "Should have backed up to the path with the correct name" {
             Test-Path "$DestBackupDir\PesterTest.bak" | Should -Be $true
         }
     }
@@ -106,7 +106,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         $backupPaths = "$DestBackupDir\stripewithdb1", "$DestBackupDir\stripewithdb2"
         $results = Backup-DbaDatabase -SqlInstance $script:instance1 -Database master -BackupDirectory $backupPaths -CreateFolder
         It "Should have appended master to all backup paths" {
-            foreach($path in $results.BackupFolder) {
+            foreach ($path in $results.BackupFolder) {
                 ($results.BackupFolder | Sort-Object) | Should -Be ($backupPaths | Sort-Object | ForEach-Object { [IO.Path]::Combine($_, 'master') })
             }
         }
@@ -115,7 +115,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 
     Context "A fully qualified path should override a backupfolder" {
         $results = Backup-DbaDatabase -SqlInstance $script:instance1 -Database master -BackupDirectory c:\temp -BackupFileName "$DestBackupDir\PesterTest2.bak"
-        It "Should report backed up to $DestBackupDir"  {
+        It "Should report backed up to $DestBackupDir" {
             $results.FullName | Should -BeLike "$DestBackupDir\PesterTest2.bak"
             $results.BackupFolder | Should Not Be 'c:\temp'
         }
@@ -139,7 +139,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             }
         }
         It "Should have written files with extensions" {
-            foreach($path in $results.BackupFile) {
+            foreach ($path in $results.BackupFile) {
                 [IO.Path]::GetExtension($path) | Should -Be '.bak'
             }
         }
@@ -158,7 +158,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     }
 
     It "Should have 1 period in file extension" {
-        foreach($path in $results.BackupFile) {
+        foreach ($path in $results.BackupFile) {
             [IO.Path]::GetExtension($path) | Should -Not -BeLike '*..*'
         }
     }
@@ -166,10 +166,10 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     Context "Should Backup to default path if none specified" {
         $results = Backup-DbaDatabase -SqlInstance $script:instance1 -Database master -BackupFileName 'PesterTest.bak'
         $DefaultPath = (Get-DbaDefaultPath -SqlInstance $script:instance1).Backup
-        It "Should report it has backed up to the path with the corrrect name"{
+        It "Should report it has backed up to the path with the corrrect name" {
             $results.Fullname | Should -BeLike "$DefaultPath*PesterTest.bak"
         }
-        It "Should have backed up to the path with the corrrect name"{
+        It "Should have backed up to the path with the corrrect name" {
             Test-Path "$DefaultPath\PesterTest.bak" | Should -Be $true
         }
     }
@@ -182,7 +182,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
     }
 
-    Context "Test Backup-DbaDatabase can take pipe input"{
+    Context "Test Backup-DbaDatabase can take pipe input" {
         $results = Get-DbaDatabase -SqlInstance $script:instance1 -Database master | Backup-DbaDatabase -confirm:$false -WarningVariable warnvar
         It "Should not warn" {
             '' -eq $warnvar | Should -Be $True
@@ -215,7 +215,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 
     Context "Should handle an encrypted database when compression is specified" {
         $sqlencrypt =
-@"
+        @"
 CREATE MASTER KEY ENCRYPTION BY PASSWORD = '<UseStrongPasswordHere>';
 go
 CREATE CERTIFICATE MyServerCert WITH SUBJECT = 'My DEK Certificate';
@@ -225,7 +225,7 @@ go
 "@
         $null = Invoke-DbaQuery -SqlInstance $script:instance2 -Query $sqlencrypt -Database Master
         $createdb =
-@"
+        @"
 CREATE DATABASE ENCRYPTION KEY
 WITH ALGORITHM = AES_128
 ENCRYPTION BY SERVER CERTIFICATE MyServerCert;
@@ -241,7 +241,7 @@ GO
         }
         Remove-DbaDatabase -SqlInstance $script:instance2 -Database encrypted -confirm:$false
         $sqldrop =
-@"
+        @"
 drop certificate MyServerCert
 go
 drop master key
@@ -271,7 +271,7 @@ go
             BeforeAll {
                 Get-DbaDatabase -SqlInstance $script:instance2 -Database "dbatoolsci_azure" | Remove-DbaDatabase -Confirm:$false
                 $server = Connect-DbaInstance -SqlInstance $script:instance2
-                if (Get-DbaCredential -SqlInstance $script:instance2 -Name "[$script:azureblob]" ){
+                if (Get-DbaCredential -SqlInstance $script:instance2 -Name "[$script:azureblob]" ) {
                     $sql = "DROP CREDENTIAL [$script:azureblob]"
                     $server.Query($sql)
                 }

@@ -4,7 +4,7 @@ function Test-PSRemoting {
     <#
     Jeff Hicks
     https://www.petri.com/test-network-connectivity-powershell-test-connection-cmdlet
-#>
+    #>
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUsePSCredentialType", "")]
     [Cmdletbinding()]
     param(
@@ -28,5 +28,3 @@ function Test-PSRemoting {
     } #process
 
 } #close function
-
-

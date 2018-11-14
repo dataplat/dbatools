@@ -130,7 +130,7 @@ function New-DbaAgentJobStep {
 
         Create a step in "Job1" with the name Step1 where the database will the "msdb" for multiple servers using pipeline
 
-#>
+    #>
 
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "Low")]
     param (
@@ -368,5 +368,3 @@ function New-DbaAgentJobStep {
         Write-Message -Message "Finished creating job step(s)" -Level Verbose
     }
 }
-
-

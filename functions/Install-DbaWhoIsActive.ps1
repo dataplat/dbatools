@@ -67,7 +67,7 @@ function Install-DbaWhoIsActive {
         PS C:\> Install-DbaWhoIsActive -SqlInstance $instances -Database master
 
         Installs sp_WhoisActive to all servers within CMS
-#>
+    #>
 
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
     param (
@@ -249,4 +249,3 @@ function Install-DbaWhoIsActive {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Install-SqlWhoIsActive
     }
 }
-

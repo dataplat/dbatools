@@ -84,7 +84,7 @@ function Grant-DbaAgPermission {
         PS C:\> Get-DbaLogin -SqlInstance sql2017a | Out-GridView -Passthru | Grant-DbaAgPermission -Type EndPoint
 
         Grants the selected logins Connect permissions on the DatabaseMirroring endpoint for sql2017a
-#>
+    #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Low')]
     param (
         [DbaInstanceParameter[]]$SqlInstance,

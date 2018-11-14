@@ -29,7 +29,7 @@ function Stop-DbaRunspace {
         PS C:\> Stop-DbaRunspace -Name 'mymodule.maintenance'
 
         Stops the runspace registered under the name 'mymodule.maintenance'
-#>
+    #>
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "")]
     [CmdletBinding()]
     param (
@@ -72,5 +72,3 @@ function Stop-DbaRunspace {
         }
     }
 }
-
-

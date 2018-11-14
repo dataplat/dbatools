@@ -2,7 +2,7 @@ function Update-SqlDbOwner {
     <#
     .SYNOPSIS
         Internal function. Updates specified database dbowner.
-#>
+    #>
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "")]
     [CmdletBinding()]
     param (

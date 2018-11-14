@@ -48,7 +48,7 @@ function Test-DbaPowerPlan {
 
         Checks the Power Plan settings for sqlserver2014a and indicates whether or not it is set to the custom plan "Maximum Performance".
 
-#>
+    #>
     param (
         [parameter(ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer", "SqlInstance")]
@@ -133,4 +133,3 @@ function Test-DbaPowerPlan {
         }
     }
 }
-

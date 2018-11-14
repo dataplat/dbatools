@@ -49,7 +49,7 @@ function Update-ServiceStatus {
         Update-ServiceStatus -InputObject $InputObject -Action 'stop' -Timeout 0 -Credential $credential
 
         Stops SQL services on sql1 and waits indefinitely for them to stop. Uses $credential to authorize on the server.
-#>
+    #>
     [CmdletBinding(SupportsShouldProcess)]
     param(
         [parameter(ValueFromPipeline, Mandatory)]
@@ -224,5 +224,3 @@ function Update-ServiceStatus {
     end {
     }
 }
-
-

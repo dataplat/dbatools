@@ -7,7 +7,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         $paramCount = 7
         $defaultParamCount = 13
         [object[]]$params = (Get-ChildItem function:\Export-DbaAvailabilityGroup).Parameters.Keys
-        $knownParameters = 'SqlInstance','SqlCredential','AvailabilityGroup','ExcludeAvailabilityGroup','Path','NoClobber','EnableException'
+        $knownParameters = 'SqlInstance', 'SqlCredential', 'AvailabilityGroup', 'ExcludeAvailabilityGroup', 'Path', 'NoClobber', 'EnableException'
         It "Should contain our specific parameters" {
             ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
         }
@@ -28,8 +28,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
             $servicename = $server.ServiceName
             if ($servicename -eq 'MSSQLSERVER') {
                 $instancename = "$computername"
-            }
-            else {
+            } else {
                 $instancename = "$computername\$servicename"
             }
             $server.Query("create database $dbname")
@@ -53,8 +52,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
                 Get-DbaDatabase -SqlInstance $script:instance3 -Database $dbname | Remove-DbaDatabase -Confirm:$false
                 $server.Query("DROP ENDPOINT dbatoolsci_AGEndpoint")
                 $server.Query("DROP CERTIFICATE dbatoolsci_AGCert")
-            }
-            catch {
+            } catch {
                 # don't care
             }
         }

@@ -50,7 +50,7 @@ function Set-DbaPrivilege {
 
         Adds the SQL Service account(s) on computers sql1, sql2 and sql3 to the local privilege 'SeManageVolumePrivilege'.
 
-#>
+    #>
     [CmdletBinding(SupportsShouldProcess)]
     param (
         [parameter(ValueFromPipeline)]
@@ -160,4 +160,3 @@ function Convert-UserNameToSID ([string] `$Acc ) {
         }
     }
 }
-

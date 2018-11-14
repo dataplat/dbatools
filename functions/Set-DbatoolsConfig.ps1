@@ -251,4 +251,3 @@ function Set-DbatoolsConfig {
     }
     #endregion Regular configuration update
 }
-

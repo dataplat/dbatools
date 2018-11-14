@@ -58,7 +58,7 @@ function Repair-DbaDbMirror {
         Attempts to repair the mirrored but suspended pubs database on sql2017.
         Restarts the endpoints then sets the partner to resume. Does not prompt for confirmation.
 
-#>
+    #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
     param (
         [DbaInstanceParameter[]]$SqlInstance,
@@ -91,4 +91,3 @@ function Repair-DbaDbMirror {
         }
     }
 }
-

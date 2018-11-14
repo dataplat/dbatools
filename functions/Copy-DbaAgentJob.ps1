@@ -72,7 +72,7 @@ function Copy-DbaAgentJob {
 
         Shows what would happen if the command were executed using force.
 
-#>
+    #>
     [cmdletbinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
     param (
         [parameter(Mandatory)]
@@ -279,4 +279,3 @@ function Copy-DbaAgentJob {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-SqlJob
     }
 }
-

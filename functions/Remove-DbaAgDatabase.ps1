@@ -52,7 +52,7 @@ function Remove-DbaAgDatabase {
         PS C:\> Get-DbaAvailabilityGroup -SqlInstance sqlserver2012 -AvailabilityGroup availabilitygroup1 | Remove-DbaAgDatabase
 
         Removes the availability groups returned from the Get-DbaAvailabilityGroup function. Prompts for confirmation.
-#>
+    #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
     param (
         [DbaInstanceParameter[]]$SqlInstance,
@@ -103,4 +103,3 @@ function Remove-DbaAgDatabase {
         }
     }
 }
-

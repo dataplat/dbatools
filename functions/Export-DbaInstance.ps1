@@ -116,7 +116,7 @@ function Export-DbaInstance {
 
         Exports everything but logins and database restore scripts to C:\dr\sqlcluster
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
@@ -438,4 +438,3 @@ function Export-DbaInstance {
         Write-Message -Level Verbose -Message "Total Elapsed time: $totaltime"
     }
 }
-

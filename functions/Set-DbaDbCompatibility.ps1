@@ -69,7 +69,7 @@ function Set-DbaDbCompatibility {
         PS C:\> Set-DbaDbCompatibility -SqlInstance localhost\sql2017 -Database Test -TargetCompatibility 12
 
         Changes database compatibility level for database Test on server localhost\sql2017 to Version 120
-#>
+    #>
     [CmdletBinding(SupportsShouldProcess)]
     param (
         [DbaInstanceParameter[]]$SqlInstance,
@@ -138,4 +138,3 @@ function Set-DbaDbCompatibility {
         }
     }
 }
-

@@ -59,7 +59,7 @@ function Remove-DbaPfDataCollectorCounter {
 
         Allows you to select which counters you'd like on localhost and does not prompt for confirmation.
 
-#>
+    #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "High")]
     param (
         [DbaInstance[]]$ComputerName = $env:COMPUTERNAME,
@@ -137,4 +137,3 @@ function Remove-DbaPfDataCollectorCounter {
         }
     }
 }
-

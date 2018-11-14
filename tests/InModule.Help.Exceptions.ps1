@@ -12,4 +12,3 @@ $global:HelpTestSkipParameterType = @{
     "Test-DbaCmConnection" = @("Type")
     "Get-DbaService"       = @("DoNotUse")
 }
-

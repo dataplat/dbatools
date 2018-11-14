@@ -44,7 +44,7 @@ function Get-DbaLinkedServer {
         PS C:\> Get-DbaCmsRegServer -SqlInstance DEV01 -Group SQLDEV | Get-DbaLinkedServer | Out-GridView
 
         Returns all linked servers for a group of servers from SQL Server Central Management Server (CMS). Send output to GridView.
-#>
+    #>
     [CmdletBinding(DefaultParameterSetName = 'Default')]
     param (
         [Parameter(Mandatory, ValueFromPipeline)]

@@ -48,7 +48,7 @@ function Export-DbaXESessionTemplate {
 
         Gets the system_health Extended Events Session from sql2017 and then exports as an XESession XML Template to C:\temp\xe
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [Alias("ServerInstance", "SqlServer")]
@@ -87,4 +87,3 @@ function Export-DbaXESessionTemplate {
         }
     }
 }
-

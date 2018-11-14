@@ -24,7 +24,7 @@ function Get-XpDirTreeRestoreFile {
         PS C:\> Get-XpDirTreeRestoreFile -Path '\\foo\bar\' -SqlInstance $SqlInstance
 
         Tests whether the instance $SqlInstance has access to the path \\foo\bar\
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]

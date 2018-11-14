@@ -132,8 +132,7 @@ $scriptBlock = {
                     Enforced = $false
                     Value    = Convert-RegType -Value $item.Value
                 }
-            }
-            catch {
+            } catch {
                 Write-Message -Level Warning -Message "Failed to interpret configuration entry from registry: $($item.Name)" -ErrorRecord $_
             }
         }
@@ -144,8 +143,7 @@ $scriptBlock = {
                     Enforced = $false
                     Value    = Convert-RegType -Value $item.Value
                 }
-            }
-            catch {
+            } catch {
                 Write-Message -Level Warning -Message "Failed to interpret configuration entry from registry: $($item.Name)" -ErrorRecord $_
             }
         }
@@ -156,8 +154,7 @@ $scriptBlock = {
                     Enforced = $true
                     Value    = Convert-RegType -Value $item.Value
                 }
-            }
-            catch {
+            } catch {
                 Write-Message -Level Warning -Message "Failed to interpret configuration entry from registry: $($item.Name)" -ErrorRecord $_
             }
         }
@@ -168,8 +165,7 @@ $scriptBlock = {
                     Enforced = $true
                     Value    = Convert-RegType -Value $item.Value
                 }
-            }
-            catch {
+            } catch {
                 Write-Message -Level Warning -Message "Failed to interpret configuration entry from registry: $($item.Name)" -ErrorRecord $_
             }
         }
@@ -180,8 +176,7 @@ $scriptBlock = {
                 Set-DbatoolsConfig -Name $value.Name -Value $value.Value -EnableException
                 [Sqlcollaborative.Dbatools.Configuration.ConfigurationHost]::Configurations[$value.Name.ToLower()].PolicySet = $true
                 [Sqlcollaborative.Dbatools.Configuration.ConfigurationHost]::Configurations[$value.Name.ToLower()].PolicyEnforced = $value.Enforced
-            }
-            catch { }
+            } catch { }
         }
 
         [Sqlcollaborative.Dbatools.Configuration.ConfigurationHost]::ImportFromRegistryDone = $true
@@ -198,8 +193,7 @@ $scriptBlock = {
 }
 if ($script:serialImport) {
     $scriptBlock.Invoke($global:dbatools_config)
-}
-else {
+} else {
     $script:dbatoolsConfigRunspace = [System.Management.Automation.PowerShell]::Create()
     if ($script:dbatoolsConfigRunspace.Runspace.Name) {
         try { $script:dbatoolsConfigRunspace.Runspace.Name = "dbatools-import-config" }

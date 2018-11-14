@@ -4,13 +4,12 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        $knownParameters = 'ComputerName', 'Credential','PowerPlan','CustomPowerPlan','EnableException'
+        $knownParameters = 'ComputerName', 'Credential', 'PowerPlan', 'CustomPowerPlan', 'EnableException'
         $paramCount = $knownParameters.Count
         $SupportShouldProcess = $true
         if ($SupportShouldProcess) {
             $defaultParamCount = 13
-        }
-        else {
+        } else {
             $defaultParamCount = 11
         }
         $command = Get-Command -Name $CommandName
@@ -58,4 +57,3 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
     }
 }
-

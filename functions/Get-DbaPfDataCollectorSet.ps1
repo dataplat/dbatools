@@ -54,7 +54,7 @@ function Get-DbaPfDataCollectorSet {
 
         Displays extra columns and also exposes the original COM object in DataCollectorSetObject.
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(ValueFromPipeline)]
@@ -186,4 +186,3 @@ function Get-DbaPfDataCollectorSet {
         }
     }
 }
-

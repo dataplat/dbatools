@@ -70,7 +70,7 @@ function Install-DbaSqlWatch {
         $servers | Install-DbaSqlWatch
 
         Logs into sql2016\standardrtm, sql2016\sqlexpress and sql2014 with Windows authentication and then installs SqlWatch in the master database.
-    #>
+       #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
     param (
         [Parameter(Mandatory, ValueFromPipeline)]

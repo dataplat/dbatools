@@ -37,7 +37,7 @@ function Get-DbatoolsConfigValue {
 
         Returns the configured value for 'Default.CoffeeMilk'. If no such value is configured, it returns '0' instead.
 
-#>
+    #>
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSPossibleIncorrectComparisonWithNull", "")]
     [CmdletBinding()]
     param (
@@ -60,4 +60,3 @@ function Get-DbatoolsConfigValue {
         return $temp
     }
 }
-

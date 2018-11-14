@@ -47,7 +47,7 @@ function Get-DbaPfDataCollectorSetTemplate {
 
         Returns more information about the template, including the full path/filename.
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [string[]]$Path = "$script:PSModuleRoot\bin\perfmontemplates\collectorsets",
@@ -106,4 +106,3 @@ function Get-DbaPfDataCollectorSetTemplate {
         }
     }
 }
-

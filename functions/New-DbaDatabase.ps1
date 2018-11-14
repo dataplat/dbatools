@@ -107,7 +107,7 @@ function New-DbaDatabase {
 
         Creates a secondary group with 2 files in the Secondary filegroup.
 
-       #>
+          #>
     [Cmdletbinding(SupportsShouldProcess, ConfirmImpact = "Low")]
     param
     (

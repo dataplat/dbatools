@@ -7,7 +7,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         $paramCount = 20
         $defaultParamCount = 13
         [object[]]$params = (Get-ChildItem function:\Import-DbaPfDataCollectorSetTemplate).Parameters.Keys
-        $knownParameters = 'ComputerName','Credential','DisplayName','SchedulesEnabled','RootPath','Segment','SegmentMaxDuration','SegmentMaxSize','Subdirectory','SubdirectoryFormat','SubdirectoryFormatPattern','Task','TaskRunAsSelf','TaskArguments','TaskUserTextArguments','StopOnCompletion','Path','Template','Instance','EnableException'
+        $knownParameters = 'ComputerName', 'Credential', 'DisplayName', 'SchedulesEnabled', 'RootPath', 'Segment', 'SegmentMaxDuration', 'SegmentMaxSize', 'Subdirectory', 'SubdirectoryFormat', 'SubdirectoryFormatPattern', 'Task', 'TaskRunAsSelf', 'TaskArguments', 'TaskUserTextArguments', 'StopOnCompletion', 'Path', 'Template', 'Instance', 'EnableException'
         It "Should contain our specific parameters" {
             ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
         }
