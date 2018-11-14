@@ -104,7 +104,7 @@ function Get-DbaSsisEnvironmentVariable {
         Gets all variables from Environments other than 'DEV' and 'PROD' on 'localhost' server,
         selects Name and Value properties for variables that names start with letter 'a' and outputs it as the GridView
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
@@ -253,4 +253,3 @@ function Get-DbaSsisEnvironmentVariable {
         }
     }
 }
-

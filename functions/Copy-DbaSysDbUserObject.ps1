@@ -53,7 +53,7 @@ function Copy-DbaSysDbUserObject {
 
         Copies user objects from source to destination
 
-#>
+    #>
     [CmdletBinding(SupportsShouldProcess = $true)]
     param (
         [Parameter(Mandatory)]
@@ -388,4 +388,3 @@ function Copy-DbaSysDbUserObject {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-SqlSysDbUserObjects
     }
 }
-

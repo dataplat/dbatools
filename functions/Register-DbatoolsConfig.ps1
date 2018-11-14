@@ -54,7 +54,7 @@ function Register-DbatoolsConfig {
 
         Retrieves all configuration items of the module MyModule, then registers them in registry to enforce them for all users on the current system.
 
-#>
+    #>
     [CmdletBinding(DefaultParameterSetName = "Default")]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseApprovedVerbs", "", Justification = "Internal functions are ignored")]
     param (

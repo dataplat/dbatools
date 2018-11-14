@@ -7,7 +7,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         $paramCount = 27
         $defaultParamCount = 13
         [object[]]$params = (Get-ChildItem function:\Copy-DbaDatabase).Parameters.Keys
-        $knownParameters = 'Source','SourceSqlCredential','Destination','DestinationSqlCredential','Database','ExcludeDatabase','AllDatabases','BackupRestore','NetworkShare','WithReplace','NoRecovery','NoBackupCleanup','NumberFiles','DetachAttach','Reattach','SetSourceReadOnly','ReuseSourceFolderStructure','IncludeSupportDbs','UseLastBackups','Continue','InputObject','NoCopyOnly','SetSourceOffline','NewName','Prefix','Force','EnableException'
+        $knownParameters = 'Source', 'SourceSqlCredential', 'Destination', 'DestinationSqlCredential', 'Database', 'ExcludeDatabase', 'AllDatabases', 'BackupRestore', 'NetworkShare', 'WithReplace', 'NoRecovery', 'NoBackupCleanup', 'NumberFiles', 'DetachAttach', 'Reattach', 'SetSourceReadOnly', 'ReuseSourceFolderStructure', 'IncludeSupportDbs', 'UseLastBackups', 'Continue', 'InputObject', 'NoCopyOnly', 'SetSourceOffline', 'NewName', 'Prefix', 'Force', 'EnableException'
         It "Should contain our specific parameters" {
             ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
         }
@@ -49,7 +49,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
         $db1 = Get-DbaDatabase -SqlInstance $script:instance2 -Database $detachattachdb
         $db2 = Get-DbaDatabase -SqlInstance $script:instance3 -Database $detachattachdb
 
-        It "should not be null"  {
+        It "should not be null" {
             $db1.Name | Should Be $detachattachdb
             $db2.Name | Should Be $detachattachdb
         }
@@ -163,12 +163,12 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
             Get-DbaProcess -SqlInstance $script:instance2, $script:instance3 -Program 'dbatools PowerShell module - dbatools.io' | Stop-DbaProcess -WarningAction SilentlyContinue
             Get-DbaDatabase -SqlInstance $script:instance3 -ExcludeAllSystemDb | Remove-DbaDatabase -Confirm:$false
         }
-        It "Should have renamed a single db"{
+        It "Should have renamed a single db" {
             $newname = "copy$(Get-Random)"
             $results = Copy-DbaDatabase -Source $script:instance2 -Destination $script:instance3 -Database $backuprestoredb -BackupRestore -NetworkShare $NetworkPath -NewName $newname
             $results[0].DestinationDatabase | Should -Be $newname
-            $files  = Get-DbaDbFile -Sqlinstance $script:instance3 -Database $newname
-            ($files.PhysicalName -like  "*$newname*").count | Should -Be $files.count
+            $files = Get-DbaDbFile -Sqlinstance $script:instance3 -Database $newname
+            ($files.PhysicalName -like "*$newname*").count | Should -Be $files.count
         }
 
         It "Should warn if trying to rename and prefix" {
@@ -177,12 +177,12 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
 
         }
 
-        It "Should prefix databasename and files"{
+        It "Should prefix databasename and files" {
             $prefix = "da$(Get-Random)"
             $results = Copy-DbaDatabase -Source $script:instance2 -Destination $script:instance3 -Database $backuprestoredb -BackupRestore -NetworkShare $NetworkPath -Prefix $prefix
             $results[0].DestinationDatabase | Should -Be "$prefix$backuprestoredb"
-            $files  = Get-DbaDbFile -Sqlinstance $script:instance3 -Database "$prefix$backuprestoredb"
-            ($files.PhysicalName -like  "*$prefix$backuprestoredb*").count | Should -Be $files.count
+            $files = Get-DbaDbFile -Sqlinstance $script:instance3 -Database "$prefix$backuprestoredb"
+            ($files.PhysicalName -like "*$prefix$backuprestoredb*").count | Should -Be $files.count
         }
     }
 
@@ -191,24 +191,24 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
             Get-DbaProcess -SqlInstance $script:instance2, $script:instance3 -Program 'dbatools PowerShell module - dbatools.io' | Stop-DbaProcess -WarningAction SilentlyContinue
             Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance3 -Database $backuprestoredb
         }
-        It "Should have renamed a single db"{
+        It "Should have renamed a single db" {
             $newname = "copy$(Get-Random)"
             $results = Copy-DbaDatabase -Source $script:instance2 -Destination $script:instance3 -Database $backuprestoredb -DetachAttach -NewName $newname -Reattach
             $results[0].DestinationDatabase | Should -Be $newname
-            $files  = Get-DbaDbFile -Sqlinstance $script:instance3 -Database $newname
-            ($files.PhysicalName -like  "*$newname*").count | Should -Be $files.count
+            $files = Get-DbaDbFile -Sqlinstance $script:instance3 -Database $newname
+            ($files.PhysicalName -like "*$newname*").count | Should -Be $files.count
         }
 
-        It "Should prefix databasename and files"{
+        It "Should prefix databasename and files" {
             $prefix = "copy$(Get-Random)"
             $results = Copy-DbaDatabase -Source $script:instance2 -Destination $script:instance3 -Database $backuprestoredb -DetachAttach -Reattach -Prefix $prefix
             $results[0].DestinationDatabase | Should -Be "$prefix$backuprestoredb"
-            $files  = Get-DbaDbFile -Sqlinstance $script:instance3 -Database "$prefix$backuprestoredb"
-            ($files.PhysicalName -like  "*$prefix$backuprestoredb*").count | Should -Be $files.count
+            $files = Get-DbaDbFile -Sqlinstance $script:instance3 -Database "$prefix$backuprestoredb"
+            ($files.PhysicalName -like "*$prefix$backuprestoredb*").count | Should -Be $files.count
         }
 
         $null = Restore-DbaDatabase -SqlInstance $script:instance2 -path $script:appveyorlabrepo\RestoreTimeClean -useDestinationDefaultDirectories
-        It "Should warn and exit if newname and >1 db specified"{
+        It "Should warn and exit if newname and >1 db specified" {
             $prefix = "copy$(Get-Random)"
             $results = Copy-DbaDatabase -Source $script:instance2 -Destination $script:instance3 -Database $backuprestoredb, RestoreTimeClean -DetachAttach -Reattach -NewName warn -WarningVariable warnvar
             $Warnvar | Should -BeLike "*Cannot use NewName when copying multiple databases"

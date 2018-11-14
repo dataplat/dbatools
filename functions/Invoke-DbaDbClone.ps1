@@ -60,7 +60,7 @@ function Invoke-DbaDbClone {
         PS C:\> Invoke-DbaDbClone -SqlInstance sql2016 -Database mydb -CloneDatabase myclone, myclone2 -UpdateStatistics
 
         Updates the statistics of mydb then clones to myclone and myclone2
-
+        
 #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
     param (

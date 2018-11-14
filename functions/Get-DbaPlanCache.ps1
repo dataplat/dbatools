@@ -42,7 +42,7 @@ function Get-DbaPlanCache {
 
         Returns the single use plan cache usage information for SQL Server instance 2017 using login 'sqladmin'
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
@@ -75,5 +75,3 @@ function Get-DbaPlanCache {
         }
     }
 }
-
-

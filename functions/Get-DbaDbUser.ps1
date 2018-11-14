@@ -59,7 +59,7 @@ function Get-DbaDbUser {
 
         Gets the users for the databases on Sql1 and Sql2/sqlexpress
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
@@ -119,4 +119,3 @@ function Get-DbaDbUser {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-DbaDatabaseUser
     }
 }
-

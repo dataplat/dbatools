@@ -108,7 +108,7 @@ function Remove-DbaDatabaseSafely {
 
         If there is a DBCC Error, the function  will continue to perform rest of the actions and will create an Agent job with 'DBCCERROR' in the name and a Backup file with 'DBCCError' in the name.
 
-#>
+    #>
     [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = "Default")]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
@@ -683,4 +683,3 @@ function Remove-DbaDatabaseSafely {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Remove-SqlDatabaseSafely
     }
 }
-

@@ -127,7 +127,7 @@ function Invoke-DbaDiagnosticQuery {
 
         Run diagnostic queries targeted at specific database, and only run database level queries against this database.
 
-#>
+    #>
 
     [CmdletBinding(SupportsShouldProcess)]
     [outputtype([pscustomobject[]])]
@@ -465,4 +465,3 @@ function Invoke-DbaDiagnosticQuery {
         Write-Progress -Id $ProgressId -Activity 'Invoke-DbaDiagnosticQuery' -Completed
     }
 }
-

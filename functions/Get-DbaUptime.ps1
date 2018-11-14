@@ -54,7 +54,7 @@ function Get-DbaUptime {
 
         Returns an object with SQL Server start time, uptime as TimeSpan object, uptime as a string, and Windows host boot time, host uptime as TimeSpan objects and host uptime as a string for every server listed in the Central Management Server on sql2014
 
-#>
+    #>
     [CmdletBinding(DefaultParameterSetName = "Default")]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
@@ -124,4 +124,3 @@ function Get-DbaUptime {
         }
     }
 }
-

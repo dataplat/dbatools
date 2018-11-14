@@ -10,7 +10,7 @@ function Get-WmiHadr {
     )
     process {
         foreach ($instance in $SqlInstance) {
-            
+
             try {
                 $computer = $computerName = $instance.ComputerName
                 $instanceName = $instance.InstanceName
@@ -19,7 +19,7 @@ function Get-WmiHadr {
                 Stop-Function -Message "Failure connecting to $computer" -Category ConnectionError -ErrorRecord $_ -Target $instance
                 return
             }
-            
+
             if ($null -eq $currentState.IsHadrEnabled) {
                 $isenabled = $false
             } else {
@@ -34,4 +34,3 @@ function Get-WmiHadr {
         }
     }
 }
-

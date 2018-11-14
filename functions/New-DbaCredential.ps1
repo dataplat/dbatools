@@ -73,7 +73,7 @@ function New-DbaCredential {
         Name has to be the full URL for the blob store container that will be the backup target.
         Password needs to be passed the Shared Access Token (SAS Key).
 
-#>
+    #>
     [CmdletBinding(SupportsShouldProcess = $true)] #, ConfirmImpact = "High"
     param (
         [parameter(Mandatory, ValueFromPipeline)]
@@ -145,4 +145,3 @@ function New-DbaCredential {
         }
     }
 }
-

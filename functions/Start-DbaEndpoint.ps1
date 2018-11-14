@@ -59,7 +59,7 @@ function Start-DbaEndpoint {
 
         Starts the endpoints returned from the Get-Endpoint function.
 
-#>
+    #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Low')]
     param (
         [DbaInstanceParameter[]]$SqlInstance,
@@ -92,5 +92,3 @@ function Start-DbaEndpoint {
         }
     }
 }
-
-

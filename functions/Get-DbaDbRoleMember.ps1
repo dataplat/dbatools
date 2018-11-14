@@ -78,7 +78,7 @@ function Get-DbaDbRoleMember {
 
         Returns all members of the db_owner role in the msdb database on localhost.
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Position = 0, Mandatory, ValueFromPipeline)]
@@ -164,4 +164,3 @@ function Get-DbaDbRoleMember {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Get-DbaRoleMember
     }
 }
-

@@ -73,7 +73,7 @@ function Copy-DbaCustomError {
 
         Shows what would happen if the command were executed using force.
 
-#>
+    #>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
     param (
         [parameter(Mandatory)]
@@ -176,4 +176,3 @@ function Copy-DbaCustomError {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-SqlCustomError
     }
 }
-

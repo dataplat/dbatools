@@ -88,7 +88,7 @@ function New-DbaXESmartEmail {
 
         Sends an email each time a querytracker event is captured.
 
-#>
+    #>
     [CmdletBinding(SupportsShouldProcess)]
     param (
         [parameter(Mandatory)]
@@ -154,4 +154,3 @@ function New-DbaXESmartEmail {
         }
     }
 }
-

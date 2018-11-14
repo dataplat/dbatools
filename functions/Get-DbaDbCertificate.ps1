@@ -61,7 +61,7 @@ function Get-DbaDbCertificate {
 
         Gets the cert1 certificate within the db1 database
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [Alias("ServerInstance", "SqlServer")]
@@ -117,4 +117,3 @@ function Get-DbaDbCertificate {
         }
     }
 }
-

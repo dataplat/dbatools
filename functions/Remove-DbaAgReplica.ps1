@@ -54,7 +54,7 @@ function Remove-DbaAgReplica {
 
         Returns full object properties on all availability group replicas found on sql2017a
 
-#>
+    #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
     param (
         [DbaInstanceParameter[]]$SqlInstance,

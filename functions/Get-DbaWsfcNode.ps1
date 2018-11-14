@@ -41,7 +41,7 @@ function Get-DbaWsfcNode {
 
         Shows all node values, including the ones not shown in the default view
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(ValueFromPipeline)]
@@ -59,4 +59,3 @@ function Get-DbaWsfcNode {
         }
     }
 }
-

@@ -36,7 +36,7 @@ function Get-DbaRepServer {
 
         Gets the replication server object for sql2016 using SQL authentication
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [Parameter(Mandatory, ValueFromPipeline)]
@@ -56,4 +56,3 @@ function Get-DbaRepServer {
         }
     }
 }
-

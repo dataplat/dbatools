@@ -1,5 +1,4 @@
 #ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
-
 function Read-DbaBackupHeader {
     <#
     .SYNOPSIS
@@ -84,9 +83,8 @@ function Read-DbaBackupHeader {
 
         Gets the backup header information from the SQL Server backup file stored at https://dbatoolsaz.blob.core.windows.net/azbackups/restoretime/restoretime_201705131850.bak on Azure
 
-#>
-    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingPlainTextForPassword", '')]
-    <# AzureCredential is utilized in this command is not a formal Credential object. #>
+       #>
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingPlainTextForPassword", 'AzureCredential', Justification = "For Parameter AzureCredential")]
     [CmdletBinding()]
     param (
         [parameter(Mandatory)]
@@ -281,4 +279,3 @@ function Read-DbaBackupHeader {
         [System.Management.Automation.Runspaces.Runspace]::DefaultRunspace = $defaultrunspace
     }
 }
-

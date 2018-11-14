@@ -78,7 +78,7 @@ function Get-DbaDbTable {
         The Table name, Schema name and Database name must be wrapped in square brackets [ ]
         Special charcters like " must be escaped by a ` charcter.
         In addition any actual instance of the ] character must be escaped by being duplicated.
-#>
+       #>
     [CmdletBinding()]
     param ([parameter(ValueFromPipeline, Mandatory)]
         [Alias("ServerInstance", "SqlServer")]
@@ -188,4 +188,3 @@ function Get-DbaDbTable {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-DbaTable
     }
 }
-

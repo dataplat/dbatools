@@ -7,7 +7,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         $paramCount = 13
         $defaultParamCount = 13
         [object[]]$params = (Get-ChildItem function:\Set-DbaTempDbConfig).Parameters.Keys
-        $knownParameters = 'SqlInstance','SqlCredential','DataFileCount','DataFileSizeMB','LogFileSizeMB','DataFileGrowthMB','LogFileGrowthMB','DataPath','LogPath','OutFile','OutputScriptOnly','DisableGrowth','EnableException'
+        $knownParameters = 'SqlInstance', 'SqlCredential', 'DataFileCount', 'DataFileSizeMB', 'LogFileSizeMB', 'DataFileGrowthMB', 'LogFileGrowthMB', 'DataPath', 'LogPath', 'OutFile', 'OutputScriptOnly', 'DisableGrowth', 'EnableException'
         It "Should contain our specific parameters" {
             ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
         }
@@ -21,4 +21,3 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Read https://github.com/sqlcollaborative/dbatools/blob/development/contributing.md#tests
     for more guidence.
 #>
-

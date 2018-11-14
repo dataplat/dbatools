@@ -196,7 +196,7 @@ function Find-DbaInstance {
 
         Scans localhost for instances using the browser service, traverses all instances for all databases and displays a subset of the important information in a formatted table.
 
-#>
+    #>
     [CmdletBinding()]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseApprovedVerbs", "", Justification = "Internal functions are ignored")]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseOutputTypeCorrectly", "", Justification = "PSSA Rule Ignored by BOH")]

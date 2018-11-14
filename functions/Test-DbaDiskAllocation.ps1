@@ -63,7 +63,7 @@ function Test-DbaDiskAllocation {
 
         Scans all disks not hosting SQL Server data or log files on server sqlserver2014a for best practice allocation unit size.
 
-#>
+    #>
     [CmdletBinding(SupportsShouldProcess)]
     [OutputType("System.Collections.ArrayList", "System.Boolean")]
     param (
@@ -225,4 +225,3 @@ function Test-DbaDiskAllocation {
         }
     }
 }
-

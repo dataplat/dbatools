@@ -41,7 +41,7 @@ function Enable-DbaTraceFlag {
 
         Enable multiple trace flags on SQL Server instance sql2016
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Position = 0, Mandatory, ValueFromPipeline)]
@@ -99,4 +99,3 @@ function Enable-DbaTraceFlag {
         }
     }
 }
-

@@ -27,9 +27,8 @@ function New-DbaScriptingOption {
 
         Exports Agent Jobs with the Scripting Options ScriptDrops set to $false and WithDependencies set to true
 
-#>
+    #>
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "")]
     param()
     New-Object Microsoft.SqlServer.Management.Smo.ScriptingOptions
 }
-

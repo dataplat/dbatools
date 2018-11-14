@@ -47,7 +47,7 @@ function Get-DbaRepPublication {
 
         Return all publications on server sql2008 for all databases that have Transactional publications
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
@@ -109,4 +109,3 @@ function Get-DbaRepPublication {
         }
     }
 }
-

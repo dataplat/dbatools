@@ -82,7 +82,7 @@ function Set-DbaAgReplica {
         PS C:\> Get-DbaAgReplica -SqlInstance sql2016 | Out-GridView -Passthru | Set-DbaAgReplica -BackupPriority 5000
 
         Sets the backup priority to 5000 for the selected availability groups.
-    #>
+       #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Medium')]
     param (
         [DbaInstanceParameter[]]$SqlInstance,

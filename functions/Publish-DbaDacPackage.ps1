@@ -96,7 +96,7 @@ function Publish-DbaDacPackage {
         PS C:\> Publish-DbaDacPackage -SqlInstance sql2017 -Database WideWorldImporters -Path C:\temp\sql2016-WideWorldImporters.dacpac -PublishXml C:\temp\sql2016-WideWorldImporters-publish.xml -GenerateDeploymentReport -ScriptOnly
 
         Does not deploy the changes, but will generate the deployment report that would be executed against WideWorldImporters.
-#>
+    #>
     [CmdletBinding(DefaultParameterSetName = 'Obj')]
     param (
         [Alias("ServerInstance", "SqlServer")]
@@ -358,4 +358,3 @@ function Publish-DbaDacPackage {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Publish-DbaDacpac
     }
 }
-

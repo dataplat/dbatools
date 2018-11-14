@@ -10,7 +10,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         $paramCount = 19
         $defaultParamCount = 13
         [object[]]$params = (Get-ChildItem function:\New-DbaLogin).Parameters.Keys
-        $knownParameters = 'SqlInstance','SqlCredential','Login','InputObject','LoginRenameHashtable','Password','HashedPassword','MapToCertificate','MapToAsymmetricKey','MapToCredential','Sid','DefaultDatabase','Language','PasswordExpiration','PasswordPolicy','Disabled','NewSid','Force','EnableException'
+        $knownParameters = 'SqlInstance', 'SqlCredential', 'Login', 'InputObject', 'LoginRenameHashtable', 'Password', 'HashedPassword', 'MapToCertificate', 'MapToAsymmetricKey', 'MapToCredential', 'Sid', 'DefaultDatabase', 'Language', 'PasswordExpiration', 'PasswordPolicy', 'Disabled', 'NewSid', 'Force', 'EnableException'
         It "Should contain our specific parameters" {
             ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
         }
@@ -50,8 +50,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
                 }
             }
         }
-    }
-    catch {<#nbd#> }
+    } catch {<#nbd#> }
 
     #create Windows login
     $computer = [ADSI]"WinNT://$computerName"
@@ -60,8 +59,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         if ($user.Name -eq $credLogin) {
             $computer.Delete('User', $credLogin)
         }
-    }
-    catch {<#User does not exist#>}
+    } catch {<#User does not exist#>}
 
     $user = $computer.Create("user", $credLogin)
     $user.SetPassword($password)
@@ -80,8 +78,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         if ($crt = $server1.Databases['master'].Certificates[$certificateName]) {
             $crt.Drop()
         }
-    }
-    catch {<#nbd#> }
+    } catch {<#nbd#> }
     $null = New-DbaDbCertificate $server1 -Name $certificateName -Password $null -Confirm:$false
 
     Context "Create new logins" {
@@ -218,6 +215,5 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         if (!$mkey) {
             $null = Remove-DbaDbMasterKey -SqlInstance $script:instance1 -Database master -Confirm:$false
         }
-    }
-    catch {<#nbd#> }
+    } catch {<#nbd#> }
 }
