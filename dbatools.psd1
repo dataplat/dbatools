@@ -11,7 +11,7 @@
     RootModule             = 'dbatools.psm1'
 
     # Version number of this module.
-    ModuleVersion          = '0.9.510'
+    ModuleVersion          = '0.9.511'
 
     # ID used to uniquely identify this module
     GUID                   = '9d139310-ce45-41ce-8e8b-d76335aa1789'
@@ -569,7 +569,8 @@
         'Install-DbaSqlWatch',
         'Uninstall-DbaSqlWatch',
         'Get-DbaMemoryCondition',
-        'Remove-DbaDbBackupRestoreHistory'
+        'Remove-DbaDbBackupRestoreHistory',
+        'New-DbaDatabase'
     )
 
     # Cmdlets to export from this module
