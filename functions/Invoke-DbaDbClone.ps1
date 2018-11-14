@@ -62,7 +62,7 @@ function Invoke-DbaDbClone {
         Updates the statistics of mydb then clones to myclone and myclone2
 
 #>
-    [CmdletBinding()]
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
     param (
         [parameter(Position = 0)]
         [Alias("ServerInstance", "SqlServer", "SqlServers")]
@@ -195,11 +195,13 @@ function Invoke-DbaDbClone {
             }
 
             if ( (Test-Bound 'UpdateStatistics') -and (Test-Bound 'ExcludeStatistics' -Not) ) {
-                try {
-                    Write-Message -Level Verbose -Message "Updating statistics"
-                    $null = $database.Query($sqlStats)
-                } catch {
-                    Stop-Function -Message "Failure" -ErrorRecord $_ -Target $server -Continue
+                if ($Pscmdlet.ShouldProcess("$instance", "Update statistics in $($Database.Name)")) {
+                    try {
+                        Write-Message -Level Verbose -Message "Updating statistics"
+                        $null = $database.Query($sqlStats)
+                    } catch {
+                        Stop-Function -Message "Failure" -ErrorRecord $_ -Target $server -Continue
+                    }
                 }
             }
 
@@ -210,13 +212,15 @@ function Invoke-DbaDbClone {
                 if ($server.Databases[$db]) {
                     Stop-Function -Message "Destination clone database $db already exists" -Target $instance -Continue
                 } else {
-                    try {
-                        $sql = "DBCC CLONEDATABASE('$dbName','$db') $sqlWith"
-                        Write-Message -Level Debug -Message "Sql Statement: $sql"
-                        $null = $database.Query($sql)
-                        Get-DbaDatabase -SqlInstance $server -Database $db
-                    } catch {
-                        Stop-Function -Message "Failure" -ErrorRecord $_ -Target $server -Continue
+                    if ($Pscmdlet.ShouldProcess("$instance", "Execute DBCC CloneDatabase($dbName, $db)")) {
+                        try {
+                            $sql = "DBCC CLONEDATABASE('$dbName','$db') $sqlWith"
+                            Write-Message -Level Debug -Message "Sql Statement: $sql"
+                            $null = $database.Query($sql)
+                            Get-DbaDatabase -SqlInstance $server -Database $db
+                        } catch {
+                            Stop-Function -Message "Failure" -ErrorRecord $_ -Target $server -Continue
+                        }
                     }
                 }
             }
@@ -226,4 +230,3 @@ function Invoke-DbaDbClone {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Invoke-DbaDatabaseClone
     }
 }
-
