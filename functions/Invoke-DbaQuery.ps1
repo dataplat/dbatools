@@ -91,50 +91,26 @@ function Invoke-DbaQuery {
     param (
         [parameter(ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
-        [DbaInstance[]]
-        $SqlInstance,
-
+        [DbaInstance[]]$SqlInstance,
         [Alias("Credential")]
-        [PsCredential]
-        $SqlCredential,
-
-        [object]$Database,
-
+        [PsCredential]$SqlCredential,
+        [string]$Database,
         [Parameter(Mandatory, Position = 0, ParameterSetName = "Query")]
-        [string]
-        $Query,
-
-        [Int32]
-        $QueryTimeout = 600,
-
+        [string]$Query,
+        [Int32]$QueryTimeout = 600,
         [Parameter(Mandatory, ParameterSetName = "File")]
-        [object[]]
-        $File,
-
+        [Alias("InputFile")]
+        [object[]]$File,
         [Parameter(Mandatory, ParameterSetName = "SMO")]
-        [Microsoft.SqlServer.Management.Smo.SqlSmoObject[]]
-        $SqlObject,
-
+        [Microsoft.SqlServer.Management.Smo.SqlSmoObject[]]$SqlObject,
         [ValidateSet("DataSet", "DataTable", "DataRow", "PSObject", "SingleValue")]
-        [string]
-        $As = "DataRow",
-
-        [System.Collections.IDictionary]
-        $SqlParameters,
-
-        [switch]
-        $AppendServerInstance,
-
-        [switch]
-        $MessagesToOutput,
-
+        [string]$As = "DataRow",
+        [System.Collections.IDictionary]$SqlParameters,
+        [switch]$AppendServerInstance,
+        [switch]$MessagesToOutput,
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
-
-        [Alias('Silent')]
-        [switch]
-        $EnableException
-
+        [switch]$EnableException
     )
 
     begin {

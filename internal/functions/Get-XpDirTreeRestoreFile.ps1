@@ -64,7 +64,7 @@ function Get-XpDirTreeRestoreFile {
     } else {
         $sql = "EXEC master.sys.xp_dirtree '$Path',1,1;"
     }
-    #$queryResult = Invoke-Sqlcmd2 -ServerInstance $SqlInstance -Credential $SqlCredential -Database tempdb -Query $query
+    #$queryResult = Invoke-DbaQuery -SqlInstance $SqlInstance -Credential $SqlCredential -Database tempdb -Query $query
     $queryResult = $server.Query($sql)
     Write-Message -Level Debug -Message $sql
     $dirs = $queryResult | Where-Object file -eq 0

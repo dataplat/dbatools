@@ -23,7 +23,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
-        $null = Invoke-Sqlcmd2 -ServerInstance $script:instance3 -InputFile $script:appveyorlabrepo\sql2008-scripts\logins.sql -ErrorAction SilentlyContinue
+        $null = Invoke-DbaQuery -SqlInstance $script:instance3 -InputFile $script:appveyorlabrepo\sql2008-scripts\logins.sql -ErrorAction SilentlyContinue
         $agname = "dbatoolsci_ag_revoke"
         $null = New-DbaAvailabilityGroup -Primary $script:instance3 -Name $agname -ClusterType None -FailoverMode Manual -Confirm:$false -Certificate dbatoolsci_AGCert
     }
