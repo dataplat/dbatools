@@ -14182,26 +14182,10 @@
                        [
                            "EnableException",
                            "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
-                           "Silent",
+                           "",
                            false,
                            "false",
                            "False"
-                       ],
-                       [
-                           "WhatIf",
-                           "Shows what would happen if the command were to run. No actions are actually performed",
-                           "wi",
-                           false,
-                           "false",
-                           ""
-                       ],
-                       [
-                           "Confirm",
-                           "Prompts you for confirmation before executing any changing operations within the command",
-                           "cf",
-                           false,
-                           "false",
-                           ""
                        ]
                    ],
         "Alias":  "",
@@ -14210,7 +14194,7 @@
         "Name":  "Get-DbaForceNetworkEncryption",
         "Links":  "https://dbatools.io/Get-DbaForceNetworkEncryption",
         "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaForceNetworkEncryption\nGets Force Encryption properties on the default (MSSQLSERVER) instance on localhost - requires (and checks for) RunAs admin.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaForceNetworkEncryption -SqlInstance sql01\\SQL2008R2SP2\nGets Force Network Encryption for the SQL2008R2SP2 on sql01. Uses Windows Credentials to both login and view the registry.",
-        "Syntax":  "Get-DbaForceNetworkEncryption [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-Credential] \u003cPSCredential\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Get-DbaForceNetworkEncryption [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-Credential] \u003cPSCredential\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
         "CommandName":  "Get-DbaHelpIndex",
