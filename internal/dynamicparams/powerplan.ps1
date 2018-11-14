@@ -1,4 +1,4 @@
-﻿#region Initialize Cache
+#region Initialize Cache
 if (-not [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache["powerplan"]) {
     [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache["powerplan"] = @()
 }
@@ -13,8 +13,8 @@ $ScriptBlock = {
         $commandAst,
         $fakeBoundParameter
     )
-    
-    
+
+
     foreach ($name in ([Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache["powerplan"] | Where-DbaObject -Like "$wordToComplete*")) {
         New-DbaTeppCompletionResult -CompletionText $name -ToolTip $name
     }
