@@ -176,9 +176,11 @@ function Import-DbaCsvToSql {
 
         Imports the entire comma-delimited housing.csv located in the directory R:\To Import on FileServer using the administrative share to the SQL "markets" database on a SQL Server named sql001.
 
-#>
+    #>
     [CmdletBinding(DefaultParameterSetName = "Default")]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseSingularNouns", "", Justification = "Internal functions are ignored")]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingPlainTextForPassword", "", Justification = "For Parameters SQLCredential and SQLCredentialPath")]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseDeclaredVarsMoreThanAssignments", "line", Justification = "Variable line is used, False Positive on line 330")]
     param (
         [string[]]$Csv,
         [Parameter(Mandatory)]
@@ -431,7 +433,7 @@ function Import-DbaCsvToSql {
                 .OUTPUTS
                     Creates new table
             #>
-
+            [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "")]
             param (
                 [Parameter(Mandatory)]
                 [string[]]$Csv,
@@ -1128,7 +1130,8 @@ function Import-DbaCsvToSql {
                                         }
                                         $colnum++
                                     }
-                                    $newrow = $datatable.Rows.Add($row)
+                                    #$newrow replaced with $null as it was identified as a unused variable
+                                    $null = $datatable.Rows.Add($row)
                                 } catch {
                                     Write-Warning "The following line ($i) is causing issues:"
                                     Write-Output $line.Replace($InternalDelimiter, "`n")
@@ -1269,7 +1272,8 @@ function Import-DbaCsvToSql {
             $null = $bulkCopy.close(); $bulkcopy.dispose();
             $null = $reader.close(); $null = $reader.dispose()
         } catch {
-
+            #here to avoid an empty catch
+            $null = 1
         }
 
         # Delete all the temp files

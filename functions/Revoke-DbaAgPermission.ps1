@@ -103,12 +103,12 @@ function Revoke-DbaAgPermission {
             Stop-Function -Message "You must specify one or more logins when using the SqlInstance parameter."
             return
         }
-        
+
         if ($Type -contains "AvailabilityGroup" -and -not $AvailabilityGroup) {
             Stop-Function -Message "You must specify at least one availability group when using the AvailabilityGroup type."
             return
         }
-        
+
         foreach ($instance in $SqlInstance) {
             if ($perm -contains "CreateAnyDatabase") {
                 try {
@@ -116,7 +116,7 @@ function Revoke-DbaAgPermission {
                 } catch {
                     Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
                 }
-                
+
                 foreach ($ag in $AvailabilityGroup) {
                     try {
                         $server.Query("ALTER AVAILABILITY GROUP $ag GRANT CREATE ANY DATABASE")
@@ -139,17 +139,17 @@ function Revoke-DbaAgPermission {
                 }
             }
         }
-        
+
         foreach ($account in $InputObject) {
             $server = $account.Parent
             if ($Type -contains "Endpoint") {
                 $server.Endpoints.Refresh()
                 $endpoint = $server.Endpoints | Where-Object EndpointType -eq DatabaseMirroring
-                
+
                 if (-not $endpoint) {
                     Stop-Function -Message "DatabaseMirroring endpoint does not exist on $server" -Target $server -Continue
                 }
-                
+
                 foreach ($perm in $Permission) {
                     if ($Pscmdlet.ShouldProcess($server.Name, "Revokeing $perm on $endpoint")) {
                         if ($perm -in 'CreateAnyDatabase') {
@@ -173,7 +173,7 @@ function Revoke-DbaAgPermission {
                     }
                 }
             }
-            
+
             if ($Type -contains "AvailabilityGroup") {
                 $ags = Get-DbaAvailabilityGroup -SqlInstance $account.Parent -AvailabilityGroup $AvailabilityGroup
                 foreach ($ag in $ags) {

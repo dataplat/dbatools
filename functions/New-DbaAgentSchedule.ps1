@@ -123,6 +123,7 @@ function New-DbaAgentSchedule {
 
 #>
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "Low")]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseOutputTypeCorrectly", "", Justification = "PSSA Rule Ignored by BOH")]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
@@ -398,6 +399,20 @@ function New-DbaAgentSchedule {
             Stop-Function -Message "End time $EndTime needs to match between '000000' and '235959'" -Target $SqlInstance
             return
         }
+
+        #Format dates and times
+        if ($StartDate) {
+            $StartDate = $StartDate.Insert(6, '-').Insert(4, '-')
+        }
+        if ($EndDate) {
+            $EndDate = $EndDate.Insert(6, '-').Insert(4, '-')
+        }
+        if ($StartTime) {
+            $StartTime = $StartTime.Insert(4, ':').Insert(2, ':')
+        }
+        if ($EndTime) {
+            $EndTime = $EndTime.Insert(4, ':').Insert(2, ':')
+        }
     }
 
     process {
@@ -485,25 +500,21 @@ function New-DbaAgentSchedule {
                         }
 
                         if ($StartDate) {
-                            $StartDate = $StartDate.Insert(6, '-').Insert(4, '-')
                             Write-Message -Message "Setting job schedule start date to $StartDate" -Level Verbose
                             $JobSchedule.ActiveStartDate = $StartDate
                         }
 
                         if ($EndDate) {
-                            $EndDate = $EndDate.Insert(6, '-').Insert(4, '-')
                             Write-Message -Message "Setting job schedule end date to $EndDate" -Level Verbose
                             $JobSchedule.ActiveEndDate = $EndDate
                         }
 
                         if ($StartTime) {
-                            $StartTime = $StartTime.Insert(4, ':').Insert(2, ':')
                             Write-Message -Message "Setting job schedule start time to $StartTime" -Level Verbose
                             $JobSchedule.ActiveStartTimeOfDay = $StartTime
                         }
 
                         if ($EndTime) {
-                            $EndTime = $EndTime.Insert(4, ':').Insert(2, ':')
                             Write-Message -Message "Setting job schedule end time to $EndTime" -Level Verbose
                             $JobSchedule.ActiveEndTimeOfDay = $EndTime
                         }
@@ -572,25 +583,21 @@ function New-DbaAgentSchedule {
                 }
 
                 if ($StartDate) {
-                    $StartDate = $StartDate.Insert(6, '-').Insert(4, '-')
                     Write-Message -Message "Setting job schedule start date to $StartDate" -Level Verbose
                     $JobSchedule.ActiveStartDate = $StartDate
                 }
 
                 if ($EndDate) {
-                    $EndDate = $EndDate.Insert(6, '-').Insert(4, '-')
                     Write-Message -Message "Setting job schedule end date to $EndDate" -Level Verbose
                     $JobSchedule.ActiveEndDate = $EndDate
                 }
 
                 if ($StartTime) {
-                    $StartTime = $StartTime.Insert(4, ':').Insert(2, ':')
                     Write-Message -Message "Setting job schedule start time to $StartTime" -Level Verbose
                     $JobSchedule.ActiveStartTimeOfDay = $StartTime
                 }
 
                 if ($EndTime) {
-                    $EndTime = $EndTime.Insert(4, ':').Insert(2, ':')
                     Write-Message -Message "Setting job schedule end time to $EndTime" -Level Verbose
                     $JobSchedule.ActiveEndTimeOfDay = $EndTime
                 }

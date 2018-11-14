@@ -175,7 +175,10 @@ function Get-DbaCmsRegServer {
                         $server.ComputerName = $lookup.ComputerName
                         $server.FQDN = $lookup.FQDN
                         $server.IPAddress = $lookup.IPAddress
-                    } catch { }
+                    } catch {
+                        # here to avoid an empty catch
+                        $null = 1
+                    }
                 }
             }
             Add-Member -Force -InputObject $server -MemberType ScriptMethod -Name ToString -Value { $this.ServerName }

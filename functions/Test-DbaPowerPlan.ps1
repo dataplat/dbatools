@@ -67,8 +67,6 @@ function Test-DbaPowerPlan {
             InstanceID  = '8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c'
             ElementName = $null
         }
-
-        $sessionOption = New-CimSessionOption -Protocol DCom
     }
 
     process {
@@ -81,32 +79,18 @@ function Test-DbaPowerPlan {
                 Stop-Function -Message "Couldn't resolve hostname. Skipping." -Continue
             }
 
-            Write-Message -Level Verbose -Message "Creating CimSession on $computer over WSMan."
-
-            if (!$Credential) {
-                $cimSession = New-CimSession -ComputerName $computerResolved -ErrorAction SilentlyContinue
-            } else {
-                $cimSession = New-CimSession -ComputerName $computerResolved -ErrorAction SilentlyContinue -Credential $Credential
+            $splatDbaCmObject = @{
+                ComputerName    = $computerResolved
+                EnableException = $true
             }
-
-            if ($null -eq $cimSession.id) {
-                Write-Message -Level Verbose -Message "Creating CimSession on $computer over WSMan failed. Creating CimSession on $computer over DCOM."
-
-                if (!$Credential) {
-                    $cimSession = New-CimSession -ComputerName $computerResolved -SessionOption $sessionOption -ErrorAction SilentlyContinue
-                } else {
-                    $cimSession = New-CimSession -ComputerName $computerResolved -SessionOption $sessionOption -ErrorAction SilentlyContinue -Credential $Credential
-                }
-            }
-
-            if ($null -eq $cimSession.id) {
-                Stop-Function -Message "Can't create CimSession on $computer." -Target $computer
+            if (Test-Bound "Credential") {
+                $splatDbaCmObject["Credential"] = $Credential
             }
 
             Write-Message -Level Verbose -Message "Getting Power Plan information from $computer."
 
             try {
-                $powerPlans = Get-CimInstance -CimSession $cimSession -ClassName Win32_PowerPlan -Namespace "root\cimv2\power" -ErrorAction Stop | Select-Object ElementName, InstanceID, IsActive
+                $powerPlans = Get-DbaCmObject @splatDbaCmObject -ClassName Win32_PowerPlan -Namespace "root\cimv2\power"  | Select-Object ElementName, InstanceId, IsActive
             } catch {
                 if ($_.Exception -match "namespace") {
                     Stop-Function -Message "Can't get Power Plan Info for $computer. Unsupported operating system." -Continue -ErrorRecord $_ -Target $computer

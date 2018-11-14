@@ -242,7 +242,7 @@ function Backup-DbaDatabase {
             }
 
             if ($InputObject.Count -gt 1 -and $BackupFileName -ne '' -and $True -ne $ReplaceInFile) {
-                Stop-Function -Message "1 BackupFile specified, but more than 1 database."  -Level Verbose
+                Stop-Function -Message "1 BackupFile specified, but more than 1 database."
                 return
             }
 
@@ -515,6 +515,8 @@ function Backup-DbaDatabase {
 
                 try {
                     if ($Pscmdlet.ShouldProcess($server.Name, "Backing up $dbname to $humanBackupFile")) {
+                        $CurrentLsn = (Read-DbaTransactionLog -SqlInstance $server -Database $dbname -RowLimit 1).'Current LSN'
+                        $NumericLSN = (Convert-DbaLSN -LSN $CurrentLsn).Numeric
                         if ($OutputScriptOnly -ne $True) {
                             $Filelist = @()
                             $FileList += $server.Databases[$dbname].FileGroups.Files | Select-Object @{ Name = "FileType"; Expression = { "D" } }, @{ Name = "Type"; Expression = { "D" } }, @{ Name = "LogicalName"; Expression = { $_.Name } }, @{ Name = "PhysicalName"; Expression = { $_.FileName } }
@@ -527,7 +529,7 @@ function Backup-DbaDatabase {
                             if ($server.VersionMajor -eq '8') {
                                 $HeaderInfo = Get-BackupAncientHistory -SqlInstance $server -Database $dbname
                             } else {
-                                $HeaderInfo = Get-DbaBackupHistory -SqlInstance $server -Database $dbname -Last -IncludeCopyOnly | Sort-Object -Property End -Descending | Select-Object -First 1
+                                $HeaderInfo = Get-DbaBackupHistory -SqlInstance $server -Database $dbname -Last -IncludeCopyOnly -LastLsn $NumericLsn  | Sort-Object -Property End -Descending | Select-Object -First 1
                             }
                             $Verified = $false
                             if ($Verify) {
@@ -583,7 +585,7 @@ function Backup-DbaDatabase {
                         Write-Message -Message "Exception thrown by db going into restoring mode due to recovery" -Leve Verbose
                     } else {
                         Write-Progress -id $ProgressId -activity "Backup" -status "Failed" -completed
-                        Stop-Function -message "Backup Failed:  $($_.Exception.Message)" -EnableException $EnableException -ErrorRecord $_ -Continue
+                        Stop-Function -message "Backup Failed" -ErrorRecord $_ -Continue
                         $BackupComplete = $false
                     }
                 }

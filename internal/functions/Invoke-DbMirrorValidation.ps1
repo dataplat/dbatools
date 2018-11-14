@@ -67,7 +67,7 @@ function Invoke-DbMirrorValidation {
         [DbaInstanceParameter]$Primary,
         [PSCredential]$PrimarySqlCredential,
         [parameter(Mandatory)]
-        [DbaInstanceParameter]$Mirror,
+        [DbaInstanceParameter[]]$Mirror,
         [PSCredential]$MirrorSqlCredential,
         [DbaInstanceParameter]$Witness,
         [PSCredential]$WitnessSqlCredential,
@@ -83,7 +83,9 @@ function Invoke-DbMirrorValidation {
             return
         }
         
-        $InputObject += Get-DbaDatabase -SqlInstance $Primary -SqlCredential $SqlCredential -Database $Database
+        if ($Primary) {
+            $InputObject += Get-DbaDatabase -SqlInstance $Primary -SqlCredential $SqlCredential -Database $Database
+        }
         
         foreach ($db in $InputObject) {
             $server = $db.Parent
@@ -210,4 +212,3 @@ function Invoke-DbMirrorValidation {
         }
     }
 }
-

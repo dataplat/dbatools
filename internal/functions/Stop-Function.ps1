@@ -184,7 +184,8 @@ function Stop-Function {
     if ($ErrorRecord -or $Exception) {
         if ($ErrorRecord) {
             foreach ($record in $ErrorRecord) {
-                if (-not $Exception) { $newException = New-Object System.Exception($record.Exception.Message, $record.Exception) }
+                $msg = Get-ErrorMessage -Record $record
+                if (-not $Exception) { $newException = New-Object System.Exception($msg, $record.Exception) }
                 else { $newException = $Exception }
                 if ($record.CategoryInfo.Category) { $Category = $record.CategoryInfo.Category }
                 $records += New-Object System.Management.Automation.ErrorRecord($newException, "$($ModuleName)_$FunctionName", $Category, $Target)

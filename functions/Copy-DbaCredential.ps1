@@ -112,6 +112,7 @@ function Copy-DbaCredential {
                 .OUTPUT
                     System.Data.DataTable
             #>
+            [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingPlainTextForPassword", "", Justification = "For Credentials")]
             param (
                 [string[]]$Credentials,
                 [bool]$Force

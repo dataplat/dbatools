@@ -30,14 +30,14 @@ Describe "$commandname Unit Test" -Tags Unittest {
                 (Get-DbaMaxMemory -SqlInstance 'ABC').SqlInstance | Should be 'ABC'
             }
 
-            It 'Server under-report by 1MB the memory installed on the host' {
+            It 'Server under-report by 1 the memory installed on the host' {
                 Mock Connect-SqlInstance {
                     return @{
                         PhysicalMemory = 1023
                     }
                 }
 
-                (Get-DbaMaxMemory -SqlInstance 'ABC').TotalMB | Should be 1024
+                (Get-DbaMaxMemory -SqlInstance 'ABC').Total | Should be 1024
             }
 
             It 'Server reports correctly the memory installed on the host' {
@@ -47,7 +47,7 @@ Describe "$commandname Unit Test" -Tags Unittest {
                     }
                 }
 
-                (Get-DbaMaxMemory -SqlInstance 'ABC').TotalMB | Should be 1024
+                (Get-DbaMaxMemory -SqlInstance 'ABC').Total | Should be 1024
             }
 
             It 'Memory allocated to SQL Server instance reported' {
@@ -61,7 +61,7 @@ Describe "$commandname Unit Test" -Tags Unittest {
                     }
                 }
 
-                (Get-DbaMaxMemory -SqlInstance 'ABC').SqlMaxMB | Should be 2147483647
+                (Get-DbaMaxMemory -SqlInstance 'ABC').MaxValue | Should be 2147483647
             }
         }
     }
@@ -73,10 +73,10 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $results = Get-DbaMaxMemory -SqlInstance $script:instance1, $script:instance2
             $results.Count | Should BeGreaterThan 1 # and ultimately not throw an exception
         }
-        It 'Returns the right amount of MB' {
-            $null = Set-DbaMaxMemory -SqlInstance $script:instance1, $script:instance2 -MaxMB 1024
+        It 'Returns the right amount of ' {
+            $null = Set-DbaMaxMemory -SqlInstance $script:instance1, $script:instance2 -Max 1024
             $results = Get-DbaMaxMemory -SqlInstance $script:instance1
-            $results.SqlMaxMB | Should Be 1024
+            $results.MaxValue | Should Be 1024
         }
     }
 }

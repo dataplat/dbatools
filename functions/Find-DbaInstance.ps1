@@ -199,6 +199,7 @@ function Find-DbaInstance {
 #>
     [CmdletBinding()]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseApprovedVerbs", "", Justification = "Internal functions are ignored")]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseOutputTypeCorrectly", "", Justification = "PSSA Rule Ignored by BOH")]
     param (
         [Parameter(Mandatory, ParameterSetName = 'Computer', ValueFromPipeline)]
         [DbaInstance[]]$ComputerName,
@@ -279,13 +280,19 @@ function Find-DbaInstance {
                     #region Gather data
                     if ($ScanType -band [Sqlcollaborative.Dbatools.Discovery.DbaInstanceScanType]::DNSResolve) {
                         try { $resolution = [System.Net.Dns]::GetHostEntry($computer.ComputerName) }
-                        catch { }
+                        catch {
+                            # here to avoid an empty catch
+                            $null = 1
+                        }
                     }
 
                     if ($ScanType -band [Sqlcollaborative.Dbatools.Discovery.DbaInstanceScanType]::Ping) {
                         $ping = New-Object System.Net.NetworkInformation.Ping
                         try { $pingReply = $ping.Send($computer.ComputerName) }
-                        catch { }
+                        catch {
+                            # here to avoid an empty catch
+                            $null = 1
+                        }
                     }
 
                     if ($ScanType -band [Sqlcollaborative.Dbatools.Discovery.DbaInstanceScanType]::SPN) {
@@ -293,7 +300,10 @@ function Find-DbaInstance {
                         if ($resolution.HostName) { $computerByName = $resolution.HostName }
                         if ($computerByName -notmatch "$([dbargx]::IPv4)|$([dbargx]::IPv6)") {
                             try { $sPNs = Get-DomainSPN -DomainController $DomainController -Credential $Credential -ComputerName $computerByName -GetSPN }
-                            catch { }
+                            catch {
+                                # here to avoid an empty catch
+                                $null = 1
+                            }
                         }
                     }
 
@@ -305,8 +315,8 @@ function Find-DbaInstance {
                         try {
                             $browseResult = Get-SQLInstanceBrowserUDP -ComputerName $computer -EnableException
                         } catch {
-                            #Variable marked as unused by PSScriptAnalyzer
-                            #$browseFailed = $true
+                            # here to avoid an empty catch
+                            $null = 1
                         }
                     }
 
@@ -475,7 +485,10 @@ function Find-DbaInstance {
 
                                     try {
                                         $dataSet.MachineName = $server.ComputerNamePhysicalNetBIOS
-                                    } catch { }
+                                    } catch {
+                                        # here to avoid an empty catch
+                                        $null = 1
+                                    }
                                 }
                             } catch {
                                 # Error class definitions
@@ -536,7 +549,7 @@ function Find-DbaInstance {
             [CmdletBinding()]
             param (
                 [string]$DomainController,
-                [object]$Credential,
+                [Pscredential]$Credential,
                 [string]$ComputerName = "*",
                 [switch]$GetSPN
             )
@@ -651,6 +664,8 @@ function Find-DbaInstance {
                         try {
                             $UDPClient.Close()
                         } catch {
+                            # here to avoid an empty catch
+                            $null = 1
                         }
 
                         if ($EnableException) { throw }

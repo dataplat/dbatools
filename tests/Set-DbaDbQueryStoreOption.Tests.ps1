@@ -35,6 +35,14 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
                 It "should return some valid results" {
                     $result = $results | Where-Object Database -eq msdb
                     $result.ActualState | Should Be 'Off'
+                    $result.MaxStorageSizeInMB | Should BeGreaterThan 1
+                }
+
+                $newnumber = $result.DataFlushIntervalInSeconds + 1
+
+                It "should change the specified param to the new value" {
+                    $results = Set-DbaDbQueryStoreOption -SqlInstance $instance -Database msdb -FlushInterval $newnumber -State ReadWrite
+                    $results.DataFlushIntervalInSeconds | Should Be $newnumber
                 }
 
                 It "should only get one database" {

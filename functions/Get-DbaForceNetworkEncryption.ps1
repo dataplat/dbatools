@@ -48,7 +48,7 @@ function Get-DbaForceNetworkEncryption {
         Gets Force Network Encryption for the SQL2008R2SP2 on sql01. Uses Windows Credentials to both login and view the registry.
 
 #>
-    [CmdletBinding()]
+    [CmdletBinding(SupportsShouldProcess)]
     param (
         [Parameter(ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer", "ComputerName")]
@@ -87,7 +87,9 @@ function Get-DbaForceNetworkEncryption {
             try {
                 $instancename = $sqlwmi.DisplayName.Replace('SQL Server (', '').Replace(')', '') # Don't clown, I don't know regex :(
             } catch {
-                # Probably because the instance name has been aliased or does not exist or samthin
+                # Probably because the instance name has been aliased or does not exist or something
+                # here to avoid an empty catch
+                $null = 1
             }
             $serviceaccount = $sqlwmi.ServiceAccount
 

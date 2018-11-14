@@ -71,11 +71,11 @@ function Suspend-DbaAgDbDataMovement {
                 return
             }
         }
-        
+
         foreach ($instance in $SqlInstance) {
             $InputObject += Get-DbaAgDatabase -SqlInstance $instance -SqlCredential $SqlCredential -Database $Database
         }
-        
+
         foreach ($agdb in $InputObject) {
             if ($Pscmdlet.ShouldProcess($ag.Parent.Name, "Seting availability group $db to $($db.Parent.Name)")) {
                 try {
