@@ -1,5 +1,6 @@
+#ValidationTags#CodeStyle,Messaging,FlowControl,Pipeline#
 function New-DbaDatabase {
-    <#
+     <#
     .SYNOPSIS
         Creates a new database
 
@@ -44,11 +45,11 @@ function New-DbaDatabase {
     .PARAMETER LogSize
         The size in MB that the Transaction log will be created.
 
-    .PARAMTER LogGrowth
+    .PARAMETER LogGrowth
         The amount in MB that the log file will be set to autogrow by.
 
     .PARAMETER SecondaryFileCount
-        The number of files to create in the Secondary filegroup for the database. Default is 1.
+        The number of files to create in the Secondary filegroup for the database.
 
     .PARAMETER SecondaryFilesize
         The size in MB of the files to be added to the Secondary filegroup. Each file added will be created with this size setting.
@@ -105,10 +106,10 @@ function New-DbaDatabase {
         Creates a database named nondefault and places data files in in the M:\data directory and log files in "L:\Logs with spaces".
 
         Creates a secondary group with 2 files in the Secondary filegroup.
-       #>
-
-    [cmdletbinding(SupportsShouldProcess, ConfirmImpact = "Low")]
-    Param
+    
+    #>
+    [Cmdletbinding(SupportsShouldProcess, ConfirmImpact = "Low")]
+    param
     (
         [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
