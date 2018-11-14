@@ -8542,11 +8542,19 @@
                        ],
                        [
                            "FileMapping",
-                           "A hashtable that can be used to move specific files to a location.\r\n$FileMapping = @{\u0027DataFile1\u0027=\u0027c:\\restoredfiles\\Datafile1.mdf\u0027;\u0027DataFile3\u0027=\u0027d:\\DataFile3.mdf\u0027}\r\nAnd files not specified in the mapping will be restored to their original location\r\nThis Parameter is exclusive with DestinationDataDirectory\r\nIf specified, this will override any other file renaming/relocation options.",
+                           "A hashtable that can be used to move specific files to a location.\r\n`$FileMapping = @{\u0027DataFile1\u0027=\u0027c:\\restoredfiles\\Datafile1.mdf\u0027;\u0027DataFile3\u0027=\u0027d:\\DataFile3.mdf\u0027}`\r\nAnd files not specified in the mapping will be restored to their original location\r\nThis Parameter is exclusive with DestinationDataDirectory\r\nIf specified, this will override any other file renaming/relocation options.",
                            "",
                            false,
                            "false",
                            ""
+                       ],
+                       [
+                           "PathSep",
+                           "By default is Windows\u0027s style (`\\`) but you can pass also, e.g., `/` for Unix\u0027s style paths",
+                           "",
+                           false,
+                           "false",
+                           "\\"
                        ],
                        [
                            "EnableException",
@@ -8563,7 +8571,7 @@
         "Name":  "Format-DbaBackupInformation",
         "Links":  "https://dbatools.io/Format-DbaBackupInformation",
         "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003e$History | Format-DbaBackupInformation -ReplaceDatabaseName NewDb\nChanges as database name references to NewDb, both in the database name and any restore paths. Note, this will fail if the BackupHistory object contains backups for more than 1 database\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003e$History | Format-DbaBackupInformation -ReplaceDatabaseName @{\u0027OldB\u0027=\u0027NewDb\u0027;\u0027ProdHr\u0027=\u0027DevHr\u0027}\nWill change all occurrences of original database name in the backup history (names and restore paths) using the mapping in the hashtable.\r\nIn this example any occurrence of OldDb will be replaced with NewDb and ProdHr with DevPR\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003e$History | Format-DbaBackupInformation -DataFileDirectory \u0027D:\\DataFiles\\\u0027 -LogFileDirectory \u0027E:\\LogFiles\\\nThis example with change the restore path for all data files (everything that is not a log file) to d:\\datafiles\r\nAnd all Transaction Log files will be restored to E:\\Logfiles\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003e$History | Format-DbaBackupInformation -RebaseBackupFolder f:\\backups\nThis example changes the location that SQL Server will look for the backups. This is useful if you\u0027ve moved the backups to a different location",
-        "Syntax":  "Format-DbaBackupInformation [-BackupHistory] \u003cObject[]\u003e [[-ReplaceDatabaseName] \u003cObject\u003e] [-ReplaceDbNameInFile] [[-DataFileDirectory] \u003cString\u003e] [[-LogFileDirectory] \u003cString\u003e] [[-DestinationFileStreamDirectory] \u003cString\u003e] [[-DatabaseNamePrefix] \u003cString\u003e] [[-DatabaseFilePrefix] \u003cString\u003e] [[-DatabaseFileSuffix] \u003cString\u003e] [[-RebaseBackupFolder] \u003cString\u003e] [-Continue] [[-FileMapping] \u003cHashtable\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Format-DbaBackupInformation [-BackupHistory] \u003cObject[]\u003e [[-ReplaceDatabaseName] \u003cObject\u003e] [-ReplaceDbNameInFile] [[-DataFileDirectory] \u003cString\u003e] [[-LogFileDirectory] \u003cString\u003e] [[-DestinationFileStreamDirectory] \u003cString\u003e] [[-DatabaseNamePrefix] \u003cString\u003e] [[-DatabaseFilePrefix] \u003cString\u003e] [[-DatabaseFileSuffix] \u003cString\u003e] [[-RebaseBackupFolder] \u003cString\u003e] [-Continue] [[-FileMapping] \u003cHashtable\u003e] [[-PathSep] \u003cString\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
         "CommandName":  "Get-DbaAgDatabase",
@@ -20625,7 +20633,7 @@
     },
     {
         "CommandName":  "Invoke-DbaAdvancedRestore",
-        "Description":  "This is the final piece in the Restore-DbaDatabase Stack. Usually a BackupHistory object will arrive here from Restore-Dbadatabase via the following pipeline:\nGet-DbaBackupInformation  | Select-DbaBackupInformation | Format-DbaBackupInformation | Test-DbaBackupInformation | Invoke-DbaAdvancedRestore\n\nWe have exposed these functions publicly to allow advanced users to perform operations that we don\u0027t support, or won\u0027t add as they would make things too complex for the majority of our users\n\nFor example if you wanted to do some very complex redirection during a migration, then doing the rewrite of destinations may be better done with your own custom scripts rather than via Format-DbaBackupInformation\n\nWe would recommend ALWAYS pushing your input through Test-DbaBackupInformation just to make sure that it makes sense to us.",
+        "Description":  "This is the final piece in the Restore-DbaDatabase Stack. Usually a BackupHistory object will arrive here from `Restore-Dbadatabase` via the following pipeline:\n`Get-DbaBackupInformation  | Select-DbaBackupInformation | Format-DbaBackupInformation | Test-DbaBackupInformation | Invoke-DbaAdvancedRestore`\n\nWe have exposed these functions publicly to allow advanced users to perform operations that we don\u0027t support, or won\u0027t add as they would make things too complex for the majority of our users\n\nFor example if you wanted to do some very complex redirection during a migration, then doing the rewrite of destinations may be better done with your own custom scripts rather than via `Format-DbaBackupInformation`\n\nWe would recommend ALWAYS pushing your input through `Test-DbaBackupInformation` just to make sure that it makes sense to us.",
         "Tags":  [
                      "Restore",
                      "Backup"
@@ -20789,7 +20797,7 @@
         "Synopsis":  "Allows the restore of modified BackupHistory Objects\nFor 90% of users Restore-DbaDatabase should be your point of access to this function. The other 10% use it at their own risk",
         "Name":  "Invoke-DbaAdvancedRestore",
         "Links":  "https://dbatools.io/Invoke-DbaAdvancedRestore",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003e$BackupHistory | Invoke-DbaAdvancedRestore -SqlInstance MyInstance\nWill restore all the backups in the BackupHistory object according to the transformations it contains\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003e$BackupHistory | Invoke-DbaAdvancedRestore -SqlInstance MyInstance -OutputScriptOnly\nPS C:\\\u003e $BackupHistory | Invoke-DbaAdvancedRestore -SqlInstance MyInstance\nFirst generates just the T-SQL restore scripts so they can be sanity checked, and then if they are good perform the full restore. By reusing the BackupHistory object there is no need to rescan all \r\nthe backup files again",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003e$BackupHistory | Invoke-DbaAdvancedRestore -SqlInstance MyInstance\nWill restore all the backups in the BackupHistory object according to the transformations it contains\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003e$BackupHistory | Invoke-DbaAdvancedRestore -SqlInstance MyInstance -OutputScriptOnly\nPS C:\\\u003e $BackupHistory | Invoke-DbaAdvancedRestore -SqlInstance MyInstance\nFirst generates just the T-SQL restore scripts so they can be sanity checked, and then if they are good perform the full restore.\r\nBy reusing the BackupHistory object there is no need to rescan all the backup files again",
         "Syntax":  "Invoke-DbaAdvancedRestore [-BackupHistory] \u003cObject[]\u003e [[-SqlInstance] \u003cDbaInstanceParameter\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [-OutputScriptOnly] [-VerifyOnly] [[-RestoreTime] \u003cDateTime\u003e] [[-StandbyDirectory] \u003cString\u003e] [-NoRecovery] [[-MaxTransferSize] \u003cInt32\u003e] [[-BlockSize] \u003cInt32\u003e] [[-BufferCount] \u003cInt32\u003e] [-Continue] [[-AzureCredential] \u003cString\u003e] [-WithReplace] [-KeepCDC] [[-PageRestore] \u003cObject[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
@@ -25918,6 +25926,188 @@
         "Links":  "https://dbatools.io/New-DbaDacProfile",
         "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eNew-DbaDacProfile -SqlInstance sql2017 -SqlCredential ad\\sqldba -Database WorldWideImporters -Path C:\\temp\nIn this example, a prompt will appear for alternative credentials, then a connection will be made to sql2017. Using that connection,\r\nthe ConnectionString will be extracted and used within the Publish Profile XML file which will be created at C:\\temp\\sql2017-WorldWideImporters-publish.xml\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eNew-DbaDacProfile -Database WorldWideImporters -Path C:\\temp -ConnectionString \"SERVER=(localdb)\\MSSQLLocalDB;Integrated Security=True;Database=master\"\nIn this example, no connections are made, and a Publish Profile XML would be created at C:\\temp\\localdb-MSSQLLocalDB-WorldWideImporters-publish.xml",
         "Syntax":  "New-DbaDacProfile [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [-Database] \u003cString[]\u003e [[-Path] \u003cString\u003e] [[-ConnectionString] \u003cString[]\u003e] [[-PublishOptions] \u003cHashtable\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+    },
+    {
+        "CommandName":  "New-DbaDatabase",
+        "Description":  "This command creates a new database.\n\nIt allows creation with multiple files, and sets all growth settings to be fixed size rather than percentage growth.",
+        "Tags":  "Database",
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "The target SQL Server instance or instances.",
+                           "",
+                           true,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
+                           "SqlCredential",
+                           "Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Name",
+                           "The name of the new database or databases to be created.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Collation",
+                           "The database collation, if not supplied the default server collation will be used.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Recoverymodel",
+                           "The recovery model for the database, if not supplied the recovery model from the model database will be used.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Owner",
+                           "The login that will be used as the database owner.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "DataFilePath",
+                           "The location that data files will be placed, otherwise the default SQL Server data path will be used.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "LogFilePath",
+                           "The location the log file will be placed, otherwise the default SQL Server log path will be used.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "PrimaryFilesize",
+                           "The size in MB for the Primary file. If this is less than the primary file size for the model database, then the model size will be used instead.",
+                           "",
+                           false,
+                           "false",
+                           "0"
+                       ],
+                       [
+                           "PrimaryFileGrowth",
+                           "The size in MB that the Primary file will autogrow by.",
+                           "",
+                           false,
+                           "false",
+                           "0"
+                       ],
+                       [
+                           "PrimaryFileMaxSize",
+                           "The maximum permitted size in MB for the Primary File. If this is less the primary file size for the model database, then the model size will be used instead.",
+                           "",
+                           false,
+                           "false",
+                           "0"
+                       ],
+                       [
+                           "LogSize",
+                           "The size in MB that the Transaction log will be created.",
+                           "",
+                           false,
+                           "false",
+                           "0"
+                       ],
+                       [
+                           "LogGrowth",
+                           "The amount in MB that the log file will be set to autogrow by.",
+                           "",
+                           false,
+                           "false",
+                           "0"
+                       ],
+                       [
+                           "SecondaryFilesize",
+                           "The size in MB of the files to be added to the Secondary filegroup. Each file added will be created with this size setting.",
+                           "",
+                           false,
+                           "false",
+                           "0"
+                       ],
+                       [
+                           "SecondaryFileGrowth",
+                           "The amount in MB that the Secondary files will be set to autogrow by. Use 0 for no growth allowed. Each file added will be created with this growth setting.",
+                           "",
+                           false,
+                           "false",
+                           "0"
+                       ],
+                       [
+                           "SecondaryFileMaxSize",
+                           "The maximum permitted size in MB for the Secondary data files to grow to. Each file added will be created with this max size setting.",
+                           "",
+                           false,
+                           "false",
+                           "0"
+                       ],
+                       [
+                           "SecondaryFileCount",
+                           "The number of files to create in the Secondary filegroup for the database.",
+                           "",
+                           false,
+                           "false",
+                           "0"
+                       ],
+                       [
+                           "DefaultFileGroup",
+                           "Sets the default file group. Either primary or secondary.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "WhatIf",
+                           "If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.",
+                           "wi",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Confirm",
+                           "If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.",
+                           "cf",
+                           false,
+                           "false",
+                           ""
+                       ]
+                   ],
+        "Alias":  "",
+        "Author":  "Matthew Darwin (@evoDBA, naturalselectiondba.wordpress.com)  | Chrissy LeMaire (@cl)",
+        "Synopsis":  "Creates a new database",
+        "Name":  "New-DbaDatabase",
+        "Links":  "https://dbatools.io/New-DbaDatabase",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eNew-DbaDatabase -SqlInstance sql1\nCreates a randomly named database (random-N) on instance sql1\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eNew-DbaDatabase -SqlInstance sql1 -Name dbatools, dbachecks\nCreates a database named dbatools and a database named dbachecks on sql1\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eNew-DbaDatabase -SqlInstance sql1, sql2, sql3 -Name multidb, multidb2 -SecondaryFilesize 20 -SecondaryFileGrowth 20 -LogSize 20 -LogGrowth 20\nCreates two databases, multidb and multidb2, on 3 instances (sql1, sql2 and sql3) and sets the secondary data file size to 20MB, the file growth to 20MB and the log growth to 20MB for each\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eNew-DbaDatabase -SqlInstance sql1 -Name nondefault -DataFilePath M:\\Data -LogFilePath \u0027L:\\Logs with spaces\u0027 -SecondaryFileCount 2\nCreates a database named nondefault and places data files in in the M:\\data directory and log files in \"L:\\Logs with spaces\".\nCreates a secondary group with 2 files in the Secondary filegroup.",
+        "Syntax":  "New-DbaDatabase [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Name] \u003cString[]\u003e] [[-Collation] \u003cString\u003e] [[-Recoverymodel] \u003cString\u003e] [[-Owner] \u003cString\u003e] [[-DataFilePath] \u003cString\u003e] [[-LogFilePath] \u003cString\u003e] [[-PrimaryFilesize] \u003cInt32\u003e] [[-PrimaryFileGrowth] \u003cInt32\u003e] [[-PrimaryFileMaxSize] \u003cInt32\u003e] [[-LogSize] \u003cInt32\u003e] [[-LogGrowth] \u003cInt32\u003e] [[-SecondaryFilesize] \u003cInt32\u003e] [[-SecondaryFileGrowth] \u003cInt32\u003e] [[-SecondaryFileMaxSize] \u003cInt32\u003e] [[-SecondaryFileCount] \u003cInt32\u003e] [[-DefaultFileGroup] \u003cString\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "CommandName":  "New-DbaDbCertificate",
@@ -31639,7 +31829,7 @@
                        ],
                        [
                            "FileMapping",
-                           "A hashtable that can be used to move specific files to a location.\r\n$FileMapping = @{\u0027DataFile1\u0027=\u0027c:\\restoredfiles\\Datafile1.mdf\u0027;\u0027DataFile3\u0027=\u0027d:\\DataFile3.mdf\u0027}\r\nAnd files not specified in the mapping will be restored to their original location\r\nThis Parameter is exclusive with DestinationDataDirectory",
+                           "A hashtable that can be used to move specific files to a location.\r\n`$FileMapping = @{\u0027DataFile1\u0027=\u0027c:\\restoredfiles\\Datafile1.mdf\u0027;\u0027DataFile3\u0027=\u0027d:\\DataFile3.mdf\u0027}`\r\nAnd files not specified in the mapping will be restored to their original location\r\nThis Parameter is exclusive with DestinationDataDirectory",
                            "",
                            false,
                            "false",
@@ -31907,7 +32097,7 @@
         "Synopsis":  "Restores a SQL Server Database from a set of backup files",
         "Name":  "Restore-DbaDatabase",
         "Links":  "https://dbatools.io/Restore-DbaDatabase",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eRestore-DbaDatabase -SqlInstance server1\\instance1 -Path \\\\server2\\backups\nScans all the backup files in \\\\server2\\backups, filters them and restores the database to server1\\instance1\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eRestore-DbaDatabase -SqlInstance server1\\instance1 -Path \\\\server2\\backups -MaintenanceSolutionBackup -DestinationDataDirectory c:\\restores\nScans all the backup files in \\\\server2\\backups$ stored in an Ola Hallengren style folder structure,\r\nfilters them and restores the database to the c:\\restores folder on server1\\instance1\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-ChildItem c:\\SQLbackups1\\, \\\\server\\sqlbackups2 | Restore-DbaDatabase -SqlInstance server1\\instance1\nTakes the provided files from multiple directories and restores them on  server1\\instance1\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003e$RestoreTime = Get-Date(\u002711:19 23/12/2016\u0027)\nPS C:\\\u003e Restore-DbaDatabase -SqlInstance server1\\instance1 -Path \\\\server2\\backups -MaintenanceSolutionBackup -DestinationDataDirectory c:\\restores -RestoreTime $RestoreTime\nScans all the backup files in \\\\server2\\backups stored in an Ola Hallengren style folder structure,\r\nfilters them and restores the database to the c:\\restores folder on server1\\instance1 up to 11:19 23/12/2016\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eRestore-DbaDatabase -SqlInstance server1\\instance1 -Path \\\\server2\\backups -DestinationDataDirectory c:\\restores -OutputScriptOnly | Select-Object -ExpandProperty Tsql | Out-File -Filepath \r\nc:\\scripts\\restore.sql\nScans all the backup files in \\\\server2\\backups stored in an Ola Hallengren style folder structure,\r\nfilters them and generate the T-SQL Scripts to restore the database to the latest point in time,\r\nand then stores the output in a file for later retrieval\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eRestore-DbaDatabase -SqlInstance server1\\instance1 -Path c:\\backups -DestinationDataDirectory c:\\DataFiles -DestinationLogDirectory c:\\LogFile\nScans all the files in c:\\backups and then restores them onto the SQL Server Instance server1\\instance1, placing data files\r\nc:\\DataFiles and all the log files into c:\\LogFiles\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003eRestore-DbaDatabase -SqlInstance server1\\instance1 -Path http://demo.blob.core.windows.net/backups/dbbackup.bak -AzureCredential MyAzureCredential\nWill restore the backup held at  http://demo.blob.core.windows.net/backups/dbbackup.bak to server1\\instance1. The connection to Azure will be made using the\r\ncredential MyAzureCredential held on instance Server1\\instance1\n-------------------------- EXAMPLE 8 --------------------------\nPS C:\\\u003eRestore-DbaDatabase -SqlInstance server1\\instance1 -Path http://demo.blob.core.windows.net/backups/dbbackup.bak\nWill attempt to restore the backups from http://demo.blob.core.windows.net/backups/dbbackup.bak if a SAS credential with the name http://demo.blob.core.windows.net/backups exists on server1\\instance1\n-------------------------- EXAMPLE 9 --------------------------\nPS C:\\\u003e$File = Get-ChildItem c:\\backups, \\\\server1\\backups -recurse\nPS C:\\\u003e $File | Restore-DbaDatabase -SqlInstance Server1\\Instance -UseDestinationDefaultDirectories\nThis will take all of the files found under the folders c:\\backups and \\\\server1\\backups, and pipeline them into\r\nRestore-DbaDatabase. Restore-DbaDatabase will then scan all of the files, and restore all of the databases included\r\nto the latest point in time covered by their backups. All data and log files will be moved to the default SQL Server\r\nfolder for those file types as defined on the target instance.\n-------------------------- EXAMPLE 10 --------------------------\nPS C:\\\u003e$files = Get-ChildItem C:\\dbatools\\db1\nPS C:\\\u003e $files | Restore-DbaDatabase -SqlInstance server\\instance1 `\r\n\u003e\u003e -DestinationFilePrefix prefix -DatabaseName Restored  `\r\n\u003e\u003e -RestoreTime (get-date \"14:58:30 22/05/2017\") `\r\n\u003e\u003e -NoRecovery -WithReplace -StandbyDirectory C:\\dbatools\\standby\r\n\u003e\u003e\r\nPS C:\\\u003e #It\u0027s in standby so we can peek at it\r\nPS C:\\\u003e Invoke-Sqlcmd2 -ServerInstance server\\instance1 -Query \"select top 1 * from Restored.dbo.steps order by dt desc\"\r\nPS C:\\\u003e #Not quite there so let\u0027s roll on a bit:\r\nPS C:\\\u003e $files | Restore-DbaDatabase -SqlInstance server\\instance1 `\r\n\u003e\u003e -DestinationFilePrefix prefix -DatabaseName Restored `\r\n\u003e\u003e -continue -WithReplace -RestoreTime (get-date \"15:09:30 22/05/2017\") `\r\n\u003e\u003e -StandbyDirectory C:\\dbatools\\standby\r\n\u003e\u003e\r\nPS C:\\\u003e Invoke-Sqlcmd2 -ServerInstance server\\instance1 -Query \"select top 1 * from restored.dbo.steps order by dt desc\"\r\nPS C:\\\u003e Restore-DbaDatabase -SqlInstance server\\instance1 -DestinationFilePrefix prefix -DatabaseName Restored -Continue -WithReplace\nIn this example we step through the backup files held in c:\\dbatools\\db1 folder.\r\nFirst we restore the database to a point in time in standby mode. This means we can check some details in the databases\r\nWe then roll it on a further 9 minutes to perform some more checks\r\nAnd finally we continue by rolling it all the way forward to the latest point in the backup.\r\nAt each step, only the log files needed to roll the database forward are restored.\n-------------------------- EXAMPLE 11 --------------------------\nPS C:\\\u003eRestore-DbaDatabase -SqlInstance server\\instance1 -Path c:\\backups -DatabaseName example1 -NoRecovery\nPS C:\\\u003e Restore-DbaDatabase -SqlInstance server\\instance1 -Recover -DatabaseName example1\nIn this example we restore example1 database with no recovery, and then the second call is to set the database to recovery.\n-------------------------- EXAMPLE 12 --------------------------\nPS C:\\\u003e$SuspectPage = Get-DbaSuspectPage -SqlInstance server\\instance1 -Database ProdFinance\nPS C:\\\u003e Get-DbaBackupHistory - SqlInstance server\\instance1 -Database -ProdFinance -Last | Restore-DbaDatabase -PageRestore PS C:\\\u003e $SuspectPage -PageRestoreTailFolder c:\\temp -TrustDbBackupHistory \r\n-AllowContinues\nGets a list of Suspect Pages using Get-DbaSuspectPage. The uses Get-DbaBackupHistory and Restore-DbaDatabase to perform a restore of the suspect pages and bring them up to date\r\nIf server\\instance1 is Enterprise edition this will be done online, if not it will be performed offline\r\nAllowContinue is required to make sure we cope with existing files\n-------------------------- EXAMPLE 13 --------------------------\nPS C:\\\u003e$BackupHistory = Get-DbaBackupInformation -SqlInstance sql2005 -Path \\\\backups\\sql2000\\ProdDb\nPS C:\\\u003e $BackupHistory | Restore-Dbadatabase -SqlInstance sql2000 -TrustDbBackupHistory\nDue to SQL Server 2000 not returning all the backup headers we cannot restore directly. As this is an issues with the SQL engine all we can offer is the following workaround\r\nThis will use a SQL Server instance \u003e 2000 to read the headers, and then pass them in to Restore-DbaDatabase as a BackupHistory object.\n-------------------------- EXAMPLE 14 --------------------------\nPS C:\\\u003eRestore-DbaDatabase -SqlInstance server1\\instance1 -Path \"C:\\Temp\\devops_prod_full.bak\" -DatabaseName \"DevOps_DEV\" -ReplaceDbNameInFile\nPS C:\\\u003e Rename-DbaDatabase -SqlInstance server1\\instance1 -Database \"DevOps_DEV\" -LogicalName \"\u003cDBN\u003e_\u003cFT\u003e\"\nThis will restore the database from the \"C:\\Temp\\devops_prod_full.bak\" file, with the new name \"DevOps_DEV\" and store the different physical files with the new name. It will use the system default \r\nconfigured data and log locations.\r\nAfter the restore the logical names of the database files will be renamed with the \"DevOps_DEV_ROWS\" for MDF/NDF and \"DevOps_DEV_LOG\" for LDF\n-------------------------- EXAMPLE 15 --------------------------\nPS C:\\\u003e$FileStructure = @{\n\u003e\u003e \u0027database_data\u0027 = \u0027C:\\Data\\database_data.mdf\u0027\r\n\u003e\u003e \u0027database_log\u0027 = \u0027C:\\Log\\database_log.ldf\u0027\r\n\u003e\u003e }\r\n\u003e\u003e\r\nPS C:\\\u003e Restore-DbaDatabase -SqlInstance server1 -Path \\\\ServerName\\ShareName\\File -DatabaseName database -FileMapping $FileStructure\nRestores \u0027database\u0027 to \u0027server1\u0027 and moves the files to new locations. The format for the $FileStructure HashTable is the file logical name as the Key, and the new location as the Value.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eRestore-DbaDatabase -SqlInstance server1\\instance1 -Path \\\\server2\\backups\nScans all the backup files in \\\\server2\\backups, filters them and restores the database to server1\\instance1\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eRestore-DbaDatabase -SqlInstance server1\\instance1 -Path \\\\server2\\backups -MaintenanceSolutionBackup -DestinationDataDirectory c:\\restores\nScans all the backup files in \\\\server2\\backups$ stored in an Ola Hallengren style folder structure,\r\nfilters them and restores the database to the c:\\restores folder on server1\\instance1\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-ChildItem c:\\SQLbackups1\\, \\\\server\\sqlbackups2 | Restore-DbaDatabase -SqlInstance server1\\instance1\nTakes the provided files from multiple directories and restores them on  server1\\instance1\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003e$RestoreTime = Get-Date(\u002711:19 23/12/2016\u0027)\nPS C:\\\u003e Restore-DbaDatabase -SqlInstance server1\\instance1 -Path \\\\server2\\backups -MaintenanceSolutionBackup -DestinationDataDirectory c:\\restores -RestoreTime $RestoreTime\nScans all the backup files in \\\\server2\\backups stored in an Ola Hallengren style folder structure,\r\nfilters them and restores the database to the c:\\restores folder on server1\\instance1 up to 11:19 23/12/2016\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003e$result = Restore-DbaDatabase -SqlInstance server1\\instance1 -Path \\\\server2\\backups -DestinationDataDirectory c:\\restores -OutputScriptOnly\nPS C:\\\u003e $result | Select-Object -ExpandProperty Tsql | Out-File -Filepath c:\\scripts\\restore.sql\nScans all the backup files in \\\\server2\\backups stored in an Ola Hallengren style folder structure,\r\nfilters them and generate the T-SQL Scripts to restore the database to the latest point in time,\r\nand then stores the output in a file for later retrieval\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eRestore-DbaDatabase -SqlInstance server1\\instance1 -Path c:\\backups -DestinationDataDirectory c:\\DataFiles -DestinationLogDirectory c:\\LogFile\nScans all the files in c:\\backups and then restores them onto the SQL Server Instance server1\\instance1, placing data files\r\nc:\\DataFiles and all the log files into c:\\LogFiles\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003eRestore-DbaDatabase -SqlInstance server1\\instance1 -Path http://demo.blob.core.windows.net/backups/dbbackup.bak -AzureCredential MyAzureCredential\nWill restore the backup held at  http://demo.blob.core.windows.net/backups/dbbackup.bak to server1\\instance1. The connection to Azure will be made using the\r\ncredential MyAzureCredential held on instance Server1\\instance1\n-------------------------- EXAMPLE 8 --------------------------\nPS C:\\\u003eRestore-DbaDatabase -SqlInstance server1\\instance1 -Path http://demo.blob.core.windows.net/backups/dbbackup.bak\nWill attempt to restore the backups from http://demo.blob.core.windows.net/backups/dbbackup.bak if a SAS credential with the name http://demo.blob.core.windows.net/backups exists on server1\\instance1\n-------------------------- EXAMPLE 9 --------------------------\nPS C:\\\u003e$File = Get-ChildItem c:\\backups, \\\\server1\\backups -recurse\nPS C:\\\u003e $File | Restore-DbaDatabase -SqlInstance Server1\\Instance -UseDestinationDefaultDirectories\nThis will take all of the files found under the folders c:\\backups and \\\\server1\\backups, and pipeline them into\r\nRestore-DbaDatabase. Restore-DbaDatabase will then scan all of the files, and restore all of the databases included\r\nto the latest point in time covered by their backups. All data and log files will be moved to the default SQL Server\r\nfolder for those file types as defined on the target instance.\n-------------------------- EXAMPLE 10 --------------------------\nPS C:\\\u003e$files = Get-ChildItem C:\\dbatools\\db1\nPS C:\\\u003e $files | Restore-DbaDatabase -SqlInstance server\\instance1 `\r\n\u003e\u003e -DestinationFilePrefix prefix -DatabaseName Restored  `\r\n\u003e\u003e -RestoreTime (get-date \"14:58:30 22/05/2017\") `\r\n\u003e\u003e -NoRecovery -WithReplace -StandbyDirectory C:\\dbatools\\standby\r\n\u003e\u003e\r\nPS C:\\\u003e #It\u0027s in standby so we can peek at it\r\nPS C:\\\u003e Invoke-DbaQuery -SQLInstance server\\instance1 -Query \"select top 1 * from Restored.dbo.steps order by dt desc\"\r\nPS C:\\\u003e #Not quite there so let\u0027s roll on a bit:\r\nPS C:\\\u003e $files | Restore-DbaDatabase -SqlInstance server\\instance1 `\r\n\u003e\u003e -DestinationFilePrefix prefix -DatabaseName Restored `\r\n\u003e\u003e -continue -WithReplace -RestoreTime (get-date \"15:09:30 22/05/2017\") `\r\n\u003e\u003e -StandbyDirectory C:\\dbatools\\standby\r\n\u003e\u003e\r\nPS C:\\\u003e Invoke-DbaQuery -SQLInstance server\\instance1 -Query \"select top 1 * from restored.dbo.steps order by dt desc\"\r\nPS C:\\\u003e Restore-DbaDatabase -SqlInstance server\\instance1 -DestinationFilePrefix prefix -DatabaseName Restored -Continue -WithReplace\nIn this example we step through the backup files held in c:\\dbatools\\db1 folder.\r\nFirst we restore the database to a point in time in standby mode. This means we can check some details in the databases\r\nWe then roll it on a further 9 minutes to perform some more checks\r\nAnd finally we continue by rolling it all the way forward to the latest point in the backup.\r\nAt each step, only the log files needed to roll the database forward are restored.\n-------------------------- EXAMPLE 11 --------------------------\nPS C:\\\u003eRestore-DbaDatabase -SqlInstance server\\instance1 -Path c:\\backups -DatabaseName example1 -NoRecovery\nPS C:\\\u003e Restore-DbaDatabase -SqlInstance server\\instance1 -Recover -DatabaseName example1\nIn this example we restore example1 database with no recovery, and then the second call is to set the database to recovery.\n-------------------------- EXAMPLE 12 --------------------------\nPS C:\\\u003eGet-DbaBackupHistory - SqlInstance server\\instance1 -Database ProdFinance -Last | Restore-DbaDatabase -PageRestore\nPS C:\\\u003e $SuspectPage -PageRestoreTailFolder c:\\temp -TrustDbBackupHistory -AllowContinues\nGets a list of Suspect Pages using Get-DbaSuspectPage. The uses Get-DbaBackupHistory and Restore-DbaDatabase to perform a restore of the suspect pages and bring them up to date\r\nIf server\\instance1 is Enterprise edition this will be done online, if not it will be performed offline\r\nAllowContinue is required to make sure we cope with existing files\n-------------------------- EXAMPLE 13 --------------------------\nPS C:\\\u003e$BackupHistory = Get-DbaBackupInformation -SqlInstance sql2005 -Path \\\\backups\\sql2000\\ProdDb\nPS C:\\\u003e $BackupHistory | Restore-DbaDatabase -SqlInstance sql2000 -TrustDbBackupHistory\nDue to SQL Server 2000 not returning all the backup headers we cannot restore directly. As this is an issues with the SQL engine all we can offer is the following workaround\r\nThis will use a SQL Server instance \u003e 2000 to read the headers, and then pass them in to Restore-DbaDatabase as a BackupHistory object.\n-------------------------- EXAMPLE 14 --------------------------\nPS C:\\\u003eRestore-DbaDatabase -SqlInstance server1\\instance1 -Path \"C:\\Temp\\devops_prod_full.bak\" -DatabaseName \"DevOps_DEV\" -ReplaceDbNameInFile\nPS C:\\\u003e Rename-DbaDatabase -SqlInstance server1\\instance1 -Database \"DevOps_DEV\" -LogicalName \"\u003cDBN\u003e_\u003cFT\u003e\"\nThis will restore the database from the \"C:\\Temp\\devops_prod_full.bak\" file, with the new name \"DevOps_DEV\" and store the different physical files with the new name. It will use the system default \r\nconfigured data and log locations.\r\nAfter the restore the logical names of the database files will be renamed with the \"DevOps_DEV_ROWS\" for MDF/NDF and \"DevOps_DEV_LOG\" for LDF\n-------------------------- EXAMPLE 15 --------------------------\nPS C:\\\u003e$FileStructure = @{\n\u003e\u003e \u0027database_data\u0027 = \u0027C:\\Data\\database_data.mdf\u0027\r\n\u003e\u003e \u0027database_log\u0027 = \u0027C:\\Log\\database_log.ldf\u0027\r\n\u003e\u003e }\r\n\u003e\u003e\r\nPS C:\\\u003e Restore-DbaDatabase -SqlInstance server1 -Path \\\\ServerName\\ShareName\\File -DatabaseName database -FileMapping $FileStructure\nRestores \u0027database\u0027 to \u0027server1\u0027 and moves the files to new locations. The format for the $FileStructure HashTable is the file logical name as the Key, and the new location as the Value.",
         "Syntax":  "Restore-DbaDatabase -SqlInstance \u003cDbaInstanceParameter\u003e [-SqlCredential \u003cPSCredential\u003e] -Path \u003cObject[]\u003e [-DatabaseName \u003cObject[]\u003e] [-DestinationDataDirectory \u003cString\u003e] [-DestinationLogDirectory \u003cString\u003e] [-DestinationFileStreamDirectory \u003cString\u003e] [-RestoreTime \u003cDateTime\u003e] [-NoRecovery] [-WithReplace] [-XpDirTree] [-OutputScriptOnly] [-VerifyOnly] [-MaintenanceSolutionBackup] [-FileMapping \u003cHashtable\u003e] [-IgnoreLogBackup] [-UseDestinationDefaultDirectories] [-ReuseSourceFolderStructure] [-DestinationFilePrefix \u003cString\u003e] [-RestoredDatabaseNamePrefix \u003cString\u003e] [-TrustDbBackupHistory] \r\n[-MaxTransferSize \u003cInt32\u003e] [-BlockSize \u003cInt32\u003e] [-BufferCount \u003cInt32\u003e] [-DirectoryRecurse] [-EnableException] [-StandbyDirectory \u003cString\u003e] [-Continue] [-AzureCredential \u003cString\u003e] [-ReplaceDbNameInFile] [-DestinationFileSuffix \u003cString\u003e] [-KeepCDC] [-AllowContinue] [-GetBackupInformation \u003cString\u003e] [-StopAfterGetBackupInformation] [-SelectBackupInformation \u003cString\u003e] [-StopAfterSelectBackupInformation] [-FormatBackupInformation \u003cString\u003e] [-StopAfterFormatBackupInformation] [-TestBackupInformation \u003cString\u003e] [-StopAfterTestBackupInformation] [-StatementTimeout \u003cInt32\u003e] [-WhatIf] [-Confirm] \r\n[\u003cCommonParameters\u003e]\nRestore-DbaDatabase -SqlInstance \u003cDbaInstanceParameter\u003e [-SqlCredential \u003cPSCredential\u003e] -Path \u003cObject[]\u003e [-DatabaseName \u003cObject[]\u003e] [-OutputScriptOnly] [-TrustDbBackupHistory] [-MaxTransferSize \u003cInt32\u003e] [-BlockSize \u003cInt32\u003e] [-BufferCount \u003cInt32\u003e] [-EnableException] [-AzureCredential \u003cString\u003e] [-AllowContinue] [-GetBackupInformation \u003cString\u003e] [-StopAfterGetBackupInformation] [-SelectBackupInformation \u003cString\u003e] [-StopAfterSelectBackupInformation] [-FormatBackupInformation \u003cString\u003e] [-StopAfterFormatBackupInformation] [-TestBackupInformation \u003cString\u003e] [-StopAfterTestBackupInformation] \r\n-PageRestore \u003cObject\u003e -PageRestoreTailFolder \u003cString\u003e [-StatementTimeout \u003cInt32\u003e] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nRestore-DbaDatabase -SqlInstance \u003cDbaInstanceParameter\u003e [-SqlCredential \u003cPSCredential\u003e] [-DatabaseName \u003cObject[]\u003e] [-OutputScriptOnly] [-EnableException] [-AzureCredential \u003cString\u003e] [-Recover] [-AllowContinue] [-GetBackupInformation \u003cString\u003e] [-StopAfterGetBackupInformation] [-SelectBackupInformation \u003cString\u003e] [-StopAfterSelectBackupInformation] [-FormatBackupInformation \u003cString\u003e] [-StopAfterFormatBackupInformation] [-TestBackupInformation \u003cString\u003e] [-StopAfterTestBackupInformation] [-StatementTimeout \u003cInt32\u003e] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
@@ -38100,7 +38290,7 @@
     },
     {
         "CommandName":  "Test-DbaBackupInformation",
-        "Description":  "Input is normally from a backup history object generated from Format-DbaBackupInformation. This is then parse to check that it\u0027s valid for restore. Tests performed include:\n    - Checking unbroken LSN chain\n    - If the target database exists and WithReplace has been provided\n    - If any files already exist, but owned by other databases\n    - Creates any new folders required\n    - That the backup files exists at the location specified, and can be seen by the Sql Instance\n    - If no errors are found then the objects for that database will me marked as Verified",
+        "Description":  "Input is normally from a backup history object generated from `Format-DbaBackupInformation`. This is then parse to check that it\u0027s valid for restore. Tests performed include:\n  - Checking unbroken LSN chain\n  - If the target database exists and WithReplace has been provided\n  - If any files already exist, but owned by other databases\n  - Creates any new folders required\n  - That the backup files exists at the location specified, and can be seen by the Sql Instance\n  - If no errors are found then the objects for that database will me marked as Verified",
         "Tags":  [
                      "Backup",
                      "Restore",
@@ -38109,7 +38299,7 @@
         "Params":  [
                        [
                            "BackupHistory",
-                           "dbatools BackupHistory object. Normally this will have been process with Select- and then Format-DbaBackupInformation",
+                           "dbatools BackupHistory object. Normally this will have been process with `Select-` and then `Format-DbaBackupInformation`",
                            "",
                            true,
                            "true (ByValue)",
