@@ -695,7 +695,7 @@ function Copy-DbaDatabase {
         $sourceNetBios = $sourceServer.ComputerName
 
         Write-Message -Level Verbose -Message "Ensuring user databases exist (counting databases)."
-        
+
         if ($sourceserver.Databases.IsSystemObject -notcontains $false) {
             Stop-Function -Message "No user databases to migrate"
             return
@@ -1383,4 +1383,3 @@ function Copy-DbaDatabase {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-SqlDatabase
     }
 }
-

@@ -120,7 +120,7 @@ function Write-DbaDataTable {
         Performs a bulk insert of all the data in customers.csv. If mydb.dbo.customers does not exist, it will be created with inefficient but forgiving DataTypes.
 
         Prompts for confirmation before a variety of steps.
-    
+
     .EXAMPLE
         PS C:\> $DataTable = Import-Csv C:\temp\customers.csv
         PS C:\> Write-DbaDataTable -SqlInstance sql2014 -InputObject $DataTable -Table mydb.dbo.customers -Truncate

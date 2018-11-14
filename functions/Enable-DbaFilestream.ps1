@@ -26,7 +26,7 @@ function Enable-DbaFilestream {
 
     .PARAMETER ShareName
         Specifies the Windows file share name to be used for storing the FILESTREAM data.
-    
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -88,7 +88,8 @@ function Enable-DbaFilestream {
                 }
             }
         }
-        $level = $finallevel = [int]$FileStreamLevel
+        # = $finallevel removed as it was identified as a unused variable
+        $level = [int]$FileStreamLevel
         $OutputLookup = @{
             0 = 'Disabled'
             1 = 'FileStream enabled for T-Sql access'
@@ -101,16 +102,16 @@ function Enable-DbaFilestream {
             Stop-Function -Message "Filestream must be at least level 2 when using ShareName"
             return
         }
-        
+
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             } catch {
                 Stop-Function -Message "Failure connecting to $computer" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-            
+
             $filestreamstate = [int]$server.Configuration.FilestreamAccessLevel.ConfigValue
-            
+
             if ($Force -or $PSCmdlet.ShouldProcess($instance, "Changing from '$($OutputLookup[$filestreamstate])' to '$($OutputLookup[$level])' at the instance level")) {
                 # Server level
                 if ($server.IsClustered) {
@@ -121,22 +122,23 @@ function Enable-DbaFilestream {
                 } else {
                     $result = Set-FileSystemSetting -Instance $instance -Credential $Credential -ShareName $ShareName -FilestreamLevel $level
                 }
-                
+
                 # Instance level
                 if ($level -eq 3) {
                     $level = 2
                 }
-                
+
                 try {
                     $null = Set-DbaSpConfigure -SqlInstance $server -Name FilestreamAccessLevel -Value $level -EnableException
                 } catch {
                     Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
                 }
-                
+
                 if ($Force) {
-                    $restart = Restart-DbaService -ComputerName $server.ComputerName -InstanceName $server.ServiceName -Type Engine -Force
+                    #$restart replaced with $null as it was identified as a unused variable
+                    $null = Restart-DbaService -ComputerName $server.ComputerName -InstanceName $server.ServiceName -Type Engine -Force
                 }
-                
+
                 Get-DbaFilestream -SqlInstance $instance -SqlCredential $SqlCredential -Credential $Credential
                 if ($filestreamstate -ne $level -and -not $Force) {
                     Write-Message -Level Warning -Message "[$instance] $result"
