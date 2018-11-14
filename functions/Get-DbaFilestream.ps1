@@ -38,7 +38,7 @@ function Get-DbaFilestream {
         PS C:\> Get-DbaFilestream -SqlInstance server1\instance2
 
         Will return the status of Filestream configuration for the service and instance server1\instance2
-    
+
     .EXAMPLE
         PS C:\> Get-DbaFilestream -SqlInstance server1\instance2 -SqlCredential sqladmin
 

@@ -73,7 +73,7 @@ function Invoke-DbatoolsFormatter {
                     $newCBH = $CBHEndRex.Replace($CBH, "$startSpaces#>")
                     if ($newCBH) {
                         #replace the CBH
-                        $content = $CBHRex.Replace($content, $newCBH, 1)
+                        $content = $content.Replace($CBH, $newCBH)
                     }
                 }
             }

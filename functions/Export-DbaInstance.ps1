@@ -146,7 +146,7 @@ function Export-DbaInstance {
 
         $elapsed = [System.Diagnostics.Stopwatch]::StartNew()
         $started = Get-Date
-        
+
         $ScriptingOptions = New-Object Microsoft.SqlServer.Management.Smo.ScriptingOptions
         $ScriptingOptions.ScriptBatchTerminator = $true
 

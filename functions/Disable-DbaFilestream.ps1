@@ -48,7 +48,7 @@ function Disable-DbaFilestream {
         PS C:\> Disable-DbaFilestream -SqlInstance server1\instance2 -Confirm:$false
 
         Does not prompt for confirmation. Disables filestream on the service and instance levels.
-    
+
     .EXAMPLE
         PS C:\> Get-DbaFilestream -SqlInstance server1\instance2, server5\instance5, prod\hr | Where-Object InstanceAccessLevel -gt 0 | Disable-DbaFilestream -Force
 
@@ -83,18 +83,18 @@ function Disable-DbaFilestream {
             } catch {
                 Stop-Function -Message "Failure connecting to $computer" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-            
+
             # Instance level
             $filestreamstate = [int]$server.Configuration.FilestreamAccessLevel.RunningValue
-            
+
             if ($Force -or $PSCmdlet.ShouldProcess($instance, "Changing from '$($OutputLookup[$filestreamstate])' to '$($OutputLookup[$level])' at the instance level")) {
                 try {
                     $null = Set-DbaSpConfigure -SqlInstance $server -Name FilestreamAccessLevel -Value $level -EnableException
                 } catch {
                     Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
                 }
-            
-            
+
+
                 # Server level
                 if ($server.IsClustered) {
                     $nodes = Get-DbaWsfcNode -ComputerName $instance -Credential $Credential
@@ -104,11 +104,12 @@ function Disable-DbaFilestream {
                 } else {
                     $result = Set-FileSystemSetting -Instance $instance -Credential $Credential -FilestreamLevel $FileStreamLevel
                 }
-            
+
                 if ($Force) {
-                    $restart = Restart-DbaService -ComputerName $instance.ComputerName -InstanceName $server.ServiceName -Type Engine -Force
+                    #$restart replaced with $null as it was identified as a unused variable
+                    $null = Restart-DbaService -ComputerName $instance.ComputerName -InstanceName $server.ServiceName -Type Engine -Force
                 }
-            
+
                 Get-DbaFilestream -SqlInstance $instance -SqlCredential $SqlCredential -Credential $Credential
 
                 if ($filestreamstate -ne $level -and -not $Force) {

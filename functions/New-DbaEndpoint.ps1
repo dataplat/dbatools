@@ -118,11 +118,11 @@ function New-DbaEndpoint {
             } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-            
+
             if (-not (Test-Bound -ParameterName Owner)) {
                 $Owner = Get-SaLoginName -SqlInstance $server
             }
-            
+
             if ($Certificate) {
                 $cert = Get-DbaDbCertificate -SqlInstance $server -Certificate $Certificate
                 if (-not $cert) {
@@ -178,8 +178,7 @@ function New-DbaEndpoint {
                     $server.Endpoints.Refresh()
                     Get-DbaEndpoint -SqlInstance $server -Endpoint $name
                 } catch {
-                    $msg = Get-ErrorMessage -Record $_
-                    Stop-Function -Message $msg -ErrorRecord $_ -Continue
+                    Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
                 }
             }
         }
