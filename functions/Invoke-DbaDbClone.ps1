@@ -23,6 +23,9 @@ function Invoke-DbaDbClone {
     .PARAMETER Database
         The database to clone - this list is auto-populated from the server.
 
+    .PARAMETER InputObject
+        Enables piping from Get-DbaDatabase
+
     .PARAMETER CloneDatabase
         The name(s) to clone to.
 
@@ -35,6 +38,12 @@ function Invoke-DbaDbClone {
     .PARAMETER UpdateStatistics
         Update the statistics prior to cloning (per Microsoft Tiger Team formula)
 
+    .PARAMETER WhatIf
+        Shows what would happen if the command were to run. No actions are actually performed.
+
+    .PARAMETER Confirm
+        Prompts you for confirmation before executing any changing operations within the command.
+    
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -57,31 +66,28 @@ function Invoke-DbaDbClone {
         Clones mydb to myclone on sql2016
 
     .EXAMPLE
-        PS C:\> Invoke-DbaDbClone -SqlInstance sql2016 -Database mydb -CloneDatabase myclone, myclone2 -UpdateStatistics
+        PS C:\> Get-DbaDatabase -SqlInstance sql2016 -Database mydb | Invoke-DbaDbClone -CloneDatabase myclone, myclone2 -UpdateStatistics
 
         Updates the statistics of mydb then clones to myclone and myclone2
-
-    #>
-    [CmdletBinding()]
+        
+#>
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Medium')]
     param (
-        [parameter(Position = 0)]
-        [Alias("ServerInstance", "SqlServer", "SqlServers")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [parameter(Mandatory, ValueFromPipeline)]
-        [object]$Database,
+        [string[]]$Database,
+        [parameter(ValueFromPipeline)]
+        [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
         [string[]]$CloneDatabase,
         [switch]$ExcludeStatistics,
         [switch]$ExcludeQueryStore,
         [switch]$UpdateStatistics,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 
     begin {
-
-        if (-not $Database.Name -and -not $SqlInstance) {
-            Stop-Function -Message "You must specify a server name if you did not pipe a database"
+        if (-not $Database -and $SqlInstance) {
+            Stop-Function -Message "You must specify a database name if you did not pipe a database"
         }
 
         $sqlStats = "DECLARE @out TABLE(id INT IDENTITY(1,1), s SYSNAME, o SYSNAME, i SYSNAME, stats_stream VARBINARY(MAX), rows BIGINT, pages BIGINT)
@@ -126,7 +132,7 @@ function Invoke-DbaDbClone {
 
         $noStats = "NO_STATISTICS"
         $noQueryStore = "NO_QUERYSTORE"
-        if ( (Test-Bound 'ExcludeStatistics') -or (Test-Bound 'ExcludeQueryStore') ) {
+        if ( (Test-Bound -ParameterName 'ExcludeStatistics') -or (Test-Bound -ParameterName 'ExcludeQueryStore') ) {
             $sqlWith = ""
             if ($ExcludeStatistics) {
                 $sqlWith = "WITH $noStats"
@@ -138,22 +144,21 @@ function Invoke-DbaDbClone {
                 $sqlWith = "WITH $noStats,$noQueryStore"
             }
         }
+        
+        $sql2012min = [version]"11.0.7001.0" # SQL 2012 SP4
+        $sql2014min = [version]"12.0.5000.0" # SQL 2014 SP2
+        $sql2014CuMin = [version]"12.0.5538" # SQL 2014 SP2 + CU3
+        $sql2016min = [version]"13.0.4001.0" # SQL 2016 SP1
     }
     process {
         if (Test-FunctionInterrupt) { return }
-
-        foreach ($instance in $SqlInstance) {
-
-            try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 12
-            } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
-            }
-
-            $sql2012min = [version]"11.0.7001.0" # SQL 2012 SP4
-            $sql2014min = [version]"12.0.5000.0" # SQL 2014 SP2
-            $sql2014CuMin = [version]"12.0.5538" # SQL 2014 SP2 + CU3
-            $sql2016min = [version]"13.0.4001.0" # SQL 2016 SP1
+        
+        if ($SqlInstance) {
+            $InputObject += Get-DbaDatabase -SqlInstance $SqlInstance -SqlCredential $SqlCredential
+        }
+        
+        foreach ($db in $InputObject) {
+            $server = $db.Parent
 
             if ($server.VersionMajor -eq 11 -and $server.Version -lt $sql2012min) {
                 Stop-Function -Message "Unsupported version for $instance. SQL Server 2012 SP4 and above required." -Target $server -Continue
@@ -167,7 +172,7 @@ function Invoke-DbaDbClone {
                 Stop-Function -Message "Unsupported version for $instance. SQL Server 2016 SP1 and above required." -Target $server -Continue
             }
 
-            if (Test-Bound 'ExcludeStatistics') {
+            if (Test-Bound -ParameterName 'ExcludeStatistics') {
                 if ($server.VersionMajor -eq 12 -and $server.Version -lt $sql2014CuMin) {
                     Stop-Function -Message "Unsupported version for $instance. SQL Server 2014 SP1 + CU3 and above required." -Target $server -Continue
                 }
@@ -176,47 +181,43 @@ function Invoke-DbaDbClone {
                 }
             }
 
-            if (Test-Bound 'ExcludeQueryStore') {
+            if (Test-Bound -ParameterName 'ExcludeQueryStore') {
                 if ($server.VersionMajor -lt 13 - ($server.VersionMajor -eq 13 -and $server.Version -lt $sql2016min)) {
                     Stop-Function -Message "Unsupported version for $instance. SQL Server 2016 SP1 and above required." -Target $server -Continue
                 }
             }
 
-            if (-not $Database.Name) {
-                [Microsoft.SqlServer.Management.Smo.Database]$database = $server.Databases[$database]
-            }
-
-            if ($Database.IsSystemObject) {
+            if ($db.IsSystemObject) {
                 Stop-Function -Message "Only user databases are supported" -Target $instance -Continue
             }
 
-            if (-not $Database.Name) {
-                Stop-Function -Message "Database not found" -Target $instance -Continue
-            }
-
-            if ( (Test-Bound 'UpdateStatistics') -and (Test-Bound 'ExcludeStatistics' -Not) ) {
-                try {
-                    Write-Message -Level Verbose -Message "Updating statistics"
-                    $null = $database.Query($sqlStats)
-                } catch {
-                    Stop-Function -Message "Failure" -ErrorRecord $_ -Target $server -Continue
+            if ( (Test-Bound -ParameterName 'UpdateStatistics') -and (Test-Bound -ParameterName 'ExcludeStatistics' -Not) ) {
+                if ($Pscmdlet.ShouldProcess($instance, "Update statistics in $($db.Name)")) {
+                    try {
+                        Write-Message -Level Verbose -Message "Updating statistics"
+                        $null = $db.Query($sqlStats)
+                    } catch {
+                        Stop-Function -Message "Failure" -ErrorRecord $_ -Target $server -Continue
+                    }
                 }
             }
 
-            $dbName = $database.Name
+            $dbName = $db.Name
 
-            foreach ($db in $CloneDatabase) {
-                Write-Message -Level Verbose -Message "Cloning $db from $database"
-                if ($server.Databases[$db]) {
-                    Stop-Function -Message "Destination clone database $db already exists" -Target $instance -Continue
+            foreach ($clonedb in $CloneDatabase) {
+                Write-Message -Level Verbose -Message "Cloning $clonedb from $db"
+                if ($server.Databases[$clonedb]) {
+                    Stop-Function -Message "Destination clone database $clonedb already exists" -Target $instance -Continue
                 } else {
-                    try {
-                        $sql = "DBCC CLONEDATABASE('$dbName','$db') $sqlWith"
-                        Write-Message -Level Debug -Message "Sql Statement: $sql"
-                        $null = $database.Query($sql)
-                        Get-DbaDatabase -SqlInstance $server -Database $db
-                    } catch {
-                        Stop-Function -Message "Failure" -ErrorRecord $_ -Target $server -Continue
+                    if ($Pscmdlet.ShouldProcess($instance, "Execute DBCC CloneDatabase($dbName, $clonedb)")) {
+                        try {
+                            $sql = "DBCC CLONEDATABASE('$dbName','$clonedb') $sqlWith"
+                            Write-Message -Level Debug -Message "Sql Statement: $sql"
+                            $null = $db.Query($sql)
+                            Get-DbaDatabase -SqlInstance $server -Database $clonedb
+                        } catch {
+                            Stop-Function -Message "Failure" -ErrorRecord $_ -Target $server -Continue
+                        }
                     }
                 }
             }
