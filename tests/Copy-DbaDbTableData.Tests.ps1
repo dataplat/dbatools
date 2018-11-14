@@ -49,7 +49,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $null = $db2.Query("DROP TABLE dbo.dbatoolsci_example")
             $null = $db.Query("DROP TABLE tempdb.dbo.dbatoolsci_willexist")
         } catch {
-            $null = 1    
+            $null = 1
         }
     }
     
