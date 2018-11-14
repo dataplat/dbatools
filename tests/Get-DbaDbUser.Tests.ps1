@@ -28,11 +28,11 @@ USE Master;
 CREATE USER [$DBUserName] FOR LOGIN [$DBUserName]
     WITH DEFAULT_SCHEMA = dbo;
 "@
-        Invoke-Sqlcmd2 -ServerInstance $script:instance2 -Query $CreateTestUser -Database master
+        Invoke-DbaQuery -SqlInstance $script:instance2 -Query $CreateTestUser -Database master
     }
     AfterAll{
         $DropTestUser = "DROP User [$DBUserName];"
-        Invoke-Sqlcmd2 -ServerInstance $script:instance2 -Query $DropTestUser -Database master
+        Invoke-DbaQuery -SqlInstance $script:instance2 -Query $DropTestUser -Database master
     }
 
     Context "Partition Functions are correctly located" {
