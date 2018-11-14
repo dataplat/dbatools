@@ -18,21 +18,25 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 }
 
 Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
-    It "creates one new randomly named database" {
+    Context "commands work as expected" {
         $results = New-DbaDatabase -SqlInstance $script:instance2
-        $results.Name | Should -Match random
-        $results | Remove-DbaDatabase -Confirm:$false
-    }
-    It "creates one new database on two servers" {
+        It "creates one new randomly named database" {
+            $results.Name | Should -Match random
+            $results | Remove-DbaDatabase -Confirm:$false
+        }
+        
         $results = New-DbaDatabase -SqlInstance $script:instance2, $script:instance3 -Name dbatoolsci_newdb
-        $results.Name | Should -Be 'dbatoolsci_newdb', 'dbatoolsci_newdb'
-        $results | Remove-DbaDatabase -Confirm:$false
-    }
-    It "creates two new databases on two servers" {
+        It "creates one new database on two servers" {
+            $results.Name | Should -Be 'dbatoolsci_newdb', 'dbatoolsci_newdb'
+            $results | Remove-DbaDatabase -Confirm:$false
+        }
+        
         $results = New-DbaDatabase -SqlInstance $script:instance2, $script:instance3 -Name dbatoolsci_newdb1, dbatoolsci_newdb2
-        $results.Name | Should -Contain dbatoolsci_newdb1
-        $results.Name | Should -Contain dbatoolsci_newdb2
-        $results.Count | Should -Be 4
-        $results | Remove-DbaDatabase -Confirm:$false
+        It "creates two new databases on two servers" {
+            $results.Name | Should -Contain dbatoolsci_newdb1
+            $results.Name | Should -Contain dbatoolsci_newdb2
+            $results.Count | Should -Be 4
+            $results | Remove-DbaDatabase -Confirm:$false
+        }
     }
 }
