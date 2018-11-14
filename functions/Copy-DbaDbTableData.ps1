@@ -242,13 +242,16 @@ function Copy-DbaDbTableData {
             }
 
             try {
-                $dbTable = Get-DbaDbTable -SqlInstance $server -Table $Table -Database $Database -EnableException -Verbose:$false
-                if ($dbTable.Count -eq 1) {
-                    $InputObject += $dbTable
-                } else {
-                    Write-Message -Level Warning -Message "The table $Table matches $($dbTable.Count) objects. Unable to determine which object to copy"
-                    continue
+                foreach ($tbl in $Table) {
+                    $dbTable = Get-DbaDbTable -SqlInstance $server -Table $tbl -Database $Database -EnableException -Verbose:$false
+                    if ($dbTable.Count -eq 1) {
+                        $InputObject += $dbTable
+                    } else {
+                        Write-Message -Level Warning -Message "The table $tbl matches $($dbTable.Count) objects. Unable to determine which object to copy"
+                        continue
+                    }
                 }
+                
             } catch {
                 Stop-Function -Message "Unable to determine source table : $Table"
                 return
