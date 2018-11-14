@@ -7,7 +7,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         $paramCount = 2
         $defaultParamCount = 11
         [object[]]$params = (Get-ChildItem function:\Invoke-DbatoolsFormatter).Parameters.Keys
-        $knownParameters = 'Path', 'EnableException'
+        $knownParameters = 'Path','EnableException'
         It "Should contain our specific parameters" {
             ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
         }
@@ -26,7 +26,7 @@ function Get-DbaStub {
 
         .DESCRIPTION
             Using
-        #>
+#>
 process {
         Write-Message -Level Verbose "stub"
 }}
