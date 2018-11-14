@@ -1,62 +1,62 @@
-﻿function Install-DbaInstance {
+function Install-DbaInstance {
     <#
     .SYNOPSIS
 
-    This function will help you to quickly install a SQL Server instance. 
+    This function will help you to quickly install a SQL Server instance.
 
     .DESCRIPTION
 
-    This function will help you to quickly install a SQL Server instance. 
+    This function will help you to quickly install a SQL Server instance.
 
     The number of TempDB files will be set to the number of cores with a maximum of eight.
-    
+
     The perform volume maintenance right can be granted to the SQL Server account. if you happen to activate this in an environment where you are not allowed to do this,
     please revert that operation by removing the right from the local security policy (secpol.msc).
 
     You will see a screen with the users available on your machine. There you can choose the user that will act as Service Account for your SQL Server Install. This
-    implies that the user has been created beforehand. 
+    implies that the user has been created beforehand.
 
     Note that the dowloaded installation file must be unzipped or an ISO has to be mounted. This will not be executed from this script. This function offers the possibility
     to execute an autosearch for the installation files. But you can just browse to the correct file if you like.
 
-    .PARAMETER Version 
+    .PARAMETER Version
             Version will hold the SQL Server version you wish to install. The variable will support autocomplete
 
-    .PARAMETER Edition 
+    .PARAMETER Edition
             Edition will hold the different basic editions of SQL Server: Express, Standard, Enterprise and Developer. The variable will support autocomplete
 
-    .PARAMETER Role 
+    .PARAMETER Role
             Role Will hold the option to install all features with defaults. Version is still mandatory. if no Edition is selected, it will default to Express!
 
-    .PARAMETER StatsAndMl 
+    .PARAMETER StatsAndMl
             StatsandML will hold the R and Python choices. The variable will support autocomplete. There will be a check on version; this parameter will revert to NULL if the version is below 2016
-    
-    .PARAMETER Appvolume 
+
+    .PARAMETER Appvolume
             AppVolume will hold the volume letter of the application disc. if left empty, it will default to C, unless there is a drive named like App
 
-    .PARAMETER DataVolume 
+    .PARAMETER DataVolume
             DataVolume will hold the volume letter of the Data disc. if left empty, it will default to C, unless there is a drive named like Data
 
-    .PARAMETER LogVolume 
+    .PARAMETER LogVolume
             LogVolume will hold the volume letter of the Log disc. if left empty, it will default to C, unless there is a drive named like Log
 
-    .PARAMETER TempVolume 
+    .PARAMETER TempVolume
             TempVolume will hold the volume letter of the Temp disc. if left empty, it will default to C, unless there is a drive named like Temp
 
-    .PARAMETER BackupVolume 
+    .PARAMETER BackupVolume
             BackupVolume will hold the volume letter of the Backup disc. if left empty, it will default to C, unless there is a drive named like Backup
 
     .PARAMETER InstallFolder
             InstallFolder will hold the driveletter and subsequent folders (if any) of your installation media. The input must point to the location where the
             setup.exe is located.
 
-    .PARAMETER PerformVolumeMaintenance 
+    .PARAMETER PerformVolumeMaintenance
             PerformVolumeMaintenance will set the policy for grant or deny this right to the SQL Server service account.
 
-    .PARAMETER SaveFile 
+    .PARAMETER SaveFile
             SaveFile will prompt you for a file location to save the new config file. Otherwise it will only be saved in the PowerShell bin directory.
 
-    .PARAMETER Authentication 
+    .PARAMETER Authentication
             Authentication will prompt you if you want mixed mode authentication or just Windows AD authentication. With Mixed Mode, you will be prompted for the SA password.
 
     .PARAMETER EnableException
@@ -75,7 +75,7 @@
 
     This will run the installation with default setting apart from the application volume, this will be redirected to the G drive.
 
-    .Example 
+    .Example
 
     C:\PS> Install-DbaInstance -Version 2016 -AppVolume "D" -DataVolume "E" -LogVolume "L" -PerformVolumeMaintenance -SqlServerAccount "MyDomain\SvcSqlServer"
 
@@ -83,11 +83,11 @@
     right is granted and the domain account SvcSqlServer will be used as the service account for SqlServer.
 
 
-    #>
+       #>
     Param  (
         [parameter(Mandatory)]
         [ValidateSet("2008", "2008R2", "2012", "2014", "2016", "2017", "2019")]
-        [string]$Version, 
+        [string]$Version,
         [ValidateSet("Express", "Standard", "Enterprise", "Developer")]
         [string]$Edition = "Express",
         [ValidateSet("AllFeaturesWithDefaults", "Custom")]
@@ -96,10 +96,10 @@
         [string]$StatsAndMl,
         [ValidateSet("Windows", "Mixed Mode")]
         [string]$Authentication,
-        [string]$AppVolume, 
-        [string]$DataVolume, 
-        [string]$LogVolume, 
-        [string]$TempVolume, 
+        [string]$AppVolume,
+        [string]$DataVolume,
+        [string]$LogVolume,
+        [string]$TempVolume,
         [string]$BackupVolume,
         [string]$InstallFolder,
         [switch]$PerformVolumeMaintenance,
@@ -113,7 +113,7 @@
         #Reminder to check on all faulty combinations that might be possible
     }
 
-    if($null -eq $Role -or $Role -eq "AllFeaturesWithDefaults"){
+    if ($null -eq $Role -or $Role -eq "AllFeaturesWithDefaults") {
         #Reminder to check which paramters should be set to run a default.
     }
 
@@ -130,7 +130,7 @@
 
     Copy-Item "$script:PSModuleRoot\bin\installtemplate\$version\$Edition\Configuration$version.ini" -Destination "$script:PSModuleRoot\bin\installtemplate\"
 
-    # Get the content of the copied ini file to use. 
+    # Get the content of the copied ini file to use.
 
     $configini = Get-Content "$script:PSModuleRoot\bin\installtemplate\Configuration$version.ini"
 
@@ -143,25 +143,24 @@
     if ($Authentication -eq "Mixed Mode") {
         $SAPassW = [PsCredential](Get-Credential -UserName "SA"  -Message "Please Enter the SA Password.")
     }
-    
+
     # Get the installation folder of SQL Server. if the user didn't choose a specific folder, the autosearch will commence. It will take some time!
-    # To limit the number of results, the search exludes the Windows, program files, program data and users directories. 
+    # To limit the number of results, the search exludes the Windows, program files, program data and users directories.
     # If the user added the folder where the installation disc or files are located, the input is somewhat sanitized to allow multiple sorts of entry.
     # The user is expected to add the complete folder structure!
 
     if ($InstallFolder::IsNullOrEmpty()) {
-        
+
         Write-Message -level Verbose -Message "No Setup directory found. Switching to autosearch"
 
         $SetupFile = Get-CimInstance -ClassName cim_datafile -Filter "Extension = 'EXE'" |
-            Where-Object {($_.Name.ToUpper().Contains('SETUP') -and $_.Name -notlike '*users*' -and $_.Name -notlike '*Program*' -and $_.Name -notlike '*Windows*')} | 
+            Where-Object {($_.Name.ToUpper().Contains('SETUP') -and $_.Name -notlike '*users*' -and $_.Name -notlike '*Program*' -and $_.Name -notlike '*Windows*')} |
             Select-Object -Property @{Label = "FileLocation"; Expression = {$_.Name}} |
-            Out-GridView -Title 'Please select the correct folder with the SQL Server installation Media' -PassThru | 
+            Out-GridView -Title 'Please select the correct folder with the SQL Server installation Media' -PassThru |
             Select-Object -ExpandProperty FileLocation
-                
+
         Write-Message -Level Verbose -Message 'Selected Setup: ' + $SetupFile
-    }
-    else {
+    } else {
         $SetupFile = $SetupFile -replace "\\$"
         $SetupFile = $SetupFile -replace ":$"
     }
@@ -169,36 +168,35 @@
     if ($SetupFile.Length -eq 1) {
         $SetupFile = $SetupFile + ':\SETUP.EXE'
         Write-Message -Level Verbose -Message 'Setup will start from ' + $SetupFile
-    } 
-    else {
+    } else {
         $SetupFile = $SetupFile + '\SETUP.EXE'
         Write-Message -Level Verbose -Message 'Setup will start from ' + $SetupFile
     }
 
     # Check if there are designated drives for Data, Log, TempDB, Back-up and Application.
     if ($DataVolume -eq $null -or $DataVolume -eq '') {
-        $DataVolume = Get-Volume | 
-            Where-Object {$_.DriveType -EQ 'Fixed' -and $null -ne $_.DriveLetter -and $_.FileSystemLabel -like '*Data*'} | 
+        $DataVolume = Get-Volume |
+            Where-Object {$_.DriveType -EQ 'Fixed' -and $null -ne $_.DriveLetter -and $_.FileSystemLabel -like '*Data*'} |
             Select-Object -ExpandProperty DriveLetter
     }
     if ($LogVolume -eq $null -or $LogVolume -eq '') {
-        $LogVolume = Get-Volume | 
-            Where-Object {$_.DriveType -EQ 'Fixed' -and $null -ne $_.DriveLetter -and $_.FileSystemLabel -like '*Log*'} |  
+        $LogVolume = Get-Volume |
+            Where-Object {$_.DriveType -EQ 'Fixed' -and $null -ne $_.DriveLetter -and $_.FileSystemLabel -like '*Log*'} |
             Select-Object -ExpandProperty DriveLetter
     }
     if ($TempVolume -eq $null -or $TempVolume -eq '') {
-        $TempVolume = Get-Volume | 
-            Where-Object {$_.DriveType -EQ 'Fixed' -and $null -ne $_.DriveLetter -and $_.FileSystemLabel -like '*TempDB*'} |  
+        $TempVolume = Get-Volume |
+            Where-Object {$_.DriveType -EQ 'Fixed' -and $null -ne $_.DriveLetter -and $_.FileSystemLabel -like '*TempDB*'} |
             Select-Object -ExpandProperty DriveLetter
     }
     if ($AppVolume -eq $null -or $AppVolume -eq '') {
-        $AppVolume = Get-Volume | 
-            Where-Object {$_.DriveType -EQ 'Fixed' -and $null -ne $_.DriveLetter -and $_.FileSystemLabel -like '*App*'} |  
+        $AppVolume = Get-Volume |
+            Where-Object {$_.DriveType -EQ 'Fixed' -and $null -ne $_.DriveLetter -and $_.FileSystemLabel -like '*App*'} |
             Select-Object -ExpandProperty DriveLetter
     }
     if ($BackupVolume -eq $null -or $BackupVolume -eq '') {
-        $BackupVolume = Get-Volume | 
-            Where-Object {$_.DriveType -EQ 'Fixed' -and $null -ne $_.DriveLetter -and $_.FileSystemLabel -like '*Backup*'} |  
+        $BackupVolume = Get-Volume |
+            Where-Object {$_.DriveType -EQ 'Fixed' -and $null -ne $_.DriveLetter -and $_.FileSystemLabel -like '*Backup*'} |
             Select-Object -ExpandProperty DriveLetter
     }
     #Check the number of cores available on the server. Summed because every processor can contain multiple cores
@@ -245,20 +243,18 @@
             $NewDataVolume = Read-Host "Your datavolume: "
             if ([string]::IsNullOrEmpty($NewDataVolume)) {
                 Write-Message -Level Verbose -Message "Datavolume remains on " $DataVolume
-            }
-            else {
+            } else {
                 $NewDataVolume = $NewDataVolume -replace "\\$"
                 $NewDataVolume = $NewDataVolume -replace ":$"
                 $DataVolume = $NewDataVolume
                 Write-Message -Level Verbose -Message "DataVolume moved to " $DataVolume
             }
-            
+
             Write-Message -Level Verbose -Message "logvolume: " $LogVolume
             $NewLogVolume = Read-Host "Your logvolume: "
             if ([string]::IsNullOrEmpty($NewLogVolume)) {
                 Write-Message -Level Verbose -Message "Logvolume remains on " $LogVolume
-            }
-            else {
+            } else {
                 $NewLogVolume = $NewLogVolume -replace "\\$"
                 $NewLogVolume = $NewLogVolume -replace ":$"
                 $LogVolume = $NewLogVolume
@@ -270,8 +266,7 @@
             $NewTempVolume = Read-Host "Your TempVolume: "
             if ([string]::IsNullOrEmpty($NewTempVolume)) {
                 Write-Message -Level Verbose -Message "TempVolume remains on " $TempVolume
-            }
-            else {
+            } else {
                 $NewTempVolume = $NewTempVolume -replace "\\$"
                 $NewTempVolume = $NewTempVolume -replace ":$"
                 $TempVolume = $NewTempVolume
@@ -282,8 +277,7 @@
             $NewAppVolume = Read-Host "Your AppVolume: "
             if ([string]::IsNullOrEmpty($NewAppVolume)) {
                 Write-Message -Level Verbose -Message "AppVolume remains on " $AppVolume
-            }
-            else {
+            } else {
                 $NewAppVolume = $NewAppVolume -replace "\\$"
                 $NewAppVolume = $NewAppVolume -replace ":$"
                 $AppVolume = $NewAppVolume
@@ -294,8 +288,7 @@
             $NewBackupVolume = Read-Host "Your BackupVolume: "
             if ([string]::IsNullOrEmpty($NewBackupVolume)) {
                 Write-Message -Level Verbose -Message "BackupVolume remains on " $BackupVolume
-            }
-            else {
+            } else {
                 $NewBackupVolume = $NewBackupVolume -replace "\\$"
                 $NewBackupVolume = $NewBackupVolume -replace ":$"
                 $BackupVolume = $NewBackupVolume
@@ -323,14 +316,13 @@
     if ($Authentication -eq "Mixed Mode") {
         & $SetupFile /ConfigurationFile=$configini /Q /IACCEPTSQLSERVERLICENSETERMS /SAPWD= $SAPassW.GetNetworkCredential().Password
 
-    }
-    else {
+    } else {
         & $SetupFile /ConfigurationFile=$configini /Q /IACCEPTSQLSERVERLICENSETERMS
     }
 
-    
 
-    
+
+
 
     #Now configure the right amount of TempDB files.
 
@@ -345,11 +337,11 @@
 
     #And make sure the standard one has the same configuration as the new ones to make sure the parallelism works
     $sql = @'
-ALTER DATABASE TempDB   
-MODifY FILE  
-(NAME = tempdev,  
-SIZE = 64MB, FILEGROWTH = 64MB);  
-GO  
+ALTER DATABASE TempDB
+MODifY FILE
+(NAME = tempdev,
+SIZE = 64MB, FILEGROWTH = 64MB);
+GO
 '@
 
     Invoke-Sqlcmd -Database TempDB -Query $sql
