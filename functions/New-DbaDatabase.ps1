@@ -5,18 +5,18 @@ function New-DbaDatabase {
         Creates a new database
 
     .DESCRIPTION
-        New-DbaDatabase creates a new database with a single Secondary filegroup, and the PRIMARY filegroup reserved for system objects.
+        This command creates a new database.
 
         It allows creation with multiple files, and sets all growth settings to be fixed size rather than percentage growth.
 
     .PARAMETER SqlInstance
-        The target SQL Server instance or instances. Defaults to localhost.
+        The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
     .PARAMETER Name
-        The name of the new database to be created.
+        The name of the new database or databases to be created.
 
     .PARAMETER DataFilePath
         The location that data files will be placed, otherwise the default SQL Server data path will be used.
@@ -76,7 +76,7 @@ function New-DbaDatabase {
 
     .NOTES
         Tags: Database
-        Author: Matthew Darwin (@evoDBA, naturalselectiondba.wordpress.com)
+        Author: Matthew Darwin (@evoDBA, naturalselectiondba.wordpress.com)  | Chrissy LeMaire (@cl)
 
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
@@ -199,11 +199,11 @@ function New-DbaDatabase {
                     Write-Message -Message "Creating directory $DataFilePath" -Level Verbose
                     $null = New-DbaDirectory -SqlInstance $server -Path $DataFilePath -EnableException
                 } catch {
-                    Stop-Function -Message "Error creating Secondary file directory $DataFilePath on $instance" -Target $instance -Continue
+                    Stop-Function -Message "Error creating secondary file directory $DataFilePath on $instance" -Target $instance -Continue
                 }
             }
 
-            Write-Message -Message "Set local Data drive to $DataFilePath and local log drive to $LogFilePath" -Level Verbose
+            Write-Message -Message "Set local data path to $DataFilePath and local log path to $LogFilePath" -Level Verbose
 
             foreach ($dbname in $Name) {
                 if ($server.Databases[$dbname].Name) {
