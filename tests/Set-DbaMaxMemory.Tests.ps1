@@ -4,7 +4,7 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tags "UnitTests" {
     Context "Validate parameters" {
-        $knownParameters = 'SqlInstance', 'SqlCredential', 'MaxMB', 'EnableException'
+        $knownParameters = 'SqlInstance', 'SqlCredential', 'Max', 'InputObject', 'EnableException'
         $SupportShouldProcess = $true
         $paramCount = $knownParameters.Count
         if ($SupportShouldProcess) {
@@ -28,18 +28,18 @@ Describe "$CommandName Unit Tests" -Tags "UnitTests" {
 
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
-        $inst1CurrentSqlMax = (Get-DbaMaxMemory -SqlInstance $script:instance1).SqlMaxMB
-        $inst2CurrentSqlMax = (Get-DbaMaxMemory -SqlInstance $script:instance2).SqlMaxMB
+        $inst1CurrentMaxValue = (Get-DbaMaxMemory -SqlInstance $script:instance1).MaxValue
+        $inst2CurrentMaxValue = (Get-DbaMaxMemory -SqlInstance $script:instance2).MaxValue
     }
     AfterAll {
-       $null = Set-DbaMaxMemory -SqlInstance $script:instance1 -MaxMB $inst1CurrentSqlMax
-       $null = Set-DbaMaxMemory -SqlInstance $script:instance2 -MaxMB $inst2CurrentSqlMax
+       $null = Set-DbaMaxMemory -SqlInstance $script:instance1 -Max $inst1CurrentMaxValue
+       $null = Set-DbaMaxMemory -SqlInstance $script:instance2 -Max $inst2CurrentMaxValue
     }
     Context "Connects to multiple instances" {
-        $results = Set-DbaMaxMemory -SqlInstance $script:instance1, $script:instance2 -MaxMB 1024
+        $results = Set-DbaMaxMemory -SqlInstance $script:instance1, $script:instance2 -Max 1024
         foreach ($result in $results) {
-            It 'Returns 1024 MB for each instance' {
-                $result.CurrentMaxValue | Should Be 1024
+            It 'Returns 1024  for each instance' {
+                $result.MaxValue | Should Be 1024
             }
         }
     }
@@ -49,5 +49,3 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
     }
 }
-
-

@@ -14178,6 +14178,22 @@
                            false,
                            "false",
                            "False"
+                       ],
+                       [
+                           "WhatIf",
+                           "Shows what would happen if the command were to run. No actions are actually performed",
+                           "wi",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Confirm",
+                           "Prompts you for confirmation before executing any changing operations within the command",
+                           "cf",
+                           false,
+                           "false",
+                           ""
                        ]
                    ],
         "Alias":  "",
@@ -14186,7 +14202,7 @@
         "Name":  "Get-DbaForceNetworkEncryption",
         "Links":  "https://dbatools.io/Get-DbaForceNetworkEncryption",
         "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaForceNetworkEncryption\nGets Force Encryption properties on the default (MSSQLSERVER) instance on localhost - requires (and checks for) RunAs admin.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaForceNetworkEncryption -SqlInstance sql01\\SQL2008R2SP2\nGets Force Network Encryption for the SQL2008R2SP2 on sql01. Uses Windows Credentials to both login and view the registry.",
-        "Syntax":  "Get-DbaForceNetworkEncryption [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-Credential] \u003cPSCredential\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Get-DbaForceNetworkEncryption [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-Credential] \u003cPSCredential\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "CommandName":  "Get-DbaHelpIndex",
@@ -14920,7 +14936,7 @@
     },
     {
         "CommandName":  "Get-DbaMaxMemory",
-        "Description":  "This command retrieves the SQL Server \u0027Max Server Memory\u0027 configuration setting as well as the total  physical installed on the server.",
+        "Description":  "This command retrieves the SQL Server \u0027Max Server Memory\u0027 configuration setting as well as the total physical installed on the server.\n\nResults are turned in megabytes (MB).",
         "Tags":  [
                      "MaxMemory",
                      "Memory"
@@ -14929,7 +14945,7 @@
                        [
                            "SqlInstance",
                            "The target SQL Server instance or instances.",
-                           "ServerInstance,SqlServer,SqlServers",
+                           "",
                            true,
                            "true (ByValue)",
                            ""
@@ -14945,7 +14961,7 @@
                        [
                            "EnableException",
                            "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
-                           "Silent",
+                           "",
                            false,
                            "false",
                            "False"
@@ -14956,7 +14972,7 @@
         "Synopsis":  "Gets the \u0027Max Server Memory\u0027 configuration setting and the memory of the server.  Works on SQL Server 2000-2014.",
         "Name":  "Get-DbaMaxMemory",
         "Links":  "https://dbatools.io/Get-DbaMaxMemory",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaMaxMemory -SqlInstance sqlcluster,sqlserver2012\nGet memory settings for all servers within the SQL Server Central Management Server \"sqlcluster\".\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaMaxMemory -SqlInstance sqlcluster | Where-Object { $_.SqlMaxMB -gt $_.TotalMB }\nFind all servers in Server Central Management Server that have \u0027Max Server Memory\u0027 set to higher than the total memory of the server (think 2147483647)\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eFind-DbaInstance -ComputerName localhost | Get-DbaMaxMemory | Format-Table -AutoSize\nScans localhost for instances using the browser service, traverses all instances and displays memory settings in a formatted table.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaMaxMemory -SqlInstance sqlcluster, sqlserver2012\nGet memory settings for instances \"sqlcluster\" and \"sqlserver2012\". Returns results in megabytes (MB).\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaCmsRegServer -SqlInstance sqlcluster | Get-DbaMaxMemory | Where-Object { $_.MaxValue -gt $_.Total }\nFind all servers in Server Central Management Server that have \u0027Max Server Memory\u0027 set to higher than the total memory of the server (think 2147483647)\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eFind-DbaInstance -ComputerName localhost | Get-DbaMaxMemory | Format-Table -AutoSize\nScans localhost for instances using the browser service, traverses all instances and displays memory settings in a formatted table.",
         "Syntax":  "Get-DbaMaxMemory [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
@@ -25791,6 +25807,22 @@
                            false,
                            "false",
                            "False"
+                       ],
+                       [
+                           "WhatIf",
+                           "If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.",
+                           "wi",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Confirm",
+                           "If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.",
+                           "cf",
+                           false,
+                           "false",
+                           ""
                        ]
                    ],
         "Alias":  "",
@@ -25799,7 +25831,7 @@
         "Name":  "New-DbaDacOption",
         "Links":  "https://dbatools.io/New-DbaDacOption",
         "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003e$options = New-DbaDacOption -Type Dacpac -Action Export\nPS C:\\\u003e $options.ExtractAllTableData = $true\r\nPS C:\\\u003e $options.CommandTimeout = 0\r\nPS C:\\\u003e Export-DbaDacPackage -SqlInstance sql2016 -Database DB1 -Options $options\nUses DacOption object to set the CommandTimeout to 0 then extracts the dacpac for SharePoint_Config on sql2016 to C:\\temp\\SharePoint_Config.dacpac including all table data.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003e$options = New-DbaDacOption -Type Dacpac -Action Publish\nPS C:\\\u003e $options.DeployOptions.DropObjectsNotInSource = $true\r\nPS C:\\\u003e Publish-DbaDacPackage -SqlInstance sql2016 -Database DB1 -Options $options -Path c:\\temp\\db.dacpac\nUses DacOption object to set Deployment Options and publish the db.dacpac dacpac file as DB1 on sql2016",
-        "Syntax":  "New-DbaDacOption [[-Type] \u003cString\u003e] [-Action] \u003cString\u003e [[-PublishXml] \u003cString\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
+        "Syntax":  "New-DbaDacOption [[-Type] \u003cString\u003e] [-Action] \u003cString\u003e [[-PublishXml] \u003cString\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "CommandName":  "New-DbaDacProfile",
@@ -35114,7 +35146,7 @@
                        [
                            "SqlInstance",
                            "The target SQL Server instance or instances.",
-                           "ServerInstance,SqlServer,SqlServers,ComputerName",
+                           "",
                            false,
                            "false",
                            ""
@@ -35122,23 +35154,31 @@
                        [
                            "SqlCredential",
                            "Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)",
-                           "Credential",
+                           "",
                            false,
                            "false",
                            ""
                        ],
                        [
-                           "MaxMB",
-                           "Specifies the max megabytes",
+                           "Max",
+                           "Specifies the max megabytes (MB)",
                            "",
                            false,
                            "false",
                            "0"
                        ],
                        [
+                           "InputObject",
+                           "A InputObject returned by Test-DbaMaxMemory",
+                           "",
+                           false,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
                            "EnableException",
                            "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
-                           "Silent",
+                           "",
                            false,
                            "false",
                            "False"
@@ -35165,8 +35205,8 @@
         "Synopsis":  "Sets SQL Server \u0027Max Server Memory\u0027 configuration setting to a new value then displays information this setting.",
         "Name":  "Set-DbaMaxMemory",
         "Links":  "https://dbatools.io/Set-DbaMaxMemory",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eSet-DbaMaxMemory sqlserver1\nSet max memory to the recommended MB on just one server named \"sqlserver1\"\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eSet-DbaMaxMemory -SqlInstance sqlserver1 -MaxMB 2048\nExplicitly max memory to 2048 MB on just one server, \"sqlserver1\"\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaCmsRegServer -SqlInstance sqlserver | Test-DbaMaxMemory | Where-Object { $_.SqlMaxMB -gt $_.TotalMB } | Set-DbaMaxMemory\nFind all servers in SQL Server Central Management server that have Max SQL memory set to higher than the total memory\r\nof the server (think 2147483647), then pipe those to Set-DbaMaxMemory and use the default recommendation.",
-        "Syntax":  "Set-DbaMaxMemory [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [-SqlCredential \u003cPSCredential\u003e] [[-MaxMB] \u003cInt32\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eSet-DbaMaxMemory sqlserver1\nSet max memory to the recommended on just one server named \"sqlserver1\"\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eSet-DbaMaxMemory -SqlInstance sqlserver1 -Max 2048\nExplicitly set max memory to 2048 on just one server, \"sqlserver1\"\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaCmsRegServer -SqlInstance sqlserver | Test-DbaMaxMemory | Where-Object { $_.MaxValue -gt $_.Total } | Set-DbaMaxMemory\nFind all servers in SQL Server Central Management Server that have Max SQL memory set to higher than the total memory\r\nof the server (think 2147483647), then pipe those to Set-DbaMaxMemory and use the default recommendation.",
+        "Syntax":  "Set-DbaMaxMemory [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Max] \u003cInt32\u003e] [[-InputObject] \u003cPSObject[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "CommandName":  "Set-DbaNetworkCertificate",
@@ -39726,7 +39766,7 @@
                        [
                            "SqlInstance",
                            "The target SQL Server instance or instances.",
-                           "ServerInstance,SqlServer,SqlServers",
+                           "",
                            true,
                            "true (ByValue)",
                            ""
@@ -39750,7 +39790,7 @@
                        [
                            "EnableException",
                            "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
-                           "Silent",
+                           "",
                            false,
                            "false",
                            "False"
@@ -39761,8 +39801,8 @@
         "Synopsis":  "Calculates the recommended value for SQL Server \u0027Max Server Memory\u0027 configuration setting. Works on SQL Server 2000-2014.",
         "Name":  "Test-DbaMaxMemory",
         "Links":  "https://dbatools.io/Test-DbaMaxMemory",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eTest-DbaMaxMemory -SqlInstance sqlcluster,sqlserver2012\nCalculate the \u0027Max Server Memory\u0027 settings for all servers within the SQL Server Central Management Server \"sqlcluster\"\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eTest-DbaMaxMemory -SqlInstance sqlcluster | Where-Object { $_.SqlMaxMB -gt $_.TotalMB } | Set-DbaMaxMemory\nFind all servers in CMS that have Max SQL memory set to higher than the total memory of the server (think 2147483647) and set it to recommended value.",
-        "Syntax":  "Test-DbaMaxMemory [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Credential \u003cPSCredential\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eTest-DbaMaxMemory -SqlInstance sqlcluster,sqlserver2012\nCalculate the \u0027Max Server Memory\u0027 for SQL Server instances sqlcluster and sqlserver2012\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaCmsRegServer -SqlInstance sqlcluster | Test-DbaMaxMemory\nCalculate the \u0027Max Server Memory\u0027 settings for all servers within the SQL Server Central Management Server \"sqlcluster\"\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaCmsRegServer -SqlInstance sqlcluster | Test-DbaMaxMemory | Where-Object { $_.MaxValue -gt $_.Total } | Set-DbaMaxMemory\nFind all servers in CMS that have Max SQL memory set to higher than the total memory of the server (think 2147483647) and set it to recommended value.",
+        "Syntax":  "Test-DbaMaxMemory [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Credential] \u003cPSCredential\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
         "CommandName":  "Test-DbaMigrationConstraint",
