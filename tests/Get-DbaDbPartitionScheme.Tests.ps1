@@ -29,7 +29,7 @@ GO
 CREATE PARTITION SCHEME $PFScheme AS PARTITION [$PFName] ALL TO ( [PRIMARY] );
 "@
 
-        Invoke-DbaQuery -SqlInstance $script:instance2 -Query $CreateTestPartitionScheme -Database master -ParseGo
+        Invoke-DbaQuery -SqlInstance $script:instance2 -Query $CreateTestPartitionScheme -Database master
     }
     AfterAll{
         $DropTestPartitionScheme = @"
@@ -37,7 +37,7 @@ DROP PARTITION SCHEME [$PFScheme];
 GO
 DROP PARTITION FUNCTION [$PFName];
 "@
-        Invoke-DbaQuery -SqlInstance $script:instance2 -Query $DropTestPartitionScheme -Database master -ParseGo
+        Invoke-DbaQuery -SqlInstance $script:instance2 -Query $DropTestPartitionScheme -Database master
     }
 
     Context "Partition Functions are correctly located" {
