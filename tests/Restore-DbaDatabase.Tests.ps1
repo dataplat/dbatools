@@ -281,7 +281,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
 
     Context "RestoreTime setup checks" {
         $results = Restore-DbaDatabase -SqlInstance $script:instance2 -path $script:appveyorlabrepo\RestoreTimeClean
-        $sqlResults = Invoke-Sqlcmd2 -ServerInstance $script:instance2 -Query "select convert(datetime,convert(varchar(20),max(dt),120)) as maxdt, convert(datetime,convert(varchar(20),min(dt),120)) as mindt from RestoreTimeClean.dbo.steps"
+        $sqlResults = Invoke-DbaQuery -SqlInstance $script:instance2 -Query "select convert(datetime,convert(varchar(20),max(dt),120)) as maxdt, convert(datetime,convert(varchar(20),min(dt),120)) as mindt from RestoreTimeClean.dbo.steps"
         It "Should restore cleanly" {
             ($results.RestoreComplete -contains $false) | Should Be $false
             ($results.count -gt 0) | Should be $True
@@ -312,7 +312,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
 
     Context "RestoreTime point in time" {
         $results = Restore-DbaDatabase -SqlInstance $script:instance2 -path $script:appveyorlabrepo\RestoreTimeClean -RestoreTime (get-date "2017-06-01 13:22:44")
-        $sqlResults = Invoke-Sqlcmd2 -ServerInstance $script:instance2 -Query "select convert(datetime,convert(varchar(20),max(dt),120)) as maxdt, convert(datetime,convert(varchar(20),min(dt),120)) as mindt from RestoreTimeClean.dbo.steps"
+        $sqlResults = Invoke-DbaQuery -SqlInstance $script:instance2 -Query "select convert(datetime,convert(varchar(20),max(dt),120)) as maxdt, convert(datetime,convert(varchar(20),min(dt),120)) as mindt from RestoreTimeClean.dbo.steps"
         It "Should have restored 4 files" {
             $results.count | Should be 4
         }
@@ -336,7 +336,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
 
     Context "RestoreTime point in time with Simple Model" {
         $results = Restore-DbaDatabase -SqlInstance $script:instance2 -path $script:appveyorlabrepo\sql2008-backups\SimpleRecovery\ -RestoreTime (get-date "2018-04-06 10:37:44")
-        $sqlResults = Invoke-Sqlcmd2 -ServerInstance $script:instance2 -Query "select convert(datetime,convert(varchar(20),max(dt),120)) as maxdt, convert(datetime,convert(varchar(20),min(dt),120)) as mindt from SimpleBackTest.dbo.steps"
+        $sqlResults = Invoke-DbaQuery -SqlInstance $script:instance2 -Query "select convert(datetime,convert(varchar(20),max(dt),120)) as maxdt, convert(datetime,convert(varchar(20),min(dt),120)) as mindt from SimpleBackTest.dbo.steps"
 
         It "Should have restored 2 files" {
             $results.count | Should be 2
@@ -371,7 +371,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             return
         }
         $results = Restore-DbaDatabase -SqlInstance $script:instance2 -path $script:appveyorlabrepo\RestoreTimeClean -RestoreTime (get-date "2017-06-01 13:22:44") -StandbyDirectory c:\temp
-        $sqlResults = Invoke-Sqlcmd2 -ServerInstance $script:instance2 -Query "select convert(datetime,convert(varchar(20),max(dt),120)) as maxdt, convert(datetime,convert(varchar(20),min(dt),120)) as mindt from RestoreTimeClean.dbo.steps"
+        $sqlResults = Invoke-DbaQuery -SqlInstance $script:instance2 -Query "select convert(datetime,convert(varchar(20),max(dt),120)) as maxdt, convert(datetime,convert(varchar(20),min(dt),120)) as mindt from RestoreTimeClean.dbo.steps"
         It "Should have restored 4 files" {
             $results.count | Should be 4
         }
@@ -382,7 +382,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $sqlResults.maxdt | Should be (get-date "2017-06-01 13:22:43")
         }
         $results2 = Restore-DbaDatabase -SqlInstance $script:instance2 -path $script:appveyorlabrepo\RestoreTimeClean -Continue
-        $sqlResults2 = Invoke-Sqlcmd2 -ServerInstance $script:instance2 -Query "select convert(datetime,convert(varchar(20),max(dt),120)) as maxdt, convert(datetime,convert(varchar(20),min(dt),120)) as mindt from RestoreTimeClean.dbo.steps"
+        $sqlResults2 = Invoke-DbaQuery -SqlInstance $script:instance2 -Query "select convert(datetime,convert(varchar(20),max(dt),120)) as maxdt, convert(datetime,convert(varchar(20),min(dt),120)) as mindt from RestoreTimeClean.dbo.steps"
         It "Should have restored 2 files" {
             $results2.count | Should be 2
         }
@@ -407,7 +407,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             return
         }
         $results = Restore-DbaDatabase -SqlInstance $script:instance2 -Databasename contest -path $script:appveyorlabrepo\RestoreTimeClean -RestoreTime (get-date "2017-06-01 13:22:44") -StandbyDirectory c:\temp
-        $sqlResults = Invoke-Sqlcmd2 -ServerInstance $script:instance2 -Query "select convert(datetime,convert(varchar(20),max(dt),120)) as maxdt, convert(datetime,convert(varchar(20),min(dt),120)) as mindt from contest.dbo.steps"
+        $sqlResults = Invoke-DbaQuery -SqlInstance $script:instance2 -Query "select convert(datetime,convert(varchar(20),max(dt),120)) as maxdt, convert(datetime,convert(varchar(20),min(dt),120)) as mindt from contest.dbo.steps"
         It "Should have restored 4 files" {
             $results.count | Should be 4
         }
@@ -418,7 +418,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $sqlResults.maxdt | Should be (get-date "2017-06-01 13:22:43")
         }
         $results2 = Restore-DbaDatabase -SqlInstance $script:instance2 -Databasename contest -path $script:appveyorlabrepo\RestoreTimeClean -Continue
-        $sqlResults2 = Invoke-Sqlcmd2 -ServerInstance $script:instance2 -Query "select convert(datetime,convert(varchar(20),max(dt),120)) as maxdt, convert(datetime,convert(varchar(20),min(dt),120)) as mindt from contest.dbo.steps"
+        $sqlResults2 = Invoke-DbaQuery -SqlInstance $script:instance2 -Query "select convert(datetime,convert(varchar(20),max(dt),120)) as maxdt, convert(datetime,convert(varchar(20),min(dt),120)) as mindt from contest.dbo.steps"
         It "Should have restored 2 files" {
             $results2.count | Should be 2
         }
@@ -767,14 +767,14 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
 
         insert into testpage values (REPLICATE('f','8000'))
         use master"
-        $null = Invoke-Sqlcmd2 -ServerInstance $script:instance2 -Query $sql -Database Pagerestore
-        $sqlResults2 = Invoke-SqlCmd2 -ServerInstance $script:instance2 -Database Master -Query "select * from pagerestore.dbo.testpage where filler like 'a%'" -ErrorVariable errvar -ErrorAction SilentlyContinue
+        $null = Invoke-DbaQuery -SqlInstance $script:instance2 -Query $sql -Database Pagerestore
+        $sqlResults2 = Invoke-DbaQuery -SqlInstance $script:instance2 -Database Master -Query "select * from pagerestore.dbo.testpage where filler like 'a%'" -ErrorVariable errvar -ErrorAction SilentlyContinue
         It "Should have warned about corruption" {
             ($errvar -match "SQL Server detected a logical consistency-based I/O error: incorrect checksum \(expected") | Should be $True
             ($null -eq $sqlResults2) | SHould be $True
         }
         $null = Get-DbaBackupHistory -SqlInstance $script:instance2 -Database pagerestore -last | Restore-DbaDatabase -SqlInstance $script:instance2 -PageRestore (Get-DbaSuspectPage -SqlInstance $script:instance2 -Database PageRestore) -TrustDbBackupHistory -AllowContinue -DatabaseName PageRestore -PageRestoreTailFolder c:\temp -ErrorAction SilentlyContinue
-        $sqlResults3 = Invoke-SqlCmd2 -ServerInstance $script:instance2 -Query "select * from pagerestore.dbo.testpage where filler like 'f%'" -ErrorVariable errvar3 -ErrorAction SilentlyContinue
+        $sqlResults3 = Invoke-DbaQuery -SqlInstance $script:instance2 -Query "select * from pagerestore.dbo.testpage where filler like 'f%'" -ErrorVariable errvar3 -ErrorAction SilentlyContinue
         It -Skip "Should work after page restore" {
             #($null -eq $errvar3) | Should Be $True
             ($null -eq $sqlResults3) | SHould be $False
