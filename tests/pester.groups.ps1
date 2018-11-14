@@ -38,7 +38,9 @@ $TestsRunGroups = @{
         'Test-DbaRecoveryModel',
         'Set-DbaDbState',
         'Reset-DbaAdmin',
-        'Test-DbaDeprecatedFeature'
+        'Test-DbaDeprecatedFeature',
+        'Test-DbaServerName',
+        'Test-DbaTempDbConfig'
     )
     # do not run everywhere
     "disabled"          = @()
