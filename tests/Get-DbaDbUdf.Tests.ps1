@@ -41,11 +41,11 @@ BEGIN
      RETURN(@ISOweek);
 END;
 "@
-        Invoke-Sqlcmd2 -ServerInstance $script:instance2 -Query $CreateTestUDFunction -Database master
+        Invoke-DbaQuery -SqlInstance $script:instance2 -Query $CreateTestUDFunction -Database master
     }
     AfterAll{
         $DropTestUDFunction = "DROP FUNCTION dbo.dbatoolssci_ISOweek;"
-        Invoke-Sqlcmd2 -ServerInstance $script:instance2 -Query $DropTestUDFunction -Database master
+        Invoke-DbaQuery -SqlInstance $script:instance2 -Query $DropTestUDFunction -Database master
     }
 
     Context "Partition Functions are correctly located" {

@@ -73,7 +73,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
             $result.Count | Should Be 1
 
             # the query doesn't return records inserted before the restore
-            $result = Invoke-SqlCmd2 -ServerInstance $script:instance2 -Query "SELECT * FROM [$db1].[dbo].[Example]" -QueryTimeout 10 -ConnectionTimeout 10
+            $result = Invoke-DbaQuery -SqlInstance $script:instance2 -Query "SELECT * FROM [$db1].[dbo].[Example]" -QueryTimeout 10
             $result.id | Should Be 1
         }
 

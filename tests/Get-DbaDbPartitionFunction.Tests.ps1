@@ -22,11 +22,11 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         $tempguid = [guid]::newguid();
         $PFName = "dbatoolssci_$($tempguid.guid)"
         $CreateTestPartitionFunction = "CREATE PARTITION FUNCTION [$PFName] (int)  AS RANGE LEFT FOR VALUES (1, 100, 1000, 10000, 100000);"
-        Invoke-Sqlcmd2 -ServerInstance $script:instance2 -Query $CreateTestPartitionFunction -Database master
+        Invoke-DbaQuery -SqlInstance $script:instance2 -Query $CreateTestPartitionFunction -Database master
     }
     AfterAll{
         $DropTestPartitionFunction = "DROP PARTITION FUNCTION [$PFName];"
-        Invoke-Sqlcmd2 -ServerInstance $script:instance2 -Query $DropTestPartitionFunction -Database master
+        Invoke-DbaQuery -SqlInstance $script:instance2 -Query $DropTestPartitionFunction -Database master
     }
 
     Context "Partition Functions are correctly located" {
