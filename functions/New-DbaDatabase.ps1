@@ -1,6 +1,6 @@
 #ValidationTags#CodeStyle,Messaging,FlowControl,Pipeline#
 function New-DbaDatabase {
-     <#
+    <#
     .SYNOPSIS
         Creates a new database
 
@@ -106,8 +106,8 @@ function New-DbaDatabase {
         Creates a database named nondefault and places data files in in the M:\data directory and log files in "L:\Logs with spaces".
 
         Creates a secondary group with 2 files in the Secondary filegroup.
-    
-    #>
+
+       #>
     [Cmdletbinding(SupportsShouldProcess, ConfirmImpact = "Low")]
     param
     (
