@@ -41,7 +41,7 @@ function Get-DbaForceNetworkEncryption {
 
         Gets Force Network Encryption for the SQL2008R2SP2 on sql01. Uses Windows Credentials to both login and view the registry.
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [Parameter(ValueFromPipeline)]
@@ -54,15 +54,15 @@ function Get-DbaForceNetworkEncryption {
         foreach ($instance in $SqlInstance) {
             Write-Message -Level VeryVerbose -Message "Processing $instance" -Target $instance
             $null = Test-ElevationRequirement -ComputerName $instance -Continue
-            
+
             Write-Message -Level Verbose -Message "Resolving hostname"
             $resolved = $null
             $resolved = Resolve-DbaNetworkName -ComputerName $instance
-            
+
             if ($null -eq $resolved) {
                 Stop-Function -Message "Can't resolve $instance" -Target $instance -Continue -Category InvalidArgument
             }
-            
+
             try {
                 $sqlwmi = Invoke-ManagedComputerCommand -ComputerName $resolved.FullComputerName -ScriptBlock {
                     $wmi.Services
@@ -70,7 +70,7 @@ function Get-DbaForceNetworkEncryption {
             } catch {
                 Stop-Function -Message "Failed to access $instance" -Target $instance -Continue -ErrorRecord $_
             }
-            
+
             $regroot = ($sqlwmi.AdvancedProperties | Where-Object Name -eq REGROOT).Value
             $vsname = ($sqlwmi.AdvancedProperties | Where-Object Name -eq VSNAME).Value
             try {
@@ -81,7 +81,7 @@ function Get-DbaForceNetworkEncryption {
                 $null = 1
             }
             $serviceaccount = $sqlwmi.ServiceAccount
-            
+
             if ([System.String]::IsNullOrEmpty($regroot)) {
                 $regroot = $sqlwmi.AdvancedProperties | Where-Object {
                     $_ -match 'REGROOT'
@@ -89,7 +89,7 @@ function Get-DbaForceNetworkEncryption {
                 $vsname = $sqlwmi.AdvancedProperties | Where-Object {
                     $_ -match 'VSNAME'
                 }
-                
+
                 if (![System.String]::IsNullOrEmpty($regroot)) {
                     $regroot = ($regroot -Split 'Value\=')[1]
                     $vsname = ($vsname -Split 'Value\=')[1]
@@ -97,31 +97,31 @@ function Get-DbaForceNetworkEncryption {
                     Stop-Function -Message "Can't find instance $vsname on $instance" -Continue -Category ObjectNotFound -Target $instance
                 }
             }
-            
+
             if ([System.String]::IsNullOrEmpty($vsname)) {
                 $vsname = $instance
             }
-            
+
             Write-Message -Level Verbose -Message "Regroot: $regroot" -Target $instance
             Write-Message -Level Verbose -Message "ServiceAcct: $serviceaccount" -Target $instance
             Write-Message -Level Verbose -Message "InstanceName: $instancename" -Target $instance
             Write-Message -Level Verbose -Message "VSNAME: $vsname" -Target $instance
-            
+
             $scriptblock = {
                 $regpath = "Registry::HKEY_LOCAL_MACHINE\$($args[0])\MSSQLServer\SuperSocketNetLib"
                 $cert = (Get-ItemProperty -Path $regpath -Name Certificate).Certificate
                 $forceencryption = (Get-ItemProperty -Path $regpath -Name ForceEncryption).ForceEncryption
-                
+
                 # [pscustomobject] doesn't always work, unsure why. so return hashtable then turn it into  pscustomobject on client
                 @{
-                    ComputerName = $env:COMPUTERNAME
-                    InstanceName = $args[2]
-                    SqlInstance  = $args[1]
-                    ForceEncryption = ($forceencryption -eq $true)
+                    ComputerName          = $env:COMPUTERNAME
+                    InstanceName          = $args[2]
+                    SqlInstance           = $args[1]
+                    ForceEncryption       = ($forceencryption -eq $true)
                     CertificateThumbprint = $cert
                 }
             }
-            
+
             try {
                 $results = Invoke-Command2 -ComputerName $resolved.FullComputerName -Credential $Credential -ArgumentList $regroot, $vsname, $instancename -ScriptBlock $scriptblock -ErrorAction Stop -Raw
                 foreach ($result in $results) {
