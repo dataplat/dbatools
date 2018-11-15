@@ -151,7 +151,7 @@ function Get-DbaPrivilege {
                     [PSCustomObject]@{
                         ComputerName                       = $computer
                         User                               = $_
-                        LogonAsBatchPrivilege              = $BL -contains $_
+                        LogonAsBatch              = $BL -contains $_
                         InstantFileInitializationPrivilege = $ifi -contains $_
                         LockPagesInMemoryPrivilege         = $lpim -contains $_
                     }
