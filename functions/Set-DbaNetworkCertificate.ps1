@@ -59,7 +59,7 @@ function Set-DbaNetworkCertificate {
 
         Sets the network certificate for the SQL2008R2SP2 instance to the certificate with the thumbprint of 1223FB1ACBCA44D3EE9640F81B6BA14A92F3D6E2 in LocalMachine\My on sql1
 
-#>
+    #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low", DefaultParameterSetName = 'Default')]
     param (
         [Parameter(ValueFromPipeline)]
@@ -211,4 +211,3 @@ function Set-DbaNetworkCertificate {
         }
     }
 }
-

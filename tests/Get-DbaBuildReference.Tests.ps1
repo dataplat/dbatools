@@ -7,7 +7,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         $paramCount = 5
         $defaultParamCount = 11
         [object[]]$params = (Get-ChildItem function:\Get-DbaBuildReference).Parameters.Keys
-        $knownParameters = 'Build','SqlInstance','SqlCredential','Update','EnableException'
+        $knownParameters = 'Build', 'SqlInstance', 'SqlCredential', 'Update', 'EnableException'
         It "Should contain our specific parameters" {
             ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
         }
@@ -65,8 +65,7 @@ Describe "$CommandName Unit Test" -Tags Unittest {
                 }
                 try {
                     $splitted | Foreach-Object { [convert]::ToInt32($_) }
-                }
-                catch {
+                } catch {
                     # I know. But someone can find a method to output a custom message ?
                     $splitted -join '.' | Should Be "Composed by integers"
                 }

@@ -55,7 +55,7 @@ function Test-DbaIdentityUsage {
 
         Check identity seeds on server sql2008 for only the TestDB database, limiting results to 20% utilization of seed range or higher
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Position = 0, Mandatory, ValueFromPipeline)]
@@ -206,4 +206,3 @@ function Test-DbaIdentityUsage {
         }
     }
 }
-

@@ -42,7 +42,7 @@ function Add-DbaDbMirrorMonitor {
 
         Creates a database mirroring monitor job that periodically updates the mirroring status for every mirrored database on sql2008 and sql2012.
 
-#>
+    #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Low')]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
@@ -74,4 +74,3 @@ function Add-DbaDbMirrorMonitor {
         }
     }
 }
-

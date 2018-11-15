@@ -60,7 +60,7 @@ function Get-DbaPfDataCollector {
 
         Gets all Collectors for the 'System Correlation' CollectorSet.
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [DbaInstance[]]$ComputerName = $env:COMPUTERNAME,
@@ -137,4 +137,3 @@ function Get-DbaPfDataCollector {
         }
     }
 }
-

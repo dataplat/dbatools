@@ -57,7 +57,7 @@ function Invoke-DbaDbMirrorFailover {
         Forces the failover of the pubs database on sql2016 and allows data loss.
         Does not prompt for confirmation.
 
-#>
+    #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
     param (
         [DbaInstanceParameter]$SqlInstance,
@@ -93,4 +93,3 @@ function Invoke-DbaDbMirrorFailover {
         }
     }
 }
-

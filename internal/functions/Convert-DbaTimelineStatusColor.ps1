@@ -53,4 +53,3 @@ function Convert-DbaTimelineStatusColor {
     }
     return $out
 }
-

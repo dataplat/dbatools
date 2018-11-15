@@ -41,7 +41,7 @@ function Get-DbaProductKey {
 
         Gets SQL Server versions, editions and product keys for all instances within each server or workstation.
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(ValueFromPipeline, Mandatory)]
@@ -217,4 +217,3 @@ function Get-DbaProductKey {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Parameter ServersFromFile
     }
 }
-

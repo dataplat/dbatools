@@ -24,7 +24,7 @@ function Get-XpDirTreeRestoreFile {
         PS C:\> Get-XpDirTreeRestoreFile -Path '\\foo\bar\' -SqlInstance $SqlInstance
 
         Tests whether the instance $SqlInstance has access to the path \\foo\bar\
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
@@ -64,7 +64,7 @@ function Get-XpDirTreeRestoreFile {
     } else {
         $sql = "EXEC master.sys.xp_dirtree '$Path',1,1;"
     }
-    #$queryResult = Invoke-Sqlcmd2 -ServerInstance $SqlInstance -Credential $SqlCredential -Database tempdb -Query $query
+    #$queryResult = Invoke-DbaQuery -SqlInstance $SqlInstance -Credential $SqlCredential -Database tempdb -Query $query
     $queryResult = $server.Query($sql)
     Write-Message -Level Debug -Message $sql
     $dirs = $queryResult | Where-Object file -eq 0

@@ -65,7 +65,7 @@ function Add-DbaAgListener {
 
         Creates a listener on port 1433 with a dynamic IP for the group1 availability group on sql2017.
 
-#>
+    #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Low')]
     param (
         [DbaInstanceParameter[]]$SqlInstance,

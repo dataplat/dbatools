@@ -200,7 +200,7 @@ function New-DbaAvailabilityGroup {
         PS C:\> New-DbaAvailabilityGroup @params
 
         This exact command was used to create an availability group on docker!
-#>
+    #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
     param (
         [parameter(ValueFromPipeline)]

@@ -162,7 +162,7 @@ function Copy-DbaDatabase {
 
         It also includes the support databases (ReportServer, ReportServerTempDb, distribution).
 
-#>
+    #>
     [CmdletBinding(DefaultParameterSetName = "DbBackup", SupportsShouldProcess = $true)]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseOutputTypeCorrectly", "", Justification = "PSSA Rule Ignored by BOH")]
     param (

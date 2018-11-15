@@ -153,7 +153,7 @@ function Read-DbaTraceFile {
 
         Reads every trace file on sql2014
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Position = 0, Mandatory, ValueFromPipelineByPropertyName)]
@@ -278,4 +278,3 @@ function Read-DbaTraceFile {
         }
     }
 }
-

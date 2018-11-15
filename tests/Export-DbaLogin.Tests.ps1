@@ -7,7 +7,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         $paramCount = 13
         $defaultParamCount = 13
         [object[]]$params = (Get-ChildItem function:\Export-DbaLogin).Parameters.Keys
-        $knownParameters = 'SqlInstance','SqlCredential','Login','ExcludeLogin','Database','Path','NoClobber','Append','NoDatabases','NoJobs','EnableException','ExcludeGoBatchSeparator','DestinationVersion'
+        $knownParameters = 'SqlInstance', 'SqlCredential', 'Login', 'ExcludeLogin', 'Database', 'Path', 'NoClobber', 'Append', 'NoDatabases', 'NoJobs', 'EnableException', 'ExcludeGoBatchSeparator', 'DestinationVersion'
         It "Should contain our specific parameters" {
             ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
         }
@@ -47,8 +47,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             }
             $null = $server.Query("GRANT SELECT ON sys.databases TO [$login2] WITH GRANT OPTION")
             $server.Databases[$dbname2].ExecuteNonQuery("CREATE USER [$user2] FOR LOGIN [$login2]")
-        }
-        catch { } # No idea why appveyor can't handle this
+        } catch { } # No idea why appveyor can't handle this
     }
     AfterAll {
         Remove-DbaDatabase -SqlInstance $script:instance1 -Database $dbname1 -Confirm:$false

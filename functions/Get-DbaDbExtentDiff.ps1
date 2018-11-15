@@ -52,7 +52,7 @@ function Get-DbaDbExtentDiff {
 
         Get the changes for the DB01 database on multiple servers.
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
@@ -168,4 +168,3 @@ function Get-DbaDbExtentDiff {
         }
     }
 }
-

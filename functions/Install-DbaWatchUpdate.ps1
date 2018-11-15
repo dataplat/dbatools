@@ -41,7 +41,7 @@ function Install-DbaWatchUpdate {
 
         Will create the scheduled task as the name MyScheduledTask
 
-#>
+    #>
     [cmdletbinding(SupportsShouldProcess)]
     param(
         [string]$TaskName = 'dbatools version check',
@@ -104,4 +104,3 @@ function Install-DbaWatchUpdate {
         }
     }
 }
-

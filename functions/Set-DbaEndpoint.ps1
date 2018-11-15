@@ -60,7 +60,7 @@ function Set-DbaEndpoint {
 
         Changes the endpoint type to tsql on endpoint ep1
 
-#>
+    #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Low')]
     param (
         [DbaInstanceParameter[]]$SqlInstance,

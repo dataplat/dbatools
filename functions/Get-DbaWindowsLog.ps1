@@ -53,7 +53,7 @@ function Get-DbaWindowsLog {
 
         Returns all lines in the errorlogs that have event number 18456 in them
 
-#>
+    #>
     #This exists to ignore the Script Analyzer rule for Start-Runspace
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "")]
     [CmdletBinding()]

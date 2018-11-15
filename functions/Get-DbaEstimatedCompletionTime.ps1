@@ -72,7 +72,7 @@ function Get-DbaEstimatedCompletionTime {
 
         Gets estimated completion times for queries performed against the Northwind, pubs, and Adventureworks2014 databases
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
@@ -154,4 +154,3 @@ function Get-DbaEstimatedCompletionTime {
         }
     }
 }
-

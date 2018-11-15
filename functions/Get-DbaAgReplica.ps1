@@ -53,7 +53,7 @@ function Get-DbaAgReplica {
 
         Returns full object properties on all availability group replicas found on sql2017a
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [DbaInstanceParameter[]]$SqlInstance,

@@ -54,7 +54,7 @@ function Get-DbaMemoryUsage {
 
         Returns a gridview displaying Server, counter instance, counter, number of pages, memory in KB, memory in MB
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(ValueFromPipeline)]

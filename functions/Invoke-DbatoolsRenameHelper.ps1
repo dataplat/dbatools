@@ -56,7 +56,7 @@ function Invoke-DbatoolsRenameHelper {
         Shows what would happen if the command would run. If the command would run and there were matches,
         the resulting changes would be written to disk as Ascii encoded.
 
-#>
+       #>
     [CmdletBinding(SupportsShouldProcess = $true)]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
@@ -68,6 +68,10 @@ function Invoke-DbatoolsRenameHelper {
     process {
         foreach ($fileobject in $InputObject) {
             $file = $fileobject.FullName
+            $allrenames = $script:renames + @{
+                "AliasName"  = "Invoke-Sqlcmd2"
+                "Definition" = "Invoke-DbaQuery"
+            }
             foreach ($name in $script:renames) {
                 if ((Select-String -Pattern $name.AliasName -Path $file)) {
                     if ($Pscmdlet.ShouldProcess($file, "Replacing $($name.AliasName) with $($name.Definition)")) {
@@ -83,4 +87,3 @@ function Invoke-DbatoolsRenameHelper {
         }
     }
 }
-

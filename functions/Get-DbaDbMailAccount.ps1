@@ -58,7 +58,7 @@ function Get-DbaDbMailAccount {
 
         Returns the Database Mail accounts for "sql2014","sql2016" and "sqlcluster\sharepoint"
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [Alias("ServerInstance", "SqlServer")]

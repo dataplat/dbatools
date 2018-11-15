@@ -81,7 +81,7 @@ function Invoke-DbaDbDecryptObject {
 
         Decrypt objects "Function1" and "Function2" and output the data to the user using a pipeline for the instance.
 
-#>
+    #>
     [CmdletBinding()]
     param(
         [parameter(Mandatory, ValueFromPipeline)]
@@ -348,4 +348,3 @@ function Invoke-DbaDbDecryptObject {
         Write-Message -Message "Finished decrypting data" -Level Verbose
     }
 }
-

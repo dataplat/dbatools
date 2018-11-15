@@ -7,7 +7,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         $paramCount = 5
         $defaultParamCount = 11
         [object[]]$params = (Get-ChildItem function:\Test-DbaDiskSpeed).Parameters.Keys
-        $knownParameters = 'SqlInstance','SqlCredential','Database','ExcludeDatabase','EnableException'
+        $knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'EnableException'
         It "Should contain our specific parameters" {
             ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
         }
@@ -20,8 +20,8 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     Context "Command actually works" {
         It "should have info for model" {
-           $results = Test-DbaDiskSpeed -SqlInstance $script:instance1
-           $results.FileName -contains 'modellog.ldf'
+            $results = Test-DbaDiskSpeed -SqlInstance $script:instance1
+            $results.FileName -contains 'modellog.ldf'
         }
         It "returns only for master" {
             $results = Test-DbaDiskSpeed -SqlInstance $script:instance1 -Database master

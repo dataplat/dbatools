@@ -56,7 +56,7 @@ function Get-DbaDbSnapshot {
 
         Returns information for database snapshots HR_snapshot and Accounting_snapshot
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
@@ -113,4 +113,3 @@ function Get-DbaDbSnapshot {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Get-DbaDatabaseSnapshot
     }
 }
-

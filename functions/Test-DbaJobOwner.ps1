@@ -59,7 +59,7 @@ function Test-DbaJobOwner {
         Returns all SQL Agent Jobs where the owner does not match DOMAIN\account. Note
         that Login must be a valid security principal that exists on the target server.
 
-#>
+    #>
     [CmdletBinding()]
     [OutputType('System.Object[]')]
     param (
@@ -154,4 +154,3 @@ function Test-DbaJobOwner {
     }
 
 }
-

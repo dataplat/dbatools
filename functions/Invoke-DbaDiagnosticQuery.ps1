@@ -127,7 +127,7 @@ function Invoke-DbaDiagnosticQuery {
 
         Run diagnostic queries targeted at specific database, and only run database level queries against this database.
 
-#>
+    #>
 
     [CmdletBinding(SupportsShouldProcess)]
     [outputtype([pscustomobject[]])]
@@ -306,9 +306,10 @@ function Invoke-DbaDiagnosticQuery {
 
 
             }
-
+            
             foreach ($scriptpart in $parsedscript) {
-
+                # ensure results are null with each part, otherwise duplicated information may be returned
+                $result = $null
                 if (($QueryName.Count -ne 0) -and ($QueryName -notcontains $scriptpart.QueryName)) { continue }
                 if (!$scriptpart.DBSpecific -and !$DatabaseSpecific) {
                     if ($ExportQueries) {
@@ -330,7 +331,7 @@ function Invoke-DbaDiagnosticQuery {
                         try {
                             $result = $server.Query($scriptpart.Text)
                             Write-Message -Level Verbose -Message "Processed $($scriptpart.QueryName) on $instance"
-                            if (!$result) {
+                            if (-not $result) {
                                 [pscustomobject]@{
                                     ComputerName     = $server.ComputerName
                                     InstanceName     = $server.ServiceName
@@ -405,7 +406,7 @@ function Invoke-DbaDiagnosticQuery {
                             Write-Message -Level Verbose -Message "Collecting diagnostic query data from $($currentDb) for $($scriptpart.QueryName) on $instance"
                             try {
                                 $result = $server.Query($scriptpart.Text, $currentDb)
-                                if (!$result) {
+                                if (-not $result) {
                                     [pscustomobject]@{
                                         ComputerName     = $server.ComputerName
                                         InstanceName     = $server.ServiceName
@@ -465,4 +466,3 @@ function Invoke-DbaDiagnosticQuery {
         Write-Progress -Id $ProgressId -Activity 'Invoke-DbaDiagnosticQuery' -Completed
     }
 }
-

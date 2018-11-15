@@ -44,7 +44,7 @@ function Clear-DbaWaitStatistics {
 
         Clears wait stats on servers sql2008 and sqlserver2012, without prompting
 
-#>
+    #>
     [CmdletBinding(ConfirmImpact = 'High', SupportsShouldProcess)]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseSingularNouns", "", Justification = "Singular Noun doesn't make sense")]
     param (

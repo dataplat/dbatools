@@ -52,7 +52,7 @@ function Get-DbaServerProtocol {
         Disables the VIA ServerNetworkProtocol on computer sql1.
         If successful, return code 0 is shown.
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(ValueFromPipeline)]
@@ -91,4 +91,3 @@ function Get-DbaServerProtocol {
         }
     }
 }
-

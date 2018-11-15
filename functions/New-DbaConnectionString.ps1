@@ -159,7 +159,7 @@ function New-DbaConnectionString {
 
         Creates a connection string with ReadOnly ApplicationIntent.
 
-#>
+    #>
     [CmdletBinding(SupportsShouldProcess)]
     param (
         [Parameter(Mandatory, ValueFromPipeline)]
@@ -268,4 +268,3 @@ function New-DbaConnectionString {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias New-DbaSqlConnectionString
     }
 }
-

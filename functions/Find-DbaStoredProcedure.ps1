@@ -65,7 +65,7 @@ function Find-DbaStoredProcedure {
 
         Searches in "mydb" database stored procedures for "runtime" in the text body
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Position = 0, Mandatory, ValueFromPipeline)]
@@ -199,4 +199,3 @@ function Find-DbaStoredProcedure {
         Write-Message -Level Verbose -Message "Evaluated $everyserverspcount total stored procedures"
     }
 }
-

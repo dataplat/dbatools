@@ -41,7 +41,7 @@ function Get-DbaRgWorkloadGroup {
 
         Gets the workload groups on sql2017
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(ValueFromPipeline)]
@@ -68,4 +68,3 @@ function Get-DbaRgWorkloadGroup {
         }
     }
 }
-

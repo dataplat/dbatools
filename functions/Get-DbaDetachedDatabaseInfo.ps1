@@ -37,7 +37,7 @@ function Get-DbaDetachedDatabaseInfo {
 
         Returns information about the detached database file M:\Archive\mydb.mdf using the SQL Server instance sql2016. The M drive is relative to the SQL Server instance.
 
-#>
+    #>
 
     [CmdletBinding(DefaultParameterSetName = "Default")]
     param (
@@ -138,4 +138,3 @@ function Get-DbaDetachedDatabaseInfo {
         return $mdfinfo
     }
 }
-

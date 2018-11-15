@@ -8,7 +8,7 @@ Describe "$CommandName Unit Tests" -Tag "UnitTests" {
         <#
             Get commands, Default count = 11
             Commands with SupportShouldProcess = 13
-        #>
+               #>
         $defaultParamCount = 13
         [object[]]$params = (Get-ChildItem function:\Enable-DbaAgHadr).Parameters.Keys
         $knownParameters = 'SqlInstance', 'Credential', 'Force', 'EnableException'
@@ -33,9 +33,9 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
             Disable-DbaAgHadr -SqlInstance $script:instance3 -Confirm:$false -WarningAction SilentlyContinue -Force
         }
     }
-    
+
     $results = Enable-DbaAgHadr -SqlInstance $script:instance3 -Confirm:$false -Force
-    
+
     It "enables hadr" {
         $results.IsHadrEnabled | Should -Be $true
     }

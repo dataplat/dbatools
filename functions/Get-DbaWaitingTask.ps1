@@ -45,7 +45,7 @@ function Get-DbaWaitingTask {
 
         Returns the waiting task for all sessions (user and system) on sqlserver2014a
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Position = 0, Mandatory, ValueFromPipeline)]
@@ -134,4 +134,3 @@ function Get-DbaWaitingTask {
         }
     }
 }
-

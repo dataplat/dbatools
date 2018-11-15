@@ -54,7 +54,7 @@ function Enable-DbaAgHadr {
 
         Sets Hadr service to disabled for the instance dev1 on sq2012, and restart the service to apply the change.
 
-#>
+    #>
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "High")]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
@@ -139,4 +139,3 @@ function Enable-DbaAgHadr {
         }
     }
 }
-

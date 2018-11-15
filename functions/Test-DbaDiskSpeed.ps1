@@ -48,7 +48,7 @@ function Test-DbaDiskSpeed {
 
         Tests how disks storing tempdb files on sql2008 are performing.
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Position = 0, Mandatory, ValueFromPipeline)]
@@ -118,4 +118,3 @@ function Test-DbaDiskSpeed {
         }
     }
 }
-

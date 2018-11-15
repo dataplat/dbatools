@@ -1,7 +1,6 @@
 if (Get-Command TabExpansionPlusPlus\Register-ArgumentCompleter -ErrorAction Ignore) {
     $script:TEPP = $true
-}
-else {
+} else {
     $script:TEPP = $false
 }
 
@@ -66,6 +65,7 @@ Register-DbaTeppArgumentCompleter -Command $names -Parameter Session -Name Sessi
 Register-DbaTeppArgumentCompleter -Command $names -Parameter Snapshot -Name Snapshot -All
 Register-DbaTeppArgumentCompleter -Command $names -Parameter SqlInstance -Name SqlInstance -All
 Register-DbaTeppArgumentCompleter -Command $names -Parameter InstanceProperty -Name InstanceProperty -All
+Register-DbaTeppArgumentCompleter -Command $names -Parameter PowerPlan -Name PowerPlan -All
 #endregion Automatic TEPP by parameter name
 
 #region Explicit TEPP
@@ -80,4 +80,3 @@ Register-DbaTeppArgumentCompleter -Command "Get-DbaProcess", "Stop-DbaProcess" -
 Register-DbaTeppArgumentCompleter -Command "Import-DbaXESessionTemplate", "Get-DbaXESessionTemplate", "Export-DbaXESessionTemplate" -Parameter Template -Name xesessiontemplate
 Register-DbaTeppArgumentCompleter -Command "Import-DbaPfDataCollectorSetTemplate", "Get-DbaPfDataCollectorSetTemplate", "Export-DbaPfDataCollectorSetTemplate"  -Parameter Template -Name perfmontemplate
 #endregion Explicit TEPP
-

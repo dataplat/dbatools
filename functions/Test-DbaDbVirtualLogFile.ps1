@@ -66,7 +66,7 @@ function Test-DbaDbVirtualLogFile {
 
         Returns VLF counts for the db1 and db2 databases on sqlcluster.
 
-#>
+    #>
     [CmdletBinding()]
     [OutputType([System.Collections.ArrayList])]
     param ([parameter(ValueFromPipeline, Mandatory)]
@@ -132,4 +132,3 @@ function Test-DbaDbVirtualLogFile {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Test-DbaVirtualLogFile
     }
 }
-

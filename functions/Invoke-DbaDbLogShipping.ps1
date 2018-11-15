@@ -384,7 +384,7 @@ function Invoke-DbaDbLogShipping {
         Sets up log shipping with all defaults except that a backup file is generated.
         The script will show a message that the copy destination has not been supplied and asks if you want to use the default which would be the backup directory of the secondary server with the folder "logshipping" i.e. "D:\SQLBackup\Logshiping".
 
-#>
+    #>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
 
     param(
@@ -1828,4 +1828,3 @@ function Invoke-DbaDbLogShipping {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Invoke-DbaLogShipping
     }
 }
-

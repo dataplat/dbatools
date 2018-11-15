@@ -141,7 +141,7 @@ function Set-DbaLogin {
 
         Disable the login from the pipeline
 
-#>
+    #>
 
     [CmdletBinding(SupportsShouldProcess)]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingPlainTextForPassword", "", Justification = "For Parameter Password")]
@@ -364,4 +364,3 @@ function Set-DbaLogin {
         }
     }
 }
-

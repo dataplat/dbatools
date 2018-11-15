@@ -102,7 +102,7 @@ function Install-DbaMaintenanceSolution {
         - 'DatabaseIntegrityCheck - USER_DATABASES'
         - 'DatabaseBackup - USER_DATABASES - DIFF'
 
-#>
+    #>
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "High")]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseSingularNouns", "", Justification = "Internal functions are ignored")]
     param (

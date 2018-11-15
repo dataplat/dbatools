@@ -36,7 +36,7 @@ function Test-DbaManagementObject {
 
         Returns True if the version exists, if it does not exist it will return False
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(ValueFromPipeline)]
@@ -83,4 +83,3 @@ function Test-DbaManagementObject {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Test-DbaSqlManagementObject
     }
 }
-

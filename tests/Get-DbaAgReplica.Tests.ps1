@@ -7,7 +7,7 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
         <#
             Get commands, Default count = 11
             Commands with SupportShouldProcess = 13
-        #>
+               #>
         $defaultParamCount = 11
         [object[]]$params = (Get-ChildItem function:\Get-DbaAgReplica).Parameters.Keys
         $knownParameters = 'SqlInstance', 'SqlCredential', 'AvailabilityGroup', 'Replica', 'EnableException', 'InputObject'

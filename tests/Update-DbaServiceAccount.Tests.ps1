@@ -8,7 +8,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         $paramCount = 9
         $defaultParamCount = 13
         [object[]]$params = (Get-ChildItem function:\Update-DbaServiceAccount).Parameters.Keys
-        $knownParameters = 'ComputerName','Credential','InputObject','ServiceName','Username','ServiceCredential','OldPassword','NewPassword','EnableException'
+        $knownParameters = 'ComputerName', 'Credential', 'InputObject', 'ServiceName', 'Username', 'ServiceCredential', 'OldPassword', 'NewPassword', 'EnableException'
         It "Should contain our specific parameters" {
             ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
         }
@@ -37,8 +37,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         if ($user.Name -eq $login) {
             $computer.Delete('User', $login)
         }
-    }
-    catch {<#User does not exist#>}
+    } catch {<#User does not exist#>}
 
     if ($l = Get-DbaLogin -SqlInstance $script:instance2 -Login $winLogin) {
         $results = $server.Query("IF EXISTS (SELECT * FROM sys.server_principals WHERE name = '$winLogin') EXEC sp_who '$winLogin'")
