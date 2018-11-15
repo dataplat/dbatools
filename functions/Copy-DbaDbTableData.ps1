@@ -295,9 +295,8 @@ function Copy-DbaDbTableData {
                         try {
                             $tablescript = $sqltable | Export-DbaScript -Passthru | Out-String
                             $tablescript = $tablescript.Replace($sqltable.Name, $DestinationTable)
-                            $tablescript
-                            return
                             Invoke-DbaQuery -SqlInstance $destServer -Database $DestinationDatabase -Query "$tablescript" -EnableException # add some string assurance there
+                            $destServer.Databases[$DestinationDatabase].Tables.Refresh()
                             $desttable = Get-DbaDbTable -SqlInstance $destinationserver -SqlCredential $DestinationSqlCredential -Table $DestinationTable -Database $DestinationDatabase -Verbose:$false | Select-Object -First 1
                         } catch {
                             Stop-Function -Message "Unable to determine destination table: $DestinationTable" -ErrorRecord $_

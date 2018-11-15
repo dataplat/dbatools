@@ -105,7 +105,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         $tablewarning | Should -match Auto
     }
 
-    It -Skip "automatically creates the table" {
+    It "automatically creates the table" {
         $result = Copy-DbaDbTableData -SqlInstance $script:instance1 -Database tempdb -Table dbatoolsci_example -DestinationTable dbatoolsci_willexist -AutoCreateTable
         $result.DestinationTable | Should -Be 'dbatoolsci_willexist'
     }
