@@ -7,7 +7,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         $paramCount = 9
         $defaultParamCount = 13
         [object[]]$params = (Get-ChildItem function:\Start-DbaXESmartTarget).Parameters.Keys
-        $knownParameters = 'SqlInstance','SqlCredential','Database','Session','FailOnProcessingError','Responder','Template','NotAsJob','EnableException'
+        $knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'Session', 'FailOnProcessingError', 'Responder', 'Template', 'NotAsJob', 'EnableException'
         It "Should contain our specific parameters" {
             ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
         }
@@ -21,4 +21,3 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Read https://github.com/sqlcollaborative/dbatools/blob/development/contributing.md#tests
     for more guidence.
 #>
-

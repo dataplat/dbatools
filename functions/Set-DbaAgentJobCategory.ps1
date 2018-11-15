@@ -53,7 +53,7 @@ function Set-DbaAgentJobCategory {
 
         Rename multiple jobs in one go on multiple servers.
 
-#>
+    #>
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "Low")]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseOutputTypeCorrectly", "", Justification = "PSSA Rule Ignored by BOH")]
     param (
@@ -149,4 +149,3 @@ function Set-DbaAgentJobCategory {
     }
 
 }
-

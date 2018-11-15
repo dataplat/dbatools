@@ -41,7 +41,7 @@ function Get-DbaPbmCategorySubscription {
 
         Uses a credential $cred to connect and return all policy category subscriptions from the sql2016 PBM server
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [Alias("ServerInstance", "SqlServer")]
@@ -69,4 +69,3 @@ function Get-DbaPbmCategorySubscription {
         }
     }
 }
-

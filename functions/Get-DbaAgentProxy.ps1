@@ -41,7 +41,7 @@ function Get-DbaAgentProxy {
 
         Returns all SQL Agent proxies  on serverA and serverB\instanceB
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Position = 0, Mandatory, ValueFromPipeline)]
@@ -83,4 +83,3 @@ function Get-DbaAgentProxy {
         }
     }
 }
-

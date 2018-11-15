@@ -125,7 +125,7 @@ function Copy-DbaLogin {
 
         Displays all available logins on sql2016 in a grid view, then copies all selected logins to sql2017.
 
-#>
+    #>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess)]
     param (
         [parameter(ParameterSetName = "SqlInstance", Mandatory)]
@@ -551,4 +551,3 @@ function Copy-DbaLogin {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-SqlLogin
     }
 }
-

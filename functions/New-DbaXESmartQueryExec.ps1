@@ -55,7 +55,7 @@ function New-DbaXESmartQueryExec {
 
         Executes a T-SQL command against dbadb on sql2017 whenever a deadlock event is recorded.
 
-#>
+    #>
     [CmdletBinding(SupportsShouldProcess)]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
@@ -111,4 +111,3 @@ function New-DbaXESmartQueryExec {
         }
     }
 }
-

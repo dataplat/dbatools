@@ -62,7 +62,7 @@ function Get-DbaPfAvailableCounter {
 
         Adds all counters matching "sql" to the DataCollector01 within the 'Test Collector Set' CollectorSet.
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [DbaInstance[]]$ComputerName = $env:ComputerName,
@@ -104,4 +104,3 @@ function Get-DbaPfAvailableCounter {
         }
     }
 }
-

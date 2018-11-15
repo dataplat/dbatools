@@ -45,7 +45,7 @@ function Get-DbaServerAudit {
 
         Returns all Security Audits for the local and sql2016 SQL Server instances
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Position = 0, Mandatory, ValueFromPipeline)]
@@ -93,4 +93,3 @@ function Get-DbaServerAudit {
         }
     }
 }
-

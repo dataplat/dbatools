@@ -67,7 +67,7 @@ function Remove-DbaAgentJobStep {
 
         Remove the job step from the job on multiple servers using pipeline.
 
-#>
+    #>
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "Low")]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
@@ -139,4 +139,3 @@ function Remove-DbaAgentJobStep {
         Write-Message -Message "Finished removing the jobs step(s)" -Level Verbose
     }
 }
-

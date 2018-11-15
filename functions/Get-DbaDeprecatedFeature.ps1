@@ -38,7 +38,7 @@ function Get-DbaDeprecatedFeature {
 
         Check deprecated features on server sql2008.
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Position = 0, Mandatory, ValueFromPipeline)]
@@ -75,4 +75,3 @@ function Get-DbaDeprecatedFeature {
         }
     }
 }
-

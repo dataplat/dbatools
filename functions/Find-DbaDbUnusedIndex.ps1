@@ -58,7 +58,7 @@ function Find-DbaDbUnusedIndex {
 
         Finds unused databases on all databases on sql2016
 
-    #>
+       #>
     [CmdletBinding()]
     param (
         [parameter(ValueFromPipeline)]

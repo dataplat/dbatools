@@ -7,7 +7,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         $paramCount = 18
         $defaultParamCount = 11
         [object[]]$params = (Get-ChildItem function:\Get-DbaDatabase).Parameters.Keys
-        $knownParameters = 'SqlInstance','SqlCredential','Database','ExcludeDatabase','ExcludeAllUserDb','ExcludeAllSystemDb','Owner','Encrypted','Status','Access','RecoveryModel','NoFullBackup','NoFullBackupSince','NoLogBackup','NoLogBackupSince','EnableException','IncludeLastUsed','OnlyAccessible'
+        $knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'ExcludeAllUserDb', 'ExcludeAllSystemDb', 'Owner', 'Encrypted', 'Status', 'Access', 'RecoveryModel', 'NoFullBackup', 'NoFullBackupSince', 'NoLogBackup', 'NoLogBackupSince', 'EnableException', 'IncludeLastUsed', 'OnlyAccessible'
         It "Should contain our specific parameters" {
             ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
         }
@@ -72,7 +72,7 @@ Describe "$commandname Unit Tests" -Tags "UnitTests", Get-DBADatabase {
         Mock Invoke-QueryRawDatabases -MockWith {
             [object]@(
                 @{
-                    name     = 'db1'
+                    name  = 'db1'
                     state = 0
                     Owner = 'sa'
                 }
@@ -106,15 +106,15 @@ Describe "$commandname Unit Tests" -Tags "UnitTests", Get-DBADatabase {
                 [object]@{
                     Name      = 'SQLServerName'
                     Databases = @(
-                            @{
-                                Name           = 'db1'
-                                Status         = 'Normal'
-                                ReadOnly       = 'false'
-                                IsSystemObject = 'false'
-                                RecoveryModel  = 'Full'
-                                Owner          = 'sa'
-                                IsAccessible   = $true
-                            }
+                        @{
+                            Name           = 'db1'
+                            Status         = 'Normal'
+                            ReadOnly       = 'false'
+                            IsSystemObject = 'false'
+                            RecoveryModel  = 'Full'
+                            Owner          = 'sa'
+                            IsAccessible   = $true
+                        }
                     )
                 } #object
             } -ModuleName dbatools #mock connect-sqlserver

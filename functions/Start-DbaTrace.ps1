@@ -53,7 +53,7 @@ function Start-DbaTrace {
 
         Starts selected traces on sql2008
 
-#>
+    #>
     [CmdletBinding(SupportsShouldProcess)]
     param (
         [Alias("ServerInstance", "SqlServer")]
@@ -96,4 +96,3 @@ function Start-DbaTrace {
         }
     }
 }
-

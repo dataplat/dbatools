@@ -26,10 +26,10 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
     }
     Context "Command can handle multiple SqlInstances" {
-        $results = Get-DbaUptime -SqlInstance $script:instance1,$script:instance2
-            It "Command resultset could contain 2 results" {
-                $results.count | Should Be 2
-            }
+        $results = Get-DbaUptime -SqlInstance $script:instance1, $script:instance2
+        It "Command resultset could contain 2 results" {
+            $results.count | Should Be 2
+        }
         foreach ($result in $results) {
             It "Windows up time should be more than SQL Uptime" {
                 $result.SqlUptime | Should BeLessThan $result.WindowsUpTime
@@ -48,4 +48,3 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
     }
 }
-

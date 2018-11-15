@@ -12,8 +12,7 @@ Register-DbatoolsConfigValidation -Name "string" -ScriptBlock {
     try {
         # Seriously, this should work for almost anybody and anything
         [string]$data = $Value
-    }
-    catch {
+    } catch {
         $Result.Message = "Not a string: $Value"
         $Result.Success = $False
         return $Result

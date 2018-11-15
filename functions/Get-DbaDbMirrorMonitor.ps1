@@ -69,7 +69,7 @@ function Get-DbaDbMirrorMonitor {
 
         Updates monitor stats then returns the last 24 hours worth of status rows for a monitored database from the status table on sql2008 and sql2012.
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [DbaInstanceParameter[]]$SqlInstance,
@@ -140,4 +140,3 @@ function Get-DbaDbMirrorMonitor {
         }
     }
 }
-

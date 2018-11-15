@@ -86,7 +86,7 @@ function Invoke-DbaQuery {
 
         Runs the sql commands stored in rebuild.sql against all accessible databases of the instances "server1", "server1\nordwind" and "server2"
 
-#>
+    #>
     [CmdletBinding(DefaultParameterSetName = "Query")]
     param (
         [parameter(ValueFromPipeline)]
@@ -320,4 +320,3 @@ function Invoke-DbaQuery {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Invoke-DbaSqlQuery
     }
 }
-

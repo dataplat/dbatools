@@ -143,7 +143,7 @@ function Invoke-DbaPfRelog {
 
         Relogs all the log files from the DataCollector01 on the local computer and allows overwrite.
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(ValueFromPipelineByPropertyName)]
@@ -421,4 +421,3 @@ function Invoke-DbaPfRelog {
         }
     }
 }
-

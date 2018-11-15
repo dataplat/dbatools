@@ -16,7 +16,7 @@ function Register-DbaTeppScriptblock {
             Register-DbaTeppScriptblock -ScriptBlock $scriptBlock -Name MyFirstTeppScriptBlock
 
             Stores the scriptblock stored in $scriptBlock under the name "MyFirstTeppScriptBlock"
-    #>
+       #>
     [CmdletBinding()]
     param (
         [System.Management.Automation.ScriptBlock]
@@ -33,5 +33,3 @@ function Register-DbaTeppScriptblock {
 
     [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Scripts[$Name.ToLower()] = $scp
 }
-
-

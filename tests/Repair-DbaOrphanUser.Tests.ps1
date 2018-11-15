@@ -71,4 +71,3 @@ CREATE LOGIN [dbatoolsci_orphan2] WITH PASSWORD = N'password2', CHECK_EXPIRATION
         $results | Should -BeNullOrEmpty
     }
 }
-

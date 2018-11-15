@@ -62,7 +62,7 @@ function Add-DbaAgDatabase {
         PS C:\> Get-DbaDbSharePoint -SqlInstance sqlcluster -ConfigDatabase SharePoint_Config_2019 | Add-DbaAgDatabase -AvailabilityGroup SharePoint
 
         Adds SharePoint databases as found in SharePoint_Config_2019 on sqlcluster to ag1 on sqlcluster
-#>
+    #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Low')]
     param (
         [DbaInstanceParameter[]]$SqlInstance,
@@ -104,4 +104,3 @@ function Add-DbaAgDatabase {
         }
     }
 }
-

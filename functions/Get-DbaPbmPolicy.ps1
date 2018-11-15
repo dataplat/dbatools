@@ -55,7 +55,7 @@ function Get-DbaPbmPolicy {
 
         Returns all policies from sql2016 server that part of the PolicyCategory MorningCheck
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [Alias("ServerInstance", "SqlServer")]
@@ -102,5 +102,3 @@ function Get-DbaPbmPolicy {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-DbaPolicy
     }
 }
-
-

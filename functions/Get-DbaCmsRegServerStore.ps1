@@ -40,7 +40,7 @@ function Get-DbaCmsRegServerStore {
 
         Returns a SQL Server Registered Server Store Object from sqlserver2014a  by logging in with the sqladmin login
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
@@ -75,4 +75,3 @@ function Get-DbaCmsRegServerStore {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Get-DbaRegisteredServerStore
     }
 }
-

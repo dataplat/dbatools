@@ -4,26 +4,23 @@ param(
     [ValidateSet('ps3', 'ps4', 'Release', 'Debug')]
     [string] $MsbuildConfiguration = "Release",
     [string] $MsbuildOptions = "",
-    [Parameter(HelpMessage='Target to run instead of build')]
+    [Parameter(HelpMessage = 'Target to run instead of build')]
     [string] $MsbuildTarget = 'Build'
 )
 
-if (-not $PSBoundParameters.ContainsKey('MsbuildConfiguration'))
-{
-    $_MsbuildConfiguration = switch ($PSVersionTable.PSVersion.Major)
-    {
+if (-not $PSBoundParameters.ContainsKey('MsbuildConfiguration')) {
+    $_MsbuildConfiguration = switch ($PSVersionTable.PSVersion.Major) {
         3 { "ps3" }
         4 { "ps4" }
         default { "Release" }
     }
-}
-else { $_MsbuildConfiguration = $MsbuildConfiguration }
+} else { $_MsbuildConfiguration = $MsbuildConfiguration }
 
 function Get-MsBuildPath {
     [CmdletBinding()]
     [OutputType([string])]
     param()
-    process{
+    process {
         $rawPath = "$(Split-Path ([string].Assembly.Location))\msbuild.exe"
         (Resolve-Path $rawPath).Path
     }
@@ -60,8 +57,7 @@ if ($MsbuildTarget -eq 'Build') {
         if ($script:alwaysBuildLibrary) { Move-Item -Path "$PSModuleRoot\bin\dbatools.dll" -Destination $script:DllRoot -Force -ErrorAction Stop }
         else { Copy-Item -Path "$PSModuleRoot\bin\dbatools.dll" -Destination $script:DllRoot -Force -ErrorAction Stop }
         Add-Type -Path "$PSModuleRoot\dbatools.dll" -ErrorAction Stop
-    }
-    catch {
+    } catch {
         Write-Verbose -Message "Failed to copy & import, attempting to import straight from the module directory"
         Add-Type -Path "$PSModuleRoot\bin\dbatools.dll" -ErrorAction Stop
     }

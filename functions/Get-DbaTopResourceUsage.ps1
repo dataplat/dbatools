@@ -72,7 +72,7 @@ function Get-DbaTopResourceUsage {
 
         Return all the columns plus the QueryPlan column
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Position = 0, Mandatory, ValueFromPipeline)]
@@ -300,4 +300,3 @@ function Get-DbaTopResourceUsage {
         }
     }
 }
-

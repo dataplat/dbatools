@@ -59,7 +59,7 @@ function Test-DbaConnection {
         ```
 
         Test connection to SQL2016 and outputs information collected
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(ValueFromPipeline)]
@@ -192,4 +192,3 @@ function Test-DbaConnection {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Test-SqlConnection
     }
 }
-

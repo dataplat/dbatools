@@ -68,7 +68,7 @@ function Remove-DbaPfDataCollectorSet {
 
         Stops and removes the 'System Correlation' Collector.
 
-#>
+    #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "High")]
     param (
         [DbaInstance[]]$ComputerName = $env:COMPUTERNAME,
@@ -135,4 +135,3 @@ function Remove-DbaPfDataCollectorSet {
         }
     }
 }
-

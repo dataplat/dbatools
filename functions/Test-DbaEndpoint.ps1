@@ -64,7 +64,7 @@ function Test-DbaEndpoint {
 
         See all endpoints that were skipped due to not having a tcp listener port.
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [DbaInstanceParameter[]]$SqlInstance,

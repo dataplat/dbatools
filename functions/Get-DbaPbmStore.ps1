@@ -47,7 +47,7 @@ function Get-DbaPbmStore {
 
         Uses a credential $cred to connect and return the policy store from the sql2016 instance
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
@@ -78,4 +78,3 @@ function Get-DbaPbmStore {
         }
     }
 }
-
