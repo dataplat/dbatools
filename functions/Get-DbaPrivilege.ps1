@@ -152,8 +152,8 @@ function Get-DbaPrivilege {
                         ComputerName                       = $computer
                         User                               = $_
                         LogonAsBatch              = $BL -contains $_
-                        InstantFileInitializationPrivilege = $ifi -contains $_
-                        LockPagesInMemoryPrivilege         = $lpim -contains $_
+                        InstantFileInitialization = $ifi -contains $_
+                        LockPagesInMemory         = $lpim -contains $_
                     }
                 }
                 Write-Message -Level Verbose -Message "Removing secpol file on $computer"
