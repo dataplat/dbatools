@@ -71,7 +71,7 @@ function Import-DbaXESessionTemplate {
 
         Allows you to select a Session template then import to an instance named sql2017.
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
@@ -205,4 +205,3 @@ function Import-DbaXESessionTemplate {
         }
     }
 }
-

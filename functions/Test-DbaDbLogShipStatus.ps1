@@ -77,7 +77,7 @@ function Test-DbaDbLogShipStatus {
 
         Retrieves the log ship information and only returns the columns SQL Instance, Database, Instance Type and Status
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
@@ -280,4 +280,3 @@ EXEC master.sys.sp_help_log_shipping_monitor"
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Test-DbaLogShippingStatus
     }
 }
-

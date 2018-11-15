@@ -67,7 +67,7 @@ function Get-DbaAgentJobStep {
 
         Find all of your Job Steps from SQL Server instances in the $servers collection
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Position = 0, Mandatory, ValueFromPipeline)]
@@ -114,4 +114,3 @@ function Get-DbaAgentJobStep {
         }
     }
 }
-

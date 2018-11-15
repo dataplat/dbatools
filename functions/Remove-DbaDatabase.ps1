@@ -67,7 +67,7 @@ function Remove-DbaDatabase {
         PS C:\> Get-DbaDatabase -SqlInstance server\instance -ExcludeAllSystemDb | Remove-DbaDatabase -Confirm:$false
 
         Removes all the user databases from server\instance without any confirmation
-#>
+    #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High', DefaultParameterSetName = "Default")]
     param (
         [parameter(Mandatory, ParameterSetName = "instance")]

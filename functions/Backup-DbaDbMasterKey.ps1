@@ -68,7 +68,7 @@ function Backup-DbaDbMasterKey {
 
         Logs into sql2016 with Windows credentials then backs up db1's keys to the \\nas\sqlbackups\keys directory.
 
-#>
+    #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Low')]
     param (
         [DbaInstanceParameter[]]$SqlInstance,
@@ -159,4 +159,3 @@ function Backup-DbaDbMasterKey {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Backup-DbaDatabaseMasterKey
     }
 }
-

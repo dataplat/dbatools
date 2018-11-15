@@ -30,7 +30,7 @@ function Invoke-DbatoolsFormatter {
 
         Reformats C:\dbatools\functions\Get-DbaDatabase.ps1 to dbatools' standards
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]

@@ -11,7 +11,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
             The $defaultParamCount is adjusted based on what type of command you are writing the test for:
                 - Commands that *do not* include SupportShouldProcess, set defaultParamCount    = 11
                 - Commands that *do* include SupportShouldProcess, set defaultParamCount        = 13
-        #>
+               #>
         $paramCount = 5
         $defaultParamCount = 13
         [object[]]$params = (Get-ChildItem function:\Disable-DbaFilestream).Parameters.Keys
@@ -33,7 +33,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     AfterAll {
         Set-DbaFilestream -SqlInstance $script:instance1 -FileStreamLevel $OriginalFileStream.InstanceAccessLevel -force
     }
-    
+
     Context "Changing FileStream Level" {
         $NewLevel = ($OriginalFileStream.FileStreamStateId + 1) % 3 #Move it on one, but keep it less than 4 with modulo division
         $results = Set-DbaFilestream -SqlInstance $script:instance1 -FileStreamLevel $NewLevel -Force -WarningVariable warnvar -WarningAction silentlyContinue -ErrorVariable errvar -Erroraction silentlyContinue

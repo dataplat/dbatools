@@ -25,4 +25,3 @@ Describe "$commandname Unit Tests" -Tag "UnitTests" {
         New-DbaDacOption -Action Publish -Type Bacpac | Should -Not -BeNullOrEmpty
     }
 }
-

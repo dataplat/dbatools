@@ -45,7 +45,7 @@ function Get-DbaEndpoint {
 
         Returns all endpoints for the local and sql2016 SQL Server instances
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Position = 0, Mandatory, ValueFromPipeline)]
@@ -114,4 +114,3 @@ function Get-DbaEndpoint {
         }
     }
 }
-

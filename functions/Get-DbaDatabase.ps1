@@ -141,7 +141,7 @@ function Get-DbaDatabase {
 
         Returns databases 'OneDb' and 'OtherDB' from SQL Server instances SQL2 and SQL3 if databases by those names exist on those instances.
 
-#>
+    #>
     [CmdletBinding(DefaultParameterSetName = "Default")]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseSingularNouns", "", Justification = "Internal functions are ignored")]
     param (

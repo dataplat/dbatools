@@ -34,7 +34,7 @@ function Get-DbaAgHadr {
 
         Returns a status of the Hadr setting for sql2016 SQL Server instance.
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
@@ -58,4 +58,3 @@ function Get-DbaAgHadr {
         }
     }
 }
-

@@ -50,7 +50,7 @@ function Remove-DbaNetworkCertificate {
 
         Shows what would happen if the command were run
 
-#>
+    #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low", DefaultParameterSetName = 'Default')]
     param (
         [Parameter(ValueFromPipeline)]
@@ -137,4 +137,3 @@ function Remove-DbaNetworkCertificate {
         }
     }
 }
-

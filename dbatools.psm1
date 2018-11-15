@@ -349,7 +349,7 @@ $script:renames = @(
     },
     @{
         "AliasName"  = "Expand-SqlTLogResponsibly"
-        "Definition" = "Expand-DbaTLogResponsibly"
+        "Definition" = "Expand-DbaDbLogFile"
     },
     @{
         "AliasName"  = "Export-SqlLogin"
@@ -569,7 +569,7 @@ $script:renames = @(
     },
     @{
         "AliasName"  = "Test-DbaFullRecoveryModel"
-        "Definition" = "Test-DbaRecoveryModel"
+        "Definition" = "Test-DbaDbRecoveryModel"
     },
     @{
         "AliasName"  = "Get-DbaDatabaseSnapshot"
@@ -925,6 +925,14 @@ $script:renames = @(
     @{
         "AliasName"  = "Get-DbaRestoreHistory"
         "Definition" = "Get-DbaDbRestoreHistory"
+    },
+    @{
+        "AliasName"  = "Expand-DbaTLogResponsibly"
+        "Definition" = "Expand-DbaDbLogFile"
+    },
+    @{
+        "AliasName"  = "Test-DbaRecoveryModel"
+        "Definition" = "Test-DbaDbRecoveryModel"
     }
 )
 

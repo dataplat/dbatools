@@ -109,7 +109,7 @@ function Backup-DbaDbCertificate {
 
         Exports all certificates found on sql2016 to the default data directory.
 
-#>
+    #>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess, ConfirmImpact = 'Low')]
     param (
         [parameter(Mandatory, ParameterSetName = "instance")]
@@ -249,4 +249,3 @@ function Backup-DbaDbCertificate {
         }
     }
 }
-

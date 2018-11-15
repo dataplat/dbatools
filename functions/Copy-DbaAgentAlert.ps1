@@ -71,7 +71,7 @@ function Copy-DbaAgentAlert {
 
         Shows what would happen if the command were executed using force.
 
-#>
+    #>
     [cmdletbinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
     param (
         [parameter(Mandatory)]
@@ -307,4 +307,3 @@ function Copy-DbaAgentAlert {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-SqlAlert
     }
 }
-

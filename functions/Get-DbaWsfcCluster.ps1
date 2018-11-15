@@ -41,7 +41,7 @@ function Get-DbaWsfcCluster {
 
         Shows all cluster values, including the ones not shown in the default view
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(ValueFromPipeline)]
@@ -57,4 +57,3 @@ function Get-DbaWsfcCluster {
         }
     }
 }
-

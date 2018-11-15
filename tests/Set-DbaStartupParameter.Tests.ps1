@@ -7,7 +7,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         $paramCount = 21
         $defaultParamCount = 13
         [object[]]$params = (Get-ChildItem function:\Set-DbaStartupParameter).Parameters.Keys
-        $knownParameters = 'SqlInstance','SqlCredential','Credential','MasterData','MasterLog','ErrorLog','TraceFlags','CommandPromptStart','MinimalStart','MemoryToReserve','SingleUser','SingleUserDetails','NoLoggingToWinEvents','StartAsNamedInstance','DisableMonitoring','IncreasedExtents','TraceFlagsOverride','StartUpConfig','Offline','Force','EnableException'
+        $knownParameters = 'SqlInstance', 'SqlCredential', 'Credential', 'MasterData', 'MasterLog', 'ErrorLog', 'TraceFlags', 'CommandPromptStart', 'MinimalStart', 'MemoryToReserve', 'SingleUser', 'SingleUserDetails', 'NoLoggingToWinEvents', 'StartAsNamedInstance', 'DisableMonitoring', 'IncreasedExtents', 'TraceFlagsOverride', 'StartUpConfig', 'Offline', 'Force', 'EnableException'
         It "Should contain our specific parameters" {
             ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
         }
@@ -21,4 +21,3 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Read https://github.com/sqlcollaborative/dbatools/blob/development/contributing.md#tests
     for more guidence.
 #>
-

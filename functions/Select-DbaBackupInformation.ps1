@@ -72,7 +72,7 @@ function Select-DbaBackupInformation {
 
         Returns all the backups in \\server1\backups$ to restore to 1 hour ago using only Full and Diff backups.
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
@@ -236,4 +236,3 @@ function Select-DbaBackupInformation {
         }
     }
 }
-

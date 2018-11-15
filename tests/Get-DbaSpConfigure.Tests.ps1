@@ -7,7 +7,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         $paramCount = 5
         $defaultParamCount = 11
         [object[]]$params = (Get-ChildItem function:\Get-DbaSpConfigure).Parameters.Keys
-        $knownParameters = 'SqlInstance', 'SqlCredential','Name','ExcludeName','EnableException'
+        $knownParameters = 'SqlInstance', 'SqlCredential', 'Name', 'ExcludeName', 'EnableException'
         It "Should contain our specific parameters" {
             ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
         }
@@ -35,7 +35,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 
         It "returns two results less than all data" {
             $results = Get-DbaSpConfigure -SqlInstance $script:instance1 -ExcludeName "remote query timeout (s)", AllowUpdates
-            $results.Count -eq $configs.count -2
+            $results.Count -eq $configs.count - 2
         }
 
         It "matches the output of sp_configure " {

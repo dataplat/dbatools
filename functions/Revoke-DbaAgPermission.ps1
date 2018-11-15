@@ -82,7 +82,7 @@ function Revoke-DbaAgPermission {
         PS C:\> Get-DbaLogin -SqlInstance sql2017a | Out-GridView -Passthru | Revoke-DbaAgPermission -Type EndPoint
 
         Revokes the selected logins Connect permissions on the DatabaseMirroring endpoint for sql2017a.
-#>
+    #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Low')]
     param (
         [DbaInstanceParameter[]]$SqlInstance,

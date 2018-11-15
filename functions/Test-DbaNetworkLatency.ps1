@@ -59,7 +59,7 @@ function Test-DbaNetworkLatency {
 
         Tests the execution results return of "select top 10 * from otherdb.dbo.table" 10 times on sqlserver2014a, sqlcluster, and sqlserver using Windows credentials.
 
-#>
+    #>
     [CmdletBinding()]
     [OutputType([System.Object[]])]
     param (
@@ -125,4 +125,3 @@ function Test-DbaNetworkLatency {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Test-SqlNetworkLatency
     }
 }
-

@@ -124,7 +124,7 @@ function Import-DbaPfDataCollectorSetTemplate {
 
         If you'd like to remove counters for the default instance, use Remove-DbaPfDataCollectorCounter.
 
-#>
+    #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
     param (
         [parameter(ValueFromPipeline)]
@@ -302,4 +302,3 @@ function Import-DbaPfDataCollectorSetTemplate {
         }
     }
 }
-

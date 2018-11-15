@@ -9,8 +9,7 @@ Describe "$CommandName Unit Tests" -Tags "UnitTests" {
         $paramCount = $knownParameters.Count
         if ($SupportShouldProcess) {
             $defaultParamCount = 13
-        }
-        else {
+        } else {
             $defaultParamCount = 11
         }
         $command = Get-Command -Name $CommandName
@@ -42,7 +41,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
 
             $group3 = "dbatoolsci-group1b"
             $newGroup3 = Add-DbaCmsRegServerGroup -SqlInstance $script:instance1 -Name $group3
-          }
+        }
         AfterAll {
             Get-DbaCmsRegServer -SqlInstance $script:instance1 -Name $regSrvName  | Remove-DbaCmsRegServer -Confirm:$false
             Get-DbaCmsRegServerGroup -SqlInstance $script:instance1 -Group $group, $group2, $group3 | Remove-DbaCmsRegServerGroup -Confirm:$false

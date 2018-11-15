@@ -59,7 +59,7 @@ function Get-DbaDbView {
 
         Gets the views for the databases on Sql1 and Sql2/sqlexpress
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
@@ -117,4 +117,3 @@ function Get-DbaDbView {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-DbaDatabaseView
     }
 }
-

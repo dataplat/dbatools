@@ -49,7 +49,7 @@ function Test-DbaMaxMemory {
 
         Find all servers in CMS that have Max SQL memory set to higher than the total memory of the server (think 2147483647) and set it to recommended value.
 
-    #>
+       #>
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]

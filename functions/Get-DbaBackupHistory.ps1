@@ -138,7 +138,7 @@ function Get-DbaBackupHistory {
 
         If db1 has multiple recovery forks, specifying the RecoveryFork GUID will restrict the search to that fork.
 
-#>
+    #>
     [CmdletBinding(DefaultParameterSetName = "Default")]
     param (
         [parameter(Mandatory, ValueFromPipeline)]

@@ -7,7 +7,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         $paramCount = 5
         $defaultParamCount = 11
         [object[]]$params = (Get-ChildItem function:\Test-DbaNetworkLatency).Parameters.Keys
-        $knownParameters = 'SqlInstance','SqlCredential','Query','Count','EnableException'
+        $knownParameters = 'SqlInstance', 'SqlCredential', 'Query', 'Count', 'EnableException'
         It "Should contain our specific parameters" {
             ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
         }

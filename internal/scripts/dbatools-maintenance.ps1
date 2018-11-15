@@ -30,8 +30,7 @@ $scriptBlock = {
             Start-Sleep -Seconds 5
         }
         #endregion Main Execution
-    }
-    catch {  }
+    } catch {  }
     finally {
         [Sqlcollaborative.Dbatools.Runspace.RunspaceHost]::Runspaces[$___ScriptName.ToLower()].SignalStopped()
     }

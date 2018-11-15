@@ -86,7 +86,7 @@ function Find-DbaDbGrowthEvent {
 
         Returns any database Auto Growth events on data files in the Default Trace for every database on the ServerA\SQL2016 instance.
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
@@ -260,4 +260,3 @@ function Find-DbaDbGrowthEvent {
         }
     }
 }
-

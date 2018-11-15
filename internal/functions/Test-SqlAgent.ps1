@@ -2,7 +2,7 @@ function Test-SqlAgent {
     <#
     .SYNOPSIS
         Internal function. Checks to see if SQL Server Agent is running on a server.
-#>
+    #>
     [CmdletBinding()]
     param (
         [Parameter(Mandatory)]
@@ -20,5 +20,3 @@ function Test-SqlAgent {
     try { $null = $SqlInstance.JobServer.script(); return $true }
     catch { return $false }
 }
-
-

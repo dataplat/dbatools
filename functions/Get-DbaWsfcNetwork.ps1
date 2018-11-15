@@ -36,7 +36,7 @@ function Get-DbaWsfcNetwork {
 
         Gets network information from the failover cluster cluster01
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(ValueFromPipeline)]
@@ -56,4 +56,3 @@ function Get-DbaWsfcNetwork {
         }
     }
 }
-

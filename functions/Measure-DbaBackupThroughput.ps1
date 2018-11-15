@@ -88,7 +88,7 @@ function Measure-DbaBackupThroughput {
 
         Gets backup calculations, limited to the last year and only the bigoldb database
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Position = 0, Mandatory, ValueFromPipeline)]
@@ -179,4 +179,3 @@ function Measure-DbaBackupThroughput {
         }
     }
 }
-

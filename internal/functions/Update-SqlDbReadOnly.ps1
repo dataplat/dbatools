@@ -2,7 +2,7 @@ function Update-SqlDbReadOnly {
     <#
     .SYNOPSIS
         Internal function. Updates specified database to read-only or read-write. Necessary because SMO doesn't appear to support NO_WAIT.
-#>
+    #>
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "")]
     [CmdletBinding()]
     param (
@@ -35,5 +35,3 @@ function Update-SqlDbReadOnly {
         return $false
     }
 }
-
-

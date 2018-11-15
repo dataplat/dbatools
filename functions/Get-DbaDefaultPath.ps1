@@ -39,7 +39,7 @@ function Get-DbaDefaultPath {
 
         Returns the default file paths for "sql2014","sql2016" and "sqlcluster\sharepoint"
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Position = 0, Mandatory, ValueFromPipeline)]
@@ -102,4 +102,3 @@ function Get-DbaDefaultPath {
         }
     }
 }
-

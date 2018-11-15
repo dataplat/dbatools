@@ -1,4 +1,4 @@
-function Expand-DbaTLogResponsibly {
+function Expand-DbaDbLogFile {
     <#
     .SYNOPSIS
         This command will help you to automatically grow your transaction log  file in a responsible way (preventing the generation of too many VLFs).
@@ -106,34 +106,34 @@ function Expand-DbaTLogResponsibly {
         This script uses Get-DbaDiskSpace dbatools command to get the TLog's drive free space
 
     .LINK
-        https://dbatools.io/Expand-DbaTLogResponsibly
+        https://dbatools.io/Expand-DbaDbLogFile
 
     .EXAMPLE
-        PS C:\> Expand-DbaTLogResponsibly -SqlInstance sqlcluster -Database db1 -TargetLogSize 50000
+        PS C:\> Expand-DbaDbLogFile -SqlInstance sqlcluster -Database db1 -TargetLogSize 50000
 
         Grows the transaction log for database db1 on sqlcluster to 50000 MB and calculates the increment size.
 
     .EXAMPLE
-        PS C:\> Expand-DbaTLogResponsibly -SqlInstance sqlcluster -Database db1, db2 -TargetLogSize 10000 -IncrementSize 200
+        PS C:\> Expand-DbaDbLogFile -SqlInstance sqlcluster -Database db1, db2 -TargetLogSize 10000 -IncrementSize 200
 
         Grows the transaction logs for databases db1 and db2 on sqlcluster to 1000MB and sets the growth increment to 200MB.
 
     .EXAMPLE
-        PS C:\> Expand-DbaTLogResponsibly -SqlInstance sqlcluster -Database db1 -TargetLogSize 10000 -LogFileId 9
+        PS C:\> Expand-DbaDbLogFile -SqlInstance sqlcluster -Database db1 -TargetLogSize 10000 -LogFileId 9
 
         Grows the transaction log file  with FileId 9 of the db1 database on sqlcluster instance to 10000MB.
 
     .EXAMPLE
-        PS C:\> Expand-DbaTLogResponsibly -SqlInstance sqlcluster -Database (Get-Content D:\DBs.txt) -TargetLogSize 50000
+        PS C:\> Expand-DbaDbLogFile -SqlInstance sqlcluster -Database (Get-Content D:\DBs.txt) -TargetLogSize 50000
 
         Grows the transaction log of the databases specified in the file 'D:\DBs.txt' on sqlcluster instance to 50000MB.
 
     .EXAMPLE
-        PS C:\> Expand-DbaTLogResponsibly -SqlInstance SqlInstance -Database db1,db2 -TargetLogSize 100 -IncrementSize 10 -ShrinkLogFile -ShrinkSize 10 -BackupDirectory R:\MSSQL\Backup
+        PS C:\> Expand-DbaDbLogFile -SqlInstance SqlInstance -Database db1,db2 -TargetLogSize 100 -IncrementSize 10 -ShrinkLogFile -ShrinkSize 10 -BackupDirectory R:\MSSQL\Backup
 
         Grows the transaction logs for databases db1 and db2 on SQL server SQLInstance to 100MB, sets the incremental growth to 10MB, shrinks the transaction log to 10MB and uses the directory R:\MSSQL\Backup for the required backups.
 
-#>
+       #>
     [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = 'Default')]
     param (
         [parameter(Position = 1, Mandatory)]
@@ -513,5 +513,6 @@ function Expand-DbaTLogResponsibly {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -Parameter TargetLogSizeMB
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -Parameter IncrementSizeMB
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -Parameter ShrinkSizeMB
+        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Expand-DbaTLogResponsibly
     }
 }

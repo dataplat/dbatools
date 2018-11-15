@@ -94,7 +94,7 @@ function Export-DbaLogin {
 
         Exports login realcajun from sqlserver2008 to the file C:\temp\users.sql with syntax to run on SQL Server 2016
 
-#>
+    #>
     [CmdletBinding(SupportsShouldProcess = $true)]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
@@ -405,4 +405,3 @@ function Export-DbaLogin {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Export-SqlLogin
     }
 }
-

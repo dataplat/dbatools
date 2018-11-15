@@ -3514,7 +3514,7 @@
     },
     {
         "CommandName":  "Copy-DbaDbTableData",
-        "Description":  "Copies data between SQL Server tables using SQL Bulk Copy.\nThe same can be achieved also doing\n$sourcetable = Invoke-SqlCmd2 -ServerInstance instance1 ... -As DataTable\nWrite-DbaDataTable -SqlInstance ... -InputObject $sourcetable\nbut it will force buffering the contents on the table in memory (high RAM usage for large tables).\nWith this function, a streaming copy will be done in the most speedy and least resource-intensive way.",
+        "Description":  "Copies data between SQL Server tables using SQL Bulk Copy.\nThe same can be achieved also doing\n$sourcetable = Invoke-DbaQuery -SqlInstance instance1 ... -As DataTable\nWrite-DbaDataTable -SqlInstance ... -InputObject $sourcetable\nbut it will force buffering the contents on the table in memory (high RAM usage for large tables).\nWith this function, a streaming copy will be done in the most speedy and least resource-intensive way.",
         "Tags":  "Migration",
         "Params":  [
                        [
@@ -3580,6 +3580,14 @@
                            false,
                            "false",
                            ""
+                       ],
+                       [
+                           "AutoCreateTable",
+                           "Creates the destination table if it does not already exist, based off of the \"Export...\" script of the source table.",
+                           "",
+                           false,
+                           "false",
+                           "False"
                        ],
                        [
                            "BatchSize",
@@ -3700,7 +3708,7 @@
         "Name":  "Copy-DbaDbTableData",
         "Links":  "https://dbatools.io/Copy-DbaDbTableData",
         "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eCopy-DbaDbTableData -SqlInstance sql1 -Destination sql2 -Database dbatools_from -Table dbo.test_table\nCopies all the data from table dbo.test_table in database dbatools_from on sql1 to table test_table in database dbatools_from on sql2.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eCopy-DbaDbTableData -SqlInstance sql1 -Destination sql2 -Database dbatools_from -DestinationDatabase dbatools_dest -Table [Schema].[test table]\nCopies all the data from table [Schema].[test table] in database dbatools_from on sql1 to table [Schema].[test table] in database dbatools_dest on sql2\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaDbTable -SqlInstance sql1 -Database tempdb -Table tb1, tb2 | Copy-DbaDbTableData -DestinationTable tb3\nCopies all data from tables tb1 and tb2 in tempdb on sql1 to tb3 in tempdb on sql1\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaDbTable -SqlInstance sql1 -Database tempdb -Table tb1, tb2 | Copy-DbaDbTableData -Destination sql2\nCopies data from tbl1 in tempdb on sql1 to tbl1 in tempdb on sql2\r\nthen\r\nCopies data from tbl2 in tempdb on sql1 to tbl2 in tempdb on sql2\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eCopy-DbaDbTableData -SqlInstance sql1 -Destination sql2 -Database dbatools_from -Table test_table -KeepIdentity -Truncate\nCopies all the data in table test_table from sql1 to sql2, using the database dbatools_from, keeping identity columns and truncating the destination\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003e$params = @{\n\u003e\u003e SourceSqlInstance = \u0027sql1\u0027\r\n\u003e\u003e DestinationSqlInstance = \u0027sql2\u0027\r\n\u003e\u003e Database = \u0027dbatools_from\u0027\r\n\u003e\u003e DestinationDatabase = \u0027dbatools_dest\u0027\r\n\u003e\u003e Table = \u0027[Schema].[Table]\u0027\r\n\u003e\u003e DestinationTable = \u0027[dbo].[Table.Copy]\u0027\r\n\u003e\u003e KeepIdentity = $true\r\n\u003e\u003e KeepNulls = $true\r\n\u003e\u003e Truncate = $true\r\n\u003e\u003e BatchSize = 10000\r\n\u003e\u003e }\r\n\u003e\u003e\r\nPS C:\\\u003e Copy-DbaDbTableData @params\nCopies all the data from table [Schema].[Table] in database dbatools_from on sql1 to table [dbo].[Table.Copy] in database dbatools_dest on sql2\r\nKeeps identity columns and Nulls, truncates the destination and processes in BatchSize of 10000.",
-        "Syntax":  "Copy-DbaDbTableData [[-SqlInstance] \u003cDbaInstanceParameter\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Destination] \u003cDbaInstanceParameter\u003e] [[-DestinationSqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString\u003e] [[-DestinationDatabase] \u003cString\u003e] [[-Table] \u003cString[]\u003e] [[-Query] \u003cString\u003e] [[-BatchSize] \u003cInt32\u003e] [[-NotifyAfter] \u003cInt32\u003e] [[-DestinationTable] \u003cString\u003e] [-NoTableLock] [-CheckConstraints] [-FireTriggers] [-KeepIdentity] [-KeepNulls] [-Truncate] [[-bulkCopyTimeOut] \u003cInt32\u003e] [[-InputObject] \u003cTable[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Copy-DbaDbTableData [[-SqlInstance] \u003cDbaInstanceParameter\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Destination] \u003cDbaInstanceParameter[]\u003e] [[-DestinationSqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString\u003e] [[-DestinationDatabase] \u003cString\u003e] [[-Table] \u003cString[]\u003e] [[-Query] \u003cString\u003e] [-AutoCreateTable] [[-BatchSize] \u003cInt32\u003e] [[-NotifyAfter] \u003cInt32\u003e] [[-DestinationTable] \u003cString\u003e] [-NoTableLock] [-CheckConstraints] [-FireTriggers] [-KeepIdentity] [-KeepNulls] [-Truncate] [[-bulkCopyTimeOut] \u003cInt32\u003e] [[-InputObject] \u003cTable[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "CommandName":  "Copy-DbaEndpoint",
@@ -5681,7 +5689,7 @@
         "Syntax":  "Enable-DbaTraceFlag [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] -TraceFlag \u003cInt32[]\u003e [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
-        "CommandName":  "Expand-DbaTLogResponsibly",
+        "CommandName":  "Expand-DbaDbLogFile",
         "Description":  "As you may already know, having a transaction log file with too many Virtual Log Files (VLFs) can hurt your database performance in many ways.\n\nExample:\nToo many VLFs can cause transaction log backups to slow down and can also slow down database recovery and, in extreme cases, even impact insert/update/delete performance.\n\nReferences:\nhttp://www.sqlskills.com/blogs/kimberly/transaction-log-vlfs-too-many-or-too-few/\nhttp://blogs.msdn.com/b/saponsqlserver/archive/2012/02/22/too-many-virtual-log-files-vlfs-can-cause-slow-database-recovery.aspx\nhttp://www.brentozar.com/blitz/high-virtual-log-file-vlf-count/\n\nIn order to get rid of this fragmentation we need to grow the file taking the following into consideration:\n- How many VLFs are created when we perform a grow operation or when an auto-grow is invoked?\n\nNote: In SQL Server 2014 this algorithm has changed (http://www.sqlskills.com/blogs/paul/important-change-vlf-creation-algorithm-sql-server-2014/)\n\nAttention:\nWe are growing in MB instead of GB because of known issue prior to SQL 2012:\nMore detail here:\nhttp://www.sqlskills.com/BLOGS/PAUL/post/Bug-log-file-growth-broken-for-multiples-of-4GB.aspx\nand\nhttp://connect.microsoft.com/SqlInstance/feedback/details/481594/log-growth-not-working-properly-with-specific-growth-sizes-vlfs-also-not-created-appropriately\nor\nhttps://connect.microsoft.com/SqlInstance/feedback/details/357502/transaction-log-file-size-will-not-grow-exactly-4gb-when-filegrowth-4gb\n\nUnderstanding related problems:\nhttp://www.sqlskills.com/blogs/kimberly/transaction-log-vlfs-too-many-or-too-few/\nhttp://blogs.msdn.com/b/saponsqlserver/archive/2012/02/22/too-many-virtual-log-files-vlfs-can-cause-slow-database-recovery.aspx\nhttp://www.brentozar.com/blitz/high-virtual-log-file-vlf-count/\n\nKnown bug before SQL Server 2012\nhttp://www.sqlskills.com/BLOGS/PAUL/post/Bug-log-file-growth-broken-for-multiples-of-4GB.aspx\nhttp://connect.microsoft.com/SqlInstance/feedback/details/481594/log-growth-not-working-properly-with-specific-growth-sizes-vlfs-also-not-created-appropriately\nhttps://connect.microsoft.com/SqlInstance/feedback/details/357502/transaction-log-file-size-will-not-grow-exactly-4gb-when-filegrowth-4gb\n\nHow it works?\nThe transaction log will grow in chunks until it reaches the desired size.\nExample: If you have a log file with 8192MB and you say that the target size is 81920MB (80GB) it will grow in chunks of 8192MB until it reaches 81920MB. 8192 -\u003e 16384 -\u003e 24576 ... 73728 -\u003e 81920",
         "Tags":  [
                      "Storage",
@@ -5801,13 +5809,13 @@
                            ""
                        ]
                    ],
-        "Alias":  "Expand-SqlTLogResponsibly",
+        "Alias":  "Expand-DbaTLogResponsibly,Expand-SqlTLogResponsibly",
         "Author":  "Claudio Silva (@ClaudioESSilva)",
         "Synopsis":  "This command will help you to automatically grow your transaction log  file in a responsible way (preventing the generation of too many VLFs).",
-        "Name":  "Expand-DbaTLogResponsibly",
-        "Links":  "https://dbatools.io/Expand-DbaTLogResponsibly",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eExpand-DbaTLogResponsibly -SqlInstance sqlcluster -Database db1 -TargetLogSize 50000\nGrows the transaction log for database db1 on sqlcluster to 50000 MB and calculates the increment size.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eExpand-DbaTLogResponsibly -SqlInstance sqlcluster -Database db1, db2 -TargetLogSize 10000 -IncrementSize 200\nGrows the transaction logs for databases db1 and db2 on sqlcluster to 1000MB and sets the growth increment to 200MB.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eExpand-DbaTLogResponsibly -SqlInstance sqlcluster -Database db1 -TargetLogSize 10000 -LogFileId 9\nGrows the transaction log file  with FileId 9 of the db1 database on sqlcluster instance to 10000MB.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eExpand-DbaTLogResponsibly -SqlInstance sqlcluster -Database (Get-Content D:\\DBs.txt) -TargetLogSize 50000\nGrows the transaction log of the databases specified in the file \u0027D:\\DBs.txt\u0027 on sqlcluster instance to 50000MB.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eExpand-DbaTLogResponsibly -SqlInstance SqlInstance -Database db1,db2 -TargetLogSize 100 -IncrementSize 10 -ShrinkLogFile -ShrinkSize 10 -BackupDirectory R:\\MSSQL\\Backup\nGrows the transaction logs for databases db1 and db2 on SQL server SQLInstance to 100MB, sets the incremental growth to 10MB, shrinks the transaction log to 10MB and uses the directory \r\nR:\\MSSQL\\Backup for the required backups.",
-        "Syntax":  "Expand-DbaTLogResponsibly [-SqlInstance] \u003cDbaInstanceParameter\u003e [[-SqlCredential] \u003cPSCredential\u003e] [-Database \u003cObject[]\u003e] [[-ExcludeDatabase] \u003cObject[]\u003e] [-TargetLogSize] \u003cInt32\u003e [[-IncrementSize] \u003cInt32\u003e] [[-LogFileId] \u003cInt32\u003e] [-ExcludeDiskSpaceValidation] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nExpand-DbaTLogResponsibly [-SqlInstance] \u003cDbaInstanceParameter\u003e [[-SqlCredential] \u003cPSCredential\u003e] [-Database \u003cObject[]\u003e] [[-ExcludeDatabase] \u003cObject[]\u003e] [-TargetLogSize] \u003cInt32\u003e [[-IncrementSize] \u003cInt32\u003e] [[-LogFileId] \u003cInt32\u003e] [-ShrinkLogFile] [-ShrinkSize] \u003cInt32\u003e [[-BackupDirectory] \u003cString\u003e] [-ExcludeDiskSpaceValidation] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Name":  "Expand-DbaDbLogFile",
+        "Links":  "https://dbatools.io/Expand-DbaDbLogFile",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eExpand-DbaDbLogFile -SqlInstance sqlcluster -Database db1 -TargetLogSize 50000\nGrows the transaction log for database db1 on sqlcluster to 50000 MB and calculates the increment size.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eExpand-DbaDbLogFile -SqlInstance sqlcluster -Database db1, db2 -TargetLogSize 10000 -IncrementSize 200\nGrows the transaction logs for databases db1 and db2 on sqlcluster to 1000MB and sets the growth increment to 200MB.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eExpand-DbaDbLogFile -SqlInstance sqlcluster -Database db1 -TargetLogSize 10000 -LogFileId 9\nGrows the transaction log file  with FileId 9 of the db1 database on sqlcluster instance to 10000MB.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eExpand-DbaDbLogFile -SqlInstance sqlcluster -Database (Get-Content D:\\DBs.txt) -TargetLogSize 50000\nGrows the transaction log of the databases specified in the file \u0027D:\\DBs.txt\u0027 on sqlcluster instance to 50000MB.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eExpand-DbaDbLogFile -SqlInstance SqlInstance -Database db1,db2 -TargetLogSize 100 -IncrementSize 10 -ShrinkLogFile -ShrinkSize 10 -BackupDirectory R:\\MSSQL\\Backup\nGrows the transaction logs for databases db1 and db2 on SQL server SQLInstance to 100MB, sets the incremental growth to 10MB, shrinks the transaction log to 10MB and uses the directory \r\nR:\\MSSQL\\Backup for the required backups.",
+        "Syntax":  "Expand-DbaDbLogFile [-SqlInstance] \u003cDbaInstanceParameter\u003e [[-SqlCredential] \u003cPSCredential\u003e] [-Database \u003cObject[]\u003e] [[-ExcludeDatabase] \u003cObject[]\u003e] [-TargetLogSize] \u003cInt32\u003e [[-IncrementSize] \u003cInt32\u003e] [[-LogFileId] \u003cInt32\u003e] [-ExcludeDiskSpaceValidation] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nExpand-DbaDbLogFile [-SqlInstance] \u003cDbaInstanceParameter\u003e [[-SqlCredential] \u003cPSCredential\u003e] [-Database \u003cObject[]\u003e] [[-ExcludeDatabase] \u003cObject[]\u003e] [-TargetLogSize] \u003cInt32\u003e [[-IncrementSize] \u003cInt32\u003e] [[-LogFileId] \u003cInt32\u003e] [-ShrinkLogFile] [-ShrinkSize] \u003cInt32\u003e [[-BackupDirectory] \u003cString\u003e] [-ExcludeDiskSpaceValidation] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "CommandName":  "Export-DbaAvailabilityGroup",
@@ -21034,7 +21042,7 @@
                        [
                            "SqlInstance",
                            "The target SQL Server instance or instances.",
-                           "ServerInstance,SqlServer,SqlServers",
+                           "",
                            false,
                            "false",
                            ""
@@ -21051,7 +21059,15 @@
                            "Database",
                            "The database to clone - this list is auto-populated from the server.",
                            "",
-                           true,
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "InputObject",
+                           "Enables piping from Get-DbaDatabase",
+                           "",
+                           false,
                            "true (ByValue)",
                            ""
                        ],
@@ -21090,10 +21106,26 @@
                        [
                            "EnableException",
                            "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
-                           "Silent",
+                           "",
                            false,
                            "false",
                            "False"
+                       ],
+                       [
+                           "WhatIf",
+                           "Shows what would happen if the command were to run. No actions are actually performed.",
+                           "wi",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Confirm",
+                           "Prompts you for confirmation before executing any changing operations within the command.",
+                           "cf",
+                           false,
+                           "false",
+                           ""
                        ]
                    ],
         "Alias":  "Invoke-DbaDatabaseClone",
@@ -21101,8 +21133,8 @@
         "Synopsis":  "Clones a database schema and statistics",
         "Name":  "Invoke-DbaDbClone",
         "Links":  "https://dbatools.io/Invoke-DbaDbClone",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eInvoke-DbaDbClone -SqlInstance sql2016 -Database mydb -CloneDatabase myclone\nClones mydb to myclone on sql2016\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eInvoke-DbaDbClone -SqlInstance sql2016 -Database mydb -CloneDatabase myclone, myclone2 -UpdateStatistics\nUpdates the statistics of mydb then clones to myclone and myclone2",
-        "Syntax":  "Invoke-DbaDbClone [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [-SqlCredential \u003cPSCredential\u003e] -Database \u003cObject\u003e [-CloneDatabase \u003cString[]\u003e] [-ExcludeStatistics] [-ExcludeQueryStore] [-UpdateStatistics] [-EnableException] [\u003cCommonParameters\u003e]"
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eInvoke-DbaDbClone -SqlInstance sql2016 -Database mydb -CloneDatabase myclone\nClones mydb to myclone on sql2016\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaDatabase -SqlInstance sql2016 -Database mydb | Invoke-DbaDbClone -CloneDatabase myclone, myclone2 -UpdateStatistics\nUpdates the statistics of mydb then clones to myclone and myclone2",
+        "Syntax":  "Invoke-DbaDbClone [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString[]\u003e] [[-InputObject] \u003cDatabase[]\u003e] [[-CloneDatabase] \u003cString[]\u003e] [-ExcludeStatistics] [-ExcludeQueryStore] [-UpdateStatistics] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "CommandName":  "Invoke-DbaDbDecryptObject",
@@ -22801,7 +22833,7 @@
                        [
                            "File",
                            "Specifies the path to one or several files to be used as the query input.",
-                           "",
+                           "InputFile",
                            true,
                            "false",
                            ""
@@ -22857,7 +22889,7 @@
                        [
                            "EnableException",
                            "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
-                           "Silent",
+                           "",
                            false,
                            "false",
                            "False"
@@ -22869,7 +22901,7 @@
         "Name":  "Invoke-DbaQuery",
         "Links":  "https://dbatools.io/Invoke-DbaQuery",
         "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eInvoke-DbaQuery -SqlInstance server\\instance -Query \u0027SELECT foo FROM bar\u0027\nRuns the sql query \u0027SELECT foo FROM bar\u0027 against the instance \u0027server\\instance\u0027\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaCmsRegServer -SqlInstance [SERVERNAME] -Group [GROUPNAME] | Invoke-DbaQuery -Query \u0027SELECT foo FROM bar\u0027\nRuns the sql query \u0027SELECT foo FROM bar\u0027 against all instances in the group [GROUPNAME] on the CMS [SERVERNAME]\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003e\"server1\", \"server1\\nordwind\", \"server2\" | Invoke-DbaQuery -File \"C:\\scripts\\sql\\rebuild.sql\"\nRuns the sql commands stored in rebuild.sql against the instances \"server1\", \"server1\\nordwind\" and \"server2\"\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaDatabase -SqlInstance \"server1\", \"server1\\nordwind\", \"server2\" | Invoke-DbaQuery -File \"C:\\scripts\\sql\\rebuild.sql\"\nRuns the sql commands stored in rebuild.sql against all accessible databases of the instances \"server1\", \"server1\\nordwind\" and \"server2\"",
-        "Syntax":  "Invoke-DbaQuery [-SqlInstance \u003cDbaInstanceParameter[]\u003e] [-SqlCredential \u003cPSCredential\u003e] [-Database \u003cObject\u003e] [-Query] \u003cString\u003e [-QueryTimeout \u003cInt32\u003e] [-As \u003cString\u003e] [-SqlParameters \u003cIDictionary\u003e] [-AppendServerInstance] [-MessagesToOutput] [-InputObject \u003cDatabase[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]\nInvoke-DbaQuery [-SqlInstance \u003cDbaInstanceParameter[]\u003e] [-SqlCredential \u003cPSCredential\u003e] [-Database \u003cObject\u003e] [-QueryTimeout \u003cInt32\u003e] -File \u003cObject[]\u003e [-As \u003cString\u003e] [-SqlParameters \u003cIDictionary\u003e] [-AppendServerInstance] [-MessagesToOutput] [-InputObject \u003cDatabase[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]\nInvoke-DbaQuery [-SqlInstance \u003cDbaInstanceParameter[]\u003e] [-SqlCredential \u003cPSCredential\u003e] [-Database \u003cObject\u003e] [-QueryTimeout \u003cInt32\u003e] -SqlObject \u003cSqlSmoObject[]\u003e [-As \u003cString\u003e] [-SqlParameters \u003cIDictionary\u003e] [-AppendServerInstance] [-MessagesToOutput] [-InputObject \u003cDatabase[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Invoke-DbaQuery [-SqlInstance \u003cDbaInstanceParameter[]\u003e] [-SqlCredential \u003cPSCredential\u003e] [-Database \u003cString\u003e] [-Query] \u003cString\u003e [-QueryTimeout \u003cInt32\u003e] [-As \u003cString\u003e] [-SqlParameters \u003cIDictionary\u003e] [-AppendServerInstance] [-MessagesToOutput] [-InputObject \u003cDatabase[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]\nInvoke-DbaQuery [-SqlInstance \u003cDbaInstanceParameter[]\u003e] [-SqlCredential \u003cPSCredential\u003e] [-Database \u003cString\u003e] [-QueryTimeout \u003cInt32\u003e] -File \u003cObject[]\u003e [-As \u003cString\u003e] [-SqlParameters \u003cIDictionary\u003e] [-AppendServerInstance] [-MessagesToOutput] [-InputObject \u003cDatabase[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]\nInvoke-DbaQuery [-SqlInstance \u003cDbaInstanceParameter[]\u003e] [-SqlCredential \u003cPSCredential\u003e] [-Database \u003cString\u003e] [-QueryTimeout \u003cInt32\u003e] -SqlObject \u003cSqlSmoObject[]\u003e [-As \u003cString\u003e] [-SqlParameters \u003cIDictionary\u003e] [-AppendServerInstance] [-MessagesToOutput] [-InputObject \u003cDatabase[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
         "CommandName":  "Invoke-DbatoolsFormatter",
@@ -39012,6 +39044,79 @@
         "Syntax":  "Test-DbaDbOwner [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cObject[]\u003e] [[-ExcludeDatabase] \u003cObject[]\u003e] [[-TargetLogin] \u003cString\u003e] [-Detailed] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
+        "CommandName":  "Test-DbaDbRecoveryModel",
+        "Description":  "When you switch a database into FULL recovery model, it will behave like a SIMPLE recovery model until a full backup is taken in order to begin a log backup chain.\n\nHowever, you may also desire to validate if a database is SIMPLE or BULK LOGGED on an instance.\n\nInspired by Paul Randal\u0027s post (http://www.sqlskills.com/blogs/paul/new-script-is-that-database-really-in-the-full-recovery-mode/)",
+        "Tags":  [
+                     "DisasterRecovery",
+                     "Backup"
+                 ],
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "The target SQL Server instance or instances.",
+                           "ServerInstance,SqlServer",
+                           true,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
+                           "Database",
+                           "Specifies the database(s) to process. Options for this list are auto-populated from the server. If unspecified, all databases will be processed.",
+                           "Databases",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "ExcludeDatabase",
+                           "Specifies the database(s) to exclude from processing. Options for this list are auto-populated from the server.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "SqlCredential",
+                           "Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "RecoveryModel",
+                           "Specifies the type of recovery model you wish to test. By default it will test for FULL Recovery Model.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Detailed",
+                           "Output all properties, will be deprecated in 1.0.0 release.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "Silent",
+                           false,
+                           "false",
+                           "False"
+                       ]
+                   ],
+        "Alias":  "Test-DbaFullRecoveryModel,Test-DbaRecoveryModel",
+        "Author":  "Claudio Silva (@ClaudioESSilva)",
+        "Synopsis":  "Find if database is really a specific recovery model or not.",
+        "Name":  "Test-DbaDbRecoveryModel",
+        "Links":  "https://dbatools.io/Test-DbaDbRecoveryModel",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eTest-DbaDbRecoveryModel -SqlInstance sql2005\nShows all databases where the configured recovery model is FULL and indicates whether or not they are really in FULL recovery model.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eTest-DbaDbRecoveryModel -SqlInstance . | Where-Object {$_.ActualRecoveryModel -ne \"FULL\"}\nOnly shows the databases that are functionally in \u0027simple\u0027 mode.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eTest-DbaDbRecoveryModel -SqlInstance sql2008 -RecoveryModel Bulk_Logged | Sort-Object Server  -Descending\nShows all databases where the configured recovery model is BULK_LOGGED and sort them by server name descending\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eTest-DbaDbRecoveryModel -SqlInstance localhost | Select-Object -Property *\nShows all of the properties for the databases that have Full Recovery Model",
+        "Syntax":  "Test-DbaDbRecoveryModel [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-Database] \u003cObject[]\u003e] [[-ExcludeDatabase] \u003cObject[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-RecoveryModel] \u003cObject\u003e] [-Detailed] [-EnableException] [\u003cCommonParameters\u003e]"
+    },
+    {
         "CommandName":  "Test-DbaDbVirtualLogFile",
         "Description":  "Having a transaction log file with too many virtual log files (VLFs) can hurt database performance.\n\nToo many VLFs can cause transaction log backups to slow down and can also slow down database recovery and, in extreme cases, even affect insert/update/delete performance.\n\nReferences:\nhttp://www.sqlskills.com/blogs/kimberly/transaction-log-vlfs-too-many-or-too-few/\nhttp://blogs.msdn.com/b/saponsqlserver/archive/2012/02/22/too-many-virtual-log-files-vlfs-can-cause-slow-database-recovery.aspx\n\nIf you\u0027ve got a high number of VLFs, you can use Expand-SqlTLogResponsibly to reduce the number.",
         "Tags":  [
@@ -39539,7 +39644,7 @@
     },
     {
         "CommandName":  "Test-DbaLastBackup",
-        "Description":  "Restores all or some of the latest backups and performs a DBCC CHECKDB.\n\n1. Gathers information about the last full backups\n2. Restores the backups to the Destination with a new name. If no Destination is specified, the originating SqlServer wil be used.\n3. The database is restored as \"dbatools-testrestore-$databaseName\" by default, but you can change dbatools-testrestore to whatever you would like using -Prefix\n4. The internal file names are also renamed to prevent conflicts with original database\n5. A DBCC CHECKDB is then performed\n6. And the test database is finally dropped",
+        "Description":  "Restores all or some of the latest backups and performs a DBCC CHECKDB.\n\n1. Gathers information about the last full backups\n2. Restores the backups to the Destination with a new name. If no Destination is specified, the originating SQL Server instance wil be used.\n3. The database is restored as \"dbatools-testrestore-$databaseName\" by default, but you can change dbatools-testrestore to whatever you would like using -Prefix\n4. The internal file names are also renamed to prevent conflicts with original database\n5. A DBCC CHECKDB is then performed\n6. And the test database is finally dropped",
         "Tags":  [
                      "DisasterRecovery",
                      "Backup",
@@ -39728,7 +39833,7 @@
         "Synopsis":  "Quickly and easily tests the last set of full backups for a server.",
         "Name":  "Test-DbaLastBackup",
         "Links":  "https://dbatools.io/Test-DbaLastBackup",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eTest-DbaLastBackup -SqlInstance sql2016\nDetermines the last full backup for ALL databases, attempts to restore all databases (with a different name and file structure), then performs a DBCC CHECKDB. Once the test is complete, the test \r\nrestore will be dropped.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eTest-DbaLastBackup -SqlInstance sql2016 -Database SharePoint_Config\nDetermines the last full backup for SharePoint_Config, attempts to restore it, then performs a DBCC CHECKDB.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaDatabase -SqlInstance sql2016, sql2017 |Test-DbaLastBackup\nTests every database backup on sql2016 and sql2017\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaDatabase -SqlInstance sql2016, sql2017 -Database SharePoint_Config |Test-DbaLastBackup\nTests the database backup for the SharePoint_Config database on sql2016 and sql2017\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eTest-DbaLastBackup -SqlInstance sql2016 -Database model, master -VerifyOnly\nSkips performing an action restore of the database and simply verifies the backup using VERIFYONLY option of the restore.\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eTest-DbaLastBackup -SqlInstance sql2016 -NoCheck -NoDrop\nSkips the DBCC CHECKDB check. This can help speed up the tests but makes it less tested. The test restores will remain on the server.\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003eTest-DbaLastBackup -SqlInstance sql2016 -DataDirectory E:\\bigdrive -LogDirectory L:\\bigdrive -MaxSize 10240\nRestores data and log files to alternative locations and only restores databases that are smaller than 10 GB.\n-------------------------- EXAMPLE 8 --------------------------\nPS C:\\\u003eTest-DbaLastBackup -SqlInstance sql2014 -Destination sql2016 -CopyFile\nCopies the backup files for sql2014 databases to sql2016 default backup locations and then attempts restore from there.\n-------------------------- EXAMPLE 9 --------------------------\nPS C:\\\u003eTest-DbaLastBackup -SqlInstance sql2014 -Destination sql2016 -CopyFile -CopyPath \"\\\\BackupShare\\TestRestore\\\"\nCopies the backup files for sql2014 databases to sql2016 default backup locations and then attempts restore from there.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eTest-DbaLastBackup -SqlInstance sql2016\nDetermines the last full backup for ALL databases, attempts to restore all databases (with a different name and file structure), then performs a DBCC CHECKDB. Once the test is complete, the test \r\nrestore will be dropped.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eTest-DbaLastBackup -SqlInstance sql2016 -Database SharePoint_Config\nDetermines the last full backup for SharePoint_Config, attempts to restore it, then performs a DBCC CHECKDB.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaDatabase -SqlInstance sql2016, sql2017 | Test-DbaLastBackup\nTests every database backup on sql2016 and sql2017\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaDatabase -SqlInstance sql2016, sql2017 -Database SharePoint_Config | Test-DbaLastBackup\nTests the database backup for the SharePoint_Config database on sql2016 and sql2017\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eTest-DbaLastBackup -SqlInstance sql2016 -Database model, master -VerifyOnly\nSkips performing an action restore of the database and simply verifies the backup using VERIFYONLY option of the restore.\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eTest-DbaLastBackup -SqlInstance sql2016 -NoCheck -NoDrop\nSkips the DBCC CHECKDB check. This can help speed up the tests but makes it less tested. The test restores will remain on the server.\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003eTest-DbaLastBackup -SqlInstance sql2016 -DataDirectory E:\\bigdrive -LogDirectory L:\\bigdrive -MaxSize 10240\nRestores data and log files to alternative locations and only restores databases that are smaller than 10 GB.\n-------------------------- EXAMPLE 8 --------------------------\nPS C:\\\u003eTest-DbaLastBackup -SqlInstance sql2014 -Destination sql2016 -CopyFile\nCopies the backup files for sql2014 databases to sql2016 default backup locations and then attempts restore from there.\n-------------------------- EXAMPLE 9 --------------------------\nPS C:\\\u003eTest-DbaLastBackup -SqlInstance sql2014 -Destination sql2016 -CopyFile -CopyPath \"\\\\BackupShare\\TestRestore\\\"\nCopies the backup files for sql2014 databases to sql2016 default backup locations and then attempts restore from there.",
         "Syntax":  "Test-DbaLastBackup [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cObject[]\u003e] [[-ExcludeDatabase] \u003cObject[]\u003e] [[-Destination] \u003cDbaInstanceParameter\u003e] [[-DestinationCredential] \u003cObject\u003e] [[-DataDirectory] \u003cString\u003e] [[-LogDirectory] \u003cString\u003e] [[-Prefix] \u003cString\u003e] [-VerifyOnly] [-NoCheck] [-NoDrop] [-CopyFile] [[-CopyPath] \u003cString\u003e] [[-MaxSize] \u003cInt32\u003e] [-IncludeCopyOnly] [-IgnoreLogBackup] [[-AzureCredential] \u003cString\u003e] [[-InputObject] \u003cDatabase[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
@@ -40248,79 +40353,6 @@
         "Links":  "https://dbatools.io/Test-DbaPowerPlan",
         "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eTest-DbaPowerPlan -ComputerName sqlserver2014a\nChecks the Power Plan settings for sqlserver2014a and indicates whether or not it complies with best practices.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eTest-DbaPowerPlan -ComputerName sqlserver2014a -CustomPowerPlan \u0027Maximum Performance\u0027\nChecks the Power Plan settings for sqlserver2014a and indicates whether or not it is set to the custom plan \"Maximum Performance\".",
         "Syntax":  "Test-DbaPowerPlan [[-ComputerName] \u003cDbaInstanceParameter[]\u003e] [[-Credential] \u003cPSCredential\u003e] [[-CustomPowerPlan] \u003cString\u003e] [-Detailed] [-EnableException] [\u003cCommonParameters\u003e]"
-    },
-    {
-        "CommandName":  "Test-DbaRecoveryModel",
-        "Description":  "When you switch a database into FULL recovery model, it will behave like a SIMPLE recovery model until a full backup is taken in order to begin a log backup chain.\n\nHowever, you may also desire to validate if a database is SIMPLE or BULK LOGGED on an instance.\n\nInspired by Paul Randal\u0027s post (http://www.sqlskills.com/blogs/paul/new-script-is-that-database-really-in-the-full-recovery-mode/)",
-        "Tags":  [
-                     "DisasterRecovery",
-                     "Backup"
-                 ],
-        "Params":  [
-                       [
-                           "SqlInstance",
-                           "The target SQL Server instance or instances.",
-                           "ServerInstance,SqlServer",
-                           true,
-                           "true (ByValue)",
-                           ""
-                       ],
-                       [
-                           "Database",
-                           "Specifies the database(s) to process. Options for this list are auto-populated from the server. If unspecified, all databases will be processed.",
-                           "Databases",
-                           false,
-                           "false",
-                           ""
-                       ],
-                       [
-                           "ExcludeDatabase",
-                           "Specifies the database(s) to exclude from processing. Options for this list are auto-populated from the server.",
-                           "",
-                           false,
-                           "false",
-                           ""
-                       ],
-                       [
-                           "SqlCredential",
-                           "Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)",
-                           "",
-                           false,
-                           "false",
-                           ""
-                       ],
-                       [
-                           "RecoveryModel",
-                           "Specifies the type of recovery model you wish to test. By default it will test for FULL Recovery Model.",
-                           "",
-                           false,
-                           "false",
-                           ""
-                       ],
-                       [
-                           "Detailed",
-                           "Output all properties, will be deprecated in 1.0.0 release.",
-                           "",
-                           false,
-                           "false",
-                           "False"
-                       ],
-                       [
-                           "EnableException",
-                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
-                           "Silent",
-                           false,
-                           "false",
-                           "False"
-                       ]
-                   ],
-        "Alias":  "Test-DbaFullRecoveryModel",
-        "Author":  "Claudio Silva (@ClaudioESSilva)",
-        "Synopsis":  "Find if database is really a specific recovery model or not.",
-        "Name":  "Test-DbaRecoveryModel",
-        "Links":  "https://dbatools.io/Test-DbaRecoveryModel",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eTest-DbaRecoveryModel -SqlInstance sql2005\nShows all databases where the configured recovery model is FULL and indicates whether or not they are really in FULL recovery model.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eTest-DbaRecoveryModel -SqlInstance . | Where-Object {$_.ActualRecoveryModel -ne \"FULL\"}\nOnly shows the databases that are functionally in \u0027simple\u0027 mode.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eTest-DbaRecoveryModel -SqlInstance sql2008 -RecoveryModel Bulk_Logged | Sort-Object Server  -Descending\nShows all databases where the configured recovery model is BULK_LOGGED and sort them by server name descending\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eTest-DbaRecoveryModel -SqlInstance localhost | Select-Object -Property *\nShows all of the properties for the databases that have Full Recovery Model",
-        "Syntax":  "Test-DbaRecoveryModel [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-Database] \u003cObject[]\u003e] [[-ExcludeDatabase] \u003cObject[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-RecoveryModel] \u003cObject\u003e] [-Detailed] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
         "CommandName":  "Test-DbaRepLatency",

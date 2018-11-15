@@ -56,7 +56,7 @@ function Test-DbaTempdbConfig {
         PS C:\> Get-DbaCmsRegServer -SqlInstance sqlserver2014a | Test-DbaTempdbConfig | Select-Object * | Out-GridView
 
         Checks tempdb configuration for a group of servers from SQL Server Central Management Server (CMS). Output includes all columns. Send output to GridView.
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]

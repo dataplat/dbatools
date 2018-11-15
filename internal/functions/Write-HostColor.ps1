@@ -49,7 +49,7 @@ function Write-HostColor {
         Write-HostColor -String $stringLong
 
         Will print a long multiline text in its entirety while still respecting the colorcodes
-#>
+    #>
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingWriteHost", "")]
     [CmdletBinding()]
     param (
@@ -87,4 +87,3 @@ function Write-HostColor {
         }
     }
 }
-

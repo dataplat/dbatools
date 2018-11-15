@@ -8,7 +8,7 @@ Describe "$CommandName Unit Tests" -Tag UnitTests, Get-DbaLogin {
         $paramCount = 6
         $defaultParamCount = 11
         [object[]]$params = (Get-ChildItem function:\Test-DbaLoginPassword).Parameters.Keys
-        $knownParameters = 'SqlInstance','SqlCredential','Dictionary','Login','InputObject','EnableException'
+        $knownParameters = 'SqlInstance', 'SqlCredential', 'Dictionary', 'Login', 'InputObject', 'EnableException'
         It "Should contain our specific parameters" {
             ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
         }
@@ -45,8 +45,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     AfterAll {
         try {
             $newlogin.Drop()
-        }
-        catch {
+        } catch {
             # don't care
         }
     }

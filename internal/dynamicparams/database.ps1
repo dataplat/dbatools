@@ -33,8 +33,7 @@ $ScriptBlock = {
 
     try {
         [DbaInstanceParameter]$parServer = $server | Select-Object -First 1
-    }
-    catch {
+    } catch {
         return
     }
 
@@ -51,8 +50,7 @@ $ScriptBlock = {
             New-DbaTeppCompletionResult -CompletionText $name -ToolTip $name
         }
         return
-    }
-    catch {
+    } catch {
         return
     }
 }
@@ -66,4 +64,3 @@ $ScriptBlock = {
 }
 Register-DbaTeppInstanceCacheBuilder -ScriptBlock $ScriptBlock
 #endregion Update Cache
-

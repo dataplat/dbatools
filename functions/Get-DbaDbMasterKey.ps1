@@ -51,7 +51,7 @@ function Get-DbaDbMasterKey {
 
         Gets the master key for the db1 database
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [Alias("ServerInstance", "SqlServer")]
@@ -94,4 +94,3 @@ function Get-DbaDbMasterKey {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-DbaDatabaseMasterKey
     }
 }
-

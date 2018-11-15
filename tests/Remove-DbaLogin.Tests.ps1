@@ -7,7 +7,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         $paramCount = 6
         $defaultParamCount = 13
         [object[]]$params = (Get-ChildItem function:\Remove-DbaLogin).Parameters.Keys
-        $knownParameters = 'SqlInstance','SqlCredential','Login','InputObject','Force','EnableException'
+        $knownParameters = 'SqlInstance', 'SqlCredential', 'Login', 'InputObject', 'Force', 'EnableException'
         It "Should contain our specific parameters" {
             ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
         }

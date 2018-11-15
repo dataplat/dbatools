@@ -41,7 +41,7 @@ function Copy-DbaXESessionTemplate {
 
         Copies your templates from C:\temp\xetemplates to $home\Documents\SQL Server Management Studio\Templates\XEventTemplates.
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [string[]]$Path = "$script:PSModuleRoot\bin\xetemplates",
@@ -70,4 +70,3 @@ function Copy-DbaXESessionTemplate {
         }
     }
 }
-

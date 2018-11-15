@@ -118,7 +118,7 @@ function Get-DbaHelpIndex {
 
         Returns the index information for all indexes in the MyDB database
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [Alias("ServerInstance", "SqlServer")]
@@ -1101,4 +1101,3 @@ function Get-DbaHelpIndex {
         }
     }
 }
-

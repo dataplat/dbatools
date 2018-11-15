@@ -48,7 +48,7 @@ function New-DbaXESession {
 
         Returns a new XE Session object from sql2017 then adds an event, an action then creates it.
 
-#>
+    #>
     [CmdletBinding(SupportsShouldProcess)]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
@@ -77,4 +77,3 @@ function New-DbaXESession {
         }
     }
 }
-

@@ -42,7 +42,7 @@ function Get-DbaTrace {
 
         Lists the default trace information on the sql2016 SQL Server.
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Position = 0, Mandatory, ValueFromPipeline)]
@@ -124,4 +124,3 @@ function Get-DbaTrace {
         }
     }
 }
-

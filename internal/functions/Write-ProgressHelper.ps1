@@ -6,7 +6,7 @@ function Write-ProgressHelper {
         [string]$Activity,
         [string]$Message
     )
-    
+
     $caller = (Get-PSCallStack)[1].Command
 
     if (-not $Activity) {
@@ -37,7 +37,7 @@ function Write-ProgressHelper {
             }
         }
     }
-    
+
     $TotalSteps = ([regex]::Matches((Get-Command -Module dbatools -Name $caller).Definition, "Write-ProgressHelper")).Count
     Write-Progress -Activity $Activity -Status $Message -PercentComplete (($StepNumber / $TotalSteps) * 100)
 }

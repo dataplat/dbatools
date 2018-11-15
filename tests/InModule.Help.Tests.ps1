@@ -124,8 +124,7 @@ foreach ($command in $commands) {
                         }
                         $testparamserrors += 1
                     }
-                }
-                elseif ($parameter.ParameterType.FullName -in $HelpTestEnumeratedArrays) {
+                } elseif ($parameter.ParameterType.FullName -in $HelpTestEnumeratedArrays) {
                     # Enumerations often have issues with the typename not being reliably available
                     $names = [Enum]::GetNames($parameter.ParameterType.DeclaredMembers[0].ReturnType)
                     if ($parameterHelp.parameterValueGroup.parameterValue -ne $names) {
@@ -135,8 +134,7 @@ foreach ($command in $commands) {
                         }
                         $testparamserrors += 1
                     }
-                }
-                else {
+                } else {
                     # To avoid calling Trim method on a null object.
                     $helpType = if ($parameterHelp.parameterValue) { $parameterHelp.parameterValue.Trim() }
                     if ($helpType -ne $codeType ) {
@@ -166,4 +164,3 @@ foreach ($command in $commands) {
         }
     }
 }
-

@@ -74,7 +74,7 @@ function Test-DbaDiskAlignment {
 
         Tests the disk alignment of multiple servers
 
-#>
+    #>
     param (
         [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer", "SqlInstance")]
@@ -322,4 +322,3 @@ function Test-DbaDiskAlignment {
         }
     }
 }
-
