@@ -145,7 +145,7 @@
         'Get-DbaProcess',
         'Get-DbaRunningJob',
         'Set-DbaMaxDop',
-        'Test-DbaRecoveryModel',
+        'Test-DbaDbRecoveryModel',
         'Test-DbaMaxDop',
         'Remove-DbaBackup',
         'Get-DbaPermission',
@@ -754,7 +754,9 @@
     'Invoke-DbaLogShippingRecovery',
     'Test-DbaLogShippingStatus',
     'Get-DbaRoleMember',
-    'Get-DbaRestoreHistory'
+    'Get-DbaRestoreHistory',
+    'Expand-DbaTLogResponsibly',
+    'Test-DbaRecoveryModel'
 
     # List of all modules packaged with this module
     ModuleList             = @()

@@ -1,4 +1,4 @@
-function Test-DbaRecoveryModel {
+function Test-DbaDbRecoveryModel {
     <#
     .SYNOPSIS
         Find if database is really a specific recovery model or not.
@@ -42,25 +42,25 @@ function Test-DbaRecoveryModel {
         License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
     .LINK
-        https://dbatools.io/Test-DbaRecoveryModel
+        https://dbatools.io/Test-DbaDbRecoveryModel
 
     .EXAMPLE
-        PS C:\> Test-DbaRecoveryModel -SqlInstance sql2005
+        PS C:\> Test-DbaDbRecoveryModel -SqlInstance sql2005
 
         Shows all databases where the configured recovery model is FULL and indicates whether or not they are really in FULL recovery model.
 
     .EXAMPLE
-        PS C:\> Test-DbaRecoveryModel -SqlInstance . | Where-Object {$_.ActualRecoveryModel -ne "FULL"}
+        PS C:\> Test-DbaDbRecoveryModel -SqlInstance . | Where-Object {$_.ActualRecoveryModel -ne "FULL"}
 
         Only shows the databases that are functionally in 'simple' mode.
 
     .EXAMPLE
-        PS C:\> Test-DbaRecoveryModel -SqlInstance sql2008 -RecoveryModel Bulk_Logged | Sort-Object Server  -Descending
+        PS C:\> Test-DbaDbRecoveryModel -SqlInstance sql2008 -RecoveryModel Bulk_Logged | Sort-Object Server  -Descending
 
         Shows all databases where the configured recovery model is BULK_LOGGED and sort them by server name descending
 
     .EXAMPLE
-        PS C:\> Test-DbaRecoveryModel -SqlInstance localhost | Select-Object -Property *
+        PS C:\> Test-DbaDbRecoveryModel -SqlInstance localhost | Select-Object -Property *
 
         Shows all of the properties for the databases that have Full Recovery Model
 
