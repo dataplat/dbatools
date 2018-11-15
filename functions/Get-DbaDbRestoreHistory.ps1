@@ -1,5 +1,5 @@
 #ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
-function Get-DbaRestoreHistory {
+function Get-DbaDbRestoreHistory {
     <#
     .SYNOPSIS
         Returns restore history details for databases on a SQL Server.
@@ -44,35 +44,35 @@ function Get-DbaRestoreHistory {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaRestoreHistory
+        https://dbatools.io/Get-DbaDbRestoreHistory
 
     .EXAMPLE
-        PS C:\> Get-DbaRestoreHistory -SqlInstance sql2016
+        PS C:\> Get-DbaDbRestoreHistory -SqlInstance sql2016
 
         Returns server name, database, username, restore type, date for all restored databases on sql2016.
 
     .EXAMPLE
-        PS C:\> Get-DbaRestoreHistory -SqlInstance sql2016 -Database db1, db2 -Since '2016-07-01 10:47:00'
+        PS C:\> Get-DbaDbRestoreHistory -SqlInstance sql2016 -Database db1, db2 -Since '2016-07-01 10:47:00'
 
         Returns restore information only for databases db1 and db2 on sql2016 since July 1, 2016 at 10:47 AM.
 
     .EXAMPLE
-        PS C:\> Get-DbaRestoreHistory -SqlInstance sql2014, sql2016 -Exclude db1
+        PS C:\> Get-DbaDbRestoreHistory -SqlInstance sql2014, sql2016 -Exclude db1
 
         Returns restore information for all databases except db1 on sql2014 and sql2016.
 
     .EXAMPLE
         PS C:\> $cred = Get-Credential sqladmin
-        PS C:\> Get-DbaRestoreHistory -SqlInstance sql2014 -Database AdventureWorks2014, pubs -SqlCredential $cred | Format-Table
+        PS C:\> Get-DbaDbRestoreHistory -SqlInstance sql2014 -Database AdventureWorks2014, pubs -SqlCredential $cred | Format-Table
 
         Returns database restore information for AdventureWorks2014 and pubs database on sql2014, connects using SQL Authentication via sqladmin account. Formats the data as a table.
 
     .EXAMPLE
-        PS C:\> Get-DbaCmsRegServer -SqlInstance sql2016 | Get-DbaRestoreHistory
+        PS C:\> Get-DbaCmsRegServer -SqlInstance sql2016 | Get-DbaDbRestoreHistory
 
         Returns database restore information for every database on every server listed in the Central Management Server on sql2016.
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
@@ -202,4 +202,3 @@ function Get-DbaRestoreHistory {
         }
     }
 }
-

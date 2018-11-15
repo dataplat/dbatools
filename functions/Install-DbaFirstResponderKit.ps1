@@ -84,7 +84,7 @@ function Install-DbaFirstResponderKit {
 
         Installs the dev branch version of the FRK in the master database on sql2016 instance.
 
-#>
+    #>
     [CmdletBinding(SupportsShouldProcess = $true)]
     param (
         [Parameter(Mandatory, ValueFromPipeline)]
@@ -228,4 +228,3 @@ function Install-DbaFirstResponderKit {
         }
     }
 }
-

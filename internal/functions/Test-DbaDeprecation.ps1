@@ -52,7 +52,7 @@ function Test-DbaDeprecation {
 
             Will - once per session - complain if the alias 'Copy-SqlDatabase' is used.
             Will cause tests to fail, if it's still in the code after release 1.0.0.0.
-    #>
+       #>
     [CmdletBinding()]
     param (
         [Parameter(Mandatory)]
@@ -89,7 +89,7 @@ function Test-DbaDeprecation {
 
             if ($sub.CommandElements | Where-Object ParameterName -eq $Parameter) {
                 if ($CustomMessage) { $Message = $CustomMessage }
-                else { $Message = "Using the parameter $Parameter is deprecated. This parameter will be removed in version $DeprecatedOn, check in the documentation what parameter to use instead" }
+                else { $Message = "Using the parameter $Parameter is deprecated. This parameter will be removed in version $DeprecatedOn or before, check in the documentation what parameter to use instead" }
 
                 Write-Message -Message $Message -Level Warning -FunctionName $FunctionName -Once "Deprecated.Alias.$Alias"
             }
@@ -98,11 +98,10 @@ function Test-DbaDeprecation {
         "Alias" {
             if ($Alias -eq $Call.InvocationName) {
                 if ($CustomMessage) { $Message = $CustomMessage }
-                else { $Message = "Using the alias $Alias is deprecated. This alias will be removed in version $DeprecatedOn, use $FunctionName instead. Invoke-DbatoolsRenameHelper can also help rename commands within your scripts." }
+                else { $Message = "Using the alias $Alias is deprecated. This alias will be removed in version $DeprecatedOn or before, use $FunctionName instead. Invoke-DbatoolsRenameHelper can also help rename commands within your scripts." }
 
                 Write-Message -Message $Message -Level Warning -FunctionName $FunctionName -Once "Deprecated.Alias.$Alias"
             }
         }
     }
 }
-

@@ -69,8 +69,9 @@ function Measure-DbaDiskSpaceRequirement {
 
         Using a SQL table. We are DBA after all!
 
-#>
+    #>
     [CmdletBinding()]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseOutputTypeCorrectly", "", Justification = "PSSA Rule Ignored by BOH")]
     param(
         [Parameter(Mandatory, ValueFromPipelineByPropertyName = $true)]
         [DbaInstanceParameter]$Source,
@@ -293,4 +294,3 @@ function Measure-DbaDiskSpaceRequirement {
         $DestinationDatabase = $null
     }
 }
-

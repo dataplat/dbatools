@@ -107,8 +107,9 @@ function New-DbaComputerCertificate {
 
         Creates a self-signed certificate
 
-#>
+    #>
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "Low")]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseOutputTypeCorrectly", "", Justification = "PSSA Rule Ignored by BOH")]
     param (
         [parameter(ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer", "SqlInstance")]
@@ -383,4 +384,3 @@ function New-DbaComputerCertificate {
         }
     }
 }
-

@@ -60,7 +60,7 @@ function Get-DbaCmsRegServerGroup {
 
         Returns the sub-group Development of the HR group from the CMS on sqlserver2014a.
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
@@ -114,7 +114,10 @@ function Get-DbaCmsRegServerGroup {
                                 Write-Message -Level Verbose -Message "Added $($thisgroup.Name)"
                                 $groups += $thisgroup
                             }
-                        } catch { }
+                        } catch {
+                            # here to avoid an empty catch
+                            $null = 1
+                        }
                     }
                 }
             } else {
@@ -155,4 +158,3 @@ function Get-DbaCmsRegServerGroup {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Get-DbaRegisteredServerGroup
     }
 }
-

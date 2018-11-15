@@ -53,7 +53,7 @@ function Copy-DbaSysDbUserObject {
 
         Copies user objects from source to destination
 
-#>
+    #>
     [CmdletBinding(SupportsShouldProcess = $true)]
     param (
         [Parameter(Mandatory)]
@@ -370,11 +370,15 @@ function Copy-DbaSysDbUserObject {
                                     $destServer.Query($sql, $systemDb)
                                 } catch {
                                     # Don't care - long story having to do with duplicate stuff
+                                    # here to avoid an empty catch
+                                    $null = 1
                                 }
                             }
                         }
                     } catch {
                         # Don't care - long story having to do with duplicate stuff
+                        # here to avoid an empty catch
+                        $null = 1
                     }
                 }
             }
@@ -384,4 +388,3 @@ function Copy-DbaSysDbUserObject {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-SqlSysDbUserObjects
     }
 }
-

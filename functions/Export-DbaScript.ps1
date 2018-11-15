@@ -122,7 +122,7 @@ function Export-DbaScript {
         Uses Scripting options to ensure Batch Terminator is set
         Will append the output to the file C:\temp\export.sql if it already exists
 
-#>
+    #>
     [CmdletBinding(SupportsShouldProcess = $true)]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
@@ -290,4 +290,3 @@ function Export-DbaScript {
         }
     }
 }
-

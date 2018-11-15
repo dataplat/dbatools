@@ -84,8 +84,9 @@ function Reset-DbaAdmin {
         Skips restart confirmation, prompts for password, then adds a SQL Login "sqladmin" with sysadmin privileges.
         If the account already exists, it will be added to the sysadmin role and the password will be reset.
 
-#>
+    #>
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "High")]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingWMICmdlet", "", Justification = "Using Get-WmiObject for client backwards compatibilty")]
     param (
         [Parameter(Mandatory)]
         [Alias("ServerInstance", "SqlServer")]
@@ -426,4 +427,3 @@ function Reset-DbaAdmin {
         Write-Message -Level Verbose -Message "Script complete!"
     }
 }
-

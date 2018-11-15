@@ -4,16 +4,16 @@ function Test-DbaBackupInformation {
         Tests a dbatools backup history object is correct for restoring
 
     .DESCRIPTION
-        Input is normally from a backup history object generated from Format-DbaBackupInformation. This is then parse to check that it's valid for restore. Tests performed include:
-            - Checking unbroken LSN chain
-            - If the target database exists and WithReplace has been provided
-            - If any files already exist, but owned by other databases
-            - Creates any new folders required
-            - That the backup files exists at the location specified, and can be seen by the Sql Instance
-            - If no errors are found then the objects for that database will me marked as Verified
+        Input is normally from a backup history object generated from `Format-DbaBackupInformation`. This is then parse to check that it's valid for restore. Tests performed include:
+          - Checking unbroken LSN chain
+          - If the target database exists and WithReplace has been provided
+          - If any files already exist, but owned by other databases
+          - Creates any new folders required
+          - That the backup files exists at the location specified, and can be seen by the Sql Instance
+          - If no errors are found then the objects for that database will me marked as Verified
 
     .PARAMETER BackupHistory
-        dbatools BackupHistory object. Normally this will have been process with Select- and then Format-DbaBackupInformation
+        dbatools BackupHistory object. Normally this will have been process with `Select-` and then `Format-DbaBackupInformation`
 
     .PARAMETER SqlInstance
         The Sql Server instance that wil be performing the restore
@@ -63,8 +63,9 @@ function Test-DbaBackupInformation {
         Pass in a BackupHistory object to be tested against MyInstance.
         Those records that pass are marked as verified. We can then use the IsVerified property to divide the failures and successes
 
-#>
+    #>
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "Low")]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseOutputTypeCorrectly", "", Justification = "PSSA Rule Ignored by BOH")]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
         [object[]]$BackupHistory,
@@ -120,6 +121,7 @@ function Test-DbaBackupInformation {
                 $DBHistoryPhysicalPaths = ($DbHistory | Select-Object -ExpandProperty filelist | Select-Object PhysicalName -Unique).PhysicalName
                 $DBHistoryPhysicalPathsTest = Test-DbaPath -SqlInstance $RestoreInstance -Path $DBHistoryPhysicalPaths
                 $DBHistoryPhysicalPathsExists = ($DBHistoryPhysicalPathsTest | Where-Object FileExists -eq $True).FilePath
+                $pathSep = Get-DbaPathSep -Server $RestoreInstance
                 foreach ($path in $DBHistoryPhysicalPaths) {
                     if (($DBHistoryPhysicalPathsTest | Where-Object FilePath -eq $path).FileExists) {
                         if ($path -in $DBFileCheck) {
@@ -136,7 +138,15 @@ function Test-DbaBackupInformation {
                             $VerificationErrors++
                         }
                     } else {
+                        <#
+                        dang, Split-Path converts path separators always using the "current system" settings
+                        PS C:> Split-Path -Path '/var/opt/mssql/data/foo.bak' -Parent
+                        \var\opt\mssql\data
+                        I'm not aware of a safe way to change this so...we do a little hack.
+                        #>
+                        $pathSep = Get-DbaPathSep -Server $RestoreInstance
                         $ParentPath = Split-Path $path -Parent
+                        $ParentPath = $ParentPath.Replace('\', $pathSep)
                         if (!(Test-DbaPath -SqlInstance $RestoreInstance -Path $ParentPath) ) {
                             if (-not $OutputScriptOnly) {
                                 $ConfirmMessage = "`n Creating Folder $ParentPath on $SqlInstance `n"
@@ -174,7 +184,7 @@ function Test-DbaBackupInformation {
             }
             if ($VerificationErrors -eq 0) {
                 Write-Message -Message "Marking $Database as verified" -Level Verbose
-                $InternalHistory | Where-Object {$_.Database -eq $Database} | foreach-Object {$_.IsVerified = $True}
+                $InternalHistory | Where-Object {$_.Database -eq $Database} | Foreach-Object {$_.IsVerified = $True}
             } else {
                 Write-Message -Message "Verification errors  = $VerificationErrors - Has not Passed" -Level Verbose
             }
@@ -182,4 +192,3 @@ function Test-DbaBackupInformation {
         $InternalHistory
     }
 }
-

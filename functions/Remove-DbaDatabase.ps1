@@ -67,7 +67,7 @@ function Remove-DbaDatabase {
         PS C:\> Get-DbaDatabase -SqlInstance server\instance -ExcludeAllSystemDb | Remove-DbaDatabase -Confirm:$false
 
         Removes all the user databases from server\instance without any confirmation
-#>
+    #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High', DefaultParameterSetName = "Default")]
     param (
         [parameter(Mandatory, ParameterSetName = "instance")]
@@ -135,7 +135,8 @@ function Remove-DbaDatabase {
                 } catch {
                     try {
                         if ($Pscmdlet.ShouldProcess("$db on $server", "SMO drop")) {
-                            $server.databases[$dbname].Drop()
+                            $dbname = $db.Name
+                            $db.Parent.databases[$dbname].Drop()
                             $server.Refresh()
 
                             [pscustomobject]@{
@@ -162,4 +163,3 @@ function Remove-DbaDatabase {
         }
     }
 }
-

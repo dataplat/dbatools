@@ -56,7 +56,7 @@ function Test-DbaConnectionAuthScheme {
 
         Returns the results of "SELECT * from sys.dm_exec_connections WHERE session_id = @@SPID"
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
@@ -122,4 +122,3 @@ function Test-DbaConnectionAuthScheme {
         }
     }
 }
-

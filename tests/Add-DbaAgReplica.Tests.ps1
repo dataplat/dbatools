@@ -7,7 +7,7 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
         <#
             Get commands, Default count = 11
             Commands with SupportShouldProcess = 13
-        #>
+               #>
         $defaultParamCount = 13
         [object[]]$params = (Get-ChildItem function:\Add-DbaAgReplica).Parameters.Keys
         $knownParameters = 'SqlInstance', 'SqlCredential', 'AvailabilityGroup', 'Name', 'AvailabilityMode', 'FailoverMode', 'BackupPriority', 'ConnectionModeInPrimaryRole', 'ConnectionModeInSecondaryRole', 'SeedingMode', 'Endpoint', 'Passthru', 'ReadonlyRoutingConnectionUrl', 'Certificate', 'InputObject', 'EnableException'
@@ -29,8 +29,8 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
         # the only way to test, really, is to call New-DbaAvailabilityGroup which calls Add-DbaAgReplica
         $agname = "dbatoolsci_add_replicagroup"
         $null = New-DbaAvailabilityGroup -Primary $script:instance3 -Name $agname -ClusterType None -FailoverMode Manual -Confirm:$false -Certificate dbatoolsci_AGCert
-        
-        
+
+
         It "returns results with proper data" {
             $results = Get-DbaAgReplica -SqlInstance $script:instance3
             $results.AvailabilityGroup | Should -Contain $agname

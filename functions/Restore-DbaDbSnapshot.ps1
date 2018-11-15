@@ -79,7 +79,7 @@ function Restore-DbaDbSnapshot {
 
         Restores databases from snapshots named HR_snap_20161201 and Accounting_snap_20161101
 
-#>
+    #>
     [CmdletBinding(SupportsShouldProcess)]
     param (
         [Alias("ServerInstance", "SqlServer")]
@@ -199,4 +199,3 @@ function Restore-DbaDbSnapshot {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Restore-DbaFromDatabaseSnapshot
     }
 }
-

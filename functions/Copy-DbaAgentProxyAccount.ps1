@@ -68,7 +68,7 @@ function Copy-DbaAgentProxyAccount {
 
         Shows what would happen if the command were executed using force.
 
-#>
+    #>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
     param (
         [parameter(Mandatory)]
@@ -130,7 +130,8 @@ function Copy-DbaAgentProxyAccount {
                 try {
                     $credentialtest = $destServer.Credentials[$CredentialName]
                 } catch {
-                    # don't care
+                    #here to avoid an empty catch
+                    $null = 1
                 }
 
                 if ($null -eq $credentialtest) {
@@ -200,4 +201,3 @@ function Copy-DbaAgentProxyAccount {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-SqlProxyAccount
     }
 }
-

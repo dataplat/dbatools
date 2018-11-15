@@ -25,12 +25,6 @@ function Add-DbaCmsRegServerGroup {
     .PARAMETER InputObject
         Allows results from Get-DbaCmsRegServerGroup to be piped in
 
-    .PARAMETER IncludeRegisteredServers
-        Create the registered servers within the group, too
-
-    .PARAMETER InputObject
-        Allows results from Get-DbaCmsRegServerGroup to be piped in
-
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
 
@@ -70,7 +64,7 @@ function Add-DbaCmsRegServerGroup {
 
         Creates a registered server group on sql2012 and sql2014 called sub-folder within the HR group of each server
 
-#>
+    #>
     [CmdletBinding(SupportsShouldProcess)]
     param (
         [Alias("ServerInstance", "SqlServer")]
@@ -123,4 +117,3 @@ function Add-DbaCmsRegServerGroup {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Add-DbaRegisteredServerGroup
     }
 }
-

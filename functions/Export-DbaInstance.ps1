@@ -116,7 +116,7 @@ function Export-DbaInstance {
 
         Exports everything but logins and database restore scripts to C:\dr\sqlcluster
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
@@ -146,17 +146,6 @@ function Export-DbaInstance {
 
         $elapsed = [System.Diagnostics.Stopwatch]::StartNew()
         $started = Get-Date
-        function Write-ProgressHelper {
-            # thanks adam!
-            # https://www.adamtheautomator.com/building-progress-bar-powershell-scripts/
-            param (
-                [int]$StepNumber,
-                [string]$Message,
-                [int]$TotalSteps = 21
-
-            )
-            Write-Progress -Activity "Performing Instance Export for $instance" -Status $Message -PercentComplete (($StepNumber / $TotalSteps) * 100)
-        }
 
         $ScriptingOptions = New-Object Microsoft.SqlServer.Management.Smo.ScriptingOptions
         $ScriptingOptions.ScriptBatchTerminator = $true
@@ -449,4 +438,3 @@ function Export-DbaInstance {
         Write-Message -Level Verbose -Message "Total Elapsed time: $totaltime"
     }
 }
-

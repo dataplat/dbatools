@@ -67,10 +67,10 @@ function Export-DbaDacPackage {
         Exports the dacpac for SharePoint_Config on sql2016 to $home\Documents\SharePoint_Config.dacpac
 
     .EXAMPLE
-        PS C:\> $options = New-DbaDacOption -Type Dacpac
+        PS C:\> $options = New-DbaDacOption -Type Dacpac -Action Export
         PS C:\> $options.ExtractAllTableData = $true
         PS C:\> $options.CommandTimeout = 0
-        PS C:\> Export-DbaDacPackage -SqlInstance sql2016 -Database DB1 -Options
+        PS C:\> Export-DbaDacPackage -SqlInstance sql2016 -Database DB1 -Options $options
 
         Uses DacOption object to set the CommandTimeout to 0 then extracts the dacpac for DB1 on sql2016 to $home\Documents\DB1.dacpac including all table data.
 
@@ -84,7 +84,7 @@ function Export-DbaDacPackage {
         PS C:\> Export-DbaDacPackage -SqlInstance sql2016 -Database SharePoint_Config -Path C:\temp -ExtendedParameters $moreparams
 
         Using extended parameters to over-write the files and performs the extraction in quiet mode. Uses command line instead of SMO behind the scenes.
-#>
+    #>
     [CmdletBinding(DefaultParameterSetName = 'SMO')]
     param
     (
@@ -224,8 +224,8 @@ function Export-DbaDacPackage {
                     } else {
                         $opts = $DacOption
                     }
-                    $global:output = @()
-                    Register-ObjectEvent -InputObject $dacSvc -EventName "Message" -SourceIdentifier "msg" -Action { $global:output += $EventArgs.Message.Message } | Out-Null
+
+                    $null = $output = Register-ObjectEvent -InputObject $dacSvc -EventName "Message" -SourceIdentifier "msg" -Action { $EventArgs.Message.Message }
 
                     if ($Type -eq 'Dacpac') {
                         Write-Message -Level Verbose -Message "Initiating Dacpac extract to $currentFileName"
@@ -248,7 +248,7 @@ function Export-DbaDacPackage {
                             Unregister-Event -SourceIdentifier "msg"
                         }
                     }
-                    $finalResult = ($global:output -join "`r`n" | Out-String).Trim()
+                    $finalResult = ($output.output -join "`r`n" | Out-String).Trim()
                 } elseif ($PsCmdlet.ParameterSetName -eq 'CMD') {
                     if ($Type -eq 'Dacpac') { $action = 'Extract' }
                     elseif ($Type -eq 'Bacpac') { $action = 'Export' }

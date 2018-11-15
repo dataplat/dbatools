@@ -55,8 +55,9 @@ function ConvertTo-DbaTimeline {
 
         Sends an email to dba@ad.local with the results of Get-DbaBackupHistory. Note that viewing these reports may not be supported in all email clients.
 
-#>
+    #>
     [CmdletBinding()]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseOutputTypeCorrectly", "", Justification = "PSSA Rule Ignored by BOH")]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
         [object[]]$InputObject,
@@ -212,4 +213,3 @@ function ConvertTo-DbaTimeline {
         $begin, $body, $end
     }
 }
-

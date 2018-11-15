@@ -81,7 +81,7 @@ function Copy-DbaAgentCategory {
 
         Shows what would happen if the command were executed using force.
 
-#>
+    #>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldprocess = $true)]
     param (
         [parameter(Mandatory)]
@@ -399,4 +399,3 @@ function Copy-DbaAgentCategory {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-SqlAgentCategory
     }
 }
-

@@ -49,7 +49,7 @@ function Update-ServiceStatus {
         Update-ServiceStatus -InputObject $InputObject -Action 'stop' -Timeout 0 -Credential $credential
 
         Stops SQL services on sql1 and waits indefinitely for them to stop. Uses $credential to authorize on the server.
-#>
+    #>
     [CmdletBinding(SupportsShouldProcess)]
     param(
         [parameter(ValueFromPipeline, Mandatory)]
@@ -131,8 +131,8 @@ function Update-ServiceStatus {
                                 continue
                             }
                             $result.ServiceState = $result.Service._CimObject.State
-                            #Succeeded
-                            if ($result.ServiceState -eq $desiredState) {
+                            #Failed or succeeded
+                            if ($result.ServiceExitCode -ne 0 -or $result.ServiceState -eq $desiredState) {
                                 $result.CheckPending = $false
                                 continue
                             }
@@ -154,14 +154,13 @@ function Update-ServiceStatus {
                     }
                 }
                 foreach ($result in $invokeResults) {
-                    $outObject = $result.Service
                     #Add status
                     $status = switch ($result.ServiceExitCode) {
                         0 { 'Successful' }
                         10 { 'Successful '} #Already running - FullText service is started automatically
                         default { 'Failed' }
                     }
-                    Add-Member -Force -InputObject $outObject -NotePropertyName Status -NotePropertyValue $status
+                    Add-Member -Force -InputObject $result.Service -NotePropertyName Status -NotePropertyValue $status
                     #Add error message
                     $errorMessageFromReturnValue = if ($result.ServiceExitCode -in 0..($errorCodes.Length - 1)) {
                         $errorCodes[$result.ServiceExitCode]
@@ -172,10 +171,10 @@ function Update-ServiceStatus {
                         0 { "Service was successfully $actionText." }
                         default { "The attempt to $action the service returned the following error: $errorMessageFromReturnValue" }
                     }
-                    Add-Member -Force -InputObject $outObject -NotePropertyName Message -NotePropertyValue $message
+                    Add-Member -Force -InputObject $result.Service -NotePropertyName Message -NotePropertyValue $message
                     # Refresh service state for the object
-                    if ($result.ServiceState) { $outObject.State = $result.ServiceState }
-                    $outObject
+                    if ($result.ServiceState) { $result.Service.State = $result.ServiceState }
+                    $result
                 }
             }
         }
@@ -199,19 +198,29 @@ function Update-ServiceStatus {
                 if ($cimObject = ($svcCim | Where-Object Name -eq $service.ServiceName)) {
                     Add-Member -Force -InputObject $service -NotePropertyName _CimObject -NotePropertyValue $cimObject
                 } else {
-                    Stop-Function -Message "Failed to retrieve service name $($service.ServiceName) from the CIM object collection - the service will not be processed" -Continue
+                    Stop-Function -Message "Failed to retrieve service name $($service.ServiceName) from the CIM object collection - the service will not be processed" -Continue -Target $group.Name
                 }
             }
         }
         if ($Pscmdlet.ShouldProcess("Running the following service action: $action")) {
             if ($serviceComputerGroup) {
-                $serviceComputerGroup | Invoke-Parallel -ScriptBlock $svcControlBlock -RunspaceTimeout $Timeout -Throttle 50 -ImportVariables |
-                    Select-DefaultView -Property ComputerName, ServiceName, State, Status, Message
+                try {
+                    $serviceComputerGroup | Invoke-Parallel -ScriptBlock $svcControlBlock -Throttle 50 -ImportVariables | ForEach-Object {
+                        if ($_.ServiceExitCode) {
+                            $target = "$($_.Service.ServiceName) on $($_.Service.ComputerName)"
+                            Write-Message -Level Warning -Message "($target) $($_.Service.Message)" -Target $target
+                            if ($_.Service.ServiceType -eq 'Engine' -and $_.ServiceExitCode -eq 3) {
+                                Write-Message -Level Warning -Message "($target) Run the command with '-Force' switch to force the restart of a dependent SQL Agent" -Target $target
+                            }
+                        }
+                        $_.Service | Select-DefaultView -Property ComputerName, ServiceName, InstanceName, ServiceType, State, Status, Message
+                    }
+                } catch {
+                    Stop-Function -Message "Multi-threaded execution returned an error" -ErrorRecord $_ -EnableException $EnableException -FunctionName $callerName
+                }
             }
         }
     }
     end {
     }
 }
-
-

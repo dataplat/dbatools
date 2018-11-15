@@ -19,7 +19,7 @@ function Get-DbaRunspace {
         PS C:\> Get-DbaRunspace -Name 'mymodule.maintenance'
 
         Returns the runspace registered under the name 'mymodule.maintenance'
-#>
+    #>
     [CmdletBinding()]
     param (
         [string]
@@ -28,5 +28,3 @@ function Get-DbaRunspace {
 
     [Sqlcollaborative.Dbatools.Runspace.RunspaceHost]::Runspaces.Values | Where-Object Name -Like $Name
 }
-
-

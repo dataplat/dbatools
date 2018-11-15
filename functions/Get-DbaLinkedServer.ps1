@@ -1,10 +1,10 @@
 function Get-DbaLinkedServer {
     <#
     .SYNOPSIS
-        Gets all linked servers and summary of information from the sql servers listed
+        Gets all linked servers and a summary of information from the linked servers listed.
 
     .DESCRIPTION
-        Retrieves information about each linked server on the instance
+        Retrieves information about each linked server on the instance(s).
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function
@@ -38,45 +38,50 @@ function Get-DbaLinkedServer {
     .EXAMPLE
         PS C:\> Get-DbaLinkedServer -SqlInstance DEV01
 
-        Returns all Linked Servers for the SQL Server instance DEV01
+        Returns all linked servers for the SQL Server instance DEV01
 
-#>
+    .EXAMPLE
+        PS C:\> Get-DbaCmsRegServer -SqlInstance DEV01 -Group SQLDEV | Get-DbaLinkedServer | Out-GridView
+
+        Returns all linked servers for a group of servers from SQL Server Central Management Server (CMS). Send output to GridView.
+    #>
     [CmdletBinding(DefaultParameterSetName = 'Default')]
     param (
         [Parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
-        [DbaInstanceParameter[]]$SqlInstance,
+        [DbaInstance[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [object[]]$LinkedServer,
         [object[]]$ExcludeLinkedServer,
         [Alias('Silent')]
         [switch]$EnableException
     )
-    foreach ($Instance in $SqlInstance) {
-        try {
-            $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
-        } catch {
-            Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
-        }
+    process {
+        foreach ($Instance in $SqlInstance) {
+            try {
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
+            } catch {
+                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+            }
 
-        $lservers = $server.LinkedServers
+            $lservers = $server.LinkedServers
 
-        if ($LinkedServer) {
-            $lservers = $lservers | Where-Object { $_.Name -in $LinkedServer }
-        }
-        if ($ExcludeLinkedServer) {
-            $lservers = $lservers | Where-Object { $_.Name -notin $ExcludeLinkedServer }
-        }
+            if ($LinkedServer) {
+                $lservers = $lservers | Where-Object { $_.Name -in $LinkedServer }
+            }
+            if ($ExcludeLinkedServer) {
+                $lservers = $lservers | Where-Object { $_.Name -notin $ExcludeLinkedServer }
+            }
 
-        foreach ($ls in $lservers) {
-            Add-Member -Force -InputObject $ls -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
-            Add-Member -Force -InputObject $ls -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
-            Add-Member -Force -InputObject $ls -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
-            Add-Member -Force -InputObject $ls -MemberType NoteProperty -Name Impersonate -value $ls.LinkedServerLogins.Impersonate
-            Add-Member -Force -InputObject $ls -MemberType NoteProperty -Name RemoteUser -value $ls.LinkedServerLogins.RemoteUser
+            foreach ($ls in $lservers) {
+                Add-Member -Force -InputObject $ls -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
+                Add-Member -Force -InputObject $ls -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
+                Add-Member -Force -InputObject $ls -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
+                Add-Member -Force -InputObject $ls -MemberType NoteProperty -Name Impersonate -value $ls.LinkedServerLogins.Impersonate
+                Add-Member -Force -InputObject $ls -MemberType NoteProperty -Name RemoteUser -value $ls.LinkedServerLogins.RemoteUser
 
-            Select-DefaultView -InputObject $ls -Property ComputerName, InstanceName, SqlInstance, Name, 'DataSource as RemoteServer', ProductName, Impersonate, RemoteUser, 'DistPublisher as Publisher', Distributor, DateLastModified
+                Select-DefaultView -InputObject $ls -Property ComputerName, InstanceName, SqlInstance, Name, 'DataSource as RemoteServer', ProductName, Impersonate, RemoteUser, 'DistPublisher as Publisher', Distributor, DateLastModified
+            }
         }
     }
 }
-

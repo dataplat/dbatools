@@ -53,7 +53,7 @@ function Export-DbaCredential {
 
         Exports credentials, including passwords, from sql2017 to the file C:\temp\cred.sql
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [Parameter(Mandatory, ValueFromPipeline)]
@@ -138,4 +138,3 @@ function Export-DbaCredential {
         }
     }
 }
-

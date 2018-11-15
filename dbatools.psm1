@@ -369,7 +369,7 @@ $script:renames = @(
     },
     @{
         "AliasName"  = "Find-SqlUnusedIndex"
-        "Definition" = "Find-DbaUnusedIndex"
+        "Definition" = "Find-DbaDbUnusedIndex"
     },
     @{
         "AliasName"  = "Get-SqlMaxMemory"
@@ -921,6 +921,10 @@ $script:renames = @(
     @{
         "AliasName"  = "Get-DbaRoleMember"
         "Definition" = "Get-DbaDbRoleMember"
+    },
+    @{
+        "AliasName"  = "Get-DbaRestoreHistory"
+        "Definition" = "Get-DbaDbRestoreHistory"
     }
 )
 

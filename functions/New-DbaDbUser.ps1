@@ -78,7 +78,7 @@ function New-DbaDbUser {
 
         Copies users from sqlserver1.DB1 to sqlserver2.DB1. Does not copy permissions!
 
-#>
+    #>
     [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = "NoLogin")]
     param(
         [parameter(Mandatory, Position = 1)]
@@ -237,9 +237,8 @@ function New-DbaDbUser {
                 }
 
                 #Display Results
-                Get-DbaDbUser -SqlInstance $server.Name -Database $db.Name | Where-Object name -eq $smoUser.Name
-            } #foreach ($db in $databases)
-        } #foreach ($instance in $SqlInstance)
+                Get-DbaDbUser -SqlInstance $instance -SqlCredential $sqlcredential -Database $db.Name | Where-Object name -eq $smoUser.Name
+            }
+        }
     }
 }
-

@@ -34,7 +34,7 @@ function Get-DbaXEStore {
 
         Returns an XEvent Store.
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
@@ -63,4 +63,3 @@ function Get-DbaXEStore {
         }
     }
 }
-

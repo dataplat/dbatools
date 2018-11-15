@@ -4,10 +4,10 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        $paramCount = 15
+        $paramCount = 16
         $defaultParamCount = 13
         [object[]]$params = (Get-ChildItem function:\Copy-DbaLogin).Parameters.Keys
-        $knownParameters = 'Source','SourceSqlCredential','Destination','DestinationSqlCredential','Login','ExcludeLogin','ExcludeSystemLogin','SyncOnly','SyncSaName','OutFile','InputObject','LoginRenameHashtable','KillActiveConnection','Force','EnableException'
+        $knownParameters = 'Source', 'SourceSqlCredential', 'Destination', 'DestinationSqlCredential', 'Login', 'ExcludeLogin', 'ExcludeSystemLogin', 'SyncOnly', 'SyncSaName', 'OutFile', 'InputObject', 'LoginRenameHashtable', 'KillActiveConnection', 'Force', 'EnableException', 'ExcludePermissionSync'
         It "Should contain our specific parameters" {
             ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
         }
@@ -29,7 +29,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
     }
 
-    $null = Invoke-Sqlcmd2 -ServerInstance $script:instance1 -InputFile $script:appveyorlabrepo\sql2008-scripts\logins.sql
+    $null = Invoke-DbaQuery -SqlInstance $script:instance1 -InputFile $script:appveyorlabrepo\sql2008-scripts\logins.sql
 
     Context "Copy login with the same properties." {
         It "Should copy successfully" {

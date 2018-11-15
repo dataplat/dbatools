@@ -4,10 +4,10 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        $paramCount = 20
+        $paramCount = 21
         $defaultParamCount = 13
         [object[]]$params = (Get-ChildItem function:\Copy-DbaDbTableData).Parameters.Keys
-        $knownParameters = 'SqlInstance','SqlCredential','Destination','DestinationSqlCredential','Database','DestinationDatabase','Table','Query','BatchSize','NotifyAfter','DestinationTable','NoTableLock','CheckConstraints','FireTriggers','KeepIdentity','KeepNulls','Truncate','bulkCopyTimeOut','InputObject','EnableException'
+        $knownParameters = 'SqlInstance', 'SqlCredential', 'Destination', 'DestinationSqlCredential', 'Database', 'DestinationDatabase', 'Table', 'Query', 'BatchSize', 'NotifyAfter', 'DestinationTable', 'NoTableLock', 'CheckConstraints', 'FireTriggers', 'KeepIdentity', 'KeepNulls', 'Truncate', 'bulkCopyTimeOut', 'InputObject', 'EnableException', 'AutoCreateTable'
         It "Should contain our specific parameters" {
             ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
         }
@@ -39,15 +39,20 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             FROM sys.objects")
     }
     AfterAll {
-        $null = $db.Query("DROP TABLE dbo.dbatoolsci_example")
-        $null = $db.Query("DROP TABLE dbo.dbatoolsci_example2")
-        $null = $db.Query("DROP TABLE dbo.dbatoolsci_example3")
-        $null = $db.Query("DROP TABLE dbo.dbatoolsci_example4")
-        $null = $db2.Query("DROP TABLE dbo.dbatoolsci_example3")
-        $null = $db2.Query("DROP TABLE dbo.dbatoolsci_example4")
-        $null = $db2.Query("DROP TABLE dbo.dbatoolsci_example")
+        try {
+            $null = $db.Query("DROP TABLE dbo.dbatoolsci_example")
+            $null = $db.Query("DROP TABLE dbo.dbatoolsci_example2")
+            $null = $db.Query("DROP TABLE dbo.dbatoolsci_example3")
+            $null = $db.Query("DROP TABLE dbo.dbatoolsci_example4")
+            $null = $db2.Query("DROP TABLE dbo.dbatoolsci_example3")
+            $null = $db2.Query("DROP TABLE dbo.dbatoolsci_example4")
+            $null = $db2.Query("DROP TABLE dbo.dbatoolsci_example")
+            $null = $db.Query("DROP TABLE tempdb.dbo.dbatoolsci_willexist")
+        } catch {
+            $null = 1
+        }
     }
-
+    
     It "copies the table data" {
         $null = Copy-DbaDbTableData -SqlInstance $script:instance1 -Database tempdb -Table dbatoolsci_example -DestinationTable dbatoolsci_example2
         $table1count = $db.Query("select id from dbo.dbatoolsci_example")
@@ -94,5 +99,14 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         $result = Copy-DbaDbTableData -SqlInstance $script:instance1 -Database tempdb -Table dbatoolsci_example -Truncate
         $result | Should Be $null
     }
-}
 
+    It "Should warn if the destinaton table doesn't exist" {
+        $result = Copy-DbaDbTableData -SqlInstance $script:instance1 -Database tempdb -Table dbatoolsci_example -DestinationTable dbatoolsci_doesntexist -WarningVariable tablewarning
+        $tablewarning | Should -match Auto
+    }
+
+    It -Skip "automatically creates the table" {
+        $result = Copy-DbaDbTableData -SqlInstance $script:instance1 -Database tempdb -Table dbatoolsci_example -DestinationTable dbatoolsci_willexist -AutoCreateTable
+        $result.DestinationTable | Should -Be 'dbatoolsci_willexist'
+    }
+}

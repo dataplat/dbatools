@@ -12,7 +12,7 @@ function Update-SqlPermission {
             Destination Login
         .PARAMETER EnableException
             Use this switch to disable any kind of verbose messages
-    #>
+       #>
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseSingularNouns", "")]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "")]
     [CmdletBinding(SupportsShouldProcess = $true)]
@@ -337,4 +337,3 @@ function Update-SqlPermission {
         }
     }
 }
-

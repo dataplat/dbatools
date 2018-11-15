@@ -7,7 +7,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         $paramCount = 9
         $defaultParamCount = 13
         [object[]]$params = (Get-ChildItem function:\Copy-DbaLinkedServer).Parameters.Keys
-        $knownParameters = 'Source','SourceSqlCredential','Destination','DestinationSqlCredential','LinkedServer','ExcludeLinkedServer','UpgradeSqlClient','Force','EnableException'
+        $knownParameters = 'Source', 'SourceSqlCredential', 'Destination', 'DestinationSqlCredential', 'LinkedServer', 'ExcludeLinkedServer', 'UpgradeSqlClient', 'Force', 'EnableException'
         It "Should contain our specific parameters" {
             ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
         }
@@ -35,13 +35,12 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         try {
             $server1.Query($dropsql)
             $server2.Query($dropsql)
-        }
-        catch {}
+        } catch {}
     }
 
     Context "Copy linked server with the same properties" {
         It "copies successfully" {
-            $result = Copy-DbaLinkedServer -Source $server1 -Destination $server2 -LinkedServer dbatoolsci_localhost -WarningAction SilentlyContinue
+            $result = Copy-DbaLinkedServer -Source $script:instance2 -Destination $script:instance3 -LinkedServer dbatoolsci_localhost -WarningAction SilentlyContinue
             $result | Select-Object -ExpandProperty Name -Unique | Should Be "dbatoolsci_localhost"
             $result | Select-Object -ExpandProperty Status -Unique | Should Be "Successful"
         }
@@ -56,14 +55,16 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
 
         It "skips existing linked servers" {
-            $results = Copy-DbaLinkedServer -Source $server1 -Destination $server2 -LinkedServer dbatoolsci_localhost -WarningAction SilentlyContinue
+            $results = Copy-DbaLinkedServer -Source $script:instance2 -Destination $script:instance3 -LinkedServer dbatoolsci_localhost -WarningAction SilentlyContinue
             $results.Status | Should Be "Skipped"
         }
 
         It "upgrades SQLNCLI provider based on what is registered" {
-            $result = Copy-DbaLinkedServer -Source $server1 -Destination $server2 -LinkedServer dbatoolsci_localhost2 -UpgradeSqlClient
-            $server1.LinkedServers.Script() -match 'SQLNCLI10' | Should -Not -BeNullOrEmpty
-            $server2.LinkedServers.Script() -match 'SQLNCLI11' | Should -Not -BeNullOrEmpty
+            $result = Copy-DbaLinkedServer -Source $script:instance2 -Destination $script:instance3 -LinkedServer dbatoolsci_localhost2 -UpgradeSqlClient
+            $server1 = Connect-DbaInstance -SqlInstance $script:instance2
+            $server2 = Connect-DbaInstance -SqlInstance $script:instance3
+            $server1.LinkedServers.Script() -match 'SQLNCLI10' | Should -Be $true
+            $server2.LinkedServers.Script() -match 'SQLNCLI11' | Should -Be $true
         }
     }
 }

@@ -50,7 +50,7 @@ function New-DbatoolsSupportPackage {
 
         Creates a large support pack in order to help us troubleshoot stuff.
 
-#>
+    #>
     [CmdletBinding(SupportsShouldProcess)]
     param (
         [string]
@@ -117,7 +117,10 @@ function New-DbatoolsSupportPackage {
 
                 # Cut results to the limit and return them
                 return $lines[$int .. $z]
-            } catch { }
+            } catch {
+                # here to avoid an empty catch
+                $null = 1
+            }
         }
         #endregion Helper functions
     }
@@ -189,4 +192,3 @@ This will make it easier for us to troubleshoot and you won't be sending us the 
         Write-Message -Level InternalComment -Message "Ending"
     }
 }
-

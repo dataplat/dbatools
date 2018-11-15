@@ -11,7 +11,7 @@
     RootModule             = 'dbatools.psm1'
 
     # Version number of this module.
-    ModuleVersion          = '0.9.497'
+    ModuleVersion          = '0.9.512'
 
     # ID used to uniquely identify this module
     GUID                   = '9d139310-ce45-41ce-8e8b-d76335aa1789'
@@ -119,7 +119,7 @@
         'Test-DbaTempdbConfig',
         'Repair-DbaOrphanUser',
         'Remove-DbaOrphanUser',
-        'Find-DbaUnusedIndex',
+        'Find-DbaDbUnusedIndex',
         'Test-DbaDiskAllocation',
         'Test-DbaPowerPlan',
         'Set-DbaPowerPlan',
@@ -130,7 +130,7 @@
         'Test-DbaJobOwner',
         'Set-DbaJobOwner',
         'Test-DbaDbVirtualLogFile',
-        'Get-DbaRestoreHistory',
+        'Get-DbaDbRestoreHistory',
         'Get-DbaTcpPort',
         'Test-DbaDbCompatibility',
         'Test-DbaDbCollation',
@@ -399,8 +399,9 @@
         'Copy-DbaDbTableData',
         'Invoke-DbaQuery',
         'Remove-DbaLogin',
-        'Get-DbaFileStream',
-        'Set-DbaFileStream',
+        'Get-DbaFilestream',
+        'Enable-DbaFilestream',
+        'Disable-DbaFilestream',
         'Get-DbaAgentJobCategory',
         'New-DbaAgentJobCategory',
         'Remove-DbaAgentJobCategory',
@@ -563,7 +564,13 @@
         'Set-DbaAgReplica',
         'Set-DbaAvailabilityGroup',
         'Set-DbaEndpoint',
-        'Suspend-DbaAgDbDataMovement'
+        'Suspend-DbaAgDbDataMovement',
+        'Sync-DbaAvailabilityGroup',
+        'Install-DbaSqlWatch',
+        'Uninstall-DbaSqlWatch',
+        'Get-DbaMemoryCondition',
+        'Remove-DbaDbBackupRestoreHistory',
+        'New-DbaDatabase'
     )
 
     # Cmdlets to export from this module
@@ -746,7 +753,8 @@
     'Invoke-DbaLogShipping',
     'Invoke-DbaLogShippingRecovery',
     'Test-DbaLogShippingStatus',
-    'Get-DbaRoleMember'
+    'Get-DbaRoleMember',
+    'Get-DbaRestoreHistory'
 
     # List of all modules packaged with this module
     ModuleList             = @()

@@ -38,7 +38,7 @@ function Get-DbaResourceGovernor {
 
         Gets the resource governor object on Sql1 and Sql2/sqlexpress instances
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
@@ -67,4 +67,3 @@ function Get-DbaResourceGovernor {
         }
     }
 }
-

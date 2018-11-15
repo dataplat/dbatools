@@ -1,40 +1,60 @@
 function Connect-SqlInstance {
     <#
-        .SYNOPSIS
-            Internal function to establish smo connections.
+    .SYNOPSIS
+        Internal function to establish smo connections.
 
-        .DESCRIPTION
-            Internal function to establish smo connections.
+    .DESCRIPTION
+        Internal function to establish smo connections.
 
-            Can interpret any of the following types of information:
-            - String
-            - Smo Server objects
-            - Smo Linked Server objects
+        Can interpret any of the following types of information:
+        - String
+        - Smo Server objects
+        - Smo Linked Server objects
 
-        .PARAMETER SqlInstance
-            The SQL Server instance to restore to.
+        Related Docs, Pull Requests and Issues:
 
-        .PARAMETER SqlCredential
-            Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted.
+    Connect commands and alt Windows Credential fix
+    https://github.com/sqlcollaborative/dbatools/pull/3835
 
-        .PARAMETER ParameterConnection
-            This call is for dynamic parameters only and is no longer used, actually.
+    Connect-*Instance, fix errors with Windows logins
+    https://github.com/sqlcollaborative/dbatools/pull/4426
 
-        .PARAMETER AzureUnsupported
-            Throw if Azure is detected but not supported
+    Invoke-DbaSqlQuery fails to use proper Windows credentials
+    https://github.com/sqlcollaborative/dbatools/issues/3780
 
-        .PARAMETER RegularUser
-            The connection doesn't require SA privileges.
-            By default, the assumption is that SA is no longer required.
+    Fixed auth issue
+    https://github.com/sqlcollaborative/dbatools/pull/3809
 
-        .PARAMETER MinimumVersion
-           The minimum version that the calling command will support
+    Connecting to an Instance of SQL Server
+    https://docs.microsoft.com/en-us/sql/relational-databases/server-management-objects-smo/create-program/connecting-to-an-instance-of-sql-server
 
-        .EXAMPLE
-            Connect-SqlInstance -SqlInstance sql2014
+    SQL Server Connection Pooling (ADO.NET)
+    https://docs.microsoft.com/en-us/dotnet/framework/data/adonet/sql-server-connection-pooling
 
-            Connect to the Server sql2014 with native credentials.
-    #>
+    .PARAMETER SqlInstance
+        The SQL Server instance to restore to.
+
+    .PARAMETER SqlCredential
+        Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted.
+
+    .PARAMETER ParameterConnection
+        This call is for dynamic parameters only and is no longer used, actually.
+
+    .PARAMETER AzureUnsupported
+        Throw if Azure is detected but not supported
+
+    .PARAMETER RegularUser
+        The connection doesn't require SA privileges.
+        By default, the assumption is that SA is no longer required.
+
+    .PARAMETER MinimumVersion
+       The minimum version that the calling command will support
+
+    .EXAMPLE
+        Connect-SqlInstance -SqlInstance sql2014
+
+        Connect to the Server sql2014 with native credentials.
+       #>
     [CmdletBinding()]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidDefaultValueSwitchParameter", "")]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingEmptyCatchBlock", "")]
@@ -111,13 +131,27 @@ function Connect-SqlInstance {
     #region Input Object was a server object
     if ($ConvertedSqlInstance.InputObject.GetType() -eq [Microsoft.SqlServer.Management.Smo.Server]) {
         $server = $ConvertedSqlInstance.InputObject
+        $authtypeSMO = $SqlCredential.UserName -like '*\*'
         if ($server.ConnectionContext.IsOpen -eq $false) {
             if ($NonPooled) {
+                # When the Connect method is called, the connection is not automatically released.
+                # The Disconnect method must be called explicitly to release the connection to the connection pool.
+                # https://docs.microsoft.com/en-us/sql/relational-databases/server-management-objects-smo/create-program/disconnecting-from-an-instance-of-sql-server
                 $server.ConnectionContext.Connect()
-            } elseif ($authtype -eq "Windows Authentication with Credential") {
+            } elseif ($authtypeSMO -eq "Windows Authentication with Credential") {
                 # Make it connect in a natural way, hard to explain.
-                $null = $server.IsMemberOfWsfcCluster
+                # See https://docs.microsoft.com/en-us/sql/relational-databases/server-management-objects-smo/create-program/connecting-to-an-instance-of-sql-server
+                $null = $server.Information.Version
+
+                # Sometimes, however, the above may not connect as promised. Force it.
+                # See https://github.com/sqlcollaborative/dbatools/pull/4426
+                if ($server.ConnectionContext.IsOpen -eq $false) {
+                    $server.ConnectionContext.Connect()
+                }
             } else {
+                # SqlConnectionObject.Open() enables connection pooling does not support
+                # alternative Windows Credentials and passes default credentials
+                # See https://github.com/sqlcollaborative/dbatools/pull/3809
                 $server.ConnectionContext.SqlConnectionObject.Open()
             }
         }
@@ -138,6 +172,7 @@ function Connect-SqlInstance {
             }
         }
 
+        # Make ComputerName easily available in the server object
         if (-not $server.ComputerName) {
             $parsedcomputername = $server.NetName
             if (-not $parsedcomputername) {
@@ -158,15 +193,20 @@ function Connect-SqlInstance {
     try {
         $server.ConnectionContext.ConnectTimeout = [Sqlcollaborative.Dbatools.Connection.ConnectionHost]::SqlConnectionTimeout
 
-        if ($null -ne $SqlCredential.Username) {
-            $username = ($SqlCredential.Username).TrimStart("\")
+        if ($null -ne $SqlCredential.UserName) {
+            $username = ($SqlCredential.UserName).TrimStart("\")
 
             if ($username -like "*\*") {
-                $username = $username.Split("\")[1]
+                $domain, $login = $username.Split("\")
                 $authtype = "Windows Authentication with Credential"
+                if ($domain) {
+                    $formatteduser = "$login@$domain"
+                } else {
+                    $formatteduser = $username.Split("\")[1]
+                }
                 $server.ConnectionContext.LoginSecure = $true
                 $server.ConnectionContext.ConnectAsUser = $true
-                $server.ConnectionContext.ConnectAsUserName = $username
+                $server.ConnectionContext.ConnectAsUserName = $formatteduser
                 $server.ConnectionContext.ConnectAsUserPassword = ($SqlCredential).GetNetworkCredential().Password
             } else {
                 $authtype = "SQL Authentication"
@@ -179,16 +219,30 @@ function Connect-SqlInstance {
 
     try {
         if ($NonPooled) {
+            # When the Connect method is called, the connection is not automatically released.
+            # The Disconnect method must be called explicitly to release the connection to the connection pool.
+            # https://docs.microsoft.com/en-us/sql/relational-databases/server-management-objects-smo/create-program/disconnecting-from-an-instance-of-sql-server
             $server.ConnectionContext.Connect()
         } elseif ($authtype -eq "Windows Authentication with Credential") {
             # Make it connect in a natural way, hard to explain.
-            $null = $server.IsMemberOfWsfcCluster
+            # See https://docs.microsoft.com/en-us/sql/relational-databases/server-management-objects-smo/create-program/connecting-to-an-instance-of-sql-server
+            $null = $server.Information.Version
+
+            # Sometimes, however, the above may not connect as promised. Force it.
+            # See https://github.com/sqlcollaborative/dbatools/pull/4426
+            if ($server.ConnectionContext.IsOpen -eq $false) {
+                $server.ConnectionContext.Connect()
+            }
         } else {
+            # SqlConnectionObject.Open() enables connection pooling does not support
+            # alternative Windows Credentials and passes default credentials
+            # See https://github.com/sqlcollaborative/dbatools/pull/3809
             $server.ConnectionContext.SqlConnectionObject.Open()
         }
     } catch {
         $message = $_.Exception.InnerException.InnerException
         if ($message) {
+            # This is messy but it works to provide users with straightforward & detailed errors
             $message = $message.ToString()
             $message = ($message -Split '-->')[0]
             $message = ($message -Split 'at System.Data.SqlClient')[0]
@@ -294,4 +348,3 @@ function Connect-SqlInstance {
     return $server
     #endregion Input Object was anything else
 }
-

@@ -18,7 +18,7 @@ function Get-SqlDefaultSpConfigure {
         Get-SqlDefaultSpConfigure -SqlVersion 11
         Returns a list of sp_configure (sys.configurations) items for SQL 2012.
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [Parameter(Mandatory)]
@@ -560,5 +560,3 @@ function Get-SqlDefaultSpConfigure {
     }
 
 }
-
-

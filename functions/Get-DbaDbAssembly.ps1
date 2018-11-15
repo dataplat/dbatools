@@ -40,7 +40,7 @@ function Get-DbaDbAssembly {
 
         Returns all Database Assembly for the local and sql2016 SQL Server instances
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Position = 0, Mandatory, ValueFromPipeline)]
@@ -78,5 +78,3 @@ function Get-DbaDbAssembly {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-DbaDatabaseAssembly
     }
 }
-
-

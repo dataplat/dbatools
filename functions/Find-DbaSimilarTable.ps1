@@ -83,7 +83,7 @@ function Find-DbaSimilarTable {
 
         Searches AdventureWorks database and lists all tables/views with its corresponding matching tables/views with match percent greater than or equal to 60
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Position = 0, Mandatory, ValueFromPipeline)]
@@ -280,4 +280,3 @@ function Find-DbaSimilarTable {
         Write-Message -Level Verbose -Message "Found $everyServerVwCount total tables/views"
     }
 }
-

@@ -1,5 +1,4 @@
 #ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
-
 function Read-DbaBackupHeader {
     <#
     .SYNOPSIS
@@ -84,9 +83,8 @@ function Read-DbaBackupHeader {
 
         Gets the backup header information from the SQL Server backup file stored at https://dbatoolsaz.blob.core.windows.net/azbackups/restoretime/restoretime_201705131850.bak on Azure
 
-#>
-    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingPlainTextForPassword", '')]
-    <# AzureCredential is utilized in this command is not a formal Credential object. #>
+       #>
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingPlainTextForPassword", 'AzureCredential', Justification = "For Parameter AzureCredential")]
     [CmdletBinding()]
     param (
         [parameter(Mandatory)]
@@ -190,6 +188,7 @@ function Read-DbaBackupHeader {
 
         #Setup initial session state
         $InitialSessionState = [System.Management.Automation.Runspaces.InitialSessionState]::CreateDefault()
+        $defaultrunspace = [System.Management.Automation.Runspaces.Runspace]::DefaultRunspace
         #Create Runspace pool, min - 1, max - 10 sessions: there is internal SQL Server queue for the restore operations. 10 threads seem to perform best
         $runspacePool = [runspacefactory]::CreateRunspacePool(1, 10, $InitialSessionState, $Host)
         $runspacePool.Open()
@@ -277,6 +276,6 @@ function Read-DbaBackupHeader {
         }
         #Close the runspace pool
         $runspacePool.Close()
+        [System.Management.Automation.Runspaces.Runspace]::DefaultRunspace = $defaultrunspace
     }
 }
-

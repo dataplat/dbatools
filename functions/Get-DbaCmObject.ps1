@@ -11,7 +11,7 @@ function Get-DbaCmObject {
         - Wmi
         - Wmi over PowerShell Remoting
         It remembers channels that didn't work and will henceforth avoid them. It remembers invalid credentials and will avoid reusing them.
-        Much of its behavior can be configured using Test-DbaWmConnection.
+        Much of its behavior can be configured using Test-DbaCmConnection.
 
     .PARAMETER ClassName
         The name of the class to retrieve.
@@ -67,8 +67,9 @@ function Get-DbaCmObject {
         Retrieves the common operating system information from the server sql2014.
         It will use the Credentials stored in $cred to connect, unless they are known to not work, in which case they will default to windows credentials (unless another default has been set).
 
-#>
+    #>
     [CmdletBinding(DefaultParameterSetName = "Class")]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingWMICmdlet", "", Justification = "Using Get-WmiObject is used as a fallback for gathering information")]
     param (
         [Parameter(Mandatory, Position = 0, ParameterSetName = "Class")]
         [Alias('Class')]
@@ -370,4 +371,3 @@ function Get-DbaCmObject {
         }
     }
 }
-

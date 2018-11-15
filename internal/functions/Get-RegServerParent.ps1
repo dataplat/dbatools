@@ -11,11 +11,10 @@ function Get-RegServerParent {
             }
         }
         until ($null -ne $InputObject.ServerConnection -or $parentcount++ -gt 10)
-        
-        
+
+
         if ($parentcount -lt 10) {
             $InputObject
         }
     }
 }
-

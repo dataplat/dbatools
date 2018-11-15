@@ -59,7 +59,7 @@ function New-DbaClientAlias {
 
         Creates a new NamedPipes alias on the local workstation called sp, which points sqlcluster\sharepoint
 
-#>
+    #>
     [CmdletBinding(SupportsShouldProcess)]
     param (
         [DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,
@@ -145,4 +145,3 @@ function New-DbaClientAlias {
         Get-DbaClientAlias -ComputerName $computer -Credential $Credential | Where-Object AliasName -eq $Alias
     }
 }
-

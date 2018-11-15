@@ -69,7 +69,7 @@ function New-DbaXESmartReplay {
 
         Replays events from the 'Profiler Standard' session on sql2016 to sql2017's planning database. Does not run as a job so you can see the raw output.
 
-#>
+    #>
     [CmdletBinding(SupportsShouldProcess)]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
@@ -127,4 +127,3 @@ function New-DbaXESmartReplay {
         }
     }
 }
-

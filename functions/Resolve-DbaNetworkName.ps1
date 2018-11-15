@@ -82,7 +82,7 @@ function Resolve-DbaNetworkName {
 
         Returns a custom object displaying InputName, ComputerName, IPAddress, DNSHostName, Domain, FQDN for all SQL Servers returned by Get-DbaCmsRegServer
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(ValueFromPipeline)]
@@ -267,4 +267,3 @@ function Resolve-DbaNetworkName {
         }
     }
 }
-

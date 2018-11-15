@@ -7,7 +7,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         $paramCount = 4
         $defaultParamCount = 11
         [object[]]$params = (Get-ChildItem function:\Get-DbaSuspectPage).Parameters.Keys
-        $knownParameters = 'SqlInstance','Database','SqlCredential','EnableException'
+        $knownParameters = 'SqlInstance', 'Database', 'SqlCredential', 'EnableException'
         It "Should contain our specific parameters" {
             ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
         }
@@ -41,16 +41,14 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $null = $db.Query("select top 100 from example")
             $null = $server.Query("ALTER DATABASE $dbname SET PAGE_VERIFY CHECKSUM  WITH NO_WAIT")
             $null = Start-DbccCheck -Server $Server -dbname $dbname -WarningAction SilentlyContinue
-        }
-        catch {} # should fail
+        } catch {} # should fail
 
         try {
             $null = Invoke-DbaDbCorruption -SqlInstance $script:instance2 -Database $dbname -Confirm:$false
             $null = $db.Query("select top 100 from example")
             $null = $server.Query("ALTER DATABASE $dbname SET PAGE_VERIFY CHECKSUM  WITH NO_WAIT")
             $null = Start-DbccCheck -Server $Server -dbname $dbname -WarningAction SilentlyContinue
-        }
-        catch { } # should fail
+        } catch { } # should fail
 
         $results = Get-DbaSuspectPage -SqlInstance $server
         It "function should find at least one record in suspect_pages table" {

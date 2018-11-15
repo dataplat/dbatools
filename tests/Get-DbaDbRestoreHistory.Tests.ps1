@@ -6,7 +6,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
         $paramCount = 8
         $commonParamCount = ([System.Management.Automation.PSCmdlet]::CommonParameters).Count
-        [object[]]$params = (Get-ChildItem function:\Get-DbaRestoreHistory).Parameters.Keys
+        [object[]]$params = (Get-ChildItem function:\Get-DbaDbRestoreHistory).Parameters.Keys
         $knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'Since', 'Last', 'Force', 'EnableException'
         It "Should contain our specific parameters" {
             ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
@@ -42,7 +42,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
     }
     Context "Get last restore history for single database" {
-        $results = @(Get-DbaRestoreHistory -SqlInstance $script:instance2 -Database $dbname2 -Last)
+        $results = @(Get-DbaDbRestoreHistory -SqlInstance $script:instance2 -Database $dbname2 -Last)
         It "Results holds 1 object" {
             $results.count | Should -Be 1
         }
@@ -53,7 +53,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
     }
     Context "Get last restore history for multiple database" {
-        $results = @(Get-DbaRestoreHistory -SqlInstance $script:instance2 -Database $dbname1, $dbname2 -Last)
+        $results = @(Get-DbaDbRestoreHistory -SqlInstance $script:instance2 -Database $dbname1, $dbname2 -Last)
         It "Results holds 2 objects" {
             $results.count | Should -Be 2
         }
@@ -67,7 +67,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
     }
     Context "Get complete restore history for multiple database" {
-        $results = @(Get-DbaRestoreHistory -SqlInstance $script:instance2 -Database $dbname1, $dbname2)
+        $results = @(Get-DbaDbRestoreHistory -SqlInstance $script:instance2 -Database $dbname1, $dbname2)
         It "Results holds 3 objects" {
             $results.Count | Should -Be 3
         }
@@ -78,7 +78,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     }
     Context "return object properties" {
         It "has the correct properties" {
-            $results = Get-DbaRestoreHistory -SqlInstance $script:instance2 -Database $dbname1, $dbname2
+            $results = Get-DbaDbRestoreHistory -SqlInstance $script:instance2 -Database $dbname1, $dbname2
             $result = $results[0]
             $ExpectedProps = 'ComputerName,InstanceName,SqlInstance,Database,Username,RestoreType,Date,From,To,first_lsn,last_lsn,checkpoint_lsn,database_backup_lsn,backup_finish_date,BackupFinishDate,RowError,RowState,Table,ItemArray,HasErrors'.Split(',')
             ($result.PsObject.Properties.Name | Sort-Object) | Should Be ($ExpectedProps | Sort-Object)

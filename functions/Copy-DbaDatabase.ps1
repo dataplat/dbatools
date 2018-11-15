@@ -162,8 +162,9 @@ function Copy-DbaDatabase {
 
         It also includes the support databases (ReportServer, ReportServerTempDb, distribution).
 
-#>
+    #>
     [CmdletBinding(DefaultParameterSetName = "DbBackup", SupportsShouldProcess = $true)]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseOutputTypeCorrectly", "", Justification = "PSSA Rule Ignored by BOH")]
     param (
         [parameter(Mandatory = $false)]
         [DbaInstanceParameter]$Source,
@@ -354,6 +355,8 @@ function Copy-DbaDatabase {
                         $allrows = $fttable.Tables[0].rows
                     } catch {
                         # Nothing, it's just not enabled
+                        # here to avoid an empty catch
+                        $null = 1
                     }
 
                     foreach ($ftc in $allrows) {
@@ -692,10 +695,9 @@ function Copy-DbaDatabase {
         $sourceNetBios = $sourceServer.ComputerName
 
         Write-Message -Level Verbose -Message "Ensuring user databases exist (counting databases)."
-        $dbTotal = $sourceServer.Databases.Count
 
-        if ($dbTotal -le 4) {
-            Stop-Function -Message "No user databases to migrate. Quitting."
+        if ($sourceserver.Databases.IsSystemObject -notcontains $false) {
+            Stop-Function -Message "No user databases to migrate"
             return
         }
 
@@ -1381,4 +1383,3 @@ function Copy-DbaDatabase {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-SqlDatabase
     }
 }
-

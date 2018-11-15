@@ -47,7 +47,7 @@ function Restore-DbaBackupFromDirectory {
 
         All user databases contained within \\fileserver\share\sqlbackups\SQLSERVERA will be restored to sqlcluster, down the most recent full/differential/logs.
 
-#>
+    #>
     #Requires -Version 3.0
     [CmdletBinding()]
     param (
@@ -65,4 +65,3 @@ function Restore-DbaBackupFromDirectory {
 
     Write-Message -Level Warning -Message "This command is no longer supported. Please use Get-ChildItem | Restore-DbaDatabase instead"
 }
-

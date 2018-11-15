@@ -50,7 +50,7 @@ function Get-DbaDbFile {
 
         Will return an object containing all file groups and their contained files for the Impromptu and Trading databases on the sql2016 SQL Server instance
 
-#>
+    #>
     [CmdletBinding(DefaultParameterSetName = "Default")]
     param (
         [parameter(ParameterSetName = "Pipe", Mandatory, ValueFromPipeline)]
@@ -201,12 +201,16 @@ INNER JOIN sys.database_files AS df
 ON fd.Drive = LEFT(df.physical_name, 1);
 '@
                         # if the server has one drive xp_fixeddrives returns one row, but we still need $disks to be an array.
-                        $disks = @($server.Query($query2, $db.Name))
-                        $MbFreeColName = $disks[0].psobject.Properties.Name
-                        # get the free MB value for the drive in question
-                        $free = $disks | Where-Object { $_.drive -eq $result.PhysicalName.Substring(0, 1) } | Select-Object $MbFreeColName
+                        if ($server.VersionMajor -gt 8) {
+                            $disks = @($server.Query($query2, $db.Name))
+                            $MbFreeColName = $disks[0].psobject.Properties.Name
+                            # get the free MB value for the drive in question
+                            $free = $disks | Where-Object {
+                                $_.drive -eq $result.PhysicalName.Substring(0, 1)
+                            } | Select-Object $MbFreeColName
 
-                        $VolumeFreeSpace = [dbasize](($free.MB_Free) * 1024 * 1024)
+                            $VolumeFreeSpace = [dbasize](($free.MB_Free) * 1024 * 1024)
+                        }
                     }
                     if ($result.GrowthType -eq "Percent") {
                         $nextgrowtheventadd = [dbasize]($result.size * ($result.Growth * 0.01) * 1024)
@@ -257,4 +261,3 @@ ON fd.Drive = LEFT(df.physical_name, 1);
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-DbaDatabaseFIle
     }
 }
-

@@ -118,7 +118,7 @@ function Invoke-DbaDbShrink {
 
         Shrinks all databases on SQL2012 (not ideal for production)
 
-#>
+    #>
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'Low')]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
@@ -325,4 +325,3 @@ function Invoke-DbaDbShrink {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Invoke-DbaDatabaseShrink
     }
 }
-

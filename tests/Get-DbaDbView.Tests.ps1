@@ -8,7 +8,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         $paramCount = 6
         $defaultParamCount = 11
         [object[]]$params = (Get-ChildItem function:\Get-DbaDbView).Parameters.Keys
-        $knownParameters = 'SqlInstance','SqlCredential','Database','ExcludeDatabase','ExcludeSystemView','EnableException'
+        $knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'ExcludeSystemView', 'EnableException'
         it "Should contain our specific parameters" {
             ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
         }
@@ -45,8 +45,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
         It "Should exclude system views" {
             $results = Get-DbaDbView -SqlInstance $script:instance2 -ExcludeSystemView | Select-Object Name, IsSystemObject
-             $results.IsSystemObject | Should Not Contain $true
+            $results.IsSystemObject | Should Not Contain $true
         }
     }
 }
-

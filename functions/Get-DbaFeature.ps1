@@ -59,7 +59,7 @@ function Get-DbaFeature {
 
         Gets all SQL Server features for all instances on sql2017 using the ad\sqladmin credential (which has access to the Windows Server).
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(ValueFromPipeline)]
@@ -118,4 +118,3 @@ function Get-DbaFeature {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-DbaSqlFeature
     }
 }
-

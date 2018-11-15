@@ -19,9 +19,6 @@ function Remove-DbaCmsRegServerGroup {
     .PARAMETER InputObject
         Allows results from Get-DbaCmsRegServerGroup to be piped in
 
-    .PARAMETER Id
-        Get group by Id(s)
-
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
 
@@ -56,7 +53,7 @@ function Remove-DbaCmsRegServerGroup {
 
         Removes the Development subgroup within the HR group on sql2012 and turns off all prompting
 
-#>
+    #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
     param (
         [Alias("ServerInstance", "SqlServer")]
@@ -101,4 +98,3 @@ function Remove-DbaCmsRegServerGroup {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Remove-DbaRegisteredServerGroup
     }
 }
-

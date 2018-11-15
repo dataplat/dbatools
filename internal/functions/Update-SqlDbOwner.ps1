@@ -2,7 +2,7 @@ function Update-SqlDbOwner {
     <#
     .SYNOPSIS
         Internal function. Updates specified database dbowner.
-#>
+    #>
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "")]
     [CmdletBinding()]
     param (
@@ -18,16 +18,7 @@ function Update-SqlDbOwner {
     )
 
     $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
-    try {
-        if ($Destination -IsNot [Microsoft.SqlServer.Management.Smo.SqlSmoObject]) {
-            $destServer = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $SqlCredential
-        } else {
-            $destServer = $Destination
-        }
-    } catch {
-        Write-Message -Level Warning "Cannot connect to $SqlInstance"
-        break
-    }
+    $destServer = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $SqlCredential
 
     $source = $sourceServer.DomainInstanceName
     $destination = $destServer.DomainInstanceName
@@ -71,9 +62,7 @@ function Update-SqlDbOwner {
                 throw "Failed to update $DbName owner to $dbowner."
             }
         } else {
-            Write-Message -Level Output -Message "Proper owner already set on $DbName"
+            Write-Message -Level Verbose -Message "Proper owner already set on $DbName"
         }
     }
 }
-
-

@@ -24,7 +24,7 @@ Describe "$CommandName Unittests" -Tag 'UnitTests' {
             # Thanks @Fred
             $obj = [PSCustomObject]@{
                 Name                 = 'BASEName'
-                ComputerName              = 'BASEComputerName'
+                ComputerName         = 'BASEComputerName'
                 InstanceName         = 'BASEInstanceName'
                 DomainInstanceName   = 'BASEDomainInstanceName'
                 InstallDataDirectory = 'BASEInstallDataDirectory'
@@ -401,4 +401,3 @@ Describe "$CommandName Unittests" -Tag 'UnitTests' {
         }
     }
 }
-

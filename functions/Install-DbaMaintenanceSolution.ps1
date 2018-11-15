@@ -102,7 +102,7 @@ function Install-DbaMaintenanceSolution {
         - 'DatabaseIntegrityCheck - USER_DATABASES'
         - 'DatabaseBackup - USER_DATABASES - DIFF'
 
-#>
+    #>
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "High")]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseSingularNouns", "", Justification = "Internal functions are ignored")]
     param (
@@ -373,6 +373,8 @@ function Install-DbaMaintenanceSolution {
         try {
             $server.ConnectionContext.Disconnect()
         } catch {
+            # here to avoid an empty catch
+            $null = 1
         }
 
         Write-Message -Level Output -Message "Installation complete."

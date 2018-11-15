@@ -47,7 +47,7 @@ function Get-DbaPbmCategory {
 
         Uses a credential $cred to connect and return all policy categories from the sql2016 PBM server
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [Alias("ServerInstance", "SqlServer")]
@@ -85,4 +85,3 @@ function Get-DbaPbmCategory {
         }
     }
 }
-

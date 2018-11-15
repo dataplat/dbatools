@@ -53,7 +53,7 @@ function Remove-DbaTrace {
 
         Stops and removes selected traces on sql2008
 
-#>
+    #>
     [CmdletBinding(SupportsShouldProcess)]
     param (
         [Alias("ServerInstance", "SqlServer")]
@@ -107,4 +107,3 @@ function Remove-DbaTrace {
         }
     }
 }
-

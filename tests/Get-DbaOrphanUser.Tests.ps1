@@ -61,5 +61,3 @@ CREATE USER [dbatoolsci_orphan3] FROM LOGIN [dbatoolsci_orphan3];
         ($result.PsObject.Properties.Name | Sort-Object) | Should Be ($ExpectedProps | Sort-Object)
     }
 }
-
-

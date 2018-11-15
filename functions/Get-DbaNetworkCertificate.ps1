@@ -35,7 +35,7 @@ function Get-DbaNetworkCertificate {
 
         Gets computer certificates on sql2016 that are being used for SQL Server network encryption
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(ValueFromPipeline)]
@@ -96,6 +96,8 @@ function Get-DbaNetworkCertificate {
                         $cert = Get-ChildItem Cert:\LocalMachine -Recurse -ErrorAction Stop | Where-Object Thumbprint -eq $Thumbprint
                     } catch {
                         # Don't care - sometimes there's errors that are thrown for apparent good reason
+                        # here to avoid an empty catch
+                        $null = 1
                     }
 
                     if (!$cert) { continue }
@@ -126,4 +128,3 @@ function Get-DbaNetworkCertificate {
         }
     }
 }
-
