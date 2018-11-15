@@ -349,7 +349,7 @@ $script:renames = @(
     },
     @{
         "AliasName"  = "Expand-SqlTLogResponsibly"
-        "Definition" = "Expand-DbaTLogResponsibly"
+        "Definition" = "Expand-DbaDbLogFile"
     },
     @{
         "AliasName"  = "Export-SqlLogin"

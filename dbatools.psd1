@@ -106,7 +106,7 @@
         'Export-DbaLogin',
         'Reset-DbaAdmin',
         'Watch-DbaDbLogin',
-        'Expand-DbaTLogResponsibly',
+        'Expand-DbaDbLogFile',
         'Test-DbaMigrationConstraint',
         'Get-DbaCmsRegServer',
         'Test-DbaNetworkLatency',
