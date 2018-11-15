@@ -35,7 +35,7 @@ $TestsRunGroups = @{
         'Export-DbaDacPackage',
         'Set-DbaAgReplica',
         'Test-DbaOptimizeForAdHoc',
-        'Test-DbaRecoveryModel',
+        'Test-DbaDbRecoveryModel',
         'Set-DbaDbState',
         'Reset-DbaAdmin',
         'Test-DbaDeprecatedFeature',
