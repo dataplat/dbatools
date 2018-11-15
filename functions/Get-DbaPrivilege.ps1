@@ -45,7 +45,7 @@ function Get-DbaPrivilege {
 
         Gets the local privileges on computers sql1 and sql2, and shows them in a grid view.
 
-          #>
+             #>
     [CmdletBinding()]
     param (
         [parameter(ValueFromPipeline)]
@@ -149,8 +149,8 @@ function Get-DbaPrivilege {
                 $users = @() + $BL + $ifi + $lpim | Select-Object -Unique
                 $users | ForEach-Object {
                     [PSCustomObject]@{
-                        ComputerName                       = $computer
-                        User                               = $_
+                        ComputerName              = $computer
+                        User                      = $_
                         LogonAsBatch              = $BL -contains $_
                         InstantFileInitialization = $ifi -contains $_
                         LockPagesInMemory         = $lpim -contains $_
