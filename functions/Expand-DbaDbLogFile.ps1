@@ -513,5 +513,6 @@ function Expand-DbaDbLogFile {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -Parameter TargetLogSizeMB
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -Parameter IncrementSizeMB
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -Parameter ShrinkSizeMB
+        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Expand-DbaTLogResponsibly
     }
 }

@@ -159,4 +159,7 @@ function Test-DbaDbRecoveryModel {
             }
         }
     }
+    end {
+        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Test-DbaRecoveryModel
+    }
 }
