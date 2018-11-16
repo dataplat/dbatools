@@ -861,7 +861,7 @@ function Get-DbaHelpIndex {
                                 ci.FullObjectName
                     ), AllResults AS
                         (		 SELECT   c.FullObjectName ,
-                                IndexType ,
+                                ISNULL(IndexType, 'STATISTICS') AS IndexType ,
                                 ISNULL(IndexName, '') AS IndexName ,
                                 ISNULL(KeyColumns, '') AS KeyColumns ,
                                 ISNULL(IncludeColumns, '') AS IncludeColumns ,
@@ -887,7 +887,7 @@ function Get-DbaHelpIndex {
                                                             AND si.stats_id = c.Index_Id
                         UNION
                     SELECT   QUOTENAME(sch.name) + '.' + QUOTENAME(tbl.name) AS FullObjectName ,
-                                '' ,
+                                'STATISTICS' ,
                                 stats_name ,
                                 StatsColumns ,
                                 '' ,
@@ -920,7 +920,7 @@ function Get-DbaHelpIndex {
             INSERT INTO @AllResults
             SELECT  row_number() OVER (ORDER BY FullObjectName) AS RowNum ,
                     FullObjectName ,
-                    IndexType ,
+                    ISNULL(IndexType, 'STATISTICS') AS IndexType ,
                     IndexName ,
                     KeyColumns ,
                     ISNULL(IncludeColumns, '') AS IncludeColumns ,
