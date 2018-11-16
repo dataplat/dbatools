@@ -73,14 +73,14 @@ function New-DbaAvailabilityGroup {
     .PARAMETER Database
         The database or databases to add.
 
-    .PARAMETER NetworkShare
+    .PARAMETER SharedPath
         The network share where the backups will be backed up and restored from.
 
         Each SQL Server service account must have access to this share.
 
         NOTE: If a backup / restore is performed, the backups will be left in tact on the network share.
 
-    .PARAMETER UseLastBackups
+    .PARAMETER UseLastBackup
         Use the last full backup of database.
 
     .PARAMETER Force
@@ -90,7 +90,7 @@ function New-DbaAvailabilityGroup {
         Sets the availability mode of the availability group replica. Options are: AsynchronousCommit and SynchronousCommit. SynchronousCommit is default.
 
     .PARAMETER FailoverMode
-        Sets the failover mode of the availability group replica. Options are Automatic and Manual. Automatic is default.
+        Sets the failover mode of the availability group replica. Options are Automatic, Manual and External. Automatic is default.
 
     .PARAMETER BackupPriority
         Sets the backup priority availability group replica. Default is 50.
@@ -177,10 +177,10 @@ function New-DbaAvailabilityGroup {
     .EXAMPLE
         PS C:\> New-DbaAvailabilityGroup -Primary sql2017 -Name SharePoint -ClusterType None -FailoverMode Manual
 
-        Creates a new availability group on sql2017 named SharePoint with a cluster type of non and a failover mode of manual
+        Creates a new availability group on sql2017 named SharePoint with a cluster type of none and a failover mode of manual
 
     .EXAMPLE
-        PS C:\> New-DbaAvailabilityGroup -Primary sql1 -Secondary sql2 -Database pubs -ClusterType None -SeedingMode Automatic -FailoverMode Manual
+        PS C:\> New-DbaAvailabilityGroup -Primary sql1 -Secondary sql2 -Name ag1 -Database pubs -ClusterType None -SeedingMode Automatic -FailoverMode Manual
 
         Creates a new availability group with a primary replica on sql1 and a secondary on sql2. Automatically adds the database pubs.
 
@@ -191,6 +191,7 @@ function New-DbaAvailabilityGroup {
                     >> PrimarySqlCredential = $cred
                     >> Secondary = "sql2"
                     >> SecondarySqlCredential = $cred
+                    >> Name = "test-ag"
                     >> Database = "pubs"
                     >> ClusterType = "None"
                     >> SeedingMode = "Automatic"
@@ -226,8 +227,8 @@ function New-DbaAvailabilityGroup {
         # database
 
         [string[]]$Database,
-        [string]$NetworkShare,
-        [switch]$UseLastBackups,
+        [string]$SharedPath,
+        [switch]$UseLastBackup,
         [switch]$Force,
         # replica
 
@@ -256,8 +257,8 @@ function New-DbaAvailabilityGroup {
     process {
         $stepCounter = $wait = 0
 
-        if ($Force -and $Secondary -and (-not $NetworkShare -and -not $UseLastBackups) -and ($SeedingMode -ne 'Automatic')) {
-            Stop-Function -Message "NetworkShare or UseLastBackups is required when Force is used"
+        if ($Force -and $Secondary -and (-not $SharedPath -and -not $UseLastBackup) -and ($SeedingMode -ne 'Automatic')) {
+            Stop-Function -Message "SharedPath or UseLastBackup is required when Force is used"
             return
         }
 
@@ -294,15 +295,15 @@ function New-DbaAvailabilityGroup {
             }
         }
 
-        if (($NetworkShare)) {
-            if (-not (Test-DbaPath -SqlInstance $Primary -SqlCredential $PrimarySqlCredential -Path $NetworkShare)) {
-                Stop-Function -Continue -Message "Cannot access $NetworkShare from $Primary"
+        if (($SharedPath)) {
+            if (-not (Test-DbaPath -SqlInstance $Primary -SqlCredential $PrimarySqlCredential -Path $SharedPath)) {
+                Stop-Function -Continue -Message "Cannot access $SharedPath from $Primary"
                 return
             }
         }
 
-        if ($Database -and -not $UseLastBackups -and -not $NetworkShare -and $Secondary -and $SeedingMode -ne 'Automatic') {
-            Stop-Function -Continue -Message "You must specify a NetworkShare when adding databases to a manually seeded availability group"
+        if ($Database -and -not $UseLastBackup -and -not $SharedPath -and $Secondary -and $SeedingMode -ne 'Automatic') {
+            Stop-Function -Continue -Message "You must specify a SharedPath when adding databases to a manually seeded availability group"
             return
         }
 
@@ -366,8 +367,8 @@ function New-DbaAvailabilityGroup {
             }
 
             if ($primarydb.RecoveryModel -ne "Full") {
-                if ((Test-Bound -ParameterName UseLastBackups)) {
-                    Stop-Function -Message "$dbName not set to full recovery. UseLastBackups cannot be used."
+                if ((Test-Bound -ParameterName UseLastBackup)) {
+                    Stop-Function -Message "$dbName not set to full recovery. UseLastBackup cannot be used."
                     return
                 } else {
                     Set-DbaDbRecoveryModel -SqlInstance $Primary -SqlCredential $PrimarySqlCredential -Database $primarydb.Name -RecoveryModel Full
@@ -496,14 +497,14 @@ function New-DbaAvailabilityGroup {
                     if ((-not $seconddb -or $Force) -and $SeedingMode -ne 'Automatic') {
                         try {
                             if (-not $allbackups[$db]) {
-                                if ($UseLastBackups) {
+                                if ($UseLastBackup) {
                                     $allbackups[$db] = Get-DbaBackupHistory -SqlInstance $primarydb.Parent -Database $primarydb.Name -IncludeCopyOnly -Last -EnableException
                                 } else {
-                                    $fullbackup = $primarydb | Backup-DbaDatabase -BackupDirectory $NetworkShare -Type Full -EnableException
-                                    $logbackup = $primarydb | Backup-DbaDatabase -BackupDirectory $NetworkShare -Type Log -EnableException
+                                    $fullbackup = $primarydb | Backup-DbaDatabase -BackupDirectory $SharedPath -Type Full -EnableException
+                                    $logbackup = $primarydb | Backup-DbaDatabase -BackupDirectory $SharedPath -Type Log -EnableException
                                     $allbackups[$db] = $fullbackup, $logbackup
                                 }
-                                Write-Message -Level Verbose -Message "Backups still exist on $NetworkShare"
+                                Write-Message -Level Verbose -Message "Backups still exist on $SharedPath"
                             }
                             if ($Pscmdlet.ShouldProcess("$Secondary", "restoring full and log backups of $primarydb from $Primary")) {
                                 # keep going to ensure output is shown even if dbs aren't added well.

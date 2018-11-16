@@ -118,34 +118,16 @@ function Set-DbaAgentJobCategory {
                             $currentCategory.Rename($NewName[$Category.IndexOf($cat)])
                             $newCategoryName = $currentCategory.Name
                         }
-
-                        # Set up the custom object
-                        $null = $collection.Add([PSCustomObject]@{
-                                ComputerName    = $server.ComputerName
-                                InstanceName    = $server.ServiceName
-                                SqlInstance     = $server.DomainInstanceName
-                                CategoryName    = $originalCategoryName
-                                NewCategoryName = $newCategoryName
-                            })
-
+                        
+                        Get-DbaAgentJobCategory -SqlInstance $server -Category $newCategoryName
                     } catch {
                         Stop-Function -Message "Something went wrong changing the job category $cat on $instance" -Target $cat -Continue -ErrorRecord $_
                     }
-
-                } # if should process
-
-            } # for each category
-
-        } # foreach instance
-
-        # Return result
-        return $collection
-
-    } # end process
-
+                }
+            }
+        }
+    }
     end {
-        if (Test-FunctionInterrupt) { return }
         Write-Message -Message "Finished changing job category." -Level Verbose
     }
-
 }
