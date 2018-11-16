@@ -114,7 +114,7 @@ function Set-DbaSpConfigure {
                         InstanceName = $server.ServiceName
                         SqlInstance  = $server.DomainInstanceName
                         ConfigName   = $configuration
-                        OldValue     = $currentRunValue
+                        PreviousValue     = $currentRunValue
                         NewValue     = $value
                     }
 

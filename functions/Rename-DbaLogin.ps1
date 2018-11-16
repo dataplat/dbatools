@@ -93,7 +93,7 @@ function Rename-DbaLogin {
                         InstanceName = $server.ServiceName
                         SqlInstance  = $server.DomainInstanceName
                         Database     = $null
-                        OldLogin     = $Login
+                        PreviousLogin     = $Login
                         NewLogin     = $NewLogin
                         Status       = "Successful"
                     }
@@ -104,7 +104,7 @@ function Rename-DbaLogin {
                         InstanceName = $server.ServiceName
                         SqlInstance  = $server.DomainInstanceName
                         Database     = $null
-                        OldLogin     = $Login
+                        PreviousLogin     = $Login
                         NewLogin     = $NewLogin
                         Status       = "Failure"
                     }
@@ -126,7 +126,7 @@ function Rename-DbaLogin {
                             InstanceName = $server.ServiceName
                             SqlInstance  = $server.DomainInstanceName
                             Database     = $db.name
-                            OldUser      = $oldname
+                            PreviousUser      = $oldname
                             NewUser      = $NewLogin
                             Status       = "Successful"
                         }
@@ -140,7 +140,7 @@ function Rename-DbaLogin {
                             InstanceName = $server.ServiceName
                             SqlInstance  = $server.DomainInstanceName
                             Database     = $db.name
-                            OldUser      = $NewLogin
+                            PreviousUser      = $NewLogin
                             NewUser      = $oldname
                             Status       = "Failure to rename. Rolled back change."
                         }

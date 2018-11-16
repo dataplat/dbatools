@@ -121,8 +121,8 @@ function Set-DbaMaxDop {
             $collection = Test-DbaMaxDop -SqlInstance $sqlinstance -SqlCredential $SqlCredential -Verbose:$false
         }
 
-        $collection | Add-Member -Force -NotePropertyName OldInstanceMaxDopValue -NotePropertyValue 0
-        $collection | Add-Member -Force -NotePropertyName OldDatabaseMaxDopValue -NotePropertyValue 0
+        $collection | Add-Member -Force -NotePropertyName PreviousInstanceMaxDopValue -NotePropertyValue 0
+        $collection | Add-Member -Force -NotePropertyName PreviousDatabaseMaxDopValue -NotePropertyValue 0
 
         #If we have servers 2016 or higher we will have a row per database plus the instance level, getting unique we only run one time per instance
         $servers = $collection | Select-Object SqlInstance -Unique
@@ -180,12 +180,12 @@ function Set-DbaMaxDop {
                     Continue
                 }
 
-                $row.OldInstanceMaxDopValue = $row.CurrentInstanceMaxDop
+                $row.PreviousInstanceMaxDopValue = $row.CurrentInstanceMaxDop
 
                 try {
                     if ($UseRecommended) {
                         if ($dbscopedconfiguration) {
-                            $row.OldDatabaseMaxDopValue = $row.DatabaseMaxDop
+                            $row.PreviousDatabaseMaxDopValue = $row.DatabaseMaxDop
 
                             if ($resetDatabases) {
                                 Write-Message -Level Verbose -Message "Changing $($row.Database) database max DOP to $($row.DatabaseMaxDop)."
@@ -203,7 +203,7 @@ function Set-DbaMaxDop {
                         }
                     } else {
                         if ($dbscopedconfiguration) {
-                            $row.OldDatabaseMaxDopValue = $row.DatabaseMaxDop
+                            $row.PreviousDatabaseMaxDopValue = $row.DatabaseMaxDop
 
                             Write-Message -Level Verbose -Message "Changing $($row.Database) database max DOP from $($row.DatabaseMaxDop) to $MaxDop."
                             $server.Databases["$($row.Database)"].MaxDop = $MaxDop
@@ -234,8 +234,8 @@ function Set-DbaMaxDop {
                         DatabaseMaxDop         = $row.DatabaseMaxDop
                         CurrentInstanceMaxDop  = $row.CurrentInstanceMaxDop
                         RecommendedMaxDop      = $row.RecommendedMaxDop
-                        OldDatabaseMaxDopValue = $row.OldDatabaseMaxDopValue
-                        OldInstanceMaxDopValue = $row.OldInstanceMaxDopValue
+                        PreviousDatabaseMaxDopValue = $row.PreviousDatabaseMaxDopValue
+                        PreviousInstanceMaxDopValue = $row.PreviousInstanceMaxDopValue
                     }
                 } catch {
                     Stop-Function -Message "Could not modify Max Degree of Parallelism for $server."  -ErrorRecord $_ -Target $server -Continue
@@ -243,9 +243,9 @@ function Set-DbaMaxDop {
             }
 
             if ($dbscopedconfiguration) {
-                Select-DefaultView -InputObject $results -Property InstanceName, Database, OldDatabaseMaxDopValue, @{ name = "CurrentDatabaseMaxDopValue"; expression = { $_.DatabaseMaxDop } }
+                Select-DefaultView -InputObject $results -Property InstanceName, Database, PreviousDatabaseMaxDopValue, @{ name = "CurrentDatabaseMaxDopValue"; expression = { $_.DatabaseMaxDop } }
             } else {
-                Select-DefaultView -InputObject $results -Property InstanceName, OldInstanceMaxDopValue, CurrentInstanceMaxDop
+                Select-DefaultView -InputObject $results -Property InstanceName, PreviousInstanceMaxDopValue, CurrentInstanceMaxDop
             }
         }
     }

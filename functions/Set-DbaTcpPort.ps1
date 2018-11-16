@@ -109,7 +109,7 @@ function Set-DbaTcpPort {
                     ComputerName  = $computername
                     InstanceName  = $wmiinstancename
                     SqlInstance   = $sqlinstanceName
-                    OldPortNumber = $oldport
+                    PreviousPortNumber = $oldport
                     PortNumber    = $Port
                     Status        = "Success"
                 }
@@ -118,7 +118,7 @@ function Set-DbaTcpPort {
                     ComputerName  = $computername
                     InstanceName  = $wmiinstancename
                     SqlInstance   = $sqlinstanceName
-                    OldPortNumber = $oldport
+                    PreviousPortNumber = $oldport
                     PortNumber    = $Port
                     Status        = "Failed: $_"
                 }

@@ -31,13 +31,13 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 
         It "changes the remote query timeout from $remotequerytimeout to $newtimeout" {
             $results = Set-DbaSpConfigure -SqlInstance $script:instance1 -ConfigName RemoteQueryTimeout -Value $newtimeout
-            $results.OldValue | Should Be $remotequerytimeout
+            $results.PreviousValue | Should Be $remotequerytimeout
             $results.NewValue | Should Be $newtimeout
         }
 
         It "changes the remote query timeout from $newtimeout to $remotequerytimeout" {
             $results = Set-DbaSpConfigure -SqlInstance $script:instance1 -ConfigName RemoteQueryTimeout -Value $remotequerytimeout
-            $results.OldValue | Should Be $newtimeout
+            $results.PreviousValue | Should Be $newtimeout
             $results.NewValue | Should Be $remotequerytimeout
         }
 
