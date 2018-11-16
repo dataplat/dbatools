@@ -66,7 +66,7 @@ function Set-DbaSpConfigure {
 
         Returns information on the action that would be performed. No actual change will be made.
 
-    #>
+       #>
     [CmdletBinding(SupportsShouldProcess)]
     param (
         [Alias("ServerInstance", "SqlServer")]
@@ -110,12 +110,12 @@ function Set-DbaSpConfigure {
                     $server.Configuration.Alter()
 
                     [pscustomobject]@{
-                        ComputerName = $server.ComputerName
-                        InstanceName = $server.ServiceName
-                        SqlInstance  = $server.DomainInstanceName
-                        ConfigName   = $configuration
-                        OldValue     = $currentRunValue
-                        NewValue     = $value
+                        ComputerName  = $server.ComputerName
+                        InstanceName  = $server.ServiceName
+                        SqlInstance   = $server.DomainInstanceName
+                        ConfigName    = $configuration
+                        PreviousValue = $currentRunValue
+                        NewValue      = $value
                     }
 
                     #If it's a dynamic setting we're all clear, otherwise let the user know that SQL needs to be restarted for the change to take

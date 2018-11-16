@@ -3038,14 +3038,14 @@
                        ],
                        [
                            "BackupRestore",
-                           "If this switch is enabled, the copy-only backup and restore method will be used to migrate the database(s). This method requires that you specify -NetworkShare in a valid UNC format (\\\\server\\share).\nBackups will be immediately deleted after use unless -NoBackupCleanup is specified.",
+                           "If this switch is enabled, the copy-only backup and restore method will be used to migrate the database(s). This method requires that you specify -SharedPath in a valid UNC format (\\\\server\\share).\nBackups will be immediately deleted after use unless -NoBackupCleanup is specified.",
                            "",
                            true,
                            "false",
                            "False"
                        ],
                        [
-                           "NetworkShare",
+                           "SharedPath",
                            "Specifies the network location for the backup files. The SQL Server service accounts must have read/write permission on this path.",
                            "",
                            false,
@@ -3125,7 +3125,7 @@
                            "False"
                        ],
                        [
-                           "UseLastBackups",
+                           "UseLastBackup",
                            "Use the last full, diff and logs instead of performing backups. Note that the backups must exist in a location accessible by all destination servers, such a network share.",
                            "",
                            false,
@@ -3134,7 +3134,7 @@
                        ],
                        [
                            "Continue",
-                           "If specified, will to attempt to restore transaction log backups on top of existing database(s) in Recovering or Standby states. Only usable with -UseLastBackups",
+                           "If specified, will to attempt to restore transaction log backups on top of existing database(s) in Recovering or Standby states. Only usable with -UseLastBackup",
                            "",
                            false,
                            "false",
@@ -3218,8 +3218,8 @@
         "Synopsis":  "Migrates SQL Server databases from one SQL Server to another.",
         "Name":  "Copy-DbaDatabase",
         "Links":  "https://dbatools.io/Copy-DbaDatabase",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eCopy-DbaDatabase -Source sql2014a -Destination sql2014b -Database TestDB -BackupRestore -NetworkShare \\\\fileshare\\sql\\migration\nMigrates a single user database TestDB using Backup and restore from instance sql2014a to sql2014b. Backup files are stored in \\\\fileshare\\sql\\migration.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eCopy-DbaDatabase -Source sql2012 -Destination sql2014, sql2016 -DetachAttach -Reattach\nDatabases will be migrated from sql2012 to both sql2014 and sql2016 using the detach/copy files/attach method.The following will be performed: kick all users out of the database, detach all data/log \r\nfiles, move files across the network over an admin share (\\\\SqlSERVER\\M$\\MSSql...), attach file on destination server, reattach at source. If the database files (*.mdf, *.ndf, *.ldf) on *destination* \r\nexist and aren\u0027t in use, they will be overwritten.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eCopy-DbaDatabase -Source sql2014a -Destination sqlcluster, sql2016 -BackupRestore -UseLastBackups -Force\nMigrates all user databases to sqlcluster and sql2016 using the last Full, Diff and Log backups from sql204a. If the databases exists on the destinations, they will be dropped prior to attach.\nNote that the backups must exist in a location accessible by all destination servers, such a network share.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eCopy-DbaDatabase -Source sql2014a -Destination sqlcluster -ExcludeDatabase Northwind, pubs -IncludeSupportDbs -Force -BackupRestore -NetworkShare \\\\fileshare\\sql\\migration\nMigrates all user databases except for Northwind and pubs by using backup/restore (copy-only). Backup files are stored in \\\\fileshare\\sql\\migration. If the database exists on the destination, it will \r\nbe dropped prior to attach.\nIt also includes the support databases (ReportServer, ReportServerTempDb, distribution).",
-        "Syntax":  "Copy-DbaDatabase [-Source \u003cDbaInstanceParameter\u003e] [-SourceSqlCredential \u003cPSCredential\u003e] -Destination \u003cDbaInstanceParameter[]\u003e [-DestinationSqlCredential \u003cPSCredential\u003e] [-Database \u003cObject[]\u003e] [-ExcludeDatabase \u003cObject[]\u003e] [-AllDatabases] -BackupRestore [-NetworkShare \u003cString\u003e] [-WithReplace] [-NoRecovery] [-NoBackupCleanup] [-NumberFiles \u003cInt32\u003e] [-SetSourceReadOnly] [-ReuseSourceFolderStructure] [-IncludeSupportDbs] [-UseLastBackups] [-Continue] [-InputObject \u003cDatabase[]\u003e] [-NoCopyOnly] [-SetSourceOffline] [-NewName \u003cString\u003e] [-Prefix \u003cString\u003e] [-Force] [-EnableException] [-WhatIf] \r\n[-Confirm] [\u003cCommonParameters\u003e]\nCopy-DbaDatabase [-Source \u003cDbaInstanceParameter\u003e] [-SourceSqlCredential \u003cPSCredential\u003e] -Destination \u003cDbaInstanceParameter[]\u003e [-DestinationSqlCredential \u003cPSCredential\u003e] [-Database \u003cObject[]\u003e] [-ExcludeDatabase \u003cObject[]\u003e] [-AllDatabases] -DetachAttach [-Reattach] [-SetSourceReadOnly] [-ReuseSourceFolderStructure] [-IncludeSupportDbs] [-InputObject \u003cDatabase[]\u003e] [-NoCopyOnly] [-SetSourceOffline] [-NewName \u003cString\u003e] [-Prefix \u003cString\u003e] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eCopy-DbaDatabase -Source sql2014a -Destination sql2014b -Database TestDB -BackupRestore -SharedPath \\\\fileshare\\sql\\migration\nMigrates a single user database TestDB using Backup and restore from instance sql2014a to sql2014b. Backup files are stored in \\\\fileshare\\sql\\migration.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eCopy-DbaDatabase -Source sql2012 -Destination sql2014, sql2016 -DetachAttach -Reattach\nDatabases will be migrated from sql2012 to both sql2014 and sql2016 using the detach/copy files/attach method.The following will be performed: kick all users out of the database, detach all data/log \r\nfiles, move files across the network over an admin share (\\\\SqlSERVER\\M$\\MSSql...), attach file on destination server, reattach at source. If the database files (*.mdf, *.ndf, *.ldf) on *destination* \r\nexist and aren\u0027t in use, they will be overwritten.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eCopy-DbaDatabase -Source sql2014a -Destination sqlcluster, sql2016 -BackupRestore -UseLastBackup -Force\nMigrates all user databases to sqlcluster and sql2016 using the last Full, Diff and Log backups from sql204a. If the databases exists on the destinations, they will be dropped prior to attach.\nNote that the backups must exist in a location accessible by all destination servers, such a network share.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eCopy-DbaDatabase -Source sql2014a -Destination sqlcluster -ExcludeDatabase Northwind, pubs -IncludeSupportDbs -Force -BackupRestore -SharedPath \\\\fileshare\\sql\\migration\nMigrates all user databases except for Northwind and pubs by using backup/restore (copy-only). Backup files are stored in \\\\fileshare\\sql\\migration. If the database exists on the destination, it will \r\nbe dropped prior to attach.\nIt also includes the support databases (ReportServer, ReportServerTempDb, distribution).",
+        "Syntax":  "Copy-DbaDatabase [-Source \u003cDbaInstanceParameter\u003e] [-SourceSqlCredential \u003cPSCredential\u003e] -Destination \u003cDbaInstanceParameter[]\u003e [-DestinationSqlCredential \u003cPSCredential\u003e] [-Database \u003cObject[]\u003e] [-ExcludeDatabase \u003cObject[]\u003e] [-AllDatabases] -BackupRestore [-SharedPath \u003cString\u003e] [-WithReplace] [-NoRecovery] [-NoBackupCleanup] [-NumberFiles \u003cInt32\u003e] [-SetSourceReadOnly] [-ReuseSourceFolderStructure] [-IncludeSupportDbs] [-UseLastBackup] [-Continue] [-InputObject \u003cDatabase[]\u003e] [-NoCopyOnly] [-SetSourceOffline] [-NewName \u003cString\u003e] [-Prefix \u003cString\u003e] [-Force] [-EnableException] [-WhatIf] [-Confirm] \r\n[\u003cCommonParameters\u003e]\nCopy-DbaDatabase [-Source \u003cDbaInstanceParameter\u003e] [-SourceSqlCredential \u003cPSCredential\u003e] -Destination \u003cDbaInstanceParameter[]\u003e [-DestinationSqlCredential \u003cPSCredential\u003e] [-Database \u003cObject[]\u003e] [-ExcludeDatabase \u003cObject[]\u003e] [-AllDatabases] -DetachAttach [-Reattach] [-SetSourceReadOnly] [-ReuseSourceFolderStructure] [-IncludeSupportDbs] [-InputObject \u003cDatabase[]\u003e] [-NoCopyOnly] [-SetSourceOffline] [-NewName \u003cString\u003e] [-Prefix \u003cString\u003e] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "CommandName":  "Copy-DbaDataCollector",
@@ -3567,7 +3567,7 @@
                        ],
                        [
                            "Table",
-                           "Define a specific table you would like to use as source. You can specify a two-part name like sch.tbl.\r\nIf the object has special characters please wrap them in square brackets [ ].\r\nThis dbo.First.Table will try to find table named \u0027Table\u0027 on schema \u0027First\u0027 and database \u0027dbo\u0027.\r\nThe correct way to find table named \u0027First.Table\u0027 on schema \u0027dbo\u0027 is passing dbo.[First.Table]",
+                           "Define a specific table you would like to use as source. You can specify a three-part name like db.sch.tbl.\r\nIf the object has special characters please wrap them in square brackets [ ].\r\nThis dbo.First.Table will try to find table named \u0027Table\u0027 on schema \u0027First\u0027 and database \u0027dbo\u0027.\r\nThe correct way to find table named \u0027First.Table\u0027 on schema \u0027dbo\u0027 is passing dbo.[First.Table]",
                            "",
                            false,
                            "false",
@@ -4169,7 +4169,7 @@
         "Synopsis":  "Migrates logins from source to destination SQL Servers. Supports SQL Server versions 2000 and newer.",
         "Name":  "Copy-DbaLogin",
         "Links":  "https://dbatools.io/Copy-DbaLogin",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eCopy-DbaLogin -Source sqlserver2014a -Destination sqlcluster -Force\nCopies all logins from Source Destination. If a SQL Login on Source exists on the Destination, the Login on Destination will be dropped and recreated.\nIf active connections are found for a login, the copy of that Login will fail as it cannot be dropped.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eCopy-DbaLogin -Source sqlserver2014a -Destination sqlcluster -Force -KillActiveConnection\nCopies all logins from Source Destination. If a SQL Login on Source exists on the Destination, the Login on Destination will be dropped and recreated.\nIf any active connections are found they will be killed.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eCopy-DbaLogin -Source sqlserver2014a -Destination sqlcluster -ExcludeLogin realcajun -SourceSqlCredential $scred -DestinationSqlCredential $dcred\nCopies all Logins from Source to Destination except for realcajun using SQL Authentication to connect to both instances.\nIf a Login already exists on the destination, it will not be migrated.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eCopy-DbaLogin -Source sqlserver2014a -Destination sqlcluster -Login realcajun, netnerds -force\nCopies ONLY Logins netnerds and realcajun. If Login realcajun or netnerds exists on Destination, the existing Login(s) will be dropped and recreated.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eCopy-DbaLogin -Source sqlserver2014a -Destination sqlcluster -SyncOnly\nSyncs only SQL Server login permissions, roles, etc. Does not add or drop logins or users.\nIf a matching Login does not exist on Destination, the Login will be skipped.\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eCopy-DbaLogin -LoginRenameHashtable @{ \"OldUser\" = \"newlogin\" } -Source $Sql01 -Destination Localhost -SourceSqlCredential $sqlcred\nCopies OldUser and then renames it to newlogin.\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003eGet-DbaLogin -SqlInstance sql2016 | Out-GridView -Passthru | Copy-DbaLogin -Destination sql2017\nDisplays all available logins on sql2016 in a grid view, then copies all selected logins to sql2017.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eCopy-DbaLogin -Source sqlserver2014a -Destination sqlcluster -Force\nCopies all logins from Source Destination. If a SQL Login on Source exists on the Destination, the Login on Destination will be dropped and recreated.\nIf active connections are found for a login, the copy of that Login will fail as it cannot be dropped.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eCopy-DbaLogin -Source sqlserver2014a -Destination sqlcluster -Force -KillActiveConnection\nCopies all logins from Source Destination. If a SQL Login on Source exists on the Destination, the Login on Destination will be dropped and recreated.\nIf any active connections are found they will be killed.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eCopy-DbaLogin -Source sqlserver2014a -Destination sqlcluster -ExcludeLogin realcajun -SourceSqlCredential $scred -DestinationSqlCredential $dcred\nCopies all Logins from Source to Destination except for realcajun using SQL Authentication to connect to both instances.\nIf a Login already exists on the destination, it will not be migrated.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eCopy-DbaLogin -Source sqlserver2014a -Destination sqlcluster -Login realcajun, netnerds -force\nCopies ONLY Logins netnerds and realcajun. If Login realcajun or netnerds exists on Destination, the existing Login(s) will be dropped and recreated.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eCopy-DbaLogin -Source sqlserver2014a -Destination sqlcluster -SyncOnly\nSyncs only SQL Server login permissions, roles, etc. Does not add or drop logins or users.\nIf a matching Login does not exist on Destination, the Login will be skipped.\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eCopy-DbaLogin -LoginRenameHashtable @{ \"PreviousUser\" = \"newlogin\" } -Source $Sql01 -Destination Localhost -SourceSqlCredential $sqlcred\nCopies PreviousUser and then renames it to newlogin.\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003eGet-DbaLogin -SqlInstance sql2016 | Out-GridView -Passthru | Copy-DbaLogin -Destination sql2017\nDisplays all available logins on sql2016 in a grid view, then copies all selected logins to sql2017.",
         "Syntax":  "Copy-DbaLogin [-SourceSqlCredential \u003cPSCredential\u003e] -Destination \u003cDbaInstanceParameter[]\u003e [-DestinationSqlCredential \u003cPSCredential\u003e] [-Login \u003cObject[]\u003e] [-ExcludeLogin \u003cObject[]\u003e] [-ExcludeSystemLogin] [-SyncOnly] [-LoginRenameHashtable \u003cHashtable\u003e] [-KillActiveConnection] [-Force] [-ExcludePermissionSync] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nCopy-DbaLogin -Source \u003cDbaInstanceParameter\u003e [-SourceSqlCredential \u003cPSCredential\u003e] -Destination \u003cDbaInstanceParameter[]\u003e [-DestinationSqlCredential \u003cPSCredential\u003e] [-Login \u003cObject[]\u003e] [-ExcludeLogin \u003cObject[]\u003e] [-ExcludeSystemLogin] [-SyncOnly] [-SyncSaName] [-LoginRenameHashtable \u003cHashtable\u003e] [-KillActiveConnection] [-Force] [-ExcludePermissionSync] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nCopy-DbaLogin [-SourceSqlCredential \u003cPSCredential\u003e] -Destination \u003cDbaInstanceParameter[]\u003e [-DestinationSqlCredential \u003cPSCredential\u003e] [-Login \u003cObject[]\u003e] [-ExcludeLogin \u003cObject[]\u003e] [-ExcludeSystemLogin] [-SyncOnly] [-SyncSaName] [-LoginRenameHashtable \u003cHashtable\u003e] [-KillActiveConnection] [-Force] [-ExcludePermissionSync] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nCopy-DbaLogin [-SourceSqlCredential \u003cPSCredential\u003e] -Destination \u003cDbaInstanceParameter[]\u003e [-DestinationSqlCredential \u003cPSCredential\u003e] [-Login \u003cObject[]\u003e] [-ExcludeLogin \u003cObject[]\u003e] [-ExcludeSystemLogin] [-SyncOnly] -OutFile \u003cString\u003e [-LoginRenameHashtable \u003cHashtable\u003e] [-KillActiveConnection] [-Force] [-ExcludePermissionSync] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nCopy-DbaLogin [-SourceSqlCredential \u003cPSCredential\u003e] -Destination \u003cDbaInstanceParameter[]\u003e [-DestinationSqlCredential \u003cPSCredential\u003e] [-Login \u003cObject[]\u003e] [-ExcludeLogin \u003cObject[]\u003e] [-ExcludeSystemLogin] [-SyncOnly] [-InputObject \u003cObject\u003e] [-LoginRenameHashtable \u003cHashtable\u003e] [-KillActiveConnection] [-Force] [-ExcludePermissionSync] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
@@ -7887,7 +7887,7 @@
                        ],
                        [
                            "ScanType",
-                           "The scans are the individual methods used to retrieve information about the scanned computer and any potentially installed instances.\r\nThis parameter is optional, by default all scans except for establishing an actual SQL connection are performed.\r\nScans can be specified in any arbitrary combination, however at least one instance detecting scan needs to be specified in order for data to be returned.\nScans:\r\nDNSResolve\r\n- Tries resolving the computername in DNS\r\nPing\r\n- Tries pinging the computer. Failure will NOT terminate scans.\r\nSQLService\r\n- Tries listing all SQL Services using CIM/WMI\r\n- This scan uses credentials specified in the \u0027-Credential\u0027 parameter if any.\r\n- This scan detects instances.\r\n- Success in this scan guarantees high confidence (See parameter \u0027-MinimumConfidence\u0027 for details).\r\nBrowser\r\n- Tries discovering all instances via the browser service\r\n- This scan detects instances.\r\nTCPPort\r\n- Tries connecting to the TCP Ports.\r\n- By default, port 1433 is connected to.\r\n- The parameter \u0027-TCPPort\u0027 can be used to provide a list of port numbers to scan.\r\n- This scan detects possible instances. Since other services might bind to a given port, this is not the most reliable test.\r\n- This scan is also used to validate found SPNs if both scans are used in combination\r\nSqlConnect\r\n- Tries to establish a SQL connection to the server\r\n- Uses windows credentials by default\r\n- Specify custom credentials using the \u0027-SqlCredential\u0027 parameter\r\n- This scan is not used by default\r\n- Success in this scan guarantees high confidence (See parameter \u0027-MinimumConfidence\u0027 for details).\r\nSPN\r\n- Tries looking up the Service Principal Names for each instance\r\n- Will use the nearest Domain Controller by default\r\n- Target a specific domain controller using the \u0027-DomainController\u0027 parameter\r\n- If using the \u0027-DomainController\u0027 parameter, use the \u0027-Credential\u0027 parameter to specify the credentials used to connect",
+                           "The scans are the individual methods used to retrieve information about the scanned computer and any potentially installed instances.\r\nThis parameter is optional, by default all scans except for establishing an actual SQL connection are performed.\r\nScans can be specified in any arbitrary combination, however at least one instance detecting scan needs to be specified in order for data to be returned.\nScans:\r\n Browser\r\n- Tries discovering all instances via the browser service\r\n- This scan detects instances.\nSQLService\r\n- Tries listing all SQL Services using CIM/WMI\r\n- This scan uses credentials specified in the \u0027-Credential\u0027 parameter if any.\r\n- This scan detects instances.\r\n- Success in this scan guarantees high confidence (See parameter \u0027-MinimumConfidence\u0027 for details).\nSPN\r\n- Tries looking up the Service Principal Names for each instance\r\n- Will use the nearest Domain Controller by default\r\n- Target a specific domain controller using the \u0027-DomainController\u0027 parameter\r\n- If using the \u0027-DomainController\u0027 parameter, use the \u0027-Credential\u0027 parameter to specify the credentials used to connect\nTCPPort\r\n- Tries connecting to the TCP Ports.\r\n- By default, port 1433 is connected to.\r\n- The parameter \u0027-TCPPort\u0027 can be used to provide a list of port numbers to scan.\r\n- This scan detects possible instances. Since other services might bind to a given port, this is not the most reliable test.\r\n- This scan is also used to validate found SPNs if both scans are used in combination\nDNSResolve\r\n- Tries resolving the computername in DNS\nPing\r\n- Tries pinging the computer. Failure will NOT terminate scans.\nSqlConnect\r\n- Tries to establish a SQL connection to the server\r\n- Uses windows credentials by default\r\n- Specify custom credentials using the \u0027-SqlCredential\u0027 parameter\r\n- This scan is not used by default\r\n- Success in this scan guarantees high confidence (See parameter \u0027-MinimumConfidence\u0027 for details).\nAll\r\n- All of the above",
                            "",
                            false,
                            "false",
@@ -7928,7 +7928,7 @@
                        [
                            "EnableException",
                            "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
-                           "Silent",
+                           "",
                            false,
                            "false",
                            "False"
@@ -7939,7 +7939,7 @@
         "Synopsis":  "Search for SQL Server Instances.",
         "Name":  "Find-DbaInstance",
         "Links":  "https://dbatools.io/Find-DbaInstance",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eFind-DbaInstance -DiscoveryType Domain,DataSourceEnumeration\nPerforms a network search for SQL Instances by:\r\n- Looking up the Service Principal Names of computers in active directory\r\n- Using the UDP broadcast based auto-discovery of SSMS\r\nAfter that it will extensively scan all hosts thus discovered for instances.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eFind-DbaInstance -DiscoveryType All\nPerforms a network search for SQL Instances, using all discovery protocols:\r\n- Active directory search for Service Principal Names\r\n- SQL Instance Enumeration (same as SSMS does)\r\n- All IPAddresses in the current computer\u0027s subnets of all connected network interfaces\r\nNote: This scan will take a long time, due to including the IP Scan\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-ADComputer -Filter \"*\" | Find-DbaInstance\nScans all computers in the domain for SQL Instances, using a deep probe:\r\n- Tries resolving the name in DNS\r\n- Tries pinging the computer\r\n- Tries listing all SQL Services using CIM/WMI\r\n- Tries discovering all instances via the browser service\r\n- Tries connecting to the default TCP Port (1433)\r\n- Tries connecting to the TCP port of each discovered instance\r\n- Tries to establish a SQL connection to the server using default windows credentials\r\n- Tries looking up the Service Principal Names for each instance\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-Content .\\servers.txt | Find-DbaInstance -SqlCredential $cred -ScanType Browser,SqlConnect\nReads all servers from the servers.txt file (one server per line),\r\nthen scans each of them for instances using the browser service\r\nand finally attempts to connect to each instance found using the specified credentials.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eFind-DbaInstance -ComputerName localhost | Get-DbaDatabase | Format-Table -Wrap\nScans localhost for instances using the browser service, traverses all instances for all databases and displays all information in a formatted table.\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eFind-DbaInstance -ComputerName localhost | Get-DbaDatabase | Select-Object SqlInstance, Name, Status, RecoveryModel, SizeMB, Compatibility, Owner, LastFullBackup, LastDiffBackup, LastLogBackup \r\n| Format-Table -Wrap\nScans localhost for instances using the browser service, traverses all instances for all databases and displays a subset of the important information in a formatted table.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eFind-DbaInstance -DiscoveryType Domain, DataSourceEnumeration\nPerforms a network search for SQL Instances by:\r\n- Looking up the Service Principal Names of computers in active directory\r\n- Using the UDP broadcast based auto-discovery of SSMS\r\nAfter that it will extensively scan all hosts thus discovered for instances.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eFind-DbaInstance -DiscoveryType All\nPerforms a network search for SQL Instances, using all discovery protocols:\r\n- Active directory search for Service Principal Names\r\n- SQL Instance Enumeration (same as SSMS does)\r\n- All IPAddresses in the current computer\u0027s subnets of all connected network interfaces\r\nNote: This scan will take a long time, due to including the IP Scan\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-ADComputer -Filter \"*\" | Find-DbaInstance\nScans all computers in the domain for SQL Instances, using a deep probe:\r\n- Tries resolving the name in DNS\r\n- Tries pinging the computer\r\n- Tries listing all SQL Services using CIM/WMI\r\n- Tries discovering all instances via the browser service\r\n- Tries connecting to the default TCP Port (1433)\r\n- Tries connecting to the TCP port of each discovered instance\r\n- Tries to establish a SQL connection to the server using default windows credentials\r\n- Tries looking up the Service Principal Names for each instance\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-Content .\\servers.txt | Find-DbaInstance -SqlCredential $cred -ScanType Browser, SqlConnect\nReads all servers from the servers.txt file (one server per line),\r\nthen scans each of them for instances using the browser service\r\nand finally attempts to connect to each instance found using the specified credentials.\r\nthen scans each of them for instances using the browser service and SqlService\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eFind-DbaInstance -ComputerName localhost | Get-DbaDatabase | Format-Table -Wrap\nScans localhost for instances using the browser service, traverses all instances for all databases and displays all information in a formatted table.\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eFind-DbaInstance -ComputerName localhost | Get-DbaDatabase | Select-Object SqlInstance, Name, Status, RecoveryModel, SizeMB, Compatibility, Owner, LastFullBackup, LastDiffBackup, LastLogBackup \r\n| Format-Table -Wrap\nScans localhost for instances using the browser service, traverses all instances for all databases and displays a subset of the important information in a formatted table.\nUsing this method reguarly is not recommended. Use Get-DbaService or Get-DbaCmsRegServer instead.",
         "Syntax":  "Find-DbaInstance -ComputerName \u003cDbaInstanceParameter[]\u003e [-Credential \u003cPSCredential\u003e] [-SqlCredential \u003cPSCredential\u003e] [-ScanType {TCPPort | SqlConnect | SqlService | DNSResolve | SPN | Browser | Ping | Default | All}] [-DomainController \u003cString\u003e] [-TCPPort \u003cInt32[]\u003e] [-MinimumConfidence {None | Low | Medium | High}] [-EnableException] [\u003cCommonParameters\u003e]\nFind-DbaInstance -DiscoveryType {IPRange | Domain | DataSourceEnumeration | All} [-Credential \u003cPSCredential\u003e] [-SqlCredential \u003cPSCredential\u003e] [-ScanType {TCPPort | SqlConnect | SqlService | DNSResolve | SPN | Browser | Ping | Default | All}] [-IpAddress \u003cString[]\u003e] [-DomainController \u003cString\u003e] [-TCPPort \u003cInt32[]\u003e] [-MinimumConfidence {None | Low | Medium | High}] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
@@ -16303,6 +16303,44 @@
         "Syntax":  "Get-DbaPlanCache [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
+        "CommandName":  "Get-DbaPowerPlan",
+        "Description":  "Gets the Power Plan settings on a computer against best practices recommendations.",
+        "Tags":  "PowerPlan",
+        "Params":  [
+                       [
+                           "ComputerName",
+                           "The server(s) to check Power Plan settings on.",
+                           "ServerInstance,SqlServer,SqlInstance",
+                           true,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
+                           "Credential",
+                           "Specifies a PSCredential object to use in authenticating to the server(s), instead of the current user account.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ]
+                   ],
+        "Alias":  "",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
+        "Synopsis":  "Gets the Power Plan settings for compliance with best practices, which recommend High Performance for SQL Server.",
+        "Name":  "Get-DbaPowerPlan",
+        "Links":  "https://dbatools.io/Get-DbaPowerPlan",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaPowerPlan -ComputerName sql2017\nGets the Power Plan settings for sql2017\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaPowerPlan -ComputerName sql2017 -Credential ad\\admin\nGets the Power Plan settings for sql2017 using an alternative credential",
+        "Syntax":  "Get-DbaPowerPlan [-ComputerName] \u003cDbaInstanceParameter[]\u003e [[-Credential] \u003cPSCredential\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
+    },
+    {
         "CommandName":  "Get-DbaPrivilege",
         "Description":  "Gets the users with local privileges \u0027Lock Pages in Memory\u0027, \u0027Instant File Initialization\u0027, \u0027Logon as Batch\u0027 on one or more computers.\n\nRequires Local Admin rights on destination computer(s).",
         "Tags":  "Privilege",
@@ -22128,7 +22166,7 @@
                            ""
                        ],
                        [
-                           "NetworkShare",
+                           "SharedPath",
                            "The network share where the backups will be backed up and restored from.\nEach SQL Server service account must have access to this share.\nNOTE: If a backup / restore is performed, the backups will be left in tact on the network share.",
                            "",
                            false,
@@ -22144,7 +22182,7 @@
                            ""
                        ],
                        [
-                           "UseLastBackups",
+                           "UseLastBackup",
                            "Use the last full backup of database.",
                            "",
                            false,
@@ -22189,8 +22227,8 @@
         "Synopsis":  "Automates the creation of database mirrors.",
         "Name":  "Invoke-DbaDbMirroring",
         "Links":  "https://dbatools.io/Invoke-DbaDbMirroring",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003e$params = @{\n\u003e\u003e Primary = \u0027sql2017a\u0027\r\n\u003e\u003e Mirror = \u0027sql2017b\u0027\r\n\u003e\u003e MirrorSqlCredential = \u0027sqladmin\u0027\r\n\u003e\u003e Witness = \u0027sql2019\u0027\r\n\u003e\u003e Database = \u0027pubs\u0027\r\n\u003e\u003e NetworkShare = \u0027\\\\nas\\sql\\share\u0027\r\n\u003e\u003e }\r\n\u003e\u003e\r\nPS C:\\\u003e Invoke-DbaDbMirror @params\nPerforms a bunch of checks to ensure the pubs database on sql2017a\r\ncan be mirrored from sql2017a to sql2017b. Logs in to sql2019 and sql2017a\r\nusing Windows credentials and sql2017b using a SQL credential.\nPrompts for confirmation for most changes. To avoid confirmation, use -Confirm:$false or\r\nuse the syntax in the second example.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003e$params = @{\n\u003e\u003e Primary = \u0027sql2017a\u0027\r\n\u003e\u003e Mirror = \u0027sql2017b\u0027\r\n\u003e\u003e MirrorSqlCredential = \u0027sqladmin\u0027\r\n\u003e\u003e Witness = \u0027sql2019\u0027\r\n\u003e\u003e Database = \u0027pubs\u0027\r\n\u003e\u003e NetworkShare = \u0027\\\\nas\\sql\\share\u0027\r\n\u003e\u003e Force = $true\r\n\u003e\u003e Confirm = $false\r\n\u003e\u003e }\r\n\u003e\u003e\r\nPS C:\\\u003e Invoke-DbaDbMirror @params\nPerforms a bunch of checks to ensure the pubs database on sql2017a\r\ncan be mirrored from sql2017a to sql2017b. Logs in to sql2019 and sql2017a\r\nusing Windows credentials and sql2017b using a SQL credential.\nDrops existing pubs database on Mirror and Witness and restores them with\r\na fresh backup.\nDoes all the things in the decription, does not prompt for confirmation.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003e$map = @{ \u0027database_data\u0027 = \u0027M:\\Data\\database_data.mdf\u0027 \u0027database_log\u0027 = \u0027L:\\Log\\database_log.ldf\u0027 }\nPS C:\\\u003e Get-ChildItem \\\\nas\\seed | Restore-DbaDatabase -SqlInstance sql2017b -FileMapping $map -NoRecovery\r\nPS C:\\\u003e Get-DbaDatabase -SqlInstance sql2017a -Database pubs | Invoke-DbaDbMirroring -Mirror sql2017b -Confirm:$false\nRestores backups from sql2017a to a specific file struture on sql2017b then creates mirror with no prompts for confirmation.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaDatabase -SqlInstance sql2017a -Database pubs |\n\u003e\u003e Invoke-DbaDbMirroring -Mirror sql2017b -UseLastBackups -Confirm:$false\nMirrors pubs on sql2017a to sql2017b and uses the last full and logs from sql2017a to seed. Doesn\u0027t prompt for confirmation.",
-        "Syntax":  "Invoke-DbaDbMirroring [[-Primary] \u003cDbaInstanceParameter\u003e] [[-PrimarySqlCredential] \u003cPSCredential\u003e] [-Mirror] \u003cDbaInstanceParameter[]\u003e [[-MirrorSqlCredential] \u003cPSCredential\u003e] [[-Witness] \u003cDbaInstanceParameter\u003e] [[-WitnessSqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString[]\u003e] [[-NetworkShare] \u003cString\u003e] [[-InputObject] \u003cDatabase[]\u003e] [-UseLastBackups] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003e$params = @{\n\u003e\u003e Primary = \u0027sql2017a\u0027\r\n\u003e\u003e Mirror = \u0027sql2017b\u0027\r\n\u003e\u003e MirrorSqlCredential = \u0027sqladmin\u0027\r\n\u003e\u003e Witness = \u0027sql2019\u0027\r\n\u003e\u003e Database = \u0027pubs\u0027\r\n\u003e\u003e SharedPath = \u0027\\\\nas\\sql\\share\u0027\r\n\u003e\u003e }\r\n\u003e\u003e\r\nPS C:\\\u003e Invoke-DbaDbMirror @params\nPerforms a bunch of checks to ensure the pubs database on sql2017a\r\ncan be mirrored from sql2017a to sql2017b. Logs in to sql2019 and sql2017a\r\nusing Windows credentials and sql2017b using a SQL credential.\nPrompts for confirmation for most changes. To avoid confirmation, use -Confirm:$false or\r\nuse the syntax in the second example.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003e$params = @{\n\u003e\u003e Primary = \u0027sql2017a\u0027\r\n\u003e\u003e Mirror = \u0027sql2017b\u0027\r\n\u003e\u003e MirrorSqlCredential = \u0027sqladmin\u0027\r\n\u003e\u003e Witness = \u0027sql2019\u0027\r\n\u003e\u003e Database = \u0027pubs\u0027\r\n\u003e\u003e SharedPath = \u0027\\\\nas\\sql\\share\u0027\r\n\u003e\u003e Force = $true\r\n\u003e\u003e Confirm = $false\r\n\u003e\u003e }\r\n\u003e\u003e\r\nPS C:\\\u003e Invoke-DbaDbMirror @params\nPerforms a bunch of checks to ensure the pubs database on sql2017a\r\ncan be mirrored from sql2017a to sql2017b. Logs in to sql2019 and sql2017a\r\nusing Windows credentials and sql2017b using a SQL credential.\nDrops existing pubs database on Mirror and Witness and restores them with\r\na fresh backup.\nDoes all the things in the decription, does not prompt for confirmation.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003e$map = @{ \u0027database_data\u0027 = \u0027M:\\Data\\database_data.mdf\u0027 \u0027database_log\u0027 = \u0027L:\\Log\\database_log.ldf\u0027 }\nPS C:\\\u003e Get-ChildItem \\\\nas\\seed | Restore-DbaDatabase -SqlInstance sql2017b -FileMapping $map -NoRecovery\r\nPS C:\\\u003e Get-DbaDatabase -SqlInstance sql2017a -Database pubs | Invoke-DbaDbMirroring -Mirror sql2017b -Confirm:$false\nRestores backups from sql2017a to a specific file struture on sql2017b then creates mirror with no prompts for confirmation.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaDatabase -SqlInstance sql2017a -Database pubs |\n\u003e\u003e Invoke-DbaDbMirroring -Mirror sql2017b -UseLastBackup -Confirm:$false\nMirrors pubs on sql2017a to sql2017b and uses the last full and logs from sql2017a to seed. Doesn\u0027t prompt for confirmation.",
+        "Syntax":  "Invoke-DbaDbMirroring [[-Primary] \u003cDbaInstanceParameter\u003e] [[-PrimarySqlCredential] \u003cPSCredential\u003e] [-Mirror] \u003cDbaInstanceParameter[]\u003e [[-MirrorSqlCredential] \u003cPSCredential\u003e] [[-Witness] \u003cDbaInstanceParameter\u003e] [[-WitnessSqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString[]\u003e] [[-SharedPath] \u003cString\u003e] [[-InputObject] \u003cDatabase[]\u003e] [-UseLastBackup] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "CommandName":  "Invoke-DbaDbShrink",
@@ -24833,7 +24871,7 @@
                            ""
                        ],
                        [
-                           "NetworkShare",
+                           "SharedPath",
                            "The network share where the backups will be backed up and restored from.\nEach SQL Server service account must have access to this share.\nNOTE: If a backup / restore is performed, the backups will be left in tact on the network share.",
                            "",
                            false,
@@ -24841,7 +24879,7 @@
                            ""
                        ],
                        [
-                           "UseLastBackups",
+                           "UseLastBackup",
                            "Use the last full backup of database.",
                            "",
                            false,
@@ -24866,7 +24904,7 @@
                        ],
                        [
                            "FailoverMode",
-                           "Sets the failover mode of the availability group replica. Options are Automatic and Manual. Automatic is default.",
+                           "Sets the failover mode of the availability group replica. Options are Automatic, Manual and External. Automatic is default.",
                            "",
                            false,
                            "false",
@@ -24990,8 +25028,8 @@
         "Synopsis":  "Automates the creation of availability groups.",
         "Name":  "New-DbaAvailabilityGroup",
         "Links":  "https://dbatools.io/New-DbaAvailabilityGroup",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eNew-DbaAvailabilityGroup -Primary sql2016a -Name SharePoint\nCreates a new availability group on sql2016a named SharePoint\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eNew-DbaAvailabilityGroup -Primary sql2016a -Name SharePoint -Secondary sql2016b\nCreates a new availability group on sql2016b named SharePoint with a secondary replica, sql2016b\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eNew-DbaAvailabilityGroup -Primary sql2016std -Name BAG1 -Basic -Confirm:$false\nCreates a basic availability group named BAG1 on sql2016std and does not confirm when setting up\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eNew-DbaAvailabilityGroup -Primary sql2016b -Name AG1 -ClusterType Wsfc -Dhcp -Database db1 -UseLastBackup\nCreates an availability group on sql2016b with the name ag1. Uses the last backups available to add the database db1 to the AG.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eNew-DbaAvailabilityGroup -Primary sql2017 -Name SharePoint -ClusterType None -FailoverMode Manual\nCreates a new availability group on sql2017 named SharePoint with a cluster type of non and a failover mode of manual\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eNew-DbaAvailabilityGroup -Primary sql1 -Secondary sql2 -Database pubs -ClusterType None -SeedingMode Automatic -FailoverMode Manual\nCreates a new availability group with a primary replica on sql1 and a secondary on sql2. Automatically adds the database pubs.\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003e$cred = Get-Credential sqladmin\nPS C:\\\u003e $params = @{\r\n            \u003e\u003e Primary = \"sql1\"\r\n            \u003e\u003e PrimarySqlCredential = $cred\r\n            \u003e\u003e Secondary = \"sql2\"\r\n            \u003e\u003e SecondarySqlCredential = $cred\r\n            \u003e\u003e Database = \"pubs\"\r\n            \u003e\u003e ClusterType = \"None\"\r\n            \u003e\u003e SeedingMode = \"Automatic\"\r\n            \u003e\u003e FailoverMode = \"Manual\"\r\n            \u003e\u003e Confirm = $false\r\n        \u003e\u003e }\r\nPS C:\\\u003e New-DbaAvailabilityGroup @params\nThis exact command was used to create an availability group on docker!",
-        "Syntax":  "New-DbaAvailabilityGroup [[-Primary] \u003cDbaInstanceParameter\u003e] [[-PrimarySqlCredential] \u003cPSCredential\u003e] [[-Secondary] \u003cDbaInstanceParameter[]\u003e] [[-SecondarySqlCredential] \u003cPSCredential\u003e] [-Name] \u003cString\u003e [-DtcSupport] [[-ClusterType] \u003cString\u003e] [[-AutomatedBackupPreference] \u003cString\u003e] [[-FailureConditionLevel] \u003cString\u003e] [[-HealthCheckTimeout] \u003cInt32\u003e] [-Basic] [-DatabaseHealthTrigger] [-Passthru] [[-Database] \u003cString[]\u003e] [[-NetworkShare] \u003cString\u003e] [-UseLastBackups] [-Force] [[-AvailabilityMode] \u003cString\u003e] [[-FailoverMode] \u003cString\u003e] [[-BackupPriority] \u003cInt32\u003e] [[-ConnectionModeInPrimaryRole] \r\n\u003cString\u003e] [[-ConnectionModeInSecondaryRole] \u003cString\u003e] [[-SeedingMode] \u003cString\u003e] [[-Endpoint] \u003cString\u003e] [[-ReadonlyRoutingConnectionUrl] \u003cString\u003e] [[-Certificate] \u003cString\u003e] [[-IPAddress] \u003cIPAddress[]\u003e] [[-SubnetMask] \u003cIPAddress\u003e] [[-Port] \u003cInt32\u003e] [-Dhcp] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eNew-DbaAvailabilityGroup -Primary sql2016a -Name SharePoint\nCreates a new availability group on sql2016a named SharePoint\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eNew-DbaAvailabilityGroup -Primary sql2016a -Name SharePoint -Secondary sql2016b\nCreates a new availability group on sql2016b named SharePoint with a secondary replica, sql2016b\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eNew-DbaAvailabilityGroup -Primary sql2016std -Name BAG1 -Basic -Confirm:$false\nCreates a basic availability group named BAG1 on sql2016std and does not confirm when setting up\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eNew-DbaAvailabilityGroup -Primary sql2016b -Name AG1 -ClusterType Wsfc -Dhcp -Database db1 -UseLastBackup\nCreates an availability group on sql2016b with the name ag1. Uses the last backups available to add the database db1 to the AG.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eNew-DbaAvailabilityGroup -Primary sql2017 -Name SharePoint -ClusterType None -FailoverMode Manual\nCreates a new availability group on sql2017 named SharePoint with a cluster type of none and a failover mode of manual\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eNew-DbaAvailabilityGroup -Primary sql1 -Secondary sql2 -Name ag1 -Database pubs -ClusterType None -SeedingMode Automatic -FailoverMode Manual\nCreates a new availability group with a primary replica on sql1 and a secondary on sql2. Automatically adds the database pubs.\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003e$cred = Get-Credential sqladmin\nPS C:\\\u003e $params = @{\r\n            \u003e\u003e Primary = \"sql1\"\r\n            \u003e\u003e PrimarySqlCredential = $cred\r\n            \u003e\u003e Secondary = \"sql2\"\r\n            \u003e\u003e SecondarySqlCredential = $cred\r\n            \u003e\u003e Name = \"test-ag\"\r\n            \u003e\u003e Database = \"pubs\"\r\n            \u003e\u003e ClusterType = \"None\"\r\n            \u003e\u003e SeedingMode = \"Automatic\"\r\n            \u003e\u003e FailoverMode = \"Manual\"\r\n            \u003e\u003e Confirm = $false\r\n        \u003e\u003e }\r\nPS C:\\\u003e New-DbaAvailabilityGroup @params\nThis exact command was used to create an availability group on docker!",
+        "Syntax":  "New-DbaAvailabilityGroup [[-Primary] \u003cDbaInstanceParameter\u003e] [[-PrimarySqlCredential] \u003cPSCredential\u003e] [[-Secondary] \u003cDbaInstanceParameter[]\u003e] [[-SecondarySqlCredential] \u003cPSCredential\u003e] [-Name] \u003cString\u003e [-DtcSupport] [[-ClusterType] \u003cString\u003e] [[-AutomatedBackupPreference] \u003cString\u003e] [[-FailureConditionLevel] \u003cString\u003e] [[-HealthCheckTimeout] \u003cInt32\u003e] [-Basic] [-DatabaseHealthTrigger] [-Passthru] [[-Database] \u003cString[]\u003e] [[-SharedPath] \u003cString\u003e] [-UseLastBackup] [-Force] [[-AvailabilityMode] \u003cString\u003e] [[-FailoverMode] \u003cString\u003e] [[-BackupPriority] \u003cInt32\u003e] [[-ConnectionModeInPrimaryRole] \u003cString\u003e] \r\n[[-ConnectionModeInSecondaryRole] \u003cString\u003e] [[-SeedingMode] \u003cString\u003e] [[-Endpoint] \u003cString\u003e] [[-ReadonlyRoutingConnectionUrl] \u003cString\u003e] [[-Certificate] \u003cString\u003e] [[-IPAddress] \u003cIPAddress[]\u003e] [[-SubnetMask] \u003cIPAddress\u003e] [[-Port] \u003cInt32\u003e] [-Dhcp] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "CommandName":  "New-DbaClientAlias",
@@ -35293,8 +35331,8 @@
                            "-1"
                        ],
                        [
-                           "Collection",
-                           "If Test-SQLMaxDop has been executed prior to this function, the results may be passed in via this parameter.",
+                           "InputObject",
+                           "If Test-SqlMaxDop has been executed prior to this function, the results may be passed in via this parameter.",
                            "",
                            false,
                            "true (ByValue)",
@@ -35311,7 +35349,7 @@
                        [
                            "EnableException",
                            "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
-                           "Silent",
+                           "",
                            false,
                            "false",
                            "False"
@@ -35339,7 +35377,7 @@
         "Name":  "Set-DbaMaxDop",
         "Links":  "https://dbatools.io/Set-DbaMaxDop",
         "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eSet-DbaMaxDop -SqlInstance sql2008, sql2012\nSets Max DOP to the recommended value for servers sql2008 and sql2012.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eSet-DbaMaxDop -SqlInstance sql2014 -MaxDop 4\nSets Max DOP to 4 for server sql2014.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eTest-DbaMaxDop -SqlInstance sql2008 | Set-DbaMaxDop\nGets the recommended Max DOP from Test-DbaMaxDop and applies it to to sql2008.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eSet-DbaMaxDop -SqlInstance sql2016 -Database db1\nSet recommended Max DOP for database db1 on server sql2016.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eSet-DbaMaxDop -SqlInstance sql2016 -AllDatabases\nSet recommended Max DOP for all databases on server sql2016.",
-        "Syntax":  "Set-DbaMaxDop [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Database \u003cObject[]\u003e] [-ExcludeDatabase \u003cObject[]\u003e] [-MaxDop \u003cInt32\u003e] [-Collection \u003cObject\u003e] [-AllDatabases] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Set-DbaMaxDop [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Database \u003cObject[]\u003e] [-ExcludeDatabase \u003cObject[]\u003e] [-MaxDop \u003cInt32\u003e] [-InputObject \u003cPSObject\u003e] [-AllDatabases] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "CommandName":  "Set-DbaMaxMemory",
@@ -35496,8 +35534,8 @@
                        [
                            "ComputerName",
                            "The server(s) to set the Power Plan on.",
-                           "ServerInstance,SqlServer,SqlInstance",
-                           true,
+                           "",
+                           false,
                            "true (ByValue)",
                            ""
                        ],
@@ -35526,9 +35564,17 @@
                            ""
                        ],
                        [
+                           "InputObject",
+                           "Enables piping from Get-DbaPowerPlan",
+                           "",
+                           false,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
                            "EnableException",
                            "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
-                           "Silent",
+                           "",
                            false,
                            "false",
                            "False"
@@ -35555,8 +35601,8 @@
         "Synopsis":  "Sets the SQL Server OS\u0027s Power Plan.",
         "Name":  "Set-DbaPowerPlan",
         "Links":  "https://dbatools.io/Set-DbaPowerPlan",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eSet-DbaPowerPlan -ComputerName sqlserver2014a\nSets the Power Plan to High Performance. Skips it if its already set.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003e\u0027Server1\u0027, \u0027Server2\u0027 | Set-DbaPowerPlan -PowerPlaN Balanced\nSets the Power Plan to Balanced for Server1 and Server2. Skips it if its already set.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003e$cred = Get-Credential \u0027Domain\\User\u0027\nPS C:\\\u003e Set-DbaPowerPlan -ComputerName sqlserver2014a -Credential $cred\nConnects using alternative Windows credential and sets the Power Plan to High Performance. Skips it if its already set.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eSet-DbaPowerPlan -ComputerName sqlcluster -CustomPowerPlan \u0027Maximum Performance\u0027\nSets the Power Plan to the custom power plan called \"Maximum Performance\". Skips it if its already set.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eTest-DbaPowerPlan -ComputerName sqlcluster | Set-DbaPowerPlan\nTests the Power Plan on sqlcluster and sets the Power Plan to High Performance. Skips it if its already set.",
-        "Syntax":  "Set-DbaPowerPlan [-ComputerName] \u003cObject[]\u003e [[-Credential] \u003cPSCredential\u003e] [[-PowerPlan] \u003cString\u003e] [[-CustomPowerPlan] \u003cString\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eSet-DbaPowerPlan -ComputerName sql2017\nSets the Power Plan to High Performance. Skips it if its already set.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003e\u0027Server1\u0027, \u0027Server2\u0027 | Set-DbaPowerPlan -PowerPlan Balanced\nSets the Power Plan to Balanced for Server1 and Server2. Skips it if its already set.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003e$cred = Get-Credential \u0027Domain\\User\u0027\nPS C:\\\u003e Set-DbaPowerPlan -ComputerName sql2017 -Credential $cred\nConnects using alternative Windows credential and sets the Power Plan to High Performance. Skips it if its already set.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eSet-DbaPowerPlan -ComputerName sqlcluster -CustomPowerPlan \u0027Maximum Performance\u0027\nSets the Power Plan to the custom power plan called \"Maximum Performance\". Skips it if its already set.",
+        "Syntax":  "Set-DbaPowerPlan [[-ComputerName] \u003cDbaInstanceParameter[]\u003e] [[-Credential] \u003cPSCredential\u003e] [[-PowerPlan] \u003cString\u003e] [[-CustomPowerPlan] \u003cString\u003e] [[-InputObject] \u003cPSObject\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "CommandName":  "Set-DbaPrivilege",
@@ -36596,14 +36642,14 @@
     },
     {
         "CommandName":  "Start-DbaMigration",
-        "Description":  "Start-DbaMigration consolidates most of the migration tools in dbatools into one command.  This is useful when you\u0027re looking to migrate entire instances. It less flexible than using the underlying functions. Think of it as an easy button. It migrates:\n\nAll user databases to exclude support databases such as ReportServerTempDB (Use -IncludeSupportDbs for this). Use -NoDatabases to skip.\nAll logins. Use -NoLogins to skip.\nAll database mail objects. Use -NoDatabaseMail\nAll credentials. Use -NoCredentials to skip.\nAll objects within the Job Server (SQL Agent). Use -NoAgentServer to skip.\nAll linked servers. Use -NoLinkedServers to skip.\nAll groups and servers within Central Management Server. Use -NoCentralManagementServer to skip.\nAll SQL Server configuration objects (everything in sp_configure). Use -NoSpConfigure to skip.\nAll user objects in system databases. Use -NoSysDbUserObjects to skip.\nAll system triggers. Use -NoSystemTriggers to skip.\nAll system backup devices. Use -NoBackupDevices to skip.\nAll Audits. Use -NoAudits to skip.\nAll Endpoints. Use -NoEndpoints to skip.\nAll Extended Events. Use -NoExtendedEvents to skip.\nAll Policy Management objects. Use -NoPolicyManagement to skip.\nAll Resource Governor objects. Use -NoResourceGovernor to skip.\nAll Server Audit Specifications. Use -NoServerAuditSpecifications to skip.\nAll Custom Errors (User Defined Messages). Use -NoCustomErrors to skip.\nCopies All Data Collector collection sets. Does not configure the server. Use -NoDataCollector to skip.\n\nThis script provides the ability to migrate databases using detach/copy/attach or backup/restore. SQL Server logins, including passwords, SID and database/server roles can also be migrated. In addition, job server objects can be migrated and server configuration settings can be exported or migrated. This script works with named instances, clusters and SQL Express.\n\nBy default, databases will be migrated to the destination SQL Server\u0027s default data and log directories. You can override this by specifying -ReuseSourceFolderStructure. Filestreams and filegroups are also migrated. Safety is emphasized.",
+        "Description":  "Start-DbaMigration consolidates most of the migration tools in dbatools into one command.  This is useful when you\u0027re looking to migrate entire instances. It less flexible than using the underlying functions. Think of it as an easy button. It migrates:\n\nAll user databases to exclude support databases such as ReportServerTempDB (Use -IncludeSupportDbs for this). Use -Exclude Databases to skip.\nAll logins. Use -Exclude Logins to skip.\nAll database mail objects. Use -Exclude DatabaseMail\nAll credentials. Use -Exclude Credentials to skip.\nAll objects within the Job Server (SQL Agent). Use -Exclude AgentServer to skip.\nAll linked servers. Use -Exclude LinkedServers to skip.\nAll groups and servers within Central Management Server. Use -Exclude CentralManagementServer to skip.\nAll SQL Server configuration objects (everything in sp_configure). Use -Exclude SpConfigure to skip.\nAll user objects in system databases. Use -Exclude SysDbUserObjects to skip.\nAll system triggers. Use -Exclude SystemTriggers to skip.\nAll system backup devices. Use -Exclude BackupDevices to skip.\nAll Audits. Use -Exclude Audits to skip.\nAll Endpoints. Use -Exclude Endpoints to skip.\nAll Extended Events. Use -Exclude ExtendedEvents to skip.\nAll Policy Management objects. Use -Exclude PolicyManagement to skip.\nAll Resource Governor objects. Use -Exclude ResourceGovernor to skip.\nAll Server Audit Specifications. Use -Exclude ServerAuditSpecifications to skip.\nAll Custom Errors (User Defined Messages). Use -Exclude CustomErrors to skip.\nCopies All Data Collector collection sets. Does not configure the server. Use -Exclude DataCollector to skip.\n\nThis script provides the ability to migrate databases using detach/copy/attach or backup/restore. SQL Server logins, including passwords, SID and database/server roles can also be migrated. In addition, job server objects can be migrated and server configuration settings can be exported or migrated. This script works with named instances, clusters and SQL Express.\n\nBy default, databases will be migrated to the destination SQL Server\u0027s default data and log directories. You can override this by specifying -ReuseSourceFolderStructure. Filestreams and filegroups are also migrated. Safety is emphasized.",
         "Tags":  "Migration",
         "Params":  [
                        [
                            "Source",
                            "Source SQL Server.",
                            "",
-                           true,
+                           false,
                            "false",
                            ""
                        ],
@@ -36611,7 +36657,7 @@
                            "Destination",
                            "Destination SQL Server. You may specify multiple servers.\nNote that when using -BackupRestore with multiple servers, the backup will only be performed once and backups will be deleted at the end (if you didn\u0027t specify -NoBackupCleanup).\nWhen using -DetachAttach with multiple servers, -Reattach must be specified.",
                            "",
-                           true,
+                           false,
                            "false",
                            ""
                        ],
@@ -36619,7 +36665,7 @@
                            "DetachAttach",
                            "If this switch is enabled, the the detach/copy/attach method is used to perform database migrations. No files are deleted on Source. If the destination attachment fails, the source database will be \r\nreattached. File copies are performed over administrative shares (\\\\server\\x$\\mssql) using BITS. If a database is being mirrored, the mirror will be broken prior to migration.",
                            "",
-                           true,
+                           false,
                            "false",
                            "False"
                        ],
@@ -36633,14 +36679,14 @@
                        ],
                        [
                            "BackupRestore",
-                           "If this switch is enabled, the Copy-Only backup and restore method is used to perform database migrations. You must specify -NetworkShare with a valid UNC format as well (\\\\server\\share).",
+                           "If this switch is enabled, the Copy-Only backup and restore method is used to perform database migrations. You must specify -SharedPath with a valid UNC format as well (\\\\server\\share).",
                            "",
-                           true,
+                           false,
                            "false",
                            "False"
                        ],
                        [
-                           "NetworkShare",
+                           "SharedPath",
                            "Specifies the network location for the backup files. The SQL Server service accounts on both Source and Destination must have read/write permission to access this location.",
                            "",
                            false,
@@ -36674,7 +36720,7 @@
                        [
                            "ReuseSourceFolderStructure",
                            "If this switch is enabled, the data and log directory structures on Source will be kept on Destination. Otherwise, databases will be migrated to Destination\u0027s default data and log directories.\nConsider this if you\u0027re migrating between different versions and use part of Microsoft\u0027s default SQL structure (MSSQL12.INSTANCE, etc.).",
-                           "ReuseFolderStructure",
+                           "",
                            false,
                            "false",
                            "False"
@@ -36704,156 +36750,12 @@
                            ""
                        ],
                        [
-                           "NoDatabases",
-                           "If this switch is enabled, databases will not be migrated.",
-                           "SkipDatabases",
-                           false,
-                           "false",
-                           "False"
-                       ],
-                       [
-                           "NoLogins",
-                           "If this switch is enabled, Logins will not be migrated.",
+                           "Exclude",
+                           "Exclude one or more objects to migrate\nDatabases\r\nLogins\r\nAgentServer\r\nCredentials\r\nLinkedServers\r\nSpConfigure\r\nCentralManagementServer\r\nDatabaseMail\r\nSysDbUserObjects\r\nSystemTriggers\r\nBackupDevices\r\nAudits\r\nEndpoints\r\nExtendedEvents\r\nPolicyManagement\r\nResourceGovernor\r\nServerAuditSpecifications\r\nCustomErrors\r\nDataCollector",
                            "",
                            false,
                            "false",
-                           "False"
-                       ],
-                       [
-                           "NoAgentServer",
-                           "If this switch is enabled, SQL Agent jobs will not be migrated.",
-                           "SkipJobServer,NoJobServer",
-                           false,
-                           "false",
-                           "False"
-                       ],
-                       [
-                           "NoCredentials",
-                           "If this switch is enabled, Credentials will not be migrated.",
-                           "SkipCredentials",
-                           false,
-                           "false",
-                           "False"
-                       ],
-                       [
-                           "NoLinkedServers",
-                           "If this switch is enabled, Linked Servers will not be migrated.",
-                           "SkipLinkedServers",
-                           false,
-                           "false",
-                           "False"
-                       ],
-                       [
-                           "NoSpConfigure",
-                           "If this switch is enabled, options configured via sp_configure will not be migrated.",
-                           "SkipSpConfigure",
-                           false,
-                           "false",
-                           "False"
-                       ],
-                       [
-                           "NoCentralManagementServer",
-                           "If this switch is enabled, Central Management Server will not be migrated.",
-                           "SkipCentralManagementServer",
-                           false,
-                           "false",
-                           "False"
-                       ],
-                       [
-                           "NoDatabaseMail",
-                           "If this switch is enabled, Database Mail will not be migrated.",
-                           "SkipDatabaseMail",
-                           false,
-                           "false",
-                           "False"
-                       ],
-                       [
-                           "NoSysDbUserObjects",
-                           "If this switch is enabled, user objects found in the master, msdb and model databases will not be migrated.",
-                           "SkipSysDbUserObjects",
-                           false,
-                           "false",
-                           "False"
-                       ],
-                       [
-                           "NoSystemTriggers",
-                           "If this switch is enabled, System Triggers will not be migrated.",
-                           "SkipSystemTriggers",
-                           false,
-                           "false",
-                           "False"
-                       ],
-                       [
-                           "NoBackupDevices",
-                           "If this switch is enabled, Backup Devices will not be migrated.",
-                           "SkipBackupDevices",
-                           false,
-                           "false",
-                           "False"
-                       ],
-                       [
-                           "NoAudits",
-                           "If this switch is enabled, Audits will not be migrated.",
-                           "",
-                           false,
-                           "false",
-                           "False"
-                       ],
-                       [
-                           "NoEndpoints",
-                           "If this switch is enabled, Endpoints will not be migrated.",
-                           "",
-                           false,
-                           "false",
-                           "False"
-                       ],
-                       [
-                           "NoExtendedEvents",
-                           "If this switch is enabled, Extended Events will not be migrated.",
-                           "",
-                           false,
-                           "false",
-                           "False"
-                       ],
-                       [
-                           "NoPolicyManagement",
-                           "If this switch is enabled, Policy-Based Management will not be migrated.",
-                           "",
-                           false,
-                           "false",
-                           "False"
-                       ],
-                       [
-                           "NoResourceGovernor",
-                           "If this switch is enabled, Resource Governor will not be migrated.",
-                           "",
-                           false,
-                           "false",
-                           "False"
-                       ],
-                       [
-                           "NoServerAuditSpecifications",
-                           "If this switch is enabled, the Server Audit Specification will not be migrated.",
-                           "",
-                           false,
-                           "false",
-                           "False"
-                       ],
-                       [
-                           "NoCustomErrors",
-                           "If this switch is enabled, Custom Errors (User Defined Messages) will not be migrated.",
-                           "",
-                           false,
-                           "false",
-                           "False"
-                       ],
-                       [
-                           "NoDataCollector",
-                           "If this switch is enabled, the Data Collector will not be migrated.",
-                           "",
-                           false,
-                           "false",
-                           "False"
+                           ""
                        ],
                        [
                            "DisableJobsOnDestination",
@@ -36872,7 +36774,7 @@
                            "False"
                        ],
                        [
-                           "NoSaRename",
+                           "ExcludeSaRename",
                            "If this switch is enabled, the sa account will not be renamed on the destination instance to match the source.",
                            "",
                            false,
@@ -36880,7 +36782,7 @@
                            "False"
                        ],
                        [
-                           "UseLastBackups",
+                           "UseLastBackup",
                            "Use the last full, diff and logs instead of performing backups. Note that the backups must exist in a location accessible by all destination servers, such a network share.",
                            "",
                            false,
@@ -36889,7 +36791,7 @@
                        ],
                        [
                            "Continue",
-                           "If specified, will to attempt to restore transaction log backups on top of existing database(s) in Recovering or Standby states. Only usable with -UseLastBackups",
+                           "If specified, will to attempt to restore transaction log backups on top of existing database(s) in Recovering or Standby states. Only usable with -UseLastBackup",
                            "",
                            false,
                            "false",
@@ -36930,11 +36832,11 @@
                    ],
         "Alias":  "Start-SqlMigration",
         "Author":  "Chrissy LeMaire (@cl), netnerds.net",
-        "Synopsis":  "Migrates SQL Server *ALL* databases, logins, database mail profiles/accounts, credentials, SQL Agent objects, linked servers,\nCentral Management Server objects, server configuration settings (sp_configure), user objects in systems databases,\nsystem triggers and backup devices from one SQL Server to another.\n\nFor more granular control, please use one of the -No parameters and use the other functions available within the dbatools module.",
+        "Synopsis":  "Migrates SQL Server *ALL* databases, logins, database mail profiles/accounts, credentials, SQL Agent objects, linked servers,\nCentral Management Server objects, server configuration settings (sp_configure), user objects in systems databases,\nsystem triggers and backup devices from one SQL Server to another.\n\nFor more granular control, please use Exclude or use the other functions available within the dbatools module.",
         "Name":  "Start-DbaMigration",
         "Links":  "https://dbatools.io/Start-DbaMigration",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eStart-DbaMigration -Source sqlserver\\instance -Destination sqlcluster -DetachAttach\nAll databases, logins, job objects and sp_configure options will be migrated from sqlserver\\instance to sqlcluster. Databases will be migrated using the detach/copy files/attach method. Dbowner will \r\nbe updated. User passwords, SIDs, database roles and server roles will be migrated along with the login.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003e$params = @{\n\u003e\u003e \"Source\" = \"sqlcluster\";\r\n\u003e\u003e \"Destination\" = \"sql2016\";\r\n\u003e\u003e \"SourceSqlCredential\" = $scred;\r\n\u003e\u003e \"DestinationSqlCredential\" = $cred;\r\n\u003e\u003e \"NetworkShare\" = \"\\\\fileserver\\share\\sqlbackups\\Migration\";\r\n\u003e\u003e \"BackupRestore\" = $true;\r\n\u003e\u003e \"ReuseSourceFolderStructure\" = $true;\r\n\u003e\u003e \"Force\" = $true;\r\n\u003e\u003e }\r\n\u003e\u003e\r\nPS C:\\\u003e Start-DbaMigration @params -Verbose\nUtilizes splatting technique to set all the needed parameters. This will migrate databases using the backup/restore method. It will also include migration of the logins, database mail configuration, \r\ncredentials, SQL Agent, Central Management Server, and SQL Server global configuration.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003e$PSDefaultParameters = @{\n\u003e\u003e \"dbatools:Source\" = \"sqlcluster\"\r\n\u003e\u003e \"dbatools:Destination\" = \"sql2016\"\r\n\u003e\u003e }\r\n\u003e\u003e\r\nPS C:\\\u003e Start-DbaMigration -Verbose -NoDatabases -NoLogins\nUtilizes the PSDefaultParameterValues system variable, and sets the Source and Destination parameters for any function in the module that has those parameter names. This prevents the need from \r\npassing them in constantly.\r\nThe execution of the function will migrate everything but logins and databases.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eStart-DbaMigration -Verbose -Source sqlcluster -Destination sql2016 -DetachAttach -Reattach -SetSourceReadonly\nMigrate databases using detach/copy/attach. Reattach at source and set source databases read-only. Also migrates everything else.",
-        "Syntax":  "Start-DbaMigration [-Source] \u003cDbaInstanceParameter\u003e [-Destination] \u003cDbaInstanceParameter[]\u003e [[-SourceSqlCredential] \u003cPSCredential\u003e] [[-DestinationSqlCredential] \u003cPSCredential\u003e] [-NoDatabases] [-NoLogins] [-NoAgentServer] [-NoCredentials] [-NoLinkedServers] [-NoSpConfigure] [-NoCentralManagementServer] [-NoDatabaseMail] [-NoSysDbUserObjects] [-NoSystemTriggers] [-NoBackupDevices] [-NoAudits] [-NoEndpoints] [-NoExtendedEvents] [-NoPolicyManagement] [-NoResourceGovernor] [-NoServerAuditSpecifications] [-NoCustomErrors] [-NoDataCollector] [-DisableJobsOnDestination] [-DisableJobsOnSource] \r\n[-NoSaRename] [-UseLastBackups] [-Continue] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nStart-DbaMigration [-Source] \u003cDbaInstanceParameter\u003e [-Destination] \u003cDbaInstanceParameter[]\u003e [-DetachAttach] [[-Reattach]] [[-SetSourceReadOnly]] [[-ReuseSourceFolderStructure]] [[-IncludeSupportDbs]] [[-SourceSqlCredential] \u003cPSCredential\u003e] [[-DestinationSqlCredential] \u003cPSCredential\u003e] [-NoDatabases] [-NoLogins] [-NoAgentServer] [-NoCredentials] [-NoLinkedServers] [-NoSpConfigure] [-NoCentralManagementServer] [-NoDatabaseMail] [-NoSysDbUserObjects] [-NoSystemTriggers] [-NoBackupDevices] [-NoAudits] [-NoEndpoints] [-NoExtendedEvents] [-NoPolicyManagement] [-NoResourceGovernor] \r\n[-NoServerAuditSpecifications] [-NoCustomErrors] [-NoDataCollector] [-DisableJobsOnDestination] [-DisableJobsOnSource] [-NoSaRename] [-UseLastBackups] [-Continue] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nStart-DbaMigration [-Source] \u003cDbaInstanceParameter\u003e [-Destination] \u003cDbaInstanceParameter[]\u003e [-BackupRestore] [[-NetworkShare] \u003cString\u003e] [[-WithReplace]] [[-NoRecovery]] [[-SetSourceReadOnly]] [[-ReuseSourceFolderStructure]] [[-IncludeSupportDbs]] [[-SourceSqlCredential] \u003cPSCredential\u003e] [[-DestinationSqlCredential] \u003cPSCredential\u003e] [-NoDatabases] [-NoLogins] [-NoAgentServer] [-NoCredentials] [-NoLinkedServers] [-NoSpConfigure] [-NoCentralManagementServer] [-NoDatabaseMail] [-NoSysDbUserObjects] [-NoSystemTriggers] [-NoBackupDevices] [-NoAudits] [-NoEndpoints] [-NoExtendedEvents] \r\n[-NoPolicyManagement] [-NoResourceGovernor] [-NoServerAuditSpecifications] [-NoCustomErrors] [-NoDataCollector] [-DisableJobsOnDestination] [-DisableJobsOnSource] [-NoSaRename] [-UseLastBackups] [-Continue] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eStart-DbaMigration -Source sqlserver\\instance -Destination sqlcluster -DetachAttach\nAll databases, logins, job objects and sp_configure options will be migrated from sqlserver\\instance to sqlcluster. Databases will be migrated using the detach/copy files/attach method. Dbowner will \r\nbe updated. User passwords, SIDs, database roles and server roles will be migrated along with the login.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003e$params = @{\n\u003e\u003e Source = \"sqlcluster\"\r\n\u003e\u003e Destination = \"sql2016\"\r\n\u003e\u003e SourceSqlCredential = $scred\r\n\u003e\u003e DestinationSqlCredential = $cred\r\n\u003e\u003e SharedPath = \"\\\\fileserver\\share\\sqlbackups\\Migration\"\r\n\u003e\u003e BackupRestore = $true\r\n\u003e\u003e ReuseSourceFolderStructure\" = $true\r\n\u003e\u003e Force = $true\r\n\u003e\u003e }\r\n\u003e\u003e\r\nPS C:\\\u003e Start-DbaMigration @params -Verbose\nUtilizes splatting technique to set all the needed parameters. This will migrate databases using the backup/restore method. It will also include migration of the logins, database mail configuration, \r\ncredentials, SQL Agent, Central Management Server, and SQL Server global configuration.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eStart-DbaMigration -Verbose -Source sqlcluster -Destination sql2016 -DetachAttach -Reattach -SetSourceReadonly\nMigrates databases using detach/copy/attach. Reattach at source and set source databases read-only. Also migrates everything else.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003e$PSDefaultParameters = @{\n\u003e\u003e \"dbatools:Source\" = \"sqlcluster\"\r\n\u003e\u003e \"dbatools:Destination\" = \"sql2016\"\r\n\u003e\u003e }\r\n\u003e\u003e\r\nPS C:\\\u003e Start-DbaMigration -Verbose -NoDatabases -NoLogins\nUtilizes the PSDefaultParameterValues system variable, and sets the Source and Destination parameters for any function in the module that has those parameter names. This prevents the need from \r\npassing them in constantly.\r\nThe execution of the function will migrate everything but logins and databases.",
+        "Syntax":  "Start-DbaMigration [[-Source] \u003cDbaInstanceParameter\u003e] [[-Destination] \u003cDbaInstanceParameter[]\u003e] [-DetachAttach] [-Reattach] [-BackupRestore] [[-SharedPath] \u003cString\u003e] [-WithReplace] [-NoRecovery] [-SetSourceReadOnly] [-ReuseSourceFolderStructure] [-IncludeSupportDbs] [[-SourceSqlCredential] \u003cPSCredential\u003e] [[-DestinationSqlCredential] \u003cPSCredential\u003e] [[-Exclude] \u003cString[]\u003e] [-DisableJobsOnDestination] [-DisableJobsOnSource] [-ExcludeSaRename] [-UseLastBackup] [-Continue] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "CommandName":  "Start-DbaPfDataCollectorSet",
@@ -40031,7 +39933,7 @@
         "Synopsis":  "Displays information relating to SQL Server Max Degree of Parallelism setting. Works on SQL Server 2005-2016.",
         "Name":  "Test-DbaMaxDop",
         "Links":  "https://dbatools.io/Test-DbaMaxDop",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eTest-DbaMaxDop -SqlInstance sql2008, sqlserver2012\nGet Max DOP setting for servers sql2008 and sqlserver2012 and also the recommended one.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eTest-DbaMaxDop -SqlInstance sql2014 | Select-Object *\nShows Max DOP setting for server sql2014 with the recommended value. Piping the output to Select-Object * will also show the \u0027NUMANodes\u0027 and \u0027NumberOfCores\u0027 of each instance\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eTest-DbaMaxDop -SqlInstance sqlserver2016 | Select-Object *\nGet Max DOP setting for servers sql2016 with the recommended value. Piping the output to Select-Object * will also show the \u0027NUMANodes\u0027 and \u0027NumberOfCores\u0027 of each instance. Because it is an 2016 \r\ninstance will be shown \u0027InstanceVersion\u0027, \u0027Database\u0027 and \u0027DatabaseMaxDop\u0027 columns.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eTest-DbaMaxDop -SqlInstance sql2008, sqlserver2012\nGet Max DOP setting for servers sql2008 and sqlserver2012 and also the recommended one.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eTest-DbaMaxDop -SqlInstance sql2014 | Select-Object *\nShows Max DOP setting for server sql2014 with the recommended value. Piping the output to Select-Object * will also show the \u0027NumaNodes\u0027 and \u0027NumberOfCores\u0027 of each instance\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eTest-DbaMaxDop -SqlInstance sqlserver2016 | Select-Object *\nGet Max DOP setting for servers sql2016 with the recommended value. Piping the output to Select-Object * will also show the \u0027NumaNodes\u0027 and \u0027NumberOfCores\u0027 of each instance. Because it is an 2016 \r\ninstance will be shown \u0027InstanceVersion\u0027, \u0027Database\u0027 and \u0027DatabaseMaxDop\u0027 columns.",
         "Syntax":  "Test-DbaMaxDop [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Detailed] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
@@ -40330,6 +40232,14 @@
                            ""
                        ],
                        [
+                           "InputObject",
+                           "Enables piping from Get-DbaPowerPlan",
+                           "",
+                           false,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
                            "Detailed",
                            "Output all properties, will be deprecated in 1.0.0 release.",
                            "",
@@ -40340,7 +40250,7 @@
                        [
                            "EnableException",
                            "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
-                           "Silent",
+                           "",
                            false,
                            "false",
                            "False"
@@ -40352,7 +40262,7 @@
         "Name":  "Test-DbaPowerPlan",
         "Links":  "https://dbatools.io/Test-DbaPowerPlan",
         "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eTest-DbaPowerPlan -ComputerName sqlserver2014a\nChecks the Power Plan settings for sqlserver2014a and indicates whether or not it complies with best practices.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eTest-DbaPowerPlan -ComputerName sqlserver2014a -CustomPowerPlan \u0027Maximum Performance\u0027\nChecks the Power Plan settings for sqlserver2014a and indicates whether or not it is set to the custom plan \"Maximum Performance\".",
-        "Syntax":  "Test-DbaPowerPlan [[-ComputerName] \u003cDbaInstanceParameter[]\u003e] [[-Credential] \u003cPSCredential\u003e] [[-CustomPowerPlan] \u003cString\u003e] [-Detailed] [-EnableException] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Test-DbaPowerPlan [[-ComputerName] \u003cDbaInstanceParameter[]\u003e] [[-Credential] \u003cPSCredential\u003e] [[-CustomPowerPlan] \u003cString\u003e] [[-InputObject] \u003cPSObject\u003e] [-Detailed] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
         "CommandName":  "Test-DbaRepLatency",
@@ -40796,7 +40706,7 @@
                            ""
                        ],
                        [
-                           "OldPassword",
+                           "PreviousPassword",
                            "An old password of the service account. Optional when run under local admin privileges.",
                            "",
                            false,
@@ -40842,7 +40752,7 @@
         "Name":  "Update-DbaServiceAccount",
         "Links":  null,
         "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003e$NewPassword = ConvertTo-SecureString \u0027Qwerty1234\u0027 -AsPlainText -Force\nUpdate-DbaServiceAccount -ComputerName sql1 -ServiceName \u0027MSSQL$MYINSTANCE\u0027 -Password $NewPassword\nChanges the current service account\u0027s password of the service MSSQL$MYINSTANCE to \u0027Qwerty1234\u0027\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003e$cred = Get-Credential\nPS C:\\\u003e Get-DbaService sql1 -Type Engine,Agent -Instance MYINSTANCE | Update-DbaServiceAccount -ServiceCredential $cred\nRequests credentials from the user and configures them as a service account for the SQL Server engine and agent services of the instance sql1\\MYINSTANCE\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eUpdate-DbaServiceAccount -ComputerName sql1,sql2 -ServiceName \u0027MSSQLSERVER\u0027,\u0027SQLSERVERAGENT\u0027 -Username NETWORKSERVICE\nConfigures SQL Server engine and agent services on the machines sql1 and sql2 to run under Network Service system user.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaService sql1 -Type Engine -Instance MSSQLSERVER | Update-DbaServiceAccount -Username \u0027MyDomain\\sqluser1\u0027\nConfigures SQL Server engine service on the machine sql1 to run under MyDomain\\sqluser1. Will request user to input the account password.",
-        "Syntax":  "Update-DbaServiceAccount [-ComputerName \u003cDbaInstanceParameter[]\u003e] [-Credential \u003cPSCredential\u003e] [-ServiceName] \u003cString[]\u003e [-Username \u003cString\u003e] [-ServiceCredential \u003cPSCredential\u003e] [-OldPassword \u003cSecureString\u003e] [-NewPassword \u003cSecureString\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nUpdate-DbaServiceAccount [-Credential \u003cPSCredential\u003e] -InputObject \u003cObject[]\u003e [-Username \u003cString\u003e] [-ServiceCredential \u003cPSCredential\u003e] [-OldPassword \u003cSecureString\u003e] [-NewPassword \u003cSecureString\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Update-DbaServiceAccount [-ComputerName \u003cDbaInstanceParameter[]\u003e] [-Credential \u003cPSCredential\u003e] [-ServiceName] \u003cString[]\u003e [-Username \u003cString\u003e] [-ServiceCredential \u003cPSCredential\u003e] [-PreviousPassword \u003cSecureString\u003e] [-NewPassword \u003cSecureString\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nUpdate-DbaServiceAccount [-Credential \u003cPSCredential\u003e] -InputObject \u003cObject[]\u003e [-Username \u003cString\u003e] [-ServiceCredential \u003cPSCredential\u003e] [-PreviousPassword \u003cSecureString\u003e] [-NewPassword \u003cSecureString\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "CommandName":  "Update-Dbatools",

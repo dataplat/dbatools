@@ -24,7 +24,7 @@ function Update-DbaServiceAccount {
         NETWORKSERVICE
         LOCALSYSTEM
 
-    .PARAMETER OldPassword
+    .PARAMETER PreviousPassword
         An old password of the service account. Optional when run under local admin privileges.
 
     .PARAMETER NewPassword
@@ -95,7 +95,7 @@ function Update-DbaServiceAccount {
         [Alias("User")]
         [string]$Username,
         [PSCredential]$ServiceCredential,
-        [securestring]$OldPassword = (New-Object System.Security.SecureString),
+        [securestring]$PreviousPassword = (New-Object System.Security.SecureString),
         [Alias("Password")]
         [securestring]$NewPassword = (New-Object System.Security.SecureString),
         [Alias('Silent')]
@@ -206,7 +206,7 @@ function Update-DbaServiceAccount {
                             $outMessage = "The login account for the service has been successfully set."
                         } elseif ($actionType -eq 'Password') {
                             Write-Message -Level Verbose -Message "Attempting a password change for service $($svc.ServiceName) on $($svc.ComputerName)"
-                            $null = Invoke-ManagedComputerCommand -ComputerName $svc.ComputerName -Credential $Credential -ScriptBlock $scriptPasswordChange -ArgumentList @($svc.ServiceName, (New-Object System.Management.Automation.PSCredential ("user", $OldPassword)).GetNetworkCredential().Password, (New-Object System.Management.Automation.PSCredential ("user", $currentPassword)).GetNetworkCredential().Password) -EnableException:$EnableException
+                            $null = Invoke-ManagedComputerCommand -ComputerName $svc.ComputerName -Credential $Credential -ScriptBlock $scriptPasswordChange -ArgumentList @($svc.ServiceName, (New-Object System.Management.Automation.PSCredential ("user", $PreviousPassword)).GetNetworkCredential().Password, (New-Object System.Management.Automation.PSCredential ("user", $currentPassword)).GetNetworkCredential().Password) -EnableException:$EnableException
                             $outMessage = "The password has been successfully changed."
                         }
                         $outStatus = 'Successful'
