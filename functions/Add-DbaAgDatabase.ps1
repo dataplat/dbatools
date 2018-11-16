@@ -85,19 +85,22 @@ function Add-DbaAgDatabase {
         foreach ($instance in $SqlInstance) {
             $InputObject += Get-DbaDatabase -SqlInstance $instance -SqlCredential $SqlCredential -Database $Database
         }
-
+        
         foreach ($db in $InputObject) {
-            $ags = Get-DbaAvailabilityGroup -SqlInstance $db.Parent -AvailabilityGroup $AvailabilityGroup
-
-            foreach ($ag in $ags) {
-                if ($Pscmdlet.ShouldProcess($ag.Parent.Name, "Adding availability group $db to $($db.Parent.Name)")) {
-                    try {
-                        $agdb = New-Object Microsoft.SqlServer.Management.Smo.AvailabilityDatabase($ag, $db.Name)
-                        # something is up with .net create(), force a stop
-                        Invoke-Create -Object $agdb
-                        Get-DbaAgDatabase -SqlInstance $ag.Parent -Database $db.Name
-                    } catch {
-                        Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
+            $replicas = Get-DbaAgReplica -SqlInstance $db.Parent -AvailabilityGroup $AvailabilityGroup
+            
+            foreach ($replica in $replicas) {
+                $ags = Get-DbaAvailabilityGroup -SqlInstance $replica.Name -SqlCredential $SqlCredential -AvailabilityGroup $AvailabilityGroup
+                foreach ($ag in $ags) {
+                    if ($Pscmdlet.ShouldProcess($ag.Parent.Name, "Adding availability group $db to $($db.Parent.Name)")) {
+                        try {
+                            $agdb = New-Object Microsoft.SqlServer.Management.Smo.AvailabilityDatabase($ag, $db.Name)
+                            # something is up with .net create(), force a stop
+                            Invoke-Create -Object $agdb
+                            Get-DbaAgDatabase -SqlInstance $ag.Parent -Database $db.Name
+                        } catch {
+                            Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
+                        }
                     }
                 }
             }
