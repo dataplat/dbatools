@@ -190,9 +190,11 @@ function Find-DbaInstance {
         - Tries looking up the Service Principal Names for each instance
 
     .EXAMPLE
-        PS C:\> Get-Content .\servers.txt | Find-DbaInstance -SqlCredential $cred -ScanType Browser, SqlService
+        PS C:\> Get-Content .\servers.txt | Find-DbaInstance -SqlCredential $cred -ScanType Browser, SqlConnect
 
         Reads all servers from the servers.txt file (one server per line),
+        then scans each of them for instances using the browser service
+        and finally attempts to connect to each instance found using the specified credentials.
         then scans each of them for instances using the browser service and SqlService
 
     .EXAMPLE
