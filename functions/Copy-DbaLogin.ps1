@@ -28,7 +28,7 @@ function Copy-DbaLogin {
     .PARAMETER ExcludeLogin
         The login(s) to exclude. Options for this list are auto-populated from the server.
 
-    .PARAMETER ExcludeSystemLogin
+    .PARAMETER ExcludeSystemLogins
         If this switch is enabled, NT SERVICE accounts will be skipped.
 
     .PARAMETER ExcludePermissionSync
@@ -136,7 +136,7 @@ function Copy-DbaLogin {
         [PSCredential]$DestinationSqlCredential,
         [object[]]$Login,
         [object[]]$ExcludeLogin,
-        [switch]$ExcludeSystemLogin,
+        [switch]$ExcludeSystemLogins,
         [switch]$SyncOnly,
         [parameter(ParameterSetName = "Live")]
         [parameter(ParameterSetName = "SqlInstance")]
@@ -208,9 +208,9 @@ function Copy-DbaLogin {
                         }
                         continue
                     } else {
-                        if ($ExcludeSystemLogin) {
-                            if ($Pscmdlet.ShouldProcess("console", "$userName was skipped because ExcludeSystemLogin was specified.")) {
-                                Write-Message -Level Verbose -Message "$userName was skipped because ExcludeSystemLogin was specified."
+                        if ($ExcludeSystemLogins) {
+                            if ($Pscmdlet.ShouldProcess("console", "$userName was skipped because ExcludeSystemLogins was specified.")) {
+                                Write-Message -Level Verbose -Message "$userName was skipped because ExcludeSystemLogins was specified."
 
                                 $copyLoginStatus.Status = "Skipped"
                                 $copyLoginStatus.Notes = "System login"

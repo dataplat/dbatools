@@ -43,7 +43,7 @@ function Start-DbaMigration {
     .PARAMETER Destination
         Destination SQL Server. You may specify multiple servers.
 
-        Note that when using -BackupRestore with multiple servers, the backup will only be performed once and backups will be deleted at the end (if you didn't specify -NoBackupCleanup).
+        Note that when using -BackupRestore with multiple servers, the backup will only be performed once and backups will be deleted at the end (if you didn't specify -ExcludeBackupCleanup).
 
         When using -DetachAttach with multiple servers, -Reattach must be specified.
 
@@ -179,7 +179,7 @@ function Start-DbaMigration {
         >> "dbatools:Destination" = "sql2016"
         >> }
         >>
-        PS C:\> Start-DbaMigration -Verbose -NoDatabases -NoLogins
+        PS C:\> Start-DbaMigration -Verbose -Exclude Databases, Logins
 
         Utilizes the PSDefaultParameterValues system variable, and sets the Source and Destination parameters for any function in the module that has those parameter names. This prevents the need from passing them in constantly.
         The execution of the function will migrate everything but logins and databases.

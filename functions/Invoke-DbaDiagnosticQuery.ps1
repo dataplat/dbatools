@@ -42,14 +42,14 @@ function Invoke-DbaDiagnosticQuery {
     .PARAMETER DatabaseSpecific
         Run only database level queries
 
-    .PARAMETER NoQueryTextColumn
+    .PARAMETER ExcludeQueryTextColumn
         Use this switch to exclude the [Complete Query Text] column from relevant queries
 
-    .PARAMETER NoPlanColumn
+    .PARAMETER ExcludePlanColumn
         Use this switch to exclude the [Query Plan] column from relevant queries
 
     .PARAMETER NoColumnParsing
-        Does not parse the [Complete Query Text] and [Query Plan] columns and disregards the NoQueryTextColumn and NoColumnParsing switches
+        Does not parse the [Complete Query Text] and [Query Plan] columns and disregards the ExcludeQueryTextColumn and NoColumnParsing switches
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -150,8 +150,8 @@ function Invoke-DbaDiagnosticQuery {
         [switch]$UseSelectionHelper,
         [switch]$InstanceOnly,
         [switch]$DatabaseSpecific,
-        [Switch]$NoQueryTextColumn,
-        [Switch]$NoPlanColumn,
+        [Switch]$ExcludeQueryTextColumn,
+        [Switch]$ExcludePlanColumn,
         [Switch]$NoColumnParsing,
 
         [string]$OutputPath,
@@ -209,7 +209,7 @@ function Invoke-DbaDiagnosticQuery {
 
         foreach ($file in $scriptfiles) {
             if ($file.BaseName.Split("_")[2] -eq $currentdate) {
-                $parsedscript = Invoke-DbaDiagnosticQueryScriptParser -filename $file.fullname -NoQueryTextColumn:$NoQueryTextColumn -NoPlanColumn:$NoPlanColumn -NoColumnParsing:$NoColumnParsing
+                $parsedscript = Invoke-DbaDiagnosticQueryScriptParser -filename $file.fullname -ExcludeQueryTextColumn:$ExcludeQueryTextColumn -ExcludePlanColumn:$ExcludePlanColumn -NoColumnParsing:$NoColumnParsing
 
                 $newscript = [pscustomobject]@{
                     Version = $file.Basename.Split("_")[1]
