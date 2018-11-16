@@ -28,7 +28,7 @@ function Get-DbaQueryExecutionTime {
     .PARAMETER MinExecMs
         Allows you to limit the scope to queries with a specified average execution time.  Default value is 500 (ms).
 
-    .PARAMETER NoSystemDb
+    .PARAMETER ExcludeSystemDatabases
         Allows you to suppress output on system databases
 
     .PARAMETER EnableException
@@ -81,7 +81,7 @@ function Get-DbaQueryExecutionTime {
         [parameter(Position = 3, Mandatory = $false)]
         [int]$MinExecMs = 500,
         [parameter(Position = 4, Mandatory = $false)]
-        [switch]$NoSystemDb,
+        [switch]$ExcludeSystemDatabases,
         [Alias('Silent')]
         [switch]$EnableException
     )
@@ -191,7 +191,7 @@ function Get-DbaQueryExecutionTime {
                 $dbs = $dbs | Where-Object Name -In $Database
             }
 
-            if ($NoSystemDb) {
+            if ($ExcludeSystemDatabases) {
                 $dbs = $dbs | Where-Object { $_.IsSystemObject -eq $false }
             }
 

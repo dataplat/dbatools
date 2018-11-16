@@ -56,7 +56,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         }
     }
 
-    Get-DbaProcess $script:instance2 -NoSystemSpid | Stop-DbaProcess -WarningVariable warn -WarningAction SilentlyContinue
+    Get-DbaProcess $script:instance2 -ExcludeSystemSpids | Stop-DbaProcess -WarningVariable warn -WarningAction SilentlyContinue
     Context "Properly restores a database on the local drive using piped Get-ChildItem results" {
         $results = Get-ChildItem $script:appveyorlabrepo\singlerestore\singlerestore.bak | Restore-DbaDatabase -SqlInstance $script:instance2
         It "Should Return the proper backup file location" {
@@ -74,7 +74,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         }
     }
 
-    Get-DbaProcess $script:instance2 -NoSystemSpid | Stop-DbaProcess -WarningVariable warn -WarningAction SilentlyContinue
+    Get-DbaProcess $script:instance2 -ExcludeSystemSpids | Stop-DbaProcess -WarningVariable warn -WarningAction SilentlyContinue
     Context "Database is properly removed again after gci tests" {
         $results = Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance2 -Database singlerestore
         It "Should say the status was dropped" {
@@ -98,7 +98,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
 
     }
 
-    Get-DbaProcess $script:instance2 -NoSystemSpid | Stop-DbaProcess -WarningVariable warn -WarningAction SilentlyContinue
+    Get-DbaProcess $script:instance2 -ExcludeSystemSpids | Stop-DbaProcess -WarningVariable warn -WarningAction SilentlyContinue
     Clear-DbaConnectionPool
     Start-Sleep -Seconds 2
 
@@ -126,7 +126,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         }
     }
 
-    Get-DbaProcess $script:instance2 -NoSystemSpid | Stop-DbaProcess -WarningVariable warn -WarningAction SilentlyContinue
+    Get-DbaProcess $script:instance2 -ExcludeSystemSpids | Stop-DbaProcess -WarningVariable warn -WarningAction SilentlyContinue
     Context "Database is properly removed again post prefix and suffix tests" {
         $results = Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance2 -Database singlerestore
         It "Should say the status was dropped" {
@@ -154,7 +154,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         }
     }
 
-    Get-DbaProcess $script:instance2 -NoSystemSpid | Stop-DbaProcess -WarningVariable warn -WarningAction SilentlyContinue
+    Get-DbaProcess $script:instance2 -ExcludeSystemSpids | Stop-DbaProcess -WarningVariable warn -WarningAction SilentlyContinue
     Clear-DbaConnectionPool
     Start-Sleep -Seconds 2
 
@@ -226,7 +226,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         }
     }
 
-    Get-DbaProcess $script:instance2 -NoSystemSpid | Stop-DbaProcess -WarningVariable warn -WarningAction SilentlyContinue
+    Get-DbaProcess $script:instance2 -ExcludeSystemSpids | Stop-DbaProcess -WarningVariable warn -WarningAction SilentlyContinue
     Clear-DbaConnectionPool
     Start-Sleep -Seconds 5
     Clear-DbaConnectionPool
@@ -243,9 +243,9 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     }
 
     Context "Database is properly removed again after ola pipe test" {
-        Get-DbaProcess $script:instance2 -NoSystemSpid | Stop-DbaProcess -WarningVariable warn -WarningAction SilentlyContinue
+        Get-DbaProcess $script:instance2 -ExcludeSystemSpids | Stop-DbaProcess -WarningVariable warn -WarningAction SilentlyContinue
         $results = Get-DbaDatabase -SqlInstance $script:instance2 -ExcludeAllSystemDb | Remove-DbaDatabase -Confirm:$false
-        Get-DbaProcess $script:instance2 -NoSystemSpid | Stop-DbaProcess -WarningVariable warn -WarningAction SilentlyContinue
+        Get-DbaProcess $script:instance2 -ExcludeSystemSpids | Stop-DbaProcess -WarningVariable warn -WarningAction SilentlyContinue
         $results = Get-DbaDatabase -SqlInstance $script:instance2 -ExcludeAllSystemDb | Remove-DbaDatabase -Confirm:$false
 
         It "Should say the status was dropped or null" {
@@ -266,7 +266,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         }
     }
 
-    Get-DbaProcess $script:instance2 -NoSystemSpid | Stop-DbaProcess -WarningVariable warn -WarningAction SilentlyContinue
+    Get-DbaProcess $script:instance2 -ExcludeSystemSpids | Stop-DbaProcess -WarningVariable warn -WarningAction SilentlyContinue
 
     Context "All user databases are removed post ola-style test" {
         $results = Get-DbaDatabase -SqlInstance $script:instance2 -ExcludeAllSystemDb | Remove-DbaDatabase -Confirm:$false
@@ -275,7 +275,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         }
     }
 
-    Get-DbaProcess $script:instance2 -NoSystemSpid | Stop-DbaProcess -WarningVariable warn -WarningAction SilentlyContinue
+    Get-DbaProcess $script:instance2 -ExcludeSystemSpids | Stop-DbaProcess -WarningVariable warn -WarningAction SilentlyContinue
     Clear-DbaConnectionPool
     Start-Sleep -Seconds 2
 

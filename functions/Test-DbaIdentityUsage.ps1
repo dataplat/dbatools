@@ -68,14 +68,14 @@ function Test-DbaIdentityUsage {
         [parameter(Position = 1, Mandatory = $false)]
         [int]$Threshold = 0,
         [parameter(Position = 2, Mandatory = $false)]
-        [Alias("NoSystemDb")]
+        [Alias("ExcludeSystemDatabases")]
         [switch]$ExcludeSystemDb,
         [Alias('Silent')]
         [switch]$EnableException
     )
 
     begin {
-        Test-DbaDeprecation -DeprecatedOn 1.0.0 -Parameter NoSystemDb
+        Test-DbaDeprecation -DeprecatedOn 1.0.0 -Parameter ExcludeSystemDatabases
 
         $sql = ";WITH CT_DT AS
         (
