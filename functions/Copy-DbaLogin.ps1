@@ -116,9 +116,9 @@ function Copy-DbaLogin {
         If a matching Login does not exist on Destination, the Login will be skipped.
 
     .EXAMPLE
-        PS C:\> Copy-DbaLogin -LoginRenameHashtable @{ "OldUser" = "newlogin" } -Source $Sql01 -Destination Localhost -SourceSqlCredential $sqlcred
+        PS C:\> Copy-DbaLogin -LoginRenameHashtable @{ "PreviousUser" = "newlogin" } -Source $Sql01 -Destination Localhost -SourceSqlCredential $sqlcred
 
-        Copies OldUser and then renames it to newlogin.
+        Copies PreviousUser and then renames it to newlogin.
 
     .EXAMPLE
         PS C:\> Get-DbaLogin -SqlInstance sql2016 | Out-GridView -Passthru | Copy-DbaLogin -Destination sql2017
