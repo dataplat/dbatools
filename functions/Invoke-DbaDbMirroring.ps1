@@ -40,7 +40,7 @@ function Invoke-DbaDbMirroring {
     .PARAMETER Database
         The database or databases to mirror.
 
-    .PARAMETER NetworkShare
+    .PARAMETER SharedPath
         The network share where the backups will be backed up and restored from.
 
         Each SQL Server service account must have access to this share.
@@ -85,7 +85,7 @@ function Invoke-DbaDbMirroring {
         >> MirrorSqlCredential = 'sqladmin'
         >> Witness = 'sql2019'
         >> Database = 'pubs'
-        >> NetworkShare = '\\nas\sql\share'
+        >> SharedPath = '\\nas\sql\share'
         >> }
         >>
         PS C:\> Invoke-DbaDbMirror @params
@@ -104,7 +104,7 @@ function Invoke-DbaDbMirroring {
         >> MirrorSqlCredential = 'sqladmin'
         >> Witness = 'sql2019'
         >> Database = 'pubs'
-        >> NetworkShare = '\\nas\sql\share'
+        >> SharedPath = '\\nas\sql\share'
         >> Force = $true
         >> Confirm = $false
         >> }
@@ -144,7 +144,7 @@ function Invoke-DbaDbMirroring {
         [DbaInstanceParameter]$Witness,
         [PSCredential]$WitnessSqlCredential,
         [string[]]$Database,
-        [string]$NetworkShare,
+        [string]$SharedPath,
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
         [switch]$UseLastBackup,
@@ -164,8 +164,8 @@ function Invoke-DbaDbMirroring {
             return
         }
 
-        if ($Force -and (-not $NetworkShare -and -not $UseLastBackup)) {
-            Stop-Function -Message "NetworkShare or UseLastBackup is required when Force is used"
+        if ($Force -and (-not $SharedPath -and -not $UseLastBackup)) {
+            Stop-Function -Message "SharedPath or UseLastBackup is required when Force is used"
             return
         }
 
@@ -194,8 +194,8 @@ function Invoke-DbaDbMirroring {
 
             $validation = Invoke-DbMirrorValidation @params
 
-            if ((Test-Bound -ParameterName NetworkShare) -and -not $validation.AccessibleShare) {
-                Stop-Function -Continue -Message "Cannot access $NetworkShare from $($dest.Name)"
+            if ((Test-Bound -ParameterName SharedPath) -and -not $validation.AccessibleShare) {
+                Stop-Function -Continue -Message "Cannot access $SharedPath from $($dest.Name)"
             }
 
             if (-not $validation.EditionMatch) {
@@ -225,9 +225,9 @@ function Invoke-DbaDbMirroring {
                 if ($UseLastBackup) {
                     $allbackups = Get-DbaBackupHistory -SqlInstance $primarydb.Parent -Database $primarydb.Name -IncludeCopyOnly -Last
                 } else {
-                    if ($Force -or $Pscmdlet.ShouldProcess("$Primary", "Creating full and log backups of $primarydb on $networkshare")) {
-                        $fullbackup = $primarydb | Backup-DbaDatabase -BackupDirectory $NetworkShare -Type Full
-                        $logbackup = $primarydb | Backup-DbaDatabase -BackupDirectory $NetworkShare -Type Log
+                    if ($Force -or $Pscmdlet.ShouldProcess("$Primary", "Creating full and log backups of $primarydb on $SharedPath")) {
+                        $fullbackup = $primarydb | Backup-DbaDatabase -BackupDirectory $SharedPath -Type Full
+                        $logbackup = $primarydb | Backup-DbaDatabase -BackupDirectory $SharedPath -Type Log
                         $allbackups = $fullbackup, $logbackup
                     }
                 }
@@ -241,8 +241,8 @@ function Invoke-DbaDbMirroring {
                     }
                 }
 
-                if ($NetworkShare) {
-                    Write-Message -Level Verbose -Message "Backups still exist on $NetworkShare"
+                if ($SharedPath) {
+                    Write-Message -Level Verbose -Message "Backups still exist on $SharedPath"
                 }
             }
 
@@ -255,9 +255,9 @@ function Invoke-DbaDbMirroring {
                     if ($UseLastBackup) {
                         $allbackups = Get-DbaBackupHistory -SqlInstance $primarydb.Parent -Database $primarydb.Name -IncludeCopyOnly -Last
                     } else {
-                        if ($Force -or $Pscmdlet.ShouldProcess("$Primary", "Creating full and log backups of $primarydb on $networkshare")) {
-                            $fullbackup = $primarydb | Backup-DbaDatabase -BackupDirectory $NetworkShare -Type Full
-                            $logbackup = $primarydb | Backup-DbaDatabase -BackupDirectory $NetworkShare -Type Log
+                        if ($Force -or $Pscmdlet.ShouldProcess("$Primary", "Creating full and log backups of $primarydb on $SharedPath")) {
+                            $fullbackup = $primarydb | Backup-DbaDatabase -BackupDirectory $SharedPath -Type Full
+                            $logbackup = $primarydb | Backup-DbaDatabase -BackupDirectory $SharedPath -Type Log
                             $allbackups = $fullbackup, $logbackup
                         }
                     }

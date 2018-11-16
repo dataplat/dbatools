@@ -65,20 +65,36 @@ function Invoke-DbatoolsRenameHelper {
         [string]$Encoding = 'UTF8',
         [switch]$EnableException
     )
+    begin {
+        $morerenames = @(
+            @{
+                "AliasName"  = "Invoke-Sqlcmd2"
+                "Definition" = "Invoke-DbaQuery"
+            },
+            @{
+                "AliasName"  = "UseLastBackups"
+                "Definition" = "UseLastBackup"
+            }
+             ,
+            @{
+                "AliasName"  = "NetworkShare"
+                "Definition" = "SharedPath"
+            }
+        )
+        
+        $allrenames = $script:renames + $morerenames
+    }
     process {
         foreach ($fileobject in $InputObject) {
             $file = $fileobject.FullName
-            $allrenames = $script:renames + @{
-                "AliasName"  = "Invoke-Sqlcmd2"
-                "Definition" = "Invoke-DbaQuery"
-            }
-            foreach ($name in $script:renames) {
+            
+            foreach ($name in $allrenames) {
                 if ((Select-String -Pattern $name.AliasName -Path $file)) {
                     if ($Pscmdlet.ShouldProcess($file, "Replacing $($name.AliasName) with $($name.Definition)")) {
                         (Get-Content -Path $file -Raw).Replace($name.AliasName, $name.Definition) | Set-Content -Path $file -Encoding $Encoding
                         [pscustomobject]@{
                             Path         = $file
-                            Command      = $name.AliasName
+                            Pattern      = $name.AliasName
                             ReplacedWith = $name.Definition
                         }
                     }

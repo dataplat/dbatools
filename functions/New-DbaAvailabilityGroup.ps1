@@ -73,7 +73,7 @@ function New-DbaAvailabilityGroup {
     .PARAMETER Database
         The database or databases to add.
 
-    .PARAMETER NetworkShare
+    .PARAMETER SharedPath
         The network share where the backups will be backed up and restored from.
 
         Each SQL Server service account must have access to this share.
@@ -226,7 +226,7 @@ function New-DbaAvailabilityGroup {
         # database
 
         [string[]]$Database,
-        [string]$NetworkShare,
+        [string]$SharedPath,
         [switch]$UseLastBackup,
         [switch]$Force,
         # replica
@@ -256,8 +256,8 @@ function New-DbaAvailabilityGroup {
     process {
         $stepCounter = $wait = 0
 
-        if ($Force -and $Secondary -and (-not $NetworkShare -and -not $UseLastBackup) -and ($SeedingMode -ne 'Automatic')) {
-            Stop-Function -Message "NetworkShare or UseLastBackup is required when Force is used"
+        if ($Force -and $Secondary -and (-not $SharedPath -and -not $UseLastBackup) -and ($SeedingMode -ne 'Automatic')) {
+            Stop-Function -Message "SharedPath or UseLastBackup is required when Force is used"
             return
         }
 
@@ -294,15 +294,15 @@ function New-DbaAvailabilityGroup {
             }
         }
 
-        if (($NetworkShare)) {
-            if (-not (Test-DbaPath -SqlInstance $Primary -SqlCredential $PrimarySqlCredential -Path $NetworkShare)) {
-                Stop-Function -Continue -Message "Cannot access $NetworkShare from $Primary"
+        if (($SharedPath)) {
+            if (-not (Test-DbaPath -SqlInstance $Primary -SqlCredential $PrimarySqlCredential -Path $SharedPath)) {
+                Stop-Function -Continue -Message "Cannot access $SharedPath from $Primary"
                 return
             }
         }
 
-        if ($Database -and -not $UseLastBackup -and -not $NetworkShare -and $Secondary -and $SeedingMode -ne 'Automatic') {
-            Stop-Function -Continue -Message "You must specify a NetworkShare when adding databases to a manually seeded availability group"
+        if ($Database -and -not $UseLastBackup -and -not $SharedPath -and $Secondary -and $SeedingMode -ne 'Automatic') {
+            Stop-Function -Continue -Message "You must specify a SharedPath when adding databases to a manually seeded availability group"
             return
         }
 
@@ -499,11 +499,11 @@ function New-DbaAvailabilityGroup {
                                 if ($UseLastBackup) {
                                     $allbackups[$db] = Get-DbaBackupHistory -SqlInstance $primarydb.Parent -Database $primarydb.Name -IncludeCopyOnly -Last -EnableException
                                 } else {
-                                    $fullbackup = $primarydb | Backup-DbaDatabase -BackupDirectory $NetworkShare -Type Full -EnableException
-                                    $logbackup = $primarydb | Backup-DbaDatabase -BackupDirectory $NetworkShare -Type Log -EnableException
+                                    $fullbackup = $primarydb | Backup-DbaDatabase -BackupDirectory $SharedPath -Type Full -EnableException
+                                    $logbackup = $primarydb | Backup-DbaDatabase -BackupDirectory $SharedPath -Type Log -EnableException
                                     $allbackups[$db] = $fullbackup, $logbackup
                                 }
-                                Write-Message -Level Verbose -Message "Backups still exist on $NetworkShare"
+                                Write-Message -Level Verbose -Message "Backups still exist on $SharedPath"
                             }
                             if ($Pscmdlet.ShouldProcess("$Secondary", "restoring full and log backups of $primarydb from $Primary")) {
                                 # keep going to ensure output is shown even if dbs aren't added well.

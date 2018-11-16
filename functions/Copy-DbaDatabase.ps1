@@ -34,11 +34,11 @@ function Copy-DbaDatabase {
         If this switch is enabled, all user databases will be migrated. System and support databases will not be migrated. Requires -BackupRestore or -DetachAttach.
 
     .PARAMETER BackupRestore
-        If this switch is enabled, the copy-only backup and restore method will be used to migrate the database(s). This method requires that you specify -NetworkShare in a valid UNC format (\\server\share).
+        If this switch is enabled, the copy-only backup and restore method will be used to migrate the database(s). This method requires that you specify -SharedPath in a valid UNC format (\\server\share).
 
         Backups will be immediately deleted after use unless -NoBackupCleanup is specified.
 
-    .PARAMETER NetworkShare
+    .PARAMETER SharedPath
         Specifies the network location for the backup files. The SQL Server service accounts must have read/write permission on this path.
 
     .PARAMETER WithReplace
@@ -139,7 +139,7 @@ function Copy-DbaDatabase {
         https://dbatools.io/Copy-DbaDatabase
 
     .EXAMPLE
-        PS C:\> Copy-DbaDatabase -Source sql2014a -Destination sql2014b -Database TestDB -BackupRestore -NetworkShare \\fileshare\sql\migration
+        PS C:\> Copy-DbaDatabase -Source sql2014a -Destination sql2014b -Database TestDB -BackupRestore -SharedPath \\fileshare\sql\migration
 
         Migrates a single user database TestDB using Backup and restore from instance sql2014a to sql2014b. Backup files are stored in \\fileshare\sql\migration.
 
@@ -156,7 +156,7 @@ function Copy-DbaDatabase {
         Note that the backups must exist in a location accessible by all destination servers, such a network share.
 
     .EXAMPLE
-        PS C:\> Copy-DbaDatabase -Source sql2014a -Destination sqlcluster -ExcludeDatabase Northwind, pubs -IncludeSupportDbs -Force -BackupRestore -NetworkShare \\fileshare\sql\migration
+        PS C:\> Copy-DbaDatabase -Source sql2014a -Destination sqlcluster -ExcludeDatabase Northwind, pubs -IncludeSupportDbs -Force -BackupRestore -SharedPath \\fileshare\sql\migration
 
         Migrates all user databases except for Northwind and pubs by using backup/restore (copy-only). Backup files are stored in \\fileshare\sql\migration. If the database exists on the destination, it will be dropped prior to attach.
 
@@ -183,7 +183,7 @@ function Copy-DbaDatabase {
         [switch]$BackupRestore,
         [parameter(ParameterSetName = "DbBackup",
             HelpMessage = "Specify a valid network share in the format \\server\share that can be accessed by your account and the SQL Server service accounts for both Source and Destination.")]
-        [string]$NetworkShare,
+        [string]$SharedPath,
         [parameter(ParameterSetName = "DbBackup")]
         [switch]$WithReplace,
         [parameter(ParameterSetName = "DbBackup")]
@@ -224,12 +224,12 @@ function Copy-DbaDatabase {
     begin {
         $CopyOnly = -not $NoCopyOnly
 
-        if ($BackupRestore -and (-not $NetworkShare -and -not $UseLastBackup)) {
-            Stop-Function -Message "When using -BackupRestore, you must specify -NetworkShare or -UseLastBackup"
+        if ($BackupRestore -and (-not $SharedPath -and -not $UseLastBackup)) {
+            Stop-Function -Message "When using -BackupRestore, you must specify -SharedPath or -UseLastBackup"
             return
         }
-        if ($NetworkShare -and $UseLastBackup) {
-            Stop-Function -Message "-NetworkShare cannot be used with -UseLastBackup because the backup path is determined by the paths in the last backups"
+        if ($SharedPath -and $UseLastBackup) {
+            Stop-Function -Message "-SharedPath cannot be used with -UseLastBackup because the backup path is determined by the paths in the last backups"
             return
         }
         if ($DetachAttach -and -not $Reattach -and $Destination.Count -gt 1) {
@@ -240,14 +240,7 @@ function Copy-DbaDatabase {
             Stop-Function -Message "-Continue cannot be used without -UseLastBackup"
             return
         }
-        <#
-        #Variable marked as unused by PSScriptAnalyzer
-        if ($null -ne $NewName -or $null -ne $Prefix) {
-            $ReplaceDbNameInFile = $true
-        } else {
-            $ReplaceDbNameInFile = $false
-        }#>
-
+        
         function Join-Path {
             <#
         An internal command that does not require the local path to exist
@@ -647,12 +640,12 @@ function Copy-DbaDatabase {
         if (Test-FunctionInterrupt) { return }
 
         # testing twice for whatif reasons
-        if ($BackupRestore -and (-not $NetworkShare -and -not $UseLastBackup)) {
-            Stop-Function -Message "When using -BackupRestore, you must specify -NetworkShare or -UseLastBackup"
+        if ($BackupRestore -and (-not $SharedPath -and -not $UseLastBackup)) {
+            Stop-Function -Message "When using -BackupRestore, you must specify -SharedPath or -UseLastBackup"
             return
         }
-        if ($NetworkShare -and $UseLastBackup) {
-            Stop-Function -Message "-NetworkShare cannot be used with -UseLastBackup because the backup path is determined by the paths in the last backups"
+        if ($SharedPath -and $UseLastBackup) {
+            Stop-Function -Message "-SharedPath cannot be used with -UseLastBackup because the backup path is determined by the paths in the last backups"
             return
         }
         if ($DetachAttach -and -not $Reattach -and $Destination.Count -gt 1) {
@@ -734,18 +727,18 @@ function Copy-DbaDatabase {
                 }
             }
 
-            if ($NetworkShare) {
-                if ($(Test-DbaPath -SqlInstance $sourceServer -Path $NetworkShare) -eq $false) {
-                    Write-Message -Level Verbose -Message "$Source may not be able to access $NetworkShare. Trying anyway."
+            if ($SharedPath) {
+                if ($(Test-DbaPath -SqlInstance $sourceServer -Path $SharedPath) -eq $false) {
+                    Write-Message -Level Verbose -Message "$Source may not be able to access $SharedPath. Trying anyway."
                 }
 
-                if ($(Test-DbaPath -SqlInstance $destServer -Path $NetworkShare) -eq $false) {
-                    Write-Message -Level Verbose -Message "$destinstance may not be able to access $NetworkShare. Trying anyway."
+                if ($(Test-DbaPath -SqlInstance $destServer -Path $SharedPath) -eq $false) {
+                    Write-Message -Level Verbose -Message "$destinstance may not be able to access $SharedPath. Trying anyway."
                 }
 
-                if ($NetworkShare.StartsWith('\\')) {
+                if ($SharedPath.StartsWith('\\')) {
                     try {
-                        $shareServer = ($NetworkShare -split "\\")[2]
+                        $shareServer = ($SharedPath -split "\\")[2]
                         $hostEntry = ([Net.Dns]::GetHostEntry($shareServer)).HostName -split "\."
 
                         if ($shareServer -ne $hostEntry[0]) {
@@ -768,19 +761,19 @@ function Copy-DbaDatabase {
                 Stop-Function -Message "Source and Destination SQL Servers instances are the same. Quitting." -Continue
             }
 
-            if ($NetworkShare.Length -gt 0) {
+            if ($SharedPath.Length -gt 0) {
                 Write-Message -Level Verbose -Message "Checking to ensure network path is valid."
-                if (!($NetworkShare.StartsWith("\\")) -and !$script:sameserver) {
+                if (!($SharedPath.StartsWith("\\")) -and !$script:sameserver) {
                     Stop-Function -Message "Network share must be a valid UNC path (\\server\share)." -Continue
                 }
 
                 if (-not $script:sameserver) {
                     try {
-                        if ((Test-Path $NetworkShare -ErrorAction Stop)) {
-                            Write-Message -Level Verbose -Message "$NetworkShare share can be accessed."
+                        if ((Test-Path $SharedPath -ErrorAction Stop)) {
+                            Write-Message -Level Verbose -Message "$SharedPath share can be accessed."
                         }
                     } catch {
-                        Write-Message -Level Verbose -Message "$NetworkShare share cannot be accessed. Still trying anyway, in case the SQL Server service accounts have access."
+                        Write-Message -Level Verbose -Message "$SharedPath share cannot be accessed. Still trying anyway, in case the SQL Server service accounts have access."
                     }
                 }
             }
@@ -1115,7 +1108,7 @@ function Copy-DbaDatabase {
                             } else {
                                 $backupTmpResult = $backupCollection | Where-Object Database -eq $dbName
                                 if (-not $backupTmpResult) {
-                                    $backupTmpResult = Backup-DbaDatabase -SqlInstance $sourceServer -Database $dbName -BackupDirectory $NetworkShare -FileCount $numberfiles -CopyOnly:$CopyOnly
+                                    $backupTmpResult = Backup-DbaDatabase -SqlInstance $sourceServer -Database $dbName -BackupDirectory $SharedPath -FileCount $numberfiles -CopyOnly:$CopyOnly
                                 }
                                 if ($backupTmpResult) {
                                     $backupCollection += $backupTmpResult
@@ -1123,10 +1116,10 @@ function Copy-DbaDatabase {
                                 $backupResult = $BackupTmpResult.BackupComplete
                                 if (-not $backupResult) {
                                     $serviceAccount = $sourceServer.ServiceAccount
-                                    Write-Message -Level Verbose -Message "Backup Failed. Does SQL Server account $serviceAccount have access to $($NetworkShare)? Aborting routine for this database."
+                                    Write-Message -Level Verbose -Message "Backup Failed. Does SQL Server account $serviceAccount have access to $($SharedPath)? Aborting routine for this database."
 
                                     $copyDatabaseStatus.Status = "Failed"
-                                    $copyDatabaseStatus.Notes = "Backup failed. Verify service account access to $NetworkShare."
+                                    $copyDatabaseStatus.Notes = "Backup failed. Verify service account access to $SharedPath."
                                     $copyDatabaseStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                                     continue
                                 }
@@ -1374,8 +1367,8 @@ function Copy-DbaDatabase {
             Write-Message -Level Verbose -Message "Migration completed: $(Get-Date)"
             Write-Message -Level Verbose -Message "Total Elapsed time: $totalTime"
 
-            if ($NetworkShare.length -gt 0 -and $NoBackupCleanup) {
-                Write-Message -Level Verbose -Message "Backups still exist at $NetworkShare."
+            if ($SharedPath.length -gt 0 -and $NoBackupCleanup) {
+                Write-Message -Level Verbose -Message "Backups still exist at $SharedPath."
             }
         } else {
             Write-Message -Level Verbose -Message "No work was done, as we stopped during setup phase"
