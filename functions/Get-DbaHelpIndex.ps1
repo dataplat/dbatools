@@ -1028,7 +1028,7 @@ function Get-DbaHelpIndex {
             Write-Message -Level Debug -Message "$indexesQuery"
             try {
                 $IndexDetails = $db.Query($indexesQuery)
-                
+
                 if (!$Raw) {
                     foreach ($detail in $IndexDetails) {
                         $recentlyused = [datetime]$detail.MostRecentlyUsed
@@ -1052,7 +1052,7 @@ function Get-DbaHelpIndex {
                             DataCompression    = $detail.DataCompression
                             IndexReads         = "{0:N0}" -f $detail.IndexReads
                             IndexUpdates       = "{0:N0}" -f $detail.IndexUpdates
-                            SizeKB             = "{0:N0}" -f $detail.SizeKB
+                            Size               = "{0:N0}" -f $detail.SizeKB
                             IndexRows          = "{0:N0}" -f $detail.IndexRows
                             IndexLookups       = "{0:N0}" -f $detail.IndexLookups
                             MostRecentlyUsed   = $recentlyused
@@ -1061,7 +1061,7 @@ function Get-DbaHelpIndex {
                             HistogramSteps     = $detail.HistogramSteps
                             StatsLastUpdated   = $detail.StatsLastUpdated
                             IndexFragInPercent = "{0:F2}" -f $detail.IndexFragInPercent
-                        } #| Select-DefaultView -Property $OutputProperties
+                        }
                     }
                 }
 
@@ -1088,7 +1088,7 @@ function Get-DbaHelpIndex {
                             DataCompression    = $detail.DataCompression
                             IndexReads         = $detail.IndexReads
                             IndexUpdates       = $detail.IndexUpdates
-                            SizeKB             = $detail.SizeKB
+                            Size               = [dbasize]($detail.SizeKB * 1024)
                             IndexRows          = $detail.IndexRows
                             IndexLookups       = $detail.IndexLookups
                             MostRecentlyUsed   = $recentlyused
@@ -1097,7 +1097,7 @@ function Get-DbaHelpIndex {
                             HistogramSteps     = $detail.HistogramSteps
                             StatsLastUpdated   = $detail.StatsLastUpdated
                             IndexFragInPercent = $detail.IndexFragInPercent
-                        } | Select-DefaultView -Property $OutputProperties
+                        }
                     }
                 }
             } catch {
