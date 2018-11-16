@@ -490,7 +490,7 @@ function Get-DbaHelpIndex {
                                                             AND si.stats_id = c.Index_Id
                     UNION
                     SELECT   QUOTENAME(sch.name) + '.' + QUOTENAME(tbl.name) AS FullObjectName ,
-                                '' , 
+                                '' ,
                                 '' ,
                                 stats_name ,
                                 StatsColumns ,
