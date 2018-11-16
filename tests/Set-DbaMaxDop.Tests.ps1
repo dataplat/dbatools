@@ -4,7 +4,7 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 
 Describe "$commandname Unit Tests" -Tag "UnitTests", Set-DbaMaxDop {
     Context "Validate parameters" {
-        $knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'MaxDop', 'Collection', 'AllDatabases', 'EnableException'
+        $knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'MaxDop', 'InputObject', 'AllDatabases', 'EnableException'
         $SupportShouldProcess = $true
         $paramCount = $knownParameters.Count
         if ($SupportShouldProcess) {
