@@ -30,7 +30,7 @@ function Invoke-DbMirrorValidation {
         .PARAMETER Database
                 The database or databases to mirror
 
-        .PARAMETER NetworkShare
+        .PARAMETER SharedPath
                 The network share where the backups will be
 
         .PARAMETER InputObject
@@ -54,7 +54,7 @@ function Invoke-DbMirrorValidation {
                     MirrorSqlCredential = 'sqladmin'
                     Witness = 'sql2019'
                     Database = 'onthewall'
-                    NetworkShare = '\\nas\sql\share'
+                    SharedPath = '\\nas\sql\share'
                 }
 
             PS C:\> Invoke-DbMirrorValidation @params
@@ -72,7 +72,7 @@ function Invoke-DbMirrorValidation {
         [DbaInstanceParameter]$Witness,
         [PSCredential]$WitnessSqlCredential,
         [string[]]$Database,
-        [string]$NetworkShare,
+        [string]$SharedPath,
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
         [switch]$EnableException
@@ -154,8 +154,8 @@ function Invoke-DbMirrorValidation {
                 $destdbexists = $false
             }
 
-            if ((Test-Bound -ParameterName NetworkShare) -and -not (Test-DbaPath -SqlInstance $dest -Path $NetworkShare)) {
-                Write-Message -Level Verbose -Message "Cannot access $NetworkShare from $($destdb.Parent.Name)"
+            if ((Test-Bound -ParameterName SharedPath) -and -not (Test-DbaPath -SqlInstance $dest -Path $SharedPath)) {
+                Write-Message -Level Verbose -Message "Cannot access $SharedPath from $($destdb.Parent.Name)"
                 $canmirror = $false
                 $nexists = $false
             } else {
