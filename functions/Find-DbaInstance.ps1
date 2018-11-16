@@ -475,7 +475,6 @@ function Find-DbaInstance {
                     #endregion Case: Port number found
                     
                     if ($ScanType -band [Sqlcollaborative.Dbatools.Discovery.DbaInstanceScanType]::SqlConnect) {
-                        Write-Warning hello
                         $instanceHash = @{ }
                         $toDelete = @()
                         foreach ($dataSet in $masterList) {
