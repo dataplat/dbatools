@@ -90,7 +90,7 @@ function New-DbaAvailabilityGroup {
         Sets the availability mode of the availability group replica. Options are: AsynchronousCommit and SynchronousCommit. SynchronousCommit is default.
 
     .PARAMETER FailoverMode
-        Sets the failover mode of the availability group replica. Options are Automatic and Manual. Automatic is default.
+        Sets the failover mode of the availability group replica. Options are Automatic, Manual and External. Automatic is default.
 
     .PARAMETER BackupPriority
         Sets the backup priority availability group replica. Default is 50.
@@ -177,10 +177,10 @@ function New-DbaAvailabilityGroup {
     .EXAMPLE
         PS C:\> New-DbaAvailabilityGroup -Primary sql2017 -Name SharePoint -ClusterType None -FailoverMode Manual
 
-        Creates a new availability group on sql2017 named SharePoint with a cluster type of non and a failover mode of manual
+        Creates a new availability group on sql2017 named SharePoint with a cluster type of none and a failover mode of manual
 
     .EXAMPLE
-        PS C:\> New-DbaAvailabilityGroup -Primary sql1 -Secondary sql2 -Database pubs -ClusterType None -SeedingMode Automatic -FailoverMode Manual
+        PS C:\> New-DbaAvailabilityGroup -Primary sql1 -Secondary sql2 -Name ag1 -Database pubs -ClusterType None -SeedingMode Automatic -FailoverMode Manual
 
         Creates a new availability group with a primary replica on sql1 and a secondary on sql2. Automatically adds the database pubs.
 
@@ -191,6 +191,7 @@ function New-DbaAvailabilityGroup {
                     >> PrimarySqlCredential = $cred
                     >> Secondary = "sql2"
                     >> SecondarySqlCredential = $cred
+                    >> Name = "test-ag"
                     >> Database = "pubs"
                     >> ClusterType = "None"
                     >> SeedingMode = "Automatic"
