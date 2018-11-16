@@ -104,7 +104,7 @@ function Join-DbaAvailabilityGroup {
                 if ($Pscmdlet.ShouldProcess($server.Name, "Joining $ag")) {
                     try {
                         if ($ClusterType -and $server.VersionMajor -ge 14) {
-                            $server.Query("ALTER AVAILABILITY GROUP $ag JOIN WITH (CLUSTER_TYPE = $ClusterType)")
+                            $server.Query("ALTER AVAILABILITY GROUP [$ag] JOIN WITH (CLUSTER_TYPE = $ClusterType)")
                         } else {
                             $server.JoinAvailabilityGroup($ag)
                         }
