@@ -193,11 +193,6 @@ function Set-DbaTempdbConfig {
 
         $EqualCount = $server.Databases['tempdb'].ExecuteWithResults("SELECT count(1) as FileCount FROM sys.database_files WHERE size/128 = $DataFilesizeSingleMB AND type = 0").Tables[0].Rows[0].FileCount
 
-        if ($EqualCount -gt 0) {
-            Stop-Function -Message "Current tempdb not suitable to be reconfigured. The current tempdb is the same size as the specified DataFileSizeMB."
-            return
-        }
-
         Write-Message -Message "tempdb configuration validated." -Level Verbose
 
         $DataFiles = $server.Databases['tempdb'].ExecuteWithResults("select f.name as Name, f.physical_name as FileName from sys.filegroups fg join sys.database_files f on fg.data_space_id = f.data_space_id where fg.name = 'PRIMARY' and f.type_desc = 'ROWS'").Tables[0];
