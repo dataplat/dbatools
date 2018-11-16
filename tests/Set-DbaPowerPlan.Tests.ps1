@@ -4,14 +4,9 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        $knownParameters = 'ComputerName', 'Credential', 'PowerPlan', 'CustomPowerPlan', 'EnableException'
+        $knownParameters = 'ComputerName', 'Credential', 'PowerPlan', 'CustomPowerPlan', 'EnableException', 'InputObject'
         $paramCount = $knownParameters.Count
-        $SupportShouldProcess = $true
-        if ($SupportShouldProcess) {
-            $defaultParamCount = 13
-        } else {
-            $defaultParamCount = 11
-        }
+        $defaultParamCount = 13
         $command = Get-Command -Name $CommandName
         [object[]]$params = $command.Parameters.Keys
         It "Should contain our specific parameters" {

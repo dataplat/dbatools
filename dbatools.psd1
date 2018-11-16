@@ -570,7 +570,8 @@
         'Uninstall-DbaSqlWatch',
         'Get-DbaMemoryCondition',
         'Remove-DbaDbBackupRestoreHistory',
-        'New-DbaDatabase'
+        'New-DbaDatabase',
+        'Get-DbaPowerPlan'
     )
 
     # Cmdlets to export from this module
