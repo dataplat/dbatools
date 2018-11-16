@@ -56,7 +56,7 @@ function Invoke-DbatoolsRenameHelper {
         Shows what would happen if the command would run. If the command would run and there were matches,
         the resulting changes would be written to disk as Ascii encoded.
 
-       #>
+          #>
     [CmdletBinding(SupportsShouldProcess = $true)]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
@@ -75,19 +75,19 @@ function Invoke-DbatoolsRenameHelper {
                 "AliasName"  = "UseLastBackups"
                 "Definition" = "UseLastBackup"
             }
-             ,
+            ,
             @{
                 "AliasName"  = "NetworkShare"
                 "Definition" = "SharedPath"
             }
         )
-        
+
         $allrenames = $script:renames + $morerenames
     }
     process {
         foreach ($fileobject in $InputObject) {
             $file = $fileobject.FullName
-            
+
             foreach ($name in $allrenames) {
                 if ((Select-String -Pattern $name.AliasName -Path $file)) {
                     if ($Pscmdlet.ShouldProcess($file, "Replacing $($name.AliasName) with $($name.Definition)")) {

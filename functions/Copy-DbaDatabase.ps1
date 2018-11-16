@@ -283,7 +283,7 @@ function Copy-DbaDatabase {
 
             $servername = $servername.Split("\")[0]
 
-            if ($filepath.length -gt 0 -and $filepath -ne [System.DbNull]::Value) {
+            if ($filepath -and $filepath -ne [System.DbNull]::Value) {
                 $newpath = Join-Path "\\$servername\" $filepath.replace(':', '$')
                 return $newpath
             } else { return }
@@ -451,7 +451,7 @@ function Copy-DbaDatabase {
                 }
             }
 
-            if ($currentdb.AvailabilityGroupName.Length -gt 0) {
+            if ($currentdb.AvailabilityGroupName) {
                 $agName = $currentdb.AvailabilityGroupName
                 Write-Message -Level Verbose -Message "Attempting remove from Availability Group $agName."
                 try {
@@ -761,9 +761,9 @@ function Copy-DbaDatabase {
                 Stop-Function -Message "Source and Destination SQL Servers instances are the same. Quitting." -Continue
             }
 
-            if ($SharedPath.Length -gt 0) {
+            if ($SharedPath) {
                 Write-Message -Level Verbose -Message "Checking to ensure network path is valid."
-                if (!($SharedPath.StartsWith("\\")) -and !$script:sameserver) {
+                if (-not ($SharedPath.StartsWith("\\")) -and -not $script:sameserver) {
                     Stop-Function -Message "Network share must be a valid UNC path (\\server\share)." -Continue
                 }
 
@@ -901,7 +901,7 @@ function Copy-DbaDatabase {
             $started = Get-Date
             $script:TimeNow = (Get-Date -UFormat "%m%d%Y%H%M%S")
 
-            if ($AllDatabases -or $ExcludeDatabase.length -gt 0 -or $IncludeSupportDbs -or $Database.length -gt 0) {
+            if ($AllDatabases -or $ExcludeDatabase -or $IncludeSupportDbs -or $Database) {
                 foreach ($currentdb in $databaseList) {
                     $dbName = $currentdb.Name
                     $dbOwner = $currentdb.Owner
@@ -995,7 +995,7 @@ function Copy-DbaDatabase {
                     }
 
                     Write-Message -Level Verbose -Message "Checking Availability Group status."
-                    if ($currentdb.AvailabilityGroupName.Length -gt 0 -and !$force -and $DetachAttach) {
+                    if ($currentdb.AvailabilityGroupName -and !$force -and $DetachAttach) {
                         $agName = $currentdb.AvailabilityGroupName
                         Write-Message -Level Verbose -Message "Database is part of an Availability Group ($agName). Use -Force to drop from $agName and migrate. Alternatively, you can use the safer backup/restore method."
                         continue
@@ -1367,7 +1367,7 @@ function Copy-DbaDatabase {
             Write-Message -Level Verbose -Message "Migration completed: $(Get-Date)"
             Write-Message -Level Verbose -Message "Total Elapsed time: $totalTime"
 
-            if ($SharedPath.length -gt 0 -and $NoBackupCleanup) {
+            if ($SharedPath -and $NoBackupCleanup) {
                 Write-Message -Level Verbose -Message "Backups still exist at $SharedPath."
             }
         } else {

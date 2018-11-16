@@ -5,7 +5,7 @@ function Start-DbaMigration {
         Central Management Server objects, server configuration settings (sp_configure), user objects in systems databases,
         system triggers and backup devices from one SQL Server to another.
 
-        For more granular control, please use one of the -No parameters and use the other functions available within the dbatools module.
+        For more granular control, please use Exclude or use the other functions available within the dbatools module.
 
     .DESCRIPTION
         Start-DbaMigration consolidates most of the migration tools in dbatools into one command.  This is useful when you're looking to migrate entire instances. It less flexible than using the underlying functions. Think of it as an easy button. It migrates:
@@ -51,9 +51,9 @@ function Start-DbaMigration {
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
     .PARAMETER BackupRestore
-        If this switch is enabled, the Copy-Only backup and restore method is used to perform database migrations. You must specify -NetworkShare with a valid UNC format as well (\\server\share).
+        If this switch is enabled, the Copy-Only backup and restore method is used to perform database migrations. You must specify -SharedPath with a valid UNC format as well (\\server\share).
 
-    .PARAMETER NetworkShare
+    .PARAMETER SharedPath
         Specifies the network location for the backup files. The SQL Server service accounts on both Source and Destination must have read/write permission to access this location.
 
     .PARAMETER WithReplace
@@ -158,7 +158,7 @@ function Start-DbaMigration {
         >> Destination = "sql2016"
         >> SourceSqlCredential = $scred
         >> DestinationSqlCredential = $cred
-        >> NetworkShare = "\\fileserver\share\sqlbackups\Migration"
+        >> SharedPath = "\\fileserver\share\sqlbackups\Migration"
         >> BackupRestore = $true
         >> ReuseSourceFolderStructure" = $true
         >> Force = $true
@@ -184,40 +184,22 @@ function Start-DbaMigration {
         Utilizes the PSDefaultParameterValues system variable, and sets the Source and Destination parameters for any function in the module that has those parameter names. This prevents the need from passing them in constantly.
         The execution of the function will migrate everything but logins and databases.
 
-    
     #>
     [CmdletBinding(SupportsShouldProcess)]
     param (
-        [parameter(Position = 1, Mandatory)]
         [DbaInstanceParameter]$Source,
-        [parameter(Position = 2, Mandatory)]
         [DbaInstanceParameter[]]$Destination,
-        [parameter(Position = 3, Mandatory)]
         [switch]$DetachAttach,
-        [parameter(Position = 4)]
         [switch]$Reattach,
-        [parameter(Position = 5, Mandatory)]
         [switch]$BackupRestore,
-        [parameter(Position = 6,
-            HelpMessage = "Specify a valid network share in the format \\server\share that can be accessed by your account and both Sql Server service accounts.")]
-        [string]$NetworkShare,
-        [parameter(Position = 7)]
+        [parameter(HelpMessage = "Specify a valid network share in the format \\server\share that can be accessed by your account and both Sql Server service accounts.")]
+        [string]$SharedPath,
         [switch]$WithReplace,
-        [parameter(Position = 8)]
         [switch]$NoRecovery,
-        [parameter(Position = 9)]
-        [parameter(Position = 10)]
         [switch]$SetSourceReadOnly,
-        [Alias("ReuseFolderStructure")]
-        [parameter(Position = 11)]
-        [parameter(Position = 12)]
         [switch]$ReuseSourceFolderStructure,
-        [parameter(Position = 13)]
-        [parameter(Position = 14)]
         [switch]$IncludeSupportDbs,
-        [parameter(Position = 15)]
         [PSCredential]$SourceSqlCredential,
-        [parameter(Position = 16)]
         [PSCredential]$DestinationSqlCredential,
         [ValidateSet('Databases', 'Logins', 'AgentServer', 'Credentials', 'LinkedServers', 'SpConfigure', 'CentralManagementServer', 'DatabaseMail', 'SysDbUserObjects', 'SystemTriggers', 'BackupDevices', 'Audits', 'Endpoints', 'ExtendedEvents', 'PolicyManagement', 'ResourceGovernor', 'ServerAuditSpecifications', 'CustomErrors', 'DataCollector')]
         [string[]]$Exclude,
@@ -233,20 +215,21 @@ function Start-DbaMigration {
     begin {
         if ($Exclude -notcontains "Databases") {
             if (-not $BackupRestore -and -not $DetachAttach) {
-                Stop-Function -Message "You must specify a database migration method (-BackupRestore or -DetachAttach) or -NoDatabases"
+                Stop-Function -Message "You must specify a database migration method (-BackupRestore or -DetachAttach) or -Exclude Databases"
                 return
             }
         }
+        
         $elapsed = [System.Diagnostics.Stopwatch]::StartNew()
         $started = Get-Date
         $sourceserver = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
 
-        if ($BackupRestore -and (-not $NetworkShare -and -not $UseLastBackup)) {
-            Stop-Function -Message "When using -BackupRestore, you must specify -NetworkShare or -UseLastBackup"
+        if ($BackupRestore -and (-not $SharedPath -and -not $UseLastBackup)) {
+            Stop-Function -Message "When using -BackupRestore, you must specify -SharedPath or -UseLastBackup"
             return
         }
-        if ($NetworkShare -and $UseLastBackup) {
-            Stop-Function -Message "-NetworkShare cannot be used with -UseLastBackup because the backup path is determined by the paths in the last backups"
+        if ($SharedPath -and $UseLastBackup) {
+            Stop-Function -Message "-SharedPath cannot be used with -UseLastBackup because the backup path is determined by the paths in the last backups"
             return
         }
         if ($DetachAttach -and -not $Reattach -and $Destination.Count -gt 1) {
@@ -263,12 +246,12 @@ function Start-DbaMigration {
         if (Test-FunctionInterrupt) { return }
 
         # testing twice for whatif reasons
-        if ($BackupRestore -and (-not $NetworkShare -and -not $UseLastBackup)) {
-            Stop-Function -Message "When using -BackupRestore, you must specify -NetworkShare or -UseLastBackup"
+        if ($BackupRestore -and (-not $SharedPath -and -not $UseLastBackup)) {
+            Stop-Function -Message "When using -BackupRestore, you must specify -SharedPath or -UseLastBackup"
             return
         }
-        if ($NetworkShare -and $UseLastBackup) {
-            Stop-Function -Message "-NetworkShare cannot be used with -UseLastBackup because the backup path is determined by the paths in the last backups"
+        if ($SharedPath -and $UseLastBackup) {
+            Stop-Function -Message "-SharedPath cannot be used with -UseLastBackup because the backup path is determined by the paths in the last backups"
             return
         }
         if ($DetachAttach -and -not $Reattach -and $Destination.Count -gt 1) {
@@ -322,7 +305,7 @@ function Start-DbaMigration {
                 if ($UseLastBackup) {
                     Copy-DbaDatabase -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -AllDatabases -SetSourceReadOnly:$SetSourceReadOnly -ReuseSourceFolderStructure:$ReuseSourceFolderStructure -BackupRestore -Force:$Force -NoRecovery:$NoRecovery -WithReplace:$WithReplace -IncludeSupportDbs:$IncludeSupportDbs -UseLastBackup:$UseLastBackup -Continue:$Continue
                 } else {
-                    Copy-DbaDatabase -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -AllDatabases -SetSourceReadOnly:$SetSourceReadOnly -ReuseSourceFolderStructure:$ReuseSourceFolderStructure -BackupRestore -NetworkShare $NetworkShare -Force:$Force -NoRecovery:$NoRecovery -WithReplace:$WithReplace -IncludeSupportDbs:$IncludeSupportDbs
+                    Copy-DbaDatabase -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -AllDatabases -SetSourceReadOnly:$SetSourceReadOnly -ReuseSourceFolderStructure:$ReuseSourceFolderStructure -BackupRestore -SharedPath $SharedPath -Force:$Force -NoRecovery:$NoRecovery -WithReplace:$WithReplace -IncludeSupportDbs:$IncludeSupportDbs
                 }
             } else {
                 Copy-DbaDatabase -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -AllDatabases -SetSourceReadOnly:$SetSourceReadOnly -ReuseSourceFolderStructure:$ReuseSourceFolderStructure -DetachAttach:$DetachAttach -Reattach:$Reattach -Force:$Force -IncludeSupportDbs:$IncludeSupportDbs
@@ -389,7 +372,6 @@ function Start-DbaMigration {
             Copy-DbaAgentServer -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -DisableJobsOnDestination:$DisableJobsOnDestination -DisableJobsOnSource:$DisableJobsOnSource -Force:$Force
         }
     }
-
     end {
         if (Test-FunctionInterrupt) { return }
         $totaltime = ($elapsed.Elapsed.toString().Split(".")[0])
