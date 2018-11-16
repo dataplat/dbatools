@@ -112,11 +112,11 @@ function Start-DbaMigration {
     .PARAMETER DisableJobsOnSource
         If this switch is enabled, SQL Agent jobs will be disabled on the source instance.
 
-    .PARAMETER UseLastBackups
+    .PARAMETER UseLastBackup
         Use the last full, diff and logs instead of performing backups. Note that the backups must exist in a location accessible by all destination servers, such a network share.
 
     .PARAMETER Continue
-        If specified, will to attempt to restore transaction log backups on top of existing database(s) in Recovering or Standby states. Only usable with -UseLastBackups
+        If specified, will to attempt to restore transaction log backups on top of existing database(s) in Recovering or Standby states. Only usable with -UseLastBackup
 
     .PARAMETER Force
         If migrating users, forces drop and recreate of SQL and Windows logins.
@@ -154,19 +154,24 @@ function Start-DbaMigration {
 
     .EXAMPLE
         PS C:\> $params = @{
-        >> "Source" = "sqlcluster";
-        >> "Destination" = "sql2016";
-        >> "SourceSqlCredential" = $scred;
-        >> "DestinationSqlCredential" = $cred;
-        >> "NetworkShare" = "\\fileserver\share\sqlbackups\Migration";
-        >> "BackupRestore" = $true;
-        >> "ReuseSourceFolderStructure" = $true;
-        >> "Force" = $true;
+        >> Source = "sqlcluster"
+        >> Destination = "sql2016"
+        >> SourceSqlCredential = $scred
+        >> DestinationSqlCredential = $cred
+        >> NetworkShare = "\\fileserver\share\sqlbackups\Migration"
+        >> BackupRestore = $true
+        >> ReuseSourceFolderStructure" = $true
+        >> Force = $true
         >> }
         >>
         PS C:\> Start-DbaMigration @params -Verbose
 
         Utilizes splatting technique to set all the needed parameters. This will migrate databases using the backup/restore method. It will also include migration of the logins, database mail configuration, credentials, SQL Agent, Central Management Server, and SQL Server global configuration.
+
+    .EXAMPLE
+        PS C:\> Start-DbaMigration -Verbose -Source sqlcluster -Destination sql2016 -DetachAttach -Reattach -SetSourceReadonly
+
+        Migrates databases using detach/copy/attach. Reattach at source and set source databases read-only. Also migrates everything else.
 
     .EXAMPLE
         PS C:\> $PSDefaultParameters = @{
@@ -179,40 +184,36 @@ function Start-DbaMigration {
         Utilizes the PSDefaultParameterValues system variable, and sets the Source and Destination parameters for any function in the module that has those parameter names. This prevents the need from passing them in constantly.
         The execution of the function will migrate everything but logins and databases.
 
-    .EXAMPLE
-        PS C:\> Start-DbaMigration -Verbose -Source sqlcluster -Destination sql2016 -DetachAttach -Reattach -SetSourceReadonly
-
-        Migrate databases using detach/copy/attach. Reattach at source and set source databases read-only. Also migrates everything else.
-
+    
     #>
-    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
+    [CmdletBinding(SupportsShouldProcess)]
     param (
         [parameter(Position = 1, Mandatory)]
         [DbaInstanceParameter]$Source,
         [parameter(Position = 2, Mandatory)]
         [DbaInstanceParameter[]]$Destination,
-        [parameter(Position = 3, Mandatory, ParameterSetName = "DbAttachDetach")]
+        [parameter(Position = 3, Mandatory)]
         [switch]$DetachAttach,
-        [parameter(Position = 4, ParameterSetName = "DbAttachDetach")]
+        [parameter(Position = 4)]
         [switch]$Reattach,
-        [parameter(Position = 5, Mandatory, ParameterSetName = "DbBackup")]
+        [parameter(Position = 5, Mandatory)]
         [switch]$BackupRestore,
-        [parameter(Position = 6, ParameterSetName = "DbBackup",
+        [parameter(Position = 6,
             HelpMessage = "Specify a valid network share in the format \\server\share that can be accessed by your account and both Sql Server service accounts.")]
         [string]$NetworkShare,
-        [parameter(Position = 7, ParameterSetName = "DbBackup")]
+        [parameter(Position = 7)]
         [switch]$WithReplace,
-        [parameter(Position = 8, ParameterSetName = "DbBackup")]
+        [parameter(Position = 8)]
         [switch]$NoRecovery,
-        [parameter(Position = 9, ParameterSetName = "DbBackup")]
-        [parameter(Position = 10, ParameterSetName = "DbAttachDetach")]
+        [parameter(Position = 9)]
+        [parameter(Position = 10)]
         [switch]$SetSourceReadOnly,
         [Alias("ReuseFolderStructure")]
-        [parameter(Position = 11, ParameterSetName = "DbBackup")]
-        [parameter(Position = 12, ParameterSetName = "DbAttachDetach")]
+        [parameter(Position = 11)]
+        [parameter(Position = 12)]
         [switch]$ReuseSourceFolderStructure,
-        [parameter(Position = 13, ParameterSetName = "DbBackup")]
-        [parameter(Position = 14, ParameterSetName = "DbAttachDetach")]
+        [parameter(Position = 13)]
+        [parameter(Position = 14)]
         [switch]$IncludeSupportDbs,
         [parameter(Position = 15)]
         [PSCredential]$SourceSqlCredential,
@@ -223,41 +224,37 @@ function Start-DbaMigration {
         [switch]$DisableJobsOnDestination,
         [switch]$DisableJobsOnSource,
         [switch]$ExcludeSaRename,
-        [switch]$UseLastBackups,
+        [switch]$UseLastBackup,
         [switch]$Continue,
         [switch]$Force,
         [switch]$EnableException
     )
     
     begin {
+        if ($Exclude -notcontains "Databases") {
+            if (-not $BackupRestore -and -not $DetachAttach) {
+                Stop-Function -Message "You must specify a database migration method (-BackupRestore or -DetachAttach) or -NoDatabases"
+                return
+            }
+        }
         $elapsed = [System.Diagnostics.Stopwatch]::StartNew()
         $started = Get-Date
         $sourceserver = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
 
-        if ($BackupRestore -eq $false -and $DetachAttach -eq $false -and $NoDatabases -eq $false) {
-            Stop-Function -Message "You must specify a database migration method (-BackupRestore or -DetachAttach) or -NoDatabases"
+        if ($BackupRestore -and (-not $NetworkShare -and -not $UseLastBackup)) {
+            Stop-Function -Message "When using -BackupRestore, you must specify -NetworkShare or -UseLastBackup"
             return
         }
-        if ($Exclude -notcontains 'Databases') {
-            if (-not $DetachAttach -and !$BackupRestore) {
-                Stop-Function -Message "You must specify a migration method using -BackupRestore or -DetachAttach."
-                return
-            }
-        }
-        if ($BackupRestore -and (-not $NetworkShare -and -not $UseLastBackups)) {
-            Stop-Function -Message "When using -BackupRestore, you must specify -NetworkShare or -UseLastBackups"
-            return
-        }
-        if ($NetworkShare -and $UseLastBackups) {
-            Stop-Function -Message "-NetworkShare cannot be used with -UseLastBackups because the backup path is determined by the paths in the last backups"
+        if ($NetworkShare -and $UseLastBackup) {
+            Stop-Function -Message "-NetworkShare cannot be used with -UseLastBackup because the backup path is determined by the paths in the last backups"
             return
         }
         if ($DetachAttach -and -not $Reattach -and $Destination.Count -gt 1) {
             Stop-Function -Message "When using -DetachAttach with multiple servers, you must specify -Reattach to reattach database at source"
             return
         }
-        if ($Continue -and -not $UseLastBackups) {
-            Stop-Function -Message "-Continue cannot be used without -UseLastBackups"
+        if ($Continue -and -not $UseLastBackup) {
+            Stop-Function -Message "-Continue cannot be used without -UseLastBackup"
             return
         }
     }
@@ -266,12 +263,12 @@ function Start-DbaMigration {
         if (Test-FunctionInterrupt) { return }
 
         # testing twice for whatif reasons
-        if ($BackupRestore -and (-not $NetworkShare -and -not $UseLastBackups)) {
-            Stop-Function -Message "When using -BackupRestore, you must specify -NetworkShare or -UseLastBackups"
+        if ($BackupRestore -and (-not $NetworkShare -and -not $UseLastBackup)) {
+            Stop-Function -Message "When using -BackupRestore, you must specify -NetworkShare or -UseLastBackup"
             return
         }
-        if ($NetworkShare -and $UseLastBackups) {
-            Stop-Function -Message "-NetworkShare cannot be used with -UseLastBackups because the backup path is determined by the paths in the last backups"
+        if ($NetworkShare -and $UseLastBackup) {
+            Stop-Function -Message "-NetworkShare cannot be used with -UseLastBackup because the backup path is determined by the paths in the last backups"
             return
         }
         if ($DetachAttach -and -not $Reattach -and $Destination.Count -gt 1) {
@@ -322,8 +319,8 @@ function Start-DbaMigration {
             # Do it
             Write-Message -Level Verbose -Message "Migrating databases"
             if ($BackupRestore) {
-                if ($UseLastBackups) {
-                    Copy-DbaDatabase -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -AllDatabases -SetSourceReadOnly:$SetSourceReadOnly -ReuseSourceFolderStructure:$ReuseSourceFolderStructure -BackupRestore -Force:$Force -NoRecovery:$NoRecovery -WithReplace:$WithReplace -IncludeSupportDbs:$IncludeSupportDbs -UseLastBackups:$UseLastBackups -Continue:$Continue
+                if ($UseLastBackup) {
+                    Copy-DbaDatabase -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -AllDatabases -SetSourceReadOnly:$SetSourceReadOnly -ReuseSourceFolderStructure:$ReuseSourceFolderStructure -BackupRestore -Force:$Force -NoRecovery:$NoRecovery -WithReplace:$WithReplace -IncludeSupportDbs:$IncludeSupportDbs -UseLastBackup:$UseLastBackup -Continue:$Continue
                 } else {
                     Copy-DbaDatabase -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -AllDatabases -SetSourceReadOnly:$SetSourceReadOnly -ReuseSourceFolderStructure:$ReuseSourceFolderStructure -BackupRestore -NetworkShare $NetworkShare -Force:$Force -NoRecovery:$NoRecovery -WithReplace:$WithReplace -IncludeSupportDbs:$IncludeSupportDbs
                 }

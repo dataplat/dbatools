@@ -7,7 +7,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         $paramCount = 27
         $defaultParamCount = 13
         [object[]]$params = (Get-ChildItem function:\Copy-DbaDatabase).Parameters.Keys
-        $knownParameters = 'Source', 'SourceSqlCredential', 'Destination', 'DestinationSqlCredential', 'Database', 'ExcludeDatabase', 'AllDatabases', 'BackupRestore', 'NetworkShare', 'WithReplace', 'NoRecovery', 'NoBackupCleanup', 'NumberFiles', 'DetachAttach', 'Reattach', 'SetSourceReadOnly', 'ReuseSourceFolderStructure', 'IncludeSupportDbs', 'UseLastBackups', 'Continue', 'InputObject', 'NoCopyOnly', 'SetSourceOffline', 'NewName', 'Prefix', 'Force', 'EnableException'
+        $knownParameters = 'Source', 'SourceSqlCredential', 'Destination', 'DestinationSqlCredential', 'Database', 'ExcludeDatabase', 'AllDatabases', 'BackupRestore', 'NetworkShare', 'WithReplace', 'NoRecovery', 'NoBackupCleanup', 'NumberFiles', 'DetachAttach', 'Reattach', 'SetSourceReadOnly', 'ReuseSourceFolderStructure', 'IncludeSupportDbs', 'UseLastBackup', 'Continue', 'InputObject', 'NoCopyOnly', 'SetSourceOffline', 'NewName', 'Prefix', 'Force', 'EnableException'
         It "Should contain our specific parameters" {
             ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
         }
@@ -104,7 +104,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
             }
         }
     }
-    Context "UseLastBackups - read backup history" {
+    Context "UseLastBackup - read backup history" {
         BeforeAll {
             Get-DbaProcess -SqlInstance $script:instance2, $script:instance3 -Program 'dbatools PowerShell module - dbatools.io' | Stop-DbaProcess -WarningAction SilentlyContinue
             Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance3 -Database $backuprestoredb
@@ -112,7 +112,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
 
         It "copies a database successfully using backup history" {
             # It should already have a backup history by this time
-            $results = Copy-DbaDatabase -Source $script:instance2 -Destination $script:instance3 -Database $backuprestoredb -BackupRestore -UseLastBackups 3>$null
+            $results = Copy-DbaDatabase -Source $script:instance2 -Destination $script:instance3 -Database $backuprestoredb -BackupRestore -UseLastBackup 3>$null
             $results.Name -eq $backuprestoredb
             $results.Status -eq "Successful"
         }
@@ -127,7 +127,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
             $dbs[0].Owner -eq $dbs[1].Owner
         }
     }
-    Context "UseLastBackups with -Continue" {
+    Context "UseLastBackup with -Continue" {
         BeforeAll {
             Get-DbaProcess -SqlInstance $script:instance2, $script:instance3 -Program 'dbatools PowerShell module - dbatools.io' | Stop-DbaProcess -WarningAction SilentlyContinue
             Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance3 -Database $backuprestoredb
@@ -139,7 +139,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
 
         It "continues the restore over existing database using backup history" {
             # It should already have a backup history (full+diff) by this time
-            $results = Copy-DbaDatabase -Source $script:instance2 -Destination $script:instance3 -Database $backuprestoredb -BackupRestore -UseLastBackups -Continue 3>$null
+            $results = Copy-DbaDatabase -Source $script:instance2 -Destination $script:instance3 -Database $backuprestoredb -BackupRestore -UseLastBackup -Continue 3>$null
             $results.Name -eq $backuprestoredb
             $results.Status -eq "Successful"
         }

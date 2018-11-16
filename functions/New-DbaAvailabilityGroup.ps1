@@ -80,7 +80,7 @@ function New-DbaAvailabilityGroup {
 
         NOTE: If a backup / restore is performed, the backups will be left in tact on the network share.
 
-    .PARAMETER UseLastBackups
+    .PARAMETER UseLastBackup
         Use the last full backup of database.
 
     .PARAMETER Force
@@ -227,7 +227,7 @@ function New-DbaAvailabilityGroup {
 
         [string[]]$Database,
         [string]$NetworkShare,
-        [switch]$UseLastBackups,
+        [switch]$UseLastBackup,
         [switch]$Force,
         # replica
 
@@ -256,8 +256,8 @@ function New-DbaAvailabilityGroup {
     process {
         $stepCounter = $wait = 0
 
-        if ($Force -and $Secondary -and (-not $NetworkShare -and -not $UseLastBackups) -and ($SeedingMode -ne 'Automatic')) {
-            Stop-Function -Message "NetworkShare or UseLastBackups is required when Force is used"
+        if ($Force -and $Secondary -and (-not $NetworkShare -and -not $UseLastBackup) -and ($SeedingMode -ne 'Automatic')) {
+            Stop-Function -Message "NetworkShare or UseLastBackup is required when Force is used"
             return
         }
 
@@ -301,7 +301,7 @@ function New-DbaAvailabilityGroup {
             }
         }
 
-        if ($Database -and -not $UseLastBackups -and -not $NetworkShare -and $Secondary -and $SeedingMode -ne 'Automatic') {
+        if ($Database -and -not $UseLastBackup -and -not $NetworkShare -and $Secondary -and $SeedingMode -ne 'Automatic') {
             Stop-Function -Continue -Message "You must specify a NetworkShare when adding databases to a manually seeded availability group"
             return
         }
@@ -366,8 +366,8 @@ function New-DbaAvailabilityGroup {
             }
 
             if ($primarydb.RecoveryModel -ne "Full") {
-                if ((Test-Bound -ParameterName UseLastBackups)) {
-                    Stop-Function -Message "$dbName not set to full recovery. UseLastBackups cannot be used."
+                if ((Test-Bound -ParameterName UseLastBackup)) {
+                    Stop-Function -Message "$dbName not set to full recovery. UseLastBackup cannot be used."
                     return
                 } else {
                     Set-DbaDbRecoveryModel -SqlInstance $Primary -SqlCredential $PrimarySqlCredential -Database $primarydb.Name -RecoveryModel Full
@@ -496,7 +496,7 @@ function New-DbaAvailabilityGroup {
                     if ((-not $seconddb -or $Force) -and $SeedingMode -ne 'Automatic') {
                         try {
                             if (-not $allbackups[$db]) {
-                                if ($UseLastBackups) {
+                                if ($UseLastBackup) {
                                     $allbackups[$db] = Get-DbaBackupHistory -SqlInstance $primarydb.Parent -Database $primarydb.Name -IncludeCopyOnly -Last -EnableException
                                 } else {
                                     $fullbackup = $primarydb | Backup-DbaDatabase -BackupDirectory $NetworkShare -Type Full -EnableException

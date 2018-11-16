@@ -79,11 +79,11 @@ function Copy-DbaDatabase {
     .PARAMETER InputObject
         A collection of dbobjects from the pipeline.
 
-    .PARAMETER UseLastBackups
+    .PARAMETER UseLastBackup
         Use the last full, diff and logs instead of performing backups. Note that the backups must exist in a location accessible by all destination servers, such a network share.
 
     .PARAMETER Continue
-        If specified, will to attempt to restore transaction log backups on top of existing database(s) in Recovering or Standby states. Only usable with -UseLastBackups
+        If specified, will to attempt to restore transaction log backups on top of existing database(s) in Recovering or Standby states. Only usable with -UseLastBackup
 
     .PARAMETER NoCopyOnly
         If this switch is enabled, backups will be taken without COPY_ONLY. This will break the LSN backup chain, which will interfere with the restore chain of the database.
@@ -149,7 +149,7 @@ function Copy-DbaDatabase {
         Databases will be migrated from sql2012 to both sql2014 and sql2016 using the detach/copy files/attach method.The following will be performed: kick all users out of the database, detach all data/log files, move files across the network over an admin share (\\SqlSERVER\M$\MSSql...), attach file on destination server, reattach at source. If the database files (*.mdf, *.ndf, *.ldf) on *destination* exist and aren't in use, they will be overwritten.
 
     .EXAMPLE
-        PS C:\> Copy-DbaDatabase -Source sql2014a -Destination sqlcluster, sql2016 -BackupRestore -UseLastBackups -Force
+        PS C:\> Copy-DbaDatabase -Source sql2014a -Destination sqlcluster, sql2016 -BackupRestore -UseLastBackup -Force
 
         Migrates all user databases to sqlcluster and sql2016 using the last Full, Diff and Log backups from sql204a. If the databases exists on the destinations, they will be dropped prior to attach.
 
@@ -208,7 +208,7 @@ function Copy-DbaDatabase {
         [parameter(ParameterSetName = "DbAttachDetach")]
         [switch]$IncludeSupportDbs,
         [parameter(ParameterSetName = "DbBackup")]
-        [switch]$UseLastBackups,
+        [switch]$UseLastBackup,
         [parameter(ParameterSetName = "DbBackup")]
         [switch]$Continue,
         [parameter(ValueFromPipeline)]
@@ -224,20 +224,20 @@ function Copy-DbaDatabase {
     begin {
         $CopyOnly = -not $NoCopyOnly
 
-        if ($BackupRestore -and (-not $NetworkShare -and -not $UseLastBackups)) {
-            Stop-Function -Message "When using -BackupRestore, you must specify -NetworkShare or -UseLastBackups"
+        if ($BackupRestore -and (-not $NetworkShare -and -not $UseLastBackup)) {
+            Stop-Function -Message "When using -BackupRestore, you must specify -NetworkShare or -UseLastBackup"
             return
         }
-        if ($NetworkShare -and $UseLastBackups) {
-            Stop-Function -Message "-NetworkShare cannot be used with -UseLastBackups because the backup path is determined by the paths in the last backups"
+        if ($NetworkShare -and $UseLastBackup) {
+            Stop-Function -Message "-NetworkShare cannot be used with -UseLastBackup because the backup path is determined by the paths in the last backups"
             return
         }
         if ($DetachAttach -and -not $Reattach -and $Destination.Count -gt 1) {
             Stop-Function -Message "When using -DetachAttach with multiple servers, you must specify -Reattach to reattach database at source"
             return
         }
-        if ($Continue -and -not $UseLastBackups) {
-            Stop-Function -Message "-Continue cannot be used without -UseLastBackups"
+        if ($Continue -and -not $UseLastBackup) {
+            Stop-Function -Message "-Continue cannot be used without -UseLastBackup"
             return
         }
         <#
@@ -647,12 +647,12 @@ function Copy-DbaDatabase {
         if (Test-FunctionInterrupt) { return }
 
         # testing twice for whatif reasons
-        if ($BackupRestore -and (-not $NetworkShare -and -not $UseLastBackups)) {
-            Stop-Function -Message "When using -BackupRestore, you must specify -NetworkShare or -UseLastBackups"
+        if ($BackupRestore -and (-not $NetworkShare -and -not $UseLastBackup)) {
+            Stop-Function -Message "When using -BackupRestore, you must specify -NetworkShare or -UseLastBackup"
             return
         }
-        if ($NetworkShare -and $UseLastBackups) {
-            Stop-Function -Message "-NetworkShare cannot be used with -UseLastBackups because the backup path is determined by the paths in the last backups"
+        if ($NetworkShare -and $UseLastBackup) {
+            Stop-Function -Message "-NetworkShare cannot be used with -UseLastBackup because the backup path is determined by the paths in the last backups"
             return
         }
         if ($DetachAttach -and -not $Reattach -and $Destination.Count -gt 1) {
@@ -1097,13 +1097,13 @@ function Copy-DbaDatabase {
                     }
 
                     if ($BackupRestore) {
-                        if ($UseLastBackups) {
+                        if ($UseLastBackup) {
                             $whatifmsg = "Gathering last backup information for $dbName from $Source and restoring"
                         } else {
                             $whatifmsg = "Backup $dbName from $source and restoring"
                         }
                         If ($Pscmdlet.ShouldProcess($destinstance, $whatifmsg)) {
-                            if ($UseLastBackups) {
+                            if ($UseLastBackup) {
                                 $backupTmpResult = Get-DbaBackupHistory -SqlInstance $sourceServer -Database $dbName -IncludeCopyOnly -Last
                                 if (-not $backupTmpResult) {
                                     $copyDatabaseStatus.Type = "Database (BackupRestore)"
