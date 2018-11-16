@@ -11,7 +11,7 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
                #>
         $defaultParamCount = 13
         [object[]]$params = (Get-ChildItem function:\New-DbaAvailabilityGroup).Parameters.Keys
-        $knownParameters = 'Primary', 'PrimarySqlCredential', 'Secondary', 'SecondarySqlCredential', 'Name', 'DtcSupport', 'ClusterType', 'AutomatedBackupPreference', 'FailureConditionLevel', 'HealthCheckTimeout', 'Basic', 'DatabaseHealthTrigger', 'Passthru', 'Database', 'NetworkShare', 'UseLastBackups', 'Force', 'AvailabilityMode', 'FailoverMode', 'BackupPriority', 'ConnectionModeInPrimaryRole', 'ConnectionModeInSecondaryRole', 'SeedingMode', 'Endpoint', 'ReadonlyRoutingConnectionUrl', 'Certificate', 'IPAddress', 'SubnetMask', 'Port', 'Dhcp', 'EnableException'
+        $knownParameters = 'Primary', 'PrimarySqlCredential', 'Secondary', 'SecondarySqlCredential', 'Name', 'DtcSupport', 'ClusterType', 'AutomatedBackupPreference', 'FailureConditionLevel', 'HealthCheckTimeout', 'Basic', 'DatabaseHealthTrigger', 'Passthru', 'Database', 'SharedPath', 'UseLastBackup', 'Force', 'AvailabilityMode', 'FailoverMode', 'BackupPriority', 'ConnectionModeInPrimaryRole', 'ConnectionModeInSecondaryRole', 'SeedingMode', 'Endpoint', 'ReadonlyRoutingConnectionUrl', 'Certificate', 'IPAddress', 'SubnetMask', 'Port', 'Dhcp', 'EnableException'
         it "Should contain our specific parameters" {
             ((Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count) | Should Be $paramCount
         }
