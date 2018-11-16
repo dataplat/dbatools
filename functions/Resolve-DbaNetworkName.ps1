@@ -159,7 +159,11 @@ function Resolve-DbaNetworkName {
                     try {
                         if ($env:USERDNSDOMAIN) {
                             $ipaddress = ((Test-Connection -ComputerName "$Computer.$env:USERDNSDOMAIN" -Count 1 -ErrorAction SilentlyContinue).Ipv4Address).IPAddressToString
-                            $Computer = "$Computer.$env:USERDNSDOMAIN"
+                            if ($ipaddress) {
+                                $Computer = "$Computer.$env:USERDNSDOMAIN"
+                            } else {
+                                Stop-Function -Message "Couldn't resolve ip from dns name" -Continue -ErrorRecord $_
+                            }
                         }
                     } catch {
                         $Computer = $OGComputer
