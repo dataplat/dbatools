@@ -115,8 +115,8 @@ function Set-DbaMaxDop {
             $InputObject = Test-DbaMaxDop -SqlInstance $sqlinstance -SqlCredential $SqlCredential -Verbose:$false
         }
 
-        $InputObject | Add-Member -Force -NotePropertyName OldInstanceMaxDopValue -NotePropertyValue 0
-        $InputObject | Add-Member -Force -NotePropertyName OldDatabaseMaxDopValue -NotePropertyValue 0
+        $InputObject | Add-Member -Force -NotePropertyName PreviousInstanceMaxDopValue -NotePropertyValue 0
+        $InputObject | Add-Member -Force -NotePropertyName PreviousDatabaseMaxDopValue -NotePropertyValue 0
 
         #If we have servers 2016 or higher we will have a row per database plus the instance level, getting unique we only run one time per instance
         $servers = $InputObject | Select-Object SqlInstance -Unique
@@ -233,13 +233,13 @@ function Set-DbaMaxDop {
                     }
 
                     if ($dbscopedconfiguration) {
-                        Select-DefaultView -InputObject $results -Property InstanceName, Database, OldDatabaseMaxDopValue, @{
+                        Select-DefaultView -InputObject $results -Property InstanceName, Database, PreviousDatabaseMaxDopValue, @{
                             name = "CurrentDatabaseMaxDopValue"; expression = {
                                 $_.DatabaseMaxDop
                             }
                         }
                     } else {
-                        Select-DefaultView -InputObject $results -Property InstanceName, OldInstanceMaxDopValue, CurrentInstanceMaxDop
+                        Select-DefaultView -InputObject $results -Property InstanceName, PreviousInstanceMaxDopValue, CurrentInstanceMaxDop
                     }
                 } catch {
                     Stop-Function -Message "Could not modify Max Degree of Parallelism for $server." -ErrorRecord $_ -Target $server -Continue
