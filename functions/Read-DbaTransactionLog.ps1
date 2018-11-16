@@ -83,7 +83,7 @@ function Read-DbaTransactionLog {
     }
 
     if ($RowLimit -gt 0) {
-        Write-Message -Message "Limiting reults to $RowLimit rows" -Level Verbose
+        Write-Message -Message "Limiting results to $RowLimit rows" -Level Verbose
         $RowLimitSql = " TOP $RowLimit "
         $IgnoreLimit = $true
     } else {
