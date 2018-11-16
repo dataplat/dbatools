@@ -78,7 +78,7 @@ function Set-DbaMaxDop {
 
         Set recommended Max DOP for all databases on server sql2016.
 
-    #>
+       #>
     [CmdletBinding(SupportsShouldProcess = $true)]
     param (
         [parameter(Position = 0, Mandatory, ValueFromPipeline)]
@@ -226,14 +226,14 @@ function Set-DbaMaxDop {
                     }
 
                     $results += [pscustomobject]@{
-                        ComputerName           = $server.ComputerName
-                        InstanceName           = $server.ServiceName
-                        SqlInstance            = $server.DomainInstanceName
-                        InstanceVersion        = $row.InstanceVersion
-                        Database               = $row.Database
-                        DatabaseMaxDop         = $row.DatabaseMaxDop
-                        CurrentInstanceMaxDop  = $row.CurrentInstanceMaxDop
-                        RecommendedMaxDop      = $row.RecommendedMaxDop
+                        ComputerName                = $server.ComputerName
+                        InstanceName                = $server.ServiceName
+                        SqlInstance                 = $server.DomainInstanceName
+                        InstanceVersion             = $row.InstanceVersion
+                        Database                    = $row.Database
+                        DatabaseMaxDop              = $row.DatabaseMaxDop
+                        CurrentInstanceMaxDop       = $row.CurrentInstanceMaxDop
+                        RecommendedMaxDop           = $row.RecommendedMaxDop
                         PreviousDatabaseMaxDopValue = $row.PreviousDatabaseMaxDopValue
                         PreviousInstanceMaxDopValue = $row.PreviousInstanceMaxDopValue
                     }
