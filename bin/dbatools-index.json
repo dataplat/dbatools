@@ -3047,7 +3047,7 @@
                        [
                            "SharedPath",
                            "Specifies the network location for the backup files. The SQL Server service accounts must have read/write permission on this path.",
-                           "",
+                           "NetworkShare",
                            false,
                            "false",
                            ""
@@ -3191,7 +3191,7 @@
                        [
                            "EnableException",
                            "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
-                           "Silent",
+                           "",
                            false,
                            "false",
                            "False"
@@ -12092,7 +12092,7 @@
         "Synopsis":  "Determine buffer pool usage by database.",
         "Name":  "Get-DbaDbMemoryUsage",
         "Links":  "https://dbatools.io/Get-DbaDbMemoryUsage",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaDbMemoryUsage -SqlInstance sqlserver2014a\nReturns the buffer pool consumption for all user databases\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaDbMemoryUsage -SqlInstance sqlserver2014a -IncludeSystemDb\nReturns the buffer pool consumption for all user databases and system databases\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaDbMemoryUsage -SqlInstance sql1 -IncludeSystemDb -Database tempdb\nReturns the buffer pool consumption for tempdb database only\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaMemoryUsage -SqlInstance sql2 -IncludeSystemDb -Exclude \u0027master\u0027,\u0027model\u0027,\u0027msdb\u0027,\u0027ResourceDb\u0027\nReturns the buffer pool consumption for all user databases and tempdb database",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaDbMemoryUsage -SqlInstance sqlserver2014a\nReturns the buffer pool consumption for all user databases\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaDbMemoryUsage -SqlInstance sqlserver2014a -IncludeSystemDb\nReturns the buffer pool consumption for all user databases and system databases\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaDbMemoryUsage -SqlInstance sql1 -IncludeSystemDb -Database tempdb\nReturns the buffer pool consumption for tempdb database only\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaDbMemoryUsage -SqlInstance sql2 -IncludeSystemDb -Exclude \u0027master\u0027,\u0027model\u0027,\u0027msdb\u0027,\u0027ResourceDb\u0027\nReturns the buffer pool consumption for all user databases and tempdb database",
         "Syntax":  "Get-DbaDbMemoryUsage [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Database \u003cObject[]\u003e] [-ExcludeDatabase \u003cObject[]\u003e] [-IncludeSystemDb] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
@@ -18212,6 +18212,14 @@
                            ""
                        ],
                        [
+                           "Raw",
+                           "By default, messages such as SQL statements are flattened. Use raw to see the output without flattened formatting.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
                            "Errors",
                            "Instead of log entries, the error entries will be retrieved",
                            "",
@@ -18226,7 +18234,7 @@
         "Name":  "Get-DbatoolsLog",
         "Links":  "https://dbatools.io/Get-DbatoolsLog",
         "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbatoolsLog\nReturns all log entries currently in memory.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbatoolsLog -Target \"a\" -Last 1 -Skip 1\nReturns all log entries that targeted the object \"a\" in the second last execution sent.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbatoolsLog -Tag \"fail\" -Last 5\nReturns all log entries within the last 5 executions that contained the tag \"fail\"",
-        "Syntax":  "Get-DbatoolsLog [[-FunctionName] \u003cString\u003e] [[-ModuleName] \u003cString\u003e] [[-Target] \u003cObject\u003e] [[-Tag] \u003cString[]\u003e] [[-Last] \u003cInt32\u003e] [[-Skip] \u003cInt32\u003e] [[-Runspace] \u003cGuid\u003e] [[-Level] {Critical | Important | Output | Significant | VeryVerbose | Verbose | SomewhatVerbose | System | Debug | InternalComment | Warning}] [-Errors] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Get-DbatoolsLog [[-FunctionName] \u003cString\u003e] [[-ModuleName] \u003cString\u003e] [[-Target] \u003cObject\u003e] [[-Tag] \u003cString[]\u003e] [[-Last] \u003cInt32\u003e] [[-Skip] \u003cInt32\u003e] [[-Runspace] \u003cGuid\u003e] [[-Level] {Critical | Important | Output | Significant | VeryVerbose | Verbose | SomewhatVerbose | System | Debug | InternalComment | Warning}] [-Raw] [-Errors] [\u003cCommonParameters\u003e]"
     },
     {
         "CommandName":  "Get-DbaTopResourceUsage",
@@ -20329,7 +20337,7 @@
                        [
                            "SqlInstance",
                            "The target SQL Server instance onto which the Maintenance Solution will be installed.",
-                           "ServerInstance,SqlServer",
+                           "",
                            true,
                            "true (ByValue)",
                            ""
@@ -20425,7 +20433,7 @@
                        [
                            "EnableException",
                            "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
-                           "Silent",
+                           "",
                            false,
                            "false",
                            "False"
@@ -22168,7 +22176,7 @@
                        [
                            "SharedPath",
                            "The network share where the backups will be backed up and restored from.\nEach SQL Server service account must have access to this share.\nNOTE: If a backup / restore is performed, the backups will be left in tact on the network share.",
-                           "",
+                           "NetworkShare",
                            false,
                            "false",
                            ""
@@ -24873,7 +24881,7 @@
                        [
                            "SharedPath",
                            "The network share where the backups will be backed up and restored from.\nEach SQL Server service account must have access to this share.\nNOTE: If a backup / restore is performed, the backups will be left in tact on the network share.",
-                           "",
+                           "NetworkShare",
                            false,
                            "false",
                            ""
@@ -36688,7 +36696,7 @@
                        [
                            "SharedPath",
                            "Specifies the network location for the backup files. The SQL Server service accounts on both Source and Destination must have read/write permission to access this location.",
-                           "",
+                           "NetworkShare",
                            false,
                            "false",
                            ""

@@ -192,6 +192,7 @@ function Start-DbaMigration {
         [switch]$DetachAttach,
         [switch]$Reattach,
         [switch]$BackupRestore,
+        [Alias("NetworkShare")]
         [parameter(HelpMessage = "Specify a valid network share in the format \\server\share that can be accessed by your account and both Sql Server service accounts.")]
         [string]$SharedPath,
         [switch]$WithReplace,
@@ -213,6 +214,8 @@ function Start-DbaMigration {
     )
     
     begin {
+        Test-DbaDeprecation -DeprecatedOn 1.0.0 -Parameter NetworkShare -CustomMessage "Using the parameter NetworkShare is deprecated. This parameter will be removed in version 1.0.0 or before. Use SharedPath instead."
+        
         if ($Exclude -notcontains "Databases") {
             if (-not $BackupRestore -and -not $DetachAttach) {
                 Stop-Function -Message "You must specify a database migration method (-BackupRestore or -DetachAttach) or -Exclude Databases"
