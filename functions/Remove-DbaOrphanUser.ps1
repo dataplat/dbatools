@@ -149,12 +149,12 @@ function Remove-DbaOrphanUser {
                             Write-Message -Level Verbose -Message "Validating users on database $db."
 
                             if ($User.Count -eq 0) {
-                                #the third validation will remove from list sql users without login. The rule here is Sid with length higher than 16
-                                $User = $db.Users | Where-Object { $_.Login -eq "" -and ($_.ID -gt 4) -and (($_.Sid.Length -gt 16 -and $_.LoginType -eq [Microsoft.SqlServer.Management.Smo.LoginType]::SqlLogin) -eq $false) }
+                                #the third validation will remove from list sql users without login  or mapped to certificate. The rule here is Sid with length higher than 16
+                                $User = $db.Users | Where-Object { $_.Login -eq "" -and ($_.ID -gt 4) -and (($_.Sid.Length -gt 16 -and $_.LoginType -in @([Microsoft.SqlServer.Management.Smo.LoginType]::SqlLogin, [Microsoft.SqlServer.Management.Smo.LoginType]::Certificate)) -eq $false) }
                             } else {
-
-                                #the fourth validation will remove from list sql users without login. The rule here is Sid with length higher than 16
-                                $User = $db.Users | Where-Object { $_.Login -eq "" -and ($_.ID -gt 4) -and ($User -contains $_.Name) -and (($_.Sid.Length -gt 16 -and $_.LoginType -eq [Microsoft.SqlServer.Management.Smo.LoginType]::SqlLogin) -eq $false) }
+                                #the fourth validation will remove from list sql users without login or mapped to certificate. The rule here is Sid with length higher than 16
+                                $User = $db.Users | Where-Object { $_.Login -eq "" -and ($_.ID -gt 4) -and ($User -contains $_.Name) -and (($_.Sid.Length -gt 16 -and $_.LoginType -in @([Microsoft.SqlServer.Management.Smo.LoginType]::SqlLogin, [Microsoft.SqlServer.Management.Smo.LoginType]::Certificate)) -eq $false) }
+                            }
 
                             }
                         }
