@@ -240,7 +240,7 @@ function Copy-DbaDatabase {
             Stop-Function -Message "-Continue cannot be used without -UseLastBackup"
             return
         }
-        
+
         function Join-Path {
             <#
         An internal command that does not require the local path to exist
@@ -277,20 +277,29 @@ function Copy-DbaDatabase {
 
             )
 
-            if ($script:sameserver) { return $filepath }
-            if (-not $filepath) { return }
-            if ($filepath.StartsWith("\\")) { return $filepath }
+            if ($script:sameserver) {
+                return $filepath
+            }
+            if (-not $filepath) {
+                return
+            }
+            if ($filepath.StartsWith("\\")) {
+                return $filepath
+            }
 
             $servername = $servername.Split("\")[0]
 
             if ($filepath -and $filepath -ne [System.DbNull]::Value) {
                 $newpath = Join-Path "\\$servername\" $filepath.replace(':', '$')
                 return $newpath
-            } else { return }
+            } else {
+                return
+            }
         }
 
         function Get-SqlFileStructure {
-            $dbcollection = @{ };
+            $dbcollection = @{
+            };
             $databaseProgressbar = 0
 
             foreach ($db in $databaseList) {
@@ -300,8 +309,12 @@ function Copy-DbaDatabase {
 
                 $databaseProgressbar++
                 $dbStatus = $db.status.toString()
-                if ($dbStatus.StartsWith("Normal") -eq $false) { continue }
-                $destinstancefiles = @{ }; $sourcefiles = @{ }
+                if ($dbStatus.StartsWith("Normal") -eq $false) {
+                    continue
+                }
+                $destinstancefiles = @{
+                }; $sourcefiles = @{
+                }
 
                 $where = "Filetype <> 'LOG' and Filetype <> 'FULLTEXT'"
 
@@ -310,7 +323,8 @@ function Copy-DbaDatabase {
                 # Data Files
                 foreach ($file in $datarows) {
                     # Destination File Structure
-                    $d = @{ }
+                    $d = @{
+                    }
                     if ($ReuseSourceFolderStructure) {
                         $d.physical = $file.filename
                     } elseif ($WithReplace) {
@@ -334,7 +348,8 @@ function Copy-DbaDatabase {
                     $destinstancefiles.add($file.Name, $d)
 
                     # Source File Structure
-                    $s = @{ }
+                    $s = @{
+                    }
                     $s.logical = $file.Name
                     $s.physical = $file.filename
                     $s.remotefilename = Join-AdminUNC $sourceNetBios $s.physical
@@ -354,7 +369,8 @@ function Copy-DbaDatabase {
 
                     foreach ($ftc in $allrows) {
                         # Destination File Structure
-                        $d = @{ }
+                        $d = @{
+                        }
                         $pre = "sysft_"
                         $name = $ftc.Name
                         $physical = $ftc.Path # RootPath
@@ -363,7 +379,9 @@ function Copy-DbaDatabase {
                             $d.physical = $physical
                         } else {
                             $directory = Get-SqlDefaultPaths $destServer data
-                            if ($destServer.VersionMajor -lt 10) { $directory = "$directory\FTDATA" }
+                            if ($destServer.VersionMajor -lt 10) {
+                                $directory = "$directory\FTDATA"
+                            }
                             $fileName = Split-Path($physical) -leaf
                             $d.physical = "$directory\$fileName"
                         }
@@ -372,7 +390,8 @@ function Copy-DbaDatabase {
                         $destinstancefiles.add($logical, $d)
 
                         # Source File Structure
-                        $s = @{ }
+                        $s = @{
+                        }
                         $pre = "sysft_"
                         $name = $ftc.Name
                         $physical = $ftc.Path # RootPath
@@ -390,7 +409,8 @@ function Copy-DbaDatabase {
 
                 # Log Files
                 foreach ($file in $datarows) {
-                    $d = @{ }
+                    $d = @{
+                    }
                     if ($ReuseSourceFolderStructure) {
                         $d.physical = $file.filename
                     } elseif ($WithReplace) {
@@ -412,20 +432,24 @@ function Copy-DbaDatabase {
                     $d.remotefilename = Join-AdminUNC $destNetBios $d.physical
                     $destinstancefiles.add($file.Name, $d)
 
-                    $s = @{ }
+                    $s = @{
+                    }
                     $s.logical = $file.Name
                     $s.physical = $file.filename
                     $s.remotefilename = Join-AdminUNC $sourceNetBios $s.physical
                     $sourcefiles.add($file.Name, $s)
                 }
 
-                $location = @{ }
+                $location = @{
+                }
                 $location.add("Destination", $destinstancefiles)
                 $location.add("Source", $sourcefiles)
                 $dbcollection.Add($($db.Name), $location)
             }
 
-            $fileStructure = [pscustomobject]@{ "databases" = $dbcollection }
+            $fileStructure = [pscustomobject]@{
+                "databases" = $dbcollection
+            }
             Write-Progress -id 1 -Activity "Processing database file structure" -Status "Completed" -Completed
             return $fileStructure
         }
@@ -501,7 +525,9 @@ function Copy-DbaDatabase {
 
             if ($null -eq $server.Logins.Item($dbOwner)) {
                 try {
-                    $dbOwner = ($destServer.logins | Where-Object { $_.id -eq 1 }).Name
+                    $dbOwner = ($destServer.logins | Where-Object {
+                            $_.id -eq 1
+                        }).Name
                 } catch {
                     $dbOwner = "sa"
                 }
@@ -543,7 +569,9 @@ function Copy-DbaDatabase {
                             $null = New-Item -ItemType Directory -Path $remotefilename -Force
                             Start-BitsTransfer -Source "$from\*.*" -Destination $remotefilename
 
-                            $directories = (Get-ChildItem -recurse $from | Where-Object { $_.PsIsContainer }).FullName
+                            $directories = (Get-ChildItem -recurse $from | Where-Object {
+                                    $_.PsIsContainer
+                                }).FullName
                             foreach ($directory in $directories) {
                                 $newdirectory = $directory.replace($from, $remotefilename)
                                 $null = New-Item -ItemType Directory -Path $newdirectory -Force
@@ -598,14 +626,20 @@ function Copy-DbaDatabase {
 
                 if ($null -eq $dbOwner) {
                     try {
-                        $dbOwner = ($destServer.logins | Where-Object { $_.id -eq 1 }).Name
+                        $dbOwner = ($destServer.logins | Where-Object {
+                                $_.id -eq 1
+                            }).Name
                     } catch {
                         $dbOwner = "sa"
                     }
                 }
 
-                foreach ($file in $fileStructure.databases[$dbName].destination.values) { $null = $destfilestructure.add($file.physical) }
-                foreach ($file in $fileStructure.databases[$dbName].source.values) { $null = $sourceFileStructure.add($file.physical) }
+                foreach ($file in $fileStructure.databases[$dbName].destination.values) {
+                    $null = $destfilestructure.add($file.physical)
+                }
+                foreach ($file in $fileStructure.databases[$dbName].source.values) {
+                    $null = $sourceFileStructure.add($file.physical)
+                }
 
                 $detachresult = Dismount-SqlDatabase $sourceServer $dbName
 
@@ -637,7 +671,9 @@ function Copy-DbaDatabase {
         $backupCollection = @()
     }
     process {
-        if (Test-FunctionInterrupt) { return }
+        if (Test-FunctionInterrupt) {
+            return
+        }
 
         # testing twice for whatif reasons
         if ($BackupRestore -and (-not $SharedPath -and -not $UseLastBackup)) {
@@ -708,7 +744,9 @@ function Copy-DbaDatabase {
             }
 
             if ($script:sameserver -and $DetachAttach) {
-                if (-not (Test-ElevationRequirement -ComputerName $sourceServer)) { return }
+                if (-not (Test-ElevationRequirement -ComputerName $sourceServer)) {
+                    return
+                }
             }
 
             $destVersionLower = $destServer.VersionMajor -lt $sourceServer.VersionMajor
@@ -859,11 +897,19 @@ function Copy-DbaDatabase {
                 $dbName = $currentdb.Name
                 $dbOwner = $currentdb.Owner
 
-                if ($currentdb.Id -le 4) { continue }
-                if ($Database -and $Database -notcontains $dbName) { continue }
-                if ($IncludeSupportDBs -eq $false -and $SupportDBs -contains $dbName) { continue }
+                if ($currentdb.Id -le 4) {
+                    continue
+                }
+                if ($Database -and $Database -notcontains $dbName) {
+                    continue
+                }
+                if ($IncludeSupportDBs -eq $false -and $SupportDBs -contains $dbName) {
+                    continue
+                }
                 if ($IncludeSupportDBs -eq $true -and $SupportDBs -notcontains $dbName) {
-                    if ($AllDatabases -eq $false -and $Database.length -eq 0) { continue }
+                    if ($AllDatabases -eq $false -and $Database.length -eq 0) {
+                        continue
+                    }
                 }
                 $null = $databaseList.Add($currentdb)
             }
@@ -1080,11 +1126,10 @@ function Copy-DbaDatabase {
                     if ($SetSourceReadOnly) {
                         If ($Pscmdlet.ShouldProcess($source, "Set $dbName to read-only")) {
                             Write-Message -Level Verbose -Message "Setting database to read-only."
-                            $result = Update-SqldbReadOnly -SqlInstance $sourceServer -dbname $dbName -readonly:$true
-
-                            if ($result -eq $false) {
-                                Write-Message -Level Verbose -Message "Couldn't set database to read-only. Aborting routine for this database."
-                                continue
+                            try {
+                                $result = Set-DbaDbState -SqlInstance $sourceServer -Database $dbName -ReadOnly -EnableException
+                            } catch {
+                                Stop-Function -Continue -Message "Couldn't set database to read-only. Aborting routine for this database" -ErrorRecord $_
                             }
                         }
                     }
@@ -1230,12 +1275,13 @@ function Copy-DbaDatabase {
                                     $sourceServer.Databases[$dbName].BrokerEnabled = $sourceDbBrokerEnabled
                                     $sourceServer.Databases[$dbName].Alter()
 
-                                    if ($SetSourceReadOnly) {
-                                        $null = Update-SqldbReadOnly -SqlInstance $sourceServer -dbname $dbName -readonly $true
-                                    } else {
-                                        $null = Update-SqldbReadOnly -SqlInstance $sourceServer -dbname $dbName -readonly $sourceDbReadOnly
+                                    if ($SetSourceReadOnly -or $sourceDbReadOnly) {
+                                        try {
+                                            $result = Set-DbaDbState -SqlInstance $sourceServer -Database $dbName -ReadOnly -EnableException
+                                        } catch {
+                                            Stop-Function -Message "Couldn't set database to read-only" -ErrorRecord $_
+                                        }
                                     }
-
                                     Write-Message -Level Verbose -Message "Successfully reattached $dbName to $source."
                                 } else {
                                     Write-Message -Level Verbose -Message "Could not reattach $dbName to $source."
@@ -1307,12 +1353,15 @@ function Copy-DbaDatabase {
                         }
                     }
 
-                    if ($sourceDbReadOnly -ne $NewDatabase.ReadOnly -and $NoRecovery -eq $false) {
+                    if ($sourceDbReadOnly -ne $NewDatabase.ReadOnly -and -not $NoRecovery) {
                         if ($Pscmdlet.ShouldProcess($destinstance, "Updating ReadOnly status on $DestinationdbName")) {
-                            $update = Update-SqldbReadOnly -SqlInstance $destServer -dbname $DestinationdbName -readonly $sourceDbReadOnly
-                            if ($update -eq $true) {
-                                Write-Message -Level Verbose -Message "Successfully updated readonly status on $DestinationdbName."
-                            } else {
+                            try {
+                                if ($sourceDbReadOnly) {
+                                    $result = Set-DbaDbState -SqlInstance $destserver -Database $DestinationdbName -ReadOnly -EnableException
+                                } else {
+                                    $result = Set-DbaDbState -SqlInstance $destserver -Database $DestinationdbName -ReadWrite -EnableException
+                                }
+                            } catch {
                                 $copyDatabaseStatus.Status = "Successful - failed to apply ReadOnly."
                                 $copyDatabaseStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                                 Stop-Function -Message "Failed to update ReadOnly status on $DestinationdbName." -Target $destinstance -ErrorRecord $_ -Continue
@@ -1338,7 +1387,9 @@ function Copy-DbaDatabase {
         }
     }
     end {
-        if (Test-FunctionInterrupt) { return }
+        if (Test-FunctionInterrupt) {
+            return
+        }
         if (-not $NoBackupCleanUp -and $Destination.Count -gt 1) {
             foreach ($backupFile in ($backupCollection.BackupPath)) {
                 try {
@@ -1358,7 +1409,9 @@ function Copy-DbaDatabase {
                 }
             }
         }
-        if (Test-FunctionInterrupt) { return }
+        if (Test-FunctionInterrupt) {
+            return
+        }
         if ($null -ne $elapsed) {
             $totalTime = ($elapsed.Elapsed.toString().Split(".")[0])
 
