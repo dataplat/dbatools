@@ -213,7 +213,7 @@ function Get-DbaMemoryUsage {
                 try {
                     Invoke-Command2 -ComputerName $Computer -Credential $Credential -ScriptBlock $scriptblock -argumentlist $Memcounters, $Plancounters, $BufManpagecounters, $SSAScounters, $SSIScounters
                 } catch {
-                    Stop-Function -Continue -Message "Failure" -ErrorRecord $_ -Target $computer -Continue
+                    Stop-Function -Message "Failure" -ErrorRecord $_ -Target $computer -Continue
                 }
             } else {
                 Write-Message -Level Warning -Message "Can't resolve $Computer."
