@@ -227,6 +227,7 @@ function New-DbaAvailabilityGroup {
         # database
 
         [string[]]$Database,
+        [Alias("NetworkShare")]
         [string]$SharedPath,
         [switch]$UseLastBackup,
         [switch]$Force,
@@ -254,6 +255,9 @@ function New-DbaAvailabilityGroup {
         [switch]$Dhcp,
         [switch]$EnableException
     )
+    begin {
+        Test-DbaDeprecation -DeprecatedOn 1.0.0 -Parameter NetworkShare -CustomMessage "Using the parameter NetworkShare is deprecated. This parameter will be removed in version 1.0.0 or before. Use SharedPath instead."
+    }
     process {
         $stepCounter = $wait = 0
 
