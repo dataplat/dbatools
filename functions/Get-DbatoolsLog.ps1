@@ -33,7 +33,6 @@ function Get-DbatoolsLog {
     .PARAMETER Raw
         By default, messages such as SQL statements are flattened. Use raw to see the output without flattened formatting.
 
-        Has no effect without the '-Last' parameter.
     .PARAMETER Runspace
         The guid of the runspace to return messages from.
         By default, messages from all runspaces are returned.
