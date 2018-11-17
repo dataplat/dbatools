@@ -148,16 +148,16 @@ function Get-DbaDbFile {
             }
 
             foreach ($db in $InputObject) {
-                
+
                 Write-Message -Level Verbose -Message "Querying database $db"
-                
+
                 try {
                     $version = $server.Query("SELECT compatibility_level FROM sys.databases WHERE name = '$($db.Name)'")
                     $version = [int]($version.compatibility_level / 10)
                 } catch {
-                    $version = 8    
+                    $version = 8
                 }
-                
+
                 if ($version -ge 11) {
                     $query = ($sql, $sql2008, $sqlfrom, $sql2008from) -Join "`n"
                 } elseif ($version -ge 9) {
@@ -167,13 +167,13 @@ function Get-DbaDbFile {
                 }
 
                 Write-Message -Level Debug -Message "SQL Statement: $query"
-                
+
                 try {
                     $results = $server.Query($query, $db.Name)
                 } catch {
                     Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
                 }
-                
+
                 foreach ($result in $results) {
                     $size = [dbasize]($result.Size * 8192)
                     $usedspace = [dbasize]($result.UsedSpace * 8192)
