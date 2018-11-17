@@ -19,7 +19,7 @@ function Get-DbaAgentJob {
     .PARAMETER ExcludeJob
         The job(s) to exclude - this list is auto-populated from the server.
 
-    .PARAMETER NoDisabledJobs
+    .PARAMETER ExcludeDisabledJobs
         Switch will exclude disabled jobs from the output.
 
     .PARAMETER EnableException
@@ -59,7 +59,7 @@ function Get-DbaAgentJob {
         Returns all SQl Agent Jobs for the local SQL Server instances, except the BackupDiff Job.
 
     .EXAMPLE
-        PS C:\> Get-DbaAgentJob -SqlInstance localhost -NoDisabledJobs
+        PS C:\> Get-DbaAgentJob -SqlInstance localhost -ExcludeDisabledJobs
 
         Returns all SQl Agent Jobs for the local SQL Server instances, excluding the disabled jobs.
 
@@ -77,7 +77,7 @@ function Get-DbaAgentJob {
         [PSCredential]$SqlCredential,
         [object[]]$Job,
         [object[]]$ExcludeJob,
-        [switch]$NoDisabledJobs,
+        [switch]$ExcludeDisabledJobs,
         [Alias('Silent')]
         [switch]$EnableException
     )
@@ -99,7 +99,7 @@ function Get-DbaAgentJob {
             if ($ExcludeJob) {
                 $jobs = $jobs | Where-Object Name -NotIn $ExcludeJob
             }
-            if ($NoDisabledJobs) {
+            if ($ExcludeDisabledJobs) {
                 $jobs = $Jobs | Where-Object IsEnabled -eq $true
             }
 
