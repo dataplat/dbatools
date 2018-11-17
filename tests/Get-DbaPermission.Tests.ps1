@@ -7,7 +7,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         $paramCount = 7
         $defaultParamCount = 11
         [object[]]$params = (Get-ChildItem function:\Get-DbaPermission).Parameters.Keys
-        $knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'IncludeServerLevel', 'NoSystemObjects', 'EnableException'
+        $knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'IncludeServerLevel', 'ExcludeSystemObjects', 'EnableException'
         It "Should contain our specific parameters" {
             ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
         }
@@ -27,11 +27,11 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $results = Get-DbaPermission -SqlInstance $script:instance2
             $results.where( {$_.Database -eq ''}).count | Should Be 0
         }
-        it "returns no system object permissions with -NoSystemObjects" {
-            $results = Get-DbaPermission -SqlInstance $script:instance2 -NoSystemObjects
+        it "returns no system object permissions with -ExcludeSystemObjects" {
+            $results = Get-DbaPermission -SqlInstance $script:instance2 -ExcludeSystemObjects
             $results.where( {$_.securable -like 'sys.*'}).count | Should Be 0
         }
-        it "returns system object permissions without -NoSystemObjects" {
+        it "returns system object permissions without -ExcludeSystemObjects" {
             $results = Get-DbaPermission -SqlInstance $script:instance2
             $results.where( {$_.securable -like 'sys.*'}).count | Should BeGreaterThan 0
         }

@@ -40,7 +40,7 @@ $new = "localhost\sql2016"
 $old = $instance = "localhost"
 $allservers = $old, $new
 
-# Alternatively, use Registered Servers 
+# Alternatively, use Registered Servers
 $allservers = Get-DbaCmsRegServer -SqlInstance $instance
 
 # Need to restore a database? It can be as simple as this:
@@ -52,7 +52,7 @@ Get-ChildItem -Directory \\workstation\backups\sql2012 | Restore-DbaDatabase -Sq
 # What about if you need to make a backup? And you are logging in with alternative credentials?
 Get-DbaDatabase -SqlInstance $new -SqlCredential sqladmin | Backup-DbaDatabase
 
-# Testing your backups is crazy easy! 
+# Testing your backups is crazy easy!
 Start-Process https://dbatools.io/Test-DbaLastBackup
 Test-DbaLastBackup -SqlInstance $old | Out-GridView
 
@@ -70,18 +70,18 @@ Get-DbaAgentJob -SqlInstance $old | Export-DbaScript -Path C:\temp\jobs.sql
 Get-ChildItem -Directory \\workstation\backups\subset\ | Restore-DbaDatabase -SqlInstance $new -OutputScriptOnly -WithReplace | Out-File -Filepath c:\temp\restore.sql
 Invoke-Item c:\temp\restore.sql
 
-# You've probably heard about how easy migrations can be with dbatools. Here's an example 
+# You've probably heard about how easy migrations can be with dbatools. Here's an example
 $startDbaMigrationSplat = @{
     Source = $old
     Destination = $new
     BackupRestore = $true
-    NetworkShare = 'C:\temp'
+    SharedPath = 'C:\temp'
     NoSysDbUserObjects = $true
     NoCredentials = $true
     NoBackupDevices = $true
     NoEndPoints = $true
 }
-		
+
 Start-DbaMigration @startDbaMigrationSplat -Force | Select * | Out-GridView
 
 # Know how snapshots used to be a PITA? Now they're super easy
@@ -110,7 +110,7 @@ $new | Find-DbaStoredProcedure -Pattern dbatools
 
 # Have an employee who is leaving? Find all of their objects.
 $allservers | Find-DbaUserObject -Pattern ad\jdoe | Out-GridView
- 
+
 # Find detached databases, by example
 Detach-DbaDatabase -SqlInstance $instance -Database AdventureWorks2012
 Find-DbaOrphanedFile -SqlInstance $instance | Out-GridView
@@ -156,7 +156,7 @@ Get-DbaSchemaChangeHistory -SqlInstance $new -Database tempdb
 # Get Db Free Space AND write it to table
 Get-DbaDbSpace -SqlInstance $instance | Out-GridView
 Get-DbaDbSpace -SqlInstance $instance -IncludeSystemDB | ConvertTo-DbaDataTable | Write-DbaDataTable -SqlInstance $instance -Database tempdb -Table DiskSpaceExample -AutoCreateTable
-Invoke-Sqlcmd2 -ServerInstance $instance -Database tempdb -Query 'SELECT * FROM dbo.DiskSpaceExample' | Out-GridView
+Invoke-DbaQuery -SqlInstance $instance -Database tempdb -Query 'SELECT * FROM dbo.DiskSpaceExample' | Out-GridView
 
 # History
 Get-Command -Module dbatools *history*
