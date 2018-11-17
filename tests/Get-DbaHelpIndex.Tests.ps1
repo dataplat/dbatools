@@ -46,12 +46,12 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
     }
     Context "Command works when including statistics" {
-        $results = Get-DbaHelpIndex -SqlInstance $script:instance2 -Database $dbname -IncludeStats | Where-Object {$_.IndexType -eq 'Statistics'}
+        $results = Get-DbaHelpIndex -SqlInstance $script:instance2 -Database $dbname -IncludeStats | Where-Object {$_.Statistics}
         It 'Results should be returned' {
             $results | Should Not BeNullOrEmpty
         }
         It 'Returns dbatools_stats from test object' {
-            $results.Index | Should Be 'dbatools_stats'
+            $results.Statistics | Should Contain 'dbatools_stats'
         }
     }
     Context "Command output includes data types" {
@@ -68,7 +68,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         It 'Formatted as strings' {
             $results.IndexReads | Should BeOfType 'String'
             $results.IndexUpdates | Should BeOfType 'String'
-            $results.SizeKB | Should BeOfType 'String'
+            $results.Size | Should BeOfType 'String'
             $results.IndexRows | Should BeOfType 'String'
             $results.IndexLookups | Should BeOfType 'String'
             $results.StatsSampleRows | Should BeOfType 'String'
@@ -80,7 +80,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         It 'Formatted as Long' {
             $results.IndexReads | Should BeOfType 'Long'
             $results.IndexUpdates | Should BeOfType 'Long'
-            $results.SizeKB | Should BeOfType 'Long'
+            $results.Size | Should BeOfType 'dbasize'
             $results.IndexRows | Should BeOfType 'Long'
             $results.IndexLookups | Should BeOfType 'Long'
         }
