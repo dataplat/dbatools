@@ -122,22 +122,22 @@ function Install-DbaMaintenanceSolution {
         [switch]$Force,
         [switch]$EnableException
     )
-    
+
     begin {
         if ($InstallJobs -and $Solution -ne 'All') {
             Stop-Function -Message "Jobs can only be created for all solutions. To create SQL Agent jobs you need to use '-Solution All' (or not specify the Solution and let it default to All) and '-InstallJobs'."
             return
         }
-        
+
         if ((Test-Bound -ParameterName CleanupTime) -and -not $InstallJobs) {
             Stop-Function -Message "CleanupTime is only useful when installing jobs. To install jobs, please use '-InstallJobs' in addition to CleanupTime."
             return
         }
-        
+
         if ($ReplaceExisting -eq $true) {
             Write-Message -Level Verbose -Message "If Ola Hallengren's scripts are found, we will drop and recreate them!"
         }
-        
+
         $DbatoolsData = Get-DbatoolsConfigValue -FullName "Path.DbatoolsData"
 
         $url = "https://github.com/olahallengren/sql-server-maintenance-solution/archive/master.zip"
@@ -257,12 +257,12 @@ function Install-DbaMaintenanceSolution {
             return $fileContents
         }
     }
-    
+
     process {
         if (Test-FunctionInterrupt) {
             return
         }
-        
+
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -NonPooled
@@ -287,7 +287,7 @@ function Install-DbaMaintenanceSolution {
             Write-Message -Level Output -Message "Ola Hallengren's solution will be installed on database $Database."
 
             $db = $server.Databases[$Database]
-            
+
             # Required
             $required = @('CommandExecute.sql')
 
