@@ -1,3 +1,4 @@
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function New-DbaSsisCatalog {
     <#
     .SYNOPSIS
@@ -12,9 +13,12 @@ function New-DbaSsisCatalog {
     .PARAMETER SqlCredential
         Credentials used to connect to the SQL Server
 
-    .PARAMETER Password
+    .PARAMETER SecurePassword
         Required password that will be used for the security key in SSISDB.
 
+    .PARAMETER Credential
+        Use a credential object instead of a securepassword
+    
     .PARAMETER SsisCatalog
         SSIS catalog name. By default, this is SSISDB.
 
@@ -41,32 +45,39 @@ function New-DbaSsisCatalog {
         https://dbatools.io/New-DbaSsisCatalog
 
     .EXAMPLE
-        PS C:\> $password = ConvertTo-SecureString MyVisiblePassWord -AsPlainText -Force
-        PS C:\> New-DbaSsisCatalog -SqlInstance sql2016 -Password $password
+        PS C:\> $SecurePassword = Read-Host -AsSecureString -Prompt "Enter password"
+        PS C:\> New-DbaSsisCatalog -SqlInstance DEV01 -Password $SecurePassword
 
         Creates the SSIS Catalog on server DEV01 with the specified password.
-
+    
     .EXAMPLE
-        PS C:\> $password = Read-Host -AsSecureString -Prompt "Enter password"
-        PS C:\> New-DbaSsisCatalog -SqlInstance DEV01 -Password $password
+        PS C:\> New-DbaSsisCatalog -SqlInstance sql2016 -Credential usernamedoesntmatter
 
-        Creates the SSIS Catalog on server DEV01 with the specified password.
-
+        Creates the SSIS Catalog on server DEV01 with the specified password in the credential prompt. As the example username suggets the username does not matter.
+        This is simply an easier way to get a secure password.
     #>
-    [CmdletBinding(SupportsShouldProcess = $true)]
+    [CmdletBinding(SupportsShouldProcess)]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [parameter(Mandatory)]
-        [Security.SecureString]$Password,
+        [PSCredential]$Credential,
+        [Alias("Password")]
+        [Security.SecureString]$SecurePassword,
         [string]$SsisCatalog = "SSISDB",
-        [Alias('Silent')]
         [switch]$EnableException
     )
-
+    begin {
+        if (-not $SecurePassword -and -not $Credential) {
+            Stop-Function -Message "You must specify either -Password or -Credential"
+            return
+        }
+        if (-not $SecurePassword -and $Credential) {
+            $SecurePassword = $Credential.Password    
+        }
+    }
     process {
+        if (Test-FunctionInterrupt) { return }
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 10
@@ -102,7 +113,7 @@ function New-DbaSsisCatalog {
             } else {
                 if ($Pscmdlet.ShouldProcess($server, "Creating SSIS catalog: $SsisCatalog")) {
                     try {
-                        $ssisdb = New-Object Microsoft.SqlServer.Management.IntegrationServices.Catalog ($ssis, $SsisCatalog, $(([System.Runtime.InteropServices.marshal]::PtrToStringAuto([System.Runtime.InteropServices.marshal]::SecureStringToBSTR($password)))))
+                        $ssisdb = New-Object Microsoft.SqlServer.Management.IntegrationServices.Catalog ($ssis, $SsisCatalog, $(([System.Runtime.InteropServices.marshal]::PtrToStringAuto([System.Runtime.InteropServices.marshal]::SecureStringToBSTR($SecurePassword)))))
                         $ssisdb.Create()
 
                         [pscustomobject]@{
