@@ -19,8 +19,8 @@ function Connect-DbaInstance {
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
 
-    .PARAMETER Credential
-        Credential object used to connect to the SQL Server Instance as a different user. This can be a Windows or SQL Server account. Windows users are determined by the existence of a backslash, so if you are intending to use an alternative Windows connection instead of a SQL login, ensure it contains a backslash.
+    .PARAMETER SqlCredential
+        Credential object (Get-Credential) used to connect to the SQL Server Instance as a different user. This can be a Windows or SQL Server account. Windows users are determined by the existence of a backslash, so if you are intending to use an alternative Windows connection instead of a SQL login, ensure it contains a backslash.
 
     .PARAMETER Database
         The database(s) to process. This list is auto-populated from the server.
@@ -138,13 +138,13 @@ function Connect-DbaInstance {
 
     .EXAMPLE
         PS C:\> $wincred = Get-Credential ad\sqladmin
-        PS C:\> Connect-DbaInstance -SqlInstance sql2014 -Credential $wincred
+        PS C:\> Connect-DbaInstance -SqlInstance sql2014 -SqlCredential $wincred
 
-        Creates an SMO Server object that connects using alternative Windows credentials
+        Creates an SMO Server object that connects using alternative Windows Credentials
 
     .EXAMPLE
         PS C:\> $sqlcred = Get-Credential sqladmin
-        PS C:\> $server = Connect-DbaInstance -SqlInstance sql2014 -Credential $sqlcred
+        PS C:\> $server = Connect-DbaInstance -SqlInstance sql2014 -SqlCredential $sqlcred
 
         Login to sql2014 as SQL login sqladmin.
 
@@ -174,8 +174,8 @@ function Connect-DbaInstance {
         [Parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
-        [Alias("SqlCredential")]
-        [PSCredential]$Credential,
+        [Alias("Credential")]
+        [PSCredential]$SqlCredential,
         [object[]]$Database,
         [string]$AccessToken,
         [ValidateSet('ReadOnly', 'ReadWrite')]
@@ -225,7 +225,7 @@ function Connect-DbaInstance {
         $Fields201x_Db = $Fields200x_Db + @('ActiveConnections', 'AvailabilityDatabaseSynchronizationState', 'AvailabilityGroupName', 'ContainmentType', 'EncryptionEnabled')
 
         $Fields2000_Login = 'CreateDate' , 'DateLastModified' , 'DefaultDatabase' , 'DenyWindowsLogin' , 'IsSystemObject' , 'Language' , 'LanguageAlias' , 'LoginType' , 'Name' , 'Sid' , 'WindowsLoginAccessType'
-        $Fields200x_Login = $Fields2000_Login + @('AsymmetricKey', 'Certificate', 'Credential', 'ID', 'IsDisabled', 'IsLocked', 'IsPasswordExpired', 'MustChangePassword', 'PasswordExpirationEnabled', 'PasswordPolicyEnforced')
+        $Fields200x_Login = $Fields2000_Login + @('AsymmetricKey', 'Certificate', 'SqlCredential', 'ID', 'IsDisabled', 'IsLocked', 'IsPasswordExpired', 'MustChangePassword', 'PasswordExpirationEnabled', 'PasswordPolicyEnforced')
         $Fields201x_Login = $Fields200x_Login + @('PasswordHashAlgorithm')
 
 
@@ -303,7 +303,7 @@ function Connect-DbaInstance {
                         
                         if ($username -like "*\*") {
                             $domain, $login = $username.Split("\")
-                            $authtype = "Windows Authentication with Credential"
+                            $authtype = "Windows Authentication with SqlCredential"
                             if ($domain) {
                                 $formatteduser = "$login@$domain"
                             } else {
@@ -312,7 +312,7 @@ function Connect-DbaInstance {
                             $server.ConnectionContext.LoginSecure = $true
                             $server.ConnectionContext.ConnectAsUser = $true
                             $server.ConnectionContext.ConnectAsUserName = $formatteduser
-                            $server.ConnectionContext.ConnectAsUserPassword = ($SqlCredential).GetNetworkCredential().Password
+                            $server.ConnectionContext.ConnectAsUserPassword = ($SqlCredential).GetNetworkSqlCredential().Password
                         } else {
                             $authtype = "SQL Authentication"
                             $server.ConnectionContext.LoginSecure = $false
@@ -323,7 +323,7 @@ function Connect-DbaInstance {
                     
                     if ($NonPooled) {
                         $server.ConnectionContext.Connect()
-                    } elseif ($authtype -eq "Windows Authentication with Credential") {
+                    } elseif ($authtype -eq "Windows Authentication with SqlCredential") {
                         # Make it connect in a natural way, hard to explain.
                         $null = $server.Information.Version
                         if ($server.ConnectionContext.IsOpen -eq $false) {
