@@ -302,11 +302,16 @@ function Connect-DbaInstance {
                         $username = ($Credential.UserName).TrimStart("\")
 
                         if ($username -like "*\*") {
-                            $username = $username.Split("\")[1]
+                            $domain, $login = $username.Split("\")
                             $authtype = "Windows Authentication with Credential"
+                            if ($domain) {
+                                $formatteduser = "$login@$domain"
+                            } else {
+                                $formatteduser = $username.Split("\")[1]
+                            }
                             $server.ConnectionContext.LoginSecure = $true
                             $server.ConnectionContext.ConnectAsUser = $true
-                            $server.ConnectionContext.ConnectAsUserName = $username
+                            $server.ConnectionContext.ConnectAsUserName = $formatteduser
                             $server.ConnectionContext.ConnectAsUserPassword = ($Credential).GetNetworkCredential().Password
                         } else {
                             $authtype = "SQL Authentication"
