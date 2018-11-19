@@ -18,7 +18,7 @@ function New-DbaSsisCatalog {
 
     .PARAMETER Credential
         Use a credential object instead of a securepassword
-    
+
     .PARAMETER SsisCatalog
         SSIS catalog name. By default, this is SSISDB.
 
@@ -49,7 +49,7 @@ function New-DbaSsisCatalog {
         PS C:\> New-DbaSsisCatalog -SqlInstance DEV01 -Password $SecurePassword
 
         Creates the SSIS Catalog on server DEV01 with the specified password.
-    
+
     .EXAMPLE
         PS C:\> New-DbaSsisCatalog -SqlInstance sql2016 -Credential usernamedoesntmatter
 
@@ -86,32 +86,32 @@ function New-DbaSsisCatalog {
             } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-            
+
             ## check if SSIS and Engine running on box
             $services = Get-DbaService -ComputerName $server.ComputerName
-            
+
             $ssisservice = $Services | Where-Object {
                 $_.ServiceType -eq "SSIS" -and $_.State -eq "Running"
             }
-            
+
             if (-not $ssisservice) {
                 Stop-Function -Message "SSIS is not running on $instance" -Continue -Target $instance
             }
-            
+
             #if SQL 2012 or higher only validate databases with ContainmentType = NONE
             $clrenabled = Get-DbaSpConfigure -SqlInstance $server -Name IsSqlClrEnabled
-            
+
             if (-not $clrenabled.RunningValue) {
                 Stop-Function -Message 'CLR Integration must be enabled.  You can enable it by running Set-DbaSpConfigure -SqlInstance sql2012 -Config IsSqlClrEnabled -Value $true' -Continue -Target $instance
             }
-            
+
             try {
                 $ssis = New-Object Microsoft.SqlServer.Management.IntegrationServices.IntegrationServices $server
             } catch {
                 Stop-Function -Message "Can't load server" -Target $instance -ErrorRecord $_
                 return
             }
-            
+
             if ($ssis.Catalogs.Count -gt 0) {
                 Stop-Function -Message "SSIS Catalog already exists" -Continue -Target $ssis.Catalogs
             } else {
@@ -133,7 +133,7 @@ function New-DbaSsisCatalog {
                     } catch {
                         $msg = $_.Exception.InnerException.InnerException.Message
                         if (-not $msg) {
-                            $msg = $_    
+                            $msg = $_
                         }
                         Stop-Function -Message "$msg" -Target $_ -Continue
                     }
