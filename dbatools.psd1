@@ -86,7 +86,7 @@
         'Copy-DbaServerAudit',
         'Copy-DbaServerRole',
         'Copy-DbaResourceGovernor',
-        'Copy-DbaExtendedEvent',
+        'Copy-DbaXESession',
         'Copy-DbaBackupDevice',
         'Copy-DbaServerTrigger',
         'Copy-DbaCredential',
@@ -761,7 +761,8 @@
     'Copy-DbaAgentCategory',
     'Copy-DbaAgentProxyAccount',
     'Copy-DbaAgentSharedSchedule',
-    'Copy-DbaCentralManagementServer'
+    'Copy-DbaCentralManagementServer',
+    'Copy-DbaExtendedEvent'
 
     # List of all modules packaged with this module
     ModuleList             = @()

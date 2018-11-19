@@ -285,7 +285,7 @@ $script:renames = @(
     },
     @{
         "AliasName"  = "Copy-SqlExtendedEvent"
-        "Definition" = "Copy-DbaExtendedEvent"
+        "Definition" = "Copy-DbaXESession"
     },
     @{
         "AliasName"  = "Copy-SqlJob"
@@ -949,6 +949,10 @@ $script:renames = @(
     @{
         "AliasName"  = "Copy-DbaCentralManagementServer"
         "Definition" = "Copy-DbaCmsRegServer"
+    },
+    @{
+        "AliasName"  = "Copy-DbaExtendedEvent"
+        "Definition" = "Copy-DbaXESession"
     }
 )
 
