@@ -19,7 +19,7 @@ function Connect-DbaInstance {
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
 
-    .PARAMETER Credential
+    .PARAMETER SqlCredential
         Credential object used to connect to the SQL Server Instance as a different user. This can be a Windows or SQL Server account. Windows users are determined by the existence of a backslash, so if you are intending to use an alternative Windows connection instead of a SQL login, ensure it contains a backslash.
 
     .PARAMETER Database
@@ -144,14 +144,14 @@ function Connect-DbaInstance {
         Creates an SMO Server object that connects using Windows Authentication
 
     .EXAMPLE
-        PS C:\> $wincred = Get-Credential ad\sqladmin
-        PS C:\> Connect-DbaInstance -SqlInstance sql2014 -Credential $wincred
+        PS C:\> $wincred = Get-SqlCredential ad\sqladmin
+        PS C:\> Connect-DbaInstance -SqlInstance sql2014 -SqlCredential $wincred
 
         Creates an SMO Server object that connects using alternative Windows credentials
 
     .EXAMPLE
-        PS C:\> $sqlcred = Get-Credential sqladmin
-        PS C:\> $server = Connect-DbaInstance -SqlInstance sql2014 -Credential $sqlcred
+        PS C:\> $sqlcred = Get-SqlCredential sqladmin
+        PS C:\> $server = Connect-DbaInstance -SqlInstance sql2014 -SqlCredential $sqlcred
 
         Login to sql2014 as SQL login sqladmin.
 
@@ -181,8 +181,8 @@ function Connect-DbaInstance {
         [Parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
-        [Alias("SqlCredential")]
-        [PSCredential]$Credential,
+        [Alias("Credential")]
+        [PSCredential]$SqlCredential,
         [object[]]$Database,
         [string]$AccessToken,
         [ValidateSet('ReadOnly', 'ReadWrite')]
@@ -310,8 +310,8 @@ function Connect-DbaInstance {
                 }
 
                 try {
-                    if ($null -ne $Credential.UserName) {
-                        $username = ($Credential.UserName).TrimStart("\")
+                    if ($null -ne $SqlCredential.UserName) {
+                        $username = ($SqlCredential.UserName).TrimStart("\")
                         
                         # support both ad\username and username@ad
                         if ($username -like "*\*" -or $username -like "*@*") {
@@ -324,18 +324,18 @@ function Connect-DbaInstance {
                                     $formatteduser = $username.Split("\")[1]
                                 }
                             } else {
-                                $formatteduser = $Credential.UserName
+                                $formatteduser = $SqlCredential.UserName
                             }
                             
                             $server.ConnectionContext.LoginSecure = $true
                             $server.ConnectionContext.ConnectAsUser = $true
                             $server.ConnectionContext.ConnectAsUserName = $formatteduser
-                            $server.ConnectionContext.ConnectAsUserPassword = ($Credential).GetNetworkCredential().Password
+                            $server.ConnectionContext.ConnectAsUserPassword = ($SqlCredential).GetNetworkCredential().Password
                         } else {
                             $authtype = "SQL Authentication"
                             $server.ConnectionContext.LoginSecure = $false
                             $server.ConnectionContext.set_Login($username)
-                            $server.ConnectionContext.set_SecurePassword($Credential.Password)
+                            $server.ConnectionContext.set_SecurePassword($SqlCredential.Password)
                         }
                     }
 
