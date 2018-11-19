@@ -133,9 +133,9 @@ function Get-DecryptedObject {
         $results = Invoke-Command2 -ErrorAction Stop -Raw -Credential $Credential -ComputerName $sourceNetBios -ArgumentList $connString, $sql {
             $connString = $args[0]; $sql = $args[1]
             $conn = New-Object System.Data.SqlClient.SQLConnection($connString)
-            $conn.open()
-            $cmd = New-Object System.Data.SqlClient.SqlCommand($sql, $conn);
+            $cmd = New-Object System.Data.SqlClient.SqlCommand($sql, $conn)
             $dt = New-Object System.Data.DataTable
+            $conn.open()
             $dt.Load($cmd.ExecuteReader())
             $conn.Close()
             $conn.Dispose()
