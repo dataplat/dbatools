@@ -84,6 +84,7 @@ function Copy-DbaAgentProxy {
         [switch]$EnableException
     )
     begin {
+        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Copy-DbaAgentProxyAccount
         try {
             $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -MinimumVersion 9
         } catch {

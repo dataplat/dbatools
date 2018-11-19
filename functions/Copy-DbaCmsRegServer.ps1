@@ -88,6 +88,7 @@ function Copy-DbaCmsRegServer {
         [switch]$EnableException
     )
     begin {
+        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Copy-DbaCentralManagementServer
         function Invoke-ParseServerGroup {
             [cmdletbinding()]
             param (

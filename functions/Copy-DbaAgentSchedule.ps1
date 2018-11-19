@@ -73,6 +73,7 @@ function Copy-DbaAgentSchedule {
         [switch]$EnableException
     )
     begin {
+        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Copy-DbaAgentSharedSchedule
         try {
             $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -MinimumVersion 9
         } catch {

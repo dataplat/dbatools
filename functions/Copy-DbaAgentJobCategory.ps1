@@ -100,8 +100,9 @@ function Copy-DbaAgentJobCategory {
         [Alias('Silent')]
         [switch]$EnableException
     )
-
+    
     begin {
+        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Copy-DbaAgentCategory
         function Copy-JobCategory {
             <#
                 .SYNOPSIS
