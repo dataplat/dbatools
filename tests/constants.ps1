@@ -17,4 +17,6 @@ if (Test-Path C:\temp\constants.ps1) {
     $script:azureblobaccount = "dbatools"
 }
 
-$PSDefaultParameterValues['*:WarningAction' ] = 'SilentlyContinue'
+if ($env:appveyor) {
+    $PSDefaultParameterValues['*:WarningAction'] = 'SilentlyContinue'
+}
