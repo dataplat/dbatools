@@ -90,7 +90,7 @@
         'Copy-DbaBackupDevice',
         'Copy-DbaServerTrigger',
         'Copy-DbaCredential',
-        'Copy-DbaCentralManagementServer',
+        'Copy-DbaCmsRegServer',
         'Copy-DbaSysDbUserObject',
         'Copy-DbaAgentProxy',
         'Copy-DbaAgentAlert',
@@ -760,7 +760,8 @@
     'Test-DbaRecoveryModel',
     'Copy-DbaAgentCategory',
     'Copy-DbaAgentProxyAccount',
-    'Copy-DbaAgentSharedSchedule'
+    'Copy-DbaAgentSharedSchedule',
+    'Copy-DbaCentralManagementServer'
 
     # List of all modules packaged with this module
     ModuleList             = @()

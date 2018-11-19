@@ -253,7 +253,7 @@ $script:renames = @(
     },
     @{
         "AliasName"  = "Copy-SqlCentralManagementServer"
-        "Definition" = "Copy-DbaCentralManagementServer"
+        "Definition" = "Copy-DbaCmsRegServer"
     },
     @{
         "AliasName"  = "Copy-SqlCredential"
@@ -945,6 +945,10 @@ $script:renames = @(
     @{
         "AliasName"  = "Copy-DbaAgentSharedSchedule"
         "Definition" = "Copy-DbaAgentSchedule"
+    },
+    @{
+        "AliasName"  = "Copy-DbaCentralManagementServer"
+        "Definition" = "Copy-DbaCmsRegServer"
     }
 )
 

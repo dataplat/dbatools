@@ -1,10 +1,10 @@
-function Copy-DbaCentralManagementServer {
+function Copy-DbaCmsRegServer {
     <#
     .SYNOPSIS
         Migrates SQL Server Central Management groups and server instances from one SQL Server to another.
 
     .DESCRIPTION
-        Copy-DbaCentralManagementServer copies all groups, subgroups, and server instances from one SQL Server to another.
+        Copy-DbaCmsRegServer copies all groups, subgroups, and server instances from one SQL Server to another.
 
     .PARAMETER Source
         Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
@@ -18,10 +18,10 @@ function Copy-DbaCentralManagementServer {
     .PARAMETER DestinationSqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-    .PARAMETER CMSGroup
+    .PARAMETER Group
         This is an auto-populated array that contains your Central Management Server top-level groups on Source. You can specify one, many or none.
 
-        If CMSGroup is not specified, all groups in your Central Management Server will be copied.
+        If Group is not specified, all groups in your Central Management Server will be copied.
 
     .PARAMETER SwitchServerName
         If this switch is enabled, all instance names will be changed from Source to Destination.
@@ -53,20 +53,20 @@ function Copy-DbaCentralManagementServer {
         Requires: sysadmin access on SQL Servers
 
     .LINK
-        https://dbatools.io/Copy-DbaCentralManagementServer
+        https://dbatools.io/Copy-DbaCmsRegServer
 
     .EXAMPLE
-        PS C:\> Copy-DbaCentralManagementServer -Source sqlserver2014a -Destination sqlcluster
+        PS C:\> Copy-DbaCmsRegServer -Source sqlserver2014a -Destination sqlcluster
 
         All groups, subgroups, and server instances are copied from sqlserver2014a CMS to sqlcluster CMS.
 
     .EXAMPLE
-        PS C:\> Copy-DbaCentralManagementServer -Source sqlserver2014a -Destination sqlcluster -CMSGroup Group1,Group3
+        PS C:\> Copy-DbaCmsRegServer -Source sqlserver2014a -Destination sqlcluster -Group Group1,Group3
 
         Top-level groups Group1 and Group3 along with their subgroups and server instances are copied from sqlserver to sqlcluster.
 
     .EXAMPLE
-        PS C:\> Copy-DbaCentralManagementServer -Source sqlserver2014a -Destination sqlcluster -CMSGroup Group1,Group3 -SwitchServerName -SourceSqlCredential $SourceSqlCredential -DestinationSqlCredential $DestinationSqlCredential
+        PS C:\> Copy-DbaCmsRegServer -Source sqlserver2014a -Destination sqlcluster -Group Group1,Group3 -SwitchServerName -SourceSqlCredential $SourceSqlCredential -DestinationSqlCredential $DestinationSqlCredential
 
         Top-level groups Group1 and Group3 along with their subgroups and server instances are copied from sqlserver to sqlcluster. When adding sql instances to sqlcluster, if the server name of the migrating instance is "sqlcluster", it will be switched to "sqlserver".
 
@@ -81,10 +81,10 @@ function Copy-DbaCentralManagementServer {
         [parameter(Mandatory)]
         [DbaInstanceParameter[]]$Destination,
         [PSCredential]$DestinationSqlCredential,
-        [object[]]$CMSGroup,
+        [Alias('CMSGroup')]
+        [string[]]$Group,
         [switch]$SwitchServerName,
         [switch]$Force,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     begin {
@@ -302,9 +302,9 @@ function Copy-DbaCentralManagementServer {
             $toCmStore = Get-DbaCmsRegServerStore -SqlInstance $destServer
 
             $stores = $fromCmStore.DatabaseEngineServerGroup
-            if ($CMSGroup) {
+            if ($Group) {
                 $stores = @();
-                foreach ($groupName in $CMSGroup) {
+                foreach ($groupName in $Group) {
                     $stores += $fromCmStore.DatabaseEngineServerGroup.ServerGroups[$groupName]
                 }
             }

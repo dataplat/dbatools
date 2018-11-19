@@ -6,7 +6,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
         $paramCount = 8
         $defaultParamCount = 13
-        [object[]]$params = (Get-ChildItem function:\Copy-DbaCentralManagementServer).Parameters.Keys
+        [object[]]$params = (Get-ChildItem function:\Copy-DbaCmsRegServer).Parameters.Keys
         $knownParameters = 'Source', 'SourceSqlCredential', 'Destination', 'DestinationSqlCredential', 'CMSGroup', 'SwitchServerName', 'Force', 'EnableException'
         It "Should contain our specific parameters" {
             ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
@@ -48,7 +48,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $groupstore.Drop()
         }
 
-        $results = Copy-DbaCentralManagementServer -Source $script:instance2 -Destination $script:instance1 -WarningVariable warn -WarningAction SilentlyContinue -CMSGroup $group
+        $results = Copy-DbaCmsRegServer -Source $script:instance2 -Destination $script:instance1 -WarningVariable warn -WarningAction SilentlyContinue -CMSGroup $group
 
         It "should report success" {
             $results.Status | Should Be "Successful", "Successful"
