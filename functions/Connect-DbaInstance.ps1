@@ -19,7 +19,7 @@ function Connect-DbaInstance {
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
 
-    .PARAMETER Credential
+    .PARAMETER SqlCredential
         Credential object used to connect to the SQL Server Instance as a different user. This can be a Windows or SQL Server account. Windows users are determined by the existence of a backslash, so if you are intending to use an alternative Windows connection instead of a SQL login, ensure it contains a backslash.
 
     .PARAMETER Database
@@ -120,6 +120,13 @@ function Connect-DbaInstance {
     .PARAMETER SqlConnectionOnly
         Instead of returning a rich SMO server object, this command will only return a SqlConnection object when setting this switch.
 
+    .PARAMETER DisableException
+        By default in most of our commands, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        
+        This command, however, gifts you  with "sea of red" exceptions, by default, because it is useful for advanced scripting.
+    
+        Using this switch turns our "nice by default" feature on which makes errors into pretty warnings.
+    
     .NOTES
         Tags: Connect, Connection
         Author: Chrissy LeMaire (@cl), netnerds.net
@@ -137,14 +144,14 @@ function Connect-DbaInstance {
         Creates an SMO Server object that connects using Windows Authentication
 
     .EXAMPLE
-        PS C:\> $wincred = Get-Credential ad\sqladmin
-        PS C:\> Connect-DbaInstance -SqlInstance sql2014 -Credential $wincred
+        PS C:\> $wincred = Get-SqlCredential ad\sqladmin
+        PS C:\> Connect-DbaInstance -SqlInstance sql2014 -SqlCredential $wincred
 
         Creates an SMO Server object that connects using alternative Windows credentials
 
     .EXAMPLE
-        PS C:\> $sqlcred = Get-Credential sqladmin
-        PS C:\> $server = Connect-DbaInstance -SqlInstance sql2014 -Credential $sqlcred
+        PS C:\> $sqlcred = Get-SqlCredential sqladmin
+        PS C:\> $server = Connect-DbaInstance -SqlInstance sql2014 -SqlCredential $sqlcred
 
         Login to sql2014 as SQL login sqladmin.
 
@@ -174,8 +181,8 @@ function Connect-DbaInstance {
         [Parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
-        [Alias("SqlCredential")]
-        [PSCredential]$Credential,
+        [Alias("Credential")]
+        [PSCredential]$SqlCredential,
         [object[]]$Database,
         [string]$AccessToken,
         [ValidateSet('ReadOnly', 'ReadWrite')]
@@ -202,9 +209,16 @@ function Connect-DbaInstance {
         [switch]$TrustServerCertificate,
         [string]$WorkstationId,
         [string]$AppendConnectionString,
-        [switch]$SqlConnectionOnly
+        [switch]$SqlConnectionOnly,
+        [switch]$DisableException
     )
     begin {
+        if ($DisableException) {
+            $EnableException = $false
+        } else {
+            $EnableException = $true
+        }
+        
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Connect-DbaServer
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-DbaInstance
 
@@ -227,8 +241,6 @@ function Connect-DbaInstance {
         $Fields2000_Login = 'CreateDate' , 'DateLastModified' , 'DefaultDatabase' , 'DenyWindowsLogin' , 'IsSystemObject' , 'Language' , 'LanguageAlias' , 'LoginType' , 'Name' , 'Sid' , 'WindowsLoginAccessType'
         $Fields200x_Login = $Fields2000_Login + @('AsymmetricKey', 'Certificate', 'Credential', 'ID', 'IsDisabled', 'IsLocked', 'IsPasswordExpired', 'MustChangePassword', 'PasswordExpirationEnabled', 'PasswordPolicyEnforced')
         $Fields201x_Login = $Fields200x_Login + @('PasswordHashAlgorithm')
-
-
     }
     process {
         foreach ($instance in $SqlInstance) {
@@ -298,8 +310,8 @@ function Connect-DbaInstance {
                 }
 
                 try {
-                    if ($null -ne $Credential.UserName) {
-                        $username = ($Credential.UserName).TrimStart("\")
+                    if ($null -ne $SqlCredential.UserName) {
+                        $username = ($SqlCredential.UserName).TrimStart("\")
                         
                         # support both ad\username and username@ad
                         if ($username -like "*\*" -or $username -like "*@*") {
@@ -312,18 +324,18 @@ function Connect-DbaInstance {
                                     $formatteduser = $username.Split("\")[1]
                                 }
                             } else {
-                                $formatteduser = $Credential.UserName
+                                $formatteduser = $SqlCredential.UserName
                             }
                             
                             $server.ConnectionContext.LoginSecure = $true
                             $server.ConnectionContext.ConnectAsUser = $true
                             $server.ConnectionContext.ConnectAsUserName = $formatteduser
-                            $server.ConnectionContext.ConnectAsUserPassword = ($Credential).GetNetworkCredential().Password
+                            $server.ConnectionContext.ConnectAsUserPassword = ($SqlCredential).GetNetworkCredential().Password
                         } else {
                             $authtype = "SQL Authentication"
                             $server.ConnectionContext.LoginSecure = $false
                             $server.ConnectionContext.set_Login($username)
-                            $server.ConnectionContext.set_SecurePassword($Credential.Password)
+                            $server.ConnectionContext.set_SecurePassword($SqlCredential.Password)
                         }
                     }
 
@@ -348,9 +360,9 @@ function Connect-DbaInstance {
                     $message = ($message -Split '-->')[0]
                     $message = ($message -Split 'at System.Data.SqlClient')[0]
                     $message = ($message -Split 'at System.Data.ProviderBase')[0]
-                    throw "Can't connect to $instance`: $message "
+                    
+                    Stop-Function -Message "Can't connect to $instance" -ErrorRecord $_ -Continue
                 }
-
             }
 
             if ($loadedSmoVersion -ge 11) {
