@@ -212,7 +212,7 @@
         'Get-DbaDbQueryStoreOption',
         'Set-DbaDbQueryStoreOption',
         'Restore-DbaDatabase',
-        'Copy-DbaQueryStoreConfig',
+        'Copy-DbaDbQueryStoreOption',
         'Get-DbaExecutionPlan',
         'Export-DbaExecutionPlan',
         'Get-DbaServerProtocol',
@@ -762,7 +762,8 @@
     'Copy-DbaAgentProxyAccount',
     'Copy-DbaAgentSharedSchedule',
     'Copy-DbaCentralManagementServer',
-    'Copy-DbaExtendedEvent'
+    'Copy-DbaExtendedEvent',
+    'Copy-DbaQueryStoreConfig'
 
     # List of all modules packaged with this module
     ModuleList             = @()

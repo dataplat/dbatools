@@ -953,6 +953,10 @@ $script:renames = @(
     @{
         "AliasName"  = "Copy-DbaExtendedEvent"
         "Definition" = "Copy-DbaXESession"
+    },
+    @{
+        "AliasName"  = "Copy-DbaQueryStoreConfig"
+        "Definition" = "Copy-DbaDbQueryStoreOption"
     }
 )
 
