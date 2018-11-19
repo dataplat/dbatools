@@ -76,10 +76,6 @@ function Invoke-DbatoolsRenameHelper {
                 "Definition" = "UseLastBackup"
             },
             @{
-                "AliasName"  = "ExcludeSystemLogin"
-                "Definition" = "ExcludeSystemLogins"
-            },
-            @{
                 "AliasName"  = "NoSystemLogins"
                 "Definition" = "ExcludeSystemLogins"
             },
@@ -138,7 +134,8 @@ function Invoke-DbatoolsRenameHelper {
             foreach ($name in $allrenames) {
                 if ((Select-String -Pattern $name.AliasName -Path $file)) {
                     if ($Pscmdlet.ShouldProcess($file, "Replacing $($name.AliasName) with $($name.Definition)")) {
-                        (Get-Content -Path $file -Raw).Replace($name.AliasName, $name.Definition) | Set-Content -Path $file -Encoding $Encoding
+                        $content = (Get-Content -Path $file -Raw).Replace($name.AliasName, $name.Definition).Trim()
+                        Set-Content -Path $file -Encoding $Encoding -Value $content
                         [pscustomobject]@{
                             Path         = $file
                             Pattern      = $name.AliasName
