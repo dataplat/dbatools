@@ -195,15 +195,21 @@ function Connect-SqlInstance {
 
         if ($null -ne $SqlCredential.UserName) {
             $username = ($SqlCredential.UserName).TrimStart("\")
-
-            if ($username -like "*\*") {
-                $domain, $login = $username.Split("\")
-                $authtype = "Windows Authentication with Credential"
-                if ($domain) {
-                    $formatteduser = "$login@$domain"
+            
+            # support both ad\username and username@ad
+            if ($username -like "*\*" -or $username -like "*@*") {
+                if ($username -like "*\*") {
+                    $domain, $login = $username.Split("\")
+                    $authtype = "Windows Authentication with Credential"
+                    if ($domain) {
+                        $formatteduser = "$login@$domain"
+                    } else {
+                        $formatteduser = $username.Split("\")[1]
+                    }
                 } else {
-                    $formatteduser = $username.Split("\")[1]
+                    $formatteduser = $SqlCredential.UserName
                 }
+                
                 $server.ConnectionContext.LoginSecure = $true
                 $server.ConnectionContext.ConnectAsUser = $true
                 $server.ConnectionContext.ConnectAsUserName = $formatteduser
