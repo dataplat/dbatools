@@ -73,49 +73,56 @@ function New-DbaSsisCatalog {
             return
         }
         if (-not $SecurePassword -and $Credential) {
-            $SecurePassword = $Credential.Password    
+            $SecurePassword = $Credential.Password
         }
     }
     process {
-        if (Test-FunctionInterrupt) { return }
+        if (Test-FunctionInterrupt) {
+            return
+        }
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 10
             } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-
+            
             ## check if SSIS and Engine running on box
             $services = Get-DbaService -ComputerName $server.ComputerName
-
-            $ssisservice = $Services | Where-Object { $_.ServiceType -eq "SSIS" -and $_.State -eq "Running" }
-
+            
+            $ssisservice = $Services | Where-Object {
+                $_.ServiceType -eq "SSIS" -and $_.State -eq "Running"
+            }
+            
             if (-not $ssisservice) {
                 Stop-Function -Message "SSIS is not running on $instance" -Continue -Target $instance
             }
-
+            
             #if SQL 2012 or higher only validate databases with ContainmentType = NONE
-            $clrenabled = Get-DbaSpConfigure -SqlInstance $server -Config IsSqlClrEnabled
-
-            if (!$clrenabled.RunningValue) {
+            $clrenabled = Get-DbaSpConfigure -SqlInstance $server -Name IsSqlClrEnabled
+            
+            if (-not $clrenabled.RunningValue) {
                 Stop-Function -Message 'CLR Integration must be enabled.  You can enable it by running Set-DbaSpConfigure -SqlInstance sql2012 -Config IsSqlClrEnabled -Value $true' -Continue -Target $instance
             }
-
+            
             try {
                 $ssis = New-Object Microsoft.SqlServer.Management.IntegrationServices.IntegrationServices $server
             } catch {
                 Stop-Function -Message "Can't load server" -Target $instance -ErrorRecord $_
                 return
             }
-
-            if ($ssis.Catalogs[$SsisCatalog]) {
-                Stop-Function -Message "SSIS Catalog already exists" -Continue -Target $ssis.Catalogs[$SsisCatalog]
+            
+            if ($ssis.Catalogs.Count -gt 0) {
+                Stop-Function -Message "SSIS Catalog already exists" -Continue -Target $ssis.Catalogs
             } else {
                 if ($Pscmdlet.ShouldProcess($server, "Creating SSIS catalog: $SsisCatalog")) {
                     try {
                         $ssisdb = New-Object Microsoft.SqlServer.Management.IntegrationServices.Catalog ($ssis, $SsisCatalog, $(([System.Runtime.InteropServices.marshal]::PtrToStringAuto([System.Runtime.InteropServices.marshal]::SecureStringToBSTR($SecurePassword)))))
+                    } catch {
+                        Stop-Function -Message "Failed to create SSIS Catalog: $_" -Target $_ -Continue
+                    }
+                    try {
                         $ssisdb.Create()
-
                         [pscustomobject]@{
                             ComputerName = $server.ComputerName
                             InstanceName = $server.ServiceName
@@ -124,7 +131,11 @@ function New-DbaSsisCatalog {
                             Created      = $true
                         }
                     } catch {
-                        Stop-Function -Message "Failed to create SSIS Catalog: $_" -Target $_ -Continue
+                        $msg = $_.Exception.InnerException.InnerException.Message
+                        if (-not $msg) {
+                            $msg = $_    
+                        }
+                        Stop-Function -Message "$msg" -Target $_ -Continue
                     }
                 }
             }
