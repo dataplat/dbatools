@@ -298,24 +298,29 @@ function Connect-DbaInstance {
                 }
 
                 try {
-                    if ($null -ne $Credential.UserName) {
-                        $username = ($Credential.UserName).TrimStart("\")
-
+                    if ($null -ne $SqlCredential.UserName) {
+                        $username = ($SqlCredential.UserName).TrimStart("\")
+                        
                         if ($username -like "*\*") {
-                            $username = $username.Split("\")[1]
+                            $domain, $login = $username.Split("\")
                             $authtype = "Windows Authentication with Credential"
+                            if ($domain) {
+                                $formatteduser = "$login@$domain"
+                            } else {
+                                $formatteduser = $username.Split("\")[1]
+                            }
                             $server.ConnectionContext.LoginSecure = $true
                             $server.ConnectionContext.ConnectAsUser = $true
-                            $server.ConnectionContext.ConnectAsUserName = $username
-                            $server.ConnectionContext.ConnectAsUserPassword = ($Credential).GetNetworkCredential().Password
+                            $server.ConnectionContext.ConnectAsUserName = $formatteduser
+                            $server.ConnectionContext.ConnectAsUserPassword = ($SqlCredential).GetNetworkCredential().Password
                         } else {
                             $authtype = "SQL Authentication"
                             $server.ConnectionContext.LoginSecure = $false
                             $server.ConnectionContext.set_Login($username)
-                            $server.ConnectionContext.set_SecurePassword($Credential.Password)
+                            $server.ConnectionContext.set_SecurePassword($SqlCredential.Password)
                         }
                     }
-
+                    
                     if ($NonPooled) {
                         $server.ConnectionContext.Connect()
                     } elseif ($authtype -eq "Windows Authentication with Credential") {
