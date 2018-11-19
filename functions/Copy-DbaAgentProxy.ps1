@@ -1,7 +1,7 @@
-function Copy-DbaAgentProxyAccount {
+function Copy-DbaAgentProxy {
     <#
     .SYNOPSIS
-        Copy-DbaAgentProxyAccount migrates proxy accounts from one SQL Server to another.
+        Copy-DbaAgentProxy migrates proxy accounts from one SQL Server to another.
 
     .DESCRIPTION
         By default, all proxy accounts are copied. The -ProxyAccounts parameter is auto-populated for command-line completion and can be used to copy only specific proxy accounts.
@@ -51,20 +51,20 @@ function Copy-DbaAgentProxyAccount {
         Requires: sysadmin access on SQL Servers
 
     .LINK
-        https://dbatools.io/Copy-DbaAgentProxyAccount
+        https://dbatools.io/Copy-DbaAgentProxy
 
     .EXAMPLE
-        PS C:\> Copy-DbaAgentProxyAccount -Source sqlserver2014a -Destination sqlcluster
+        PS C:\> Copy-DbaAgentProxy -Source sqlserver2014a -Destination sqlcluster
 
         Copies all proxy accounts from sqlserver2014a to sqlcluster using Windows credentials. If proxy accounts with the same name exist on sqlcluster, they will be skipped.
 
     .EXAMPLE
-        PS C:\> Copy-DbaAgentProxyAccount -Source sqlserver2014a -Destination sqlcluster -ProxyAccount PSProxy -SourceSqlCredential $cred -Force
+        PS C:\> Copy-DbaAgentProxy -Source sqlserver2014a -Destination sqlcluster -ProxyAccount PSProxy -SourceSqlCredential $cred -Force
 
         Copies only the PSProxy proxy account from sqlserver2014a to sqlcluster using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster. If a proxy account with the same name exists on sqlcluster, it will be dropped and recreated because -Force was used.
 
     .EXAMPLE
-        PS C:\> Copy-DbaAgentProxyAccount -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force
+        PS C:\> Copy-DbaAgentProxy -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force
 
         Shows what would happen if the command were executed using force.
 

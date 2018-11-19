@@ -1,8 +1,8 @@
 #ValidationTags#Messaging#
-function Copy-DbaAgentCategory {
+function Copy-DbaAgentJobCategory {
     <#
     .SYNOPSIS
-        Copy-DbaAgentCategory migrates SQL Agent categories from one SQL Server to another. This is similar to sp_add_category.
+        Copy-DbaAgentJobCategory migrates SQL Agent categories from one SQL Server to another. This is similar to sp_add_category.
 
         https://msdn.microsoft.com/en-us/library/ms181597.aspx
 
@@ -64,20 +64,20 @@ function Copy-DbaAgentCategory {
         Requires: sysadmin access on SQL Servers
 
     .LINK
-        https://dbatools.io/Copy-DbaAgentCategory
+        https://dbatools.io/Copy-DbaAgentJobCategory
 
     .EXAMPLE
-        PS C:\> Copy-DbaAgentCategory -Source sqlserver2014a -Destination sqlcluster
+        PS C:\> Copy-DbaAgentJobCategory -Source sqlserver2014a -Destination sqlcluster
 
         Copies all operator categories from sqlserver2014a to sqlcluster using Windows authentication. If operator categories with the same name exist on sqlcluster, they will be skipped.
 
     .EXAMPLE
-        PS C:\> Copy-DbaAgentCategory -Source sqlserver2014a -Destination sqlcluster -OperatorCategory PSOperator -SourceSqlCredential $cred -Force
+        PS C:\> Copy-DbaAgentJobCategory -Source sqlserver2014a -Destination sqlcluster -OperatorCategory PSOperator -SourceSqlCredential $cred -Force
 
         Copies a single operator category, the PSOperator operator category from sqlserver2014a to sqlcluster using SQL credentials to authenticate to sqlserver2014a and Windows credentials for sqlcluster. If an operator category with the same name exists on sqlcluster, it will be dropped and recreated because -Force was used.
 
     .EXAMPLE
-        PS C:\> Copy-DbaAgentCategory -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force
+        PS C:\> Copy-DbaAgentJobCategory -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force
 
         Shows what would happen if the command were executed using force.
 

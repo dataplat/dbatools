@@ -1,7 +1,7 @@
-function Copy-DbaAgentSharedSchedule {
+function Copy-DbaAgentSchedule {
     <#
     .SYNOPSIS
-        Copy-DbaAgentSharedSchedule migrates shared job schedules from one SQL Server to another.
+        Copy-DbaAgentSchedule migrates shared job schedules from one SQL Server to another.
 
     .DESCRIPTION
         All shared job schedules are copied.
@@ -45,15 +45,15 @@ function Copy-DbaAgentSharedSchedule {
         Requires: sysadmin access on SQL Servers
 
     .LINK
-        https://dbatools.io/Copy-DbaAgentSharedSchedule
+        https://dbatools.io/Copy-DbaAgentSchedule
 
     .EXAMPLE
-        PS C:\> Copy-DbaAgentSharedSchedule -Source sqlserver2014a -Destination sqlcluster
+        PS C:\> Copy-DbaAgentSchedule -Source sqlserver2014a -Destination sqlcluster
 
         Copies all shared job schedules from sqlserver2014a to sqlcluster using Windows credentials. If shared job schedules with the same name exist on sqlcluster, they will be skipped.
 
     .EXAMPLE
-        PS C:\> Copy-DbaAgentSharedSchedule -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force
+        PS C:\> Copy-DbaAgentSchedule -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force
 
         Shows what would happen if the command were executed using force.
 
