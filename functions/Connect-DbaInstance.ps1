@@ -120,6 +120,13 @@ function Connect-DbaInstance {
     .PARAMETER SqlConnectionOnly
         Instead of returning a rich SMO server object, this command will only return a SqlConnection object when setting this switch.
 
+    .PARAMETER DisableException
+        By default in most of our commands, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        
+        This command, however, gifts you  with "sea of red" exceptions, by default, because it is useful for advanced scripting.
+    
+        Using this switch turns our "nice by default" feature on which makes errors into pretty warnings.
+    
     .NOTES
         Tags: Connect, Connection
         Author: Chrissy LeMaire (@cl), netnerds.net
@@ -202,9 +209,16 @@ function Connect-DbaInstance {
         [switch]$TrustServerCertificate,
         [string]$WorkstationId,
         [string]$AppendConnectionString,
-        [switch]$SqlConnectionOnly
+        [switch]$SqlConnectionOnly,
+        [switch]$DisableException
     )
     begin {
+        if ($DisableException) {
+            $EnableException = $false
+        } else {
+            $EnableException = $true
+        }
+        
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Connect-DbaServer
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-DbaInstance
 
@@ -227,8 +241,6 @@ function Connect-DbaInstance {
         $Fields2000_Login = 'CreateDate' , 'DateLastModified' , 'DefaultDatabase' , 'DenyWindowsLogin' , 'IsSystemObject' , 'Language' , 'LanguageAlias' , 'LoginType' , 'Name' , 'Sid' , 'WindowsLoginAccessType'
         $Fields200x_Login = $Fields2000_Login + @('AsymmetricKey', 'Certificate', 'Credential', 'ID', 'IsDisabled', 'IsLocked', 'IsPasswordExpired', 'MustChangePassword', 'PasswordExpirationEnabled', 'PasswordPolicyEnforced')
         $Fields201x_Login = $Fields200x_Login + @('PasswordHashAlgorithm')
-
-
     }
     process {
         foreach ($instance in $SqlInstance) {
@@ -348,9 +360,9 @@ function Connect-DbaInstance {
                     $message = ($message -Split '-->')[0]
                     $message = ($message -Split 'at System.Data.SqlClient')[0]
                     $message = ($message -Split 'at System.Data.ProviderBase')[0]
-                    throw "Can't connect to $instance`: $message "
+                    
+                    Stop-Function -Message "Can't connect to $instance" -ErrorRecord $_ -Continue
                 }
-
             }
 
             if ($loadedSmoVersion -ge 11) {
