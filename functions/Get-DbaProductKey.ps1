@@ -14,10 +14,10 @@ function Get-DbaProductKey {
 
     .PARAMETER Credential
         Login to the target Windows instance using alternative credentials. Windows Authentication supported. Accepts credential objects (Get-Credential)
-    
+
     .PARAMETER SqlCredential
-        This command logs into the SQL instance to gather additional information. 
-    
+        This command logs into the SQL instance to gather additional information.
+
         Use this parameter to connect to the discovered SQL instances using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
     .PARAMETER EnableException
