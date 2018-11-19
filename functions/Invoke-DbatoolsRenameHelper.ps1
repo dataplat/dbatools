@@ -76,6 +76,10 @@ function Invoke-DbatoolsRenameHelper {
                 "Definition" = "UseLastBackup"
             },
             @{
+                "AliasName"  = "NetworkShare"
+                "Definition" = "SharedPath"
+            },
+            @{
                 "AliasName"  = "NoSystemLogins"
                 "Definition" = "ExcludeSystemLogins"
             },
