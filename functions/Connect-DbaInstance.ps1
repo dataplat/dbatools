@@ -300,15 +300,21 @@ function Connect-DbaInstance {
                 try {
                     if ($null -ne $Credential.UserName) {
                         $username = ($Credential.UserName).TrimStart("\")
-
-                        if ($username -like "*\*") {
-                            $domain, $login = $username.Split("\")
-                            $authtype = "Windows Authentication with Credential"
-                            if ($domain) {
-                                $formatteduser = "$login@$domain"
+                        
+                        # support both ad\username and username@ad
+                        if ($username -like "*\*" -or $username -like "*@*") {
+                            if ($username -like "*\*") {
+                                $domain, $login = $username.Split("\")
+                                $authtype = "Windows Authentication with Credential"
+                                if ($domain) {
+                                    $formatteduser = "$login@$domain"
+                                } else {
+                                    $formatteduser = $username.Split("\")[1]
+                                }
                             } else {
-                                $formatteduser = $username.Split("\")[1]
+                                $formatteduser = $Credential.UserName
                             }
+                            
                             $server.ConnectionContext.LoginSecure = $true
                             $server.ConnectionContext.ConnectAsUser = $true
                             $server.ConnectionContext.ConnectAsUserName = $formatteduser
