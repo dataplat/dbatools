@@ -1,4 +1,4 @@
-function Copy-DbaExtendedEvent {
+function Copy-DbaXESession {
     <#
     .SYNOPSIS
         Migrates SQL Extended Event Sessions except the two default sessions, AlwaysOn_health and system_health.
@@ -51,25 +51,25 @@ function Copy-DbaExtendedEvent {
         Requires: sysadmin access on SQL Servers
 
     .LINK
-        https://dbatools.io/Copy-DbaExtendedEvent
+        https://dbatools.io/Copy-DbaXESession
 
     .EXAMPLE
-        PS C:\> Copy-DbaExtendedEvent -Source sqlserver2014a -Destination sqlcluster
+        PS C:\> Copy-DbaXESession -Source sqlserver2014a -Destination sqlcluster
 
         Copies all Extended Event sessions from sqlserver2014a to sqlcluster using Windows credentials.
 
     .EXAMPLE
-        PS C:\> Copy-DbaExtendedEvent -Source sqlserver2014a -Destination sqlcluster -SourceSqlCredential $cred
+        PS C:\> Copy-DbaXESession -Source sqlserver2014a -Destination sqlcluster -SourceSqlCredential $cred
 
         Copies all Extended Event sessions from sqlserver2014a to sqlcluster using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster.
 
     .EXAMPLE
-        PS C:\> Copy-DbaExtendedEvent -Source sqlserver2014a -Destination sqlcluster -WhatIf
+        PS C:\> Copy-DbaXESession -Source sqlserver2014a -Destination sqlcluster -WhatIf
 
         Shows what would happen if the command were executed.
 
     .EXAMPLE
-        PS C:\> Copy-DbaExtendedEvent -Source sqlserver2014a -Destination sqlcluster -XeSession CheckQueries, MonitorUserDefinedException
+        PS C:\> Copy-DbaXESession -Source sqlserver2014a -Destination sqlcluster -XeSession CheckQueries, MonitorUserDefinedException
 
         Copies only the Extended Events named CheckQueries and MonitorUserDefinedException from sqlserver2014a to sqlcluster.
 
@@ -91,6 +91,7 @@ function Copy-DbaExtendedEvent {
         [switch]$EnableException
     )
     begin {
+        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Copy-DbaExtendedEvent
         try {
             $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -MinimumVersion 11
         } catch {

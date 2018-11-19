@@ -1,4 +1,4 @@
-function Copy-DbaQueryStoreConfig {
+function Copy-DbaDbQueryStoreOption {
     <#
     .SYNOPSIS
         Copies the configuration of a Query Store enabled database and sets the copied configuration on other databases.
@@ -53,12 +53,12 @@ function Copy-DbaQueryStoreConfig {
         https://dbatools.io/Copy-QueryStoreConfig
 
     .EXAMPLE
-        PS C:\> Copy-DbaQueryStoreConfig -Source ServerA\SQL -SourceDatabase AdventureWorks -Destination ServerB\SQL -AllDatabases
+        PS C:\> Copy-DbaDbQueryStoreOption -Source ServerA\SQL -SourceDatabase AdventureWorks -Destination ServerB\SQL -AllDatabases
 
         Copy the Query Store configuration of the AdventureWorks database in the ServerA\SQL instance and apply it on all user databases in the ServerB\SQL Instance.
 
     .EXAMPLE
-        PS C:\> Copy-DbaQueryStoreConfig -Source ServerA\SQL -SourceDatabase AdventureWorks -Destination ServerB\SQL -DestinationDatabase WorldWideTraders
+        PS C:\> Copy-DbaDbQueryStoreOption -Source ServerA\SQL -SourceDatabase AdventureWorks -Destination ServerB\SQL -DestinationDatabase WorldWideTraders
 
         Copy the Query Store configuration of the AdventureWorks database in the ServerA\SQL instance and apply it to the WorldWideTraders database in the ServerB\SQL Instance.
 
@@ -79,8 +79,9 @@ function Copy-DbaQueryStoreConfig {
         [Alias('Silent')]
         [switch]$EnableException
     )
-
+    
     begin {
+        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Copy-DbaQueryStoreConfig
         try {
             $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
         } catch {

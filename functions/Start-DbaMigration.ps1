@@ -283,7 +283,7 @@ function Start-DbaMigration {
 
         if ($Exclude -notcontains 'CentralManagementServer') {
             Write-Message -Level Verbose -Message "Migrating Central Management Server"
-            Copy-DbaCentralManagementServer -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Force:$Force
+            Copy-DbaCmsRegServer -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Force:$Force
         }
 
         if ($Exclude -notcontains 'BackupDevices') {
@@ -367,7 +367,7 @@ function Start-DbaMigration {
 
         if ($Exclude -notcontains 'ExtendedEvents') {
             Write-Message -Level Verbose -Message "Migrating Extended Events"
-            Copy-DbaExtendedEvent -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Force:$Force
+            Copy-DbaXESession -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Force:$Force
         }
 
         if ($Exclude -notcontains 'AgentServer') {
