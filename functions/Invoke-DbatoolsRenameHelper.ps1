@@ -74,11 +74,58 @@ function Invoke-DbatoolsRenameHelper {
             @{
                 "AliasName"  = "UseLastBackups"
                 "Definition" = "UseLastBackup"
-            }
-            ,
+            },
             @{
-                "AliasName"  = "NetworkShare"
-                "Definition" = "SharedPath"
+                "AliasName"  = "ExcludeSystemLogin"
+                "Definition" = "ExcludeSystemLogins"
+            },
+            @{
+                "AliasName"  = "NoSystemLogins"
+                "Definition" = "ExcludeSystemLogins"
+            },
+            @{
+                "AliasName"  = "NoJobSteps"
+                "Definition" = "ExcludeJobSteps"
+            },
+            @{
+                "AliasName"  = "NoSystemObjects"
+                "Definition" = "ExcludeSystemObjects"
+            },
+            @{
+                "AliasName"  = "NoJobs"
+                "Definition" = "ExcludeJobs"
+            },
+            @{
+                "AliasName"  = "NoDatabases"
+                "Definition" = "ExcludeDatabases"
+            },
+            @{
+                "AliasName"  = "NoDisabledJobs"
+                "Definition" = "ExcludeDisabledJobs"
+            },
+            @{
+                "AliasName"  = "NoJobSteps"
+                "Definition" = "ExcludeJobSteps"
+            },
+            @{
+                "AliasName"  = "NoSystem"
+                "Definition" = "ExcludeSystemLogins"
+            },
+            @{
+                "AliasName"  = "NoSystemDb"
+                "Definition" = "ExcludeSystemDatabases"
+            },
+            @{
+                "AliasName"  = "NoSystemObjects"
+                "Definition" = "ExcludeSystemObjects"
+            },
+            @{
+                "AliasName"  = "NoSystemSpid"
+                "Definition" = "ExcludeSystemSpids"
+            },
+            @{
+                "AliasName"  = "NoQueryTextColumn"
+                "Definition" = "ExcludeQueryTextColumn"
             }
         )
 
