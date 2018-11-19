@@ -6,7 +6,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
         $paramCount = 8
         $defaultParamCount = 13
-        [object[]]$params = (Get-ChildItem function:\Copy-DbaExtendedEvent).Parameters.Keys
+        [object[]]$params = (Get-ChildItem function:\Copy-DbaXESession).Parameters.Keys
         $knownParameters = 'Source', 'Destination', 'SourceSqlCredential', 'DestinationSqlCredential', 'XeSession', 'ExcludeXeSession', 'Force', 'EnableException'
         It "Should contain our specific parameters" {
             ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount

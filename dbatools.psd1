@@ -11,7 +11,7 @@
     RootModule             = 'dbatools.psm1'
 
     # Version number of this module.
-    ModuleVersion          = '0.9.519'
+    ModuleVersion          = '0.9.520'
 
     # ID used to uniquely identify this module
     GUID                   = '9d139310-ce45-41ce-8e8b-d76335aa1789'
@@ -76,7 +76,7 @@
         'Copy-DbaDbMail',
         'Copy-DbaDbAssembly',
         'Copy-DbaPolicyManagement',
-        'Copy-DbaAgentSharedSchedule',
+        'Copy-DbaAgentSchedule',
         'Copy-DbaAgentOperator',
         'Copy-DbaAgentJob',
         'Copy-DbaDataCollector',
@@ -86,13 +86,13 @@
         'Copy-DbaServerAudit',
         'Copy-DbaServerRole',
         'Copy-DbaResourceGovernor',
-        'Copy-DbaExtendedEvent',
+        'Copy-DbaXESession',
         'Copy-DbaBackupDevice',
         'Copy-DbaServerTrigger',
         'Copy-DbaCredential',
-        'Copy-DbaCentralManagementServer',
+        'Copy-DbaCmsRegServer',
         'Copy-DbaSysDbUserObject',
-        'Copy-DbaAgentProxyAccount',
+        'Copy-DbaAgentProxy',
         'Copy-DbaAgentAlert',
         'Import-DbaSpConfigure',
         'Export-DbaSpConfigure'
@@ -100,7 +100,7 @@
         'Restore-DbaBackupFromDirectory',
         'Test-DbaConnection',
         'Import-DbaCsvToSql',
-        'Copy-DbaAgentCategory',
+        'Copy-DbaAgentJobCategory',
         'Update-Dbatools',
         'Test-DbaPath',
         'Export-DbaLogin',
@@ -212,7 +212,7 @@
         'Get-DbaDbQueryStoreOption',
         'Set-DbaDbQueryStoreOption',
         'Restore-DbaDatabase',
-        'Copy-DbaQueryStoreConfig',
+        'Copy-DbaDbQueryStoreOption',
         'Get-DbaExecutionPlan',
         'Export-DbaExecutionPlan',
         'Get-DbaServerProtocol',
@@ -757,7 +757,13 @@
     'Get-DbaRoleMember',
     'Get-DbaRestoreHistory',
     'Expand-DbaTLogResponsibly',
-    'Test-DbaRecoveryModel'
+    'Test-DbaRecoveryModel',
+    'Copy-DbaAgentCategory',
+    'Copy-DbaAgentProxyAccount',
+    'Copy-DbaAgentSharedSchedule',
+    'Copy-DbaCentralManagementServer',
+    'Copy-DbaExtendedEvent',
+    'Copy-DbaQueryStoreConfig'
 
     # List of all modules packaged with this module
     ModuleList             = @()
