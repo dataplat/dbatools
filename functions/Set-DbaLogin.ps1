@@ -188,7 +188,7 @@ function Set-DbaLogin {
             Stop-Function -Message 'You cannot use both -GrantLogin and -DenyLogin together' -Target $Login -Continue
         }
 
-        if (Test-bound -ParameterName 'Password') {
+        if (Test-bound -ParameterName 'SecurePassword') {
             switch ($SecurePassword.GetType().Name) {
                 'PSCredential' { $NewSecurePassword = $SecurePassword.Password }
                 'SecureString' { $NewSecurePassword = $SecurePassword }
@@ -239,7 +239,7 @@ function Set-DbaLogin {
                 }
 
                 # Change the password
-                if (Test-Bound -ParameterName 'Password') {
+                if (Test-bound -ParameterName 'SecurePassword') {
                     try {
                         $l.ChangePassword($NewSecurePassword, $Unlock, $MustChange)
                         $passwordChanged = $true
