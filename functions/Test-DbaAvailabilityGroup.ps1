@@ -15,15 +15,19 @@ function Test-DbaAvailabilityGroup {
     .PARAMETER AvailabilityGroup
         Return only specific availability groups.
 
-    .PARAMETER AllowUserPolicies
+    .PARAMETER IncludeUserPolicy
 
         Indicates that this function tests user policies found in the policy categories of Always On Availability Groups.
 
-    .PARAMETER ShowPolicyDetails
+    .PARAMETER IncludePolicyDetail
 
         Indicates that this function displays the result of each policy evaluation that it performs. The function returns one object per policy evaluation. Each policy object includes the results of evaluation. This information includes
         whether the policy passed or not, the policy name, and policy category.
 
+    .PARAMETER InputObject
+
+        Enables piping from Get-DbaAvailabilityGroup
+    
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -50,7 +54,7 @@ function Test-DbaAvailabilityGroup {
 
         Returns the health state on the Availability Group test-ag on sqlserver-0.
 
-        PS C:\> Test-DbaAvailabilityGroup -SqlInstance sqlserver-0 -AvailabilityGroup test-ag -ShowPolicyDetails
+        PS C:\> Test-DbaAvailabilityGroup -SqlInstance sqlserver-0 -AvailabilityGroup test-ag -IncludePolicyDetail
 
         Returns the health state on the Availability Group test-ag on sqlserver-0. Include detailed results.
 
@@ -70,8 +74,8 @@ function Test-DbaAvailabilityGroup {
         [string[]]$AvailabilityGroup,
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.AvailabilityGroup[]]$InputObject,
-        [switch]$AllowUserPolicies,
-        [switch]$ShowPolicyDetails,
+        [switch]$IncludeUserPolicy,
+        [switch]$IncludePolicyDetail,
         [switch]$EnableException
     )
     process {
@@ -81,16 +85,15 @@ function Test-DbaAvailabilityGroup {
         }
 
         foreach ($ag in $InputObject) {
-            $results = Test-SqlAvailabilityGroup -Path ($ag.Urn | Convert-UrnToPath) -AllowUserPolicies:$AllowUserPolicies -ShowPolicyDetails:$ShowPolicyDetails
+            #$results = Test-SqlAvailabilityGroup -Path ($ag.Urn | Convert-UrnToPath) -IncludeUserPolicy:$IncludeUserPolicy -IncludePolicyDetail:$IncludePolicyDetail
             foreach ($result in $results) {
                 Add-Member -Force -InputObject $result -MemberType NoteProperty -Name ComputerName -value $ag.ComputerName
                 Add-Member -Force -InputObject $result -MemberType NoteProperty -Name InstanceName -value $ag.InstanceName
                 Add-Member -Force -InputObject $result -MemberType NoteProperty -Name SqlInstance -value $ag.SqlInstance
-                if (-not $ShowPolicyDetails) {
+                if (-not $IncludePolicyDetail) {
                     $defaults = 'ComputerName', 'InstanceName', 'SqlInstance', 'HealthState', 'Name'
                     Select-Object -InputObject $result -Property $defaults
-                }
-                else {
+                } else {
                     $defaults = 'ComputerName', 'InstanceName', 'SqlInstance', 'Result', 'TargetObject', 'Category', 'Name'
                     Select-Object -InputObject $result -Property $defaults
                 }
