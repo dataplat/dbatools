@@ -16,8 +16,21 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         }
     }
 }
-<#
-    Integration test should appear below and are custom to the command you are writing.
-    Read https://github.com/sqlcollaborative/dbatools/blob/development/contributing.md#tests
-    for more guidence.
-#>
+
+Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
+    Context "Gets the Db Assembly" {
+        $results = Get-DbaDbAssembly -SqlInstance $script:instance2 | Where-Object {$_.parent.name -eq 'master'}
+        It "Gets results" {
+            $results | Should Not Be $Null
+        }
+        It "Should have a name of Microsoft.SqlServer.Types" {
+            $results.name | Should Be "Microsoft.SqlServer.Types"
+        }
+        It "Should have an owner of sys" {
+            $results.owner | Should Be "sys"
+        }
+        It "Should have a version matching the instance" {
+            $results.Version | Should Be 13.0.0.0
+        }
+    }
+}
