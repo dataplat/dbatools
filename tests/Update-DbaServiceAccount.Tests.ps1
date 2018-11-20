@@ -8,7 +8,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         $paramCount = 9
         $defaultParamCount = 13
         [object[]]$params = (Get-ChildItem function:\Update-DbaServiceAccount).Parameters.Keys
-        $knownParameters = 'ComputerName', 'Credential', 'InputObject', 'ServiceName', 'Username', 'ServiceCredential', 'PreviousPassword', 'NewPassword', 'EnableException'
+        $knownParameters = 'ComputerName', 'Credential', 'InputObject', 'ServiceName', 'Username', 'ServiceCredential', 'PreviousSecurePassword', 'NewSecurePassword', 'EnableException'
         It "Should contain our specific parameters" {
             ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
         }
@@ -23,8 +23,8 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     $login = 'winLogin'
     $password = 'MyV3ry$ecur3P@ssw0rd'
     $securePassword = ConvertTo-SecureString $password -AsPlainText -Force
-    $newPassword = 'Myxtr33mly$ecur3P@ssw0rd'
-    $newSecurePassword = ConvertTo-SecureString $newPassword -AsPlainText -Force
+    $NewSecurePassword = 'Myxtr33mly$ecur3P@ssw0rd'
+    $newSecurePassword = ConvertTo-SecureString $NewSecurePassword -AsPlainText -Force
     $server = Connect-SqlInstance -SqlInstance $script:instance2
     $computerName = $server.NetName
     $instanceName = $server.ServiceName
@@ -112,7 +112,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 
     Context "Change password of the service account" {
         #Change the password
-        ([adsi]"WinNT://$computerName/$login,user").SetPassword($newPassword)
+        ([adsi]"WinNT://$computerName/$login,user").SetPassword($NewSecurePassword)
 
         $errVar = $warnVar = $null
         $results = $services | Sort-Object ServicePriority | Update-DbaServiceAccount -Password $newSecurePassword -ErrorVariable $errVar -WarningVariable $warnVar
