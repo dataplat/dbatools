@@ -99,7 +99,7 @@
         'Get-DbaDetachedDatabaseInfo',
         'Restore-DbaBackupFromDirectory',
         'Test-DbaConnection',
-        'Import-DbaCsvToSql',
+        'Import-DbaCsv',
         'Copy-DbaAgentJobCategory',
         'Update-Dbatools',
         'Test-DbaPath',
@@ -763,7 +763,8 @@
     'Copy-DbaAgentSharedSchedule',
     'Copy-DbaCentralManagementServer',
     'Copy-DbaExtendedEvent',
-    'Copy-DbaQueryStoreConfig'
+    'Copy-DbaQueryStoreConfig',
+    'Import-DbaCsvToSql'
 
     # List of all modules packaged with this module
     ModuleList             = @()
