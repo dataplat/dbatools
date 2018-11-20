@@ -130,7 +130,7 @@ function Import-DbaCsvToSql {
         https://blog.netnerds.net/2015/09/Import-DbaCsvtosql-super-fast-csv-to-sql-server-import-powershell-module/
 
     .EXAMPLE
-        PS C:\> Import-DbaCsvToSql -Csv C:\temp\housing.csv -SqlInstance sql001 -Database markets
+        PS C:\> Import-DbaCsvToSql -Path C:\temp\housing.csv -SqlInstance sql001 -Database markets
 
         Imports the entire comma-delimited housing.csv to the SQL "markets" database on a SQL Server named sql001.
 
@@ -139,40 +139,40 @@ function Import-DbaCsvToSql {
         The first row is not skipped, as it does not contain column names.
 
     .EXAMPLE
-        PS C:\> Import-DbaCsvToSql -Csv .\housing.csv -SqlInstance sql001 -Database markets -Table housing -First 100000 -Safe -Delimiter "`t" -FirstRowColumns
+        PS C:\> Import-DbaCsvToSql -Path .\housing.csv -SqlInstance sql001 -Database markets -Table housing -First 100000 -Safe -Delimiter "`t" -FirstRowColumns
 
         Imports the first 100,000 rows of the tab delimited housing.csv file to the "housing" table in the "markets" database on a SQL Server named sql001. Since -Safe was specified, the OleDB method will be used for the bulk import. The first row is skipped, as it contains column names.
 
     .EXAMPLE
-        PS C:\> Import-DbaCsvToSql -csv C:\temp\huge.txt -SqlInstance sqlcluster -Database locations -Table latitudes -Delimiter "|" -Turbo
+        PS C:\> Import-DbaCsvToSql -Path C:\temp\huge.txt -SqlInstance sqlcluster -Database locations -Table latitudes -Delimiter "|" -Turbo
 
         Imports all records from the pipe delimited huge.txt file using the fastest method possible into the latitudes table within the locations database. Obtains a table lock for the duration of the bulk copy operation. This specific command has been used
         to import over 10.5 million rows in 2 minutes.
 
     .EXAMPLE
-        PS C:\> Import-DbaCsvToSql -Csv C:\temp\housing.csv, .\housing2.csv -SqlInstance sql001 -Database markets -Table housing -Delimiter "`t" -query "select top 100000 column1, column3 from csv" -Truncate
+        PS C:\> Import-DbaCsvToSql -Path C:\temp\housing.csv, .\housing2.csv -SqlInstance sql001 -Database markets -Table housing -Delimiter "`t" -query "select top 100000 column1, column3 from csv" -Truncate
 
         Truncates the "housing" table, then imports columns 1 and 3 of the first 100000 rows of the tab-delimited housing.csv in the C:\temp directory, and housing2.csv in the current directory. Since the query is executed against both files, a total of 200,000 rows will be imported.
 
     .EXAMPLE
-        PS C:\> Import-DbaCsvToSql -Csv C:\temp\housing.csv -SqlInstance sql001 -Database markets -Table housing -query "select address, zip from csv where state = 'Louisiana'" -FirstRowColumns -Truncate -FireTriggers
+        PS C:\> Import-DbaCsvToSql -Path C:\temp\housing.csv -SqlInstance sql001 -Database markets -Table housing -query "select address, zip from csv where state = 'Louisiana'" -FirstRowColumns -Truncate -FireTriggers
 
         Uses the first line to determine CSV column names. Truncates the "housing" table on the SQL Server, then imports the address and zip columns from all records in the housing.csv where the state equals Louisiana.
 
         Triggers are fired for all rows. Note that this does slightly slow down the import.
 
     .EXAMPLE
-        PS C:\> Import-DbaCsvToSql -Csv c:\temp\SingleColumn.csv -SqlInstance sql001 -Database markets -Table TempTable -SingleColumn
+        PS C:\> Import-DbaCsvToSql -Path c:\temp\SingleColumn.csv -SqlInstance sql001 -Database markets -Table TempTable -SingleColumn
 
         Upload the single column Csv SingleColumn.csv to Temptable which has just one column
 
     .EXAMPLE
-        PS C:\> Import-DbaCsvToSql -Csv "\\FileServer\To Import\housing.csv" -SqlInstance sql001 -Database markets
+        PS C:\> Import-DbaCsvToSql -Path "\\FileServer\To Import\housing.csv" -SqlInstance sql001 -Database markets
 
         Imports the entire comma-delimited housing.csv located in the share named "To Import" on FileServer to the SQL "markets" database on a SQL Server named sql001.
 
     .EXAMPLE
-        PS C:\> Import-DbaCsvToSql -Csv '\\FileServer\R$\To Import\housing.csv' -SqlInstance sql001 -Database markets
+        PS C:\> Import-DbaCsvToSql -Path '\\FileServer\R$\To Import\housing.csv' -SqlInstance sql001 -Database markets
 
         Imports the entire comma-delimited housing.csv located in the directory R:\To Import on FileServer using the administrative share to the SQL "markets" database on a SQL Server named sql001.
 
@@ -182,11 +182,12 @@ function Import-DbaCsvToSql {
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingPlainTextForPassword", "", Justification = "For Parameters SQLCredential and SQLCredentialPath")]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseDeclaredVarsMoreThanAssignments", "line", Justification = "Variable line is used, False Positive on line 330")]
     param (
-        [string[]]$Csv,
+        [parameter(ValueFromPipeline)]
+        [Alias("Csv","FullPath")]
+        [string[]]$Path,
         [Parameter(Mandatory)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter]$SqlInstance,
-        [object]$SqlCredential,
+        [pscredential]$SqlCredential,
         [string]$Table,
         [string]$Schema = "dbo",
         [switch]$Truncate,
@@ -208,63 +209,8 @@ function Import-DbaCsvToSql {
         [switch]$FireTriggers,
         [switch]$KeepIdentity,
         [switch]$KeepNulls,
-        #[Parameter(DontShow)]
-        [switch]$shellswitch,
-        #[Parameter(DontShow)]
-        [string]$SqlCredentialPath
+        [switch]$EnableException
     )
-
-    DynamicParam {
-
-        if ($SqlInstance.length -gt 0) {
-            # Auto populate database list from specified sqlserver
-            $paramconn = New-Object System.Data.SqlClient.SqlConnection
-
-            if ($SqlCredentialPath.length -gt 0) {
-                $SqlCredential = Import-CliXml $SqlCredentialPath
-            }
-
-            if ($SqlCredential.count -eq 0 -or $null -eq $SqlCredential) {
-                $paramconn.ConnectionString = "Data Source=$SqlInstance;Integrated Security=True;"
-            } else {
-                $paramconn.ConnectionString = "Data Source=$SqlInstance;User Id=$($SqlCredential.UserName); Password=$($SqlCredential.GetNetworkCredential().Password);"
-            }
-
-            try {
-                $paramconn.Open()
-                $sql = "select name from master.dbo.sysdatabases"
-                $paramcmd = New-Object System.Data.SqlClient.SqlCommand($sql, $paramconn, $null)
-                $paramdt = New-Object System.Data.DataTable
-                $paramdt.Load($paramcmd.ExecuteReader())
-                $databaselist = $paramdt.rows.name
-                $null = $paramcmd.Dispose()
-                $null = $paramconn.Close()
-                $null = $paramconn.Dispose()
-            } catch {
-                # But if the routine fails, at least let them specify a database manually
-                $databaselist = ""
-            }
-
-            # Reusable parameter setup
-            $newparams = New-Object System.Management.Automation.RuntimeDefinedParameterDictionary
-            $attributes = New-Object System.Management.Automation.ParameterAttribute
-            $attributes.Mandatory = $false
-
-            # Database list parameter setup
-            $dbattributes = New-Object -Type System.Collections.ObjectModel.Collection[System.Attribute]
-            $dbattributes.Add($attributes)
-            # If a list of databases were returned, populate the parameter set
-            if ($databaselist.length -gt 0) {
-                $dbvalidationset = New-Object System.Management.Automation.ValidateSetAttribute -ArgumentList $databaselist
-                $dbattributes.Add($dbvalidationset)
-            }
-
-            $Database = New-Object -Type System.Management.Automation.RuntimeDefinedParameter("Database", [String], $dbattributes)
-            $newparams.Add("Database", $Database)
-            return $newparams
-        }
-    }
-
     begin {
         function Get-Columns {
             <#
@@ -273,7 +219,7 @@ function Import-DbaCsvToSql {
                     This is because the OleDbConnection driver may not exist on x64.
 
                 .EXAMPLE
-                    $columns = Get-Columns -Csv .\myfile.csv -Delimiter "," -FirstRowColumns $true
+                    $columns = Get-Columns -Path .\myfile.csv -Delimiter "," -FirstRowColumns $true
 
                 .OUTPUTS
                     Array of column names
@@ -281,14 +227,14 @@ function Import-DbaCsvToSql {
 
             param (
                 [Parameter(Mandatory)]
-                [string[]]$Csv,
+                [string[]]$Path,
                 [Parameter(Mandatory)]
                 [string]$Delimiter,
                 [Parameter(Mandatory)]
                 [bool]$FirstRowColumns
             )
 
-            $columnparser = New-Object Microsoft.VisualBasic.FileIO.TextFieldParser($csv[0])
+            $columnparser = New-Object Microsoft.VisualBasic.FileIO.TextFieldParser($Path[0])
             $columnparser.TextFieldType = "Delimited"
             $columnparser.SetDelimiters($Delimiter)
             $rawcolumns = $columnparser.ReadFields()
@@ -313,18 +259,18 @@ function Import-DbaCsvToSql {
                     Returns an array of data, which can later be parsed for potential datatypes.
 
                 .EXAMPLE
-                    $columns = Get-Columns -Csv .\myfile.csv -Delimiter ","
+                    $columns = Get-Columns -Path .\myfile.csv -Delimiter ","
 
                 .OUTPUTS
                     Array of column data
              #>
             param (
                 [Parameter(Mandatory)]
-                [string[]]$Csv,
+                [string[]]$Path,
                 [Parameter(Mandatory)]
                 [string]$Delimiter
             )
-            $columnparser = New-Object Microsoft.VisualBasic.FileIO.TextFieldParser($csv[0])
+            $columnparser = New-Object Microsoft.VisualBasic.FileIO.TextFieldParser($Path[0])
             $columnparser.TextFieldType = "Delimited"
             $columnparser.SetDelimiters($Delimiter)
             $line = $columnparser.ReadLine()
@@ -346,8 +292,8 @@ function Import-DbaCsvToSql {
                     Sometimes SQL will accept a datetime that OLE won't, so Text will be used for datetime.
 
                 .EXAMPLE
-                    $columns = Get-Columns -Csv C:\temp\myfile.csv -Delimiter ","
-                    $movedschemainis = Write-Schemaini -Csv  C:\temp\myfile.csv -Columns $columns -ColumnText $columntext -Delimiter "," -FirstRowColumns $true
+                    $columns = Get-Columns -Path C:\temp\myfile.csv -Delimiter ","
+                    $movedschemainis = Write-Schemaini -Path  C:\temp\myfile.csv -Columns $columns -ColumnText $columntext -Delimiter "," -FirstRowColumns $true
 
                 .OUTPUTS
                     Creates new schema files, that look something like this:
@@ -363,7 +309,7 @@ function Import-DbaCsvToSql {
              #>
             param (
                 [Parameter(Mandatory)]
-                [string[]]$Csv,
+                [string[]]$Path,
                 [Parameter(Mandatory)]
                 [string[]]$Columns,
                 [string[]]$ColumnText,
@@ -374,7 +320,7 @@ function Import-DbaCsvToSql {
             )
 
             $movedschemainis = @{ }
-            foreach ($file in $csv) {
+            foreach ($file in $Path) {
                 $directory = Split-Path $file
                 $schemaexists = Test-Path "$directory\schema.ini"
                 if ($schemaexists -eq $true) {
@@ -428,7 +374,7 @@ function Import-DbaCsvToSql {
                     Columns parameter determine column names.
 
                 .EXAMPLE
-                    New-SqlTable -Csv $Csv -Delimiter $InternalDelimiter -Columns $columns -ColumnText $columntext -SqlConn $sqlconn -Transaction $transaction
+                    New-SqlTable -Path $Path -Delimiter $InternalDelimiter -Columns $columns -ColumnText $columntext -SqlConn $sqlconn -Transaction $transaction
 
                 .OUTPUTS
                     Creates new table
@@ -436,7 +382,7 @@ function Import-DbaCsvToSql {
             [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "")]
             param (
                 [Parameter(Mandatory)]
-                [string[]]$Csv,
+                [string[]]$Path,
                 [Parameter(Mandatory)]
                 [string]$Delimiter,
                 [string[]]$Columns,
@@ -481,8 +427,7 @@ function Import-DbaCsvToSql {
             Write-Warning "Consider creating the table first using best practices if the data will be used in production."
         }
 
-
-        if ($shellswitch -eq $false) { Write-Output "[*] Started at $(Get-Date)" }
+        Write-Output "[*] Started at $(Get-Date)"
 
         # Load the basics
         [void][Reflection.Assembly]::LoadWithPartialName("System.Data")
@@ -560,19 +505,19 @@ function Import-DbaCsvToSql {
         }
 
         # If no CSV was specified, prompt the user to select one.
-        if ($csv.length -eq 0) {
+        if ($Path.length -eq 0) {
             $fd = New-Object System.Windows.Forms.OpenFileDialog
             $fd.InitialDirectory = [environment]::GetFolderPath("MyDocuments")
             $fd.Filter = "CSV Files (*.csv;*.tsv;*.txt)|*.csv;*.tsv;*.txt"
             $fd.Title = "Select one or more CSV files"
             $fd.MultiSelect = $true
             $null = $fd.showdialog()
-            $csv = $fd.filenames
-            if ($csv.length -eq 0) {
+            $Path = $fd.filenames
+            if ($Path.length -eq 0) {
                 throw "No CSV file selected."
             }
         } else {
-            foreach ($file in $csv) {
+            foreach ($file in $Path) {
                 $exists = Test-Path $file
                 if ($exists -eq $false) {
                     throw "$file does not exist"
@@ -582,10 +527,10 @@ function Import-DbaCsvToSql {
 
         # Resolve the full path of each CSV
         $resolvedcsv = @()
-        foreach ($file in $csv) {
+        foreach ($file in $Path) {
             $resolvedcsv += (Resolve-Path $file).ProviderPath
         }
-        $csv = $resolvedcsv
+        $Path = $resolvedcsv
 
         # UniqueIdentifier kills OLE DB / SqlBulkCopy imports. Check to see if destination table contains this datatype.
         if ($safe -eq $true) {
@@ -629,7 +574,7 @@ function Import-DbaCsvToSql {
         if ($safe -eq $true) {
             # Check for drivers. First, ACE (Access) if file is smaller than 2GB, then JET
             # ACE doesn't handle files larger than 2gb. What gives?
-            foreach ($file in $csv) {
+            foreach ($file in $Path) {
                 $filesize = (Get-ChildItem $file).Length / 1GB
                 if ($filesize -gt 1.99) {
                     $jetonly = $true
@@ -678,13 +623,13 @@ function Import-DbaCsvToSql {
 
                 # Perform the actual switch, which removes any registered Import-DbaCsvToSql modules
                 # Then imports, and finally re-executes the command.
-                $csvParam = ($csv | ForEach-Object { "'$($_ -replace "'", "''")'" }) -join ","
+                $csvParam = ($Path | ForEach-Object { "'$($_ -replace "'", "''")'" }) -join ","
                 $switches = $switches -join " "
                 if ($SqlCredential.count -gt 0) {
                     $SqlCredentialPath = "$env:TEMP\sqlcredential.xml"
                     Export-CliXml -InputObject $SqlCredential $SqlCredentialPath
                 }
-                $command = "Import-DbaCsvToSql -Csv $csvParam -SqlInstance '$SqlInstance'-Database '$database' -Table '$table' -Delimiter '$InternalDelimiter' -First $First -Query '$query' -Batchsize $BatchSize -NotifyAfter $NotifyAfter $switches -shellswitch"
+                $command = "Import-DbaCsvToSql -Path $csvParam -SqlInstance '$SqlInstance'-Database '$database' -Table '$table' -Delimiter '$InternalDelimiter' -First $First -Query '$query' -Batchsize $BatchSize -NotifyAfter $NotifyAfter $switches -shellswitch"
 
                 if ($SqlCredentialPath.length -gt 0) {
                     $command += " -SqlCredentialPath $SqlCredentialPath"
@@ -696,7 +641,7 @@ function Import-DbaCsvToSql {
         }
 
         # Do the first few lines contain the specified delimiter?
-        foreach ($file in $csv) {
+        foreach ($file in $Path) {
             try { $firstfewlines = Get-Content $file -First 3 -ErrorAction Stop }
             catch { throw "$file is in use." }
             if ($SingleColumn -ne $true ) {
@@ -709,11 +654,11 @@ function Import-DbaCsvToSql {
         }
 
         # If more than one csv specified, check to ensure number of columns match
-        if ($csv -is [system.array]) {
+        if ($Path -is [system.array]) {
             if ($SingleColumn -ne $true) {
-                $numberofcolumns = ((Get-Content $csv[0] -First 1 -ErrorAction Stop) -Split $InternalDelimiter).Count
+                $numberofcolumns = ((Get-Content $Path[0] -First 1 -ErrorAction Stop) -Split $InternalDelimiter).Count
 
-                foreach ($file in $csv) {
+                foreach ($file in $Path) {
                     $firstline = Get-Content $file -First 1 -ErrorAction Stop
                     $newnumcolumns = ($firstline -Split $InternalDelimiter).Count
                     if ($newnumcolumns -ne $numberofcolumns) {
@@ -725,7 +670,7 @@ function Import-DbaCsvToSql {
 
         # Automatically generate Table name if not specified, then prompt user to confirm
         if ($table.length -eq 0) {
-            $table = [IO.Path]::GetFileNameWithoutExtension($csv[0])
+            $table = [IO.Path]::GetFileNameWithoutExtension($Path[0])
 
             #Count the dots in the file name.
             #1 dot, treat it as schema.table naming
@@ -766,20 +711,20 @@ function Import-DbaCsvToSql {
         if ($shellswitch -eq $true) {
             $bytes = [System.Convert]::FromBase64String($Query)
             $query = [System.Text.Encoding]::UTF8.GetString($bytes)
-            $csv = $csv -Split ","
+            $Path = $Path -Split ","
         }
 
         # Create columns based on first data row of first csv.
         if ($SingleColumn -ne $true) {
             Write-Output "[*] Calculating column names and datatypes"
-            $columns = Get-Columns -Csv $Csv -Delimiter $InternalDelimiter -FirstRowColumns $FirstRowColumns
+            $columns = Get-Columns -Path $Path -Delimiter $InternalDelimiter -FirstRowColumns $FirstRowColumns
             if ($columns.count -gt 255 -and $safe -eq $true) {
                 throw "CSV must contain fewer than 256 columns."
             }
         }
 
         if ($SingleColumn -ne $true) {
-            $columntext = Get-ColumnText -Csv $Csv -Delimiter $InternalDelimiter
+            $columntext = Get-ColumnText -Path $Path -Delimiter $InternalDelimiter
         }
 
         # OLEDB method requires extra checks
@@ -797,7 +742,7 @@ function Import-DbaCsvToSql {
             # In order to ensure consistent results, a schema.ini file must be created.
             # If a schema.ini already exists, it will be moved to TEMP temporarily.
             Write-Verbose "Creating schema.ini"
-            $movedschemainis = Write-Schemaini -Csv $Csv -Columns $columns -Delimiter "$InternalDelimiter" -FirstRowColumns $FirstRowColumns -ColumnText $columntext
+            $movedschemainis = Write-Schemaini -Path $Path -Columns $columns -Delimiter "$InternalDelimiter" -FirstRowColumns $FirstRowColumns -ColumnText $columntext
         }
 
         # Display SQL Server Login info
@@ -865,7 +810,7 @@ function Import-DbaCsvToSql {
         if ($tablexists -eq $false) {
             Write-Output "[*] Table does not exist"
             Write-Output "[*] Creating table"
-            New-SqlTable -Csv $Csv -Delimiter $InternalDelimiter -Columns $columns -ColumnText $columntext -SqlConn $sqlconn -Transaction $transaction
+            New-SqlTable -Path $Path -Delimiter $InternalDelimiter -Columns $columns -ColumnText $columntext -SqlConn $sqlconn -Transaction $transaction
         } else {
             Write-Output "[*] Table exists"
         }
@@ -896,7 +841,7 @@ function Import-DbaCsvToSql {
         $elapsed = [System.Diagnostics.Stopwatch]::StartNew()
 
         # Process each CSV file specified
-        foreach ($file in $csv) {
+        foreach ($file in $Path) {
 
             # Dynamically set NotifyAfter if it wasn't specified
             if ($notifyAfter -eq 0) {
@@ -1275,36 +1220,7 @@ function Import-DbaCsvToSql {
             #here to avoid an empty catch
             $null = 1
         }
-
-        # Delete all the temp files
-        if ($SqlCredentialPath.length -gt 0) {
-            if ((Test-Path $SqlCredentialPath) -eq $true) {
-                $null = cmd /c "del $SqlCredentialPath"
-            }
-        }
-
-        if ($shellswitch -eq $false -and $safe -eq $true) {
-            # Delete new schema files
-            Write-Verbose "Removing automatically generated schema.ini."
-            foreach ($file in $csv) {
-                $directory = Split-Path $file
-                $null = cmd /c "del $directory\schema.ini" | Out-Null
-            }
-
-            # If a shell switch occured, delete the temporary module file.
-            if ((Test-Path "$env:TEMP\Import-DbaCsvToSql.psm1") -eq $true) {
-                cmd /c "del $env:TEMP\Import-DbaCsvToSql.psm1" | Out-Null
-            }
-
-            # Move original schema.ini's back if they existed
-            if ($movedschemainis.count -gt 0) {
-                foreach ($item in $movedschemainis) {
-                    Write-Verbose "Moving $($item.keys) back to $($item.values)."
-                    $null = cmd /c "move $($item.keys) $($item.values)"
-                }
-            }
-            Write-Output "[*] Finished at $(Get-Date)"
-        }
+        
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Import-CsvToSql
     }
 }
