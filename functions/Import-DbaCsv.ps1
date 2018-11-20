@@ -353,7 +353,7 @@ function Import-DbaCsv {
             Add-Type -Path "$script:PSModuleRoot\bin\csv\LumenWorks.Framework.IO.dll" -ErrorAction Stop
         } catch {
             # SilentContinue isn't enough
-            $null = 1    
+            $null = 1
         }
     }
     process {
