@@ -24,14 +24,14 @@ function Update-DbaServiceAccount {
         NETWORKSERVICE
         LOCALSYSTEM
 
-    .PARAMETER PreviousSecurePassword
+    .PARAMETER PreviousPassword
         An old password of the service account. Optional when run under local admin privileges.
 
-    .PARAMETER NewSecurePassword
+    .PARAMETER NewPassword
         New password of the service account. The function will ask for a password if not specified. MSAs and local system accounts will ignore the password.
 
     .PARAMETER Username
-        Username of the service account. Cannot be used with -ServiceCredential. For local service accounts use one of the following usernames omitting the -SecurePassword parameter:
+        Username of the service account. Cannot be used with -ServiceCredential. For local service accounts use one of the following usernames omitting the -Password parameter:
         LOCALSERVICE
         NETWORKSERVICE
         LOCALSYSTEM
@@ -58,8 +58,8 @@ function Update-DbaServiceAccount {
         Requires Local Admin rights on destination computer(s).
 
     .EXAMPLE
-        PS C:\> $NewSecurePassword = ConvertTo-SecureString 'Qwerty1234' -AsPlainText -Force
-        Update-DbaServiceAccount -ComputerName sql1 -ServiceName 'MSSQL$MYINSTANCE' -SecurePassword $NewSecurePassword
+        PS C:\> $NewPassword = ConvertTo-SecureString 'Qwerty1234' -AsPlainText -Force
+        Update-DbaServiceAccount -ComputerName sql1 -ServiceName 'MSSQL$MYINSTANCE' -Password $NewPassword
 
         Changes the current service account's password of the service MSSQL$MYINSTANCE to 'Qwerty1234'
 
@@ -95,9 +95,9 @@ function Update-DbaServiceAccount {
         [Alias("User")]
         [string]$Username,
         [PSCredential]$ServiceCredential,
-        [securestring]$PreviousSecurePassword = (New-Object System.Security.SecureString),
+        [securestring]$PreviousPassword = (New-Object System.Security.SecureString),
         [Alias("Password")]
-        [securestring]$NewSecurePassword = (New-Object System.Security.SecureString),
+        [securestring]$NewPassword = (New-Object System.Security.SecureString),
         [Alias('Silent')]
         [switch]$EnableException
     )
@@ -123,16 +123,16 @@ function Update-DbaServiceAccount {
             #System logins should not have a domain name, whitespaces or passwords
             $trimmedUsername = (Split-Path $Username -Leaf).Trim().Replace(' ', '')
             #Request password input if password was not specified and account is not MSA or system login
-            if ($NewSecurePassword.Length -eq 0 -and $PSBoundParameters.Keys -notcontains 'NewSecurePassword' -and $trimmedUsername -notin 'NETWORKSERVICE', 'LOCALSYSTEM', 'LOCALSERVICE' -and $Username.EndsWith('$') -eq $false -and $Username.StartsWith('NT Service\') -eq $false) {
-                $NewSecurePassword = Read-Host -Prompt "Input new password for account $UserName" -AsSecureString
-                $NewSecurePassword2 = Read-Host -Prompt "Repeat password" -AsSecureString
-                if ((New-Object System.Management.Automation.PSCredential ("user", $NewSecurePassword)).GetNetworkCredential().Password -ne `
-                    (New-Object System.Management.Automation.PSCredential ("user", $NewSecurePassword2)).GetNetworkCredential().Password) {
+            if ($NewPassword.Length -eq 0 -and $PSBoundParameters.Keys -notcontains 'NewPassword' -and $trimmedUsername -notin 'NETWORKSERVICE', 'LOCALSYSTEM', 'LOCALSERVICE' -and $Username.EndsWith('$') -eq $false -and $Username.StartsWith('NT Service\') -eq $false) {
+                $NewPassword = Read-Host -Prompt "Input new password for account $UserName" -AsSecureString
+                $NewPassword2 = Read-Host -Prompt "Repeat password" -AsSecureString
+                if ((New-Object System.Management.Automation.PSCredential ("user", $NewPassword)).GetNetworkCredential().Password -ne `
+                    (New-Object System.Management.Automation.PSCredential ("user", $NewPassword2)).GetNetworkCredential().Password) {
                     Stop-Function -Message "Passwords do not match" -Category InvalidArgument -EnableException $EnableException
                     return
                 }
             }
-            $currentCredential = New-Object System.Management.Automation.PSCredential ($Username, $NewSecurePassword)
+            $currentCredential = New-Object System.Management.Automation.PSCredential ($Username, $NewPassword)
         } elseif ($ServiceCredential) {
             $actionType = 'Account'
             $currentCredential = $ServiceCredential
@@ -184,7 +184,7 @@ function Update-DbaServiceAccount {
         foreach ($svc in $svcCollection) {
             if ($serviceObject = Get-DbaService -ComputerName $svc.ComputerName -ServiceName $svc.ServiceName -Credential $Credential -EnableException:$EnableException) {
                 $outMessage = $outStatus = $agent = $null
-                if ($actionType -eq 'Password' -and $NewSecurePassword.Length -eq 0) {
+                if ($actionType -eq 'Password' -and $NewPassword.Length -eq 0) {
                     $currentPassword = Read-Host -Prompt "New password for $($serviceObject.StartName) ($($svc.ServiceName) on $($svc.ComputerName))" -AsSecureString
                     $currentPassword2 = Read-Host -Prompt "Repeat password" -AsSecureString
                     if ((New-Object System.Management.Automation.PSCredential ("user", $currentPassword)).GetNetworkCredential().Password -ne `
@@ -192,7 +192,7 @@ function Update-DbaServiceAccount {
                         Stop-Function -Message "Passwords do not match. This service will not be updated" -Category InvalidArgument -EnableException $EnableException -Continue
                     }
                 } else {
-                    $currentPassword = $NewSecurePassword
+                    $currentPassword = $NewPassword
                 }
                 if ($serviceObject.ServiceType -eq 'Engine') {
                     #Get SQL Agent running status
@@ -206,7 +206,7 @@ function Update-DbaServiceAccount {
                             $outMessage = "The login account for the service has been successfully set."
                         } elseif ($actionType -eq 'Password') {
                             Write-Message -Level Verbose -Message "Attempting a password change for service $($svc.ServiceName) on $($svc.ComputerName)"
-                            $null = Invoke-ManagedComputerCommand -ComputerName $svc.ComputerName -Credential $Credential -ScriptBlock $scriptPasswordChange -ArgumentList @($svc.ServiceName, (New-Object System.Management.Automation.PSCredential ("user", $PreviousSecurePassword)).GetNetworkCredential().Password, (New-Object System.Management.Automation.PSCredential ("user", $currentPassword)).GetNetworkCredential().Password) -EnableException:$EnableException
+                            $null = Invoke-ManagedComputerCommand -ComputerName $svc.ComputerName -Credential $Credential -ScriptBlock $scriptPasswordChange -ArgumentList @($svc.ServiceName, (New-Object System.Management.Automation.PSCredential ("user", $PreviousPassword)).GetNetworkCredential().Password, (New-Object System.Management.Automation.PSCredential ("user", $currentPassword)).GetNetworkCredential().Password) -EnableException:$EnableException
                             $outMessage = "The password has been successfully changed."
                         }
                         $outStatus = 'Successful'
