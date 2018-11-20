@@ -52,6 +52,9 @@ function Import-DbaCsv {
     .PARAMETER AutoCreateTable
         If this switch is enabled, the table will be created if it does not already exist. The table will be created with sub-optimal data types such as nvarchar(max)
 
+    .PARAMETER Truncate
+        If this switch is enabled, the destination table will be truncated prior to import.
+
     .PARAMETER NotifyAfter
         Specifies the import row count interval for reporting progress. A notification will be shown after each group of this many rows has been imported.
 
@@ -202,7 +205,8 @@ function Import-DbaCsv {
                 [Parameter(Mandatory)]
                 [bool]$FirstRowColumns
             )
-
+            
+            [void][Reflection.Assembly]::LoadWithPartialName("Microsoft.VisualBasic")
             $columnparser = New-Object Microsoft.VisualBasic.FileIO.TextFieldParser($Path)
             $columnparser.TextFieldType = "Delimited"
             $columnparser.SetDelimiters($Delimiter)
@@ -323,7 +327,6 @@ function Import-DbaCsv {
 
         # Load the basics
         [void][Reflection.Assembly]::LoadWithPartialName("System.Data")
-        [void][Reflection.Assembly]::LoadWithPartialName("Microsoft.VisualBasic")
 
         # Getting the total rows copied is a challenge. Use SqlBulkCopyExtension.
         # http://stackoverflow.com/questions/1188384/sqlbulkcopy-row-count-when-complete
@@ -345,8 +348,13 @@ function Import-DbaCsv {
             }
         }
     '
-        Add-Type -ReferencedAssemblies 'System.Data.dll' -TypeDefinition $source -ErrorAction SilentlyContinue
-        Add-Type -Path "$script:PSModuleRoot\bin\csv\LumenWorks.Framework.IO.dll" -ErrorAction SilentlyContinue
+        try {
+            Add-Type -ReferencedAssemblies 'System.Data.dll' -TypeDefinition $source -ErrorAction Stop
+            Add-Type -Path "$script:PSModuleRoot\bin\csv\LumenWorks.Framework.IO.dll" -ErrorAction Stop
+        } catch {
+            # SilentContinue isn't enough
+            $null = 1    
+        }
     }
     process {
         foreach ($filename in $Path) {
