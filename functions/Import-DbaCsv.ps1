@@ -212,7 +212,10 @@ function Import-DbaCsv {
         [switch]$EnableException
     )
     begin {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Import-DbaCsvtoSql
+        if ($first -gt 0 -and $query -ne "select * from csv") {
+            Stop-Function -Message "Cannot use both -Query and -First. If a query is necessary, use TOP $first within your SQL statement."
+            return
+        }
         
         function Get-Columns {
             <#
@@ -236,7 +239,7 @@ function Import-DbaCsv {
                 [bool]$FirstRowColumns
             )
             
-            $columnparser = New-Object Microsoft.VisualBasic.FileIO.TextFieldParser($Path[0])
+            $columnparser = New-Object Microsoft.VisualBasic.FileIO.TextFieldParser($Path)
             $columnparser.TextFieldType = "Delimited"
             $columnparser.SetDelimiters($Delimiter)
             $rawcolumns = $columnparser.ReadFields()
@@ -278,7 +281,7 @@ function Import-DbaCsv {
                 [Parameter(Mandatory)]
                 [string]$Delimiter
             )
-            $columnparser = New-Object Microsoft.VisualBasic.FileIO.TextFieldParser($Path[0])
+            $columnparser = New-Object Microsoft.VisualBasic.FileIO.TextFieldParser($Path)
             $columnparser.TextFieldType = "Delimited"
             $columnparser.SetDelimiters($Delimiter)
             $line = $columnparser.ReadLine()
@@ -290,92 +293,6 @@ function Import-DbaCsv {
             return $datatext
         }
         
-        function Write-Schemaini {
-            <#
-                .SYNOPSIS
-                    Unfortunately, passing delimiter within the OleDBConnection connection string is unreliable, so we'll use schema.ini instead. The default delimiter in Windows changes depending on country, so we'll do this for every delimiter, even commas.
-
-                    Get OLE datatypes based on best guess of column data within the -Columns parameter.
-
-                    Sometimes SQL will accept a datetime that OLE won't, so Text will be used for datetime.
-
-                .EXAMPLE
-                    $columns = Get-Columns -Path C:\temp\myfile.csv -Delimiter ","
-                    $movedschemainis = Write-Schemaini -Path  C:\temp\myfile.csv -Columns $columns -ColumnText $columntext -Delimiter "," -FirstRowColumns $true
-
-                .OUTPUTS
-                    Creates new schema files, that look something like this:
-
-                    [housingdata.csv]
-                    Format=Delimited(,)
-                    ColNameHeader=True
-                    Col1="House ID" Long
-                    Col2="Description" Memo
-                    Col3="Price" Double
-
-                    Returns an array of existing schema files that have been moved, if any.
-             #>
-            param (
-                [Parameter(Mandatory)]
-                [string[]]$Path,
-                [Parameter(Mandatory)]
-                [string[]]$Columns,
-                [string[]]$ColumnText,
-                [Parameter(Mandatory)]
-                [string]$Delimiter,
-                [Parameter(Mandatory)]
-                [bool]$FirstRowColumns
-            )
-            
-            $movedschemainis = @{
-            }
-            foreach ($file in $Path) {
-                $directory = Split-Path $file
-                $schemaexists = Test-Path "$directory\schema.ini"
-                if ($schemaexists -eq $true) {
-                    $newschemaname = "$env:TEMP\$(Split-Path $file -leaf)-schema.ini"
-                    $movedschemainis.Add($newschemaname, "$directory\schema.ini")
-                    Move-Item "$directory\schema.ini" $newschemaname -Force
-                }
-                
-                $filename = Split-Path $file -leaf; $directory = Split-Path $file
-                Add-Content -Path "$directory\schema.ini" -Value "[$filename]"
-                Add-Content -Path "$directory\schema.ini" -Value "Format=Delimited($InternalDelimiter)"
-                Add-Content -Path "$directory\schema.ini" -Value "ColNameHeader=$FirstRowColumns"
-                
-                $index = 0
-                $olecolumns = ($columns | ForEach-Object {
-                        $_ -Replace "\[|\]", '"'
-                    })
-                
-                foreach ($datatype in $columntext) {
-                    $olecolumnname = $olecolumns[$index]
-                    $index++
-                    
-                    try {
-                        [System.Guid]::Parse($datatype) | Out-Null; $isguid = $true
-                    } catch {
-                        $isguid = $false
-                    }
-                    
-                    if ($isguid -eq $true) {
-                        $oledatatype = "Text"
-                    } elseif ([int64]::TryParse($datatype, [ref]0) -eq $true) {
-                        $oledatatype = "Long"
-                    } elseif ([double]::TryParse($datatype, [ref]0) -eq $true) {
-                        $oledatatype = "Double"
-                    } elseif ([datetime]::TryParse($datatype, [ref]0) -eq $true) {
-                        $oledatatype = "Text"
-                    } else {
-                        $oledatatype = "Memo"
-                    }
-                    
-                    Add-Content -Path "$directory\schema.ini" -Value "Col$($index)`=$olecolumnname $oledatatype"
-                }
-            }
-            return $movedschemainis
-        }
-        
         function New-SqlTable {
             <#
                 .SYNOPSIS
@@ -385,7 +302,7 @@ function Import-DbaCsv {
                     Columns parameter determine column names.
 
                 .EXAMPLE
-                    New-SqlTable -Path $Path -Delimiter $InternalDelimiter -Columns $columns -ColumnText $columntext -SqlConn $sqlconn -Transaction $transaction
+                    New-SqlTable -Path $Path -Delimiter $Delimiter -Columns $columns -ColumnText $columntext -SqlConn $sqlconn -Transaction $transaction
 
                 .OUTPUTS
                     Creates new table
@@ -429,16 +346,16 @@ function Import-DbaCsv {
                 $null = $sqlcmd.ExecuteNonQuery()
             } catch {
                 $errormessage = $_.Exception.Message.ToString()
-                throw "Failed to execute $sql. `nDid you specify the proper delimiter? `n$errormessage"
+                Stop-Function -Continue -Message "Failed to execute $sql. `nDid you specify the proper delimiter? `n$errormessage"
             }
             
-            Write-Output "[*] Successfully created table $schema.$table with the following column definitions:`n $($sqldatatypes -join "`n ")"
-            # Write-Warning "All columns are created using a best guess, and use their maximum datatype."
-            Write-Warning "This is inefficient but allows the script to import without issues."
-            Write-Warning "Consider creating the table first using best practices if the data will be used in production."
+            Write-Message -Level Verbose -Message "[*] Successfully created table $schema.$table with the following column definitions:`n $($sqldatatypes -join "`n ")"
+            # Write-Message -Level Warning -Message "All columns are created using a best guess, and use their maximum datatype."
+            Write-Message -Level Warning -Message "This is inefficient but allows the script to import without issues."
+            Write-Message -Level Warning -Message "Consider creating the table first using best practices if the data will be used in production."
         }
         
-        Write-Output "[*] Started at $(Get-Date)"
+        Write-Message -Level Verbose -Message "[*] Started at $(Get-Date)"
         
         # Load the basics
         [void][Reflection.Assembly]::LoadWithPartialName("System.Data")
@@ -470,15 +387,8 @@ function Import-DbaCsv {
         Add-Type -Path "$script:PSModuleRoot\bin\csv\LumenWorks.Framework.IO.dll" -ErrorAction SilentlyContinue
     }
     process {
-        # Hack to get around the delimter parameter ValidateSet
-        if ($SingleColumn) {
-            $InternalDelimiter = ''
-        } else {
-            $InternalDelimiter = $Delimiter
-        }
-        
-        if ($first -gt 0 -and $query -ne "select * from csv") {
-            throw "Cannot use both -Query and -First. If a query is necessary, use TOP $first within your SQL statement."
+        if (Test-FunctionInterrupt) {
+            return
         }
         
         # In order to support -First in both Streamreader, and OleDb imports, the query must be modified slightly.
@@ -499,27 +409,12 @@ function Import-DbaCsv {
             try {
                 $firstfewlines = Get-Content $file -TotalCount 3 -ErrorAction Stop
             } catch {
-                throw "$file is in use."
+                Stop-Function -Continue -Message "$file is in use."
             }
             if ($SingleColumn -ne $true) {
                 foreach ($line in $firstfewlines) {
-                    if (($line -match $InternalDelimiter) -eq $false) {
-                        throw "Delimiter $InternalDelimiter not found in first row of $file."
-                    }
-                }
-            }
-        }
-        
-        # If more than one csv specified, check to ensure number of columns match
-        if ($Path -is [system.array]) {
-            if ($SingleColumn -ne $true) {
-                $numberofcolumns = ((Get-Content $Path[0] -TotalCount 1 -ErrorAction Stop) -Split $InternalDelimiter).Count
-                
-                foreach ($file in $Path) {
-                    $firstline = Get-Content $file -TotalCount 1 -ErrorAction Stop
-                    $newnumcolumns = ($firstline -Split $InternalDelimiter).Count
-                    if ($newnumcolumns -ne $numberofcolumns) {
-                        throw "Multiple csv file mismatch. Do both use the same delimiter and have the same number of columns?"
+                    if (($line -match $Delimiter) -eq $false) {
+                        Stop-Function -Continue -Message "Delimiter $Delimiter not found in first row of $file."
                     }
                 }
             }
@@ -567,15 +462,15 @@ function Import-DbaCsv {
         
         # Create columns based on first data row of first csv.
         if ($SingleColumn -ne $true) {
-            Write-Output "[*] Calculating column names and datatypes"
-            $columns = Get-Columns -Path $Path -Delimiter $InternalDelimiter -FirstRowColumns $FirstRowColumns
+            Write-Message -Level Verbose -Message "[*] Calculating column names and datatypes"
+            $columns = Get-Columns -Path $Path -Delimiter $Delimiter -FirstRowColumns $FirstRowColumns
             if ($columns.count -gt 255 -and $safe -eq $true) {
-                throw "CSV must contain fewer than 256 columns."
+                Stop-Function -Continue -Message "CSV must contain fewer than 256 columns."
             }
         }
         
         if ($SingleColumn -ne $true) {
-            $columntext = Get-ColumnText -Path $Path -Delimiter $InternalDelimiter
+            $columntext = Get-ColumnText -Path $Path -Delimiter $Delimiter
         }
         
         # Display SQL Server Login info
@@ -584,8 +479,9 @@ function Import-DbaCsv {
         } else {
             $username = "Windows login $(whoami)"
         }
+        
         # Open Connection to SQL Server
-        Write-Output "[*] Logging into $SqlInstance as $username"
+        Write-Message -Level Verbose -Message "[*] Logging into $SqlInstance as $username"
         $sqlconn = New-Object System.Data.SqlClient.SqlConnection
         if ($SqlCredential.count -eq 0) {
             $sqlconn.ConnectionString = "Data Source=$SqlInstance;Integrated Security=True;Connection Timeout=3; Initial Catalog=master"
@@ -596,7 +492,7 @@ function Import-DbaCsv {
         try {
             $sqlconn.Open()
         } catch {
-            throw "Could not open SQL Server connection. Is $SqlInstance online?"
+            Stop-Function -Continue -Message "Could not open SQL Server connection. Is $SqlInstance online?"
         }
         
         # Everything will be contained within 1 transaction, even creating a new table if required
@@ -606,15 +502,14 @@ function Import-DbaCsv {
         # Ensure database exists
         $sql = "select count(*) from master.dbo.sysdatabases where name = '$database'"
         $sqlcmd = New-Object System.Data.SqlClient.SqlCommand($sql, $sqlconn, $transaction)
-        $dbexists = $sqlcmd.ExecuteScalar()
-        if ($dbexists -eq $false) {
-            throw "Database does not exist on $SqlInstance"
+        if (-not $sqlcmd.ExecuteScalar()) {
+            Stop-Function -Continue -Message "Database does not exist on $SqlInstance"
         }
-        Write-Output "[*] Database exists"
+        Write-Message -Level Verbose -Message "[*] Database exists"
         
         $sqlconn.ChangeDatabase($database)
         
-        # Enure Schema exists
+        # Ensure Schema exists
         $sql = "select count(*) from $database.sys.schemas where name='$schema'"
         $sqlcmd = New-Object System.Data.SqlClient.SqlCommand($sql, $sqlconn, $transaction)
         $schemaexists = $sqlcmd.ExecuteScalar()
@@ -622,15 +517,14 @@ function Import-DbaCsv {
         # If Schema doesn't exist create it
         # Defaulting to dbo.
         if ($schemaexists -eq $false) {
-            Write-Output "[*] Creating schema $schema"
+            Write-Message -Level Verbose -Message "[*] Creating schema $schema"
             $sql = "CREATE SCHEMA [$schema] AUTHORIZATION dbo"
             $sqlcmd = New-Object System.Data.SqlClient.SqlCommand($sql, $sqlconn, $transaction)
             try {
                 $null = $sqlcmd.ExecuteNonQuery()
             } catch {
-                Write-Warning "Could not create $schema"
+                Write-Message -Level Warning -Message "Could not create $schema"
             }
-            
         }
         
         # Ensure table exists
@@ -641,23 +535,23 @@ function Import-DbaCsv {
         # Create the table if required. Remember, this will occur within a transaction, so if the script fails, the
         # new table will no longer exist.
         if ($tablexists -eq $false) {
-            Write-Output "[*] Table does not exist"
-            Write-Output "[*] Creating table"
-            New-SqlTable -Path $Path -Delimiter $InternalDelimiter -Columns $columns -ColumnText $columntext -SqlConn $sqlconn -Transaction $transaction
+            Write-Message -Level Verbose -Message "[*] Table does not exist"
+            Write-Message -Level Verbose -Message "[*] Creating table"
+            New-SqlTable -Path $Path -Delimiter $Delimiter -Columns $columns -ColumnText $columntext -SqlConn $sqlconn -Transaction $transaction
         } else {
-            Write-Output "[*] Table exists"
+            Write-Message -Level Verbose -Message "[*] Table exists"
         }
         
         # Truncate if specified. Remember, this will occur within a transaction, so if the script fails, the
         # truncate will not be committed.
         if ($truncate -eq $true) {
-            Write-Output "[*] Truncating table"
+            Write-Message -Level Verbose -Message "[*] Truncating table"
             $sql = "TRUNCATE TABLE [$schema].[$table]"
             $sqlcmd = New-Object System.Data.SqlClient.SqlCommand($sql, $sqlconn, $transaction)
             try {
                 $null = $sqlcmd.ExecuteNonQuery()
             } catch {
-                Write-Warning "Could not truncate $schema.$table"
+                Write-Message -Level Warning -Message "Could not truncate $schema.$table"
             }
         }
         
@@ -677,7 +571,6 @@ function Import-DbaCsv {
         
         # Process each CSV file specified
         foreach ($file in $Path) {
-            
             # Dynamically set NotifyAfter if it wasn't specified
             if ($notifyAfter -eq 0) {
                 if ($resultcount -is [int]) {
@@ -688,7 +581,7 @@ function Import-DbaCsv {
             }
             
             # Setup bulk copy
-            Write-Output "[*] Starting bulk copy for $(Split-Path $file -Leaf)"
+            Write-Message -Level Verbose -Message "[*] Starting bulk copy for $(Split-Path $file -Leaf)"
             
             # Setup bulk copy options
             $bulkCopyOptions = @()
@@ -702,7 +595,7 @@ function Import-DbaCsv {
             $bulkCopyOptions = $bulkCopyOptions -join " & "
             
             # Create SqlBulkCopy using default options, or options specified in command line.
-            if ($bulkCopyOptions.count -gt 1) {
+            if ($bulkCopyOptions) {
                 $bulkcopy = New-Object Data.SqlClient.SqlBulkCopy($oleconnstring, $bulkCopyOptions, $transaction)
             } else {
                 $bulkcopy = New-Object Data.SqlClient.SqlBulkCopy($sqlconn, "Default", $transaction)
@@ -715,87 +608,83 @@ function Import-DbaCsv {
             
             # Write to server :D
             try {
-                if ($safe -ne $true) {
-                    # Check to ensure batchsize isn't equal to 0
-                    if ($batchsize -eq 0) {
-                        write-warning "Invalid batchsize for this operation. Increasing to 50k"
-                        $batchsize = 50000
-                    }
-                    
-                    # Open the text file from disk
-                    $reader = New-Object System.IO.StreamReader($file)
-                    if ($FirstRowColumns -eq $true) {
-                        $null = $reader.readLine()
-                    }
-                    
-                    # Create the reusable datatable. Columns will be genereated using info from SQL.
-                    $datatable = New-Object System.Data.DataTable
-                    
-                    # Get table column info from SQL Server
-                    $sql = "SELECT c.name as colname, t.name as datatype, c.max_length, c.is_nullable FROM sys.columns c
+                # Check to ensure batchsize isn't equal to 0
+                if ($batchsize -eq 0) {
+                    Write-Message -Level Warning -Message "Invalid batchsize for this operation. Increasing to 50k"
+                    $batchsize = 50000
+                }
+                
+                # Open the text file from disk
+                $reader = New-Object System.IO.StreamReader($file)
+                if ($FirstRowColumns) {
+                    $null = $reader.readLine()
+                }
+                
+                # Create the reusable datatable. Columns will be genereated using info from SQL.
+                $datatable = New-Object System.Data.DataTable
+                
+                # Get table column info from SQL Server
+                $sql = "SELECT c.name as colname, t.name as datatype, c.max_length, c.is_nullable FROM sys.columns c
                         JOIN sys.types t ON t.system_type_id = c.system_type_id
                         WHERE c.object_id = object_id('$schema.$table') and t.name != 'sysname'
                         order by c.column_id"
-                    $sqlcmd = New-Object System.Data.SqlClient.SqlCommand($sql, $sqlconn, $transaction)
-                    $sqlcolumns = New-Object System.Data.DataTable
-                    $sqlcolumns.load($sqlcmd.ExecuteReader())
+                $sqlcmd = New-Object System.Data.SqlClient.SqlCommand($sql, $sqlconn, $transaction)
+                $sqlcolumns = New-Object System.Data.DataTable
+                $sqlcolumns.load($sqlcmd.ExecuteReader())
+                
+                foreach ($sqlcolumn in $sqlcolumns) {
+                    $datacolumn = $datatable.Columns.Add()
+                    $colname = $sqlcolumn.colname
+                    $datacolumn.AllowDBNull = $sqlcolumn.is_nullable
+                    $datacolumn.ColumnName = $colname
+                    $datacolumn.DefaultValue = [DBnull]::Value
+                    $datacolumn.Datatype = [string]
                     
-                    foreach ($sqlcolumn in $sqlcolumns) {
-                        $datacolumn = $datatable.Columns.Add()
-                        $colname = $sqlcolumn.colname
-                        $datacolumn.AllowDBNull = $sqlcolumn.is_nullable
-                        $datacolumn.ColumnName = $colname
-                        $datacolumn.DefaultValue = [DBnull]::Value
-                        $datacolumn.Datatype = [string]
-                        
-                        # The following data types can sometimes cause issues when they are null
-                        # so we will treat them differently
-                        $convert = "bigint", "DateTimeOffset", "UniqueIdentifier", "smalldatetime", "datetime"
-                        if ($convert -notcontains $sqlcolumn.datatype -and $turbo -ne $true) {
-                            $null = $bulkCopy.ColumnMappings.Add($datacolumn.ColumnName, $sqlcolumn.colname)
+                    # The following data types can sometimes cause issues when they are null
+                    # so we will treat them differently
+                    $convert = "bigint", "DateTimeOffset", "UniqueIdentifier", "smalldatetime", "datetime"
+                    if ($convert -notcontains $sqlcolumn.datatype -and $turbo -ne $true) {
+                        $null = $bulkCopy.ColumnMappings.Add($datacolumn.ColumnName, $sqlcolumn.colname)
+                    }
+                }
+                # For the columns that cause trouble, we'll add an additional column to the datatable
+                # which will perform a conversion.
+                # Setting $column.datatype alone doesn't work as well as setting+converting.
+                $calcolumns = $sqlcolumns | Where-Object {
+                    $convert -contains $_.datatype
+                }
+                foreach ($calcolumn in $calcolumns) {
+                    $colname = $calcolumn.colname
+                    $null = $newcolumn = $datatable.Columns.Add()
+                    $null = $newcolumn.ColumnName = "computed$colname"
+                    switch ($calcolumn.datatype) {
+                        "bigint" {
+                            $netdatatype = "System.Int64";
+                            $newcolumn.Datatype = [int64]
+                        }
+                        "DateTimeOffset" {
+                            $netdatatype = "System.DateTimeOffset";
+                            $newcolumn.Datatype = [DateTimeOffset]
+                        }
+                        "UniqueIdentifier" {
+                            $netdatatype = "System.Guid";
+                            $newcolumn.Datatype = [Guid]
+                        }
+                        {
+                            "smalldatetime", "datetime" -contains $_
+                        } {
+                            $netdatatype = "System.DateTime";
+                            $newcolumn.Datatype = [DateTime]
                         }
                     }
-                    # For the columns that cause trouble, we'll add an additional column to the datatable
-                    # which will perform a conversion.
-                    # Setting $column.datatype alone doesn't work as well as setting+converting.
-                    if ($turbo -ne $true) {
-                        $calcolumns = $sqlcolumns | Where-Object {
-                            $convert -contains $_.datatype
-                        }
-                        foreach ($calcolumn in $calcolumns) {
-                            $colname = $calcolumn.colname
-                            $null = $newcolumn = $datatable.Columns.Add()
-                            $null = $newcolumn.ColumnName = "computed$colname"
-                            switch ($calcolumn.datatype) {
-                                "bigint" {
-                                    $netdatatype = "System.Int64";
-                                    $newcolumn.Datatype = [int64]
-                                }
-                                "DateTimeOffset" {
-                                    $netdatatype = "System.DateTimeOffset";
-                                    $newcolumn.Datatype = [DateTimeOffset]
-                                }
-                                "UniqueIdentifier" {
-                                    $netdatatype = "System.Guid";
-                                    $newcolumn.Datatype = [Guid]
-                                }
-                                {
-                                    "smalldatetime", "datetime" -contains $_
-                                } {
-                                    $netdatatype = "System.DateTime";
-                                    $newcolumn.Datatype = [DateTime]
-                                }
-                            }
-                            # Use a data column expression to facilitate actual conversion
-                            $null = $newcolumn.Expression = "Convert($colname, $netdatatype)"
-                            $null = $bulkCopy.ColumnMappings.Add($newcolumn.ColumnName, $calcolumn.colname)
-                        }
-                    }
+                    # Use a data column expression to facilitate actual conversion
+                    $null = $newcolumn.Expression = "Convert($colname, $netdatatype)"
+                    $null = $bulkCopy.ColumnMappings.Add($newcolumn.ColumnName, $calcolumn.colname)
                     
                     # Check to see if file has quote identified data (i.e. "first","second","third")
                     $quoted = $false
                     $checkline = Get-Content $file -Tail 1
-                    $checkcolumns = $checkline.Split($InternalDelimiter)
+                    $checkcolumns = $checkline.Split($Delimiter)
                     foreach ($checkcolumn in $checkcolumns) {
                         if ($checkcolumn.StartsWith('"') -and $checkcolumn.EndsWith('"')) {
                             $quoted = $true
@@ -803,105 +692,21 @@ function Import-DbaCsv {
                     }
                     
                     if ($quoted -eq $true) {
-                        Write-Warning "The CSV file appears to use quoted identifiers. This may take a little longer."
+                        Write-Message -Level Warning -Message "The CSV file appears to use quoted identifiers. This may take a little longer."
                         # Thanks for this, Chris! http://www.schiffhauer.com/c-split-csv-values-with-a-regular-expression/
-                        $pattern = "((?<=`")[^`"]*(?=`"($InternalDelimiter|$)+)|(?<=$InternalDelimiter|^)[^$InternalDelimiter`"]*(?=$InternalDelimiter|$))"
-                    }
-                    if ($turbo -eq $true -and $first -eq 0) {
-                        while ($null -ne ($line = $reader.ReadLine())) {
-                            $i++
-                            if ($quoted -eq $true) {
-                                $null = $datatable.Rows.Add(($line.TrimStart('"').TrimEnd('"')) -Split "`"$InternalDelimiter`"")
-                            } else {
-                                $row = $datatable.Rows.Add($line.Split($InternalDelimiter))
-                            }
-                            
-                            if (($i % $batchsize) -eq 0) {
-                                $bulkcopy.WriteToServer($datatable)
-                                Write-Output "[*] $i rows have been inserted in $([math]::Round($elapsed.Elapsed.TotalSeconds, 2)) seconds."
-                                $datatable.Clear()
-                            }
-                        }
-                    } else {
-                        if ($turbo -eq $true -and $first -gt 0) {
-                            Write-Warning -Message "Using -First makes turbo a little slower."
-                        }
-                        # Start import!
-                        while ($null -ne ($line = $reader.ReadLine())) {
-                            $i++
-                            try {
-                                if ($quoted -eq $true) {
-                                    $row = $datatable.Rows.Add(($line.TrimStart('"').TrimEnd('"')) -Split $pattern)
-                                } else {
-                                    $row = $datatable.Rows.Add($line.Split($InternalDelimiter))
-                                }
-                            } catch {
-                                $row = $datatable.NewRow()
-                                try {
-                                    $tempcolumn = $line.Split($InternalDelimiter)
-                                    $colnum = 0
-                                    foreach ($column in $tempcolumn) {
-                                        if ($column.length -ne 0) {
-                                            $row.item($colnum) = $column
-                                        } else {
-                                            $row.item($colnum) = [DBnull]::Value
-                                        }
-                                        $colnum++
-                                    }
-                                    #$newrow replaced with $null as it was identified as a unused variable
-                                    $null = $datatable.Rows.Add($row)
-                                } catch {
-                                    Write-Warning "The following line ($i) is causing issues:"
-                                    Write-Output $line.Replace($InternalDelimiter, "`n")
-                                    
-                                    if ($quoted -eq $true) {
-                                        Write-Warning "The import has failed, likely because the quoted data was a little too inconsistent. Try using the -Safe parameter."
-                                    }
-                                    
-                                    Write-Verbose "Column datatypes:"
-                                    foreach ($c in $datatable.columns) {
-                                        Write-Verbose "$($c.columnname) = $($c.datatype)"
-                                    }
-                                    Write-Error $_.Exception.Message
-                                    break
-                                }
-                            }
-                            
-                            if (($i % $batchsize) -eq 0 -or $i -eq $first) {
-                                $bulkcopy.WriteToServer($datatable)
-                                Write-Output "[*] $i rows have been inserted in $([math]::Round($elapsed.Elapsed.TotalSeconds, 2)) seconds."
-                                $datatable.Clear()
-                                if ($i -eq $first) {
-                                    break
-                                }
-                            }
-                        }
-                    }
-                    # Add in all the remaining rows since the last clear
-                    if ($datatable.Rows.Count -gt 0) {
-                        $bulkcopy.WriteToServer($datatable)
-                        $datatable.Clear()
-                    }
-                } else {
-                    # Add rowcount output
-                    $bulkCopy.Add_SqlRowscopied({
-                            $script:totalrows = $args[1].RowsCopied
-                            if ($resultcount -is [int]) {
-                                $percent = [int](($script:totalrows / $resultcount) * 100)
-                                $timetaken = [math]::Round($elapsed.Elapsed.TotalSeconds, 2)
-                                Write-Progress -id 1 -activity "Inserting $resultcount rows" -percentcomplete $percent -status ([System.String]::Format("Progress: {0} rows ({1}%) in {2} seconds", $script:totalrows, $percent, $timetaken))
-                            } else {
-                                Write-Host "$($script:totalrows) rows copied in $([math]::Round($elapsed.Elapsed.TotalSeconds, 2)) seconds."
-                            }
-                        })
-                    
-                    $bulkCopy.WriteToServer($olecmd.ExecuteReader("SequentialAccess"))
-                    if ($resultcount -is [int]) {
-                        Write-Progress -id 1 -activity "Inserting $resultcount rows" -status "Complete" -Completed
+                        $pattern = "((?<=`")[^`"]*(?=`"($Delimiter|$)+)|(?<=$Delimiter|^)[^$Delimiter`"]*(?=$Delimiter|$))"
                     }
                     
+                    $delimiter = "`t"
+                    $stream = New-Object System.IO.StreamReader($file)
+                    # // or using (CsvReader csv = new CsvReader(File.OpenRead(path), false, Encoding.UTF8, addMark))
+                    # When addMark is true, consecutive null bytes will be replaced by [removed x null bytes] to indicate the removal
+                    $reader = New-Object LumenWorks.Framework.IO.Csv.CsvReader($stream, $FirstRowColumns, $Delimiter, 1)
+                    $bulkCopy.WriteToServer($reader)
+                    $reader.Close()
+                    $reader.Dispose()
+                    $completed = $true
                 }
-                $completed = $true
             } catch {
                 # If possible, give more information about common errors.
                 if ($resultcount -is [int]) {
@@ -911,8 +716,8 @@ function Import-DbaCsv {
                 $completed = $false
                 if ($errormessage -like "*for one or more required parameters*") {
                     
-                    Write-Error -Message "Looks like your SQL syntax may be invalid. `nCheck the documentation for more information or start with a simple -Query 'select top 10 * from csv'."
-                    Write-Error -Message "Valid CSV columns are $columns."
+                    Stop-Function -Continue -Message -Message "Looks like your SQL syntax may be invalid. `nCheck the documentation for more information or start with a simple -Query 'select top 10 * from csv'."
+                    Stop-Function -Continue -Message -Message "Valid CSV columns are $columns."
                     
                 } elseif ($errormessage -match "invalid column length") {
                     
@@ -928,13 +733,13 @@ function Import-DbaCsv {
                     $length = $datatable.max_length
                     
                     if ($safe -eq $true) {
-                        Write-Warning "Column $index ($column) contains data with a length greater than $length."
-                        Write-Warning "SqlBulkCopy makes it pretty much impossible to know which row caused the issue, but it's somewhere after row $($script:totalrows)."
+                        Write-Message -Level Warning -Message "Column $index ($column) contains data with a length greater than $length."
+                        Write-Message -Level Warning -Message "SqlBulkCopy makes it pretty much impossible to know which row caused the issue, but it's somewhere after row $($script:totalrows)."
                     }
                 } elseif ($errormessage -match "does not allow DBNull" -or $errormessage -match "The given value of type") {
                     
                     if ($tablexists -eq $false) {
-                        Write-Error "Looks like the datatype prediction didn't work out. Please create the table manually with proper datatypes then rerun the import script."
+                        Stop-Function -Continue -Message "Looks like the datatype prediction didn't work out. Please create the table manually with proper datatypes then rerun the import script."
                     } else {
                         $sql = "select name from sys.columns where object_id = object_id('$table') order by column_id"
                         $sqlcmd = New-Object System.Data.SqlClient.SqlCommand($sql, $sqlconn, $transaction)
@@ -943,59 +748,39 @@ function Import-DbaCsv {
                         $olecolumns = ($columns | ForEach-Object {
                                 $_ -Replace "\[|\]"
                             }) -join ', '
-                        Write-Warning "Datatype mismatch."
-                        Write-Output "[*] This is sometimes caused by null handling in SqlBulkCopy, quoted data, or the first row being column names and not data (-FirstRowColumns)."
-                        Write-Output "[*] This could also be because the data types don't match or the order of the columns within the CSV/SQL statement "
-                        Write-Output "[*] do not line up with the order of the table within the SQL Server.`n"
-                        Write-Output "[*] CSV order: $olecolumns`n"
-                        Write-Output "[*] SQL order: $($datatable.rows.name -join ', ')`n"
-                        Write-Output "[*] If this is the case, you can reorder columns by using the -Query parameter or execute the import against a view.`n"
-                        if ($safe -eq $false) {
-                            Write-Output "[*] You can also try running this import using the -Safe parameter, which handles quoted text well.`n"
-                        }
-                        Write-Error "`n$errormessage"
+                        Write-Message -Level Warning -Message "Datatype mismatch."
+                        Write-Message -Level Warning -Message "This is sometimes caused by null handling in SqlBulkCopy, quoted data, or the first row being column names and not data (-FirstRowColumns)."
+                        Write-Message -Level Warning -Message "This could also be because the data types don't match or the order of the columns within the CSV/SQL statement "
+                        Write-Message -Level Warning -Message "do not line up with the order of the table within the SQL Server.`n"
+                        Write-Message -Level Warning -Message "CSV order: $olecolumns`n"
+                        Write-Message -Level Warning -Message "SQL order: $($datatable.rows.name -join ', ')`n"
+                        Write-Message -Level Warning -Message "If this is the case, you can reorder columns by using the -Query parameter or execute the import against a view.`n"
+                        Write-Message -Level Warning -Message "[*] You can also try running this import using the -Safe parameter, which handles quoted text well.`n"
+                        Stop-Function -Continue -Message "`n$errormessage"
                     }
-                    
-                    
                 } elseif ($errormessage -match "Input string was not in a correct format" -or $errormessage -match "The given ColumnName") {
-                    Write-Warning "CSV contents may be malformed."
-                    Write-Error $errormessage
+                    Stop-Function -Continue -Message "CSV contents may be malformed. $errormessage"
                 } else {
-                    Write-Error $errormessage
+                    Stop-Function -Continue -Message $errormessage
                 }
             }
         }
         
-        if ($completed -eq $true) {
+        if ($completed) {
             # "Note: This count does not take into consideration the number of rows actually inserted when Ignore Duplicates is set to ON."
             $null = $transaction.Commit()
-            
-            if ($safe -eq $false) {
-                Write-Output "[*] $i total rows copied"
-            } else {
-                $total = [System.Data.SqlClient.SqlBulkCopyExtension]::RowsCopiedCount($bulkcopy)
-                Write-Output "[*] $total total rows copied"
-            }
+            Write-Message -Level Verbose -Message "[*] $i total rows copied"
         } else {
-            Write-Output "[*] Transaction rolled back."
-            Write-Output "[*] (Was the proper parameter specified? Is the first row the column name?)."
+            Write-Message -Level Verbose -Message "[*] Transaction rolled back."
+            Write-Message -Level Verbose -Message "[*] (Was the proper parameter specified? Is the first row the column name?)."
         }
         
         # Script is finished. Show elapsed time.
         $totaltime = [math]::Round($elapsed.Elapsed.TotalSeconds, 2)
-        Write-Output "[*] Total Elapsed Time for bulk insert: $totaltime seconds"
-    }
-    
-    end {
+        Write-Message -Level Verbose -Message "[*] Total Elapsed Time for bulk insert: $totaltime seconds"
+        
         # Close everything just in case & ignore errors
         try {
-            if ($oleconn.connection) {
-                $null = $oleconn.close(); $null = $oleconn.dispose()
-            }
-            if ($olecmd.connection) {
-                $null = $olecmd.close()
-            }
-            
             $null = $sqlconn.close(); $null = $sqlconn.Dispose();
             $null = $bulkCopy.close(); $bulkcopy.dispose();
             $null = $reader.close(); $null = $reader.dispose()
@@ -1003,7 +788,10 @@ function Import-DbaCsv {
             #here to avoid an empty catch
             $null = 1
         }
-        
+    }
+    
+    end {
+        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Import-DbaCsvtoSql
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Import-CsvToSql
     }
 }
