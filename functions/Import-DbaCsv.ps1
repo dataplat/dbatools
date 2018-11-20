@@ -399,7 +399,7 @@ function Import-DbaCsv {
                 $elapsed = [System.Diagnostics.Stopwatch]::StartNew()
                 # Open Connection to SQL Server
                 try {
-                    $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
+                    $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $sqlcredential -ConnectTimeout 0
                     $sqlconn = $server.ConnectionContext.SqlConnectionObject
                     $sqlconn.Open()
                 } catch {
