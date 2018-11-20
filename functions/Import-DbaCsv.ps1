@@ -13,8 +13,10 @@ function Import-DbaCsv {
     .PARAMETER Path
         Specifies path to the CSV file(s) to be imported. Multiple files may be imported at once.
 
-    .PARAMETER FirstRowColumns
-        Use the first row in the file to determine column names for the data being imported.
+    .PARAMETER NoHeaderRow
+        By default, the first row is used to determine column names for the data being imported.
+
+        Use this switch if the first row contains data and not column names.
 
     .PARAMETER Delimiter
         Specifies the delimiter used in the imported file(s). If no delimiter is specified, comma is assumed.
@@ -120,7 +122,7 @@ function Import-DbaCsv {
         Since a table name was not specified, the table name is automatically determined from filename as "housing".
 
     .EXAMPLE
-        PS C:\> Import-DbaCsv -Path .\housing.csv -SqlInstance sql001 -Database markets -Table housing -Delimiter "`t" -FirstRowColumns
+        PS C:\> Import-DbaCsv -Path .\housing.csv -SqlInstance sql001 -Database markets -Table housing -Delimiter "`t" -FirstRowHeader
 
         Imports the entire comma-delimited housing.csv to the SQL "markets" database on a SQL Server named sql001.
 
@@ -157,7 +159,7 @@ function Import-DbaCsv {
         [parameter(ValueFromPipeline)]
         [ValidateNotNullOrEmpty()]
         [Alias("Csv", "FullPath")]
-        [string[]]$Path,
+        [object[]]$Path,
         [Parameter(Mandatory)]
         [DbaInstanceParameter[]]$SqlInstance,
         [pscredential]$SqlCredential,
@@ -169,7 +171,6 @@ function Import-DbaCsv {
         [ValidateSet("`t", "|", ";", " ", ",")]
         [string]$Delimiter = ",",
         [switch]$SingleColumn,
-        [switch]$FirstRowColumns,
         [int]$BatchSize = 50000,
         [int]$NotifyAfter = 50000,
         [switch]$TableLock,
@@ -179,9 +180,11 @@ function Import-DbaCsv {
         [switch]$KeepNulls,
         [switch]$AutoCreateTable,
         [switch]$NoProgress,
+        [switch]$NoHeaderRow,
         [switch]$EnableException
     )
     begin {
+        $FirstRowHeader = $NoHeaderRow -eq $false
         $scriptelapsed = [System.Diagnostics.Stopwatch]::StartNew()
 
         function Get-Columns {
@@ -191,7 +194,7 @@ function Import-DbaCsv {
                     This is because the OleDbConnection driver may not exist on x64.
 
                 .EXAMPLE
-                    $columns = Get-Columns -Path .\myfile.csv -Delimiter "," -FirstRowColumns $true
+                    $columns = Get-Columns -Path .\myfile.csv -Delimiter "," -FirstRowHeader $true
 
                 .OUTPUTS
                     Array of column names
@@ -203,16 +206,16 @@ function Import-DbaCsv {
                 [Parameter(Mandatory)]
                 [string]$Delimiter,
                 [Parameter(Mandatory)]
-                [bool]$FirstRowColumns
+                [bool]$FirstRowHeader
             )
-            
+
             [void][Reflection.Assembly]::LoadWithPartialName("Microsoft.VisualBasic")
             $columnparser = New-Object Microsoft.VisualBasic.FileIO.TextFieldParser($Path)
             $columnparser.TextFieldType = "Delimited"
             $columnparser.SetDelimiters($Delimiter)
             $rawcolumns = $columnparser.ReadFields()
 
-            if ($FirstRowColumns -eq $true) {
+            if ($FirstRowHeader -eq $true) {
                 $columns = ($rawcolumns | ForEach-Object {
                         $_ -Replace '"'
                     } | Select-Object -Property @{
@@ -317,10 +320,10 @@ function Import-DbaCsv {
                 Stop-Function -Continue -Message "Failed to execute $sql. `nDid you specify the proper delimiter? `n$errormessage"
             }
 
-            Write-Message -Level Warning -Message "Successfully created table $schema.$table with the following column definitions:`n $($sqldatatypes -join "`n ")"
+            Write-Message -Level Verbose -Message "Successfully created table $schema.$table with the following column definitions:`n $($sqldatatypes -join "`n ")"
             # Write-Message -Level Warning -Message "All columns are created using a best guess, and use their maximum datatype."
-            Write-Message -Level Warning -Message "This is inefficient but allows the script to import without issues."
-            Write-Message -Level Warning -Message "Consider creating the table first using best practices if the data will be used in production."
+            Write-Message -Level Verbose -Message "This is inefficient but allows the script to import without issues."
+            Write-Message -Level Verbose -Message "Consider creating the table first using best practices if the data will be used in production."
         }
 
         Write-Message -Level Verbose -Message "Started at $(Get-Date)"
@@ -358,11 +361,16 @@ function Import-DbaCsv {
     }
     process {
         foreach ($filename in $Path) {
-            $file = (Resolve-Path -Path $filename).ProviderPath
 
-            if (-not (Test-Path -Path $file)) {
-                Stop-Function -Continue -Message "$file cannot be found"
+            if ($filename.FullName) {
+                $filename = $filename.FullName
             }
+
+            if (-not (Test-Path -Path $filename)) {
+                Stop-Function -Continue -Message "$filename cannot be found"
+            }
+
+            $file = (Resolve-Path -Path $filename).ProviderPath
 
             # Do the first few lines contain the specified delimiter?
             try {
@@ -388,7 +396,7 @@ function Import-DbaCsv {
             # Create columns based on first data row of first csv.
             if (-not $SingleColumn) {
                 Write-Message -Level Verbose -Message "Calculating column names and datatypes"
-                $columns = Get-Columns -Path $file -Delimiter $Delimiter -FirstRowColumns $FirstRowColumns
+                $columns = Get-Columns -Path $file -Delimiter $Delimiter -FirstRowHeader $FirstRowHeader
                 if ($columns.count -gt 255 -and $safe -eq $true) {
                     Stop-Function -Continue -Message "CSV must contain fewer than 256 columns."
                 }
@@ -399,11 +407,15 @@ function Import-DbaCsv {
                 $elapsed = [System.Diagnostics.Stopwatch]::StartNew()
                 # Open Connection to SQL Server
                 try {
-                    $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $sqlcredential -ConnectTimeout 0
+                    $server = Connect-DbaInstance -SqlInstance $instance -Credential $sqlcredential -ConnectTimeout 0
                     $sqlconn = $server.ConnectionContext.SqlConnectionObject
                     $sqlconn.Open()
                 } catch {
                     Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                }
+
+                if ($server.VersionMajor -eq 8) {
+                    Stop-Function -Message "SQL Server 2000 required - $instance not supported" -Target $instance -Continue
                 }
 
                 if ($PSCmdlet.ShouldProcess($instance, "Starting transaction in $Database")) {
@@ -437,7 +449,7 @@ function Import-DbaCsv {
                         try {
                             $null = $sqlcmd.ExecuteNonQuery()
                         } catch {
-                            Write-Message -Level Warning -Message "Could not create $schema"
+                            Stop-Function -Continue -Message "Could not create $schema" -ErrorRecord $_
                         }
                     }
                 }
@@ -522,7 +534,7 @@ function Import-DbaCsv {
                         # Open the text file from disk
                         # // or using (CsvReader csv = new CsvReader(File.OpenRead(path), false, Encoding.UTF8, addMark))
                         # When addMark is true, consecutive null bytes will be replaced by [removed x null bytes] to indicate the removal
-                        $reader = New-Object LumenWorks.Framework.IO.Csv.CsvReader((New-Object System.IO.StreamReader($file)), $FirstRowColumns, $Delimiter, 1)
+                        $reader = New-Object LumenWorks.Framework.IO.Csv.CsvReader((New-Object System.IO.StreamReader($file)), $FirstRowHeader, $Delimiter, 1)
 
                         # Add rowcount output
                         $bulkCopy.Add_SqlRowsCopied( {
@@ -585,7 +597,7 @@ function Import-DbaCsv {
                                         $_ -Replace "\[|\]"
                                     }) -join ', '
                                 Write-Message -Level Warning -Message "Datatype mismatch."
-                                Write-Message -Level Warning -Message "This is sometimes caused by null handling in SqlBulkCopy, quoted data, or the first row being column names and not data (-FirstRowColumns)."
+                                Write-Message -Level Warning -Message "This is sometimes caused by null handling in SqlBulkCopy, quoted data, or the first row being column names and not data (-FirstRowHeader)."
                                 Write-Message -Level Warning -Message "This could also be because the data types don't match or the order of the columns within the CSV/SQL statement "
                                 Write-Message -Level Warning -Message "do not line up with the order of the table within the SQL Server.`n"
                                 Write-Message -Level Warning -Message "CSV order: $olecolumns`n"

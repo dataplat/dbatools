@@ -6,7 +6,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
         $defaultParamCount = 13
         [object[]]$params = (Get-ChildItem function:\Import-DbaCsv).Parameters.Keys
-        $knownParameters = 'Path', 'SqlInstance', 'SqlCredential', 'Database', 'Table', 'Schema', 'Truncate', 'Delimiter', 'SingleColumn', 'FirstRowColumns', 'BatchSize', 'NotifyAfter', 'TableLock', 'CheckConstraints', 'FireTriggers', 'KeepIdentity', 'KeepNulls', 'AutoCreateTable', 'NoProgress', 'EnableException'
+        $knownParameters = 'Path', 'SqlInstance', 'SqlCredential', 'Database', 'Table', 'Schema', 'Truncate', 'Delimiter', 'SingleColumn', 'NoHeaderRow', 'BatchSize', 'NotifyAfter', 'TableLock', 'CheckConstraints', 'FireTriggers', 'KeepIdentity', 'KeepNulls', 'AutoCreateTable', 'NoProgress', 'EnableException'
         $paramCount = $knownParameters.Count
         It "Should contain our specific parameters" {
             ((Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count) | Should Be $paramCount
@@ -27,25 +27,25 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     AfterAll {
         Invoke-DbaQuery -SqlInstance $script:instance1, $script:instance2 -Database tempdb -Query "drop table SuperSmall"
     }
-    
+
     $path = "$script:appveyorlabrepo\csv\SuperSmall.csv"
-    
+
     Context "Works as expected" {
         $results = $path | Import-DbaCsv -SqlInstance $script:instance1 -Database tempdb -Delimiter `t -NotifyAfter 50000 -WarningVariable warn
         It "accepts piped input and doesn't add rows if the table does not exist" {
-            $warn | Should -Match 'does not exist'
+            $resulst | Should -Be $null
         }
-        
+
         if (-not $env:appveyor) {
             $results = Import-DbaCsv -Path $path, $path -SqlInstance $script:instance1, $script:instance2 -Database tempdb -Delimiter `t -NotifyAfter 50000 -WarningVariable warn2 -AutoCreateTable
-            
+
             It "performs 4 imports" {
                 ($results).Count | Should -Be 4
             }
-            
+
             foreach ($result in $results) {
                 It "returns the good stuff" {
-                    $result.RowsCopied | Should -Be 1000
+                    $result.RowsCopied | Should -Be 999
                     $result.Database | Should -Be tempdb
                     $result.Table | Should -Be SuperSmall
                 }
