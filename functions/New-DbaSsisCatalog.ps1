@@ -46,7 +46,7 @@ function New-DbaSsisCatalog {
 
     .EXAMPLE
         PS C:\> $SecurePassword = Read-Host -AsSecureString -Prompt "Enter password"
-        PS C:\> New-DbaSsisCatalog -SqlInstance DEV01 -Password $SecurePassword
+        PS C:\> New-DbaSsisCatalog -SqlInstance DEV01 -SecurePassword $SecurePassword
 
         Creates the SSIS Catalog on server DEV01 with the specified password.
 
@@ -69,7 +69,7 @@ function New-DbaSsisCatalog {
     )
     begin {
         if (-not $SecurePassword -and -not $Credential) {
-            Stop-Function -Message "You must specify either -Password or -Credential"
+            Stop-Function -Message "You must specify either -SecurePassword or -Credential"
             return
         }
         if (-not $SecurePassword -and $Credential) {
