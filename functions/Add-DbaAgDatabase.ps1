@@ -109,23 +109,27 @@ function Add-DbaAgDatabase {
                 
                 foreach ($replica in $replicas) {
                     $replicadb = Get-DbaAgDatabase -SqlInstance $replica -SqlCredential $SqlCredential -Database $db.Name -AvailabilityGroup $ag.Name
-                    $timeout = 1
-                    do {
-                        try {
-                            Write-Message -Level Verbose -Message "Trying to add $($replicadb.Name) to $replica"
-                            $timeout++
-                            $replicadb.JoinAvailablityGroup()
-                            $replicadb.Refresh()
-                            Start-Sleep -Seconds 1
-                        } catch {
-                            Stop-Function -Message "Error joining database to availability group" -ErrorRecord $_ -Continue
+                    if ($replicadb) {
+                        if ($Pscmdlet.ShouldProcess($ag.Parent.Name, "Joining availability group $db to $($db.Parent.Name)")) {
+                            $timeout = 1
+                            do {
+                                try {
+                                    Write-Message -Level Verbose -Message "Trying to add $($replicadb.Name) to $replica"
+                                    $timeout++
+                                    $replicadb.JoinAvailablityGroup()
+                                    $replicadb.Refresh()
+                                    Start-Sleep -Seconds 1
+                                } catch {
+                                    Stop-Function -Message "Error joining database to availability group" -ErrorRecord $_ -Continue
+                                }
+                            } while (-not $replicadb.IsJoined -and $timeout -lt 10)
+                            
+                            if ($replicadb.IsJoined) {
+                                $replicadb
+                            } else {
+                                Stop-Function -Continue -Message "Could not join $($replicadb.Name) to $replica"
+                            }
                         }
-                    } while (-not $replicadb.IsJoined -and $timeout -lt 10)
-                    
-                    if ($replicadb.IsJoined) {
-                        $replicadb
-                    } else {
-                        Stop-Function -Continue -Message "Could not join $($replicadb.Name) to $replica"
                     }
                 }
             }
