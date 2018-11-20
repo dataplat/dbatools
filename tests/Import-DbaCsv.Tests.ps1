@@ -36,14 +36,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $warn | Should -Match 'does not exist'
         }
         
-        if ($env:appveyor) {
-            $results = $path | Import-DbaCsv -SqlInstance $script:instance1 -Database tempdb -Delimiter `t -NotifyAfter 50000 -AutoCreateTable
-            It "returns the good stuff" {
-                $results.RowsCopied | Should -Be 1000
-                $results.Database | Should -Be tempdb
-                $results.Table | Should -Be SuperSmall
-            }
-        } else {
+        if (-not $env:appveyor) {
             $results = Import-DbaCsv -Path $path, $path -SqlInstance $script:instance1, $script:instance2 -Database tempdb -Delimiter `t -NotifyAfter 50000 -WarningVariable warn2 -AutoCreateTable
             
             It "performs 4 imports" {
