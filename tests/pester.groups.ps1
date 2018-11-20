@@ -23,6 +23,8 @@ $TestsRunGroups = @{
         # takes too long
         'Install-DbaSqlWatch',
         'Uninstall-DbaSqlWatch',
+        # weird too often
+        'Add-DbaComputerCertificate',
         # a bug in SMO prevents availability group scripting :(
         'Export-DbaAvailabilityGroup',
         'Get-DbaCpuRingBuffer',
