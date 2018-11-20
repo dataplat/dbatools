@@ -44,7 +44,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
 
         foreach ($result in $results) {
             It "returns the good stuff" {
-                $result.RowsCopied | Should -Be 5000
+                $result.RowsCopied | Should -Be 1000
                 $result.Database | Should -Be tempdb
                 $result.Table | Should -Be SuperSmall
             }
