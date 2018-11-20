@@ -13,7 +13,7 @@ function New-DbaServiceMasterKey {
     .PARAMETER SqlCredential
         Allows you to login to SQL Server using alternative credentials.
 
-    .PARAMETER Password
+    .PARAMETER SecurePassword
         Secure string used to create the key.
 
     .PARAMETER Credential
@@ -50,14 +50,15 @@ function New-DbaServiceMasterKey {
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [PSCredential]$Credential,
-        [Security.SecureString]$Password,
+        [Alias("Password")]
+        [Security.SecureString]$SecurePassword,
         [switch]$EnableException
     )
 
     process {
         foreach ($instance in $SqlInstance) {
             if ($PSCmdlet.ShouldProcess("$instance", "Creating New MasterKey")) {
-                New-DbaDbMasterKey -SqlInstance $instance -Database master -Password $password -Credential $Credential
+                New-DbaDbMasterKey -SqlInstance $instance -Database master -SecurePassword $SecurePassword -Credential $Credential
             }
         }
     }
