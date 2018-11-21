@@ -24,12 +24,12 @@ function Update-DbaServiceAccount {
         NETWORKSERVICE
         LOCALSYSTEM
 
-    .PARAMETER PreviousPassword
-        An old password of the service account. Optional when run under local admin privileges.
-
     .PARAMETER SecurePassword
         New password of the service account. The function will ask for a password if not specified. MSAs and local system accounts will ignore the password.
 
+    .PARAMETER PreviousPassword
+        The stored password of the service account. Optional when run with admin and remoting privileges.
+    
     .PARAMETER Username
         Username of the service account. Cannot be used with -ServiceCredential. For local service accounts use one of the following usernames omitting the -Password parameter:
         LOCALSERVICE
@@ -58,10 +58,10 @@ function Update-DbaServiceAccount {
         Requires Local Admin rights on destination computer(s).
 
     .EXAMPLE
-        PS C:\> $SecurePassword = ConvertTo-SecureString 'Qwerty1234' -AsPlainText -Force
-        Update-DbaServiceAccount -ComputerName sql1 -ServiceName 'MSSQL$MYINSTANCE' -Password $SecurePassword
+        PS C:\> $securepassword = Get-Credential doesntmatter
+        Update-DbaServiceAccount -ComputerName sql1 -ServiceName 'MSSQL$MYINSTANCE' -Password $SecurePassword.Password
 
-        Changes the current service account's password of the service MSSQL$MYINSTANCE to 'Qwerty1234'
+        Changes the current service account's password of the service MSSQL$MYINSTANCE
 
     .EXAMPLE
         PS C:\> $cred = Get-Credential
@@ -95,9 +95,9 @@ function Update-DbaServiceAccount {
         [Alias("User")]
         [string]$Username,
         [PSCredential]$ServiceCredential,
-        [securestring]$PreviousPassword,
         [Alias("Password, NewPassword")]
         [securestring]$SecurePassword = (New-Object System.Security.SecureString),
+        [securestring]$PreviousPassword,
         [switch]$EnableException
     )
     begin {
