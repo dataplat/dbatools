@@ -162,7 +162,6 @@ function Import-DbaCsv {
         [string]$Table,
         [string]$Schema = "dbo",
         [switch]$Truncate,
-        [ValidateSet("``t", "|", ";", " ", ",")]
         [string]$Delimiter = ",",
         [switch]$SingleColumn,
         [int]$BatchSize = 50000,
