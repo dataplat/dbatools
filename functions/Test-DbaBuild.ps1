@@ -2,16 +2,16 @@
 function Test-DbaBuild {
     <#
     .SYNOPSIS
-        Returns SQL Server Build "compliance" level on a build
+        Returns SQL Server Build "compliance" level on a build.
 
     .DESCRIPTION
-        Returns info about the specific build of a SQL instance, including the SP, the CU and the reference KB, End Of Support, wherever possible. It adds a Compliance property as true/false, and adds details about the "targeted compliance"
+        Returns info about the specific build of a SQL instance, including the SP, the CU and the reference KB, End Of Support, wherever possible. It adds a Compliance property as true/false, and adds details about the "targeted compliance".
 
     .PARAMETER Build
         Instead of connecting to a real instance, pass a string identifying the build to get the info back.
 
     .PARAMETER MinimumBuild
-        This is the build version to test "compliance" against. Anything below this is flagged as not compliant
+        This is the build version to test "compliance" against. Anything below this is flagged as not compliant.
 
     .PARAMETER MaxBehind
         Instead of using a specific MinimumBuild here you can pass "how many service packs and cu back" is the targeted compliance level. You can use xxSP or xxCU or both, where xx is a number. See the Examples for more information.
@@ -51,20 +51,20 @@ function Test-DbaBuild {
         PS C:\> Test-DbaBuild -Build "12.0.5540" -MinimumBuild "12.0.5557"
 
         Returns information about a build identified by "12.0.5540" (which is SQL 2014 with SP2 and CU4), which is not compliant as the minimum required
-        build is "12.0.5557" (which is SQL 2014 with SP2 and CU8)
+        build is "12.0.5557" (which is SQL 2014 with SP2 and CU8).
 
     .EXAMPLE
         PS C:\> Test-DbaBuild -Build "12.0.5540" -MaxBehind "1SP"
 
         Returns information about a build identified by "12.0.5540", making sure it is AT MOST 1 Service Pack "behind". For that version,
-        that identifies an SP2, means accepting as the lowest compliance version as "12.0.4110", that identifies 2014 with SP1
+        that identifies an SP2, means accepting as the lowest compliance version as "12.0.4110", that identifies 2014 with SP1.
 
     .EXAMPLE
         PS C:\> Test-DbaBuild -Build "12.0.5540" -MaxBehind "1SP 1CU"
 
         Returns information about a build identified by "12.0.5540", making sure it is AT MOST 1 Service Pack "behind", plus 1 CU "behind". For that version,
         that identifies an SP2 and CU, rolling back 1 SP brings you to "12.0.4110", but given the latest CU for SP1 is CU13, the target "compliant" build
-        will be "12.0.4511", which is 2014 with SP1 and CU12
+        will be "12.0.4511", which is 2014 with SP1 and CU12.
 
     .EXAMPLE
         PS C:\> Test-DbaBuild -Build "12.0.5540" -MaxBehind "0CU"
@@ -79,51 +79,34 @@ function Test-DbaBuild {
     .EXAMPLE
         PS C:\> Test-DbaBuild -Build "12.00.4502" -MinimumBuild "12.0.4511" -Update
 
-        Same as before, but tries to fetch the most up to date index online. When the online version is newer, the local one gets overwritten
+        Same as before, but tries to fetch the most up to date index online. When the online version is newer, the local one gets overwritten.
 
     .EXAMPLE
         PS C:\> Test-DbaBuild -Build "12.0.4502","10.50.4260" -MinimumBuild "12.0.4511"
 
-        Returns information builds identified by these versions strings
+        Returns information builds identified by these versions strings.
 
     .EXAMPLE
         PS C:\> Get-DbaCmsRegServer -SqlInstance sqlserver2014a | Test-DbaBuild -MinimumBuild "12.0.4511"
 
-        Integrate with other cmdlets to have builds checked for all your registered servers on sqlserver2014a
+        Integrate with other cmdlets to have builds checked for all your registered servers on sqlserver2014a.
 
     #>
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "")]
     [CmdletBinding()]
     param (
-        [version[]]
-        $Build,
-
-        [version]
-        $MinimumBuild,
-
-        [string]
-        $MaxBehind,
-
-        [switch]
-        $Latest,
-
+        [version[]]$Build,
+        [version]$MinimumBuild,
+        [string]$MaxBehind,
+        [switch] $Latest,
         [parameter(Mandatory = $false, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
-        [DbaInstanceParameter[]]
-        $SqlInstance,
-
+        [DbaInstanceParameter[]]$SqlInstance,
         [Alias("Credential")]
-        [PSCredential]
-        $SqlCredential,
-
-        [switch]
-        $Update,
-
-        [switch]
-        $Quiet,
-
-        [switch]
-        [Alias('Silent')]$EnableException
+        [PSCredential]$SqlCredential,
+        [switch]$Update,
+        [switch]$Quiet,
+        [switch][Alias('Silent')]$EnableException
     )
 
     begin {
@@ -238,7 +221,7 @@ function Test-DbaBuild {
                     $targetedBuild = $IdxVersion[$IdxVersion.Length - 1]
                 } else {
                     if ($ParsedMaxBehind.ContainsKey('SP')) {
-                        $AllSPs = $SPsAndCUs.SP | Select-Object -Unique
+                        [string[]]$AllSPs = $SPsAndCUs.SP | Select-Object -Unique
                         $targetSP = $AllSPs.Length - $ParsedMaxBehind['SP'] - 1
                         if ($targetSP -lt 0) {
                             $targetSP = 0
