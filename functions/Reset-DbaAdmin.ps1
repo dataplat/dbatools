@@ -74,12 +74,13 @@ function Reset-DbaAdmin {
         Prompts for password, then resets the "sqladmin" account password on sqlcluster.
 
     .EXAMPLE
-        PS C:\> Reset-DbaAdmin -SqlInstance sqlserver\sqlexpress -Login ad\administrator
-
-        Prompts user to confirm that they understand the SQL Service will be restarted.
+        PS C:\> Reset-DbaAdmin -SqlInstance sqlserver\sqlexpress -Login ad\administrator -Confirm:$false
 
         Adds the domain account "ad\administrator" as a sysadmin to the SQL instance.
+    
         If the account already exists, it will be added to the sysadmin role.
+    
+        Does not prompt for a password since it is not a SQL login. Does not prompt for confirmation since -Confirm is set to $false.
 
     .EXAMPLE
         PS C:\> Reset-DbaAdmin -SqlInstance sqlserver\sqlexpress -Login sqladmin -Force
@@ -496,8 +497,20 @@ function Reset-DbaAdmin {
             
             if ($pscmdlet.ShouldProcess($instance, "Logging in to get account information")) {
                 Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Logging in to get account information"
-                $cred = New-Object System.Management.Automation.PSCredential ($Login, $securePassword)
-                Get-DbaLogin -SqlInstance $instance -SqlCredential $cred -Login $Login
+                if ($securePassword) {
+                    $cred = New-Object System.Management.Automation.PSCredential ($Login, $securePassword)
+                    Get-DbaLogin -SqlInstance $instance -SqlCredential $cred -Login $Login
+                }
+                elseif ($SqlCredential) {
+                    Get-DbaLogin -SqlInstance $instance -SqlCredential $SqlCredential -Login $Login
+                }
+                else {
+                    try {
+                        Get-DbaLogin -SqlInstance $instance -SqlCredential $SqlCredential -Login $Login -EnableException
+                    } catch {
+                        Stop-Function -Message "Password not supplied, tried logging in with Integrated authentication and it failed. Either way, $Login should work now on $instance." -Continue
+                    }
+                }
             }
             
         }
