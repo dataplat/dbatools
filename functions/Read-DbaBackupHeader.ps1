@@ -83,7 +83,7 @@ function Read-DbaBackupHeader {
 
         Gets the backup header information from the SQL Server backup file stored at https://dbatoolsaz.blob.core.windows.net/azbackups/restoretime/restoretime_201705131850.bak on Azure
 
-       #>
+    #>
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingPlainTextForPassword", 'AzureCredential', Justification = "For Parameter AzureCredential")]
     [CmdletBinding()]
     param (
@@ -135,13 +135,20 @@ function Read-DbaBackupHeader {
             $null = $dataTable.Columns.Add("FileList", [object])
             $null = $dataTable.Columns.Add("SqlVersion")
             $null = $dataTable.Columns.Add("BackupPath")
-            
+
             foreach ($row in $dataTable) {
                 $row.BackupPath = $Path
+
                 $backupsize = $row.BackupSize
                 $null = $dataTable.Columns.Remove("BackupSize")
                 $null = $dataTable.Columns.Add("BackupSize", [dbasize])
                 $row.BackupSize = [dbasize]$backupsize
+
+                $cbackupsize = $row.CompressedBackupSize
+                $null = $dataTable.Columns.Remove("CompressedBackupSize")
+                $null = $dataTable.Columns.Add("CompressedBackupSize", [dbasize])
+                $row.CompressedBackupSize = [dbasize]$cbackupsize
+
                 $restore.FileNumber = $row.Position
                 <# Select-Object does a quick and dirty conversion from datatable to PS object #>
                 $row.FileList = $restore.ReadFileList($server) | Select-Object *
