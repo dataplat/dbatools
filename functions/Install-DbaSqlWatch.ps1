@@ -15,7 +15,7 @@ function Install-DbaSqlWatch {
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
     .PARAMETER Database
-        Specifies the database to install SqlWatch into. Defaults to master.
+        Specifies the database to install SqlWatch into. Defaults to SQLWATCH.
 
     .PARAMETER LocalFile
         Specifies the path to a local file to install SqlWatch from. This *should* be the zipfile as distributed by the maintainers.
@@ -48,7 +48,7 @@ function Install-DbaSqlWatch {
     .EXAMPLE
         Install-DbaSqlWatch -SqlInstance server1
 
-        Logs into server1 with Windows authentication and then installs SqlWatch in the master database.
+        Logs into server1 with Windows authentication and then installs SqlWatch in the SQLWATCH database.
 
     .EXAMPLE
         Install-DbaSqlWatch -SqlInstance server1\instance1 -Database DBA
@@ -63,20 +63,20 @@ function Install-DbaSqlWatch {
     .EXAMPLE
         Install-DbaSqlWatch -SqlInstance sql2016\standardrtm, sql2016\sqlexpress, sql2014
 
-        Logs into sql2016\standardrtm, sql2016\sqlexpress and sql2014 with Windows authentication and then installs SqlWatch in the master database.
+        Logs into sql2016\standardrtm, sql2016\sqlexpress and sql2014 with Windows authentication and then installs SqlWatch in the SQLWATCH database.
 
     .EXAMPLE
         $servers = "sql2016\standardrtm", "sql2016\sqlexpress", "sql2014"
         $servers | Install-DbaSqlWatch
 
-        Logs into sql2016\standardrtm, sql2016\sqlexpress and sql2014 with Windows authentication and then installs SqlWatch in the master database.
+        Logs into sql2016\standardrtm, sql2016\sqlexpress and sql2014 with Windows authentication and then installs SqlWatch in the SQLWATCH database.
        #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
     param (
         [Parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [string]$Database = "master",
+        [string]$Database = "SQLWATCH",
         [string]$LocalFile,
         [switch]$Force,
         [switch]$EnableException
@@ -108,7 +108,8 @@ function Install-DbaSqlWatch {
                     Write-Message -Level Verbose "Downloading $LatestReleaseUrl"
                     try {
                         Invoke-TlsWebRequest $LatestReleaseUrl -OutFile $zipfile -ErrorAction Stop -UseBasicParsing
-                    } catch {
+                    }
+                    catch {
                         #try with default proxy and usersettings
                         (New-Object System.Net.WebClient).Proxy.Credentials = [System.Net.CredentialCache]::DefaultNetworkCredentials
                         Invoke-TlsWebRequest $LatestReleaseUrl -OutFile $zipfile -ErrorAction Stop -UseBasicParsing
@@ -119,14 +120,16 @@ function Install-DbaSqlWatch {
                     try {
                         New-Item -Path $LocallyCachedZip -ItemType File -Force | Out-Null
                         Copy-Item -Path $zipfile -Destination $LocallyCachedZip -Force
-                    } catch {
+                    }
+                    catch {
                         # should we stop the function if the file copy fails?
                         # here to avoid an empty catch
                         $null = 1
                     }
                 }
             }
-        } else {
+        }
+        else {
 
             # $LocalFile was passed, so use it
             if ($PSCmdlet.ShouldProcess($env:computername, "Copying local file to temp directory")) {
@@ -134,7 +137,8 @@ function Install-DbaSqlWatch {
                 if ($LocalFile.EndsWith("zip")) {
                     $LocallyCachedZip = $zipfile
                     Copy-Item -Path $LocalFile -Destination $LocallyCachedZip -Force
-                } else {
+                }
+                else {
                     $LocallyCachedZip = (Join-Path -path $tempFolder -childpath "SqlWatch.zip")
                     Copy-Item -Path $LocalFile -Destination $LocallyCachedZip -Force
                 }
@@ -151,11 +155,13 @@ function Install-DbaSqlWatch {
             if (Get-Command -ErrorAction SilentlyContinue -Name "Expand-Archive") {
                 try {
                     Expand-Archive -Path $LocallyCachedZip -DestinationPath $LocalCacheFolder -Force
-                } catch {
+                }
+                catch {
                     Stop-Function -Message "Unable to extract $LocallyCachedZip. Archive may not be valid." -ErrorRecord $_
                     return
                 }
-            } else {
+            }
+            else {
                 # Keep it backwards compatible
                 $shell = New-Object -ComObject Shell.Application
                 $zipPackage = $shell.NameSpace($LocallyCachedZip)
@@ -177,7 +183,8 @@ function Install-DbaSqlWatch {
             if ($PSCmdlet.ShouldProcess($instance, "Installing SqlWatch on $Database")) {
                 try {
                     $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
-                } catch {
+                }
+                catch {
                     Stop-Function -Message "Failure." -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
                 }
 
@@ -208,7 +215,8 @@ function Install-DbaSqlWatch {
                         Database     = $PublishResults.Database
                         Status       = $ExtractedResult
                     }
-                } catch {
+                }
+                catch {
                     Stop-Function -Message "DACPAC failed to publish to $database on $instance." -ErrorRecord $_ -Target $instance -Continue
                 }
 
