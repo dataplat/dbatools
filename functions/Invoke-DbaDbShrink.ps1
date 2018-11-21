@@ -62,8 +62,8 @@ function Invoke-DbaDbShrink {
         Data - Just the Data files are shrunk using file shrink
         Log - Just the Log files are shrunk using file shrink
 
-    .PARAMETER StepSizeMB
-        If specified, this will chunk a larger shrink operation into multiple smaller shrinks.
+    .PARAMETER StepSize
+        Measured by MB. If specified, this will chunk a larger shrink operation into multiple smaller shrinks.
         If shrinking a file by a large amount there are benefits of doing multiple smaller chunks.
 
     .PARAMETER ExcludeIndexStats
@@ -109,7 +109,7 @@ function Invoke-DbaDbShrink {
         Shrinks AdventureWorks2014 to have 50% free space. So let's say AdventureWorks2014 was 1GB and it's using 100MB space. The database free space would be reduced to 50MB.
 
     .EXAMPLE
-        PS C:\> Invoke-DbaDbShrink -SqlInstance sql2014 -Database AdventureWorks2014 -PercentFreeSpace 50 -FileType Data -StepSizeMB 25
+        PS C:\> Invoke-DbaDbShrink -SqlInstance sql2014 -Database AdventureWorks2014 -PercentFreeSpace 50 -FileType Data -StepSize 25
 
         Shrinks AdventureWorks2014 to have 50% free space, runs shrinks in 25MB chunks for improved performance.
 
@@ -136,7 +136,7 @@ function Invoke-DbaDbShrink {
         [string]$ShrinkMethod = "Default",
         [ValidateSet('All', 'Data', 'Log')]
         [string]$FileType = "All",
-        [int]$StepSizeMB,
+        [int]$StepSize,
         [int]$StatementTimeout = 0,
         [switch]$LogsOnly,
         [switch]$ExcludeIndexStats,
@@ -155,7 +155,7 @@ function Invoke-DbaDbShrink {
             return
         }
 
-        $StepSizeKB = ($stepSizeMB * 1024)
+        $StepSizeKB = ($StepSize * 1024)
 
         $StatementTimeoutSeconds = $StatementTimeout * 60
 
@@ -240,12 +240,12 @@ function Invoke-DbaDbShrink {
 
                                 $shrinkGap = ($startingSize - $desiredFileSize)
                                 Write-Message -Level Verbose -Message "ShrinkGap: $([int]$shrinkGap) KB"
-                                Write-Message -Level Verbose -Message "Step Size: $([int]$StepSizeMB) MB"
+                                Write-Message -Level Verbose -Message "Step Size: $([int]$StepSize) MB"
 
                                 if ($StepSizeKB -and ($shrinkGap -gt $stepSizeKB)) {
                                     for ($i = 1; $i -le [int](($shrinkGap) / $stepSizeKB); $i++) {
                                         Write-Message -Level Verbose -Message "Step: $i"
-                                        $shrinkSize = $startingSize - (($stepSizeMB * 1024) * $i)
+                                        $shrinkSize = $startingSize - (($StepSize * 1024) * $i)
                                         if ($shrinkSize -lt $desiredFileSize) {
                                             $shrinkSize = $desiredFileSize
                                         }
