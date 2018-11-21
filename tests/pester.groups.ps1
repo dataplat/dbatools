@@ -25,6 +25,7 @@ $TestsRunGroups = @{
         'Uninstall-DbaSqlWatch',
         # weird too often
         'Add-DbaComputerCertificate',
+        'Get-DbaComputerCertificate',
         # a bug in SMO prevents availability group scripting :(
         'Export-DbaAvailabilityGroup',
         'Get-DbaCpuRingBuffer',
