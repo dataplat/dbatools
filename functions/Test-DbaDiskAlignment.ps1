@@ -237,19 +237,19 @@ function Test-DbaDiskAlignment {
                     }
 
                     [PSCustomObject]@{
-                        ComputerName              = $ogcomputer
-                        Name                      = "$($partition.Name)"
-                        PartitonSize              = [dbasize]($($partition.Size / 1MB) * 1024 * 1024)
-                        PartitionType             = $partition.Type
-                        TestingStripeSize         = [dbasize]($size * 1024)
-                        OffsetModuluCalculation   = [dbasize]($OffsetModuloKB * 1024)
-                        StartingOffset            = [dbasize]($offset * 1024)
-                        IsOffsetBestPractice      = $IsOffsetBestPractice
-                        IsBestPractice            = $isBestPractice
-                        NumberOfBlocks            = $partition.NumberOfBlocks
-                        BootPartition             = $partition.BootPartition
-                        PartitionBlockSize        = $partition.BlockSize
-                        IsDynamicDisk             = $IsDynamicDisk
+                        ComputerName            = $ogcomputer
+                        Name                    = "$($partition.Name)"
+                        PartitonSize            = [dbasize]($($partition.Size / 1MB) * 1024 * 1024)
+                        PartitionType           = $partition.Type
+                        TestingStripeSize       = [dbasize]($size * 1024)
+                        OffsetModuluCalculation = [dbasize]($OffsetModuloKB * 1024)
+                        StartingOffset          = [dbasize]($offset * 1024)
+                        IsOffsetBestPractice    = $IsOffsetBestPractice
+                        IsBestPractice          = $isBestPractice
+                        NumberOfBlocks          = $partition.NumberOfBlocks
+                        BootPartition           = $partition.BootPartition
+                        PartitionBlockSize      = $partition.BlockSize
+                        IsDynamicDisk           = $IsDynamicDisk
                     }
                 }
             }

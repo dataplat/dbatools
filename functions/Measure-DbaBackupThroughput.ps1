@@ -161,18 +161,18 @@ function Measure-DbaBackupThroughput {
                     $avgduration = $db.Group | ForEach-Object { New-TimeSpan -Start $_.Start -End $_.End } | Measure-Object -Average TotalSeconds
 
                     [pscustomobject]@{
-                        ComputerName    = $db.Group.ComputerName | Select-Object -First 1
-                        InstanceName    = $db.Group.InstanceName | Select-Object -First 1
-                        SqlInstance     = $db.Group.SqlInstance | Select-Object -First 1
-                        Database        = $db.Name
-                        AvgThroughput   = [dbasize]([System.Math]::Round($measuremb.Average, 2) * 1024 * 1024)
-                        AvgSize         = [dbasize]([System.Math]::Round($measuresize.Average, 2) * 1024 * 1024)
-                        AvgDuration     = [dbatimespan](New-TimeSpan -Seconds $avgduration.Average)
-                        MinThroughput   = [dbasize]([System.Math]::Round($measuremb.Minimum, 2) * 1024 * 1024)
-                        MaxThroughput   = [dbasize]([System.Math]::Round($measuremb.Maximum, 2) * 1024 * 1024)
-                        MinBackupDate   = [dbadatetime]$measurestart.Minimum
-                        MaxBackupDate   = [dbadatetime]$measureend.Maximum
-                        BackupCount     = $db.Count
+                        ComputerName  = $db.Group.ComputerName | Select-Object -First 1
+                        InstanceName  = $db.Group.InstanceName | Select-Object -First 1
+                        SqlInstance   = $db.Group.SqlInstance | Select-Object -First 1
+                        Database      = $db.Name
+                        AvgThroughput = [dbasize]([System.Math]::Round($measuremb.Average, 2) * 1024 * 1024)
+                        AvgSize       = [dbasize]([System.Math]::Round($measuresize.Average, 2) * 1024 * 1024)
+                        AvgDuration   = [dbatimespan](New-TimeSpan -Seconds $avgduration.Average)
+                        MinThroughput = [dbasize]([System.Math]::Round($measuremb.Minimum, 2) * 1024 * 1024)
+                        MaxThroughput = [dbasize]([System.Math]::Round($measuremb.Maximum, 2) * 1024 * 1024)
+                        MinBackupDate = [dbadatetime]$measurestart.Minimum
+                        MaxBackupDate = [dbadatetime]$measureend.Maximum
+                        BackupCount   = $db.Count
                     } | Select-DefaultView -ExcludeProperty ComputerName, InstanceName
                 }
             }
