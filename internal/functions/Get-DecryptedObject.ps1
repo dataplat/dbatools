@@ -142,6 +142,12 @@ function Get-DecryptedObject {
             return $dt
         }
     } catch {
+        try {
+            $conn.Close()
+            $conn.Dispose()
+        } catch {
+            $null = 1    
+        }
         Stop-Function -Message "Can't establish local DAC connection on $sourcename." -Target $server -ErrorRecord $_
         return
     }
