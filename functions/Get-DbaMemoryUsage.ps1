@@ -102,8 +102,7 @@ function Get-DbaMemoryUsage {
                         CounterInstance = (($_.Path.split("\")[-2]).replace("mssql`$", "")).split(':')[1]
                         Counter         = $_.Path.split("\")[-1]
                         Pages           = $null
-                        MemKB           = $_.cookedvalue
-                        MemMB           = $_.cookedvalue / 1024
+                        Memory          = $_.cookedvalue / 1024
                     }
                 }
             } catch {
@@ -125,8 +124,7 @@ function Get-DbaMemoryUsage {
                         CounterInstance = (($_.Path.split("\")[-2]).replace("mssql`$", "")).split(':')[1]
                         Counter         = $_.Path.split("\")[-1]
                         Pages           = $_.cookedvalue
-                        MemKB           = $_.cookedvalue * 8192 / 1024
-                        MemMB           = $_.cookedvalue * 8192 / 1048576
+                        Memory          = $_.cookedvalue * 8192 / 1048576
                     }
                 }
             } catch {
@@ -148,8 +146,7 @@ function Get-DbaMemoryUsage {
                         CounterInstance = (($_.Path.split("\")[-2]).replace("mssql`$", "")).split(':')[1]
                         Counter         = $_.Path.split("\")[-1]
                         Pages           = $_.cookedvalue
-                        MemKB           = $_.cookedvalue * 8192 / 1024.0
-                        MemMB           = $_.cookedvalue * 8192 / 1048576.0
+                        Memory          = $_.cookedvalue * 8192 / 1048576.0
                     }
                 }
             } catch {
@@ -171,8 +168,7 @@ function Get-DbaMemoryUsage {
                         CounterInstance = (($_.Path.split("\")[-2]).replace("mssql`$", "")).split(':')[1]
                         Counter         = $_.Path.split("\")[-1]
                         Pages           = $null
-                        MemKB           = $_.cookedvalue
-                        MemMB           = $_.cookedvalue / 1024
+                        Memory           = $_.cookedvalue / 1024
                     }
                 }
             } catch {
@@ -194,8 +190,7 @@ function Get-DbaMemoryUsage {
                         CounterInstance = (($_.Path.split("\")[-2]).replace("mssql`$", "")).split(':')[1]
                         Counter         = $_.Path.split("\")[-1]
                         Pages           = $null
-                        MemKB           = $_.cookedvalue / 1024
-                        MemMB           = $_.cookedvalue / 1024 / 1024
+                        Memory          = $_.cookedvalue / 1024 / 1024
                     }
                 }
             } catch {
@@ -211,7 +206,16 @@ function Get-DbaMemoryUsage {
             if ($reply.FullComputerName) {
                 $Computer = $reply.FullComputerName
                 try {
-                    Invoke-Command2 -ComputerName $Computer -Credential $Credential -ScriptBlock $scriptblock -argumentlist $Memcounters, $Plancounters, $BufManpagecounters, $SSAScounters, $SSIScounters
+                    foreach ($result in (Invoke-Command2 -ComputerName $Computer -Credential $Credential -ScriptBlock $scriptblock -argumentlist $Memcounters, $Plancounters, $BufManpagecounters, $SSAScounters, $SSIScounters)) {
+                        [PSCustomObject]@{
+                            ComputerName    = $result.ComputerName
+                            SqlInstance     = $result.SqlInstance
+                            CounterInstance = $result.CounterInstance
+                            Counter         = $result.Counter
+                            Pages           = $result.Pages
+                            Memory          = [dbasize]($result.Memory * 1024 * 1024)
+                        }
+                    }
                 } catch {
                     Stop-Function -Message "Failure" -ErrorRecord $_ -Target $computer -Continue
                 }
