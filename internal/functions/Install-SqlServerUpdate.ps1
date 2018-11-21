@@ -57,15 +57,16 @@ function Install-SqlServerUpdate {
         foreach ($currentVersion in $currentVersionGroups) {
             # create a parameter set for Find-SqlServerUpdate
             $params = @{
-                'Architecture'     = $arch
-                'SqlServerVersion' = $currentVersion.NameLevel
+                Architecture = $arch
+                MajorVersion = $currentVersion.NameLevel
+                RepositoryPath = $RepositoryPath
             }
             if ($Latest) {
                 #Find latest SQL Server build and corresponding SP and CU KBs
                 $latestCU = Test-DbaBuild -Build $currentVersion.Build -MaxBehind '0CU'
-                if ($latestCU.CUTarget) {
+                if (!$latestCU.Compliant) {
                     #more recent build is found, get KB number depending on what is the current upgrade $Type
-                    $targetKB = Get-DbaBuildReference -Build $latestCU.CUTarget
+                    $targetKB = Get-DbaBuildReference -Build $latestCU.BuildTarget
                     if ($Type -eq 'CumulativeUpdate') {
                         $params.KB = $targetKB.KBLevel
                     } elseif ($Type -eq 'ServicePack') {
@@ -106,7 +107,7 @@ function Install-SqlServerUpdate {
             }
             ## Find the installer to use
             if (-not ($installer = Find-SqlServerUpdate @params)) {
-                Stop-Function -Message "Could not find installer for the update [$($params.KB)]" -EnableException $true
+                Stop-Function -Message "Could not find installer for the update KB$($params.KB)" -EnableException $true
             }
             ## Apply patch
             if ($PSCmdlet.ShouldProcess($ComputerName, "Install $Type $($targetKB.KBLevel) ($($installer.Name)) for SQL Server $($currentVersion.BuildLevel)")) {
