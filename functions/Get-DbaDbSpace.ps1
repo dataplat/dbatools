@@ -63,7 +63,7 @@ function Get-DbaDbSpace {
         PS C:\> Get-DbaDbSpace -SqlInstance localhost -Database db1, db2 | Where-Object { $_.SpaceUntilMaxSize.Gigabyte -lt 1 }
 
         Returns database files and free space information for the db1 and db2 on localhost where there is only 1GB left until the space is maxed out
-    
+
     #>
     [CmdletBinding()]
     param ([parameter(ValueFromPipeline, Mandatory)]
@@ -199,23 +199,23 @@ function Get-DbaDbSpace {
                         }
 
                         [pscustomobject]@{
-                            ComputerName         = $server.ComputerName
-                            InstanceName         = $server.ServiceName
-                            SqlInstance          = $server.DomainInstanceName
-                            Database             = $row.DBName
-                            FileName             = $row.FileName
-                            FileGroup            = $row.FileGroup
-                            PhysicalName         = $row.PhysicalName
-                            FileType             = $row.FileType
-                            UsedSpace            = [dbasize]($UsedMB * 1024 * 1024)
-                            FreeSpace            = [dbasize]($FreeMB * 1024 * 1024)
-                            FileSize             = [dbasize]($row.FileSizeMB * 1024 * 1024)
-                            PercentUsed          = $PercentUsed
-                            AutoGrowth           = [dbasize]($row.GrowthMB * 1024 * 1024)
-                            AutoGrowType         = $row.GrowthType
-                            SpaceUntilMaxSize    = [dbasize]($SpaceUntilMax * 1024 * 1024)
-                            AutoGrowthPossible   = [dbasize]($row.PossibleAutoGrowthMB * 1024 * 1024)
-                            UnusableSpace        = [dbasize]($UnusableSpace * 1024 * 1024)
+                            ComputerName       = $server.ComputerName
+                            InstanceName       = $server.ServiceName
+                            SqlInstance        = $server.DomainInstanceName
+                            Database           = $row.DBName
+                            FileName           = $row.FileName
+                            FileGroup          = $row.FileGroup
+                            PhysicalName       = $row.PhysicalName
+                            FileType           = $row.FileType
+                            UsedSpace          = [dbasize]($UsedMB * 1024 * 1024)
+                            FreeSpace          = [dbasize]($FreeMB * 1024 * 1024)
+                            FileSize           = [dbasize]($row.FileSizeMB * 1024 * 1024)
+                            PercentUsed        = $PercentUsed
+                            AutoGrowth         = [dbasize]($row.GrowthMB * 1024 * 1024)
+                            AutoGrowType       = $row.GrowthType
+                            SpaceUntilMaxSize  = [dbasize]($SpaceUntilMax * 1024 * 1024)
+                            AutoGrowthPossible = [dbasize]($row.PossibleAutoGrowthMB * 1024 * 1024)
+                            UnusableSpace      = [dbasize]($UnusableSpace * 1024 * 1024)
                         }
                     }
                 } catch {
