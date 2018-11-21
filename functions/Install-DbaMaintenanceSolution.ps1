@@ -103,11 +103,10 @@ function Install-DbaMaintenanceSolution {
         - 'DatabaseBackup - USER_DATABASES - DIFF'
 
     #>
-    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "High")]
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Medium")]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseSingularNouns", "", Justification = "Internal functions are ignored")]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
-        [Alias('ServerInstance', 'SqlServer')]
         [DbaInstance[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [object]$Database = "master",
@@ -121,11 +120,24 @@ function Install-DbaMaintenanceSolution {
         [switch]$InstallJobs,
         [string]$LocalFile,
         [switch]$Force,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 
     begin {
+        if ($InstallJobs -and $Solution -ne 'All') {
+            Stop-Function -Message "Jobs can only be created for all solutions. To create SQL Agent jobs you need to use '-Solution All' (or not specify the Solution and let it default to All) and '-InstallJobs'."
+            return
+        }
+
+        if ((Test-Bound -ParameterName CleanupTime) -and -not $InstallJobs) {
+            Stop-Function -Message "CleanupTime is only useful when installing jobs. To install jobs, please use '-InstallJobs' in addition to CleanupTime."
+            return
+        }
+
+        if ($ReplaceExisting -eq $true) {
+            Write-Message -Level Verbose -Message "If Ola Hallengren's scripts are found, we will drop and recreate them!"
+        }
+
         $DbatoolsData = Get-DbatoolsConfigValue -FullName "Path.DbatoolsData"
 
         $url = "https://github.com/olahallengren/sql-server-maintenance-solution/archive/master.zip"
@@ -222,7 +234,7 @@ function Install-DbaMaintenanceSolution {
                 }
 
                 # OutputFileDirectory
-                if ($OutputFileDirectory.Length -gt 0) {
+                if (-not $OutputFileDirectory) {
                     $findOutputFileDirectory = 'SET @OutputFileDirectory = NULL'
                     $replaceOutputFileDirectory = 'SET @OutputFileDirectory = N''' + $OutputFileDirectory + ''''
                     $fileContents[$file] = $fileContents[$file].Replace($findOutputFileDirectory, $replaceOutputFileDirectory)
@@ -236,7 +248,7 @@ function Install-DbaMaintenanceSolution {
                 }
 
                 # Create Jobs
-                if ($InstallJobs -eq $false) {
+                if (-not $InstallJobs) {
                     $findCreateJobs = "SET @CreateJobs          = 'Y'"
                     $replaceCreateJobs = "SET @CreateJobs          = 'N'"
                     $fileContents[$file] = $fileContents[$file].Replace($findCreateJobs, $replaceCreateJobs)
@@ -247,6 +259,9 @@ function Install-DbaMaintenanceSolution {
     }
 
     process {
+        if (Test-FunctionInterrupt) {
+            return
+        }
 
         foreach ($instance in $SqlInstance) {
             try {
@@ -272,19 +287,6 @@ function Install-DbaMaintenanceSolution {
             Write-Message -Level Output -Message "Ola Hallengren's solution will be installed on database $Database."
 
             $db = $server.Databases[$Database]
-
-            if ($InstallJobs -and $Solution -ne 'All') {
-                Stop-Function -Message "To create SQL Agent jobs you need to use '-Solution All' and '-InstallJobs'."
-                return
-            }
-
-            if ($ReplaceExisting -eq $true) {
-                Write-Message -Level Verbose -Message "If Ola Hallengren's scripts are found, we will drop and recreate them!"
-            }
-
-            if ($CleanupTime -ne 0 -and $InstallJobs -eq $false) {
-                Write-Message -Level Output -Message "CleanupTime $CleanupTime value will be ignored because you chose not to create SQL Agent Jobs."
-            }
 
             # Required
             $required = @('CommandExecute.sql')
@@ -366,9 +368,6 @@ function Install-DbaMaintenanceSolution {
                 Stop-Function -Message "Could not execute $shortFileName in $Database on $instance." -ErrorRecord $_ -Target $db -Continue
             }
         }
-
-
-
         # Only here due to need for non-pooled connection in this command
         try {
             $server.ConnectionContext.Disconnect()

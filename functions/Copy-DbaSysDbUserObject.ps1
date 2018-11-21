@@ -228,7 +228,7 @@ function Copy-DbaSysDbUserObject {
                         $copyobject | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                     }
 
-                    $userobjects = Get-DbaModule -SqlInstance $sourceserver -Database $systemDb -NoSystemObjects | Sort-Object Type
+                    $userobjects = Get-DbaModule -SqlInstance $sourceserver -Database $systemDb -ExcludeSystemObjects | Sort-Object Type
                     Write-Message -Level Verbose -Message "Copying from $systemDb"
                     foreach ($userobject in $userobjects) {
 
@@ -250,7 +250,7 @@ function Copy-DbaSysDbUserObject {
                         Write-Message -Level Debug -Message $sql
                         try {
                             Write-Message -Level Verbose -Message "Searching for $name in $db on $destinstance"
-                            $result = Get-DbaModule -SqlInstance $destServer -NoSystemObjects -Database $db |
+                            $result = Get-DbaModule -SqlInstance $destServer -ExcludeSystemObjects -Database $db |
                                 Where-Object { $psitem.Name -eq $userobject.Name -and $psitem.Type -eq $userobject.Type }
                             if ($result) {
                                 Write-Message -Level Verbose -Message "Found $name in $db on $destinstance"

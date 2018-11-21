@@ -23,6 +23,9 @@ $TestsRunGroups = @{
         # takes too long
         'Install-DbaSqlWatch',
         'Uninstall-DbaSqlWatch',
+        # weird too often
+        'Add-DbaComputerCertificate',
+        'Get-DbaComputerCertificate',
         # a bug in SMO prevents availability group scripting :(
         'Export-DbaAvailabilityGroup',
         'Get-DbaCpuRingBuffer',
@@ -41,7 +44,8 @@ $TestsRunGroups = @{
         'Test-DbaDeprecatedFeature',
         'Test-DbaServerName',
         'Test-DbaTempDbConfig',
-        'Test-DbaLastBackup'
+        'Test-DbaLastBackup',
+        'Test-DbaDbVirtualLogFile'
     )
     # do not run everywhere
     "disabled"          = @()

@@ -16,7 +16,7 @@ function Restore-DbaDbCertificate {
     .PARAMETER Path
         The Path the contains the certificate and private key files. The path can be a directory or a specific certificate.
 
-    .PARAMETER Password
+    .PARAMETER SecurePassword
         Secure string used to decrypt the private key.
 
     .PARAMETER EncryptionPassword
@@ -48,12 +48,12 @@ function Restore-DbaDbCertificate {
         https://dbatools.io/Restore-DbaDbCertificate
 
     .EXAMPLE
-        PS C:\> Restore-DbaDbCertificate -SqlInstance Server1 -Path \\Server1\Certificates -Password (ConvertTo-SecureString -Force -AsPlainText GoodPass1234!!)
+        PS C:\> Restore-DbaDbCertificate -SqlInstance Server1 -Path \\Server1\Certificates -SecurePassword (ConvertTo-SecureString -Force -AsPlainText GoodPass1234!!)
 
         Restores all the certificates in the specified path, password is used to both decrypt and encrypt the private key.
 
     .EXAMPLE
-        PS C:\> Restore-DbaDbCertificate -SqlInstance Server1 -Path \\Server1\Certificates\DatabaseTDE.cer -Password (ConvertTo-SecureString -force -AsPlainText GoodPass1234!!)
+        PS C:\> Restore-DbaDbCertificate -SqlInstance Server1 -Path \\Server1\Certificates\DatabaseTDE.cer -SecurePassword (ConvertTo-SecureString -force -AsPlainText GoodPass1234!!)
 
         Restores the DatabaseTDE certificate to Server1 and uses the MasterKey to encrypt the private key.
 
@@ -68,7 +68,8 @@ function Restore-DbaDbCertificate {
         [object[]]$Path,
         [Security.SecureString]$EncryptionPassword,
         [string]$Database = "master",
-        [Security.SecureString]$Password = (Read-Host "Password" -AsSecureString),
+        [Alias("Password")]
+        [Security.SecureString]$SecurePassword = (Read-Host "Password" -AsSecureString),
         [switch]$EnableException
     )
     process {

@@ -43,7 +43,7 @@ function Start-DbaMigration {
     .PARAMETER Destination
         Destination SQL Server. You may specify multiple servers.
 
-        Note that when using -BackupRestore with multiple servers, the backup will only be performed once and backups will be deleted at the end (if you didn't specify -NoBackupCleanup).
+        Note that when using -BackupRestore with multiple servers, the backup will only be performed once and backups will be deleted at the end (if you didn't specify -ExcludeBackupCleanup).
 
         When using -DetachAttach with multiple servers, -Reattach must be specified.
 
@@ -179,7 +179,7 @@ function Start-DbaMigration {
         >> "dbatools:Destination" = "sql2016"
         >> }
         >>
-        PS C:\> Start-DbaMigration -Verbose -NoDatabases -NoLogins
+        PS C:\> Start-DbaMigration -Verbose -Exclude Databases, Logins
 
         Utilizes the PSDefaultParameterValues system variable, and sets the Source and Destination parameters for any function in the module that has those parameter names. This prevents the need from passing them in constantly.
         The execution of the function will migrate everything but logins and databases.
@@ -192,6 +192,7 @@ function Start-DbaMigration {
         [switch]$DetachAttach,
         [switch]$Reattach,
         [switch]$BackupRestore,
+        [Alias("NetworkShare")]
         [parameter(HelpMessage = "Specify a valid network share in the format \\server\share that can be accessed by your account and both Sql Server service accounts.")]
         [string]$SharedPath,
         [switch]$WithReplace,
@@ -213,6 +214,8 @@ function Start-DbaMigration {
     )
     
     begin {
+        Test-DbaDeprecation -DeprecatedOn 1.0.0 -Parameter NetworkShare -CustomMessage "Using the parameter NetworkShare is deprecated. This parameter will be removed in version 1.0.0 or before. Use SharedPath instead."
+        
         if ($Exclude -notcontains "Databases") {
             if (-not $BackupRestore -and -not $DetachAttach) {
                 Stop-Function -Message "You must specify a database migration method (-BackupRestore or -DetachAttach) or -Exclude Databases"
@@ -280,7 +283,7 @@ function Start-DbaMigration {
 
         if ($Exclude -notcontains 'CentralManagementServer') {
             Write-Message -Level Verbose -Message "Migrating Central Management Server"
-            Copy-DbaCentralManagementServer -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Force:$Force
+            Copy-DbaCmsRegServer -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Force:$Force
         }
 
         if ($Exclude -notcontains 'BackupDevices') {
@@ -364,7 +367,7 @@ function Start-DbaMigration {
 
         if ($Exclude -notcontains 'ExtendedEvents') {
             Write-Message -Level Verbose -Message "Migrating Extended Events"
-            Copy-DbaExtendedEvent -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Force:$Force
+            Copy-DbaXESession -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Force:$Force
         }
 
         if ($Exclude -notcontains 'AgentServer') {

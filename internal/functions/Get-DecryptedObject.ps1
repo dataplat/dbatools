@@ -6,7 +6,7 @@ function Get-DecryptedObject {
                 This function is heavily based on Antti Rantasaari's script at http://goo.gl/wpqSib
                 Antti Rantasaari 2014, NetSPI
                 License: BSD 3-Clause http://opensource.org/licenses/BSD-3-Clause
-               #>
+    #>
     param (
         [Parameter(Mandatory)]
         [Microsoft.SqlServer.Management.Smo.Server]$SqlInstance,
@@ -112,14 +112,14 @@ function Get-DecryptedObject {
     $sql = switch ($Type) {
         "LinkedServer" {
             "SELECT sysservers.srvname,
-                    syslnklgns.Name,
-                    substring(syslnklgns.pwdhash,5,$ivlen) iv,
-                    substring(syslnklgns.pwdhash,$($ivlen + 5),
-                    len(syslnklgns.pwdhash)-$($ivlen + 4)) pass
-                FROM master.sys.syslnklgns
-                    inner join master.sys.sysservers
-                    on syslnklgns.srvid=sysservers.srvid
-                WHERE len(pwdhash) > 0"
+                syslnklgns.Name,
+                substring(syslnklgns.pwdhash,5,$ivlen) iv,
+                substring(syslnklgns.pwdhash,$($ivlen + 5),
+                len(syslnklgns.pwdhash)-$($ivlen + 4)) pass
+            FROM master.sys.syslnklgns
+                inner join master.sys.sysservers
+                on syslnklgns.srvid=sysservers.srvid
+            WHERE len(pwdhash) > 0"
         }
         "Credential" {
             "SELECT QUOTENAME(name) AS name,credential_identity,substring(imageval,5,$ivlen) iv, substring(imageval,$($ivlen + 5),len(imageval)-$($ivlen + 4)) pass from sys.Credentials cred inner join sys.sysobjvalues obj on cred.credential_id = obj.objid where valclass=28 and valnum=2"
@@ -133,15 +133,21 @@ function Get-DecryptedObject {
         $results = Invoke-Command2 -ErrorAction Stop -Raw -Credential $Credential -ComputerName $sourceNetBios -ArgumentList $connString, $sql {
             $connString = $args[0]; $sql = $args[1]
             $conn = New-Object System.Data.SqlClient.SQLConnection($connString)
-            $conn.open()
-            $cmd = New-Object System.Data.SqlClient.SqlCommand($sql, $conn);
+            $cmd = New-Object System.Data.SqlClient.SqlCommand($sql, $conn)
             $dt = New-Object System.Data.DataTable
+            $conn.open()
             $dt.Load($cmd.ExecuteReader())
             $conn.Close()
             $conn.Dispose()
             return $dt
         }
     } catch {
+        try {
+            $conn.Close()
+            $conn.Dispose()
+        } catch {
+            $null = 1
+        }
         Stop-Function -Message "Can't establish local DAC connection on $sourcename." -Target $server -ErrorRecord $_
         return
     }

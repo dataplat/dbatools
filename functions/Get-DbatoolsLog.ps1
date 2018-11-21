@@ -30,6 +30,9 @@ function Get-DbatoolsLog {
         How many executions to skip when specifying '-Last'.
         Has no effect without the '-Last' parameter.
 
+    .PARAMETER Raw
+        By default, messages such as SQL statements are flattened. Use raw to see the output without flattened formatting.
+
     .PARAMETER Runspace
         The guid of the runspace to return messages from.
         By default, messages from all runspaces are returned.
@@ -77,52 +80,43 @@ function Get-DbatoolsLog {
     #>
     [CmdletBinding()]
     param (
-        [string]
-        $FunctionName = "*",
-
-        [string]
-        $ModuleName = "*",
-
+        [string]$FunctionName = "*",
+        [string]$ModuleName = "*",
         [AllowNull()]
-        $Target,
-
-        [string[]]
-        $Tag,
-
-        [int]
-        $Last,
-
-        [int]
-        $Skip = 0,
-
-        [guid]
-        $Runspace,
-
-        [Sqlcollaborative.Dbatools.Message.MessageLevel[]]
-        $Level,
-
-        [switch]
-        $Errors
+        [object]$Target,
+        [string[]]$Tag,
+        [int]$Last,
+        [int]$Skip = 0,
+        [guid]$Runspace,
+        [Sqlcollaborative.Dbatools.Message.MessageLevel[]]$Level,
+        [switch]$Raw,
+        [switch]$Errors
     )
-
-    begin {
-
-    }
-
     process {
-        if ($Errors) { $messages = [Sqlcollaborative.Dbatools.Message.LogHost]::GetErrors() | Where-Object { ($_.FunctionName -like $FunctionName) -and ($_.ModuleName -like $ModuleName) } }
-        else { $messages = [Sqlcollaborative.Dbatools.Message.LogHost]::GetLog() | Where-Object { ($_.FunctionName -like $FunctionName) -and ($_.ModuleName -like $ModuleName) } }
+        if ($Errors) {
+            $messages = [Sqlcollaborative.Dbatools.Message.LogHost]::GetErrors() | Where-Object {
+                ($_.FunctionName -like $FunctionName) -and ($_.ModuleName -like $ModuleName)
+            }
+        } else {
+            $messages = [Sqlcollaborative.Dbatools.Message.LogHost]::GetLog() | Where-Object {
+                ($_.FunctionName -like $FunctionName) -and ($_.ModuleName -like $ModuleName)
+            }
+        }
 
         if (Test-Bound -ParameterName Target) {
-            $messages = $messages | Where-Object TargetObject -EQ $Target
+            $messages = $messages | Where-Object TargetObject -eq $Target
         }
 
         if (Test-Bound -ParameterName Tag) {
-            $messages = $messages | Where-Object { $_.Tags | Where-Object { $_ -in $Tag } }
+            $messages = $messages | Where-Object {
+                $_.Tags | Where-Object {
+                    $_ -in $Tag
+                }
+            }
         }
 
         if (Test-Bound -ParameterName Runspace) {
-            $messages = $messages | Where-Object Runspace -EQ $Runspace
+            $messages = $messages | Where-Object Runspace -eq $Runspace
         }
 
         if (Test-Bound -ParameterName Last) {
@@ -130,17 +124,28 @@ function Get-DbatoolsLog {
             $start = $history[0].StartExecutionTime
             $end = $history[-1].EndExecutionTime
 
-            $messages = $messages | Where-Object { ($_.Timestamp -gt $start) -and ($_.Timestamp -lt $end) -and ($_.Runspace -eq ([System.Management.Automation.Runspaces.Runspace]::DefaultRunspace.InstanceId)) }
+            $messages = $messages | Where-Object {
+                ($_.Timestamp -gt $start) -and ($_.Timestamp -lt $end) -and ($_.Runspace -eq ([System.Management.Automation.Runspaces.Runspace]::DefaultRunspace.InstanceId))
+            }
         }
 
         if (Test-Bound -ParameterName Level) {
             $messages = $messages | Where-Object Level -In $Level
         }
 
-        return $messages
-    }
-
-    end {
-
+        if ($Raw) {
+            return $messages
+        } else {
+            $messages | Select-Object -Property CallStack, ComputerName, File, FunctionName, Level, Line, @{
+                Name       = "Message"
+                Expression = {
+                    $msg = ($_.Message.Split("`n") -join " ")
+                    do {
+                        $msg = $msg.Replace('  ', ' ')
+                    } until ($msg -notmatch '  ')
+                    $msg
+                }
+            }, ModuleName, Runspace, Tags, TargetObject, Timestamp, Type, Username
+        }
     }
 }
