@@ -291,11 +291,6 @@ function Start-DbaMigration {
             Copy-DbaBackupDevice -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Force:$Force
         }
 
-        if ($Exclude -notcontains 'LinkedServers') {
-            Write-Message -Level Verbose -Message "Migrating linked servers"
-            Copy-DbaLinkedServer -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Force:$Force
-        }
-
         if ($Exclude -notcontains 'SystemTriggers') {
             Write-Message -Level Verbose -Message "Migrating System Triggers"
             Copy-DbaServerTrigger -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Force:$Force
@@ -327,7 +322,12 @@ function Start-DbaMigration {
                 $null = Update-SqlDbOwner -Source $sourceserver -Destination $dest -DestinationSqlCredential $DestinationSqlCredential
             }
         }
-
+        
+        if ($Exclude -notcontains 'LinkedServers') {
+            Write-Message -Level Verbose -Message "Migrating linked servers"
+            Copy-DbaLinkedServer -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Force:$Force
+        }
+        
         if ($Exclude -notcontains 'DataCollector') {
             Write-Message -Level Verbose -Message "Migrating Data Collector collection sets"
             Copy-DbaDataCollector -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Force:$Force
