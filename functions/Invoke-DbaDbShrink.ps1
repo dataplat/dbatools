@@ -63,7 +63,9 @@ function Invoke-DbaDbShrink {
         Log - Just the Log files are shrunk using file shrink
 
     .PARAMETER StepSize
-        Measured by MB. If specified, this will chunk a larger shrink operation into multiple smaller shrinks.
+        Measured in bits - but no worries! PowerShell has a very cool way of formatting bits. Just specify something like: 1MB or 10GB. See the examples for more information.
+
+        If specified, this will chunk a larger shrink operation into multiple smaller shrinks.
         If shrinking a file by a large amount there are benefits of doing multiple smaller chunks.
 
     .PARAMETER ExcludeIndexStats
@@ -109,7 +111,7 @@ function Invoke-DbaDbShrink {
         Shrinks AdventureWorks2014 to have 50% free space. So let's say AdventureWorks2014 was 1GB and it's using 100MB space. The database free space would be reduced to 50MB.
 
     .EXAMPLE
-        PS C:\> Invoke-DbaDbShrink -SqlInstance sql2014 -Database AdventureWorks2014 -PercentFreeSpace 50 -FileType Data -StepSize 25
+        PS C:\> Invoke-DbaDbShrink -SqlInstance sql2014 -Database AdventureWorks2014 -PercentFreeSpace 50 -FileType Data -StepSize 25MB
 
         Shrinks AdventureWorks2014 to have 50% free space, runs shrinks in 25MB chunks for improved performance.
 
@@ -150,13 +152,19 @@ function Invoke-DbaDbShrink {
             Test-DbaDeprecation -DeprecatedOn "1.0.0" -Parameter "LogsOnly"
             $FileType = 'Log'
         }
-        if (!$Database -and !$ExcludeDatabase -and !$AllUserDatabases) {
+        if (-not $Database -and -not $ExcludeDatabase -and -not $AllUserDatabases) {
             Stop-Function -Message "You must specify databases to execute against using either -Database, -Exclude or -AllUserDatabases"
             return
         }
-
-        $StepSizeKB = ($StepSize * 1024)
-
+        
+        if ((Test-Bound -ParameterName StepSize) -and $stepsize -lt 1024) {
+            Stop-Function -Message "StepSize is measured in bits. Did you mean $StepSize bits? If so, please use 1024 or above. If not, then use the PowerShell bit notation like $($StepSize)MB or $($StepSize)GB"
+            return
+        }
+        
+        if ($stepsize) {
+            $StepSizeKB = ([dbasize]($StepSize)).Kilobyte
+        }
         $StatementTimeoutSeconds = $StatementTimeout * 60
 
         $sql = "SELECT
@@ -240,12 +248,12 @@ function Invoke-DbaDbShrink {
 
                                 $shrinkGap = ($startingSize - $desiredFileSize)
                                 Write-Message -Level Verbose -Message "ShrinkGap: $([int]$shrinkGap) KB"
-                                Write-Message -Level Verbose -Message "Step Size: $([int]$StepSize) MB"
+                                Write-Message -Level Verbose -Message "Step Size: $(([dbasize]$StepSize).Megabyte) MB"
 
                                 if ($StepSizeKB -and ($shrinkGap -gt $stepSizeKB)) {
                                     for ($i = 1; $i -le [int](($shrinkGap) / $stepSizeKB); $i++) {
                                         Write-Message -Level Verbose -Message "Step: $i"
-                                        $shrinkSize = $startingSize - (($StepSize * 1024) * $i)
+                                        $shrinkSize = $startingSize - (($StepSizeKB * 1024 * 1024) * $i)
                                         if ($shrinkSize -lt $desiredFileSize) {
                                             $shrinkSize = $desiredFileSize
                                         }
