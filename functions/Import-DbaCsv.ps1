@@ -302,15 +302,11 @@ function Import-DbaCsv {
                 $elapsed = [System.Diagnostics.Stopwatch]::StartNew()
                 # Open Connection to SQL Server
                 try {
-                    $server = Connect-DbaInstance -SqlInstance $instance -Credential $sqlcredential -ConnectTimeout 0
+                    $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential -StatementTimeout 0 -MinimumVersion 9
                     $sqlconn = $server.ConnectionContext.SqlConnectionObject
                     $sqlconn.Open()
                 } catch {
                     Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
-                }
-
-                if ($server.VersionMajor -eq 8) {
-                    Stop-Function -Message "SQL Server 2000 required - $instance not supported" -Target $instance -Continue
                 }
 
                 if ($PSCmdlet.ShouldProcess($instance, "Starting transaction in $Database")) {
