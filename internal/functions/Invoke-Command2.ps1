@@ -18,6 +18,12 @@ function Invoke-Command2 {
         .PARAMETER ScriptBlock
             The code to run on the targeted system
 
+        .PARAMETER Authentication
+            Choose an authentication to use for the connection
+
+        .PARAMETER ConfigurationName
+            Name of the remote PSSessionConfiguration to use. Should be registered already using Register-RemoteSessionConfiguration
+
         .PARAMETER ArgumentList
             Any arguments to pass to the scriptblock being run
 
@@ -38,6 +44,11 @@ function Invoke-Command2 {
         [object]$Credential,
         [scriptblock]$ScriptBlock,
         [object[]]$ArgumentList,
+        [parameter(ValueFromPipeline)]
+        [object[]]$InputObject,
+        [ValidateSet('Default', 'Basic', 'Negotiate', 'NegotiateWithImplicitCredential', 'Credssp', 'Digest', 'Kerberos')]
+        [string]$Authentication = 'Default',
+        [string]$ConfigurationName,
         [switch]$Raw
     )
     <# Note: Credential stays as an object type for legacy reasons. #>
@@ -48,19 +59,32 @@ function Invoke-Command2 {
     if ($ArgumentList) {
         $InvokeCommandSplat["ArgumentList"] = $ArgumentList
     }
+    if ($InputObject) {
+        $InvokeCommandSplat["InputObject"] = $InputObject
+    }
     if (-not $ComputerName.IsLocalHost) {
         $runspaceId = [System.Management.Automation.Runspaces.Runspace]::DefaultRunspace.InstanceId
         $sessionName = "dbatools_$runspaceId"
 
         # Retrieve a session from the session cache, if available (it's unique per runspace)
-        if (-not ($currentSession = [Sqlcollaborative.Dbatools.Connection.ConnectionHost]::PSSessionGet($runspaceId, $ComputerName.ComputerName) | Where-Object State -Match "Opened|Disconnected")) {
+        # Sessions with custom configurations should always run anew without reusing old ones
+        if ($ConfigurationName -or -not ($currentSession = [Sqlcollaborative.Dbatools.Connection.ConnectionHost]::PSSessionGet($runspaceId, $ComputerName.ComputerName) | Where-Object { $_.State -Match "Opened|Disconnected" } )) {
             $timeout = New-PSSessionOption -IdleTimeout (New-TimeSpan -Minutes 10).TotalMilliSeconds
-            if ($Credential) {
-                $InvokeCommandSplat["Session"] = (New-PSSession -ComputerName $ComputerName.ComputerName -Name $sessionName -SessionOption $timeout -Credential $Credential -ErrorAction Stop)
-            } else {
-                $InvokeCommandSplat["Session"] = (New-PSSession -ComputerName $ComputerName.ComputerName -Name $sessionName -SessionOption $timeout -ErrorAction Stop)
+            $psSessionSplat = @{
+                ComputerName   = $ComputerName.ComputerName
+                Authentication = $Authentication
+                Name           = $sessionName
+                SessionOption  = $timeout
+                ErrorAction    = 'Stop'
             }
-            $currentSession = $InvokeCommandSplat["Session"]
+            if ($Credential) {
+                $psSessionSplat += @{ Credential = $Credential }
+            }
+            if ($ConfigurationName) {
+                $psSessionSplat += @{ ConfigurationName = $ConfigurationName }
+            }
+            $currentSession = New-PSSession @psSessionSplat
+            $InvokeCommandSplat["Session"] = $currentSession
         } else {
             if ($currentSession.State -eq "Disconnected") {
                 $null = $currentSession | Connect-PSSession -ErrorAction Stop
