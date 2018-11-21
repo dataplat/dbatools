@@ -6,7 +6,7 @@ function Import-DbaCsv {
     .DESCRIPTION
         Import-DbaCsv takes advantage of .NET's super fast SqlBulkCopy class to import CSV files into SQL Server.
 
-        The entire import is contained within a transaction, so if a failure occurs or the script is aborted, no changes will persist.
+        The entire import is performed within a transaction, so if a failure occurs or the script is aborted, no changes will persist.
 
         If the table specified does not exist and -AutoCreateTable, it will be automatically created using slow and efficient but accomodating data types.
 
@@ -117,43 +117,37 @@ function Import-DbaCsv {
     .EXAMPLE
         PS C:\> Import-DbaCsv -Path C:\temp\housing.csv -SqlInstance sql001 -Database markets
 
-        Imports the entire comma-delimited housing.csv to the SQL "markets" database on a SQL Server named sql001.
+        Imports the entire comma-delimited housing.csv to the SQL "markets" database on a SQL Server named sql001, using the first row as column names.
 
         Since a table name was not specified, the table name is automatically determined from filename as "housing".
 
     .EXAMPLE
-        PS C:\> Import-DbaCsv -Path .\housing.csv -SqlInstance sql001 -Database markets -Table housing -Delimiter "`t" -FirstRowHeader
+        PS C:\> Import-DbaCsv -Path .\housing.csv -SqlInstance sql001 -Database markets -Table housing -Delimiter "`t" -NoHeaderRow
 
-        Imports the entire comma-delimited housing.csv to the SQL "markets" database on a SQL Server named sql001.
-
-        Since a table name was not specified, the table name is automatically determined from filename as "housing".
+        Imports the entire comma-delimited housing.csv, including the first row which is not used for colum names, to the SQL markets database, into the housing table, on a SQL Server named sql001.
 
     .EXAMPLE
         PS C:\> Import-DbaCsv -Path C:\temp\huge.txt -SqlInstance sqlcluster -Database locations -Table latitudes -Delimiter "|"
 
-        Imports the entire comma-delimited housing.csv to the SQL "markets" database on a SQL Server named sql001.
-
-        Since a table name was not specified, the table name is automatically determined from filename as "housing".
-
-    .EXAMPLE
-        PS C:\> Import-DbaCsv -Path C:\temp\housing.csv, .\housing2.csv -SqlInstance sql001 -Database markets -Table housing -Delimiter "`t" -query "select top 100000 column1, column3 from csv" -Truncate
-
-        Truncates the "housing" table, then imports columns 1 and 3 of the first 100000 rows of the tab-delimited housing.csv in the C:\temp directory, and housing2.csv in the current directory. Since the query is executed against both files, a total of 200,000 rows will be imported.
+        Imports the entire pipe-delimited huge.txt to the locations database, into the latitudes table on a SQL Server named sqlcluster.
 
     .EXAMPLE
         PS C:\> Import-DbaCsv -Path c:\temp\SingleColumn.csv -SqlInstance sql001 -Database markets -Table TempTable -SingleColumn
 
-        Upload the single column Csv SingleColumn.csv to Temptable which has just one column
+        Imports the single column CSV into TempTable
 
     .EXAMPLE
-        PS C:\> Get-ChildItem -Path \\FileServer\csvs | Import-DbaCsv -SqlInstance sql001, sql002 -Database tempdb
+        PS C:\> Get-ChildItem -Path \\FileServer\csvs | Import-DbaCsv -SqlInstance sql001, sql002 -Database tempdb -AutoCreateTable
 
-        Imports whatever
+        Imports every CSV in the \\FileServer\csvs path into both sql001 and sql002's tempdb database. Each CSV will be imported into an automatically determined table name.
+
+    .EXAMPLE
+        PS C:\> Get-ChildItem -Path \\FileServer\csvs | Import-DbaCsv -SqlInstance sql001, sql002 -Database tempdb -AutoCreateTable -WhatIf
+
+        Shows what would happen if the command were to be executed
 
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Low')]
-    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseSingularNouns", "", Justification = "Internal functions are ignored")]
-    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingPlainTextForPassword", "", Justification = "For Parameters SQLCredential and SQLCredentialPath")]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseDeclaredVarsMoreThanAssignments", "line", Justification = "Variable line is used, False Positive on line 330")]
     param (
         [parameter(ValueFromPipeline)]
@@ -168,7 +162,7 @@ function Import-DbaCsv {
         [string]$Table,
         [string]$Schema = "dbo",
         [switch]$Truncate,
-        [ValidateSet("`t", "|", ";", " ", ",")]
+        [ValidateSet("``t", "|", ";", " ", ",")]
         [string]$Delimiter = ",",
         [switch]$SingleColumn,
         [int]$BatchSize = 50000,
@@ -187,83 +181,6 @@ function Import-DbaCsv {
         $FirstRowHeader = $NoHeaderRow -eq $false
         $scriptelapsed = [System.Diagnostics.Stopwatch]::StartNew()
 
-        function Get-Columns {
-            <#
-                .SYNOPSIS
-                    TextFieldParser will be used instead of an OleDbConnection.
-                    This is because the OleDbConnection driver may not exist on x64.
-
-                .EXAMPLE
-                    $columns = Get-Columns -Path .\myfile.csv -Delimiter "," -FirstRowHeader $true
-
-                .OUTPUTS
-                    Array of column names
-            #>
-
-            param (
-                [Parameter(Mandatory)]
-                [string[]]$Path,
-                [Parameter(Mandatory)]
-                [string]$Delimiter,
-                [Parameter(Mandatory)]
-                [bool]$FirstRowHeader
-            )
-
-            [void][Reflection.Assembly]::LoadWithPartialName("Microsoft.VisualBasic")
-            $columnparser = New-Object Microsoft.VisualBasic.FileIO.TextFieldParser($Path)
-            $columnparser.TextFieldType = "Delimited"
-            $columnparser.SetDelimiters($Delimiter)
-            $rawcolumns = $columnparser.ReadFields()
-
-            if ($FirstRowHeader -eq $true) {
-                $columns = ($rawcolumns | ForEach-Object {
-                        $_ -Replace '"'
-                    } | Select-Object -Property @{
-                        Name = "name"; Expression = {
-                            "[$_]"
-                        }
-                    }).name
-            } else {
-                $columns = @()
-                foreach ($number in 1 .. $rawcolumns.count) {
-                    $columns += "[column$number]"
-                }
-            }
-
-            $columnparser.Close()
-            $columnparser.Dispose()
-            return $columns
-        }
-
-        function Get-ColumnText {
-            <#
-                .SYNOPSIS
-                    Returns an array of data, which can later be parsed for potential datatypes.
-
-                .EXAMPLE
-                    $columns = Get-Columns -Path .\myfile.csv -Delimiter ","
-
-                .OUTPUTS
-                    Array of column data
-             #>
-            param (
-                [Parameter(Mandatory)]
-                [string[]]$Path,
-                [Parameter(Mandatory)]
-                [string]$Delimiter
-            )
-            $columnparser = New-Object Microsoft.VisualBasic.FileIO.TextFieldParser($Path)
-            $columnparser.TextFieldType = "Delimited"
-            $columnparser.SetDelimiters($Delimiter)
-            $line = $columnparser.ReadLine()
-            # Skip a line, in case first line are column names
-            $line = $columnparser.ReadLine()
-            $datatext = $columnparser.ReadFields()
-            $columnparser.Close()
-            $columnparser.Dispose()
-            return $datatext
-        }
-
         function New-SqlTable {
             <#
                 .SYNOPSIS
@@ -281,38 +198,29 @@ function Import-DbaCsv {
             [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "")]
             param (
                 [Parameter(Mandatory)]
-                [string[]]$Path,
+                [string]$Path,
                 [Parameter(Mandatory)]
                 [string]$Delimiter,
-                [string[]]$Columns,
-                [string[]]$ColumnText,
+                [Parameter(Mandatory)]
+                [bool]$FirstRowHeader,
                 [System.Data.SqlClient.SqlConnection]$sqlconn,
                 [System.Data.SqlClient.SqlTransaction]$transaction
             )
+            $reader = New-Object LumenWorks.Framework.IO.Csv.CsvReader((New-Object System.IO.StreamReader($Path)), $FirstRowHeader, $Delimiter, 1)
+            $columns = $reader.GetFieldHeaders()
+            $reader.Close()
+            $reader.Dispose()
+
             # Get SQL datatypes by best guess on first data row
             $sqldatatypes = @(); $index = 0
 
-            foreach ($column in $columntext) {
-                $sqlcolumnname = $Columns[$index]
-                $index++
-
-                # bigint, float, and datetime are more accurate, but it didn't work
-                # as often as it should have, so we'll just go for a smaller datatype
-                if ([int64]::TryParse($column, [ref]0) -eq $true) {
-                    $sqldatatype = "varchar(255)"
-                } elseif ([double]::TryParse($column, [ref]0) -eq $true) {
-                    $sqldatatype = "varchar(255)"
-                } elseif ([datetime]::TryParse($column, [ref]0) -eq $true) {
-                    $sqldatatype = "varchar(255)"
-                } else {
-                    $sqldatatype = "varchar(MAX)"
-                }
-
-                $sqldatatypes += "$sqlcolumnname $sqldatatype"
+            foreach ($column in $Columns) {
+                $sqldatatypes += "[$column] varchar(MAX)"
             }
 
             $sql = "BEGIN CREATE TABLE [$schema].[$table] ($($sqldatatypes -join ' NULL,')) END"
             $sqlcmd = New-Object System.Data.SqlClient.SqlCommand($sql, $sqlconn, $transaction)
+
             try {
                 $null = $sqlcmd.ExecuteNonQuery()
             } catch {
@@ -352,10 +260,10 @@ function Import-DbaCsv {
         }
     '
         try {
+            # SilentContinue isn't enough
             Add-Type -ReferencedAssemblies 'System.Data.dll' -TypeDefinition $source -ErrorAction Stop
             Add-Type -Path "$script:PSModuleRoot\bin\csv\LumenWorks.Framework.IO.dll" -ErrorAction Stop
         } catch {
-            # SilentContinue isn't enough
             $null = 1
         }
     }
@@ -372,18 +280,16 @@ function Import-DbaCsv {
 
             $file = (Resolve-Path -Path $filename).ProviderPath
 
-            # Do the first few lines contain the specified delimiter?
+            # Does the second line contain the specified delimiter?
             try {
-                $firstfewlines = Get-Content $file -TotalCount 3 -ErrorAction Stop
+                $firstline = Get-Content -Path $file -TotalCount 2 -ErrorAction Stop
             } catch {
-                Stop-Function -Continue -Message "$file is in use."
+                Stop-Function -Continue -Message "Failure reading $file" -ErrorRecord $_
             }
             if (-not $SingleColumn) {
-                foreach ($line in $firstfewlines) {
-                    if (($line -match $Delimiter) -eq $false) {
-                        Stop-Function -Message "Delimiter ($Delimiter) not found in first row of $file"
-                        return
-                    }
+                if ($firstline -notmatch $Delimiter) {
+                    Stop-Function -Message "Delimiter ($Delimiter) not found in first few rows of $file. If this is a single column import, please specify -SingleColumn"
+                    return
                 }
             }
 
@@ -391,16 +297,6 @@ function Import-DbaCsv {
             if (-not (Test-Bound -ParameterName Table)) {
                 $table = [IO.Path]::GetFileNameWithoutExtension($file)
                 Write-Message -Level Verbose -Message "Table name not specified, using $table"
-            }
-
-            # Create columns based on first data row of first csv.
-            if (-not $SingleColumn) {
-                Write-Message -Level Verbose -Message "Calculating column names and datatypes"
-                $columns = Get-Columns -Path $file -Delimiter $Delimiter -FirstRowHeader $FirstRowHeader
-                if ($columns.count -gt 255 -and $safe -eq $true) {
-                    Stop-Function -Continue -Message "CSV must contain fewer than 256 columns."
-                }
-                $columntext = Get-ColumnText -Path $file -Delimiter $Delimiter
             }
 
             foreach ($instance in $SqlInstance) {
@@ -466,7 +362,7 @@ function Import-DbaCsv {
                     }
                     Write-Message -Level Verbose -Message "Table does not exist"
                     if ($PSCmdlet.ShouldProcess($instance, "Creating table $table")) {
-                        New-SqlTable -Path $file -Delimiter $Delimiter -Columns $columns -ColumnText $columntext -SqlConn $sqlconn -Transaction $transaction
+                        New-SqlTable -Path $file -Delimiter $Delimiter -FirstRowHeader $FirstRowHeader -SqlConn $sqlconn -Transaction $transaction
                     }
                 } else {
                     Write-Message -Level Verbose -Message "Table exists"
