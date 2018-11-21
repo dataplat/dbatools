@@ -162,7 +162,7 @@ function Get-DbaMemoryUsage {
                         CounterInstance = (($_.Path.split("\")[-2]).replace("mssql`$", "")).split(':')[1]
                         Counter         = $_.Path.split("\")[-1]
                         Pages           = $null
-                        Memory           = $_.cookedvalue / 1024
+                        Memory          = $_.cookedvalue / 1024
                     }
                 }
             } catch {

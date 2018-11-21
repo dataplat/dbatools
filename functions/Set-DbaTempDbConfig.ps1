@@ -116,16 +116,16 @@ function Set-DbaTempdbConfig {
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
-                
+
             } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-            
+
             $cores = $server.Processors
             if ($cores -gt 8) {
                 $cores = 8
             }
-            
+
             #Set DataFileCount if not specified. If specified, check against best practices.
             if (-not $DataFileCount) {
                 $DataFileCount = $cores
@@ -136,10 +136,10 @@ function Set-DbaTempdbConfig {
                 }
                 Write-Message -Message "Data file count set explicitly: $DataFileCount" -Level Verbose
             }
-            
+
             $DataFilesizeSingle = $([Math]::Floor($DataFileSize / $DataFileCount))
             Write-Message -Message "Single data file size (MB): $DataFilesizeSingle." -Level Verbose
-            
+
             if (Test-Bound -ParameterName DataPath) {
                 if ((Test-DbaPath -SqlInstance $server -Path $DataPath) -eq $false) {
                     Stop-Function -Message "$datapath is an invalid path." -Continue
@@ -148,9 +148,9 @@ function Set-DbaTempdbConfig {
                 $Filepath = $server.Databases['tempdb'].ExecuteWithResults('SELECT physical_name as FileName FROM sys.database_files WHERE file_id = 1').Tables[0].Rows[0].FileName
                 $DataPath = Split-Path $Filepath
             }
-            
+
             Write-Message -Message "Using data path: $datapath." -Level Verbose
-            
+
             if (Test-Bound -ParameterName LogPath) {
                 if ((Test-DbaPath -SqlInstance $server -Path $LogPath) -eq $false) {
                     Stop-Function -Message "$LogPath is an invalid path." -Continue
@@ -160,31 +160,31 @@ function Set-DbaTempdbConfig {
                 $LogPath = Split-Path $Filepath
             }
             Write-Message -Message "Using log path: $LogPath." -Level Verbose
-            
+
             # Check if the file growth needs to be disabled
             if ($DisableGrowth) {
                 $DataFileGrowth = 0
                 $LogFileGrowth = 0
             }
-            
+
             # Check current tempdb. Throw an error if current tempdb is larger than config.
             $CurrentFileCount = $server.Databases['tempdb'].ExecuteWithResults('SELECT count(1) as FileCount FROM sys.database_files WHERE type=0').Tables[0].Rows[0].FileCount
             $TooBigCount = $server.Databases['tempdb'].ExecuteWithResults("SELECT TOP 1 (size/128) as Size FROM sys.database_files WHERE size/128 > $DataFilesizeSingle AND type = 0").Tables[0].Rows[0].Size
-            
+
             if ($CurrentFileCount -gt $DataFileCount) {
                 Stop-Function -Message "Current tempdb in $instance is not suitable to be reconfigured. The current tempdb has a greater number of files ($CurrentFileCount) than the calculated configuration ($DataFileCount)." -Continue
             }
-            
+
             if ($TooBigCount) {
                 Stop-Function -Message "Current tempdb in $instance is not suitable to be reconfigured. The current tempdb ($TooBigCount MB) is larger than the calculated individual file configuration ($DataFilesizeSingle MB)." -Continue
             }
-            
+
             $EqualCount = $server.Databases['tempdb'].ExecuteWithResults("SELECT count(1) as FileCount FROM sys.database_files WHERE size/128 = $DataFilesizeSingle AND type = 0").Tables[0].Rows[0].FileCount
-            
+
             Write-Message -Message "tempdb configuration validated." -Level Verbose
-            
+
             $DataFiles = $server.Databases['tempdb'].ExecuteWithResults("select f.name as Name, f.physical_name as FileName from sys.filegroups fg join sys.database_files f on fg.data_space_id = f.data_space_id where fg.name = 'PRIMARY' and f.type_desc = 'ROWS'").Tables[0];
-            
+
             #Checks passed, process reconfiguration
             for ($i = 0; $i -lt $DataFileCount; $i++) {
                 $File = $DataFiles.Rows[$i]
@@ -199,20 +199,20 @@ function Set-DbaTempdbConfig {
                     $sql += "ALTER DATABASE tempdb ADD FILE(name=tempdev$i,filename='$NewPath',size=$DataFilesizeSingle MB,filegrowth=$DataFileGrowth);"
                 }
             }
-            
+
             if (-not $LogFileSize) {
                 $LogFileSize = [Math]::Floor($DataFileSize / 4)
             }
-            
+
             $logfile = $server.Databases['tempdb'].ExecuteWithResults("SELECT name, physical_name as FileName FROM sys.database_files WHERE file_id = 2").Tables[0].Rows[0];
             $Filename = Split-Path $logfile.FileName -Leaf
             $LogicalName = $logfile.Name
             $NewPath = "$LogPath\$Filename"
             $sql += "ALTER DATABASE tempdb MODIFY FILE(name=$LogicalName,filename='$NewPath',size=$LogFileSize MB,filegrowth=$LogFileGrowth);"
-            
+
             Write-Message -Message "SQL Statement to resize tempdb." -Level Verbose
             Write-Message -Message ($sql -join "`n`n") -Level Verbose
-            
+
             if ($OutputScriptOnly) {
                 return $sql
             } elseif ($OutFile) {
@@ -222,21 +222,21 @@ function Set-DbaTempdbConfig {
                     try {
                         $server.Databases['master'].ExecuteNonQuery($sql)
                         Write-Message -Level Verbose -Message "tempdb successfully reconfigured."
-                        
+
                         [PSCustomObject]@{
-                            ComputerName = $server.ComputerName
-                            InstanceName = $server.ServiceName
-                            SqlInstance  = $server.DomainInstanceName
-                            DataFileCount = $DataFileCount
-                            DataFileSize = [dbasize]($DataFileSize * 1024 * 1024)
+                            ComputerName       = $server.ComputerName
+                            InstanceName       = $server.ServiceName
+                            SqlInstance        = $server.DomainInstanceName
+                            DataFileCount      = $DataFileCount
+                            DataFileSize       = [dbasize]($DataFileSize * 1024 * 1024)
                             SingleDataFileSize = [dbasize]($DataFilesizeSingle * 1024 * 1024)
-                            LogSize      = [dbasize]($LogFileSize * 1024 * 1024)
-                            DataPath     = $DataPath
-                            LogPath      = $LogPath
-                            DataFileGrowth = [dbasize]($DataFileGrowth * 1024 * 1024)
-                            LogFileGrowth = [dbasize]($LogFileGrowth * 1024 * 1024)
+                            LogSize            = [dbasize]($LogFileSize * 1024 * 1024)
+                            DataPath           = $DataPath
+                            LogPath            = $LogPath
+                            DataFileGrowth     = [dbasize]($DataFileGrowth * 1024 * 1024)
+                            LogFileGrowth      = [dbasize]($LogFileGrowth * 1024 * 1024)
                         }
-                        
+
                         Write-Message -Level Output -Message "tempdb reconfigured. You must restart the SQL Service for settings to take effect."
                     } catch {
                         Stop-Function -Message "Unable to reconfigure tempdb. Exception: $_" -Target $sql -ErrorRecord $_ -Continue
