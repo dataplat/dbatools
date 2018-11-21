@@ -144,13 +144,13 @@ function Connect-DbaInstance {
         Creates an SMO Server object that connects using Windows Authentication
 
     .EXAMPLE
-        PS C:\> $wincred = Get-SqlCredential ad\sqladmin
+        PS C:\> $wincred = Get-Credential ad\sqladmin
         PS C:\> Connect-DbaInstance -SqlInstance sql2014 -SqlCredential $wincred
 
         Creates an SMO Server object that connects using alternative Windows credentials
 
     .EXAMPLE
-        PS C:\> $sqlcred = Get-SqlCredential sqladmin
+        PS C:\> $sqlcred = Get-Credential sqladmin
         PS C:\> $server = Connect-DbaInstance -SqlInstance sql2014 -SqlCredential $sqlcred
 
         Login to sql2014 as SQL login sqladmin.
