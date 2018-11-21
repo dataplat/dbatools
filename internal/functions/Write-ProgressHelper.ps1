@@ -38,7 +38,7 @@ function Write-ProgressHelper {
                 "Syncing availability group"
             }
             default {
-                "Processing $caller"
+                "Executing $caller"
             }
         }
     }
