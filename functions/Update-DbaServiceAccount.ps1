@@ -97,6 +97,7 @@ function Update-DbaServiceAccount {
         [PSCredential]$ServiceCredential,
         [Alias("Password, NewPassword")]
         [securestring]$SecurePassword = (New-Object System.Security.SecureString),
+        [Alias("OldPassword")]
         [securestring]$PreviousPassword,
         [switch]$EnableException
     )
