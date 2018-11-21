@@ -10,7 +10,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         [object[]]$params = (Get-ChildItem function:\Update-DbaServiceAccount).Parameters.Keys
         $knownParameters = 'ComputerName', 'Credential', 'InputObject', 'ServiceName', 'Username', 'ServiceCredential', 'PreviousPassword', 'SecurePassword', 'EnableException'
         It "Should contain our specific parameters" {
-            ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
+            ((Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count) | Should Be $paramCount
         }
         It "Should only contain $paramCount parameters" {
             $params.Count - $defaultParamCount | Should Be $paramCount
@@ -18,13 +18,13 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     }
 }
 
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
+Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
 
     $login = 'winLogin'
     $password = 'MyV3ry$ecur3P@ssw0rd'
     $securePassword = ConvertTo-SecureString $password -AsPlainText -Force
-    $SecurePassword = 'Myxtr33mly$ecur3P@ssw0rd'
-    $newSecurePassword = ConvertTo-SecureString $SecurePassword -AsPlainText -Force
+    $newPassword = 'Myxtr33mly$ecur3P@ssw0rd'
+    $newSecurePassword = ConvertTo-SecureString $newPassword -AsPlainText -Force
     $server = Connect-SqlInstance -SqlInstance $script:instance2
     $computerName = $server.NetName
     $instanceName = $server.ServiceName
@@ -37,7 +37,9 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         if ($user.Name -eq $login) {
             $computer.Delete('User', $login)
         }
-    } catch {<#User does not exist#>}
+    } catch {
+        <#User does not exist        #>
+    }
 
     if ($l = Get-DbaLogin -SqlInstance $script:instance2 -Login $winLogin) {
         $results = $server.Query("IF EXISTS (SELECT * FROM sys.server_principals WHERE name = '$winLogin') EXEC sp_who '$winLogin'")
@@ -56,9 +58,13 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     $user.SetInfo()
 
     #Get current service users
-    $services = Get-Dbaservice -ComputerName $script:instance2 -Type Engine, Agent -Instance $instanceName
-    $currentAgentUser = ($services | Where-Object { $_.ServiceType -eq 'Agent' }).StartName
-    $currentEngineUser = ($services | Where-Object { $_.ServiceType -eq 'Engine' }).StartName
+    $services = Get-Dbaservice -ComputerName $script:instance2 -Type Engine, Agent -InstanceName $instanceName
+    $currentAgentUser = ($services | Where-Object {
+            $_.ServiceType -eq 'Agent'
+        }).StartName
+    $currentEngineUser = ($services | Where-Object {
+            $_.ServiceType -eq 'Engine'
+        }).StartName
 
     #Create a new sysadmin login on SQL Server
     $newLogin = New-Object Microsoft.SqlServer.Management.Smo.Login($server, $winLogin)
@@ -112,10 +118,10 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 
     Context "Change password of the service account" {
         #Change the password
-        ([adsi]"WinNT://$computerName/$login,user").SetPassword($SecurePassword)
+        ([adsi]"WinNT://$computerName/$login,user").SetPassword($newPassword)
 
         $errVar = $warnVar = $null
-        $results = $services | Sort-Object ServicePriority | Update-DbaServiceAccount -Password $newSecurePassword -ErrorVariable $errVar -WarningVariable $warnVar
+        $results = $services | Sort-Object ServicePriority | Update-DbaServiceAccount -NewPassword $newSecurePassword -ErrorVariable $errVar -WarningVariable $warnVar
 
         It "Password change should return something" {
             $results | Should Not Be $null
@@ -145,7 +151,9 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 
     Context "Change agent service account to local system" {
         $errVar = $warnVar = $null
-        $results = $services | Where-Object { $_.ServiceType -eq 'Agent' } | Update-DbaServiceAccount -Username 'NT AUTHORITY\LOCAL SYSTEM' -ErrorVariable $errVar -WarningVariable $warnVar
+        $results = $services | Where-Object {
+            $_.ServiceType -eq 'Agent'
+        } | Update-DbaServiceAccount -Username 'NT AUTHORITY\LOCAL SYSTEM' -ErrorVariable $errVar -WarningVariable $warnVar
 
         It "Should return something" {
             $results | Should Not Be $null
@@ -164,7 +172,9 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     }
     Context "Revert SQL Agent service account changes ($currentAgentUser)" {
         $errVar = $warnVar = $null
-        $results = $services | Where-Object { $_.ServiceType -eq 'Agent' } | Update-DbaServiceAccount -Username $currentAgentUser -ErrorVariable $errVar -WarningVariable $warnVar
+        $results = $services | Where-Object {
+            $_.ServiceType -eq 'Agent'
+        } | Update-DbaServiceAccount -Username $currentAgentUser -ErrorVariable $errVar -WarningVariable $warnVar
 
         It "Should return something" {
             $results | Should Not Be $null
@@ -183,7 +193,9 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     }
     Context "Revert SQL Engine service account changes ($currentEngineUser)" {
         $errVar = $warnVar = $null
-        $results = $services | Where-Object { $_.ServiceType -eq 'Engine' } | Update-DbaServiceAccount -Username $currentEngineUser -ErrorVariable $errVar -WarningVariable $warnVar
+        $results = $services | Where-Object {
+            $_.ServiceType -eq 'Engine'
+        } | Update-DbaServiceAccount -Username $currentEngineUser -ErrorVariable $errVar -WarningVariable $warnVar
 
         It "Should return something" {
             $results | Should Not Be $null
