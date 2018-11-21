@@ -23,8 +23,8 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     $login = 'winLogin'
     $password = 'MyV3ry$ecur3P@ssw0rd'
     $securePassword = ConvertTo-SecureString $password -AsPlainText -Force
-    $newPassword = 'Myxtr33mly$ecur3P@ssw0rd'
-    $newSecurePassword = ConvertTo-SecureString $newPassword -AsPlainText -Force
+    $SecurePassword = 'Myxtr33mly$ecur3P@ssw0rd'
+    $newSecurePassword = ConvertTo-SecureString $SecurePassword -AsPlainText -Force
     $server = Connect-SqlInstance -SqlInstance $script:instance2
     $computerName = $server.NetName
     $instanceName = $server.ServiceName
@@ -112,7 +112,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 
     Context "Change password of the service account" {
         #Change the password
-        ([adsi]"WinNT://$computerName/$login,user").SetPassword($newPassword)
+        ([adsi]"WinNT://$computerName/$login,user").SetPassword($SecurePassword)
 
         $errVar = $warnVar = $null
         $results = $services | Sort-Object ServicePriority | Update-DbaServiceAccount -Password $newSecurePassword -ErrorVariable $errVar -WarningVariable $warnVar
