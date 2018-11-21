@@ -59,6 +59,8 @@ function Test-DbaBuild {
         Returns information about a build identified by "12.0.5540", making sure it is AT MOST 1 Service Pack "behind". For that version,
         that identifies an SP2, means accepting as the lowest compliance version as "12.0.4110", that identifies 2014 with SP1.
 
+        Output column CUTarget is not relevant (empty). SPTarget and BuildTarget are filled in the result.
+
     .EXAMPLE
         PS C:\> Test-DbaBuild -Build "12.0.5540" -MaxBehind "1SP 1CU"
 
@@ -71,10 +73,14 @@ function Test-DbaBuild {
 
         Returns information about a build identified by "12.0.5540", making sure it is the latest CU release.
 
+        Output columns CUTarget, SPTarget and BuildTarget are relevant. If the latest build is a service pack (not a CU), CUTarget will be empty.
+
     .EXAMPLE
         PS C:\> Test-DbaBuild -Build "12.0.5540" -Latest
 
-        Same as previous, returns information about a build identified by "12.0.5540", making sure it is the latest build available.
+        Returns information about a build identified by "12.0.5540", making sure it is the latest build available.
+
+        Output columns CUTarget and SPTarget are not relevant (empty), only the BuildTarget is.
 
     .EXAMPLE
         PS C:\> Test-DbaBuild -Build "12.00.4502" -MinimumBuild "12.0.4511" -Update
