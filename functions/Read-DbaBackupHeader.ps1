@@ -69,9 +69,9 @@ function Read-DbaBackupHeader {
         Also returns detailed information about each of the datafiles contained in the backupset.
 
     .EXAMPLE
-        PS C:\> "C:\temp\myfile.bak", "\backupserver\backups\myotherfile.bak" | Read-DbaBackupHeader -SqlInstance sql2016
+        PS C:\> "C:\temp\myfile.bak", "\backupserver\backups\myotherfile.bak" | Read-DbaBackupHeader -SqlInstance sql2016  | Where-Object { $_.BackupSize.Megabyte -gt 100 }
 
-        Similar to running Read-DbaBackupHeader -SqlInstance sql2016 -Path "C:\temp\myfile.bak", "\backupserver\backups\myotherfile.bak"
+        Reads the two files and returns only backups larger than 100 MB
 
     .EXAMPLE
         PS C:\> Get-ChildItem \\nas\sql\*.bak | Read-DbaBackupHeader -SqlInstance sql2016
