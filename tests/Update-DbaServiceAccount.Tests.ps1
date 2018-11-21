@@ -201,7 +201,6 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
 
     }
-
     #Cleanup
     $server.Logins[$winLogin].Drop()
     $computer.Delete('User', $login)
