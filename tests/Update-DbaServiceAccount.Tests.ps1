@@ -121,7 +121,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         ([adsi]"WinNT://$computerName/$login,user").SetPassword($newPassword)
 
         $errVar = $warnVar = $null
-        $results = $services | Sort-Object ServicePriority | Update-DbaServiceAccount -NewPassword $newSecurePassword -ErrorVariable $errVar -WarningVariable $warnVar
+        $results = $services | Sort-Object ServicePriority | Update-DbaServiceAccount -SecurePassword $newSecurePassword -ErrorVariable $errVar -WarningVariable $warnVar
 
         It "Password change should return something" {
             $results | Should Not Be $null
