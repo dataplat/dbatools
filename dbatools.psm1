@@ -957,6 +957,10 @@ $script:renames = @(
     @{
         "AliasName"  = "Copy-DbaQueryStoreConfig"
         "Definition" = "Copy-DbaDbQueryStoreOption"
+    },
+    @{
+        "AliasName"  = "Import-DbaCsvToSql"
+        "Definition" = "Import-DbaCsv"
     }
 )
 
