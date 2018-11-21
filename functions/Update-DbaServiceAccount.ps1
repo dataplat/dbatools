@@ -29,7 +29,7 @@ function Update-DbaServiceAccount {
 
     .PARAMETER PreviousPassword
         The stored password of the service account. Optional when run with admin and remoting privileges.
-    
+
     .PARAMETER Username
         Username of the service account. Cannot be used with -ServiceCredential. For local service accounts use one of the following usernames omitting the -Password parameter:
         LOCALSERVICE
