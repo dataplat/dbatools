@@ -117,7 +117,6 @@
     <Compile Include="Runspace\RunspaceHost.cs" />
     <Compile Include="TabExpansion\TabCompletionSet.cs" />
     <Compile Include="TypeConversion\DbaCredentialParameterConverter.cs" />
-    <Compile Include="Utility\CredentialPrompt.cs" />
     <Compile Include="Utility\DbaValidatePatternAttribute.cs" />
     <Compile Include="Utility\DbaValidateScriptAttribute.cs" />
     <Compile Include="Utility\SizeStyle.cs" />
