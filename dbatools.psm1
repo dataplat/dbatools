@@ -22,9 +22,12 @@ function Import-ModuleFile {
     param (
         $Path
     )
-
-    if ($script:doDotSource) { . $Path }
-    else { $ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create([io.file]::ReadAllText($Path))), $null, $null) }
+    
+    if ($script:doDotSource) {
+        . (Resolve-Path -Path $Path)
+    } else {
+        $ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create([io.file]::ReadAllText((Resolve-Path -Path $Path)))), $null, $null)
+    }
 }
 
 function Write-ImportTime {
@@ -123,11 +126,11 @@ if (Test-Path -Path "$script:PSModuleRoot\.git") { $script:multiFileImport = $tr
 Write-ImportTime -Text "Validated defines"
 #endregion Import Defines
 
-Get-ChildItem -Path "$script:PSModuleRoot\bin\*.dll" -Recurse | Unblock-File -ErrorAction SilentlyContinue
+Get-ChildItem -Path (Resolve-Path "$script:PSModuleRoot\bin\") -Filter "*.dll" -Recurse
 Write-ImportTime -Text "Unblocking Files"
 
 # Define folder in which to copy dll files before importing
-if (-not $script:copyDllMode) { $script:DllRoot = "$script:PSModuleRoot\bin" }
+if (-not $script:copyDllMode) { $script:DllRoot = (Resolve-Path "$script:PSModuleRoot\bin\") }
 else {
     $libraryTempPath = "$($env:TEMP)\dbatools-$(Get-Random -Minimum 1000000 -Maximum 9999999)"
     while (Test-Path -Path $libraryTempPath) {
