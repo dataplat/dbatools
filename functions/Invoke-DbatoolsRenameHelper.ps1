@@ -113,7 +113,7 @@ function Invoke-DbatoolsRenameHelper {
             },
             @{
                 "AliasName"  = "NoSystemDb"
-                "Definition" = "ExcludeSystemDatabases"
+                "Definition" = "ExcludeSystem"
             },
             @{
                 "AliasName"  = "NoSystemObjects"
@@ -126,6 +126,14 @@ function Invoke-DbatoolsRenameHelper {
             @{
                 "AliasName"  = "NoQueryTextColumn"
                 "Definition" = "ExcludeQueryTextColumn"
+            },
+            @{
+                "AliasName"  = ""
+                "Definition" = ""
+            },
+            @{
+                "AliasName"  = ""
+                "Definition" = ""
             }
         )
 
