@@ -1,7 +1,7 @@
 
 -- SQL Server 2014 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: October 31, 2018
+-- Last Modified: November 14, 2018
 -- https://www.sqlskills.com/blogs/glenn/
 -- http://sqlserverperformance.wordpress.com/
 -- Twitter: GlennAlanBerry
@@ -482,7 +482,8 @@ SELECT cpu_count AS [Logical CPU Count], scheduler_count,
        committed_target_kb/1024 AS [Committed Target Memory (MB)],
        max_workers_count AS [Max Workers Count], 
 	   affinity_type_desc AS [Affinity Type], 
-       sqlserver_start_time AS [SQL Server Start Time], 
+       sqlserver_start_time AS [SQL Server Start Time],
+	   DATEDIFF(hour, sqlserver_start_time, GETDATE()) AS [SQL Server Up Time (hrs)],
 	   virtual_machine_type_desc AS [Virtual Machine Type]
 FROM sys.dm_os_sys_info WITH (NOLOCK) OPTION (RECOMPILE);
 ------
