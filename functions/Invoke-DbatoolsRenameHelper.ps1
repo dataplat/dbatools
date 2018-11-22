@@ -128,12 +128,12 @@ function Invoke-DbatoolsRenameHelper {
                 "Definition" = "ExcludeQueryTextColumn"
             },
             @{
-                "AliasName"  = ""
-                "Definition" = ""
+                "AliasName"  = "ExcludeAllSystemDb"
+                "Definition" = "ExcludeSystem"
             },
             @{
-                "AliasName"  = ""
-                "Definition" = ""
+                "AliasName"  = "ExcludeAllUserDb"
+                "Definition" = "ExcludeUser"
             }
         )
 
