@@ -64,11 +64,18 @@ function Invoke-Command2 {
     }
     if (-not $ComputerName.IsLocalHost) {
         $runspaceId = [System.Management.Automation.Runspaces.Runspace]::DefaultRunspace.InstanceId
-        $sessionName = "dbatools_$runspaceId"
+        $sessionName = "dbatools_$($Authentication)_$runspaceId"
 
         # Retrieve a session from the session cache, if available (it's unique per runspace)
-        # Sessions with custom configurations should always run anew without reusing old ones
-        if ($ConfigurationName -or -not ($currentSession = [Sqlcollaborative.Dbatools.Connection.ConnectionHost]::PSSessionGet($runspaceId, $ComputerName.ComputerName) | Where-Object { $_.State -Match "Opened|Disconnected" } )) {
+        $currentSession = [Sqlcollaborative.Dbatools.Connection.ConnectionHost]::PSSessionGet($runspaceId, $ComputerName.ComputerName) | Where-Object { $_.State -Match "Opened|Disconnected" -and $_.Name -eq $sessionName }
+        # Checking if current configuration name is different - session should be recreated in this case
+        if ($currentSession -and ($ConfigurationName -or $currentSession.ConfigurationName -notin '', 'Microsoft.PowerShell') -and $currentSession.ConfigurationName -ne $ConfigurationName) {
+            Write-Message -Level Debug "Removing session $sessionName with Configuration [$($currentSession.ConfigurationName)] - need to redefine configuration name to [$ConfigurationName]"
+            $currentSession | Remove-PSSession
+            $currentSession = $null
+        }
+        if (-not $currentSession) {
+            Write-Message -Level Debug "Creating new $Authentication session [$sessionName] for $($ComputerName.ComputerName)"
             $timeout = New-PSSessionOption -IdleTimeout (New-TimeSpan -Minutes 10).TotalMilliSeconds
             $psSessionSplat = @{
                 ComputerName   = $ComputerName.ComputerName
@@ -86,6 +93,7 @@ function Invoke-Command2 {
             $currentSession = New-PSSession @psSessionSplat
             $InvokeCommandSplat["Session"] = $currentSession
         } else {
+            Write-Message -Level Debug "Found an existing session $sessionName, reusing it"
             if ($currentSession.State -eq "Disconnected") {
                 $null = $currentSession | Connect-PSSession -ErrorAction Stop
             }

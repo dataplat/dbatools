@@ -70,7 +70,7 @@ function Invoke-Program {
                 $ps.WaitForExit();
                 # Check the exit code of the process to see if it succeeded.
                 if ($ps.ExitCode -notin $SuccessReturnCodes) {
-                    throw "Error running program: exited with errorcode $($ps.ExitCode), while only $($SuccessReturnCodes) were allowed`: $std";
+                    throw "Error running program: exited with errorcode $($ps.ExitCode), while only $($SuccessReturnCodes) were allowed`: $stderr";
                 }
             }
         }
@@ -99,16 +99,17 @@ function Invoke-Program {
                 $configuration = Register-RemoteSessionConfiguration -Computer $ComputerName -Credential $Credential -Name "dbatools$functionName"
             }
             if ($configuration.Successful) {
-                Write-Message -Level Verbose -Message "RemoteSessionConfiguration ($($configuration.Name)) was successful, using it."
+                Write-Message -Level Debug -Message "RemoteSessionConfiguration ($($configuration.Name)) was successful, using it."
                 $params += @{ ConfigurationName = $configuration.Name }
             } else {
-                Write-Message -Level Verbose -Message "RemoteSessionConfiguration ($($configuration.Name)) was unsuccessful, falling back to CredSSP - make sure to configure it on both ends"
+                Write-Message -Level Verbose -Message "Falling back to CredSSP"
+                Initialize-CredSSP -ComputerName $ComputerName -Credential $Credential -EnableException $false
                 $params += @{ Authentication = 'CredSSP' }
             }
         }
-        Write-Message -Level Verbose -Message "Acceptable success return codes are [$($SuccessReturnCodes -join ',')]"
+        Write-Message -Level Debug -Message "Acceptable success return codes are [$($SuccessReturnCodes -join ',')]"
         # Run program on specified computer.
-        Write-Message -Level Verbose -Message "Starting process path [$Path] - Args: [$ArgumentList] - Working dir: [$WorkingDirectory] on $ComputerName"
+        Write-Message -Level Verbose -Message "Starting process path [$Path] with arguments [$ArgumentList] on $ComputerName"
         Invoke-Command2 @params -Raw
     }
 }

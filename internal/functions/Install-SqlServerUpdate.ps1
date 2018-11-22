@@ -44,8 +44,11 @@ function Install-SqlServerUpdate {
             Stop-Function -Message "Updating multiple versions of SQL Server is only supported with -Latest switch. Please specify a version of SQL Server on $ComputerName that you want to update." -EnableException $true
         }
         if ($MajorVersion) {
-            $currentVersionGroups = $currentVersionGroups | Where-Object { $_NameLevel -in $MajorVersion }
+            $currentVersionGroups = $currentVersionGroups | Where-Object { $_.NameLevel -in $MajorVersion }
         }
+        $verCount = ($currentVersionGroups | Measure-Object).Count
+        $verDesc = ($currentVersionGroups | Foreach-Object { "$($_.NameLevel) ($($_.Build))" }) -join ', '
+        Write-Message -Level Verbose -Message "Found $verCount existing SQL Server version(s): $verDesc"
         ## Find the architecture of the computer
         $arch = (Get-DbaCmObject -ComputerName $ComputerName -ClassName 'Win32_ComputerSystem').SystemType
         if ($arch -eq 'x64-based PC') {
@@ -53,10 +56,11 @@ function Install-SqlServerUpdate {
         } else {
             $arch = 'x86'
         }
+        $targetLevel = ''
         # Launch a setup sequence for each version found
         foreach ($currentVersion in $currentVersionGroups) {
             # create a parameter set for Find-SqlServerUpdate
-            $params = @{
+            $kbLookupParams = @{
                 Architecture = $arch
                 MajorVersion = $currentVersion.NameLevel
                 RepositoryPath = $RepositoryPath
@@ -68,11 +72,15 @@ function Install-SqlServerUpdate {
                     #more recent build is found, get KB number depending on what is the current upgrade $Type
                     $targetKB = Get-DbaBuildReference -Build $latestCU.BuildTarget
                     if ($Type -eq 'CumulativeUpdate') {
-                        $params.KB = $targetKB.KBLevel
+                        $targetLevel = "$($targetKB.SPLevel | Where-Object { $_ -ne 'LATEST' })$($targetKB.CULevel)"
+                        Write-Message -Level Verbose -Message "Upgrading SQL$($targetKB.NameLevel) to a latest Cumulative Update $targetLevel (KB$($targetKB.KBLevel))"
+                        $kbLookupParams.KB = $targetKB.KBLevel
                     } elseif ($Type -eq 'ServicePack') {
                         $targetSP = $targetKB.SPLevel | Where-Object { $_ -ne 'LATEST' } | Select-Object -First 1
-                        $spKb = Get-DbaBuildReference -SqlServerVersion $targetKB.NameLevel -ServicePack $targetSP
-                        $params.KB = $spKb.KBLevel
+                        $targetKB = Get-DbaBuildReference -SqlServerVersion $targetKB.NameLevel -ServicePack $targetSP
+                        $targetLevel = $targetKB.SPLevel | Where-Object { $_ -ne 'LATEST' }
+                        Write-Message -Level Verbose -Message "Upgrading SQL$($targetKB.NameLevel) to a latest Service Pack $targetLevel (KB$($targetKB.KBLevel))"
+                        $kbLookupParams.KB = $targetKB.KBLevel
                     }
                 } else {
                     Write-Message -Message "No latest cumulative updates found for build $($currentVersion.Build) on computer [$($ComputerName)]." -Level Verbose
@@ -95,7 +103,9 @@ function Install-SqlServerUpdate {
                     $targetKB = Get-DbaBuildReference -SqlServerVersion $currentVersion.NameLevel -ServicePack $Number
                 }
                 if ($targetKB) {
-                    $params.KB = $targetKB.KBLevel
+                    $targetLevel = "$($targetKB.SPLevel | Where-Object { $_ -ne 'LATEST' })$($targetKB.CULevel)"
+                    Write-Message -Level Verbose -Message "Upgrading SQL$($targetKB.NameLevel) to $targetLevel (KB$($targetKB.KBLevel))"
+                    $kbLookupParams.KB = $targetKB.KBLevel
                 } else {
                     Stop-Function -Message "Could not find a KB reference for SP $ServicePack CU $CumulativeUpdate" -EnableException $true
                 }
@@ -107,7 +117,7 @@ function Install-SqlServerUpdate {
             }
             ## Find the installer to use
             if (-not ($installer = Find-SqlServerUpdate @params)) {
-                Stop-Function -Message "Could not find installer for the update KB$($params.KB)" -EnableException $true
+                Stop-Function -Message "Could not find installer for the update KB$($kbLookupParams.KB)" -EnableException $true
             }
             ## Apply patch
             if ($PSCmdlet.ShouldProcess($ComputerName, "Install $Type $($targetKB.KBLevel) ($($installer.Name)) for SQL Server $($currentVersion.BuildLevel)")) {
@@ -131,7 +141,7 @@ function Install-SqlServerUpdate {
                         try {
                             $null = Invoke-Command2 -ComputerName $ComputerName -Credential $Credential -ScriptBlock { Remove-Item -Recurse -Force -LiteralPath $args[0] -ErrorAction Stop } -Raw -ArgumentLit $spExtractPath
                         } catch {
-                            Stop-Function -Message "Failed to cleanup temp folder on computer $ComputerName" -ErrorRecord $_
+                            Write-Message -Level Warning -Message "Failed to cleanup temp folder on computer $ComputerName`: $($_.Exception.Message) "
                         }
                     }
                 }
@@ -143,6 +153,15 @@ function Install-SqlServerUpdate {
                         Stop-Function -Message "Failed to restart computer" -ErrorRecord $_ -EnableException $true
                     }
                 }
+            }
+            # return resulting object. This function throws, so all results here are expected to be shown only in a positive light
+            [psobject]@{
+                MajorVersion = $kbLookupParams.MajorVersion
+                TargetLevel = $targetLevel
+                KB = $kbLookupParams.KB
+                Successful = $true
+                Restarted = [bool]$Restart
+                Installer = $spExtractPath.FullName
             }
         }
     }

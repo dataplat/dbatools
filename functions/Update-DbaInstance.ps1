@@ -83,7 +83,7 @@ function Update-DbaInstance {
         [ValidateNotNullOrEmpty()]
         [string]$SqlServerVersion,
         [Parameter(ParameterSetName = 'Latest')]
-        [string]$MajorVersion,
+        [string[]]$MajorVersion,
         [Parameter(ParameterSetName = 'Latest')]
         [ValidateSet('All', 'ServicePack', 'CumulativeUpdate')]
         [string]$Type = 'All',
@@ -91,7 +91,7 @@ function Update-DbaInstance {
         [switch]$Latest,
         [string]$RepositoryPath,
         [switch]$Restart,
-        [switch]$Online,
+        #[switch]$Online,
         [switch]$EnableException
     )
     begin {
@@ -156,17 +156,18 @@ function Update-DbaInstance {
     }
     process {
         :computers foreach ($computer in $ComputerName) {
-            if ($resolvedName = (Resolve-DbaNetworkName -ComputerName $computer).FullComputerName) {
+            if ($resolvedName = (Resolve-DbaNetworkName -ComputerName $computer.ComputerName).FullComputerName) {
                 :actions foreach ($actionParam in $actions) {
                     if (Test-PendingReboot -ComputerName $resolvedName) {
                         #Exit the actions loop altogether - nothing can be installed here anyways
                         Stop-Function -Message "$resolvedName is pending a reboot. Reboot the computer before proceeding." -Continue -ContinueLabel computers
                     }
                     try {
-                        Install-SqlServerUpdate @actionParam -ComputerName $resolvedName -Credential $Credential -Restart $Restart
+                        Write-Message -Level Verbose -Message "Launching installation on $resolvedName with following params: $($actionParam | ConvertTo-Json -Depth 1 -Compress)"
+                        Install-SqlServerUpdate @actionParam -ComputerName $resolvedName -Credential $Credential -Restart $Restart -RepositoryPath $RepositoryPath
                     } catch {
                         #Exit the actions loop altogether - upgrade failed
-                        Stop-Function -Message "Update failed to install on $resolvedName" -Continue -ContinueLabel computers
+                        Stop-Function -Message "Update failed to install on $resolvedName" -ErrorRecord $_ -Continue -ContinueLabel computers
                     }
                 }
                 if (!$computer.IsIsLocalHost) {
