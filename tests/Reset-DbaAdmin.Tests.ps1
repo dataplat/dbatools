@@ -26,10 +26,9 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         It "adds the login as sysadmin" {
             $password = ConvertTo-SecureString -Force -AsPlainText resetadmin1
             $cred = New-Object System.Management.Automation.PSCredential ("dbatoolsci_resetadmin", $password)
-            Reset-DbaAdmin -SqlInstance $script:instance2 -Login dbatoolsci_resetadmin -SecurePassword $password -Confirm:$false
-            $server = Connect-DbaInstance -SqlInstance $script:instance2 -Credential $cred
-            $server.Name | Should Be $script:instance2
-            $server.ConnectionContext.FixedServerRoles -match 'SysAdmin'
+            $results = Reset-DbaAdmin -SqlInstance $script:instance2 -Login dbatoolsci_resetadmin -SecurePassword $password -Confirm:$false
+            $results.Name | Should -Be dbatoolsci_resetadmin
+            $results.IsMember("sysadmin") | Should -Be $true
         }
     }
 }
