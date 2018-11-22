@@ -1,4 +1,4 @@
-function Get-SQLServerVersion {
+function Get-SqlServerVersion {
     [CmdletBinding()]
     param
     (
@@ -8,11 +8,11 @@ function Get-SQLServerVersion {
         [bool]$EnableException
     )
     begin {
+        $versions = @()
     }
     process {
-        $versions = @()
         try {
-            $sqlComponents = Get-SQLInstanceComponent -ComputerName $ComputerName
+            $sqlComponents = Get-SqlInstanceComponent -ComputerName $ComputerName
             foreach ($component in $sqlComponents) {
                 #Replace first decimal of the minor build with a 0, since we're using build numbers here
                 #Refer to https://sqlserverbuilds.blogspot.com/

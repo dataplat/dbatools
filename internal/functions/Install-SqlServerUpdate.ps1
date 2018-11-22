@@ -10,14 +10,13 @@ function Install-SqlServerUpdate {
         [ValidateNotNullOrEmpty()]
         [DbaInstanceParameter]$ComputerName,
         [pscredential]$Credential,
-        [Parameter(Mandatory)]
         [Parameter(Mandatory, ParameterSetName = 'Latest')]
         [ValidateSet('ServicePack', 'CumulativeUpdate')]
         [string]$Type,
         [string[]]$MajorVersion,
-        [Parameter(Mandatory, ParameterSetName = 'Number')]
+        [Parameter(ParameterSetName = 'Number')]
         [int]$ServicePack,
-        [Parameter(Mandatory, ParameterSetName = 'Number')]
+        [Parameter(ParameterSetName = 'Number')]
         [int]$CumulativeUpdate,
         [Parameter(Mandatory, ParameterSetName = 'Latest')]
         [ValidateNotNullOrEmpty()]
@@ -61,8 +60,8 @@ function Install-SqlServerUpdate {
         foreach ($currentVersion in $currentVersionGroups) {
             # create a parameter set for Find-SqlServerUpdate
             $kbLookupParams = @{
-                Architecture = $arch
-                MajorVersion = $currentVersion.NameLevel
+                Architecture   = $arch
+                MajorVersion   = $currentVersion.NameLevel
                 RepositoryPath = $RepositoryPath
             }
             if ($Latest) {
@@ -90,7 +89,7 @@ function Install-SqlServerUpdate {
                 # Find target KB number based on provided SP/CU levels
                 if ($CumulativeUpdate -gt 0) {
                     #Cumulative update is present - installing CU
-                    if ($null -ne $ServicePack) {
+                    if (Test-Bound -Parameter ServicePack) {
                         #Service pack is present - using it as a reference
                         $targetKB = Get-DbaBuildReference -SqlServerVersion $currentVersion.NameLevel -ServicePack $ServicePack -CumulativeUpdate $CumulativeUpdate
                     } else {
@@ -100,7 +99,7 @@ function Install-SqlServerUpdate {
                     }
                 } elseif ($ServicePack -gt 0) {
                     #Service pack number was passed without CU - installing service pack
-                    $targetKB = Get-DbaBuildReference -SqlServerVersion $currentVersion.NameLevel -ServicePack $Number
+                    $targetKB = Get-DbaBuildReference -SqlServerVersion $currentVersion.NameLevel -ServicePack $ServicePack
                 }
                 if ($targetKB) {
                     $targetLevel = "$($targetKB.SPLevel | Where-Object { $_ -ne 'LATEST' })$($targetKB.CULevel)"
@@ -116,7 +115,7 @@ function Install-SqlServerUpdate {
                 return
             }
             ## Find the installer to use
-            if (-not ($installer = Find-SqlServerUpdate @params)) {
+            if (-not ($installer = Find-SqlServerUpdate @kbLookupParams)) {
                 Stop-Function -Message "Could not find installer for the update KB$($kbLookupParams.KB)" -EnableException $true
             }
             ## Apply patch
@@ -139,7 +138,11 @@ function Install-SqlServerUpdate {
                     } finally {
                         ## Cleanup temp
                         try {
-                            $null = Invoke-Command2 -ComputerName $ComputerName -Credential $Credential -ScriptBlock { Remove-Item -Recurse -Force -LiteralPath $args[0] -ErrorAction Stop } -Raw -ArgumentLit $spExtractPath
+                            $null = Invoke-Command2 -ComputerName $ComputerName -Credential $Credential -ScriptBlock {
+                                if (Test-Path $args[0]) {
+                                    Remove-Item -Recurse -Force -LiteralPath $args[0] -ErrorAction Stop
+                                }
+                            } -Raw -ArgumentList $spExtractPath
                         } catch {
                             Write-Message -Level Warning -Message "Failed to cleanup temp folder on computer $ComputerName`: $($_.Exception.Message) "
                         }
@@ -148,7 +151,12 @@ function Install-SqlServerUpdate {
                 if ($Restart) {
                     Write-Message "Restarting computer $ComputerName and waiting for it to come back online"
                     try {
-                        Restart-Computer -ComputerName $ComputerName -Credential $Credential -Wait -For WinRm -Force -ErrorAction Stop
+                        $restartParams = @{
+                            ComputerName = $ComputerName
+                        }
+                        if ($Credential) { $restartParams += @{ Credential = $Credential }
+                        }
+                        Restart-Computer @restartParams -Wait -For WinRm -Force -ErrorAction Stop
                     } catch {
                         Stop-Function -Message "Failed to restart computer" -ErrorRecord $_ -EnableException $true
                     }
@@ -157,11 +165,12 @@ function Install-SqlServerUpdate {
             # return resulting object. This function throws, so all results here are expected to be shown only in a positive light
             [psobject]@{
                 MajorVersion = $kbLookupParams.MajorVersion
-                TargetLevel = $targetLevel
-                KB = $kbLookupParams.KB
-                Successful = $true
-                Restarted = [bool]$Restart
-                Installer = $spExtractPath.FullName
+                TargetLevel  = $targetLevel
+                KB           = $kbLookupParams.KB
+                Successful   = $true
+                Restarted    = [bool]$Restart
+                Installer    = $installer.FullName
+                ExtractPath  = $spExtractPath
             }
         }
     }

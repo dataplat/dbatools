@@ -81,7 +81,7 @@ function Update-DbaInstance {
         [pscredential]$Credential,
         [Parameter(Mandatory, ParameterSetName = 'Version')]
         [ValidateNotNullOrEmpty()]
-        [string]$SqlServerVersion,
+        [string[]]$SqlServerVersion,
         [Parameter(ParameterSetName = 'Latest')]
         [string[]]$MajorVersion,
         [Parameter(ParameterSetName = 'Latest')]
@@ -95,6 +95,9 @@ function Update-DbaInstance {
         [switch]$EnableException
     )
     begin {
+
+    }
+    process {
         if ($PSCmdlet.ParameterSetName -eq 'Version') {
             if ($SqlServerVersion -notmatch '^((SQL)?\d{4}(R2)?)?\s*(SP\d+)?\s*(CU\d+)?$') {
                 Stop-Function -Message "$SqlServerVersion is an incorrect SqlServerVersion value, please refer to Get-Help Update-DbaInstance -Parameter SqlServerVersion"
@@ -129,34 +132,37 @@ function Update-DbaInstance {
             }
         } else {
             foreach ($ver in $SqlServerVersion) {
-                if ($ver -match '^(SQL)?(\d{4}(R2)?)?\s*SP(\d+)') {
-                    $currentAction = @{
-                        ServicePack = $Matches[3]
+                $currentAction = @{}
+                if ($ver -and $ver -match '^(SQL)?(\d{4}(R2)?)?\s*(SP)?(\d+)?(CU)?(\d+)?') {
+                    Write-Message -Level Debug "Parsed SqlServerVersion as $($Matches[2,5,7] | ConvertTo-Json -Depth 1 -Compress)"
+                    if (-not ($Matches[5] -or $Matches[7])) {
+                        Stop-Function -Message "Either SP or CU should be specified in $ver, please refer to Get-Help Update-DbaInstance -Parameter SqlServerVersion"
+                        return
                     }
                     if ($Matches[2]) {
                         $currentAction += @{ MajorVersion = $Matches[2]}
                     }
-                    $actions += $currentAction
+                    if ($Matches[5]) {
+                        $currentAction += @{ ServicePack = $Matches[5]}
+                        $actions += $currentAction
+                    }
+                    if ($Matches[7]) {
+                        $actions += $currentAction.Clone() + @{ CumulativeUpdate = $Matches[7] }
+                    }
+                } else {
+                    Stop-Function -Message "$ver is an incorrect SqlServerVersion value, please refer to Get-Help Update-DbaInstance -Parameter SqlServerVersion"
+                    return
                 }
-                if ($ver -match '^(SQL)?(\d{4}(R2)?)?\s*(SP)?(\d+)?CU(\d+)') {
-                    $currentAction = @{
-                        CumulativeUpdate = $Matches[5]
-                    }
-                    if ($Matches[2]) {
-                        $currentAction += @{ MajorVersion = $Matches[2]}
-                    }
-                    if ($Matches[4]) {
-                        $currentAction += @{ ServicePack = $Matches[4]}
-                    }
+                if ($currentAction.CumulativeUpdate -or $currentAction.MajorVersion -or $currentAction.ServicePack) {
                     $actions += $currentAction
+                } else {
+                    Stop-Function -Message "Failed to determine proper Sql Server version, please refer to Get-Help Update-DbaInstance -Parameter SqlServerVersion"
+                    return
                 }
             }
         }
-
-    }
-    process {
         :computers foreach ($computer in $ComputerName) {
-            if ($resolvedName = (Resolve-DbaNetworkName -ComputerName $computer.ComputerName).FullComputerName) {
+            if ($resolvedName = (Resolve-DbaNetworkName -ComputerName $computer.ComputerName -Turbo).FullComputerName) {
                 :actions foreach ($actionParam in $actions) {
                     if (Test-PendingReboot -ComputerName $resolvedName) {
                         #Exit the actions loop altogether - nothing can be installed here anyways
@@ -170,12 +176,15 @@ function Update-DbaInstance {
                         Stop-Function -Message "Update failed to install on $resolvedName" -ErrorRecord $_ -Continue -ContinueLabel computers
                     }
                 }
-                if (!$computer.IsIsLocalHost) {
+                if (!$computer.IsLocalHost) {
                     if ($PSCmdlet.ShouldProcess($resolvedName, "Unregistering any leftover PSSession Configurations")) {
                         try {
-                            Unregister-RemoteSessionConfiguration -ComputerName $resolvedName -Credential $Credential -Name "dbatools_Install-SqlServerUpdate"
+                            $unreg = Unregister-RemoteSessionConfiguration -ComputerName $resolvedName -Credential $Credential -Name "dbatoolsInstallSqlServerUpdate"
+                            if (!$unreg.Successful) {
+                                throw $unreg.Status
+                            }
                         } catch {
-                            Stop-Function -Message "Failed to unregister PSSession Configurations on $resolvedName" -Continue -ContinueLabel computers
+                            Stop-Function -Message "Failed to unregister PSSession Configurations on $resolvedName" -Continue -ContinueLabel actions -ErrorRecord $_
                         }
                     }
                 }
