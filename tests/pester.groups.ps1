@@ -26,8 +26,10 @@ $TestsRunGroups = @{
         # weird too often
         'Add-DbaComputerCertificate',
         'Get-DbaComputerCertificate',
+        'Get-DbaMsdtc',
         # a bug in SMO prevents availability group scripting :(
         'Export-DbaAvailabilityGroup',
+        # Non-useful info from newly started sql servers
         'Get-DbaCpuRingBuffer',
         'Get-DbaLatchStatistic',
         # these work but fail too often on appveyor
