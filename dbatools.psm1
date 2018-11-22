@@ -233,7 +233,7 @@ Write-ImportTime -Text "Script: Maintenance"
 $script:renames = @(
     @{
         "AliasName"  = "Copy-SqlAgentCategory"
-        "Definition" = "Copy-DbaAgentCategory"
+        "Definition" = "Copy-DbaAgentJobCategory"
     },
     @{
         "AliasName"  = "Copy-SqlAlert"
@@ -253,7 +253,7 @@ $script:renames = @(
     },
     @{
         "AliasName"  = "Copy-SqlCentralManagementServer"
-        "Definition" = "Copy-DbaCentralManagementServer"
+        "Definition" = "Copy-DbaCmsRegServer"
     },
     @{
         "AliasName"  = "Copy-SqlCredential"
@@ -285,7 +285,7 @@ $script:renames = @(
     },
     @{
         "AliasName"  = "Copy-SqlExtendedEvent"
-        "Definition" = "Copy-DbaExtendedEvent"
+        "Definition" = "Copy-DbaXESession"
     },
     @{
         "AliasName"  = "Copy-SqlJob"
@@ -313,7 +313,7 @@ $script:renames = @(
     },
     @{
         "AliasName"  = "Copy-SqlProxyAccount"
-        "Definition" = "Copy-DbaAgentProxyAccount"
+        "Definition" = "Copy-DbaAgentProxy"
     },
     @{
         "AliasName"  = "Copy-SqlResourceGovernor"
@@ -329,7 +329,7 @@ $script:renames = @(
     },
     @{
         "AliasName"  = "Copy-SqlSharedSchedule"
-        "Definition" = "Copy-DbaAgentSharedSchedule"
+        "Definition" = "Copy-DbaAgentSchedule"
     },
     @{
         "AliasName"  = "Copy-SqlSpConfigure"
@@ -933,6 +933,34 @@ $script:renames = @(
     @{
         "AliasName"  = "Test-DbaRecoveryModel"
         "Definition" = "Test-DbaDbRecoveryModel"
+    },
+    @{
+        "AliasName"  = "Copy-DbaAgentCategory"
+        "Definition" = "Copy-DbaAgentJobCategory"
+    },
+    @{
+        "AliasName"  = "Copy-DbaAgentProxyAccount"
+        "Definition" = "Copy-DbaAgentProxy"
+    },
+    @{
+        "AliasName"  = "Copy-DbaAgentSharedSchedule"
+        "Definition" = "Copy-DbaAgentSchedule"
+    },
+    @{
+        "AliasName"  = "Copy-DbaCentralManagementServer"
+        "Definition" = "Copy-DbaCmsRegServer"
+    },
+    @{
+        "AliasName"  = "Copy-DbaExtendedEvent"
+        "Definition" = "Copy-DbaXESession"
+    },
+    @{
+        "AliasName"  = "Copy-DbaQueryStoreConfig"
+        "Definition" = "Copy-DbaDbQueryStoreOption"
+    },
+    @{
+        "AliasName"  = "Import-DbaCsvToSql"
+        "Definition" = "Import-DbaCsv"
     }
 )
 
@@ -1004,5 +1032,12 @@ if ($PSCommandPath -like "*.psm1") {
 #Write-ImportTime -Text "Loaded type extensions"
 
 [Sqlcollaborative.Dbatools.dbaSystem.SystemHost]::ModuleImported = $true;
+
+if (Get-Module -Name sqlserver, sqlps) {
+    if (Get-DbatoolsConfigValue -FullName Import.SqlpsCheck) {
+        Write-Warning -Message 'SQLPS or SqlServer was previously imported during this session. If you encounter weird issues with dbatools, please restart PowerShell, then import dbatools without loading SQLPS or SqlServer first.'
+        Write-Warning -Message 'To disable this message, type: Set-DbatoolsConfig -Name Import.SqlpsCheck -Value $false'
+    }
+}
 
 #endregion Post-Import Cleanup

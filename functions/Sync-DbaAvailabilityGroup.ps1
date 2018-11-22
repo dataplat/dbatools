@@ -264,7 +264,7 @@ function Sync-DbaAvailabilityGroup {
             if ($Exclude -notcontains "AgentCategory") {
                 if ($PSCmdlet.ShouldProcess("Syncing Agent Categories from $primaryserver to $secondaryservers")) {
                     Write-ProgressHelper -Activity $activity -StepNumber ($stepCounter++) -Message "Syncing Agent Categories"
-                    Copy-DbaAgentCategory -Source $server -Destination $secondaries -Force:$force
+                    Copy-DbaAgentJobCategory -Source $server -Destination $secondaries -Force:$force
                     $secondaries.JobServer.JobCategories.Refresh()
                     $secondaries.JobServer.OperatorCategories.Refresh()
                     $secondaries.JobServer.AlertCategories.Refresh()
@@ -290,7 +290,7 @@ function Sync-DbaAvailabilityGroup {
             if ($Exclude -notcontains "AgentProxy") {
                 if ($PSCmdlet.ShouldProcess("Syncing Agent Proxy Accounts from $primaryserver to $secondaryservers")) {
                     Write-ProgressHelper -Activity $activity -StepNumber ($stepCounter++) -Message "Syncing Agent Proxy Accounts"
-                    Copy-DbaAgentProxyAccount -Source $server -Destination $secondaries -Force:$force
+                    Copy-DbaAgentProxy -Source $server -Destination $secondaries -Force:$force
                     $secondaries.JobServer.ProxyAccounts.Refresh()
                 }
             }
@@ -298,7 +298,7 @@ function Sync-DbaAvailabilityGroup {
             if ($Exclude -notcontains "AgentSchedule") {
                 if ($PSCmdlet.ShouldProcess("Syncing Agent Schedules from $primaryserver to $secondaryservers")) {
                     Write-ProgressHelper -Activity $activity -StepNumber ($stepCounter++) -Message "Syncing Agent Schedules"
-                    Copy-DbaAgentSharedSchedule -Source $server -Destination $secondaries -Force:$force
+                    Copy-DbaAgentSchedule -Source $server -Destination $secondaries -Force:$force
                     $secondaries.JobServer.SharedSchedules.Refresh()
                     $secondaries.JobServer.Refresh()
                     $secondaries.Refresh()

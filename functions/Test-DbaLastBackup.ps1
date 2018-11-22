@@ -347,7 +347,7 @@ function Test-DbaLastBackup {
                 $ogdbname = $dbname
                 $restorelist = Read-DbaBackupHeader -SqlInstance $destserver -Path $lastbackup[0].Path -AzureCredential $AzureCredential
 
-                if ($MaxSize -and $MaxSize -lt $restorelist.BackupSizeMB) {
+                if ($MaxSize -and $MaxSize -lt $restorelist.BackupSize.Megabyte) {
                     $success = "The backup size for $dbname ($mb MB) exceeds the specified maximum size ($MaxSize MB)."
                     $dbccresult = "Skipped"
                 } else {

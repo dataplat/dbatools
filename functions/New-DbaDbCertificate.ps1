@@ -31,7 +31,7 @@ function New-DbaDbCertificate {
     .PARAMETER ActiveForServiceBrokerDialog
         Optional secure string used to create the certificate.
 
-    .PARAMETER Password
+    .PARAMETER SecurePassword
         Optional password - if no password is supplied, the password will be protected by the master key
 
     .PARAMETER InputObject
@@ -77,7 +77,8 @@ function New-DbaDbCertificate {
         [datetime]$StartDate = (Get-Date),
         [datetime]$ExpirationDate = $StartDate.AddYears(5),
         [switch]$ActiveForServiceBrokerDialog,
-        [Security.SecureString]$Password,
+        [Alias("Password")]
+        [Security.SecureString]$SecurePassword,
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
         [switch]$EnableException
@@ -118,8 +119,8 @@ function New-DbaDbCertificate {
                         $smocert.ExpirationDate = $ExpirationDate
                         $smocert.ActiveForServiceBrokerDialog = $ActiveForServiceBrokerDialog
 
-                        if ($Password) {
-                            $smocert.Create(([System.Runtime.InteropServices.marshal]::PtrToStringAuto([System.Runtime.InteropServices.marshal]::SecureStringToBSTR($password))))
+                        if ($SecurePassword) {
+                            $smocert.Create(([System.Runtime.InteropServices.marshal]::PtrToStringAuto([System.Runtime.InteropServices.marshal]::SecureStringToBSTR($SecurePassword))))
                         } else {
                             $smocert.Create()
                         }

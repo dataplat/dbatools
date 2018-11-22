@@ -55,9 +55,14 @@ function Get-DbaDbSpace {
         Returns all user database files and free space information for the localhost and localhost\namedinstance SQL Server instances. Processes data via the pipeline.
 
     .EXAMPLE
-        PS C:\> Get-DbaDbSpace -SqlInstance localhost -Database db1, db2
+        PS C:\> Get-DbaDbSpace -SqlInstance localhost -Database db1, db2 | Where-Object { $_.SpaceUntilMaxSize.Megabyte -lt 1 }
 
-        Returns database files and free space information for the db1 and db2 on localhost.
+        Returns database files and free space information for the db1 and db2 on localhost where there is only 1MB left until the space is maxed out
+
+    .EXAMPLE
+        PS C:\> Get-DbaDbSpace -SqlInstance localhost -Database db1, db2 | Where-Object { $_.SpaceUntilMaxSize.Gigabyte -lt 1 }
+
+        Returns database files and free space information for the db1 and db2 on localhost where there is only 1GB left until the space is maxed out
 
     #>
     [CmdletBinding()]
@@ -66,10 +71,9 @@ function Get-DbaDbSpace {
         [DbaInstanceParameter[]]$SqlInstance,
         [System.Management.Automation.PSCredential]$SqlCredential,
         [Alias("Databases")]
-        [object[]]$Database,
-        [object[]]$ExcludeDatabase,
+        [string[]]$Database,
+        [string[]]$ExcludeDatabase,
         [switch]$IncludeSystemDBs,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 
@@ -195,23 +199,23 @@ function Get-DbaDbSpace {
                         }
 
                         [pscustomobject]@{
-                            ComputerName         = $server.ComputerName
-                            InstanceName         = $server.ServiceName
-                            SqlInstance          = $server.DomainInstanceName
-                            Database             = $row.DBName
-                            FileName             = $row.FileName
-                            FileGroup            = $row.FileGroup
-                            PhysicalName         = $row.PhysicalName
-                            FileType             = $row.FileType
-                            UsedSpaceMB          = $UsedMB
-                            FreeSpaceMB          = $FreeMB
-                            FileSizeMB           = $row.FileSizeMB
-                            PercentUsed          = $PercentUsed
-                            AutoGrowth           = $row.GrowthMB
-                            AutoGrowType         = $row.GrowthType
-                            SpaceUntilMaxSizeMB  = $SpaceUntilMax
-                            AutoGrowthPossibleMB = $row.PossibleAutoGrowthMB
-                            UnusableSpaceMB      = $UnusableSpace
+                            ComputerName       = $server.ComputerName
+                            InstanceName       = $server.ServiceName
+                            SqlInstance        = $server.DomainInstanceName
+                            Database           = $row.DBName
+                            FileName           = $row.FileName
+                            FileGroup          = $row.FileGroup
+                            PhysicalName       = $row.PhysicalName
+                            FileType           = $row.FileType
+                            UsedSpace          = [dbasize]($UsedMB * 1024 * 1024)
+                            FreeSpace          = [dbasize]($FreeMB * 1024 * 1024)
+                            FileSize           = [dbasize]($row.FileSizeMB * 1024 * 1024)
+                            PercentUsed        = $PercentUsed
+                            AutoGrowth         = [dbasize]($row.GrowthMB * 1024 * 1024)
+                            AutoGrowType       = $row.GrowthType
+                            SpaceUntilMaxSize  = [dbasize]($SpaceUntilMax * 1024 * 1024)
+                            AutoGrowthPossible = [dbasize]($row.PossibleAutoGrowthMB * 1024 * 1024)
+                            UnusableSpace      = [dbasize]($UnusableSpace * 1024 * 1024)
                         }
                     }
                 } catch {

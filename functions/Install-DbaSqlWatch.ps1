@@ -15,7 +15,7 @@ function Install-DbaSqlWatch {
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
     .PARAMETER Database
-        Specifies the database to install SqlWatch into. Defaults to master.
+        Specifies the database to install SqlWatch into. Defaults to SQLWATCH.
 
     .PARAMETER LocalFile
         Specifies the path to a local file to install SqlWatch from. This *should* be the zipfile as distributed by the maintainers.
@@ -48,7 +48,7 @@ function Install-DbaSqlWatch {
     .EXAMPLE
         Install-DbaSqlWatch -SqlInstance server1
 
-        Logs into server1 with Windows authentication and then installs SqlWatch in the master database.
+        Logs into server1 with Windows authentication and then installs SqlWatch in the SQLWATCH database.
 
     .EXAMPLE
         Install-DbaSqlWatch -SqlInstance server1\instance1 -Database DBA
@@ -63,20 +63,20 @@ function Install-DbaSqlWatch {
     .EXAMPLE
         Install-DbaSqlWatch -SqlInstance sql2016\standardrtm, sql2016\sqlexpress, sql2014
 
-        Logs into sql2016\standardrtm, sql2016\sqlexpress and sql2014 with Windows authentication and then installs SqlWatch in the master database.
+        Logs into sql2016\standardrtm, sql2016\sqlexpress and sql2014 with Windows authentication and then installs SqlWatch in the SQLWATCH database.
 
     .EXAMPLE
         $servers = "sql2016\standardrtm", "sql2016\sqlexpress", "sql2014"
         $servers | Install-DbaSqlWatch
 
-        Logs into sql2016\standardrtm, sql2016\sqlexpress and sql2014 with Windows authentication and then installs SqlWatch in the master database.
-       #>
+        Logs into sql2016\standardrtm, sql2016\sqlexpress and sql2014 with Windows authentication and then installs SqlWatch in the SQLWATCH database.
+    #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
     param (
         [Parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [string]$Database = "master",
+        [string]$Database = "SQLWATCH",
         [string]$LocalFile,
         [switch]$Force,
         [switch]$EnableException

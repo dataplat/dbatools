@@ -1,7 +1,7 @@
-function Copy-DbaAgentProxyAccount {
+function Copy-DbaAgentProxy {
     <#
     .SYNOPSIS
-        Copy-DbaAgentProxyAccount migrates proxy accounts from one SQL Server to another.
+        Copy-DbaAgentProxy migrates proxy accounts from one SQL Server to another.
 
     .DESCRIPTION
         By default, all proxy accounts are copied. The -ProxyAccounts parameter is auto-populated for command-line completion and can be used to copy only specific proxy accounts.
@@ -51,20 +51,20 @@ function Copy-DbaAgentProxyAccount {
         Requires: sysadmin access on SQL Servers
 
     .LINK
-        https://dbatools.io/Copy-DbaAgentProxyAccount
+        https://dbatools.io/Copy-DbaAgentProxy
 
     .EXAMPLE
-        PS C:\> Copy-DbaAgentProxyAccount -Source sqlserver2014a -Destination sqlcluster
+        PS C:\> Copy-DbaAgentProxy -Source sqlserver2014a -Destination sqlcluster
 
         Copies all proxy accounts from sqlserver2014a to sqlcluster using Windows credentials. If proxy accounts with the same name exist on sqlcluster, they will be skipped.
 
     .EXAMPLE
-        PS C:\> Copy-DbaAgentProxyAccount -Source sqlserver2014a -Destination sqlcluster -ProxyAccount PSProxy -SourceSqlCredential $cred -Force
+        PS C:\> Copy-DbaAgentProxy -Source sqlserver2014a -Destination sqlcluster -ProxyAccount PSProxy -SourceSqlCredential $cred -Force
 
         Copies only the PSProxy proxy account from sqlserver2014a to sqlcluster using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster. If a proxy account with the same name exists on sqlcluster, it will be dropped and recreated because -Force was used.
 
     .EXAMPLE
-        PS C:\> Copy-DbaAgentProxyAccount -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force
+        PS C:\> Copy-DbaAgentProxy -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force
 
         Shows what would happen if the command were executed using force.
 
@@ -84,6 +84,7 @@ function Copy-DbaAgentProxyAccount {
         [switch]$EnableException
     )
     begin {
+        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Copy-DbaAgentProxyAccount
         try {
             $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -MinimumVersion 9
         } catch {
@@ -121,23 +122,32 @@ function Copy-DbaAgentProxyAccount {
                     Notes             = $null
                     DateTime          = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
                 }
-
-                # Proxy accounts rely on Credential accounts
+                
                 $credentialName = $account.CredentialName
-                $copyAgentProxyAccountStatus.Name = $credentialName
+                $copyAgentProxyAccountStatus.Name = $proxyName
                 $copyAgentProxyAccountStatus.Type = "Credential"
-
+                
+                # Proxy accounts rely on Credential accounts
+                if (-not $CredentialName) {
+                    $copyAgentProxyAccountStatus.Status = "Skipped"
+                    $copyAgentProxyAccountStatus.Notes = "Skipping migration of $proxyName due to misconfigured (empty) credential name"
+                    $copyAgentProxyAccountStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                    Write-Message -Level Verbose -Message "Skipping migration of $proxyName due to misconfigured (empty) credential name"
+                    continue
+                }
+                
                 try {
                     $credentialtest = $destServer.Credentials[$CredentialName]
                 } catch {
                     #here to avoid an empty catch
                     $null = 1
                 }
-
+                
                 if ($null -eq $credentialtest) {
                     $copyAgentProxyAccountStatus.Status = "Skipped"
+                    $copyAgentProxyAccountStatus.Notes = "Associated credential account, $CredentialName, does not exist on $destinstance"
                     $copyAgentProxyAccountStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                    Write-Message -Level Verbose -Message "Associated credential account, $CredentialName, does not exist on $destinstance. Skipping migration of $proxyName."
+                    Write-Message -Level Verbose -Message "Associated credential account, $CredentialName, does not exist on $destinstance"
                     continue
                 }
 
@@ -148,8 +158,7 @@ function Copy-DbaAgentProxyAccount {
                     if ($force -eq $false) {
                         $copyAgentProxyAccountStatus.Status = "Skipped"
                         $copyAgentProxyAccountStatus
-                        Write-Message -Level Verbose -Message "Server proxy account $proxyName exists at destination. Use -Force to drop and migrate."
-                        continue
+                        Stop-Function -Message "Server proxy account $proxyName exists at destination. Use -Force to drop and migrate." -Continue
                     } else {
                         if ($Pscmdlet.ShouldProcess($destinstance, "Dropping server proxy account $proxyName and recreating")) {
                             try {
