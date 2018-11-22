@@ -44,7 +44,6 @@ $TestsRunGroups = @{
         'Test-DbaDeprecatedFeature',
         'Test-DbaServerName',
         'Test-DbaTempDbConfig',
-        'Test-DbaLastBackup',
         'Test-DbaDbVirtualLogFile'
     )
     # do not run everywhere

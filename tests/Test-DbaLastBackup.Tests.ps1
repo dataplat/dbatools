@@ -36,7 +36,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     }
     AfterAll {
         # these for sure
-        Get-DbaDatabase -SqlInstance $script:instance1 -Database $dbs | Remove-DbaDatabase -Confirm:$false
+        Get-DbaDatabase -SqlInstance $script:instance1 -Database $dbs, "bigtestrest", "smalltestrest" | Remove-DbaDatabase -Confirm:$false
         # those just in case test-dbalastbackup didn't cooperate
         Get-DbaDatabase -SqlInstance $script:instance1 | Where-Object Name -like 'dbatools-testrestore-dbatoolsci_*' | Remove-DbaDatabase -Confirm:$false
         # see "Restores using a specific path"
