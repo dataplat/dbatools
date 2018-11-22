@@ -40,7 +40,6 @@ $TestsRunGroups = @{
         'Test-DbaOptimizeForAdHoc',
         'Test-DbaDbRecoveryModel',
         'Set-DbaDbState',
-        'Reset-DbaAdmin',
         'Test-DbaDeprecatedFeature',
         'Test-DbaServerName',
         'Test-DbaTempDbConfig',
