@@ -61,18 +61,6 @@ namespace Sqlcollaborative.Dbatools.Parameter
         }
 
         /// <summary>
-        /// Creates a credential parameter from a string only. Will prompt the user for the rest of the input. Will provide an option to remember the credential under the name provided
-        /// </summary>
-        /// <param name="UserName">The username (and domain name as may be the case) to put a credential around</param>
-        public DbaCredentialParameter(string UserName)
-        {
-            if (CredentialStore.ContainsKey(UserName.ToLower()))
-                Credential = CredentialStore[UserName.ToLower()];
-            else
-                throw new InvalidOperationException("Credential not found in credential cache!");
-        }
-
-        /// <summary>
         /// Creates a credential parameter from anything it nows how to handle
         /// </summary>
         /// <param name="Credential">The object to convert</param>
