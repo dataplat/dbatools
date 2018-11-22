@@ -25,7 +25,7 @@ function Backup-DbaDbMasterKey {
     .PARAMETER Credential
         Pass a credential object for the password
 
-    .PARAMETER Password
+    .PARAMETER SecurePassword
         The password to encrypt the exported key. This must be a SecureString.
 
     .PARAMETER InputObject
@@ -76,7 +76,8 @@ function Backup-DbaDbMasterKey {
         [PSCredential]$Credential,
         [string[]]$Database,
         [string[]]$ExcludeDatabase,
-        [Security.SecureString]$Password,
+        [Alias("Password")]
+        [Security.SecureString]$SecurePassword,
         [string]$Path,
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
@@ -84,7 +85,7 @@ function Backup-DbaDbMasterKey {
     )
     begin {
         if ($Credential) {
-            $Password = $Credential.Password
+            $SecurePassword = $Credential.Password
         }
     }
     process {
@@ -120,11 +121,11 @@ function Backup-DbaDbMasterKey {
             }
 
             # If you pass a password param, then you will not be prompted for each database, but it wouldn't be a good idea to build in insecurity
-            if (-not $Password -and -not $Credential) {
-                $password = Read-Host -AsSecureString -Prompt "You must enter Service Key password for $instance"
-                $password2 = Read-Host -AsSecureString -Prompt "Type the password again"
+            if (-not $SecurePassword -and -not $Credential) {
+                $SecurePassword = Read-Host -AsSecureString -Prompt "You must enter Service Key password for $instance"
+                $SecurePassword2 = Read-Host -AsSecureString -Prompt "Type the password again"
 
-                if (([System.Runtime.InteropServices.marshal]::PtrToStringAuto([System.Runtime.InteropServices.marshal]::SecureStringToBSTR($password))) -ne ([System.Runtime.InteropServices.marshal]::PtrToStringAuto([System.Runtime.InteropServices.marshal]::SecureStringToBSTR($password2)))) {
+                if (([System.Runtime.InteropServices.marshal]::PtrToStringAuto([System.Runtime.InteropServices.marshal]::SecureStringToBSTR($SecurePassword))) -ne ([System.Runtime.InteropServices.marshal]::PtrToStringAuto([System.Runtime.InteropServices.marshal]::SecureStringToBSTR($SecurePassword2)))) {
                     Stop-Function -Message "Passwords do not match" -Continue
                 }
             }
@@ -137,7 +138,7 @@ function Backup-DbaDbMasterKey {
 
             if ($Pscmdlet.ShouldProcess($instance, "Backing up master key to $filename")) {
                 try {
-                    $masterkey.Export($filename, [System.Runtime.InteropServices.marshal]::PtrToStringAuto([System.Runtime.InteropServices.marshal]::SecureStringToBSTR($password)))
+                    $masterkey.Export($filename, [System.Runtime.InteropServices.marshal]::PtrToStringAuto([System.Runtime.InteropServices.marshal]::SecureStringToBSTR($SecurePassword)))
                     $status = "Success"
                 } catch {
                     $status = "Failure"

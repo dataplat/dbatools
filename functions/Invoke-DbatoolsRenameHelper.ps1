@@ -56,7 +56,7 @@ function Invoke-DbatoolsRenameHelper {
         Shows what would happen if the command would run. If the command would run and there were matches,
         the resulting changes would be written to disk as Ascii encoded.
 
-          #>
+    #>
     [CmdletBinding(SupportsShouldProcess = $true)]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
@@ -74,11 +74,66 @@ function Invoke-DbatoolsRenameHelper {
             @{
                 "AliasName"  = "UseLastBackups"
                 "Definition" = "UseLastBackup"
-            }
-            ,
+            },
             @{
                 "AliasName"  = "NetworkShare"
                 "Definition" = "SharedPath"
+            },
+            @{
+                "AliasName"  = "NoSystemLogins"
+                "Definition" = "ExcludeSystemLogins"
+            },
+            @{
+                "AliasName"  = "NoJobSteps"
+                "Definition" = "ExcludeJobSteps"
+            },
+            @{
+                "AliasName"  = "NoSystemObjects"
+                "Definition" = "ExcludeSystemObjects"
+            },
+            @{
+                "AliasName"  = "NoJobs"
+                "Definition" = "ExcludeJobs"
+            },
+            @{
+                "AliasName"  = "NoDatabases"
+                "Definition" = "ExcludeDatabases"
+            },
+            @{
+                "AliasName"  = "NoDisabledJobs"
+                "Definition" = "ExcludeDisabledJobs"
+            },
+            @{
+                "AliasName"  = "NoJobSteps"
+                "Definition" = "ExcludeJobSteps"
+            },
+            @{
+                "AliasName"  = "NoSystem"
+                "Definition" = "ExcludeSystemLogins"
+            },
+            @{
+                "AliasName"  = "NoSystemDb"
+                "Definition" = "ExcludeSystem"
+            },
+            @{
+                "AliasName"  = "NoSystemObjects"
+                "Definition" = "ExcludeSystemObjects"
+            },
+            @{
+                "AliasName"  = "NoSystemSpid"
+                "Definition" = "ExcludeSystemSpids"
+            },
+            @{
+                "AliasName"  = "NoQueryTextColumn"
+                "Definition" = "ExcludeQueryTextColumn"
+            },
+            @{
+                "AliasName"  = "ExcludeAllSystemDb"
+                "Definition" = "ExcludeSystem"
+            },
+            @{
+                "AliasName"  = "ExcludeAllUserDb"
+                "Definition" = "ExcludeUser"
             }
         )
 
@@ -91,7 +146,8 @@ function Invoke-DbatoolsRenameHelper {
             foreach ($name in $allrenames) {
                 if ((Select-String -Pattern $name.AliasName -Path $file)) {
                     if ($Pscmdlet.ShouldProcess($file, "Replacing $($name.AliasName) with $($name.Definition)")) {
-                        (Get-Content -Path $file -Raw).Replace($name.AliasName, $name.Definition) | Set-Content -Path $file -Encoding $Encoding
+                        $content = (Get-Content -Path $file -Raw).Replace($name.AliasName, $name.Definition).Trim()
+                        Set-Content -Path $file -Encoding $Encoding -Value $content
                         [pscustomobject]@{
                             Path         = $file
                             Pattern      = $name.AliasName

@@ -283,17 +283,12 @@ function Start-DbaMigration {
 
         if ($Exclude -notcontains 'CentralManagementServer') {
             Write-Message -Level Verbose -Message "Migrating Central Management Server"
-            Copy-DbaCentralManagementServer -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Force:$Force
+            Copy-DbaCmsRegServer -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Force:$Force
         }
 
         if ($Exclude -notcontains 'BackupDevices') {
             Write-Message -Level Verbose -Message "Migrating Backup Devices"
             Copy-DbaBackupDevice -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Force:$Force
-        }
-
-        if ($Exclude -notcontains 'LinkedServers') {
-            Write-Message -Level Verbose -Message "Migrating linked servers"
-            Copy-DbaLinkedServer -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Force:$Force
         }
 
         if ($Exclude -notcontains 'SystemTriggers') {
@@ -327,7 +322,12 @@ function Start-DbaMigration {
                 $null = Update-SqlDbOwner -Source $sourceserver -Destination $dest -DestinationSqlCredential $DestinationSqlCredential
             }
         }
-
+        
+        if ($Exclude -notcontains 'LinkedServers') {
+            Write-Message -Level Verbose -Message "Migrating linked servers"
+            Copy-DbaLinkedServer -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Force:$Force
+        }
+        
         if ($Exclude -notcontains 'DataCollector') {
             Write-Message -Level Verbose -Message "Migrating Data Collector collection sets"
             Copy-DbaDataCollector -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Force:$Force
@@ -367,7 +367,7 @@ function Start-DbaMigration {
 
         if ($Exclude -notcontains 'ExtendedEvents') {
             Write-Message -Level Verbose -Message "Migrating Extended Events"
-            Copy-DbaExtendedEvent -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Force:$Force
+            Copy-DbaXESession -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Force:$Force
         }
 
         if ($Exclude -notcontains 'AgentServer') {

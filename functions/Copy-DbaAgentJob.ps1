@@ -177,16 +177,16 @@ function Copy-DbaAgentJob {
                     }
                 }
 
-                $proxyNames = $serverJob.JobSteps.ProxyName | Where-Object { $_.Length -gt 0 }
+                $proxyNames = ($serverJob.JobSteps | Where-Object ProxyName).ProxyName
                 $missingProxy = $proxyNames | Where-Object { $destServer.JobServer.ProxyAccounts.Name -notcontains $_ }
 
-                if ($missingProxy.Count -gt 0 -and $proxyNames.Count -gt 0) {
-                    if ($Pscmdlet.ShouldProcess($destinstance, "Proxy Account(s) $($proxyNames[0]) doesn't exist on destination. Skipping job [$jobName].")) {
+                if ($missingProxy -and $proxyNames) {
+                    if ($Pscmdlet.ShouldProcess($destinstance, "Proxy Account(s) $missingProxy doesn't exist on destination. Skipping job [$jobName].")) {
                         $missingProxy = ($missingProxy | Sort-Object | Get-Unique) -join ", "
                         $copyJobStatus.Status = "Skipped"
-                        $copyJobStatus.Notes = "Job is dependent on proxy $($proxyNames[0])"
+                        $copyJobStatus.Notes = "Job is dependent on proxy $missingProxy"
                         $copyJobStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                        Write-Message -Level Verbose -Message "Proxy Account(s) $($proxyNames[0]) doesn't exist on destination. Skipping job [$jobName]."
+                        Write-Message -Level Verbose -Message "Proxy Account(s) $missingProxy doesn't exist on destination. Skipping job [$jobName]."
                     }
                     continue
                 }

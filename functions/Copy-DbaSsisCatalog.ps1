@@ -228,7 +228,7 @@ function Copy-DbaSsisCatalog {
         function New-SSISDBCatalog {
             [CmdletBinding(SupportsShouldProcess)]
             param (
-                [System.Security.SecureString]$Password
+                [System.Security.SecureString]$SecurePassword
             )
             if ($Pscmdlet.ShouldProcess("Creating New SSISDB Catalog")) {
                 if (!$Password) {
@@ -352,7 +352,7 @@ function Copy-DbaSsisCatalog {
                             }
                         }
                     } else {
-                        New-SSISDBCatalog -Password $CreateCatalogPassword
+                        New-SSISDBCatalog -SecurePassword $CreateCatalogPassword
                     }
 
                     $destinationSSIS.Refresh()
