@@ -67,13 +67,9 @@ namespace Sqlcollaborative.Dbatools.Parameter
         public DbaCredentialParameter(string UserName)
         {
             if (CredentialStore.ContainsKey(UserName.ToLower()))
-            {
                 Credential = CredentialStore[UserName.ToLower()];
-            }
-            else if (dbaSystem.SystemHost.UnattendedMode)
-                throw new InvalidOperationException("Cannot prompt for credentials in unattended mode!");
             else
-                Credential = PromptForCredential(UserName);
+                throw new InvalidOperationException("Credential not found in credential cache!");
         }
 
         /// <summary>
@@ -141,24 +137,6 @@ namespace Sqlcollaborative.Dbatools.Parameter
         public NetworkCredential GetNetworkCredential()
         {
             return Credential.GetNetworkCredential();
-        }
-
-        /// <summary>
-        /// Prompts the user for a password to complete a credentials object
-        /// </summary>
-        /// <param name="Name">The name of the user. If specified, this will be added to the prompt.</param>
-        /// <returns>The finished PSCredential object</returns>
-        public static PSCredential PromptForCredential(string Name = "")
-        {
-            Utility.CredentialPrompt prompt = Utility.CredentialPrompt.GetCredential(Name);
-            if (prompt.Cancelled)
-                throw new ArgumentException("No credentials specified!");
-
-            PSCredential cred = new PSCredential(prompt.Username, prompt.Password);
-            if (prompt.Remember)
-                CredentialStore[cred.UserName.ToLower()] = cred;
-
-            return cred;
         }
 
         /// <summary>
