@@ -1,7 +1,7 @@
 
 -- SQL Server 2016 SP2 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: October 24, 2018
+-- Last Modified: November 14, 2018
 -- https://www.sqlskills.com/blogs/glenn/
 -- http://sqlserverperformance.wordpress.com/
 -- Twitter: GlennAlanBerry
@@ -67,7 +67,8 @@ SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version In
 -- 13.0.5026.0		SP2 RTM				4/24/2018		https://bit.ly/2FEvN2q 
 -- 13.0.5149.0		SP2 CU1				5/30/2018		https://support.microsoft.com/en-us/help/4135048/cumulative-update-1-for-sql-server-2016-sp2
 -- 13.0.5153.0		SP2 CU2				7/16/2018		https://support.microsoft.com/en-us/help/4340355
--- 13.0.5216.0		SP2 CU3				9/20/2018		https://support.microsoft.com/en-us/help/4458871			
+-- 13.0.5216.0		SP2 CU3				9/20/2018		https://support.microsoft.com/en-us/help/4458871
+-- 13.0.5233.0		SP2 CU4			   11/13/2018		https://support.microsoft.com/en-us/help/4464106/cumulative-update-4-for-sql-server-2016-sp2	
 
 		
 															
@@ -453,7 +454,8 @@ SELECT cpu_count AS [Logical CPU Count], scheduler_count,
        physical_memory_kb/1024 AS [Physical Memory (MB)], 
        max_workers_count AS [Max Workers Count], 
 	   affinity_type_desc AS [Affinity Type], 
-       sqlserver_start_time AS [SQL Server Start Time], 
+       sqlserver_start_time AS [SQL Server Start Time],
+	   DATEDIFF(hour, sqlserver_start_time, GETDATE()) AS [SQL Server Up Time (hrs)],
 	   virtual_machine_type_desc AS [Virtual Machine Type], 
        softnuma_configuration_desc AS [Soft NUMA Configuration], 
 	   sql_memory_model_desc
@@ -1093,7 +1095,7 @@ ON t1.lock_owner_address = t2.resource_address OPTION (RECOMPILE);
 
 
 
--- Get CPU Utilization History for last 256 minutes (in one minute intervals)  (Query 44) (CPU Utilization History)
+-- Get CPU Utilization History for last 256 minutes (in one minute intervals)  (Query 45) (CPU Utilization History)
 DECLARE @ts_now bigint = (SELECT cpu_ticks/(cpu_ticks/ms_ticks) FROM sys.dm_os_sys_info WITH (NOLOCK)); 
 
 SELECT TOP(256) SQLProcessUtilization AS [SQL Server Process CPU Utilization], 
