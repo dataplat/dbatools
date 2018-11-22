@@ -1,7 +1,7 @@
 
 -- SQL Server 2008 R2 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: July 10, 2018
+-- Last Modified: November 11, 2018
 -- https://www.sqlserverperformance.wordpress.com/
 -- https://www.sqlskills.com/blogs/glenn/
 -- Twitter: GlennAlanBerry
@@ -252,7 +252,9 @@ WHERE node_state_desc <> N'ONLINE DAC' OPTION (RECOMPILE);
 SELECT cpu_count AS [Logical CPU Count], hyperthread_ratio AS [Hyperthread Ratio],
 cpu_count/hyperthread_ratio AS [Physical CPU Count], 
 physical_memory_in_bytes/1048576 AS [Physical Memory (MB)], 
-sqlserver_start_time, affinity_type_desc 
+sqlserver_start_time,
+DATEDIFF(hour, sqlserver_start_time, GETDATE()) AS [SQL Server Up Time (hrs)],
+affinity_type_desc 
 FROM sys.dm_os_sys_info WITH (NOLOCK) OPTION (RECOMPILE);
 ------
 
