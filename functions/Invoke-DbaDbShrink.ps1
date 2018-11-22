@@ -156,12 +156,12 @@ function Invoke-DbaDbShrink {
             Stop-Function -Message "You must specify databases to execute against using either -Database, -Exclude or -AllUserDatabases"
             return
         }
-        
+
         if ((Test-Bound -ParameterName StepSize) -and $stepsize -lt 1024) {
             Stop-Function -Message "StepSize is measured in bits. Did you mean $StepSize bits? If so, please use 1024 or above. If not, then use the PowerShell bit notation like $($StepSize)MB or $($StepSize)GB"
             return
         }
-        
+
         if ($stepsize) {
             $StepSizeKB = ([dbasize]($StepSize)).Kilobyte
         }
@@ -223,11 +223,11 @@ function Invoke-DbaDbShrink {
                     $desiredFileSize = $spaceUsed + $desiredSpaceAvailable
 
                     Write-Message -Level Verbose -Message "File: $($file.Name)"
-                    Write-Message -Level Verbose -Message "Starting Size (KB): $([int]$startingSize)"
+                    Write-Message -Level Verbose -Message "Initial Size (KB): $([int]$startingSize)"
                     Write-Message -Level Verbose -Message "Space Used (KB): $([int]$spaceUsed)"
-                    Write-Message -Level Verbose -Message "Starting Freespace (KB): $([int]$spaceAvailable)"
-                    Write-Message -Level Verbose -Message "Desired Freespace (KB): $([int]$desiredSpaceAvailable)"
-                    Write-Message -Level Verbose -Message "Desired FileSize (KB): $([int]$desiredFileSize)"
+                    Write-Message -Level Verbose -Message "Initial Freespace (KB): $([int]$spaceAvailable)"
+                    Write-Message -Level Verbose -Message "Target Freespace (KB): $([int]$desiredSpaceAvailable)"
+                    Write-Message -Level Verbose -Message "Target FileSize (KB): $([int]$desiredFileSize)"
 
                     if ($spaceAvailable -le $desiredSpaceAvailable) {
                         Write-Message -Level Warning -Message "File size of ($startingSize) is less than or equal to the desired outcome ($desiredFileSize) for $($file.Name)"
@@ -271,10 +271,9 @@ function Invoke-DbaDbShrink {
                                     $file.Refresh()
                                 }
                                 $success = $true
-                                $notes = "Database shrinks can cause massive index fragmentation and negatively impact performance. You should now run DBCC INDEXDEFRAG or ALTER INDEX ... REORGANIZE"
                             } catch {
                                 $success = $false
-                                Stop-Function -message "Shrink Failed:  $($_.Exception.InnerException)"  -EnableException $EnableException -ErrorRecord $_ -Continue
+                                Stop-Function -message "Failure" -EnableException $EnableException -ErrorRecord $_ -Continue
                                 continue
                             }
                             $end = Get-Date
@@ -297,29 +296,29 @@ function Invoke-DbaDbShrink {
                             $elapsed = "{0:HH:mm:ss}" -f ([datetime]$ts.Ticks)
 
                             $object = [PSCustomObject]@{
-                                ComputerName                  = $server.ComputerName
-                                InstanceName                  = $server.ServiceName
-                                SqlInstance                   = $server.DomainInstanceName
-                                Database                      = $db.name
-                                File                          = $file.name
-                                Start                         = $start
-                                End                           = $end
-                                Elapsed                       = $elapsed
-                                Success                       = $success
-                                StartingTotalSize             = [dbasize]($startingSize * 1024)
-                                StartingUsed                  = [dbasize]($spaceUsed * 1024)
-                                FinalTotalSize                = [dbasize]($finalFileSize * 1024)
-                                StartingAvailable             = [dbasize]($spaceAvailable * 1024)
-                                DesiredAvailable              = [dbasize]($desiredSpaceAvailable * 1024)
-                                FinalAvailable                = [dbasize]($finalSpaceAvailable * 1024)
-                                StartingAvgIndexFragmentation = [math]::Round($startingFrag, 1)
-                                EndingAvgIndexFragmentation   = [math]::Round($endingDefrag, 1)
-                                StartingTopIndexFragmentation = [math]::Round($startingTopFrag, 1)
-                                EndingTopIndexFragmentation   = [math]::Round($endingTopDefrag, 1)
-                                Notes                         = $notes
+                                ComputerName                = $server.ComputerName
+                                InstanceName                = $server.ServiceName
+                                SqlInstance                 = $server.DomainInstanceName
+                                Database                    = $db.name
+                                File                        = $file.name
+                                Start                       = $start
+                                End                         = $end
+                                Elapsed                     = $elapsed
+                                Success                     = $success
+                                InitialSize                 = [dbasize]($startingSize * 1024)
+                                InitialUsed                 = [dbasize]($spaceUsed * 1024)
+                                InitialAvailable            = [dbasize]($spaceAvailable * 1024)
+                                TargetAvailable             = [dbasize]($desiredSpaceAvailable * 1024)
+                                FinalAvailable              = [dbasize]($finalSpaceAvailable * 1024)
+                                FinalSize                   = [dbasize]($finalFileSize * 1024)
+                                InitialAverageFragmentation = [math]::Round($startingFrag, 1)
+                                FinalAverageFragmentation   = [math]::Round($endingDefrag, 1)
+                                InitialTopFragmentation     = [math]::Round($startingTopFrag, 1)
+                                FinalTopFragmentation       = [math]::Round($endingTopDefrag, 1)
+                                Notes                       = "Database shrinks can cause massive index fragmentation and negatively impact performance. You should now run DBCC INDEXDEFRAG or ALTER INDEX ... REORGANIZE"
                             }
                             if ($ExcludeIndexStats) {
-                                Select-DefaultView -InputObject $object -ExcludeProperty StartingAvgIndexFragmentation, EndingAvgIndexFragmentation, StartingTopIndexFragmentation, EndingTopIndexFragmentation
+                                Select-DefaultView -InputObject $object -ExcludeProperty InitialAverageFragmentation, FinalAverageFragmentation, InitialTopFragmentation, FinalTopFragmentation
                             } else {
                                 $object
                             }
