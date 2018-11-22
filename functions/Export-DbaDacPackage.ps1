@@ -192,7 +192,7 @@ function Export-DbaDacPackage {
             }
             $cleaninstance = $instance.ToString().Replace('\', '-')
 
-            $dbs = Get-DbaDatabase -SqlInstance $server -OnlyAccessible -ExcludeAllSystemDb -Database $Database -ExcludeDatabase $ExcludeDatabase
+            $dbs = Get-DbaDatabase -SqlInstance $server -OnlyAccessible -ExcludeSystem -Database $Database -ExcludeDatabase $ExcludeDatabase
             if (-not $dbs) {
                 Stop-Function -Message "Databases not found on $instance" -Target $instance -Continue
             }

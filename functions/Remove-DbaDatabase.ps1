@@ -59,12 +59,12 @@ function Remove-DbaDatabase {
         Does not prompt and swiftly removes containeddb on SQL Server sql2016
 
     .EXAMPLE
-        PS C:\> Get-DbaDatabase -SqlInstance server\instance -ExcludeAllSystemDb | Remove-DbaDatabase
+        PS C:\> Get-DbaDatabase -SqlInstance server\instance -ExcludeSystem | Remove-DbaDatabase
 
         Removes all the user databases from server\instance
 
     .EXAMPLE
-        PS C:\> Get-DbaDatabase -SqlInstance server\instance -ExcludeAllSystemDb | Remove-DbaDatabase -Confirm:$false
+        PS C:\> Get-DbaDatabase -SqlInstance server\instance -ExcludeSystem | Remove-DbaDatabase -Confirm:$false
 
         Removes all the user databases from server\instance without any confirmation
     #>
