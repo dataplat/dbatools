@@ -33,6 +33,7 @@ $TestsRunGroups = @{
         # these work but fail too often on appveyor
         # will revisit once they get their new data center
         'Remove-DbaAvailabilityGroup',
+        'Reset-DbaAdmin',
         'Remove-DbaAgDatabase',
         'New-DbaAvailabilityGroup',
         'Export-DbaDacPackage',
@@ -40,7 +41,6 @@ $TestsRunGroups = @{
         'Test-DbaOptimizeForAdHoc',
         'Test-DbaDbRecoveryModel',
         'Set-DbaDbState',
-        'Reset-DbaAdmin',
         'Test-DbaDeprecatedFeature',
         'Test-DbaServerName',
         'Test-DbaTempDbConfig',
