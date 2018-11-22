@@ -36,11 +36,7 @@ function Unregister-RemoteSessionConfiguration {
         $unregisterIt = Invoke-Command2 -ComputerName $ComputerName -Credential $Credential -ScriptBlock $removeRunasSession -ArgumentList @($Name)
 
         Write-Message -Level Verbose -Message "Restarting WinRm service on $ComputerName"
-        try {
-            $null = Get-Service -ComputerName $ComputerName -Name WinRM -ErrorAction Stop | Restart-Service -ErrorAction Stop
-        } catch {
-            Write-Message -Level Warning "Failed to restart WinRM service on a remote machine, authentication might fail to work as expected"
-        }
+        Restart-WinRMService -ComputerName $ComputerName -Credential $Credential
 
         return $unregisterIt
     }
