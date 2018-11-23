@@ -411,10 +411,13 @@ function New-DbaAvailabilityGroup {
                     BackupPriority                = $BackupPriority
                     ConnectionModeInPrimaryRole   = $ConnectionModeInPrimaryRole
                     ConnectionModeInSecondaryRole = $ConnectionModeInSecondaryRole
-                    SeedingMode                   = $SeedingMode
                     Endpoint                      = $Endpoint
                     ReadonlyRoutingConnectionUrl  = $ReadonlyRoutingConnectionUrl
                     Certificate                   = $Certificate
+                }
+
+                if ($server.VersionMajor -ge 13) {
+                    $replicaparams += @{SeedingMode = $SeedingMode}
                 }
 
                 $null = Add-DbaAgReplica @replicaparams -EnableException -SqlInstance $server
