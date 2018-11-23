@@ -15,11 +15,12 @@ $scriptBlock = {
             [bool]$DoCopy,
             [string]$Name
         )
-
+        $DllRoot = (Resolve-Path -Path $DllRoot)
+        
         if (-not $DoCopy) {
             return
         }
-        if ("$ModuleRoot\bin\smo" -eq $DllRoot) {
+        if ((Resolve-Path -Path "$ModuleRoot\bin\smo") -eq $DllRoot) {
             return
         }
 
@@ -27,7 +28,7 @@ $scriptBlock = {
             $null = New-Item -Path $DllRoot -ItemType Directory -ErrorAction Ignore
         }
 
-        Copy-Item -Path "$ModuleRoot\bin\smo\$Name.dll" -Destination $DllRoot
+        Copy-Item -Path (Resolve-Path -Path "$ModuleRoot\bin\smo\$Name.dll") -Destination $DllRoot
     }
     
     #region Names
@@ -187,14 +188,16 @@ $scriptBlock = {
     }
     if ($PSVersionTable.PSEdition -eq "Core") {
         foreach ($name in $names) {
-            Add-Type -Path "$DllRoot\coreclr\$name.dll"
+            Add-Type -Path (Resolve-Path -Path "$DllRoot\coreclr\$name.dll")
         }
     } else {
         foreach ($name in $names) {
-            Add-Type -Path "$DllRoot\$name.dll"
+            Add-Type -Path (Resolve-Path -Path "$DllRoot\$name.dll")
         }
     }
 }
+
+$smo = (Resolve-Path -Path "$script:DllRoot\smo")
 
 if ($script:serialImport) {
     $scriptBlock.Invoke($script:PSModuleRoot, "$script:DllRoot\smo", (-not $script:strictSecurityMode))
@@ -204,6 +207,6 @@ if ($script:serialImport) {
         try { $script:smoRunspace.Runspace.Name = "dbatools-import-smo" }
         catch { }
     }
-    $script:smoRunspace.AddScript($scriptBlock).AddArgument($script:PSModuleRoot).AddArgument("$script:DllRoot\smo").AddArgument((-not $script:strictSecurityMode))
+    $script:smoRunspace.AddScript($scriptBlock).AddArgument($script:PSModuleRoot).AddArgument($smo).AddArgument((-not $script:strictSecurityMode))
     $script:smoRunspace.BeginInvoke()
 }
