@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
     and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.524] - 2018-11-23
+### Added
+- $script:core for easy core detection in functions
+
+### Fixed
+- Resolve-Path added to core import routine
+
 ## [0.9.523] - 2018-11-23
 ### Added
 - Support for Dacfx for core 🎉
