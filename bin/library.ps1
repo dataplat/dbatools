@@ -45,7 +45,7 @@ if (([System.Management.Automation.PSTypeName]'Sqlcollaborative.Dbatools.Configu
 }
 #endregion Test whether the module had already been imported
 
-$libraryBase = (Resolve-Path -LiteralPath ($ExecutionContext.SessionState.Module.ModuleBase + "\bin"))
+$libraryBase = (Resolve-Path -Path ($ExecutionContext.SessionState.Module.ModuleBase + "\bin"))
 $dll = (Resolve-Path -Path "$libraryBase\dbatools.dll" -ErrorAction Ignore)
 
 if ($ImportLibrary) {
@@ -61,7 +61,7 @@ if ($ImportLibrary) {
         }
         # Else we prioritize user convenience
 else {
-            $sln = (Resolve-Path -LiteralPath "$libraryBase\projects\dbatools\dbatools.sln")
+            $sln = (Resolve-Path -Path "$libraryBase\projects\dbatools\dbatools.sln")
             $hasProject = Test-Path -Path $sln
             
             if (-not $dll) {
@@ -81,14 +81,14 @@ else {
                     if ("$($dll)" -ne "$(Join-Path -Path $script:DllRoot -ChildPath dbatools.dll)") {
                         Copy-Item -Path $dll -Destination $script:DllRoot -Force -ErrorAction Stop
                     }
-                    Add-Type -Path (Resolve-Path -LiteralPath "$script:DllRoot\dbatools.dll") -ErrorAction Stop
+                    Add-Type -Path (Resolve-Path -Path "$script:DllRoot\dbatools.dll") -ErrorAction Stop
                 } catch {
                     Write-Verbose -Message "Failed to copy and import, attempting to import straight from the module directory"
                     Add-Type -Path $dll -ErrorAction Stop
                 }
                 Write-Verbose -Message "Total duration: $((Get-Date) - $start)"
             } elseif ($hasProject) {
-                . Import-ModuleFile (Resolve-Path -LiteralPath "$($script:PSModuleRoot)\bin\build-project.ps1")
+                . Import-ModuleFile (Resolve-Path -Path "$($script:PSModuleRoot)\bin\build-project.ps1")
             } else {
                 throw "No valid dbatools library found! Check your module integrity"
             }
