@@ -134,21 +134,24 @@ function Export-DbaDacPackage {
                 $fileName = $fileItem.FullName
             }
         }
-
-        $dacfxPath = "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Dac.dll"
-        if ((Test-Path $dacfxPath) -eq $false) {
-            Stop-Function -Message 'Dac Fx library not found.' -EnableException $EnableException
-            return
-        } else {
-            try {
-                Add-Type -Path $dacfxPath
-                Write-Message -Level Verbose -Message "Dac Fx loaded."
-            } catch {
-                Stop-Function -Message 'No usable version of Dac Fx found.' -ErrorRecord $_
+        
+        if ($PSVersionTable.PSEdition -ne "Core") {
+            $dacfxPath = Resolve-Path -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Dac.dll"
+            
+            if ((Test-Path $dacfxPath) -eq $false) {
+                Stop-Function -Message 'Dac Fx library not found.' -EnableException $EnableException
                 return
+            } else {
+                try {
+                    Add-Type -Path $dacfxPath
+                    Write-Message -Level Verbose -Message "Dac Fx loaded."
+                } catch {
+                    Stop-Function -Message 'No usable version of Dac Fx found.' -ErrorRecord $_
+                    return
+                }
             }
         }
-
+        
         #check that at least one of the DB selection parameters was specified
         if (!$AllUserDatabases -and !$Database) {
             Stop-Function -Message "Either -Database or -AllUserDatabases should be specified" -Continue
