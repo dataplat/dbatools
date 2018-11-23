@@ -46,7 +46,7 @@ if (([System.Management.Automation.PSTypeName]'Sqlcollaborative.Dbatools.Configu
 #endregion Test whether the module had already been imported
 
 $libraryBase = (Resolve-Path -LiteralPath ($ExecutionContext.SessionState.Module.ModuleBase + "\bin"))
-$dll = (Resolve-Path -LiteralPath "$libraryBase\dbatools.dll")
+$dll = (Resolve-Path -Path "$libraryBase\dbatools.dll" -ErrorAction Ignore)
 
 if ($ImportLibrary) {
     #region Add Code
@@ -74,16 +74,16 @@ else {
                 $start = Get-Date
                 
                 try {
-                    $libraryBase = Resolve-Path -LiteralPath "$libraryBase\"
-                    $script:DllRoot = Resolve-Path -LiteralPath $script:DllRoot
+                    $libraryBase = Resolve-Path -Path "$libraryBase\"
+                    $script:DllRoot = Resolve-Path -Path $script:DllRoot
                     Write-Verbose -Message "Found library, trying to copy & import"
-                    
-                    if ($dll -ne (Resolve-Path -LiteralPath "$script:DllRoot\dbatools.dll")) {
+                    # this looks excessive but for some reason the explicit string to string is required
+                    if ("$($dll)" -ne "$(Join-Path -Path $script:DllRoot -ChildPath dbatools.dll)") {
                         Copy-Item -Path $dll -Destination $script:DllRoot -Force -ErrorAction Stop
                     }
                     Add-Type -Path (Resolve-Path -LiteralPath "$script:DllRoot\dbatools.dll") -ErrorAction Stop
                 } catch {
-                    Write-Verbose -Message "Failed to copy&import, attempting to import straight from the module directory"
+                    Write-Verbose -Message "Failed to copy and import, attempting to import straight from the module directory"
                     Add-Type -Path $dll -ErrorAction Stop
                 }
                 Write-Verbose -Message "Total duration: $((Get-Date) - $start)"
