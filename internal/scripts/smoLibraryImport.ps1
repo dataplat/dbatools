@@ -46,7 +46,13 @@ $scriptBlock = {
             'Microsoft.SqlServer.Smo',
             'Microsoft.SqlServer.SmoExtended',
             'Microsoft.SqlServer.SqlEnum',
-            'System.Security.SecureString'
+            'System.Security.SecureString',
+            'Microsoft.Data.Tools.Schema.Sql',
+            'Microsoft.Data.Tools.Utilities',
+            'Microsoft.SqlServer.Dac',
+            'Microsoft.SqlServer.Dac.Extensions',
+            'Microsoft.SqlServer.TransactSql.ScriptDom',
+            'Microsoft.SqlServer.Types'
         )
     } else {
         $names = @(
