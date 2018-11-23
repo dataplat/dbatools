@@ -69,7 +69,8 @@ function New-DbaDacOption {
         [switch]$EnableException
     )
     if ($PScmdlet.ShouldProcess("$type", "Creating New DacOptions of $action")) {
-        if (-not $script:core) {
+        if ($PSVersionTable.PSEdition -ne "Core") {
+            
             $dacfxPath = "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Dac.dll"
             if ((Test-Path $dacfxPath) -eq $false) {
                 Stop-Function -Message 'Dac Fx library not found.' -EnableException $EnableException
