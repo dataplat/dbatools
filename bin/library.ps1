@@ -70,7 +70,8 @@ else {
                 $hasCompiledDll = Test-Path -Path $dll
             }
             
-            if ((-not $script:alwaysBuildLibrary) -and $hasCompiledDll -and ([System.Diagnostics.FileVersionInfo]::GetVersionInfo("$libraryBase\dbatools.dll").FileVersion -eq $currentLibraryVersion)) {
+            $reslibdll = Resolve-Path -Path "$libraryBase\dbatools.dll"
+            if ((-not $script:alwaysBuildLibrary) -and $hasCompiledDll -and ([System.Diagnostics.FileVersionInfo]::GetVersionInfo($reslibdll).FileVersion -eq $currentLibraryVersion)) {
                 $start = Get-Date
                 
                 try {
