@@ -45,12 +45,12 @@ if (([System.Management.Automation.PSTypeName]'Sqlcollaborative.Dbatools.Configu
 }
 #endregion Test whether the module had already been imported
 
+$libraryBase = (Resolve-Path -Path ($ExecutionContext.SessionState.Module.ModuleBase + "\bin"))
+$dll = (Resolve-Path -Path "$libraryBase\dbatools.dll")
+
 if ($ImportLibrary) {
     #region Add Code
     try {
-        $libraryBase = (Resolve-Path -Path ($ExecutionContext.SessionState.Module.ModuleBase + "\bin"))
-        $dll = (Resolve-Path -Path "$libraryBase\dbatools.dll")
-        
         # In strict security mode, only load from the already pre-compiled binary within the module
         if ($script:strictSecurityMode) {
             if (Test-Path -Path $dll) {
@@ -61,9 +61,15 @@ if ($ImportLibrary) {
         }
         # Else we prioritize user convenience
 else {
-            $sln = (Resolve-Path -PSPath "$libraryBase\projects\dbatools\dbatools.sln")
+            $sln = (Resolve-Path -LiteralPath "$libraryBase\projects\dbatools\dbatools.sln")
             $hasProject = Test-Path -Path $sln
-            $hasCompiledDll = Test-Path -Path "$libraryBase\dbatools.dll"
+            
+            if (-not $dll) {
+                $hasCompiledDll = $false
+            } else {
+                $hasCompiledDll = Test-Path -Path $dll
+            }
+            
             if ((-not $script:alwaysBuildLibrary) -and $hasCompiledDll -and ([System.Diagnostics.FileVersionInfo]::GetVersionInfo("$libraryBase\dbatools.dll").FileVersion -eq $currentLibraryVersion)) {
                 $start = Get-Date
                 
