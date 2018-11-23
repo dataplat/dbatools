@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
     and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.523] - 2018-11-23
+### Added
+- Support for Dacfx for core 🎉
+
+### Fixed
+- Weird thing in Core where a string comparison didn't work so it tried to copy dbatools.dll onto itself
+- Get-DbaDbFile now works for CS collation
+
 ## [0.9.522] - 2018-11-23
 ### Added
 - Support for PS Core on Windows 🎉
