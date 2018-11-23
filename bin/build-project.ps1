@@ -1,6 +1,6 @@
 [CmdletBinding()]
 param (
-    [string]$ProjectPath = (Join-Path -Path $PSModuleRoot -ChildPath (Resolve-Path -Path 'bin\projects\dbatools\dbatools.sln')),
+    [string]$ProjectPath = (Resolve-Path -Path (Join-Path -Path $PSModuleRoot -ChildPath 'bin\projects\dbatools\dbatools.sln')),
     [ValidateSet('ps3', 'ps4', 'Release', 'Debug')]
     [string]$MsbuildConfiguration = "Release",
     [string]$MsbuildOptions = "",
