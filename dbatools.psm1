@@ -175,26 +175,26 @@ if (-not ([Sqlcollaborative.Dbatools.Message.LogHost]::LoggingPath)) {
 
 if ($script:multiFileImport) {
     # All internal functions privately available within the toolset
-    foreach ($function in (Get-ChildItem "$script:PSModuleRoot\internal\functions\*.ps1")) {
+    foreach ($function in (Get-ChildItem -Path (Resolve-Path -Path "$script:PSModuleRoot\internal\functions\*.ps1"))) {
         . Import-ModuleFile $function.FullName
     }
     Write-ImportTime -Text "Loading Internal Commands"
 
-    . Import-ModuleFile "$script:PSModuleRoot\internal\scripts\cmdlets.ps1"
+    . Import-ModuleFile -Path (Resolve-Path -Path "$script:PSModuleRoot\internal\scripts\cmdlets.ps1")
     Write-ImportTime -Text "Registering cmdlets"
-
+    
     # All exported functions
-    foreach ($function in (Get-ChildItem "$script:PSModuleRoot\functions\*.ps1")) {
+    foreach ($function in (Get-ChildItem -Path (Resolve-Path -Path "$script:PSModuleRoot\functions\*.ps1"))) {
         . Import-ModuleFile $function.FullName
     }
     Write-ImportTime -Text "Loading Public Commands"
-
+    
 }
 else {
-    . "$script:PSModuleRoot\allcommands.ps1"
+    . (Resolve-Path -Path "$script:PSModuleRoot\allcommands.ps1")
     Write-ImportTime -Text "Loading Public and Private Commands"
 
-    . Import-ModuleFile "$script:PSModuleRoot\internal\scripts\cmdlets.ps1"
+    . Import-ModuleFile (Resolve-Path -Path "$script:PSModuleRoot\internal\scripts\cmdlets.ps1")
     Write-ImportTime -Text "Registering cmdlets"
 }
 
@@ -202,32 +202,32 @@ else {
 # Note: Each optional file must include a conditional governing whether it's run at all.
 # Validations were moved into the other files, in order to prevent having to update dbatools.psm1 every time
 # 96ms
-foreach ($function in (Get-ChildItem "$script:PSModuleRoot\optional\*.ps1")) {
+foreach ($function in (Get-ChildItem -Path (Resolve-Path -Path "$script:PSModuleRoot\optional\*.ps1"))) {
     . Import-ModuleFile $function.FullName
 }
 Write-ImportTime -Text "Loading Optional Commands"
 
 # Process TEPP parameters
-. Import-ModuleFile "$script:PSModuleRoot\internal\scripts\insertTepp.ps1"
+. Import-ModuleFile -Path (Resolve-Path -Path "$script:PSModuleRoot\internal\scripts\insertTepp.ps1")
 Write-ImportTime -Text "Loading TEPP"
 
 # Process transforms
-. Import-ModuleFile "$script:PSModuleRoot\internal\scripts\message-transforms.ps1"
+. Import-ModuleFile -Path (Resolve-Path -Path "$script:PSModuleRoot\internal\scripts\message-transforms.ps1")
 Write-ImportTime -Text "Loading Message Transforms"
 
 # Load scripts that must be individually run at the end #
 #-------------------------------------------------------#
 
 # Start the logging system (requires the configuration system up and running)
-. Import-ModuleFile "$script:PSModuleRoot\internal\scripts\logfilescript.ps1"
+. Import-ModuleFile -Path (Resolve-Path -Path "$script:PSModuleRoot\internal\scripts\logfilescript.ps1")
 Write-ImportTime -Text "Script: Logging"
 
 # Start the tepp asynchronous update system (requires the configuration system up and running)
-. Import-ModuleFile "$script:PSModuleRoot\internal\scripts\updateTeppAsync.ps1"
+. Import-ModuleFile -Path (Resolve-Path -Path "$script:PSModuleRoot\internal\scripts\updateTeppAsync.ps1")
 Write-ImportTime -Text "Script: Asynchronous TEPP Cache"
 
 # Start the maintenance system (requires pretty much everything else already up and running)
-. Import-ModuleFile "$script:PSModuleRoot\internal\scripts\dbatools-maintenance.ps1"
+. Import-ModuleFile -Path (Resolve-Path -Path "$script:PSModuleRoot\internal\scripts\dbatools-maintenance.ps1")
 Write-ImportTime -Text "Script: Maintenance"
 
 #region Aliases
@@ -1028,7 +1028,7 @@ if ($script:dbatoolsConfigRunspace) {
 Write-ImportTime -Text "Waiting for runspaces to finish"
 
 if ($PSCommandPath -like "*.psm1") {
-    Update-TypeData -AppendPath "$script:PSModuleRoot\xml\dbatools.Types.ps1xml"
+    Update-TypeData -AppendPath (Resolve-Path -Path "$script:PSModuleRoot\xml\dbatools.Types.ps1xml")
     Write-ImportTime -Text "Loaded type extensions"
 }
 #. Import-ModuleFile "$script:PSModuleRoot\bin\type-extensions.ps1"
