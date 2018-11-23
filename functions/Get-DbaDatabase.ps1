@@ -20,15 +20,15 @@ function Get-DbaDatabase {
     .PARAMETER ExcludeDatabase
         Specifies one or more database(s) to exclude from processing.
 
-    .PARAMETER ExcludeAllUserDb
+    .PARAMETER ExcludeUser
         If this switch is enabled, only databases which are not User databases will be processed.
 
-        This parameter cannot be used with -ExcludeAllSystemDb.
+        This parameter cannot be used with -ExcludeSystem.
 
-    .PARAMETER ExcludeAllSystemDb
+    .PARAMETER ExcludeSystem
         If this switch is enabled, only databases which are not System databases will be processed.
 
-        This parameter cannot be used with -ExcludeAllUserDb.
+        This parameter cannot be used with -ExcludeUser.
 
     .PARAMETER Status
         Specifies one or more database statuses to filter on. Only databases in the status(es) listed will be returned. Valid options for this parameter are 'Emergency', 'Normal', 'Offline', 'Recovering', 'Restoring', 'Standby', and 'Suspect'.
@@ -91,12 +91,12 @@ function Get-DbaDatabase {
         Returns all databases on the local default SQL Server instance.
 
     .EXAMPLE
-        PS C:\> Get-DbaDatabase -SqlInstance localhost -ExcludeAllUserDb
+        PS C:\> Get-DbaDatabase -SqlInstance localhost -ExcludeUser
 
         Returns only the system databases on the local default SQL Server instance.
 
     .EXAMPLE
-        PS C:\> Get-DbaDatabase -SqlInstance localhost -ExcludeAllSystemDb
+        PS C:\> Get-DbaDatabase -SqlInstance localhost -ExcludeSystem
 
         Returns only the user databases on the local default SQL Server instance.
 
@@ -152,10 +152,10 @@ function Get-DbaDatabase {
         [Alias("Databases")]
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
-        [Alias("SystemDbOnly", "NoUserDb")]
-        [switch]$ExcludeAllUserDb,
-        [Alias("UserDbOnly", "NoSystemDb")]
-        [switch]$ExcludeAllSystemDb,
+        [Alias("SystemDbOnly", "NoUserDb", "ExcludeAllUserDb")]
+        [switch]$ExcludeUser,
+        [Alias("UserDbOnly", "NoSystemDb", "ExcludeAllSystemDb")]
+        [switch]$ExcludeSystem,
         [string[]]$Owner,
         [switch]$Encrypted,
         [ValidateSet('EmergencyMode', 'Normal', 'Offline', 'Recovering', 'Restoring', 'Standby', 'Suspect')]
@@ -176,8 +176,8 @@ function Get-DbaDatabase {
 
     begin {
 
-        if ($ExcludeAllUserDb -and $ExcludeAllSystemDb) {
-            Stop-Function -Message "You cannot specify both ExcludeAllUserDb and ExcludeAllSystemDb." -Continue -EnableException $EnableException
+        if ($ExcludeUser -and $ExcludeSystem) {
+            Stop-Function -Message "You cannot specify both ExcludeUser and ExcludeSystem." -Continue -EnableException $EnableException
         }
 
     }
@@ -233,9 +233,9 @@ function Get-DbaDatabase {
                 $dblastused = Invoke-QueryDBlastUsed
             }
 
-            if ($ExcludeAllUserDb) {
+            if ($ExcludeUser) {
                 $DBType = @($true)
-            } elseif ($ExcludeAllSystemDb) {
+            } elseif ($ExcludeSystem) {
                 $DBType = @($false)
             } else {
                 $DBType = @($false, $true)

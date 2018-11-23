@@ -957,6 +957,10 @@ $script:renames = @(
     @{
         "AliasName"  = "Copy-DbaQueryStoreConfig"
         "Definition" = "Copy-DbaDbQueryStoreOption"
+    },
+    @{
+        "AliasName"  = "Import-DbaCsvToSql"
+        "Definition" = "Import-DbaCsv"
     }
 )
 
@@ -1028,5 +1032,12 @@ if ($PSCommandPath -like "*.psm1") {
 #Write-ImportTime -Text "Loaded type extensions"
 
 [Sqlcollaborative.Dbatools.dbaSystem.SystemHost]::ModuleImported = $true;
+
+if (Get-Module -Name sqlserver, sqlps) {
+    if (Get-DbatoolsConfigValue -FullName Import.SqlpsCheck) {
+        Write-Warning -Message 'SQLPS or SqlServer was previously imported during this session. If you encounter weird issues with dbatools, please restart PowerShell, then import dbatools without loading SQLPS or SqlServer first.'
+        Write-Warning -Message 'To disable this message, type: Set-DbatoolsConfig -Name Import.SqlpsCheck -Value $false'
+    }
+}
 
 #endregion Post-Import Cleanup
