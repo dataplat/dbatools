@@ -135,7 +135,7 @@ function Export-DbaDacPackage {
             }
         }
         
-        if ($PSVersionTable.PSEdition -ne "Core") {
+        if (-not $script:core) {
             $dacfxPath = Resolve-Path -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Dac.dll"
             
             if ((Test-Path $dacfxPath) -eq $false) {
