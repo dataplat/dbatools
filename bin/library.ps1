@@ -50,7 +50,7 @@ if ($ImportLibrary) {
     try {
         $libraryBase = (Resolve-Path -Path ($ExecutionContext.SessionState.Module.ModuleBase + "\bin"))
         $dll = (Resolve-Path -Path "$libraryBase\dbatools.dll")
-
+        
         # In strict security mode, only load from the already pre-compiled binary within the module
         if ($script:strictSecurityMode) {
             if (Test-Path -Path $dll) {
@@ -60,19 +60,17 @@ if ($ImportLibrary) {
             }
         }
         # Else we prioritize user convenience
-        else {
+else {
             $hasProject = Test-Path -Path "$libraryBase\projects\dbatools\dbatools.sln"
-            $hasCompiledDll = Test-Path -Path $dll
-            $buildproject = (Resolve-Path -Path "$script:DllRoot\dbatools.dll")
-
-            if ((-not $script:alwaysBuildLibrary) -and $hasCompiledDll -and ([System.Diagnostics.FileVersionInfo]::GetVersionInfo($dll).FileVersion -eq $currentLibraryVersion)) {
+            $hasCompiledDll = Test-Path -Path "$libraryBase\dbatools.dll"
+            if ((-not $script:alwaysBuildLibrary) -and $hasCompiledDll -and ([System.Diagnostics.FileVersionInfo]::GetVersionInfo("$libraryBase\dbatools.dll").FileVersion -eq $currentLibraryVersion)) {
                 $start = Get-Date
-
+                
                 try {
                     $libraryBase = Resolve-Path -Path "$libraryBase\"
                     $script:DllRoot = Resolve-Path -Path $script:DllRoot
                     Write-Verbose -Message "Found library, trying to copy & import"
-
+                    
                     if ($dll -ne (Resolve-Path -Path "$script:DllRoot\dbatools.dll")) {
                         Copy-Item -Path $dll -Destination $script:DllRoot -Force -ErrorAction Stop
                     }
@@ -88,7 +86,7 @@ if ($ImportLibrary) {
                 throw "No valid dbatools library found! Check your module integrity"
             }
         }
-
+        
         #region PowerShell TypeData
         Update-TypeData -TypeName "Sqlcollaborative.Dbatools.dbaSystem.DbatoolsException" -SerializationDepth 2 -ErrorAction Ignore
         Update-TypeData -TypeName "Sqlcollaborative.Dbatools.dbaSystem.DbatoolsExceptionRecord" -SerializationDepth 2 -ErrorAction Ignore
