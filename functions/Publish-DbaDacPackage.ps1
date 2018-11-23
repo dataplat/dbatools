@@ -162,7 +162,7 @@ function Publish-DbaDacPackage {
             return $instance.ToString().Replace('\', '-').Replace('(', '').Replace(')', '')
         }
         
-        if (Test-Bound -Not -ParameterName 'DacfxPath' -and -not $script:core) {
+        if (Test-Bound -Not -ParameterName 'DacfxPath' -and $PSVersionTable.PSEdition -ne "Core") {
             $dacfxPath = "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Dac.dll"
             
             if ((Test-Path $dacfxPath) -eq $false) {

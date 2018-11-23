@@ -32,7 +32,7 @@ $scriptBlock = {
     }
     
     #region Names
-    if (-not $script:core) {
+    if ($PSVersionTable.PSEdition -eq "Core") {
         $names = @(
             'Microsoft.Data.Tools.Sql.BatchParser',
             'Microsoft.SqlServer.ConnectionInfo',
@@ -186,7 +186,7 @@ $scriptBlock = {
     foreach ($name in $names) {
         Copy-Assembly -ModuleRoot $ModuleRoot -DllRoot $DllRoot -DoCopy $DoCopy -Name $name
     }
-    if (-not $script:core) {
+    if ($PSVersionTable.PSEdition -eq "Core") {
         foreach ($name in $names) {
             Add-Type -Path (Resolve-Path -Path "$DllRoot\coreclr\$name.dll")
         }
