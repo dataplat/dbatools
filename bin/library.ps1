@@ -48,21 +48,24 @@ if (([System.Management.Automation.PSTypeName]'Sqlcollaborative.Dbatools.Configu
 if ($ImportLibrary) {
     #region Add Code
     try {
-        $libraryBase = $ExecutionContext.SessionState.Module.ModuleBase + "\bin"
-
+        $libraryBase = (Resolve-Path -Path ($ExecutionContext.SessionState.Module.ModuleBase + "\bin"))
+        $dll = (Resolve-Path -Path "$libraryBase\dbatools.dll")
+        
         # In strict security mode, only load from the already pre-compiled binary within the module
         if ($script:strictSecurityMode) {
-            if (Test-Path -Path "$libraryBase\dbatools.dll") {
-                Add-Type -Path "$libraryBase\dbatools.dll" -ErrorAction Stop
+            if (Test-Path -Path $dll) {
+                Add-Type -Path $dll -ErrorAction Stop
             } else {
                 throw "Library not found, terminating!"
             }
         }
         # Else we prioritize user convenience
-        else {
+else {
             $hasProject = Test-Path -Path "$libraryBase\projects\dbatools\dbatools.sln"
-            $hasCompiledDll = Test-Path -Path "$libraryBase\dbatools.dll"
-            if ((-not $script:alwaysBuildLibrary) -and $hasCompiledDll -and ([System.Diagnostics.FileVersionInfo]::GetVersionInfo("$libraryBase\dbatools.dll").FileVersion -eq $currentLibraryVersion)) {
+            $hasCompiledDll = Test-Path -Path $dll
+            $buildproject = (Resolve-Path -Path "$script:DllRoot\dbatools.dll")
+            
+            if ((-not $script:alwaysBuildLibrary) -and $hasCompiledDll -and ([System.Diagnostics.FileVersionInfo]::GetVersionInfo($dll).FileVersion -eq $currentLibraryVersion)) {
                 $start = Get-Date
                 
                 try {
@@ -70,22 +73,22 @@ if ($ImportLibrary) {
                     $script:DllRoot = Resolve-Path -Path $script:DllRoot
                     Write-Verbose -Message "Found library, trying to copy & import"
                     
-                    if ("$libraryBase\dbatools.dll" -ne "$script:DllRoot\dbatools.dll") {
-                        Copy-Item -Path "$libraryBase\dbatools.dll" -Destination $script:DllRoot -Force -ErrorAction Stop
+                    if ($dll -ne (Resolve-Path -Path "$script:DllRoot\dbatools.dll")) {
+                        Copy-Item -Path $dll -Destination $script:DllRoot -Force -ErrorAction Stop
                     }
-                    Add-Type -Path "$script:DllRoot\dbatools.dll" -ErrorAction Stop
+                    Add-Type -Path (Resolve-Path -Path "$script:DllRoot\dbatools.dll") -ErrorAction Stop
                 } catch {
                     Write-Verbose -Message "Failed to copy&import, attempting to import straight from the module directory"
-                    Add-Type -Path "$libraryBase\dbatools.dll" -ErrorAction Stop
+                    Add-Type -Path $dll -ErrorAction Stop
                 }
                 Write-Verbose -Message "Total duration: $((Get-Date) - $start)"
             } elseif ($hasProject) {
-                . Import-ModuleFile "$($script:PSModuleRoot)\bin\build-project.ps1"
+                . Import-ModuleFile (Resolve-Path -Path "$($script:PSModuleRoot)\bin\build-project.ps1")
             } else {
                 throw "No valid dbatools library found! Check your module integrity"
             }
         }
-
+        
         #region PowerShell TypeData
         Update-TypeData -TypeName "Sqlcollaborative.Dbatools.dbaSystem.DbatoolsException" -SerializationDepth 2 -ErrorAction Ignore
         Update-TypeData -TypeName "Sqlcollaborative.Dbatools.dbaSystem.DbatoolsExceptionRecord" -SerializationDepth 2 -ErrorAction Ignore
