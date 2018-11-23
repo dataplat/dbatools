@@ -39,7 +39,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
         Foreach ($row in $results) {
             It "Should have extents for $($row.DatabaseName)" {
-                $row.ExtentsTotal | Should BeGreater 0
+                $row.ExtentsTotal | Should BeGreaterOrEqual 0
             }
             It "Should have extents changed for $($row.DatabaseName)" {
                 $row.ExtentsChanged | Should BeGreaterOrEqual 0
