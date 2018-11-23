@@ -1,5 +1,10 @@
 $start = Get-Date
 
+if (($PSVersionTable.Keys -contains "PSEdition") -and ($PSVersionTable.PSEdition -ne 'Desktop')) {
+    $script:core = $true
+} else {
+    $script:core = $false
+}
 #region Import helper functions
 function Import-ModuleFile {
     <#
