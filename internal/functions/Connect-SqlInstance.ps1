@@ -50,6 +50,9 @@ function Connect-SqlInstance {
     .PARAMETER MinimumVersion
        The minimum version that the calling command will support
 
+    .PARAMETER StatementTimeout
+        Sets the number of seconds a statement is given to run before failing with a timeout error.
+
     .EXAMPLE
         Connect-SqlInstance -SqlInstance sql2014
 
@@ -64,6 +67,7 @@ function Connect-SqlInstance {
         [object]$SqlCredential,
         [switch]$ParameterConnection,
         [switch]$RegularUser = $true,
+        [int]$StatementTimeout,
         [int]$MinimumVersion,
         [switch]$AzureUnsupported,
         [switch]$NonPooled
@@ -189,8 +193,11 @@ function Connect-SqlInstance {
     $server = New-Object Microsoft.SqlServer.Management.Smo.Server $ConvertedSqlInstance.FullSmoName
     $server.ConnectionContext.ApplicationName = "dbatools PowerShell module - dbatools.io"
     if ($ConvertedSqlInstance.IsConnectionString) { $server.ConnectionContext.ConnectionString = $ConvertedSqlInstance.InputObject }
-
+    
     try {
+        if (Test-Bound -ParameterName 'StatementTimeout') {
+            $server.ConnectionContext.StatementTimeout = $StatementTimeout
+        }
         $server.ConnectionContext.ConnectTimeout = [Sqlcollaborative.Dbatools.Connection.ConnectionHost]::SqlConnectionTimeout
 
         if ($null -ne $SqlCredential.UserName) {

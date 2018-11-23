@@ -389,10 +389,10 @@ function New-DbaAvailabilityGroup {
                 $ag.AutomatedBackupPreference = [Microsoft.SqlServer.Management.Smo.AvailabilityGroupAutomatedBackupPreference]::$AutomatedBackupPreference
                 $ag.FailureConditionLevel = [Microsoft.SqlServer.Management.Smo.AvailabilityGroupFailureConditionLevel]::$FailureConditionLevel
                 $ag.HealthCheckTimeout = $HealthCheckTimeout
-                $ag.DatabaseHealthTrigger = $DatabaseHealthTrigger
 
                 if ($server.VersionMajor -ge 13) {
                     $ag.BasicAvailabilityGroup = $Basic
+                    $ag.DatabaseHealthTrigger = $DatabaseHealthTrigger
                 }
 
                 if ($server.VersionMajor -ge 14) {
