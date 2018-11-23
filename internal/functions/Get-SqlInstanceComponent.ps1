@@ -111,8 +111,7 @@ function Get-SQLInstanceComponent {
                     $isCluster = $false;
                     $instanceValue = $regKey.GetValue($sqlInstance);
                     $instanceReg = $reg.OpenSubKey("$regPath\\$instanceValue");
-                    if ($instanceReg.GetSubKeyNames() -contains 'Cluster')
-                    {
+                    if ($instanceReg.GetSubKeyNames() -contains 'Cluster') {
                         $isCluster = $true;
                         $instanceRegCluster = $instanceReg.OpenSubKey('Cluster');
                         $clusterName = $instanceRegCluster.GetValue('ClusterName');

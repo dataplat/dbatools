@@ -32,7 +32,7 @@ function Invoke-Program {
         [ValidateNotNullOrEmpty()]
         [uint32[]]$SuccessReturnCodes = @(0, 3010),
 
-        [switch]$UseCredSSP
+        [switch]$UsePSSessionConfiguration
     )
     process {
         $startProcess = {
@@ -85,31 +85,43 @@ function Invoke-Program {
 
         $params = @{
             ScriptBlock  = $startProcess
-            ArgumentList  = $argList
+            ArgumentList = $argList
             ComputerName = $ComputerName
             Credential   = $Credential
         }
+
+        Write-Message -Level Debug -Message "Acceptable success return codes are [$($SuccessReturnCodes -join ',')]"
+
         if (!$ComputerName.IsLocalHost) {
             # Trying to use PSSessionConfiguration if it was registered before; otherwise, fall back to CredSSP
-            if (!$UseCredSSP) {
+            if (!$UsePSSessionConfiguration) {
+                Write-Message -Level Verbose -Message "Attempting to configure CredSSP for remote connections"
+                Initialize-CredSSP -ComputerName $ComputerName -Credential $Credential -EnableException $false
+                $sspSuccessful = $true
+                Write-Message -Level Verbose -Message "Starting process path [$Path] with arguments [$ArgumentList] on $ComputerName through CredSSP"
+                try {
+                    Invoke-Command2 @params -Authentication CredSSP -Raw -ErrorAction Stop
+                } catch [System.Management.Automation.Remoting.PSRemotingTransportException] {
+                    Write-Message -Level Verbose -Message "CredSSP to $ComputerName unsuccessful, falling back to PSSession configurations"
+                    $sspSuccessful = $false
+                } catch {
+                    Stop-Function -Message "Remote execution failed" -ErrorRecord $_ -EnableException $true
+                }
+            }
+            if (!$sspSuccessful) {
                 $stack = Get-PSCallStack
                 if ($stack.Length -gt 2) { $functionName = $stack[1].FunctionName }
                 else { $functionName = 'Invoke-Program' }
                 $functionName = $functionName.Replace('-', '').Replace('<', '').Replace('>', '')
                 $configuration = Register-RemoteSessionConfiguration -Computer $ComputerName -Credential $Credential -Name "dbatools$functionName"
-            }
-            if ($configuration.Successful) {
-                Write-Message -Level Debug -Message "RemoteSessionConfiguration ($($configuration.Name)) was successful, using it."
-                $params += @{ ConfigurationName = $configuration.Name }
-            } else {
-                Write-Message -Level Verbose -Message "Falling back to CredSSP"
-                Initialize-CredSSP -ComputerName $ComputerName -Credential $Credential -EnableException $false
-                $params += @{ Authentication = 'CredSSP' }
+                if ($configuration.Successful) {
+                    Write-Message -Level Debug -Message "RemoteSessionConfiguration ($($configuration.Name)) was successful, using it."
+                    Write-Message -Level Verbose -Message "Starting process path [$Path] with arguments [$ArgumentList] on $ComputerName using PS session configuration"
+                    Invoke-Command2 @params -ConfigurationName $configuration.Name -Raw -ErrorAction Stop
+                } else {
+                    Stop-Function -Message "RemoteSession configuration unsuccessful, no valid connection options found. $($configuration.Status)" -EnableException $true
+                }
             }
         }
-        Write-Message -Level Debug -Message "Acceptable success return codes are [$($SuccessReturnCodes -join ',')]"
-        # Run program on specified computer.
-        Write-Message -Level Verbose -Message "Starting process path [$Path] with arguments [$ArgumentList] on $ComputerName"
-        Invoke-Command2 @params -Raw
     }
 }
