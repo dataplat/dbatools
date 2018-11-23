@@ -61,7 +61,8 @@ if ($ImportLibrary) {
         }
         # Else we prioritize user convenience
 else {
-            $hasProject = Test-Path -Path "$libraryBase\projects\dbatools\dbatools.sln"
+            $sln = (Resolve-Path -PSPath "$libraryBase\projects\dbatools\dbatools.sln")
+            $hasProject = Test-Path -Path $sln
             $hasCompiledDll = Test-Path -Path "$libraryBase\dbatools.dll"
             if ((-not $script:alwaysBuildLibrary) -and $hasCompiledDll -and ([System.Diagnostics.FileVersionInfo]::GetVersionInfo("$libraryBase\dbatools.dll").FileVersion -eq $currentLibraryVersion)) {
                 $start = Get-Date
