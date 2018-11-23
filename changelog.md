@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
     and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.525] - 2018-11-23
+### Added
+- CROSS PLATFORM SUPPORT INCLUDING MACOS AND LINUX 🎉
+
+![image](https://user-images.githubusercontent.com/8278033/48960127-ac3c3980-ef6a-11e8-90ca-1e8e56df8ee0.png)
+
 ## [0.9.524] - 2018-11-23
 ### Added
 - $script:core for easy core detection in functions
