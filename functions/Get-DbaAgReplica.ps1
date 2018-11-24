@@ -69,13 +69,14 @@ function Get-DbaAgReplica {
             $InputObject += Get-DbaAvailabilityGroup -SqlInstance $SqlInstance -SqlCredential $SqlCredential -AvailabilityGroup $AvailabilityGroup
         }
 
+        $availabilityReplicas = $InputObject.AvailabilityReplicas
         if ($Replica) {
-            $InputObject = $InputObject | Where-Object { $_.AvailabilityReplicas.Name -contains $Replica }
+            $availabilityReplicas = $InputObject.AvailabilityReplicas | Where-Object { $_.Name -eq $Replica }
         }
 
         $defaults = 'ComputerName', 'InstanceName', 'SqlInstance', 'AvailabilityGroup', 'Name', 'Role', 'ConnectionState', 'RollupSynchronizationState', 'AvailabilityMode', 'BackupPriority', 'EndpointUrl', 'SessionTimeout', 'FailoverMode', 'ReadonlyRoutingList'
 
-        foreach ($agreplica in $InputObject.AvailabilityReplicas) {
+        foreach ($agreplica in $availabilityReplicas) {
             #Variable marked as unused by PSScriptAnalyzer
             #$server = $agreplica.Parent.Parent
             Add-Member -Force -InputObject $agreplica -MemberType NoteProperty -Name ComputerName -value $agreplica.Parent.ComputerName
