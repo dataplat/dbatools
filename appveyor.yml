@@ -7,7 +7,7 @@ before_build:
   - nuget restore bin\projects\dbatools\dbatools.sln
 
 build:
-  project: bin\projects\dbatools\dbatools.sln
+ - ps: cd bin\projects\dbatools\dbatools.sln; dotnet --version; dotnet build
 
 after_build:
     # Removed to prevent credential exposure
