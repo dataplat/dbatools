@@ -164,7 +164,7 @@ function Export-DbaInstance {
             if (-not (Test-Bound -ParameterName Path)) {
                 $timenow = (Get-Date -uformat "%m%d%Y%H%M%S")
                 $mydocs = [Environment]::GetFolderPath('MyDocuments')
-                $path = "$mydocs\$($server.name.replace('\', '$'))-$timenow"
+                $path = Resolve-Path -Path "$mydocs\$($server.name.replace('\', '$'))-$timenow"
             }
 
             if (-not (Test-Path $Path)) {
