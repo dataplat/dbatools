@@ -6,7 +6,7 @@ configuration: "Debug"
 before_build:
   - nuget restore bin\projects\dbatools\dbatools.sln
 
-build:
+build_script:
  - ps: cd bin\projects\dbatools\dbatools.sln; dotnet --version; dotnet build
 
 after_build:
