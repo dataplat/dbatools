@@ -61,7 +61,7 @@ function Get-DbaPfDataCollectorSetTemplate {
         $Pattern = $Pattern.Replace("*", ".*").Replace("..*", ".*")
     }
     process {
-        if (Test-NotWindows) { return }
+        if (-not (Test-Windows)) { return }
         
         foreach ($directory in $Path) {
             $files = Get-ChildItem "$directory\*.xml"
