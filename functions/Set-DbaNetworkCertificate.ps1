@@ -74,7 +74,7 @@ function Set-DbaNetworkCertificate {
     
     process {
         # Registry access
-        if (Test-NotWindows) { return }
+        if (-not (Test-Windows)) { return }
         if (Test-FunctionInterrupt) { return }
 
         if (-not $Certificate -and -not $Thumbprint) {

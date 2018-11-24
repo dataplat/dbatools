@@ -96,7 +96,7 @@ function Resolve-DbaNetworkName {
     )
     
     process {
-        if (Test-NotWindows) {
+        if (-not (Test-Windows -NoWarn)) {
             Write-Message -Level Verbose -Message "Non-Windows client detected. Turbo (DNS resolution only) set to $true"
             $Turbo = $true
         }

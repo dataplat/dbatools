@@ -1,5 +1,5 @@
 #ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
-function Test-NotWindows {
+function Test-Windows {
     <#
         .SYNOPSIS
             Internal tool, used to detect non-Windows platforms
@@ -8,7 +8,7 @@ function Test-NotWindows {
             Some things don't work with Windows, this is an easy way to detect
 
         .EXAMPLE
-            if (Test-NotWindows) { return }
+            if (-not (Test-Windows)) { return }
 
             The calling function will stop if this function returns true.
     #>
@@ -21,8 +21,8 @@ function Test-NotWindows {
         if (-not $NoWarn) {
             Write-Message -Level Warning -Message "This command is not supported on non-Windows platforms :("
         }
-        return $true
+        return $false
     }
 
-    return $false
+    return $true
 }
