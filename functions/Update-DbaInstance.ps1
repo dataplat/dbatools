@@ -210,7 +210,7 @@ function Update-DbaInstance {
             if (-not ([DbaInstanceParameter]$computer).IsLocalHost) {
                 Write-Message -Level Verbose -Message "Unregistering any leftover PSSession Configurations on $computer"
                 try {
-                    $unreg = Unregister-RemoteSessionConfiguration -ComputerName $computer -Credential $Credential -Name "dbatoolsInstallSqlServerUpdate"
+                    $unreg = Unregister-RemoteSessionConfiguration -ComputerName $computer -Credential $Credential -Name dbatoolsInvokeProgram
                     if (!$unreg.Successful) {
                         throw $unreg.Status
                     }
