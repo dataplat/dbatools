@@ -257,6 +257,9 @@ function Test-DbaDiskAlignment {
     }
 
     process {
+        # uses cim commands
+        if (-not (Test-Windows)) { return }
+        
         foreach ($computer in $ComputerName) {
             $computer = $ogcomputer = $computer.ComputerName
             Write-Message -Level VeryVerbose -Message "Processing: $computer."
