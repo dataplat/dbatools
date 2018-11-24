@@ -97,7 +97,6 @@ function Add-DbaAgDatabase {
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
         [ValidateSet('Automatic', 'Manual')]
         [string]$SeedingMode,
-        [Alias("NetworkShare")]
         [string]$SharedPath,
         [switch]$UseLastBackup,
         [switch]$EnableException
