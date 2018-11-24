@@ -3,7 +3,7 @@
 configuration: "Debug"
 
 build_script:
- - ps: cd bin\projects\dbatools; dotnet build
+ - ps: Push-Location bin\projects\dbatools; dotnet build; Pop-Location
 
 after_build:
     # Removed to prevent credential exposure
