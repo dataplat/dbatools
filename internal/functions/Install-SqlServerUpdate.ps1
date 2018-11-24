@@ -143,8 +143,10 @@ function Install-SqlServerUpdate {
                 if ($spExtractPath) {
                     try {
                         # Extract file
-                        $null = Invoke-Program @invProgParams -Path $installer.FullName -ArgumentList "/extract:`"$spExtractPath`" /quiet"
+                        Write-Message -Level Verbose -Message "Extracting $installer to $spExtractPath"
+                        $null = Invoke-Program @invProgParams -Path $installer.FullName -ArgumentList "/extract`:`"$spExtractPath`" /quiet"
                         # Install the patch
+                        Write-Message -Level Verbose -Message "Starting installation from $spExtractPath"
                         $null = Invoke-Program @invProgParams -Path "$spExtractPath\setup.exe" -ArgumentList '/quiet /allinstances'
                     } catch {
                         Stop-Function -Message "Upgrade failed" -ErrorRecord $_ -EnableException $true
