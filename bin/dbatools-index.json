@@ -1,7 +1,7 @@
 ﻿[
     {
         "CommandName":  "Add-DbaAgDatabase",
-        "Description":  "Adds a database to an availability group on a SQL Server instance.",
+        "Description":  "Adds a database to an availability group on a SQL Server instance.\n\nBefore joining the replica databases to the availablity group, the databases will be initialized with automatic seeding or full/log backup.",
         "Tags":  [
                      "AvailabilityGroup",
                      "HA",
@@ -10,7 +10,7 @@
         "Params":  [
                        [
                            "SqlInstance",
-                           "The target SQL Server instance or instances. Server version must be SQL Server version 2012 or higher.",
+                           "The target SQL Server instance or instances. Server version must be SQL Server version 2012 or higher.\nThis should be the primary replica.",
                            "",
                            false,
                            "false",
@@ -49,6 +49,30 @@
                            ""
                        ],
                        [
+                           "SeedingMode",
+                           "Specifies how the secondary replica will be initially seeded.\nAutomatic enables direct seeding. This method will seed the secondary replica over the network. This method does not require you to backup and restore a copy of the primary database on the replica.\nManual requires you to create a backup of the database on the primary replica and manually restore that backup on the secondary replica.\nIf not specified, the setting from the availability group replica will be used. Otherwise the setting will be updated.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "SharedPath",
+                           "The network share where the backups will be backed up and restored from.\nEach SQL Server service account must have access to this share.\nNOTE: If a backup / restore is performed, the backups will be left in tact on the network share.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "UseLastBackup",
+                           "Use the last full backup of database.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
                            "EnableException",
                            "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
                            "",
@@ -79,7 +103,7 @@
         "Name":  "Add-DbaAgDatabase",
         "Links":  "https://dbatools.io/Add-DbaAgDatabase",
         "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eAdd-DbaAgDatabase -SqlInstance sql2017a -AvailabilityGroup ag1 -Database db1, db2 -Confirm\nAdds db1 and db2 to ag1 on sql2017a. Prompts for confirmation.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaDatabase -SqlInstance sql2017a | Out-GridView -Passthru | Add-DbaAgDatabase -AvailabilityGroup ag1\nAdds selected databases from sql2017a to ag1\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaDbSharePoint -SqlInstance sqlcluster | Add-DbaAgDatabase -AvailabilityGroup SharePoint\nAdds SharePoint databases as found in SharePoint_Config on sqlcluster to ag1 on sqlcluster\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaDbSharePoint -SqlInstance sqlcluster -ConfigDatabase SharePoint_Config_2019 | Add-DbaAgDatabase -AvailabilityGroup SharePoint\nAdds SharePoint databases as found in SharePoint_Config_2019 on sqlcluster to ag1 on sqlcluster",
-        "Syntax":  "Add-DbaAgDatabase [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [-AvailabilityGroup] \u003cString\u003e [[-Database] \u003cString[]\u003e] [[-InputObject] \u003cDatabase[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Add-DbaAgDatabase [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [-AvailabilityGroup] \u003cString\u003e [[-Database] \u003cString[]\u003e] [[-InputObject] \u003cDatabase[]\u003e] [[-SeedingMode] \u003cString\u003e] [[-SharedPath] \u003cString\u003e] [-UseLastBackup] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "CommandName":  "Add-DbaAgListener",
@@ -8731,6 +8755,22 @@
                            ""
                        ],
                        [
+                           "Database",
+                           "Return jobs with T-SQL job steps associated with specific databases",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Category",
+                           "Return jobs associated with specific category",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
                            "ExcludeDisabledJobs",
                            "Switch will exclude disabled jobs from the output.",
                            "",
@@ -8741,7 +8781,7 @@
                        [
                            "EnableException",
                            "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
-                           "Silent",
+                           "",
                            false,
                            "false",
                            "False"
@@ -8753,7 +8793,7 @@
         "Name":  "Get-DbaAgentJob",
         "Links":  "https://dbatools.io/Get-DbaAgentJob",
         "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaAgentJob -SqlInstance localhost\nReturns all SQL Agent Jobs on the local default SQL Server instance\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaAgentJob -SqlInstance localhost, sql2016\nReturns all SQl Agent Jobs for the local and sql2016 SQL Server instances\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaAgentJob -SqlInstance localhost -Job BackupData, BackupDiff\nReturns all SQL Agent Jobs named BackupData and BackupDiff from the local SQL Server instance.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaAgentJob -SqlInstance localhost -ExcludeJob BackupDiff\nReturns all SQl Agent Jobs for the local SQL Server instances, except the BackupDiff Job.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eGet-DbaAgentJob -SqlInstance localhost -ExcludeDisabledJobs\nReturns all SQl Agent Jobs for the local SQL Server instances, excluding the disabled jobs.\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003e$servers | Get-DbaAgentJob | Out-GridView -PassThru | Start-DbaAgentJob -WhatIf\nFind all of your Jobs from SQL Server instances in the $servers collection, select the jobs you want to start then see jobs would start if you ran Start-DbaAgentJob",
-        "Syntax":  "Get-DbaAgentJob [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Job \u003cObject[]\u003e] [-ExcludeJob \u003cObject[]\u003e] [-ExcludeDisabledJobs] [-EnableException] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Get-DbaAgentJob [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Job \u003cString[]\u003e] [-ExcludeJob \u003cString[]\u003e] [-Database \u003cString[]\u003e] [-Category \u003cString[]\u003e] [-ExcludeDisabledJobs] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
         "CommandName":  "Get-DbaAgentJobCategory",
