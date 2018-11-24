@@ -4,10 +4,10 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        $paramCount = 5
         $defaultParamCount = 13
         [object[]]$params = (Get-ChildItem function:\Reset-DbaAdmin).Parameters.Keys
-        $knownParameters = 'SqlInstance', 'Login', 'SecurePassword', 'Force', 'EnableException'
+        $knownParameters = 'SqlInstance', 'SqlCredential', 'Login', 'SecurePassword', 'Force', 'EnableException'
+        $paramCount = $knownParameters.Count
         It "Should contain our specific parameters" {
             ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
         }
@@ -20,16 +20,15 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     AfterAll {
         Get-DbaProcess -SqlInstance $script:instance2 -Login dbatoolsci_resetadmin | Stop-DbaProcess -WarningAction SilentlyContinue
-        (Get-DbaLogin -SqlInstance $script:instance2 -Login dbatoolsci_resetadmin).Drop()
+        Get-DbaLogin -SqlInstance $script:instance2 -Login dbatoolsci_resetadmin| Remove-DbaLogin -Confirm:$false
     }
     Context "adds a sql login" {
         It "adds the login as sysadmin" {
             $password = ConvertTo-SecureString -Force -AsPlainText resetadmin1
             $cred = New-Object System.Management.Automation.PSCredential ("dbatoolsci_resetadmin", $password)
-            Reset-DbaAdmin -SqlInstance $script:instance2 -Login dbatoolsci_resetadmin -SecurePassword $password -Confirm:$false -WarningAction SilentlyContinue
-            $server = Connect-DbaInstance -SqlInstance $script:instance2 -Credential $cred
-            $server.Name | Should Be $script:instance2
-            $server.ConnectionContext.FixedServerRoles -match 'SysAdmin'
+            $results = Reset-DbaAdmin -SqlInstance $script:instance2 -Login dbatoolsci_resetadmin -SecurePassword $password -Confirm:$false
+            $results.Name | Should -Be dbatoolsci_resetadmin
+            $results.IsMember("sysadmin") | Should -Be $true
         }
     }
 }

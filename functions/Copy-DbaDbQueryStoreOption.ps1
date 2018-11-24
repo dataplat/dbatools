@@ -109,7 +109,7 @@ function Copy-DbaDbQueryStoreOption {
                 }
 
                 # We have to exclude all the system databases since they cannot have the Query Store feature enabled
-                $dbs = Get-DbaDatabase -SqlInstance $destServer -ExcludeAllSystemDb
+                $dbs = Get-DbaDatabase -SqlInstance $destServer -ExcludeSystem
 
                 if ($DestinationDatabase.count -gt 0) {
                     $dbs = $dbs | Where-Object { $DestinationDatabase -contains $_.Name }

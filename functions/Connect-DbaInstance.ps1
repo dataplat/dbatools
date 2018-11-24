@@ -67,9 +67,6 @@ function Connect-DbaInstance {
 
         If you specify a failover partner and the primary server is not configured for database mirroring, the connection to the primary server (specified with the Server keyword) will succeed if the primary server is available.
 
-    .PARAMETER IsActiveDirectoryUniversalAuth
-        If this switch is enabled, the connection will be configured to use Azure Active Directory authentication.
-
     .PARAMETER LockTimeout
         Sets the time in seconds required for the connection to time out when the current transaction is locked.
 
@@ -144,13 +141,13 @@ function Connect-DbaInstance {
         Creates an SMO Server object that connects using Windows Authentication
 
     .EXAMPLE
-        PS C:\> $wincred = Get-SqlCredential ad\sqladmin
+        PS C:\> $wincred = Get-Credential ad\sqladmin
         PS C:\> Connect-DbaInstance -SqlInstance sql2014 -SqlCredential $wincred
 
         Creates an SMO Server object that connects using alternative Windows credentials
 
     .EXAMPLE
-        PS C:\> $sqlcred = Get-SqlCredential sqladmin
+        PS C:\> $sqlcred = Get-Credential sqladmin
         PS C:\> $server = Connect-DbaInstance -SqlInstance sql2014 -SqlCredential $sqlcred
 
         Login to sql2014 as SQL login sqladmin.
@@ -192,7 +189,6 @@ function Connect-DbaInstance {
         [int]$ConnectTimeout = ([Sqlcollaborative.Dbatools.Connection.ConnectionHost]::SqlConnectionTimeout),
         [switch]$EncryptConnection,
         [string]$FailoverPartner,
-        [switch]$IsActiveDirectoryUniversalAuth,
         [int]$LockTimeout,
         [int]$MaxPoolSize,
         [int]$MinPoolSize,
@@ -286,7 +282,6 @@ function Connect-DbaInstance {
                 if (Test-Bound -ParameterName 'ConnectTimeout') { $server.ConnectionContext.ConnectTimeout = $ConnectTimeout }
                 if (Test-Bound -ParameterName 'Database') { $server.ConnectionContext.DatabaseName = $Database }
                 if (Test-Bound -ParameterName 'EncryptConnection') { $server.ConnectionContext.EncryptConnection = $true }
-                if (Test-Bound -ParameterName 'IsActiveDirectoryUniversalAuth') { $server.ConnectionContext.IsActiveDirectoryUniversalAuth = $true }
                 if (Test-Bound -ParameterName 'LockTimeout') { $server.ConnectionContext.LockTimeout = $LockTimeout }
                 if (Test-Bound -ParameterName 'MaxPoolSize') { $server.ConnectionContext.MaxPoolSize = $MaxPoolSize }
                 if (Test-Bound -ParameterName 'MinPoolSize') { $server.ConnectionContext.MinPoolSize = $MinPoolSize }

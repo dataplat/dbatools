@@ -11,7 +11,7 @@
     RootModule             = 'dbatools.psm1'
 
     # Version number of this module.
-    ModuleVersion          = '0.9.520'
+    ModuleVersion          = '0.9.523'
 
     # ID used to uniquely identify this module
     GUID                   = '9d139310-ce45-41ce-8e8b-d76335aa1789'
@@ -99,7 +99,7 @@
         'Get-DbaDetachedDatabaseInfo',
         'Restore-DbaBackupFromDirectory',
         'Test-DbaConnection',
-        'Import-DbaCsvToSql',
+        'Import-DbaCsv',
         'Copy-DbaAgentJobCategory',
         'Update-Dbatools',
         'Test-DbaPath',
@@ -763,7 +763,8 @@
     'Copy-DbaAgentSharedSchedule',
     'Copy-DbaCentralManagementServer',
     'Copy-DbaExtendedEvent',
-    'Copy-DbaQueryStoreConfig'
+    'Copy-DbaQueryStoreConfig',
+    'Import-DbaCsvToSql'
 
     # List of all modules packaged with this module
     ModuleList             = @()
@@ -793,7 +794,7 @@
             LicenseUri   = "https://opensource.org/licenses/MIT"
 
             # Release notes for this particular version of the module
-            ReleaseNotes = "https://dbatools.io/releases"
+            ReleaseNotes = "https://dbatools.io/changelog"
 
             # If true, the LicenseUrl points to an end-user license (not just a source license) which requires the user agreement before use.
             # RequireLicenseAcceptance = ""

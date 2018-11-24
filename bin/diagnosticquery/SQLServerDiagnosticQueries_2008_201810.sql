@@ -1,7 +1,7 @@
 
 -- SQL Server 2008 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: July 5, 2018
+-- Last Modified: November 11, 2018
 -- https://sqlserverperformance.wordpress.com/
 -- https://www.sqlskills.com/blogs/glenn/
 -- Twitter: GlennAlanBerry
@@ -213,7 +213,9 @@ WHERE node_state_desc <> N'ONLINE DAC' OPTION (RECOMPILE);
 -- (Cannot distinguish between HT and multi-core)
 SELECT cpu_count AS [Logical CPU Count], hyperthread_ratio AS [Hyperthread Ratio],
 cpu_count/hyperthread_ratio AS [Physical CPU Count], 
-physical_memory_in_bytes/1048576 AS [Physical Memory (MB)], sqlserver_start_time 
+physical_memory_in_bytes/1048576 AS [Physical Memory (MB)], 
+sqlserver_start_time,
+DATEDIFF(hour, sqlserver_start_time, GETDATE()) AS [SQL Server Up Time (hrs)]
 FROM sys.dm_os_sys_info WITH (NOLOCK) OPTION (RECOMPILE);
 ------
 
