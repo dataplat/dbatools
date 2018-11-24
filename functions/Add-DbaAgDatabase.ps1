@@ -125,7 +125,7 @@ function Add-DbaAgDatabase {
                 Stop-Function -Message "$($db.Name) is already joined to $($ag.Name)" -Continue
             }
 
-            $replicas = $ag.AvailabilityReplicas | Where-Object Role -eq Secondary | Select-Object -Unique -ExpandProperty Name
+            $secondaryReplicas = $ag.AvailabilityReplicas | Where-Object Role -eq Secondary | Select-Object -Unique -ExpandProperty Name
 
             if ($SeedingMode -eq "Automatic") {
                 # first check
@@ -133,7 +133,6 @@ function Add-DbaAgDatabase {
                     $null = Backup-DbaDatabase -BackupFileName NUL -SqlInstance $Primary -SqlCredential $SqlCredential -Database $db
                 }
             }
-
 
             if ($Pscmdlet.ShouldProcess($ag.Parent.Name, "Adding availability group $db to $($db.Parent.Name)")) {
                 try {
@@ -146,14 +145,16 @@ function Add-DbaAgDatabase {
                 }
             }
 
-            foreach ($replica in $replicas) {
-                $agreplica = Get-DbaAgReplica -SqlInstance $Primary -AvailabilityGroup $ag.name
+            foreach ($replica in $secondaryReplicas) {
+
+                $agreplica = Get-DbaAgReplica -SqlInstance $Primary -AvailabilityGroup $ag.name -Replica $replica
+
                 if ($SeedingMode) {
-                    #$agreplica.SeedingMode = $SeedingMode # ijeb ?
+                    $agreplica.SeedingMode = $SeedingMode
                     $agreplica.alter()
                 }
                 $agreplica.refresh()
-                $SeedingModeReplica = $agreplica | Select-Object -Unique -ExpandProperty SeedingMode
+                $SeedingModeReplica = $agreplica.SeedingMode
 
                 $primarydb = Get-DbaDatabase -SqlInstance $Primary -SqlCredential $SqlCredential -Database $db.name
 
@@ -201,6 +202,8 @@ function Add-DbaAgDatabase {
                             Stop-Function -Continue -Message "Could not join $($replicadb.Name) to $replica"
                         }
                     }
+                } else {
+                    $replicadb
                 }
             }
         }
