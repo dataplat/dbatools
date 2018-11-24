@@ -174,7 +174,7 @@ function Add-DbaAgReplica {
                         $replica.ReadonlyRoutingConnectionUrl = $ReadonlyRoutingConnectionUrl
                     }
 
-                    if ($SeedingMode) {
+                    if ($SeedingMode -and $server.VersionMajor -ge 13) {
                         $replica.SeedingMode = $SeedingMode
                     }
 

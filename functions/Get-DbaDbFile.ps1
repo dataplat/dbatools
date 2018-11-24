@@ -132,8 +132,8 @@ function Get-DbaDbFile {
             fg.groupid as FileGroupDataSpaceId,
             NULL as FileGroupType,
             NULL AS FileGroupTypeDescription,
-            CAST(fg.Status & 0x10 as BIT) as FileGroupDefault,
-            CAST(fg.Status & 0x8 as BIT) as FileGroupReadOnly
+            CAST(fg.status & 0x10 as BIT) as FileGroupDefault,
+            CAST(fg.status & 0x8 as BIT) as FileGroupReadOnly
             from sysfiles df
             left outer join  sysfilegroups fg on df.groupid=fg.groupid"
 
