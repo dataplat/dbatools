@@ -109,8 +109,9 @@ function Get-DbaComputerCertificate {
         }
         #endregion Scriptblock for remoting
     }
-
+    
     process {
+        if (Test-NotWindows) { return }
         foreach ($computer in $computername) {
             try {
                 Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $scriptblock -ArgumentList $thumbprint, $Store, $Folder, $Path -ErrorAction Stop | Select-DefaultView -Property FriendlyName, DnsNameList, Thumbprint, NotBefore, NotAfter, Subject, Issuer

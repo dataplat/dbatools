@@ -94,8 +94,13 @@ function Resolve-DbaNetworkName {
         [Alias('Silent')]
         [switch]$EnableException
     )
-
+    
     process {
+        if (Test-NotWindows) {
+            Write-Message -Level Verbose -Message "Non-Windows client detected. Turbo (DNS resolution only) set to $true"
+            $Turbo = $true
+        }
+        
         foreach ($Computer in $ComputerName) {
             $conn = $ipaddress = $null
 
