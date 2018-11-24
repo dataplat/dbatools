@@ -16,8 +16,55 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         }
     }
 }
-<#
-    Integration test should appear below and are custom to the command you are writing.
-    Read https://github.com/sqlcollaborative/dbatools/blob/development/contributing.md#tests
-    for more guidence.
-#>
+
+Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
+    BeforeAll {
+        $dbname = "dbatoolsci_test_$(get-random)"
+        $server = Connect-DbaInstance -SqlInstance $script:instance3
+        $server.Query("Create Database [$dbname]")
+    }
+    AfterAll {
+        $server.Query("DROP Database [$dbname]")
+    }
+
+    Context "Gets DbSpace" {
+        $results = Get-DbaDbSpace -SqlInstance $script:instance3 | Where-Object {$_.Database -eq "$dbname"}
+        It "Gets results" {
+            $results | Should Not Be $null
+        }
+        foreach ($row in $results) {
+            It "Should retreive space for $dbname" {
+                $row.Database | Should Be $dbname
+            }
+            It "Should have a physical path for $dbname" {
+                $row.physicalname | Should Not Be $null
+            }
+        }
+    }
+    Context "Gets DbSpace when using -database" {
+        $results = Get-DbaDbSpace -SqlInstance $script:instance3 -Database $dbname
+        It "Gets results" {
+            $results | Should Not Be $null
+        }
+        Foreach ($row in $results) {
+            It "Should retreive space for $dbname" {
+                $row.Database | Should Be $dbname
+            }
+            It "Should have a physical path for $dbname" {
+                $row.physicalname | Should Not Be $null
+            }
+        }
+    }
+    Context "Gets no DbSpace for specific database when using -ExcludeDatabase" {
+        $results = Get-DbaDbSpace -SqlInstance $script:instance3 -ExcludeDatabase $dbname
+        It "Gets no results" {
+            $results.database | Should Not Contain $dbname
+        }
+    }
+    Context "Gets DbSpace for system databases when using -IncludeSystemDBs" {
+        $results = Get-DbaDbSpace -SqlInstance $script:instance3 -IncludeSystemDBs
+        It "Gets results" {
+            $results.database | Should Contain 'Master'
+        }
+    }
+}

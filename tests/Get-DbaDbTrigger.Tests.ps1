@@ -16,8 +16,56 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         }
     }
 }
-<#
-    Integration test should appear below and are custom to the command you are writing.
-    Read https://github.com/sqlcollaborative/dbatools/blob/development/contributing.md#tests
-    for more guidence.
-#>
+
+Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
+    BeforeAll {
+        #trigger adapted from https://docs.microsoft.com/en-us/sql/t-sql/statements/create-trigger-transact-sql?view=sql-server-2017
+        $trigger = @"
+CREATE TRIGGER dbatoolsci_safety
+    ON DATABASE
+    FOR DROP_SYNONYM
+    AS
+    IF (@@ROWCOUNT = 0)
+    RETURN;
+    RAISERROR ('You must disable Trigger "dbatoolsci_safety" to drop synonyms!',10, 1)
+    ROLLBACK
+"@
+        $server = Connect-DbaInstance -SqlInstance $script:instance3
+        $server.Query("$trigger")
+    }
+    AfterAll {
+        $trigger = "DROP TRIGGER dbatoolsci_safety ON DATABASE;"
+        $server.Query("$trigger")
+    }
+
+    Context "Gets Database Trigger" {
+        $results = Get-DbaDbTrigger -SqlInstance $script:instance3 | Where-Object {$_.name -eq "dbatoolsci_safety"}
+        It "Gets results" {
+            $results | Should Not Be $null
+        }
+        It "Should be enabled" {
+            $results.isenabled | Should Be $true
+        }
+        It "Should have text of Trigger" {
+            $results.text | Should BeLike '*FOR DROP_SYNONYM*'
+        }
+    }
+    Context "Gets Database Trigger when using -Database" {
+        $results = Get-DbaDbTrigger -SqlInstance $script:instance3 -Database Master
+        It "Gets results" {
+            $results | Should Not Be $null
+        }
+        It "Should be enabled" {
+            $results.isenabled | Should Be $true
+        }
+        It "Should have text of Trigger" {
+            $results.text | Should BeLike '*FOR DROP_SYNONYM*'
+        }
+    }
+    Context "Gets no Database Trigger when using -ExcludeDatabase" {
+        $results = Get-DbaDbTrigger -SqlInstance $script:instance3 -ExcludeDatabase Master
+        It "Gets no results" {
+            $results | Should Be $null
+        }
+    }
+}
