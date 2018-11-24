@@ -169,7 +169,7 @@ function Set-DbaStartupParameter {
         After the work has been completed, we can push the original startup parameters back to server1\instance1 and resume normal operation
 
 #>
-    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "High")]
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "High")]
     param ([parameter(Mandatory)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter]$SqlInstance,

@@ -195,7 +195,7 @@ function Rename-DbaDatabase {
         The db is then set offline (watch out!). The function tries to do a simple rename and then sets the db online again to finish the rename process
 
     #>
-    [CmdletBinding(SupportsShouldProcess = $true)]
+    [CmdletBinding(SupportsShouldProcess)]
     param (
         [parameter(Mandatory, ParameterSetName = "Server")]
         [Alias("ServerInstance", "SqlServer")]
