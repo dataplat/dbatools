@@ -217,9 +217,13 @@ foreach ($function in (Get-ChildItem -Path (Resolve-Path -Path "$script:PSModule
 }
 Write-ImportTime -Text "Loading Optional Commands"
 
-# Process TEPP parameters
-. Import-ModuleFile -Path (Resolve-Path -Path "$script:PSModuleRoot\internal\scripts\insertTepp.ps1")
-Write-ImportTime -Text "Loading TEPP"
+if (($PSVersionTable.Keys -contains "Platform") -and $PSVersionTable.Platform -ne "Win32NT") {
+    Write-Verbose -Message "Skipping tepp configuration. Not Core compatible yet."
+} else {
+    # Process TEPP parameters
+    . Import-ModuleFile -Path (Resolve-Path -Path "$script:PSModuleRoot\internal\scripts\insertTepp.ps1")
+    Write-ImportTime -Text "Loading TEPP"
+}
 
 # Process transforms
 . Import-ModuleFile -Path (Resolve-Path -Path "$script:PSModuleRoot\internal\scripts\message-transforms.ps1")
@@ -232,9 +236,13 @@ Write-ImportTime -Text "Loading Message Transforms"
 . Import-ModuleFile -Path (Resolve-Path -Path "$script:PSModuleRoot\internal\scripts\logfilescript.ps1")
 Write-ImportTime -Text "Script: Logging"
 
-# Start the tepp asynchronous update system (requires the configuration system up and running)
-. Import-ModuleFile -Path (Resolve-Path -Path "$script:PSModuleRoot\internal\scripts\updateTeppAsync.ps1")
-Write-ImportTime -Text "Script: Asynchronous TEPP Cache"
+if (($PSVersionTable.Keys -contains "Platform") -and $PSVersionTable.Platform -ne "Win32NT") {
+    Write-Verbose -Message "Skipping tepp configuration. Not Core compatible yet."
+} else {
+    # Start the tepp asynchronous update system (requires the configuration system up and running)
+    . Import-ModuleFile -Path (Resolve-Path -Path "$script:PSModuleRoot\internal\scripts\updateTeppAsync.ps1")
+    Write-ImportTime -Text "Script: Asynchronous TEPP Cache"
+}
 
 # Start the maintenance system (requires pretty much everything else already up and running)
 . Import-ModuleFile -Path (Resolve-Path -Path "$script:PSModuleRoot\internal\scripts\dbatools-maintenance.ps1")
