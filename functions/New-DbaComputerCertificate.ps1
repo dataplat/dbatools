@@ -229,7 +229,8 @@ function New-DbaComputerCertificate {
 
     process {
         if (Test-FunctionInterrupt) { return }
-
+        if (Test-NotWindows) { return }
+        
         foreach ($computer in $ComputerName) {
 
             if (!$secondaryNode) {

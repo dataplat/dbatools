@@ -171,12 +171,16 @@ Write-ImportTime -Text "Loading dbatools library"
 
 # Load configuration system
 # Should always go after library and path setting
-if (-not ([Sqlcollaborative.Dbatools.dbaSystem.SystemHost]::ModuleImported)) {
-    . Import-ModuleFile "$script:PSModuleRoot\internal\configurations\configuration.ps1"
-    Write-ImportTime -Text "Configuration System"
-}
-if (-not ([Sqlcollaborative.Dbatools.Message.LogHost]::LoggingPath)) {
-    [Sqlcollaborative.Dbatools.Message.LogHost]::LoggingPath = "$($env:AppData)\PowerShell\dbatools"
+if (($PSVersionTable.Keys -contains "Platform") -and $PSVersionTable.Platform -ne "Win32NT") {
+    Write-Verbose -Message "Skipping configuration. Not Core compatible yet."
+} else {
+    if (-not ([Sqlcollaborative.Dbatools.dbaSystem.SystemHost]::ModuleImported)) {
+        . Import-ModuleFile "$script:PSModuleRoot\internal\configurations\configuration.ps1"
+        Write-ImportTime -Text "Configuration System"
+    }
+    if (-not ([Sqlcollaborative.Dbatools.Message.LogHost]::LoggingPath)) {
+        [Sqlcollaborative.Dbatools.Message.LogHost]::LoggingPath = "$($env:AppData)\PowerShell\dbatools"
+    }
 }
 
 if ($script:multiFileImport) {
@@ -213,9 +217,13 @@ foreach ($function in (Get-ChildItem -Path (Resolve-Path -Path "$script:PSModule
 }
 Write-ImportTime -Text "Loading Optional Commands"
 
-# Process TEPP parameters
-. Import-ModuleFile -Path (Resolve-Path -Path "$script:PSModuleRoot\internal\scripts\insertTepp.ps1")
-Write-ImportTime -Text "Loading TEPP"
+if (($PSVersionTable.Keys -contains "Platform") -and $PSVersionTable.Platform -ne "Win32NT") {
+    Write-Verbose -Message "Skipping tepp configuration. Not Core compatible yet."
+} else {
+    # Process TEPP parameters
+    . Import-ModuleFile -Path (Resolve-Path -Path "$script:PSModuleRoot\internal\scripts\insertTepp.ps1")
+    Write-ImportTime -Text "Loading TEPP"
+}
 
 # Process transforms
 . Import-ModuleFile -Path (Resolve-Path -Path "$script:PSModuleRoot\internal\scripts\message-transforms.ps1")
@@ -228,9 +236,13 @@ Write-ImportTime -Text "Loading Message Transforms"
 . Import-ModuleFile -Path (Resolve-Path -Path "$script:PSModuleRoot\internal\scripts\logfilescript.ps1")
 Write-ImportTime -Text "Script: Logging"
 
-# Start the tepp asynchronous update system (requires the configuration system up and running)
-. Import-ModuleFile -Path (Resolve-Path -Path "$script:PSModuleRoot\internal\scripts\updateTeppAsync.ps1")
-Write-ImportTime -Text "Script: Asynchronous TEPP Cache"
+if (($PSVersionTable.Keys -contains "Platform") -and $PSVersionTable.Platform -ne "Win32NT") {
+    Write-Verbose -Message "Skipping tepp configuration. Not Core compatible yet."
+} else {
+    # Start the tepp asynchronous update system (requires the configuration system up and running)
+    . Import-ModuleFile -Path (Resolve-Path -Path "$script:PSModuleRoot\internal\scripts\updateTeppAsync.ps1")
+    Write-ImportTime -Text "Script: Asynchronous TEPP Cache"
+}
 
 # Start the maintenance system (requires pretty much everything else already up and running)
 . Import-ModuleFile -Path (Resolve-Path -Path "$script:PSModuleRoot\internal\scripts\dbatools-maintenance.ps1")
