@@ -14,11 +14,13 @@ function Test-NotWindows {
        #>
     [CmdletBinding()]
     param (
-        
+        [switch]$NoWarn
     )
     
-    if (($PSVersionTable.Keys -contains "Platform") -and $psversiontable.Platform -ne "Win32NT1") {
-        Write-Message -Level Warning -Message "This command is not supported on non-Windows platforms :("
+    if (($PSVersionTable.Keys -contains "Platform") -and $psversiontable.Platform -ne "Win32NT") {
+        if (-not $NoWarn) {
+            Write-Message -Level Warning -Message "This command is not supported on non-Windows platforms :("
+        }
         return $true
     }
     

@@ -171,12 +171,16 @@ Write-ImportTime -Text "Loading dbatools library"
 
 # Load configuration system
 # Should always go after library and path setting
-if (-not ([Sqlcollaborative.Dbatools.dbaSystem.SystemHost]::ModuleImported)) {
-    . Import-ModuleFile "$script:PSModuleRoot\internal\configurations\configuration.ps1"
-    Write-ImportTime -Text "Configuration System"
-}
-if (-not ([Sqlcollaborative.Dbatools.Message.LogHost]::LoggingPath)) {
-    [Sqlcollaborative.Dbatools.Message.LogHost]::LoggingPath = "$($env:AppData)\PowerShell\dbatools"
+if (($PSVersionTable.Keys -contains "Platform") -and $PSVersionTable.Platform -ne "Win32NT") {
+    Write-Verbose -Message "Skipping configuration. Not Core compatible yet."
+} else {
+    if (-not ([Sqlcollaborative.Dbatools.dbaSystem.SystemHost]::ModuleImported)) {
+        . Import-ModuleFile "$script:PSModuleRoot\internal\configurations\configuration.ps1"
+        Write-ImportTime -Text "Configuration System"
+    }
+    if (-not ([Sqlcollaborative.Dbatools.Message.LogHost]::LoggingPath)) {
+        [Sqlcollaborative.Dbatools.Message.LogHost]::LoggingPath = "$($env:AppData)\PowerShell\dbatools"
+    }
 }
 
 if ($script:multiFileImport) {
