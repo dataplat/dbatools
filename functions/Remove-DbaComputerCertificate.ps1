@@ -102,8 +102,10 @@ function Remove-DbaComputerCertificate {
         }
         #endregion Scriptblock for remoting
     }
-
+    
     process {
+        if (Test-NotWindows) { return }
+        
         foreach ($computer in $computername) {
             foreach ($thumb in $Thumbprint) {
                 if ($PScmdlet.ShouldProcess("local", "Connecting to $computer to remove cert from Cert:\$Store\$Folder")) {
