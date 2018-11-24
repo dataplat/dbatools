@@ -54,11 +54,19 @@ function Invoke-Command2 {
 
         # Retrieve a session from the session cache, if available (it's unique per runspace)
         if (-not ($currentSession = [Sqlcollaborative.Dbatools.Connection.ConnectionHost]::PSSessionGet($runspaceId, $ComputerName.ComputerName) | Where-Object State -Match "Opened|Disconnected")) {
-            $timeout = New-PSSessionOption -IdleTimeout (New-TimeSpan -Minutes 10).TotalMilliSeconds
-            if ($Credential) {
-                $InvokeCommandSplat["Session"] = (New-PSSession -ComputerName $ComputerName.ComputerName -Name $sessionName -SessionOption $timeout -Credential $Credential -ErrorAction Stop)
+            if (Test-Windows -NoWarn) {
+                $timeout = New-PSSessionOption -IdleTimeout (New-TimeSpan -Minutes 10).TotalMilliSeconds
+                if ($Credential) {
+                    $InvokeCommandSplat["Session"] = (New-PSSession -ComputerName $ComputerName.ComputerName -Name $sessionName -SessionOption $timeout -Credential $Credential -ErrorAction Stop)
+                } else {
+                    $InvokeCommandSplat["Session"] = (New-PSSession -ComputerName $ComputerName.ComputerName -Name $sessionName -SessionOption $timeout -ErrorAction Stop)
+                }
             } else {
-                $InvokeCommandSplat["Session"] = (New-PSSession -ComputerName $ComputerName.ComputerName -Name $sessionName -SessionOption $timeout -ErrorAction Stop)
+                if ($Credential) {
+                    $InvokeCommandSplat["Session"] = (New-PSSession -ComputerName $ComputerName.ComputerName -Name $sessionName -Credential $Credential -ErrorAction Stop)
+                } else {
+                    $InvokeCommandSplat["Session"] = (New-PSSession -ComputerName $ComputerName.ComputerName -Name $sessionName -ErrorAction Stop)
+                }
             }
             $currentSession = $InvokeCommandSplat["Session"]
         } else {
