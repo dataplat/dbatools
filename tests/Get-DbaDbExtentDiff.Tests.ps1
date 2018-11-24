@@ -19,17 +19,11 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
-        #Get-DbaProcess -SqlInstance $script:instance1 -Program 'dbatools PowerShell module - dbatools.io' | Stop-DbaProcess -WarningAction SilentlyContinue
         $dbname = "dbatoolsci_test_$(get-random)"
         $server = Connect-DbaInstance -SqlInstance $script:instance3
-        $null = $server.Query("Create Database [$dbname]")
-        $null = $server.Query("select * into syscols from sys.all_columns
-                                select * into sysallparams from sys.all_parameters
-                                create clustered index CL_sysallparams on sysallparams (object_id)
-                                create nonclustered index NC_syscols on syscols (precision) include (collation_name)", $dbname)
+        $server.Query("Create Database [$dbname]")
     }
     AfterAll {
-        #Get-DbaProcess -SqlInstance $script:instance3 -Database $dbname | Stop-DbaProcess -WarningAction SilentlyContinue
         Remove-DbaDatabase -SqlInstance $script:instance3 -Database $dbname -Confirm:$false
     }
 
