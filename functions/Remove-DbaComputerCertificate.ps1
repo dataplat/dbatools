@@ -76,17 +76,71 @@ function Remove-DbaComputerCertificate {
         $scriptblock = {
             param (
                 $Thumbprint,
-
                 $Store,
-
                 $Folder
             )
             <# DO NOT use Write-Message as this is inside of a script block #>
             Write-Verbose "Searching Cert:\$Store\$Folder for thumbprint: $thumbprint"
-            $cert = Get-ChildItem "Cert:\$store\$folder" -Recurse | Where-Object { $_.Thumbprint -eq $Thumbprint }
-
+            function Get-CoreCertStore {
+                [CmdletBinding()]
+                param (
+                    [ValidateSet("CurrentUser", "LocalMachine")]
+                    [string]$Store,
+                    [ValidateSet("AddressBook", "AuthRoot, CertificateAuthority", "Disallowed", "My", "Root", "TrustedPeople", "TrustedPublisher")]
+                    [string]$Folder,
+                    [ValidateSet("ReadOnly", "ReadWrite")]
+                    [string]$Flag = "ReadOnly"
+                )
+                
+                $storename = [System.Security.Cryptography.X509Certificates.StoreLocation]::$Store
+                $foldername = [System.Security.Cryptography.X509Certificates.StoreName]::$Folder
+                $flags = [System.Security.Cryptography.X509Certificates.OpenFlags]::$Flag
+                $certstore = [System.Security.Cryptography.X509Certificates.X509Store]::New($foldername, $storename)
+                $certstore.Open($flags)
+                
+                $certstore
+            }
+            
+            function Get-CoreCertificate {
+                [CmdletBinding()]
+                param (
+                    [ValidateSet("CurrentUser", "LocalMachine")]
+                    [string]$Store,
+                    [ValidateSet("AddressBook", "AuthRoot, CertificateAuthority", "Disallowed", "My", "Root", "TrustedPeople", "TrustedPublisher")]
+                    [string]$Folder,
+                    [ValidateSet("ReadOnly", "ReadWrite")]
+                    [string]$Flag = "ReadOnly",
+                    [string[]]$Thumbprint,
+                    [System.Security.Cryptography.X509Certificates.X509Store[]]$InputObject
+                )
+                
+                if (-not $InputObject) {
+                    $InputObject += Get-CoreCertStore -Store $Store -Folder $Folder -Flag $Flag
+                }
+                
+                $certs = ($InputObject).Certificates
+                
+                if ($Thumbprint) {
+                    $certs = $certs | Where-Object Thumbprint -in $Thumbprint
+                }
+                $certs
+            }
+            
+            if ($Thumbprint) {
+                try {
+                    <# DO NOT use Write-Message as this is inside of a script block #>
+                    Write-Verbose "Searching Cert:\$Store\$Folder"
+                    $cert = Get-CoreCertificate -Store $Store -Folder $Folder -Thumbprint $Thumbprint
+                } catch {
+                    # don't care - there's a weird issue with remoting where an exception gets thrown for no apparent reason
+                    # here to avoid an empty catch
+                    $null = 1
+                }
+            }
+            
             if ($cert) {
-                $null = $cert | Remove-Item
+                $certstore = Get-CoreCertStore -Store $Store -Folder $Folder -Flag ReadWrite
+                $certstore.Remove($cert)
                 $status = "Removed"
             } else {
                 $status = "Certificate not found in Cert:\$Store\$Folder"
@@ -104,8 +158,6 @@ function Remove-DbaComputerCertificate {
     }
     
     process {
-        if (Test-NotWindows) { return }
-        
         foreach ($computer in $computername) {
             foreach ($thumb in $Thumbprint) {
                 if ($PScmdlet.ShouldProcess("local", "Connecting to $computer to remove cert from Cert:\$Store\$Folder")) {
