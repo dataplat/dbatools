@@ -58,7 +58,7 @@ function Add-DbaComputerCertificate {
         Adds the local C:\temp\cert.cer to the local computer's LocalMachine\My (Personal) certificate store.
 
     #>
-    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "High")]
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
     param (
         [Alias("ServerInstance", "SqlServer", "SqlInstance")]
         [DbaInstance[]]$ComputerName = $env:COMPUTERNAME,
