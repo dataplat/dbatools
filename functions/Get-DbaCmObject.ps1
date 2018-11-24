@@ -113,6 +113,9 @@ function Get-DbaCmObject {
         $ParSet = $PSCmdlet.ParameterSetName
     }
     process {
+        # uses cim commands
+        if (-not (Test-Windows)) { return }
+        
         :main foreach ($connectionObject in $ComputerName) {
             if (-not $connectionObject.Success) { Stop-Function -Message "Failed to interpret input: $($connectionObject.Input)" -Category InvalidArgument -Target $connectionObject.Input -Continue -SilentlyContinue:$SilentlyContinue }
 
