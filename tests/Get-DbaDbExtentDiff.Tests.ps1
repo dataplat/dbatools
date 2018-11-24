@@ -20,21 +20,21 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
         $dbname = "dbatoolsci_test_$(get-random)"
-        $server = Connect-DbaInstance -SqlInstance $script:instance3
+        $server = Connect-DbaInstance -SqlInstance $script:instance2
         $server.Query("Create Database [$dbname]")
     }
     AfterAll {
-        Remove-DbaDatabase -SqlInstance $script:instance3 -Database $dbname -Confirm:$false
+        Remove-DbaDatabase -SqlInstance $script:instance2 -Database $dbname -Confirm:$false
     }
 
     Context "Gets Changed Extents for Multiple Databases" {
-        $results = Get-DbaDbExtentDiff -SqlInstance $script:instance3
+        $results = Get-DbaDbExtentDiff -SqlInstance $script:instance2
         It "Gets results" {
             $results | Should Not Be $null
         }
         Foreach ($row in $results) {
             It "Should have extents for $($row.DatabaseName)" {
-                $row.ExtentsTotal | Should BeGreaterOrEqual 0
+                $row.ExtentsTotal | Should BeGreaterThan 0
             }
             It "Should have extents changed for $($row.DatabaseName)" {
                 $row.ExtentsChanged | Should BeGreaterOrEqual 0
@@ -42,15 +42,15 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
     }
     Context "Gets Changed Extents for Single Database" {
-        $results = Get-DbaDbExtentDiff -SqlInstance $script:instance3 -Database $dbname
+        $results = Get-DbaDbExtentDiff -SqlInstance $script:instance2 -Database $dbname
         It "Gets results" {
             $results | Should Not Be $null
         }
         It "Should have extents for $($results.DatabaseName)" {
             $results.ExtentsTotal | Should BeGreaterThan 0
         }
-        It "Should have 0 extents changed for $($results.DatabaseName)" {
-            $results.ExtentsChanged | Should Be 0
+        It "Should have extents changed for $($results.DatabaseName)" {
+            $results.ExtentsChanged | Should BeGreaterOrEqual 0
         }
     }
 }
