@@ -63,7 +63,7 @@ function Export-DbaPfDataCollectorSetTemplate {
         [switch]$EnableException
     )
     process {
-        if (Test-NotWindows) { return }
+        if (-not (Test-Windows)) { return }
         
         if ($InputObject.Credential -and (Test-Bound -ParameterName Credential -Not)) {
             $Credential = $InputObject.Credential
