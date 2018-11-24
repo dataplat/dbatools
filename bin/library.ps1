@@ -61,16 +61,21 @@ if ($ImportLibrary) {
         }
         # Else we prioritize user convenience
 else {
-            $sln = (Resolve-Path -Path "$libraryBase\projects\dbatools\dbatools.sln")
-            $hasProject = Test-Path -Path $sln
+            try {
+                $sln = (Resolve-Path -Path "$libraryBase\projects\dbatools\dbatools.sln" -ErrorAction Stop)
+                $hasProject = Test-Path -Path $sln -ErrorAction Stop
+            } catch {
+                $null = 1
+            }
             
             if (-not $dll) {
                 $hasCompiledDll = $false
             } else {
-                $hasCompiledDll = Test-Path -Path $dll
+                $hasCompiledDll = Test-Path -Path $dll -ErrorAction Stop
             }
             
             $reslibdll = Resolve-Path -Path "$libraryBase\dbatools.dll"
+            
             if ((-not $script:alwaysBuildLibrary) -and $hasCompiledDll -and ([System.Diagnostics.FileVersionInfo]::GetVersionInfo($reslibdll).FileVersion -eq $currentLibraryVersion)) {
                 $start = Get-Date
                 
