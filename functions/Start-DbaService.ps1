@@ -72,7 +72,7 @@ function Start-DbaService {
         Starts the SQL Server related services of type "SSRS" (Reporting Services) on computers in the variable MyServers.
 
     #>
-    [CmdletBinding(DefaultParameterSetName = "Server", SupportsShouldProcess)]
+    [CmdletBinding(DefaultParameterSetName = "Server", SupportsShouldProcess = $true)]
     param (
         [Parameter(ParameterSetName = "Server", Position = 1)]
         [Alias("cn", "host", "Server")]

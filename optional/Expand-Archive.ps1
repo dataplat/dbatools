@@ -50,7 +50,7 @@ Which ships with PowerShell Version 5 but will run under v3.
         #>
         [CmdletBinding(
             DefaultParameterSetName = "Path",
-            SupportsShouldProcess,
+            SupportsShouldProcess = $true,
             HelpUri = "http://go.microsoft.com/fwlink/?LinkID=393253")]
         param
         (

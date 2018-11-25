@@ -57,7 +57,7 @@ function Invoke-DbatoolsRenameHelper {
         the resulting changes would be written to disk as Ascii encoded.
 
     #>
-    [CmdletBinding(SupportsShouldProcess)]
+    [CmdletBinding(SupportsShouldProcess = $true)]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
         [System.IO.FileInfo[]]$InputObject,

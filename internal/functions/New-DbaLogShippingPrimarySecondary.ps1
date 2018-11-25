@@ -49,7 +49,7 @@ function New-DbaLogShippingPrimarySecondary {
         .EXAMPLE
             New-DbaLogShippingPrimarySecondary -SqlInstance sql1 -PrimaryDatabase DB1 -SecondaryServer sql2 -SecondaryDatabase DB1_DR
        #>
-    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
+    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "Low")]
     param (
         [parameter(Mandatory)]
         [Alias("ServerInstance", "SqlServer")]

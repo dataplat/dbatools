@@ -48,7 +48,7 @@ function Remove-DbaClientAlias {
         Removes all SQL Server client aliases on the local computer
 
     #>
-    [CmdletBinding(SupportsShouldProcess)]
+    [CmdletBinding(SupportsShouldProcess = $true)]
     param (
         [parameter(ValueFromPipelineByPropertyName = $true)]
         [DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,

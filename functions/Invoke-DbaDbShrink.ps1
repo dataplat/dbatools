@@ -121,7 +121,7 @@ function Invoke-DbaDbShrink {
         Shrinks all databases on SQL2012 (not ideal for production)
 
     #>
-    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Low')]
+    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'Low')]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]

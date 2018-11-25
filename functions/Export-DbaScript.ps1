@@ -123,7 +123,7 @@ function Export-DbaScript {
         Will append the output to the file C:\temp\export.sql if it already exists
 
     #>
-    [CmdletBinding(SupportsShouldProcess)]
+    [CmdletBinding(SupportsShouldProcess = $true)]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
         [object[]]$InputObject,

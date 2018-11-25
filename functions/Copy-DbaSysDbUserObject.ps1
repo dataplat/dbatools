@@ -54,7 +54,7 @@ function Copy-DbaSysDbUserObject {
         Copies user objects from source to destination
 
     #>
-    [CmdletBinding(SupportsShouldProcess)]
+    [CmdletBinding(SupportsShouldProcess = $true)]
     param (
         [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]

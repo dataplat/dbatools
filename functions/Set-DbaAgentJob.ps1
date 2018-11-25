@@ -151,7 +151,7 @@ function Set-DbaAgentJob {
         Changes a job with the name "Job1" on multiple servers to have another description using pipe line
 
     #>
-    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
+    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "Low")]
     param (
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,

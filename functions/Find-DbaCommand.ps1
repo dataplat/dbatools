@@ -83,7 +83,7 @@ function Find-DbaCommand {
         Finds all commands searching the entire help for "snapshot", rebuilding the index (good for developers)
 
     #>
-    [CmdletBinding(SupportsShouldProcess)]
+    [CmdletBinding(SupportsShouldProcess = $true)]
     param (
         [String]$Pattern,
         [String[]]$Tag,

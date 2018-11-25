@@ -124,7 +124,7 @@ function Set-DbaAgentSchedule {
         Changes the schedule for Job1 with the name 'daily' to enabled on multiple servers using pipe line
 
     #>
-    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
+    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "Low")]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]

@@ -89,7 +89,7 @@ function Reset-DbaAdmin {
         If the account already exists, it will be added to the sysadmin role and the password will be reset.
 
     #>
-    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "High")]
+    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "High")]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingWMICmdlet", "", Justification = "Using Get-WmiObject for client backwards compatibilty")]
     param (
         [Parameter(Mandatory)]
