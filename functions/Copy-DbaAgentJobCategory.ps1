@@ -82,7 +82,7 @@ function Copy-DbaAgentJobCategory {
         Shows what would happen if the command were executed using force.
 
     #>
-    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldprocess = $true)]
+    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess)]
     param (
         [parameter(Mandatory)]
         [DbaInstanceParameter]$Source,
@@ -189,7 +189,7 @@ function Copy-DbaAgentJobCategory {
 
                     If the associated credential for the category does not exist on the destination, it will be skipped. If the operator category already exists on the destination, it will be skipped unless -Force is used.
             #>
-            [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldprocess = $true)]
+            [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess)]
             param (
                 [string[]]$operatorCategories
             )
@@ -268,7 +268,7 @@ function Copy-DbaAgentJobCategory {
 
                     If the associated credential for the category does not exist on the destination, it will be skipped. If the alert category already exists on the destination, it will be skipped unless -Force is used.
             #>
-            [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldprocess = $true)]
+            [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess)]
             param (
                 [string[]]$AlertCategories
             )

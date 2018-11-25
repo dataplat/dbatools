@@ -67,7 +67,7 @@ function Set-DbaJobOwner {
         Sets SQL Agent Job owner to sa on all jobs where the owner does not match sa on both sqlserver and sql2016.
 
     #>
-    [CmdletBinding(SupportsShouldProcess = $true)]
+    [CmdletBinding(SupportsShouldProcess)]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
