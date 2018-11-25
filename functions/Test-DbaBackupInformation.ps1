@@ -64,7 +64,7 @@ function Test-DbaBackupInformation {
         Those records that pass are marked as verified. We can then use the IsVerified property to divide the failures and successes
 
     #>
-    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "Low")]
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseOutputTypeCorrectly", "", Justification = "PSSA Rule Ignored by BOH")]
     param (
         [parameter(Mandatory, ValueFromPipeline)]

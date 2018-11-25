@@ -74,7 +74,7 @@ function Copy-DbaCustomError {
         Shows what would happen if the command were executed using force.
 
     #>
-    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
+    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess)]
     param (
         [parameter(Mandatory)]
         [DbaInstanceParameter]$Source,

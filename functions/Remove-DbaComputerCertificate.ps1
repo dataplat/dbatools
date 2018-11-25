@@ -58,7 +58,7 @@ function Remove-DbaComputerCertificate {
         Removes certificate with thumbprint C2BBE81A94FEE7A26FFF86C2DFDAF6BFD28C6C94 in the User\My (Personal) store on Server1
 
     #>
-    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "High")]
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "High")]
     param (
         [Alias("ServerInstance", "SqlServer", "SqlInstance")]
         [DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,
@@ -91,16 +91,16 @@ function Remove-DbaComputerCertificate {
                     [ValidateSet("ReadOnly", "ReadWrite")]
                     [string]$Flag = "ReadOnly"
                 )
-                
+
                 $storename = [System.Security.Cryptography.X509Certificates.StoreLocation]::$Store
                 $foldername = [System.Security.Cryptography.X509Certificates.StoreName]::$Folder
                 $flags = [System.Security.Cryptography.X509Certificates.OpenFlags]::$Flag
                 $certstore = [System.Security.Cryptography.X509Certificates.X509Store]::New($foldername, $storename)
                 $certstore.Open($flags)
-                
+
                 $certstore
             }
-            
+
             function Get-CoreCertificate {
                 [CmdletBinding()]
                 param (
@@ -113,19 +113,19 @@ function Remove-DbaComputerCertificate {
                     [string[]]$Thumbprint,
                     [System.Security.Cryptography.X509Certificates.X509Store[]]$InputObject
                 )
-                
+
                 if (-not $InputObject) {
                     $InputObject += Get-CoreCertStore -Store $Store -Folder $Folder -Flag $Flag
                 }
-                
+
                 $certs = ($InputObject).Certificates
-                
+
                 if ($Thumbprint) {
                     $certs = $certs | Where-Object Thumbprint -in $Thumbprint
                 }
                 $certs
             }
-            
+
             if ($Thumbprint) {
                 try {
                     <# DO NOT use Write-Message as this is inside of a script block #>
@@ -137,7 +137,7 @@ function Remove-DbaComputerCertificate {
                     $null = 1
                 }
             }
-            
+
             if ($cert) {
                 $certstore = Get-CoreCertStore -Store $Store -Folder $Folder -Flag ReadWrite
                 $certstore.Remove($cert)
@@ -156,7 +156,7 @@ function Remove-DbaComputerCertificate {
         }
         #endregion Scriptblock for remoting
     }
-    
+
     process {
         foreach ($computer in $computername) {
             foreach ($thumb in $Thumbprint) {
