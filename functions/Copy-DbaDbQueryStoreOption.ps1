@@ -63,7 +63,7 @@ function Copy-DbaDbQueryStoreOption {
         Copy the Query Store configuration of the AdventureWorks database in the ServerA\SQL instance and apply it to the WorldWideTraders database in the ServerB\SQL Instance.
 
     #>
-    [CmdletBinding(SupportsShouldProcess = $true)]
+    [CmdletBinding(SupportsShouldProcess)]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter]$Source,
@@ -79,7 +79,7 @@ function Copy-DbaDbQueryStoreOption {
         [Alias('Silent')]
         [switch]$EnableException
     )
-    
+
     begin {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Copy-DbaQueryStoreConfig
         try {

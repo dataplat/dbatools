@@ -163,7 +163,7 @@ function Copy-DbaDatabase {
         It also includes the support databases (ReportServer, ReportServerTempDb, distribution).
 
     #>
-    [CmdletBinding(DefaultParameterSetName = "DbBackup", SupportsShouldProcess = $true)]
+    [CmdletBinding(DefaultParameterSetName = "DbBackup", SupportsShouldProcess)]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseOutputTypeCorrectly", "", Justification = "PSSA Rule Ignored by BOH")]
     param (
         [parameter(Mandatory = $false)]
@@ -223,7 +223,7 @@ function Copy-DbaDatabase {
     )
     begin {
         Test-DbaDeprecation -DeprecatedOn 1.0.0 -Parameter NetworkShare -CustomMessage "Using the parameter NetworkShare is deprecated. This parameter will be removed in version 1.0.0 or before. Use SharedPath instead."
-        
+
         $CopyOnly = -not $NoCopyOnly
 
         if ($BackupRestore -and (-not $SharedPath -and -not $UseLastBackup)) {
