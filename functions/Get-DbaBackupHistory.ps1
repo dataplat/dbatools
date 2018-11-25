@@ -590,10 +590,6 @@ function Get-DbaBackupHistory {
                 Write-Message -Level SomewhatVerbose -Message "Processing as Raw Output."
                 $results | Select-Object *, @{ Name = "FullName"; Expression = { $_.Path } }
                 Write-Message -Level SomewhatVerbose -Message "$($results.Count) result sets found."
-            } elseif ($force) {
-                Write-Message -Level SomewhatVerbose -Message "Forcing SQL Output."
-                $results | Select-Object *, @{ Name = "FullName"; Expression = { $_.Path } }
-                Write-Message -Level SomewhatVerbose -Message "$($results.Count) result sets found."
             } else {
                 Write-Message -Level SomewhatVerbose -Message "Processing as grouped output."
                 $groupedResults = $results | Group-Object -Property BackupsetId
