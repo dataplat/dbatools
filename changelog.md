@@ -59,7 +59,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Updated Glen Berry's scripts
 
 
-## changelog info for now becauese i forget
+## changelog background and additional info
 
 ### Types of changes
 * Added for new features.
