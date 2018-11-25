@@ -74,7 +74,7 @@ function New-DbaCredential {
         Password needs to be passed the Shared Access Token (SAS Key).
 
     #>
-    [CmdletBinding(SupportsShouldProcess)] #, ConfirmImpact = "High"
+    [CmdletBinding(SupportsShouldProcess = $true)] #, ConfirmImpact = "High"
     param (
         [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]

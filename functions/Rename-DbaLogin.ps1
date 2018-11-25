@@ -61,7 +61,7 @@ function Rename-DbaLogin {
         WhatIf Example
 
           #>
-    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess)]
+    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
     param (
         [parameter(Mandatory)]
         [DbaInstanceParameter[]]$SqlInstance,

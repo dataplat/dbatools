@@ -135,7 +135,7 @@ function Set-DbaAgentJobStep {
         Changes the database of the step in "Job1" with the name Step1 to msdb for multiple servers using pipeline
 
     #>
-    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
+    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "Low")]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]

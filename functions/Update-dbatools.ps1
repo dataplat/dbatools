@@ -43,7 +43,7 @@ function Update-Dbatools {
         Updates dbatools to the current development branch. Deletes current copy and replaces it with latest from github.
 
     #>
-    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
+    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "Low")]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseSingularNouns", "", Justification = "It is the proper noun of the cmdlet")]
     param(
         [parameter(Mandatory = $false)]

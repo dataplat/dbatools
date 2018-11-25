@@ -109,7 +109,7 @@ function Remove-DbaDatabaseSafely {
         If there is a DBCC Error, the function  will continue to perform rest of the actions and will create an Agent job with 'DBCCERROR' in the name and a Backup file with 'DBCCError' in the name.
 
     #>
-    [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = "Default")]
+    [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = "Default")]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
@@ -197,7 +197,7 @@ function Remove-DbaDatabaseSafely {
             <#
                 .SYNOPSIS
             #>
-            [CmdletBinding(SupportsShouldProcess)]
+            [CmdletBinding(SupportsShouldProcess = $true)]
             param ()
             if ($destserver.VersionMajor -eq 8) {
                 $serviceName = 'MSSQLSERVER'
@@ -239,7 +239,7 @@ function Remove-DbaDatabaseSafely {
 
             #>
 
-            [CmdletBinding(SupportsShouldProcess)]
+            [CmdletBinding(SupportsShouldProcess = $true)]
             param (
                 [object]$server,
                 [string]$dbname
@@ -272,7 +272,7 @@ function Remove-DbaDatabaseSafely {
                 .SYNOPSIS
 
             #>
-            [CmdletBinding(SupportsShouldProcess)]
+            [CmdletBinding(SupportsShouldProcess = $true)]
             param ([string]$categoryname,
                 [object]$jobServer)
 

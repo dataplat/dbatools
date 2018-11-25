@@ -69,7 +69,7 @@ function Copy-DbaSpConfigure {
         Shows what would happen if the command were executed.
 
     #>
-    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess)]
+    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
     param (
         [parameter(Mandatory)]
         [DbaInstanceParameter]$Source,

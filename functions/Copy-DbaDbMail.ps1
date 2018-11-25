@@ -69,7 +69,7 @@ function Copy-DbaDbMail {
         Performs execution of function, and will throw a terminating exception if something breaks
 
     #>
-    [cmdletbinding(DefaultParameterSetName = "Default", SupportsShouldProcess)]
+    [cmdletbinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
     param (
         [parameter(Mandatory)]
         [DbaInstanceParameter]$Source,

@@ -37,7 +37,7 @@ function Set-ServiceStartMode {
         Sets all SQL services on sql1 to Automatic startup.
 
     #>
-    [CmdletBinding(SupportsShouldProcess)]
+    [CmdletBinding(SupportsShouldProcess = $true)]
     param (
         [string]$Mode,
         [parameter(ValueFromPipeline, Mandatory)]

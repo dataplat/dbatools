@@ -217,7 +217,7 @@ function Invoke-Parallel {
 
             if ($ImportVariables) {
                 #Exclude common parameters, bound parameters, and automatic variables
-                Function _temp {[cmdletbinding(SupportsShouldProcess)] param() }
+                Function _temp {[cmdletbinding(SupportsShouldProcess = $True)] param() }
                 $VariablesToExclude = @( (Get-Command _temp | Select-Object -ExpandProperty parameters).Keys + $PSBoundParameters.Keys + $StandardUserEnv.Variables )
                 Write-Verbose "Excluding variables $( ($VariablesToExclude | Sort-Object ) -join ", ")"
 

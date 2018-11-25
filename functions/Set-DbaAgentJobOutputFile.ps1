@@ -46,7 +46,7 @@ function Set-DbaAgentJobOutputFile {
         Sets the Job step for The Agent job on SERVERNAME to E:\Logs\AgentJobStepOutput.txt
 
     #>
-    [CmdletBinding(SupportsShouldProcess)]
+    [CmdletBinding(SupportsShouldProcess = $true)]
     param (
         [Parameter(Mandatory, HelpMessage = 'The SQL Server Instance',
             ValueFromPipeline,

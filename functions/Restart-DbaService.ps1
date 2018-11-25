@@ -80,7 +80,7 @@ function Restart-DbaService {
         Restarts SQL Server database engine services on sql1 forcing dependent SQL Server Agent services to restart as well.
 
     #>
-    [CmdletBinding(DefaultParameterSetName = "Server", SupportsShouldProcess)]
+    [CmdletBinding(DefaultParameterSetName = "Server", SupportsShouldProcess = $true)]
     param (
         [Parameter(ParameterSetName = "Server", Position = 1)]
         [Alias("cn", "host", "Server")]

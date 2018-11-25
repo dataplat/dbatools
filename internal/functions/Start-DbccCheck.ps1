@@ -1,5 +1,5 @@
 function Start-DbccCheck {
-    [CmdletBinding(SupportsShouldProcess)]
+    [CmdletBinding(SupportsShouldProcess = $true)]
     param (
         [object]$server,
         [string]$dbname,

@@ -73,7 +73,7 @@ function Copy-DbaCmsRegServer {
         If SwitchServerName is not specified, "sqlcluster" will be skipped.
 
     #>
-    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess)]
+    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
     param (
         [parameter(Mandatory)]
         [DbaInstanceParameter]$Source,
