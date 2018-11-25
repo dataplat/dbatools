@@ -5,7 +5,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
     and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [0.9.531] - 2018-11-24
-# Added
+### Added
 - Support for Core and Certs
 - Solution file upgraded to Core combination and VS 2017
 
@@ -14,7 +14,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Fixed
 - Fixed non-Windows imports. "Fixed" used loosely - disabled configuration to speed up import. Xplat still not fully delivered.
 
-# Added
+### Added
 - Seeding support to Add-DbaAgDatabase
 - More integration tests!
 - Category and Database filters to Get-DbaAgentJob
