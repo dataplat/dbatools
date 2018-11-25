@@ -80,7 +80,7 @@ function Update-DbaServiceAccount {
         Configures SQL Server engine service on the machine sql1 to run under MyDomain\sqluser1. Will request user to input the account password.
 
     #>
-    [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = "ServiceName" )]
+    [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = "ServiceName" )]
     param (
         [parameter(ParameterSetName = "ServiceName")]
         [Alias("cn", "host", "Server")]
