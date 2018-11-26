@@ -88,19 +88,19 @@ function Resolve-DbaNetworkName {
         [parameter(ValueFromPipeline)]
         [Alias('cn', 'host', 'ServerInstance', 'Server', 'SqlInstance')]
         [DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,
-        [PSCredential] $Credential,
+        [PSCredential]$Credential,
         [Alias('FastParrot')]
         [switch]$Turbo,
         [Alias('Silent')]
         [switch]$EnableException
     )
-    
+
     process {
         if (-not (Test-Windows -NoWarn)) {
             Write-Message -Level Verbose -Message "Non-Windows client detected. Turbo (DNS resolution only) set to $true"
             $Turbo = $true
         }
-        
+
         foreach ($Computer in $ComputerName) {
             $conn = $ipaddress = $null
 
@@ -125,7 +125,7 @@ function Resolve-DbaNetworkName {
                         $ipaddress = $resolved.AddressList[0].IPAddressToString
                         $fqdn = $resolved.HostName
                     } catch {
-                        Stop-Function -Message "DNS name not found" -Continue -InnerErrorRecord $_
+                        Stop-Function -Message "DNS name not found" -Continue -ErrorRecord $_
                     }
                 }
 
@@ -166,8 +166,12 @@ function Resolve-DbaNetworkName {
                             $ipaddress = ((Test-Connection -ComputerName "$Computer.$env:USERDNSDOMAIN" -Count 1 -ErrorAction SilentlyContinue).Ipv4Address).IPAddressToString
                             if ($ipaddress) {
                                 $Computer = "$Computer.$env:USERDNSDOMAIN"
+                                Write-Message -Level VeryVerbose -Message "IP Address from $Computer is $ipaddress"
                             } else {
-                                Stop-Function -Message "Couldn't resolve ip from dns name" -Continue -ErrorRecord $_
+                                Write-Message -Level VeryVerbose -Message "No IP Address returned from $Computer"
+                                Write-Message -Level VeryVerbose -Message "Using .NET.Dns to resolve IP Address"
+                                Resolve-DbaNetworkName -ComputerName $Computer -Turbo
+                                continue
                             }
                         }
                     } catch {
@@ -202,11 +206,11 @@ function Resolve-DbaNetworkName {
                             }
                         }
                         if (Test-Bound "Credential") {
-                            $conn = Get-DbaCmObject -ClassName win32_ComputerSystem -Computer $RemoteComputer -Credential $Credential -EnableException
-                            $DNSSuffix = Invoke-Command2 -Computer $RemoteComputer -ScriptBlock $ScBlock -Credential $Credential -ErrorAction Stop
+                            $conn = Get-DbaCmObject -ClassName win32_ComputerSystem -ComputerName $RemoteComputer -Credential $Credential -EnableException
+                            $DNSSuffix = Invoke-Command2 -ComputerName $RemoteComputer -ScriptBlock $ScBlock -Credential $Credential -ErrorAction Stop
                         } else {
-                            $conn = Get-DbaCmObject -ClassName win32_ComputerSystem -Computer $RemoteComputer -EnableException
-                            $DNSSuffix = Invoke-Command2 -Computer $RemoteComputer -ScriptBlock $ScBlock -ErrorAction Stop
+                            $conn = Get-DbaCmObject -ClassName win32_ComputerSystem -ComputerName $RemoteComputer -EnableException
+                            $DNSSuffix = Invoke-Command2 -ComputerName $RemoteComputer -ScriptBlock $ScBlock -ErrorAction Stop
                         }
                     } catch {
                         Write-Message -Level Verbose -Message "Unable to get computer information from $Computer"
@@ -230,7 +234,7 @@ function Resolve-DbaNetworkName {
                                 DNSDomain = $suffix
                             }
                         } catch {
-                            Stop-Function -Message "No .NET.Dns information from $Computer" -InnerErrorRecord $_ -Continue
+                            Stop-Function -Message "No .NET.Dns information from $Computer" -ErrorRecord $_ -Continue
                         }
                     }
                 }
@@ -243,7 +247,7 @@ function Resolve-DbaNetworkName {
                     Write-Message -Level VeryVerbose -Message "Resolving $FullComputerName using .NET.Dns GetHostEntry"
                     $hostentry = ([System.Net.Dns]::GetHostEntry($FullComputerName)).HostName
                 } catch {
-                    Stop-Function -Message ".NET.Dns GetHostEntry failed for $FullComputerName" -InnerErrorRecord $_
+                    Stop-Function -Message ".NET.Dns GetHostEntry failed for $FullComputerName" -ErrorRecord $_
                 }
 
                 $fqdn = "$($conn.DNSHostname).$($conn.Domain)"
