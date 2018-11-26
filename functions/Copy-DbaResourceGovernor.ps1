@@ -69,7 +69,7 @@ function Copy-DbaResourceGovernor {
         Shows what would happen if the command were executed.
 
     #>
-    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
+    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess)]
     param (
         [parameter(Mandatory)]
         [DbaInstanceParameter]$Source,
@@ -119,7 +119,7 @@ function Copy-DbaResourceGovernor {
                 Notes             = $null
                 DateTime          = [DbaDateTime](Get-Date)
             }
-            
+
             if ($Pscmdlet.ShouldProcess($destinstance, "Updating Resource Governor settings")) {
                 if ($destServer.Edition -notmatch 'Enterprise' -and $destServer.Edition -notmatch 'Datacenter' -and $destServer.Edition -notmatch 'Developer') {
                     Write-Message -Level Verbose -Message "The resource governor is not available in this edition of SQL Server. You can manipulate resource governor metadata but you will not be able to apply resource governor configuration. Only Enterprise edition of SQL Server supports resource governor."
@@ -152,7 +152,7 @@ function Copy-DbaResourceGovernor {
                                 $copyResourceGovClassifierFunc.Status = "Successful"
                                 $copyResourceGovClassifierFunc.Notes = "The new classifier function has been created"
                                 $copyResourceGovClassifierFunc | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                                
+
                                 $sql = "ALTER RESOURCE GOVERNOR RECONFIGURE;"
                                 Write-Message -Level Debug -Message $sql
                                 Write-Message -Level Verbose -Message "Reconfiguring Resource Governor."
@@ -186,12 +186,12 @@ function Copy-DbaResourceGovernor {
                                     Write-Message -Level Debug -Message $sql
                                     Write-Message -Level Verbose -Message "Mapping Resource Governor classifier function."
                                     $destServer.Query($sql)
-                                    
+
                                     $sql = "ALTER RESOURCE GOVERNOR RECONFIGURE;"
                                     Write-Message -Level Debug -Message $sql
                                     Write-Message -Level Verbose -Message "Reconfiguring Resource Governor."
                                     $destServer.Query($sql)
-                                    
+
                                     $copyResourceGovClassifierFunc.Status = "Successful"
                                     $copyResourceGovClassifierFunc.Notes = "The old classifier function has been overwritten."
                                     $copyResourceGovClassifierFunc | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
@@ -202,12 +202,12 @@ function Copy-DbaResourceGovernor {
                         $copyResourceGovSetting.Status = "Failed"
                         $copyResourceGovSetting.Notes = (Get-ErrorMessage -Record $_)
                         $copyResourceGovSetting | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                        
+
                         $sql = "ALTER RESOURCE GOVERNOR RECONFIGURE;"
                         Write-Message -Level Debug -Message $sql
                         Write-Message -Level Verbose -Message "Reconfiguring Resource Governor."
                         $destServer.Query($sql)
-                        
+
                         Stop-Function -Message "Not able to update settings." -Target $destServer -ErrorRecord $_
                     }
                 }
@@ -264,7 +264,7 @@ function Copy-DbaResourceGovernor {
                                 $copyResourceGovPool | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
                                 Stop-Function -Message "Unable to drop: $_ Moving on." -Target $destPool -ErrorRecord $_ -Continue
-                                
+
                                 $sql = "ALTER RESOURCE GOVERNOR RECONFIGURE;"
                                 Write-Message -Level Debug -Message $sql
                                 Write-Message -Level Verbose -Message "Reconfiguring Resource Governor."
@@ -305,7 +305,7 @@ function Copy-DbaResourceGovernor {
 
                             $copyResourceGovWorkGroup.Status = "Successful"
                             $copyResourceGovWorkGroup | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                            
+
                             $sql = "ALTER RESOURCE GOVERNOR RECONFIGURE;"
                             Write-Message -Level Debug -Message $sql
                             Write-Message -Level Verbose -Message "Reconfiguring Resource Governor."
@@ -332,7 +332,7 @@ function Copy-DbaResourceGovernor {
                         if (!$sourceServer.ResourceGovernor.Enabled) {
                             $sql = "ALTER RESOURCE GOVERNOR DISABLE"
                             $destServer.Query($sql)
-                            
+
                             $sql = "ALTER RESOURCE GOVERNOR RECONFIGURE;"
                             Write-Message -Level Debug -Message $sql
                             Write-Message -Level Verbose -Message "Reconfiguring Resource Governor."

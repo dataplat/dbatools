@@ -73,7 +73,7 @@ function Copy-DbaAgentJob {
         Shows what would happen if the command were executed using force.
 
     #>
-    [cmdletbinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
+    [cmdletbinding(DefaultParameterSetName = "Default", SupportsShouldProcess)]
     param (
         [parameter(Mandatory)]
         [DbaInstanceParameter]$Source,

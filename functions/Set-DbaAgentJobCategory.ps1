@@ -54,7 +54,7 @@ function Set-DbaAgentJobCategory {
         Rename multiple jobs in one go on multiple servers.
 
     #>
-    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "Low")]
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseOutputTypeCorrectly", "", Justification = "PSSA Rule Ignored by BOH")]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
@@ -118,7 +118,7 @@ function Set-DbaAgentJobCategory {
                             $currentCategory.Rename($NewName[$Category.IndexOf($cat)])
                             $newCategoryName = $currentCategory.Name
                         }
-                        
+
                         Get-DbaAgentJobCategory -SqlInstance $server -Category $newCategoryName
                     } catch {
                         Stop-Function -Message "Something went wrong changing the job category $cat on $instance" -Target $cat -Continue -ErrorRecord $_

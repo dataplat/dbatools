@@ -154,7 +154,7 @@ function Copy-DbaDbTableData {
         Keeps identity columns and Nulls, truncates the destination and processes in BatchSize of 10000.
 
        #>
-    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
+    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess)]
     param (
         [Alias("ServerInstance", "SqlServer", "Source")]
         [DbaInstanceParameter]$SqlInstance,

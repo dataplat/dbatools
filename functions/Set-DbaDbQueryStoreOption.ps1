@@ -90,7 +90,7 @@ function Set-DbaDbQueryStoreOption {
         Configure the Query Store settings for all user databases except the AdventureWorks database in the ServerA\SQL Instance.
 
     #>
-    [CmdletBinding(SupportsShouldProcess = $true)]
+    [CmdletBinding(SupportsShouldProcess)]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]

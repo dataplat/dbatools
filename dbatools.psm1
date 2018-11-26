@@ -892,10 +892,6 @@ $script:renames = @(
         "Definition" = "Export-DbaCmsRegServer"
     },
     @{
-        "AliasName"  = "Get-DbaRegisteredServer"
-        "Definition" = "Get-DbaCmsRegServer"
-    },
-    @{
         "AliasName"  = "Get-DbaRegisteredServerGroup"
         "Definition" = "Get-DbaCmsRegServerGroup"
     },
@@ -999,6 +995,10 @@ $script:renames | ForEach-Object {
     @{
         "AliasName"  = "Detach-DbaDatabase"
         "Definition" = "Dismount-DbaDatabase"
+    },
+    @{
+        "AliasName"  = "Get-DbaRegisteredServer"
+        "Definition" = "Get-DbaCmsRegServer"
     }
 ) | ForEach-Object {
     if (-not (Test-Path Alias:$($_.AliasName))) { Set-Alias -Scope Global -Name $($_.AliasName) -Value $($_.Definition) }
