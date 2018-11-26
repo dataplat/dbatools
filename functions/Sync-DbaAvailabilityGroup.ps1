@@ -61,6 +61,18 @@ function Sync-DbaAvailabilityGroup {
         AgentSchedule
         AgentJob
 
+    .PARAMETER Login
+        Specific logins to sync. If unspecified, all logins will be processed.
+
+    .PARAMETER ExcludeLogin
+        Specific logins to exclude when performing the sync. If unspecified, all logins will be processed.
+
+    .PARAMETER Job
+        Specific jobs to sync. If unspecified, all logins will be processed.
+
+    .PARAMETER ExcludeJob
+         Specific jobs to exclude when performing the sync. If unspecified, all logins will be processed.
+
     .PARAMETER InputObject
         Enables piping from Get-DbaAvailabilityGroup.
 
