@@ -71,7 +71,7 @@ function Set-DbaSpn {
         Displays what would happen trying to set all missing SPNs for sql2016
 
     #>
-    [cmdletbinding(SupportsShouldProcess = $true, DefaultParameterSetName = "Default")]
+    [cmdletbinding(SupportsShouldProcess, DefaultParameterSetName = "Default")]
     param (
         [Parameter(Mandatory, ValueFromPipelineByPropertyName)]
         [Alias("RequiredSPN")]

@@ -86,7 +86,7 @@ function Remove-DbaOrphanUser {
         Removes user OrphanUser from all databases even if they have a matching Login. Any schema that the user owns will change ownership to dbo.
 
     #>
-    [CmdletBinding(SupportsShouldProcess = $true)]
+    [CmdletBinding(SupportsShouldProcess)]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]

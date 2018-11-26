@@ -132,7 +132,7 @@ function New-DbaAgentJobStep {
 
     #>
 
-    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "Low")]
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
