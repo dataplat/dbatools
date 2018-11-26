@@ -1,12 +1,17 @@
 function Restart-WinRMService {
     <#
-    Restarts WinRM service on a remote machine and waits for it to get back up
+    .SYNOPSIS
+        Restarts WinRM service on a remote machine and waits for it to get back up
+    .DESCRIPTION
+        Restarts WinRM service on a remote machine and waits for it to get back up by attempting to establish a WinRM session.
     #>
+
     [CmdletBinding(SupportsShouldProcess)]
     Param (
         [Parameter(Mandatory)]
         $ComputerName,
-        [pscredential]$Credential
+        [pscredential]$Credential,
+        [int]$Timeout = 30
     )
     begin {
 
@@ -25,7 +30,7 @@ function Restart-WinRMService {
             }
             Write-Message -Level Debug "Waiting for the WinRM service to restart on $ComputerName"
             $waitCounter = 0
-            while ($waitCounter -lt 30 * 5) {
+            while ($waitCounter -lt $Timeout * 5) {
                 try {
                     $available = Invoke-Command2 -ComputerName $ComputerName -Credential $Credential -ScriptBlock { $true } -Raw -ErrorAction Stop
                 } catch {

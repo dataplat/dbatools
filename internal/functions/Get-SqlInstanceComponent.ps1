@@ -64,9 +64,8 @@ function Get-SQLInstanceComponent {
     param
     (
         [Parameter(ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true)]
-        [Alias('__Server', 'DNSHostName', 'IPAddress')]
+        [Alias('Computer', 'DNSHostName', 'IPAddress')]
         [string[]]$ComputerName = $Env:COMPUTERNAME,
-
         [Parameter()]
         [ValidateSet('SSDS', 'SSAS', 'SSRS')]
         [string[]]$Component = @('SSDS', 'SSAS', 'SSRS')

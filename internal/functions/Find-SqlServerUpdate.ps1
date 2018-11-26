@@ -1,4 +1,16 @@
 function Find-SqlServerUpdate {
+    <#
+        .SYNOPSIS
+            Returns a SQL Server KB filesystem object based on parameters
+        .DESCRIPTION
+            Recursively searches specified folder for a file that matches the following pattern:
+            "SQLServer$MajorVersion*-KB$KB-*$Architecture*.exe"
+
+        .EXAMPLE
+            PS> Find-SqlServerUpdate -MajorVersion 2016 -KB 412348 -RepositoryPath \\my\updates
+
+            Looks for SQLServer2016*-KB412348-*x64*.exe in \\my\updates and all the subfolders
+    #>
     [OutputType('System.IO.FileInfo')]
     [CmdletBinding()]
     Param

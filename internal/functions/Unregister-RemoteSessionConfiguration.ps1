@@ -1,6 +1,9 @@
 function Unregister-RemoteSessionConfiguration {
     <#
-    Unregisters a session previously created with Register-RemoteSessionConfiguration through WinRM.
+    .SYNOPSIS
+        Unregisters a PSSessionConfiguration on a remote machine
+    .DESCRIPTION
+        Unregisters a session previously created with Register-RemoteSessionConfiguration through WinRM.
     #>
     [CmdletBinding()]
     Param (

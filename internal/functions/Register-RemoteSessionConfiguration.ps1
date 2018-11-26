@@ -1,7 +1,10 @@
 function Register-RemoteSessionConfiguration {
     <#
-    Registers a session with a custom credentials on a remote machine through WinRM.
-    Designed to overcome the double-hop issue and as an alternative to CredSSP protocol.
+    .SYNOPSIS
+        Registers a PSSessionConfiguration on a remote machine
+    .DESCRIPTION
+        Registers a session with a custom credentials on a remote machine through WinRM.
+        Designed to overcome the double-hop issue and as an alternative to CredSSP protocol.
     #>
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingConvertToSecureStringWithPlainText", "")]
     [CmdletBinding()]

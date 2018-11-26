@@ -1,11 +1,17 @@
 function Get-SqlServerVersion {
+    <#
+    .SYNOPSIS
+        Returns a build reference for each SQL Server installation found on a computer.
+    .DESCRIPTION
+        Gets information from internal Get-SqlInstanceComponent and adjusts output to leverage
+        Get-DbaBuildReference to get an appropriate information about the current build.
+    #>
     [CmdletBinding()]
     param
     (
         [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
-        [string]$ComputerName,
-        [bool]$EnableException
+        [string]$ComputerName
     )
     begin {
         $versions = @()

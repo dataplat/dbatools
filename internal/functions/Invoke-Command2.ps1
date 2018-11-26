@@ -18,11 +18,18 @@ function Invoke-Command2 {
         .PARAMETER ScriptBlock
             The code to run on the targeted system
 
+        .PARAMETER InputObject
+            Object that could be used in the ScriptBlock as $Input.
+            NOTE:
+            The object will be de-serialized once passed through the remote pipeline.
+            Some objects (like hashtables) do not support de-serialization.
+
         .PARAMETER Authentication
             Choose an authentication to use for the connection
 
         .PARAMETER ConfigurationName
-            Name of the remote PSSessionConfiguration to use. Should be registered already using Register-RemoteSessionConfiguration
+            Name of the remote PSSessionConfiguration to use.
+            Should be registered already using Register-PSSessionConfiguration or internal Register-RemoteSessionConfiguration.
 
         .PARAMETER ArgumentList
             Any arguments to pass to the scriptblock being run
@@ -64,6 +71,7 @@ function Invoke-Command2 {
     }
     if (-not $ComputerName.IsLocalHost) {
         $runspaceId = [System.Management.Automation.Runspaces.Runspace]::DefaultRunspace.InstanceId
+        # sessions with different Authentication should have different session names
         $sessionName = "dbatools_$($Authentication)_$runspaceId"
 
         # Retrieve a session from the session cache, if available (it's unique per runspace)

@@ -30,7 +30,7 @@ function Update-DbaInstance {
         Default: All
 
     .PARAMETER KB
-        Install a specific update or list of updates.
+        Install a specific update or list of updates. Can be a number of a string KBXXXXXXX.
 
     .PARAMETER SqlServerVersion
         A target version of the installation you want to reach. Can be defined using the following general pattern: <MajorVersion><SPX><CUX>.
@@ -97,11 +97,19 @@ function Update-DbaInstance {
 
         Updates SQL Server 2012 on SQL1 with the most recent ServicePack found in your patch repository.
 
+    .EXAMPLE
+        PS C:\> Update-DbaInstance -ComputerName SQL1 -KB 123456 -Restart
+
+        Installs KB 123456 on SQL1 and restarts the computer.
+
 
     #>
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSShouldProcess", "")]
+    # Shouldprocess is handled by internal function Install-SqlServerUpdate
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
     Param (
         [parameter(ValueFromPipeline)]
+        [Alias("cn", "host", "Server")]
         [DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,
         [pscredential]$Credential,
         [Parameter(Mandatory, ParameterSetName = 'Version')]
@@ -114,6 +122,9 @@ function Update-DbaInstance {
         [string]$Type = 'All',
         [Parameter(Mandatory, ParameterSetName = 'Latest')]
         [switch]$Latest,
+        [Parameter(Mandatory, ParameterSetName = 'KB')]
+        [ValidateNotNullOrEmpty()]
+        [string[]]$KB,
         [string[]]$RepositoryPath,
         [switch]$Restart,
         [switch]$EnableException
@@ -137,6 +148,16 @@ function Update-DbaInstance {
                     return
                 }
             }
+        } elseif ($PSCmdlet.ParameterSetName -eq 'KB') {
+            $kbList = @()
+            foreach ($kbItem in $KB) {
+                if ($kbItem -match '^(KB)?(\d+)$') {
+                    $kbList += $Matches[2]
+                } else {
+                    Stop-Function -Message "$kbItem is an incorrect KB value, please refer to Get-Help Update-DbaInstance -Parameter KB"
+                    return
+                }
+            }
         }
         $actions = @()
         if ($Latest) {
@@ -155,27 +176,35 @@ function Update-DbaInstance {
                 }
             }
         } else {
-            foreach ($ver in $SqlServerVersion) {
-                $currentAction = @{}
-                if ($ver -and $ver -match '^(SQL)?(\d{4}(R2)?)?\s*(SP)?(\d+)?(CU)?(\d+)?') {
-                    Write-Message -Level Debug "Parsed SqlServerVersion as $($Matches[2,5,7] | ConvertTo-Json -Depth 1 -Compress)"
-                    if (-not ($Matches[5] -or $Matches[7])) {
-                        Stop-Function -Message "Either SP or CU should be specified in $ver, please refer to Get-Help Update-DbaInstance -Parameter SqlServerVersion"
+            if ($PSCmdlet.ParameterSetName -eq 'Version') {
+                foreach ($ver in $SqlServerVersion) {
+                    $currentAction = @{}
+                    if ($ver -and $ver -match '^(SQL)?(\d{4}(R2)?)?\s*(SP)?(\d+)?(CU)?(\d+)?') {
+                        Write-Message -Level Debug "Parsed SqlServerVersion as $($Matches[2,5,7] | ConvertTo-Json -Depth 1 -Compress)"
+                        if (-not ($Matches[5] -or $Matches[7])) {
+                            Stop-Function -Message "Either SP or CU should be specified in $ver, please refer to Get-Help Update-DbaInstance -Parameter SqlServerVersion"
+                            return
+                        }
+                        if ($Matches[2]) {
+                            $currentAction += @{ MajorVersion = $Matches[2]}
+                        }
+                        if ($Matches[5]) {
+                            $currentAction += @{ ServicePack = $Matches[5]}
+                            $actions += $currentAction
+                        }
+                        if ($Matches[7]) {
+                            $actions += $currentAction.Clone() + @{ CumulativeUpdate = $Matches[7] }
+                        }
+                    } else {
+                        Stop-Function -Message "$ver is an incorrect SqlServerVersion value, please refer to Get-Help Update-DbaInstance -Parameter SqlServerVersion"
                         return
                     }
-                    if ($Matches[2]) {
-                        $currentAction += @{ MajorVersion = $Matches[2]}
+                }
+            } elseif ($PSCmdlet.ParameterSetName -eq 'KB') {
+                foreach ($kbItem in $kbList) {
+                    $actions += @{
+                        KB = $kbItem
                     }
-                    if ($Matches[5]) {
-                        $currentAction += @{ ServicePack = $Matches[5]}
-                        $actions += $currentAction
-                    }
-                    if ($Matches[7]) {
-                        $actions += $currentAction.Clone() + @{ CumulativeUpdate = $Matches[7] }
-                    }
-                } else {
-                    Stop-Function -Message "$ver is an incorrect SqlServerVersion value, please refer to Get-Help Update-DbaInstance -Parameter SqlServerVersion"
-                    return
                 }
             }
         }

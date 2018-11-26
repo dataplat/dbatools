@@ -1,10 +1,12 @@
 function Initialize-CredSSP {
     <#
     .SYNOPSIS
-        Configure remote computer to use Credssp protocol
+        Configure local and remote computers to use Credssp protocol
 
     .DESCRIPTION
         Enables both local and remote machine to participate in a Credssp session.
+        Local computer will be told to trust the Delegate (remote) computer.
+        Remote computer will be configured to act as a server and accept client connections from local computer.
 
     .PARAMETER ComputerName
         Remote computer name

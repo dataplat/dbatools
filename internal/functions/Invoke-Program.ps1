@@ -1,7 +1,48 @@
 function Invoke-Program {
     <#
+    .SYNOPSIS
+        Invokes a remote execution of a file using specific credentials.
+
+    .DESCRIPTION
     Based on https://github.com/adbertram/PSSqlUpdater
-    Invokes a remote execution of a file passing credentials over the network: either using PSSessionConfiguration or through a CredSSP protocol.
+    Invokes a remote execution of a file passing credentials over the network to avoid a double-hop issue
+    and gain privileges necessary to execute any kind of executables.
+
+    First it tries to initialize a CredSSP connection by configuring both Client and Server to run CredSSP connections.
+
+    If CredSSP connection fails, it falls back to a less secure PSSessionConfiguration workaround, which registers
+    a temporary session configuration on a target machine (PS3.0+) and re-creates current PSSession to use remote
+    configuration by default.
+
+    .PARAMETER ComputerName
+        Remote computer name
+
+    .PARAMETER Path
+        Path to the executable
+
+    .PARAMETER Credential
+        Credential object that will be used for authentication
+
+    .PARAMETER ArgumentList
+        List of arguments to pass to the executable
+
+    .PARAMETER ExpandStrings
+        The strings in ArgumentList and WorkingDirectory will be evaluated remotely on a target machine.
+
+    .PARAMETER SuccessReturnCode
+        Return codes that will be acknowledged as successful execution. Defaults to 0 (success), 3010 (restart required)
+
+    .PARAMETER WorkingDirectory
+        Working directory for the process
+
+    .PARAMETER UsePSSessionConfiguration
+        Skips the CredSSP attempts and proceeds directly to PSSessionConfiguration connections
+
+    .EXAMPLE
+        PS C:\> Invoke-Program -ComputerName ServerA -Credentials $cred -Path "C:\temp\setup.exe" -ArgumentList '/quiet' -WorkingDirectory 'C:'
+
+        Starts "setup.exe /quiet" on ServerA under provided credentials. C:\ will be set as a working directory.
+
     #>
     [CmdletBinding()]
     [OutputType([System.Management.Automation.PSObject])]
@@ -10,28 +51,15 @@ function Invoke-Program {
         [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [string]$Path,
-
-        [Parameter()]
         [DbaInstanceParameter]$ComputerName = $env:COMPUTERNAME,
-
-        [Parameter()]
         [pscredential]$Credential,
-
-        [Parameter()]
         [ValidateNotNullOrEmpty()]
         [string[]]$ArgumentList,
-
-        [Parameter()]
         [bool]$ExpandStrings = $false,
-
-        [Parameter()]
         [ValidateNotNullOrEmpty()]
         [string]$WorkingDirectory,
-
-        [Parameter()]
         [ValidateNotNullOrEmpty()]
-        [uint32[]]$SuccessReturnCodes = @(0, 3010),
-
+        [uint32[]]$SuccessReturnCode = @(0, 3010),
         [switch]$UsePSSessionConfiguration
     )
     process {
@@ -41,7 +69,7 @@ function Invoke-Program {
                 $ArgumentList,
                 $ExpandStrings,
                 $WorkingDirectory,
-                $SuccessReturnCodes
+                $SuccessReturnCode
             )
             $processStartInfo = New-Object System.Diagnostics.ProcessStartInfo
             $processStartInfo.FileName = $Path
@@ -69,7 +97,7 @@ function Invoke-Program {
                 $stdErr = $ps.StandardError.ReadToEnd()
                 $ps.WaitForExit()
                 # Check the exit code of the process to see if it succeeded.
-                if ($ps.ExitCode -notin $SuccessReturnCodes) {
+                if ($ps.ExitCode -notin $SuccessReturnCode) {
                     throw "Error running program: exited with errorcode $($ps.ExitCode)`:`n$stdErr`n$stdOut"
                 } else {
                     $stdOut
@@ -82,7 +110,7 @@ function Invoke-Program {
             $ArgumentList,
             $ExpandStrings,
             $WorkingDirectory,
-            $SuccessReturnCodes
+            $SuccessReturnCode
         )
 
         $params = @{
@@ -92,7 +120,7 @@ function Invoke-Program {
             Credential   = $Credential
         }
 
-        Write-Message -Level Debug -Message "Acceptable success return codes are [$($SuccessReturnCodes -join ',')]"
+        Write-Message -Level Debug -Message "Acceptable success return codes are [$($SuccessReturnCode -join ',')]"
 
         if (!$ComputerName.IsLocalHost) {
             if (!$Credential) {
@@ -107,7 +135,7 @@ function Invoke-Program {
                 try {
                     Invoke-Command2 @params -Authentication CredSSP -Raw -ErrorAction Stop
                 } catch [System.Management.Automation.Remoting.PSRemotingTransportException] {
-                    Write-Message -Level Verbose -Message "CredSSP to $ComputerName unsuccessful: $($_.Exception.Message), falling back to PSSession configurations"
+                    Write-Message -Level Warning -Message "CredSSP to $ComputerName unsuccessful, falling back to PSSession configurations | $($_.Exception.Message)"
                     $sspSuccessful = $false
                 } catch {
                     Stop-Function -Message "Remote execution failed" -ErrorRecord $_ -EnableException $true
