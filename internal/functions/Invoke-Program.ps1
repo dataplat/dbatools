@@ -43,34 +43,36 @@ function Invoke-Program {
                 $WorkingDirectory,
                 $SuccessReturnCodes
             )
-            $processStartInfo = New-Object System.Diagnostics.ProcessStartInfo;
-            $processStartInfo.FileName = $Path;
+            $processStartInfo = New-Object System.Diagnostics.ProcessStartInfo
+            $processStartInfo.FileName = $Path
             if ($ArgumentList) {
-                $processStartInfo.Arguments = $ArgumentList;
+                $processStartInfo.Arguments = $ArgumentList
                 if ($ExpandStrings) {
-                    $processStartInfo.Arguments = $ExecutionContext.InvokeCommand.ExpandString($ArgumentList);
+                    $processStartInfo.Arguments = $ExecutionContext.InvokeCommand.ExpandString($ArgumentList)
                 }
             }
             if ($WorkingDirectory) {
-                $processStartInfo.WorkingDirectory = $WorkingDirectory;
+                $processStartInfo.WorkingDirectory = $WorkingDirectory
                 if ($ExpandStrings) {
-                    $processStartInfo.WorkingDirectory = $ExecutionContext.InvokeCommand.ExpandString($WorkingDirectory);
+                    $processStartInfo.WorkingDirectory = $ExecutionContext.InvokeCommand.ExpandString($WorkingDirectory)
                 }
             }
-            $processStartInfo.UseShellExecute = $false; # This is critical for installs to function on core servers
+            $processStartInfo.UseShellExecute = $false # This is critical for installs to function on core servers
             $processStartInfo.CreateNoWindow = $true
             $processStartInfo.RedirectStandardError = $true
             $processStartInfo.RedirectStandardOutput = $true
-            $ps = New-Object System.Diagnostics.Process;
-            $ps.StartInfo = $processStartInfo;
-            $started = $ps.Start();
+            $ps = New-Object System.Diagnostics.Process
+            $ps.StartInfo = $processStartInfo
+            $started = $ps.Start()
             if ($started) {
-                $ps.StandardOutput.ReadToEnd()
-                $stderr = $ps.StandardError.ReadToEnd()
-                $ps.WaitForExit();
+                $stdOut = $ps.StandardOutput.ReadToEnd()
+                $stdErr = $ps.StandardError.ReadToEnd()
+                $ps.WaitForExit()
                 # Check the exit code of the process to see if it succeeded.
                 if ($ps.ExitCode -notin $SuccessReturnCodes) {
-                    throw "Error running program: exited with errorcode $($ps.ExitCode), while only $($SuccessReturnCodes) were allowed`: $stderr";
+                    throw "Error running program: exited with errorcode $($ps.ExitCode)`:`n$stdErr`n$stdOut"
+                } else {
+                    $stdOut
                 }
             }
         }
@@ -93,6 +95,9 @@ function Invoke-Program {
         Write-Message -Level Debug -Message "Acceptable success return codes are [$($SuccessReturnCodes -join ',')]"
 
         if (!$ComputerName.IsLocalHost) {
+            if (!$Credential) {
+                Stop-Function -Message "Explicit credentials are required when running agains remote hosts. Make sure to define the -Credential parameter" -EnableException $true
+            }
             # Try to use CredSSP first, otherwise fall back to PSSession configurations with custom user/password
             if (!$UsePSSessionConfiguration) {
                 Write-Message -Level Verbose -Message "Attempting to configure CredSSP for remote connections"
@@ -102,7 +107,7 @@ function Invoke-Program {
                 try {
                     Invoke-Command2 @params -Authentication CredSSP -Raw -ErrorAction Stop
                 } catch [System.Management.Automation.Remoting.PSRemotingTransportException] {
-                    Write-Message -Level Verbose -Message "CredSSP to $ComputerName unsuccessful, falling back to PSSession configurations"
+                    Write-Message -Level Verbose -Message "CredSSP to $ComputerName unsuccessful: $($_.Exception.Message), falling back to PSSession configurations"
                     $sspSuccessful = $false
                 } catch {
                     Stop-Function -Message "Remote execution failed" -ErrorRecord $_ -EnableException $true

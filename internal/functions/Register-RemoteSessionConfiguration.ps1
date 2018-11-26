@@ -63,7 +63,7 @@ function Register-RemoteSessionConfiguration {
         }
         if ($registerIt) {
             Write-Message -Level Debug -Message "Configuration attempt returned the following status`: $($registerIt.Status)"
-            if ($registerIt.Status -eq 'Updated') {
+            if ($registerIt.Status -in 'Updated', 'Created') {
                 Write-Message -Level Verbose -Message "Restarting WinRm service on $ComputerName"
                 Restart-WinRMService -ComputerName $ComputerName -Credential $Credential
             }

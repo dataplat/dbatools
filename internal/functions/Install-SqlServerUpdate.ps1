@@ -138,23 +138,26 @@ function Install-SqlServerUpdate {
                     Credential   = $Credential
                 }
                 # Find a temporary folder to extract to
-                $spExtractPath = Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock { $env:temp } -Raw -ErrorAction Stop
-                $spExtractPath = Join-Path $spExtractPath "$($targetKB.KBLevel)_Extract" -ErrorAction Stop
+                $chosenDrive = (Get-DbaDiskSpace -ComputerName $computer -Credential $Credential | Sort-Object -Property Free -Descending | Select-Object -First 1).Name
+                if (!$chosenDrive) {
+                    $chosenDrive = Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock { $env:SystemDrive } -Raw -ErrorAction Stop
+                }
+                $spExtractPath = $chosenDrive.TrimEnd('\') + "\dbatools_KB$($targetKB.KBLevel)_Extract"
                 if ($spExtractPath) {
                     try {
                         # Extract file
                         Write-Message -Level Verbose -Message "Extracting $installer to $spExtractPath"
-                        $null = Invoke-Program @invProgParams -Path $installer.FullName -ArgumentList "/extract`:`"$spExtractPath`" /quiet"
+                        $null = Invoke-Program @invProgParams -Path $installer.FullName -ArgumentList "/x`:`"$spExtractPath`" /quiet"
                         # Install the patch
                         Write-Message -Level Verbose -Message "Starting installation from $spExtractPath"
-                        $null = Invoke-Program @invProgParams -Path "$spExtractPath\setup.exe" -ArgumentList '/quiet /allinstances'
+                        $log = Invoke-Program @invProgParams -Path "$spExtractPath\setup.exe" -ArgumentList '/quiet /allinstances /IAcceptSQLServerLicenseTerms' -WorkingDirectory $spExtractPath
                     } catch {
                         Stop-Function -Message "Upgrade failed" -ErrorRecord $_ -EnableException $true
                     } finally {
                         ## Cleanup temp
                         try {
                             $null = Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock {
-                                if (Test-Path $args[0]) {
+                                if ($args[0] -like '*\dbatools_KB*_Extract' -and (Test-Path $args[0])) {
                                     Remove-Item -Recurse -Force -LiteralPath $args[0] -ErrorAction Stop
                                 }
                             } -Raw -ArgumentList $spExtractPath
@@ -190,6 +193,7 @@ function Install-SqlServerUpdate {
                 Installer    = $installer.FullName
                 ExtractPath  = $spExtractPath
                 Message      = $message
+                Log          = $log
             }
         }
     }

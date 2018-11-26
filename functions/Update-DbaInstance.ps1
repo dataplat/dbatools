@@ -29,6 +29,9 @@ function Update-DbaInstance {
         Type of the update: All | ServicePack | CumulativeUpdate. Only usable with -Latest.
         Default: All
 
+    .PARAMETER KB
+        Install a specific update or list of updates.
+
     .PARAMETER SqlServerVersion
         A target version of the installation you want to reach. Can be defined using the following general pattern: <MajorVersion><SPX><CUX>.
         Any part of the pattern can be ommitted if needed:
