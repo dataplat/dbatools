@@ -94,24 +94,24 @@ function Resolve-DbaNetworkName {
         [Alias('Silent')]
         [switch]$EnableException
     )
-    
+
     process {
         if (-not (Test-Windows -NoWarn)) {
             Write-Message -Level Verbose -Message "Non-Windows client detected. Turbo (DNS resolution only) set to $true"
             $Turbo = $true
         }
-        
+
         foreach ($Computer in $ComputerName) {
             $conn = $ipaddress = $null
-            
+
             $OGComputer = $Computer
-            
+
             if ($Computer.IsLocalhost) {
                 $Computer = $env:COMPUTERNAME
             } else {
                 $Computer = $Computer.ComputerName
             }
-            
+
             if ($Turbo) {
                 try {
                     Write-Message -Level VeryVerbose -Message "Resolving $Computer using .NET.Dns GetHostEntry"
@@ -128,7 +128,7 @@ function Resolve-DbaNetworkName {
                         Stop-Function -Message "DNS name not found" -Continue -ErrorRecord $_
                     }
                 }
-                
+
                 if ($fqdn -notmatch "\.") {
                     if ($computer.ComputerName -match "\.") {
                         $dnsdomain = $computer.ComputerName.Substring($computer.ComputerName.IndexOf(".") + 1)
@@ -140,24 +140,24 @@ function Resolve-DbaNetworkName {
                         }
                     }
                 }
-                
+
                 $hostname = $fqdn.Split(".")[0]
-                
+
                 [PSCustomObject]@{
-                    InputName    = $OGComputer
-                    ComputerName = $hostname.ToUpper()
-                    IPAddress    = $ipaddress
-                    DNSHostname  = $hostname
-                    DNSDomain    = $fqdn.Replace("$hostname.", "")
-                    Domain       = $fqdn.Replace("$hostname.", "")
-                    DNSHostEntry = $fqdn
-                    FQDN         = $fqdn
+                    InputName        = $OGComputer
+                    ComputerName     = $hostname.ToUpper()
+                    IPAddress        = $ipaddress
+                    DNSHostname      = $hostname
+                    DNSDomain        = $fqdn.Replace("$hostname.", "")
+                    Domain           = $fqdn.Replace("$hostname.", "")
+                    DNSHostEntry     = $fqdn
+                    FQDN             = $fqdn
                     FullComputerName = $fqdn
                 }
-                
+
             } else {
-                
-                
+
+
                 try {
                     $ipaddress = ((Test-Connection -ComputerName $Computer -Count 1 -ErrorAction Stop).Ipv4Address).IPAddressToString
                 } catch {
@@ -179,7 +179,7 @@ function Resolve-DbaNetworkName {
                         $ipaddress = ([System.Net.Dns]::GetHostEntry($Computer)).AddressList[0].IPAddressToString
                     }
                 }
-                
+
                 if ($ipaddress) {
                     Write-Message -Level VeryVerbose -Message "IP Address from $Computer is $ipaddress"
                 } else {
@@ -187,7 +187,7 @@ function Resolve-DbaNetworkName {
                     Write-Message -Level VeryVerbose -Message "Using .NET.Dns to resolve IP Address"
                     return (Resolve-DbaNetworkName -ComputerName $Computer -Turbo)
                 }
-                
+
                 if ($PSVersionTable.PSVersion.Major -gt 2) {
                     Write-Message -Level System -Message "Your PowerShell Version is $($PSVersionTable.PSVersion.Major)"
                     try {
@@ -215,7 +215,7 @@ function Resolve-DbaNetworkName {
                     } catch {
                         Write-Message -Level Verbose -Message "Unable to get computer information from $Computer"
                     }
-                    
+
                     if (!$conn) {
                         Write-Message -Level Verbose -Message "No WMI/CIM from $Computer. Getting HostName via .NET.Dns"
                         try {
@@ -249,7 +249,7 @@ function Resolve-DbaNetworkName {
                 } catch {
                     Stop-Function -Message ".NET.Dns GetHostEntry failed for $FullComputerName" -ErrorRecord $_
                 }
-                
+
                 $fqdn = "$($conn.DNSHostname).$($conn.Domain)"
                 if ($fqdn -eq ".") {
                     Write-Message -Level VeryVerbose -Message "No full FQDN found. Setting to null"
@@ -259,21 +259,21 @@ function Resolve-DbaNetworkName {
                     Write-Message -Level VeryVerbose -Message "No DNS FQDN found. Setting to null"
                     $FullComputerName = $null
                 }
-                
+
                 if ($FullComputerName -ne "." -and $FullComputerName -notmatch "\." -and $conn.Domain -match "\.") {
                     $d = $conn.Domain
                     $FullComputerName = "$FullComputerName.$d"
                 }
-                
+
                 [PSCustomObject]@{
-                    InputName    = $OGComputer
-                    ComputerName = $conn.Name
-                    IPAddress    = $ipaddress
-                    DNSHostName  = $conn.DNSHostname
-                    DNSDomain    = $DNSSuffix.DNSDomain
-                    Domain       = $conn.Domain
-                    DNSHostEntry = $hostentry
-                    FQDN         = $fqdn.TrimEnd(".")
+                    InputName        = $OGComputer
+                    ComputerName     = $conn.Name
+                    IPAddress        = $ipaddress
+                    DNSHostName      = $conn.DNSHostname
+                    DNSDomain        = $DNSSuffix.DNSDomain
+                    Domain           = $conn.Domain
+                    DNSHostEntry     = $hostentry
+                    FQDN             = $fqdn.TrimEnd(".")
                     FullComputerName = $FullComputerName
                 }
             }
