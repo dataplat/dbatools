@@ -1,13 +1,13 @@
 function Get-DbaLogin {
     <#
     .SYNOPSIS
-        Function to get an SMO login object of the logins for a given SQL Instance. Takes a server object from the pipe
+        Function to get an SMO login object of the logins for a given SQL Server instance. Takes a server object from the pipeline.
 
     .DESCRIPTION
         The Get-DbaLogin function returns an SMO Login object for the logins passed, if there are no users passed it will return all logins.
 
     .PARAMETER SqlInstance
-        TThe target SQL Server instance or instances.You must have sysadmin access and server version must be SQL Server version 2000 or higher.
+        The target SQL Server instance or instances.You must have sysadmin access and server version must be SQL Server version 2000 or higher.
 
     .PARAMETER SqlCredential
         Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted.
@@ -24,14 +24,11 @@ function Get-DbaLogin {
     .PARAMETER ExcludeFilter
         A list of logins to exclude - accepts wildcard patterns
 
-    .PARAMETER ExcludeSystemLogins
+    .PARAMETER ExcludeSystemLogin
         A Switch to remove System Logins from the output.
 
-    .PARAMETER SQLLogins
-        A Switch to return Logins of type SQLLogin only.
-
-    .PARAMETER WindowsLogins
-        A Switch to return Logins of type Windows only.
+    .PARAMETER Type
+        Filters logins by their type. Valid options are Windows and SQL.
 
     .PARAMETER Locked
         A Switch to return locked Logins.
@@ -84,27 +81,27 @@ function Get-DbaLogin {
         Get all user objects from server sql2016 except the login dbatoolsuser, returned as SMO login objects.
 
     .EXAMPLE
-        PS C:\> Get-DbaLogin -SqlInstance sql2016 -WindowsLogins
+        PS C:\> Get-DbaLogin -SqlInstance sql2016 -Type Windows
 
         Get all user objects from server sql2016 that are Windows Logins
 
     .EXAMPLE
-        PS C:\> Get-DbaLogin -SqlInstance sql2016 -WindowsLogins -IncludeFilter *Rob*
+        PS C:\> Get-DbaLogin -SqlInstance sql2016 -Type Windows -IncludeFilter *Rob*
 
         Get all user objects from server sql2016 that are Windows Logins and have Rob in the name
 
     .EXAMPLE
-        PS C:\> Get-DbaLogin -SqlInstance sql2016 -SQLLogins
+        PS C:\> Get-DbaLogin -SqlInstance sql2016 -Type SQL
 
-        Get all user objects from server sql2016 that are SQLLogins
-
-    .EXAMPLE
-        PS C:\> Get-DbaLogin -SqlInstance sql2016 -SQLLogins -IncludeFilter *Rob*
-
-        Get all user objects from server sql2016 that are SQLLogins  and have Rob in the name
+        Get all user objects from server sql2016 that are SQL Logins
 
     .EXAMPLE
-        PS C:\> Get-DbaLogin -SqlInstance sql2016 -ExcludeSystemLogins
+        PS C:\> Get-DbaLogin -SqlInstance sql2016 -Type SQL -IncludeFilter *Rob*
+
+        Get all user objects from server sql2016 that are SQL Logins and have Rob in the name
+
+    .EXAMPLE
+        PS C:\> Get-DbaLogin -SqlInstance sql2016 -ExcludeSystemLogin
 
         Get all user objects from server sql2016 that are not system objects
 
@@ -132,16 +129,15 @@ function Get-DbaLogin {
     [CmdletBinding()]
     param (
         [parameter(Position = 0, Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [object[]]$Login,
         [object[]]$IncludeFilter,
         [object[]]$ExcludeLogin,
         [object[]]$ExcludeFilter,
-        [switch]$ExcludeSystemLogins,
-        [switch]$SQLLogins,
-        [switch]$WindowsLogins,
+        [switch]$ExcludeSystemLogin,
+        [ValidateSet('Windows', 'SQL')]
+        [string]$Type,
         [switch]$HasAccess,
         [switch]$Locked,
         [switch]$Disabled,
@@ -164,16 +160,16 @@ function Get-DbaLogin {
                 $serverLogins = $serverLogins | Where-Object Name -in $Login
             }
 
-            if ($ExcludeSystemLogins) {
+            if ($ExcludeSystemLogin) {
                 $serverLogins = $serverLogins | Where-Object IsSystemObject -eq $false
             }
 
-            if ($SQLLogins) {
-                $serverLogins = $serverLogins | Where-Object LoginType -eq 'SqlLogin'
+            if ($Type -eq 'Windows') {
+                $serverLogins = $serverLogins | Where-Object LoginType -eq 'WindowsUser'
             }
 
-            if ($WindowsLogins) {
-                $serverLogins = $serverLogins | Where-Object LoginType -eq 'WindowsUser'
+            if ($Type -eq 'SQL') {
+                $serverLogins = $serverLogins | Where-Object LoginType -eq 'SqlLogin'
             }
 
             if ($IncludeFilter) {
