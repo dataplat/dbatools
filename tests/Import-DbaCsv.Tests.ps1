@@ -6,7 +6,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
         $defaultParamCount = 13
         [object[]]$params = (Get-ChildItem function:\Import-DbaCsv).Parameters.Keys
-        $knownParameters = 'Path', 'SqlInstance', 'SqlCredential', 'Database', 'Table', 'Schema', 'Truncate', 'Delimiter', 'SingleColumn', 'NoHeaderRow', 'BatchSize', 'NotifyAfter', 'TableLock', 'CheckConstraints', 'FireTriggers', 'KeepIdentity', 'KeepNulls', 'AutoCreateTable', 'NoProgress', 'EnableException'
+        $knownParameters = 'Path', 'SqlInstance', 'SqlCredential', 'ColumnMap', 'Database', 'Table', 'Column', 'Schema', 'Truncate', 'Delimiter', 'SingleColumn', 'NoHeaderRow', 'BatchSize', 'NotifyAfter', 'TableLock', 'CheckConstraints', 'FireTriggers', 'KeepIdentity', 'KeepNulls', 'AutoCreateTable', 'NoProgress', 'EnableException'
         $paramCount = $knownParameters.Count
         It "Should contain our specific parameters" {
             ((Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count) | Should Be $paramCount
