@@ -72,16 +72,14 @@ function Invoke-Command2 {
     if (-not $ComputerName.IsLocalHost) {
         $runspaceId = [System.Management.Automation.Runspaces.Runspace]::DefaultRunspace.InstanceId
         # sessions with different Authentication should have different session names
-        $sessionName = "dbatools_$($Authentication)_$runspaceId"
+        if ($ConfigurationName) {
+            $sessionName = "dbatools_$($Authentication)_$($ConfigurationName)_$runspaceId"
+        } else {
+            $sessionName = "dbatools_$($Authentication)_$runspaceId"
+        }
 
         # Retrieve a session from the session cache, if available (it's unique per runspace)
         $currentSession = [Sqlcollaborative.Dbatools.Connection.ConnectionHost]::PSSessionGet($runspaceId, $ComputerName.ComputerName) | Where-Object { $_.State -Match "Opened|Disconnected" -and $_.Name -eq $sessionName }
-        # Checking if current configuration name is different - session should be recreated in this case
-        if ($currentSession -and ($ConfigurationName -or $currentSession.ConfigurationName -notin '', 'Microsoft.PowerShell') -and $currentSession.ConfigurationName -ne $ConfigurationName) {
-            Write-Message -Level Debug "Removing session $sessionName with Configuration [$($currentSession.ConfigurationName)] - need to redefine configuration name to [$ConfigurationName]"
-            $currentSession | Remove-PSSession
-            $currentSession = $null
-        }
         if (-not $currentSession) {
             Write-Message -Level Debug "Creating new $Authentication session [$sessionName] for $($ComputerName.ComputerName)"
             $psSessionSplat = @{
