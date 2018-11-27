@@ -146,9 +146,20 @@ function Invoke-Program {
                 if ($configuration.Successful) {
                     Write-Message -Level Debug -Message "RemoteSessionConfiguration ($($configuration.Name)) was successful, using it."
                     Write-Message -Level Verbose -Message "Starting process [$Path] with arguments [$ArgumentList] on $ComputerName using PS session configuration"
-                    Invoke-Command2 @params -ConfigurationName $configuration.Name -Raw -ErrorAction Stop
+                    try {
+                        Invoke-Command2 @params -ConfigurationName $configuration.Name -Raw -ErrorAction Stop
+                    } catch {
+                        throw $_
+                    } finally {
+                        # Unregister PSRemote configurations once completed. It's slow, but necessary - otherwise we're gonna leave unnesessary junk on a remote
+                        Write-Message -Level Verbose -Message "Unregistering any leftover PSSession Configurations on $ComputerName"
+                        $unreg = Unregister-RemoteSessionConfiguration -ComputerName $ComputerName -Credential $Credential -Name dbatoolsInvokeProgram
+                        if (!$unreg.Successful) {
+                            Stop-Function -Message "Failed to unregister PSSession Configurations on $ComputerName | $($configuration.Status)" -EnableException $false
+                        }
+                    }
                 } else {
-                    Stop-Function -Message "RemoteSession configuration unsuccessful, no valid connection options found. $($configuration.Status)" -EnableException $true
+                    Stop-Function -Message "RemoteSession configuration unsuccessful, no valid connection options found | $($configuration.Status)" -EnableException $true
                 }
             }
         } else {

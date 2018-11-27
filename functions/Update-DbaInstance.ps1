@@ -237,20 +237,6 @@ function Update-DbaInstance {
                 }
             }
         }
-        # Unregister PSRemote configurations possibly created by Install-SqlServerUpdate
-        foreach ($computer in $resolvedComputers) {
-            if (-not ([DbaInstanceParameter]$computer).IsLocalHost) {
-                Write-Message -Level Verbose -Message "Unregistering any leftover PSSession Configurations on $computer"
-                try {
-                    $unreg = Unregister-RemoteSessionConfiguration -ComputerName $computer -Credential $Credential -Name dbatoolsInvokeProgram
-                    if (!$unreg.Successful) {
-                        throw $unreg.Status
-                    }
-                } catch {
-                    Stop-Function -Message "Failed to unregister PSSession Configurations on $computer" -ErrorRecord $_
-                }
-            }
-        }
     }
     end {
 
