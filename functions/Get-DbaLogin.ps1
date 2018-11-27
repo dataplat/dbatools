@@ -36,6 +36,12 @@ function Get-DbaLogin {
     .PARAMETER Disabled
         A Switch to return disabled Logins.
 
+    .PARAMETER SqlLogins
+        Deprecated. Please use -Type SQL
+
+    .PARAMETER WindowsLogins
+        Deprecated. Please use -Type Windows.
+
     .PARAMETER HasAccess
         A Switch to return Logins that have access to the instance of SQL Server.
 
@@ -135,16 +141,26 @@ function Get-DbaLogin {
         [object[]]$IncludeFilter,
         [object[]]$ExcludeLogin,
         [object[]]$ExcludeFilter,
+        [Alias('ExcludeSystemLogins')]
         [switch]$ExcludeSystemLogin,
         [ValidateSet('Windows', 'SQL')]
         [string]$Type,
         [switch]$HasAccess,
+        [switch]$SqlLogins,
+        [switch]$WindowsLogins,
         [switch]$Locked,
         [switch]$Disabled,
-        [Alias('Silent')]
         [switch]$EnableException
     )
-
+    begin {
+        Test-DbaDeprecation -DeprecatedOn 1.0.0 -Parameter SQLLogins, WindowsLogins
+        if ($SQLLogins) {
+            $Type = "SQL"
+        }
+        if ($WindowsLogins) {
+            $Type = "Windows"
+        }
+    }
     process {
         foreach ($instance in $SqlInstance) {
 
