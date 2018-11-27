@@ -193,7 +193,6 @@ function Invoke-Sqlcmd2 {
         [ValidateNotNullOrEmpty()]
         [string[]]$ServerInstance,
         [Parameter(Position = 1,
-            Mandatory = $false,
             ValueFromPipelineByPropertyName = $true,
             ValueFromRemainingArguments = $false)]
         [string]$Database,
@@ -222,67 +221,54 @@ function Invoke-Sqlcmd2 {
         [string]$InputFile,
         [Parameter(ParameterSetName = 'Ins-Que',
             Position = 3,
-            Mandatory = $false,
             ValueFromPipelineByPropertyName = $true,
             ValueFromRemainingArguments = $false)]
         [Parameter(ParameterSetName = 'Ins-Fil',
             Position = 3,
-            Mandatory = $false,
             ValueFromPipelineByPropertyName = $true,
             ValueFromRemainingArguments = $false)]
         [Alias('SqlCredential')]
         [System.Management.Automation.PSCredential]$Credential,
         [Parameter(ParameterSetName = 'Ins-Que',
             Position = 4,
-            Mandatory = $false,
             ValueFromRemainingArguments = $false)]
         [Parameter(ParameterSetName = 'Ins-Fil',
             Position = 4,
-            Mandatory = $false,
             ValueFromRemainingArguments = $false)]
         [switch]$Encrypt,
         [Parameter(Position = 5,
-            Mandatory = $false,
             ValueFromPipelineByPropertyName = $true,
             ValueFromRemainingArguments = $false)]
         [Int32]$QueryTimeout = 600,
         [Parameter(ParameterSetName = 'Ins-Fil',
             Position = 6,
-            Mandatory = $false,
             ValueFromPipelineByPropertyName = $true,
             ValueFromRemainingArguments = $false)]
         [Parameter(ParameterSetName = 'Ins-Que',
             Position = 6,
-            Mandatory = $false,
             ValueFromPipelineByPropertyName = $true,
             ValueFromRemainingArguments = $false)]
         [Int32]$ConnectionTimeout = 15,
         [Parameter(Position = 7,
-            Mandatory = $false,
             ValueFromPipelineByPropertyName = $true,
             ValueFromRemainingArguments = $false)]
         [ValidateSet("DataSet", "DataTable", "DataRow", "PSObject", "SingleValue")]
         [string]$As = "DataRow",
         [Parameter(Position = 8,
-            Mandatory = $false,
             ValueFromPipelineByPropertyName = $true,
             ValueFromRemainingArguments = $false)]
         [System.Collections.IDictionary]$SqlParameters,
-        [Parameter(Position = 9,
-            Mandatory = $false)]
+        [Parameter(Position = 9)]
         [switch]$AppendServerInstance,
-        [Parameter(Position = 10,
-            Mandatory = $false)]
+        [Parameter(Position = 10)]
         [switch]$ParseGO,
         [Parameter(ParameterSetName = 'Con-Que',
             Position = 11,
-            Mandatory = $false,
             ValueFromPipeline = $false,
             ValueFromPipelineByPropertyName = $false,
             ValueFromRemainingArguments = $false)]
         [Parameter(ParameterSetName = 'Con-Fil',
             Position = 11,
-            Mandatory = $false,
             ValueFromPipeline = $false,
             ValueFromPipelineByPropertyName = $false,
             ValueFromRemainingArguments = $false)]

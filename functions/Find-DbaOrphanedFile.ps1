@@ -85,9 +85,7 @@ function Find-DbaOrphanedFile {
         [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
-        [parameter(Mandatory = $false)]
         [pscredential]$SqlCredential,
-        [parameter(Mandatory = $false)]
         [string[]]$Path,
         [string[]]$FileType,
         [switch]$LocalOnly,

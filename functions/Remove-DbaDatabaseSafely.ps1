@@ -119,20 +119,15 @@ function Remove-DbaDatabaseSafely {
         $SqlCredential,
         [Alias("Databases")]
         [object[]]$Database,
-        [parameter(Mandatory = $false)]
         [DbaInstanceParameter]$Destination = $sqlinstance,
         [PSCredential]
         $DestinationCredential,
-        [parameter(Mandatory = $false)]
         [Alias("NoCheck")]
         [switch]$NoDbccCheckDb,
         [parameter(Mandatory)]
         [string]$BackupFolder,
-        [parameter(Mandatory = $false)]
         [string]$CategoryName = 'Rationalisation',
-        [parameter(Mandatory = $false)]
         [string]$JobOwner,
-        [parameter(Mandatory = $false)]
         [switch]$AllDatabases,
         [ValidateSet("Default", "On", "Of")]
         [string]$BackupCompression = 'Default',

@@ -63,7 +63,7 @@ function Get-DbaBuildReference {
         [version[]]
         $Build,
 
-        [parameter(Mandatory = $false, ValueFromPipeline)]
+        [parameter(ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]
         $SqlInstance,
