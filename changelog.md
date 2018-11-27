@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
     and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.533] - 2018-11-27
+### Fixed
+- Removed mandatory=$false on parameters because it's implied
+
+### Added
+- Extra include and exclude options to `Sync-DbaAvailabilityGroup`
+- Extra column parameters to `Import-DbaCsv`
+
 ## [0.9.532] - 2018-11-26
 ### Fixed
 - Publish-DbaDacpackage param issues introduced by core fixes

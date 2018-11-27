@@ -61,7 +61,6 @@ function Set-DbaAgentJobCategory {
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [Parameter(Mandatory = $false)]
         [ValidateNotNullOrEmpty()]
         [string[]]$Category,
         [string[]]$NewName,

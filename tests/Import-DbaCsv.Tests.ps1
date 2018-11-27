@@ -6,7 +6,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
         $defaultParamCount = 13
         [object[]]$params = (Get-ChildItem function:\Import-DbaCsv).Parameters.Keys
-        $knownParameters = 'Path', 'SqlInstance', 'SqlCredential', 'Database', 'Table', 'Schema', 'Truncate', 'Delimiter', 'SingleColumn', 'NoHeaderRow', 'BatchSize', 'NotifyAfter', 'TableLock', 'CheckConstraints', 'FireTriggers', 'KeepIdentity', 'KeepNulls', 'AutoCreateTable', 'NoProgress', 'EnableException'
+        $knownParameters = 'Path', 'SqlInstance', 'SqlCredential', 'ColumnMap', 'Database', 'Table', 'Column', 'Schema', 'Truncate', 'Delimiter', 'SingleColumn', 'NoHeaderRow', 'BatchSize', 'NotifyAfter', 'TableLock', 'CheckConstraints', 'FireTriggers', 'KeepIdentity', 'KeepNulls', 'AutoCreateTable', 'NoProgress', 'EnableException'
         $paramCount = $knownParameters.Count
         It "Should contain our specific parameters" {
             ((Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count) | Should Be $paramCount
@@ -49,6 +49,13 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
                     $result.Database | Should -Be tempdb
                     $result.Table | Should -Be SuperSmall
                 }
+            }
+
+            $result = Import-DbaCsv -Path $path -SqlInstance $script:instance1 -Database tempdb -Delimiter `t -Table SuperSmall -Truncate
+            It "doesn't break when truncate is passed" {
+                $result.RowsCopied | Should -Be 999
+                $result.Database | Should -Be tempdb
+                $result.Table | Should -Be SuperSmall
             }
         }
     }

@@ -166,7 +166,6 @@ function Copy-DbaDatabase {
     [CmdletBinding(DefaultParameterSetName = "DbBackup", SupportsShouldProcess)]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseOutputTypeCorrectly", "", Justification = "PSSA Rule Ignored by BOH")]
     param (
-        [parameter(Mandatory = $false)]
         [DbaInstanceParameter]$Source,
         [PSCredential]$SourceSqlCredential,
         [parameter(Mandatory)]

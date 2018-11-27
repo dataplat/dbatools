@@ -75,7 +75,6 @@ function Install-DbaWhoIsActive {
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PsCredential]$SqlCredential,
-        [parameter(Mandatory = $false)]
         [ValidateScript( { Test-Path -Path $_ -PathType Leaf })]
         [string]$LocalFile,
         [object]$Database,
