@@ -8,7 +8,7 @@ function Import-DbaCsv {
 
         The entire import is performed within a transaction, so if a failure occurs or the script is aborted, no changes will persist.
 
-        If the table specified does not exist and -AutoCreateTable, it will be automatically created using slow and efficient but accomodating data types.
+        If the table or view specified does not exist and -AutoCreateTable, it will be automatically created using slow and efficient but accomodating data types.
 
     .PARAMETER Path
         Specifies path to the CSV file(s) to be imported. Multiple files may be imported at once.
@@ -50,6 +50,8 @@ function Import-DbaCsv {
         If the table specified does not exist and -AutoCreateTable, it will be automatically created using slow and efficient but accomodating data types.
 
         If the automatically generated table datatypes do not work for you, please create the table prior to import.
+
+        If you want to import specific columns from a CSV, create a view with corresponding columns.
 
     .PARAMETER AutoCreateTable
         If this switch is enabled, the table will be created if it does not already exist. The table will be created with sub-optimal data types such as nvarchar(max)
@@ -345,15 +347,18 @@ function Import-DbaCsv {
                     }
                 }
 
-                # Ensure table exists
+                # Ensure table or view exists
                 $sql = "select count(*) from $Database.sys.tables where name = '$table' and schema_id=schema_id('$schema')"
                 $sqlcmd = New-Object System.Data.SqlClient.SqlCommand($sql, $sqlconn, $transaction)
 
+                $sql2 = "select count(*) from $Database.sys.views where name = '$table' and schema_id=schema_id('$schema')"
+                $sqlcmd2 = New-Object System.Data.SqlClient.SqlCommand($sql2, $sqlconn, $transaction)
+
                 # Create the table if required. Remember, this will occur within a transaction, so if the script fails, the
                 # new table will no longer exist.
-                if (($sqlcmd.ExecuteScalar()) -eq 0) {
+                if (($sqlcmd.ExecuteScalar()) -eq 0 -and ($sqlcmd2.ExecuteScalar()) -eq 0) {
                     if (-not $AutoCreateTable) {
-                        Stop-Function -Continue -Message "Table $table does not exist and AutoCreateTable was not specified"
+                        Stop-Function -Continue -Message "Table or view $table does not exist and AutoCreateTable was not specified"
                     }
                     Write-Message -Level Verbose -Message "Table does not exist"
                     if ($PSCmdlet.ShouldProcess($instance, "Creating table $table")) {
@@ -377,23 +382,12 @@ function Import-DbaCsv {
                     }
                 }
 
-                # Get columns for column mapping
-                if ($null -eq $columnMappings) {
-                    $olecolumns = ($columns | ForEach-Object {
-                            $_ -Replace "\[|\]"
-                        })
-                    $sql = "select name from sys.columns where object_id = object_id('$schema.$table') order by column_id"
-                    $sqlcmd = New-Object System.Data.SqlClient.SqlCommand($sql, $sqlconn, $transaction)
-                    $sqlcolumns = New-Object System.Data.DataTable
-                    $sqlcolumns.Load($sqlcmd.ExecuteReader())
-                }
-
                 # Setup bulk copy
                 Write-Message -Level Verbose -Message "Starting bulk copy for $(Split-Path $file -Leaf)"
 
                 # Setup bulk copy options
                 $bulkCopyOptions = @()
-                $options = "TableLock", "CheckConstraints", "FireTriggers", "KeepIdentity", "KeepNulls", "Default", "Truncate"
+                $options = "TableLock", "CheckConstraints", "FireTriggers", "KeepIdentity", "KeepNulls", "Default"
                 foreach ($option in $options) {
                     $optionValue = Get-Variable $option -ValueOnly -ErrorAction SilentlyContinue
                     if ($optionValue -eq $true) {
@@ -437,6 +431,7 @@ function Import-DbaCsv {
                             })
 
                         $bulkCopy.WriteToServer($reader)
+
                         if ($resultcount -is [int]) {
                             Write-Progress -id 1 -activity "Inserting $resultcount rows" -status "Complete" -Completed
                         }
@@ -450,58 +445,7 @@ function Import-DbaCsv {
                         if ($resultcount -is [int]) {
                             Write-Progress -id 1 -activity "Inserting $resultcount rows" -status "Failed" -Completed
                         }
-
-                        # If possible, give more information about common errors.
-                        $errormessage = $_.Exception.Message.ToString()
-                        if ($errormessage -like "*for one or more required parameters*") {
-
-                            Stop-Function -Continue -Message -Message "Looks like your SQL syntax may be invalid. `nCheck the documentation for more information or start with a simple -Query 'select top 10 * from csv'."
-                            Stop-Function -Continue -Message -Message "Valid CSV columns are $columns."
-
-                        } elseif ($errormessage -match "invalid column length") {
-
-                            # Get more information about malformed CSV input
-                            $pattern = @("\d+")
-                            $match = [regex]::matches($errormessage, @("\d+"))
-                            $index = [int]($match.groups[1].Value) - 1
-                            $sql = "select name, max_length from sys.columns where object_id = object_id('$table') and column_id = $index"
-                            $sqlcmd = New-Object System.Data.SqlClient.SqlCommand($sql, $sqlconn, $transaction)
-                            $datatable = New-Object System.Data.DataTable
-                            $datatable.load($sqlcmd.ExecuteReader())
-                            $column = $datatable.name
-                            $length = $datatable.max_length
-
-                            if ($safe -eq $true) {
-                                Write-Message -Level Warning -Message "Column $index ($column) contains data with a length greater than $length."
-                                Write-Message -Level Warning -Message "SqlBulkCopy makes it pretty much impossible to know which row caused the issue, but it's somewhere after row $($script:totalrows)."
-                            }
-                        } elseif ($errormessage -match "does not allow DBNull" -or $errormessage -match "The given value of type") {
-
-                            if ($tablexists -eq $false) {
-                                Stop-Function -Continue -Message "Looks like the datatype prediction didn't work out. Please create the table manually with proper datatypes then rerun the import script."
-                            } else {
-                                $sql = "select name from sys.columns where object_id = object_id('$table') order by column_id"
-                                $sqlcmd = New-Object System.Data.SqlClient.SqlCommand($sql, $sqlconn, $transaction)
-                                $datatable = New-Object System.Data.DataTable
-                                $datatable.Load($sqlcmd.ExecuteReader())
-                                $olecolumns = ($columns | ForEach-Object {
-                                        $_ -Replace "\[|\]"
-                                    }) -join ', '
-                                Write-Message -Level Warning -Message "Datatype mismatch."
-                                Write-Message -Level Warning -Message "This is sometimes caused by null handling in SqlBulkCopy, quoted data, or the first row being column names and not data (-FirstRowHeader)."
-                                Write-Message -Level Warning -Message "This could also be because the data types don't match or the order of the columns within the CSV/SQL statement "
-                                Write-Message -Level Warning -Message "do not line up with the order of the table within the SQL Server.`n"
-                                Write-Message -Level Warning -Message "CSV order: $olecolumns`n"
-                                Write-Message -Level Warning -Message "SQL order: $($datatable.rows.name -join ', ')`n"
-                                Write-Message -Level Warning -Message "If this is the case, you can reorder columns by using the -Query parameter or execute the import against a view.`n"
-                                Write-Message -Level Warning -Message "You can also try running this import using the -Safe parameter, which handles quoted text well.`n"
-                                Stop-Function -Continue -Message "`n$errormessage"
-                            }
-                        } elseif ($errormessage -match "Input string was not in a correct format" -or $errormessage -match "The given ColumnName") {
-                            Stop-Function -Continue -Message "CSV contents may be malformed. $errormessage"
-                        } else {
-                            Stop-Function -Continue -Message $errormessage
-                        }
+                        Stop-Function -Continue -Message $errormessage
                     }
                 }
                 if ($PSCmdlet.ShouldProcess($instance, "Committing transaction")) {
@@ -523,7 +467,7 @@ function Import-DbaCsv {
                             Path         = $file
                         }
                     } else {
-                        Stop-Function -Message "Transaction rolled back. Was the proper delimiter specified? Is the first row the column name?"
+                        Stop-Function -Message "Transaction rolled back. Was the proper delimiter specified? Is the first row the column name?" -ErrorRecord $_
                         return
                     }
                 }
