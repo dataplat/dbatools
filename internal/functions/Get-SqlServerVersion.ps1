@@ -18,7 +18,7 @@ function Get-SqlServerVersion {
     }
     process {
         try {
-            $sqlComponents = Get-SqlInstanceComponent -ComputerName $ComputerName
+            $sqlComponents = Get-SqlInstanceComponent -ComputerName $ComputerName -Credential $Credential
             foreach ($component in $sqlComponents) {
                 #Replace first decimal of the minor build with a 0, since we're using build numbers here
                 #Refer to https://sqlserverbuilds.blogspot.com/
