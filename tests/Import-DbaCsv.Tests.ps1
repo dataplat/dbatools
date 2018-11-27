@@ -50,6 +50,13 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
                     $result.Table | Should -Be SuperSmall
                 }
             }
+
+            $result = Import-DbaCsv -Path $path -SqlInstance $script:instance1 -Database tempdb -Delimiter `t -Table SuperSmall -Truncate
+            It "doesn't break when truncate is passed" {
+                $result.RowsCopied | Should -Be 999
+                $result.Database | Should -Be tempdb
+                $result.Table | Should -Be SuperSmall
+            }
         }
     }
 }
