@@ -105,7 +105,7 @@ function Test-DbaBuild {
         [version]$MinimumBuild,
         [string]$MaxBehind,
         [switch] $Latest,
-        [parameter(Mandatory = $false, ValueFromPipeline)]
+        [parameter(ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [Alias("Credential")]

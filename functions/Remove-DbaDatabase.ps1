@@ -73,7 +73,6 @@ function Remove-DbaDatabase {
         [parameter(Mandatory, ParameterSetName = "instance")]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
-        [parameter(Mandatory = $false)]
         [Alias("Credential")]
         [PSCredential]
         $SqlCredential,
