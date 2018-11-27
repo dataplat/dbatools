@@ -53,8 +53,14 @@ function Import-DbaCsv {
 
         If you want to import specific columns from a CSV, create a view with corresponding columns.
 
+    .PARAMETER Column
+        Import only specific columns. To remap column names, use the ColumnMap.
+
+    .PARAMETER ColumnMap
+        By default, the bulk copy tries to automap columns. When it doesn't work as desired, this parameter will help. Check out the examples for more information.
+
     .PARAMETER AutoCreateTable
-        If this switch is enabled, the table will be created if it does not already exist. The table will be created with sub-optimal data types such as nvarchar(max)
+        Creates a table if it does not already exist. The table will be created with sub-optimal data types such as nvarchar(max)
 
     .PARAMETER Truncate
         If this switch is enabled, the destination table will be truncated prior to import.
@@ -148,6 +154,19 @@ function Import-DbaCsv {
 
         Shows what would happen if the command were to be executed
 
+    .EXAMPLE
+        PS C:\> Import-DbaCsv -Path c:\temp\dataset.csv -SqlInstance sql2016 -Database tempdb -Column Name, Address, Mobile
+
+        Import only Name, Address and Mobile even if other columns exist. All other columns are ignored and therefore null or default values.
+
+    .EXAMPLE
+        PS C:\> $columns = @{
+        >> Text = 'FirstName'
+        >> Number = 'PhoneNumber'
+        >> }
+        PS C:\> Import-DbaCsv -Path c:\temp\supersmall.csv -SqlInstance sql2016 -Database tempdb -ColumnMap $columns
+
+        The CSV column 'Text' is inserted into SQL column 'FirstName' and CSV column Number is inserted into the SQL Column 'PhoneNumber'. All other columns are ignored and therefore null or default values.
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Low')]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseDeclaredVarsMoreThanAssignments", "line", Justification = "Variable line is used, False Positive on line 330")]
@@ -173,6 +192,8 @@ function Import-DbaCsv {
         [switch]$FireTriggers,
         [switch]$KeepIdentity,
         [switch]$KeepNulls,
+        [string[]]$Column,
+        [hashtable[]]$ColumnMap,
         [switch]$AutoCreateTable,
         [switch]$NoProgress,
         [switch]$NoHeaderRow,
@@ -410,6 +431,20 @@ function Import-DbaCsv {
                         $bulkCopy.BatchSize = $BatchSize
                         $bulkCopy.NotifyAfter = $NotifyAfter
                         $bulkCopy.EnableStreaming = $true
+
+                        if ($ColumnMap) {
+                            foreach ($columnname in $ColumnMap) {
+                                foreach ($key in $columnname.Keys) {
+                                    $null = $bulkcopy.ColumnMappings.Add($key, $columnname[$key])
+                                }
+                            }
+                        }
+
+                        if ($Column) {
+                            foreach ($columnname in $Column) {
+                                $null = $bulkcopy.ColumnMappings.Add($columnname, $columnname)
+                            }
+                        }
                     } catch {
                         Stop-Function -Continue -Message "Failure" -ErrorRecord $_
                     }
