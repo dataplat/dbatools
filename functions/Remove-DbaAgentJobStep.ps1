@@ -73,7 +73,6 @@ function Remove-DbaAgentJobStep {
         [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
-        [Parameter(Mandatory = $false)]
         [PSCredential]$SqlCredential,
         [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
