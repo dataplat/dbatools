@@ -150,10 +150,10 @@ function Invoke-Parallel {
     #>
     [cmdletbinding(DefaultParameterSetName = 'ScriptBlock')]
     param (
-        [Parameter(Mandatory = $false, position = 0, ParameterSetName = 'ScriptBlock')]
+        [Parameter(Position = 0, ParameterSetName = 'ScriptBlock')]
         [System.Management.Automation.ScriptBlock]$ScriptBlock,
 
-        [Parameter(Mandatory = $false, ParameterSetName = 'ScriptFile')]
+        [Parameter(ParameterSetName = 'ScriptFile')]
         [ValidateScript( {Test-Path $_ -pathtype leaf})]
         $ScriptFile,
 
