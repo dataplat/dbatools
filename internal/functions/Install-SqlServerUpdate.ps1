@@ -121,6 +121,9 @@ function Install-SqlServerUpdate {
                     }
                 }
                 if ($targetKB) {
+                    if ($targetKB.MatchType -ne 'Exact') {
+                        Stop-Function -Message "Couldn't find an exact build match with specified parameters while updating $currentMajorVersion" -EnableException $true
+                    }
                     $targetLevel = "$($targetKB.SPLevel | Where-Object { $_ -ne 'LATEST' })$($targetKB.CULevel)"
                     $targetKBLevel = $targetKB.KBLevel | Select-Object -First 1
                     Write-Message -Level Verbose -Message "Upgrading SQL$($targetKB.NameLevel) to $targetLevel (KB$($targetKBLevel))"
