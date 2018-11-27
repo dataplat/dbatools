@@ -171,16 +171,17 @@ function Get-SQLInstanceComponent {
 
                     #region Get exe version
                     try {
-                        $binRoot = $instanceRegSetup.GetValue("SQLBinRoot")
-                        $fileVersion = Invoke-Command2 -ArgumentList $binRoot -Raw -Credential $Credential -ComputerName $computer -ScriptBlock {
-                            Param (
-                                $Path
-                            )
-                            (Get-Item -Path (Join-Path $Path "sqlservr.exe") -ErrorAction Stop).VersionInfo.ProductVersion
-                        }
-                        if ($fileVersion) {
-                            $version = $fileVersion
-                            Write-Message -Level Debug -Message "New version from the binary file: $version"
+                        if ($binRoot = $instanceRegSetup.GetValue("SQLBinRoot")) {
+                            $fileVersion = Invoke-Command2 -ArgumentList $binRoot -Raw -Credential $Credential -ComputerName $computer -ScriptBlock {
+                                Param (
+                                    $Path
+                                )
+                                (Get-Item -Path (Join-Path $Path "sqlservr.exe") -ErrorAction Stop).VersionInfo.ProductVersion
+                            }
+                            if ($fileVersion) {
+                                $version = $fileVersion
+                                Write-Message -Level Debug -Message "New version from the binary file: $version"
+                            }
                         }
                     } catch {
                         Write-Message -Level Debug -Message "Failed to get exe version, leaving $version as is"
