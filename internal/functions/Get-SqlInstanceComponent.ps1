@@ -114,7 +114,7 @@ function Get-SQLInstanceComponent {
                         $isCluster = $true;
                         $instanceRegCluster = $instanceReg.OpenSubKey('Cluster');
                         $clusterName = $instanceRegCluster.GetValue('ClusterName');
-                        Write-Verbose -Message "Getting cluster node names";
+                        Write-Message -Level Verbose -Message "Getting cluster node names";
                         $clusterReg = $reg.OpenSubKey("Cluster\\Nodes");
                         $clusterNodes = $clusterReg.GetSubKeyNames();
                         if ($clusterNodes) {
@@ -148,14 +148,20 @@ function Get-SQLInstanceComponent {
 
                     #region Get SQL version
                     try {
-
+                        $versionHash = @{
+                            '11' = 'SQLServer2012'
+                            '12' = 'SQLServer2014'
+                            '13' = 'SQLServer2016'
+                            '14' = 'SQL2017'
+                            '15' = 'SQL2019'
+                        }
                         $version = $instanceRegSetup.GetValue("Version");
-                        if ($version.Split('.')[0] -eq '11') {
-                            $verKey = $reg.OpenSubKey('SOFTWARE\\Microsoft\\Microsoft SQL Server\\110\\SQLServer2012\\CurrentVersion')
+                        Write-Message -Level Debug -Message "Found version $version"
+                        $majorVersion = $version.Split('.')[0]
+                        if ($majorVersion -and $versionHash[$majorVersion]) {
+                            $verKey = $reg.OpenSubKey("SOFTWARE\\Microsoft\\Microsoft SQL Server\\$($majorVersion)0\\$($versionHash[$majorVersion])\\CurrentVersion")
                             $version = $verKey.GetValue('Version')
-                        } elseif ($version.Split('.')[0] -eq '12') {
-                            $verKey = $reg.OpenSubKey('SOFTWARE\\Microsoft\\Microsoft SQL Server\\120\\SQLServer2014\\CurrentVersion')
-                            $version = $verKey.GetValue('Version')
+                            Write-Message -Level Debug -Message "New version from the CurrentVersion key: $version"
                         }
                     } catch {
                         $version = $null;
