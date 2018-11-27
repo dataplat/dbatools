@@ -63,7 +63,7 @@ function Copy-DbaDbQueryStoreOption {
         Copy the Query Store configuration of the AdventureWorks database in the ServerA\SQL instance and apply it to the WorldWideTraders database in the ServerB\SQL Instance.
 
     #>
-    [CmdletBinding(SupportsShouldProcess = $true)]
+    [CmdletBinding(SupportsShouldProcess)]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter]$Source,
@@ -79,7 +79,7 @@ function Copy-DbaDbQueryStoreOption {
         [Alias('Silent')]
         [switch]$EnableException
     )
-    
+
     begin {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Copy-DbaQueryStoreConfig
         try {
@@ -109,7 +109,7 @@ function Copy-DbaDbQueryStoreOption {
                 }
 
                 # We have to exclude all the system databases since they cannot have the Query Store feature enabled
-                $dbs = Get-DbaDatabase -SqlInstance $destServer -ExcludeAllSystemDb
+                $dbs = Get-DbaDatabase -SqlInstance $destServer -ExcludeSystem
 
                 if ($DestinationDatabase.count -gt 0) {
                     $dbs = $dbs | Where-Object { $DestinationDatabase -contains $_.Name }

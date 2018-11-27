@@ -2,12 +2,8 @@
 
 configuration: "Debug"
 
-
-before_build:
-  - nuget restore bin\projects\dbatools\dbatools.sln
-
-build:
-  project: bin\projects\dbatools\dbatools.sln
+build_script:
+ - ps: Push-Location bin\projects\dbatools; dotnet build; Pop-Location
 
 after_build:
     # Removed to prevent credential exposure

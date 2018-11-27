@@ -22,9 +22,12 @@ function Import-ModuleFile {
     param (
         $Path
     )
-
-    if ($script:doDotSource) { . $Path }
-    else { $ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create([io.file]::ReadAllText($Path))), $null, $null) }
+    
+    if ($script:doDotSource) {
+        . (Resolve-Path -Path $Path)
+    } else {
+        $ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create([io.file]::ReadAllText((Resolve-Path -Path $Path)))), $null, $null)
+    }
 }
 
 function Write-ImportTime {
@@ -79,6 +82,12 @@ Write-ImportTime -Text "Resolved path to not SQLSERVER PSDrive"
 
 $script:PSModuleRoot = $PSScriptRoot
 
+if (($PSVersionTable.Keys -contains "PSEdition") -and ($PSVersionTable.PSEdition -ne 'Desktop')) {
+    $script:core = $true
+} else {
+    $script:core = $false
+}
+
 #region Import Defines
 $dbatoolsSystemUserNode = Get-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\WindowsPowerShell\dbatools\System" -ErrorAction Ignore
 $dbatoolsSystemSystemNode = Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\WindowsPowerShell\dbatools\System" -ErrorAction Ignore
@@ -123,11 +132,11 @@ if (Test-Path -Path "$script:PSModuleRoot\.git") { $script:multiFileImport = $tr
 Write-ImportTime -Text "Validated defines"
 #endregion Import Defines
 
-Get-ChildItem -Path "$script:PSModuleRoot\bin\*.dll" -Recurse | Unblock-File -ErrorAction SilentlyContinue
+Get-ChildItem -Path (Resolve-Path "$script:PSModuleRoot\bin\") -Filter "*.dll" -Recurse
 Write-ImportTime -Text "Unblocking Files"
 
 # Define folder in which to copy dll files before importing
-if (-not $script:copyDllMode) { $script:DllRoot = "$script:PSModuleRoot\bin" }
+if (-not $script:copyDllMode) { $script:DllRoot = (Resolve-Path "$script:PSModuleRoot\bin\") }
 else {
     $libraryTempPath = "$($env:TEMP)\dbatools-$(Get-Random -Minimum 1000000 -Maximum 9999999)"
     while (Test-Path -Path $libraryTempPath) {
@@ -162,36 +171,40 @@ Write-ImportTime -Text "Loading dbatools library"
 
 # Load configuration system
 # Should always go after library and path setting
-if (-not ([Sqlcollaborative.Dbatools.dbaSystem.SystemHost]::ModuleImported)) {
-    . Import-ModuleFile "$script:PSModuleRoot\internal\configurations\configuration.ps1"
-    Write-ImportTime -Text "Configuration System"
-}
-if (-not ([Sqlcollaborative.Dbatools.Message.LogHost]::LoggingPath)) {
-    [Sqlcollaborative.Dbatools.Message.LogHost]::LoggingPath = "$($env:AppData)\PowerShell\dbatools"
+if (($PSVersionTable.Keys -contains "Platform") -and $PSVersionTable.Platform -ne "Win32NT") {
+    Write-Verbose -Message "Skipping configuration. Not Core compatible yet."
+} else {
+    if (-not ([Sqlcollaborative.Dbatools.dbaSystem.SystemHost]::ModuleImported)) {
+        . Import-ModuleFile "$script:PSModuleRoot\internal\configurations\configuration.ps1"
+        Write-ImportTime -Text "Configuration System"
+    }
+    if (-not ([Sqlcollaborative.Dbatools.Message.LogHost]::LoggingPath)) {
+        [Sqlcollaborative.Dbatools.Message.LogHost]::LoggingPath = "$($env:AppData)\PowerShell\dbatools"
+    }
 }
 
 if ($script:multiFileImport) {
     # All internal functions privately available within the toolset
-    foreach ($function in (Get-ChildItem "$script:PSModuleRoot\internal\functions\*.ps1")) {
+    foreach ($function in (Get-ChildItem -Path (Resolve-Path -Path "$script:PSModuleRoot\internal\functions\*.ps1"))) {
         . Import-ModuleFile $function.FullName
     }
     Write-ImportTime -Text "Loading Internal Commands"
 
-    . Import-ModuleFile "$script:PSModuleRoot\internal\scripts\cmdlets.ps1"
+    . Import-ModuleFile -Path (Resolve-Path -Path "$script:PSModuleRoot\internal\scripts\cmdlets.ps1")
     Write-ImportTime -Text "Registering cmdlets"
-
+    
     # All exported functions
-    foreach ($function in (Get-ChildItem "$script:PSModuleRoot\functions\*.ps1")) {
+    foreach ($function in (Get-ChildItem -Path (Resolve-Path -Path "$script:PSModuleRoot\functions\*.ps1"))) {
         . Import-ModuleFile $function.FullName
     }
     Write-ImportTime -Text "Loading Public Commands"
-
+    
 }
 else {
-    . "$script:PSModuleRoot\allcommands.ps1"
+    . (Resolve-Path -Path "$script:PSModuleRoot\allcommands.ps1")
     Write-ImportTime -Text "Loading Public and Private Commands"
 
-    . Import-ModuleFile "$script:PSModuleRoot\internal\scripts\cmdlets.ps1"
+    . Import-ModuleFile (Resolve-Path -Path "$script:PSModuleRoot\internal\scripts\cmdlets.ps1")
     Write-ImportTime -Text "Registering cmdlets"
 }
 
@@ -199,32 +212,40 @@ else {
 # Note: Each optional file must include a conditional governing whether it's run at all.
 # Validations were moved into the other files, in order to prevent having to update dbatools.psm1 every time
 # 96ms
-foreach ($function in (Get-ChildItem "$script:PSModuleRoot\optional\*.ps1")) {
+foreach ($function in (Get-ChildItem -Path (Resolve-Path -Path "$script:PSModuleRoot\optional\*.ps1"))) {
     . Import-ModuleFile $function.FullName
 }
 Write-ImportTime -Text "Loading Optional Commands"
 
-# Process TEPP parameters
-. Import-ModuleFile "$script:PSModuleRoot\internal\scripts\insertTepp.ps1"
-Write-ImportTime -Text "Loading TEPP"
+if (($PSVersionTable.Keys -contains "Platform") -and $PSVersionTable.Platform -ne "Win32NT") {
+    Write-Verbose -Message "Skipping tepp configuration. Not Core compatible yet."
+} else {
+    # Process TEPP parameters
+    . Import-ModuleFile -Path (Resolve-Path -Path "$script:PSModuleRoot\internal\scripts\insertTepp.ps1")
+    Write-ImportTime -Text "Loading TEPP"
+}
 
 # Process transforms
-. Import-ModuleFile "$script:PSModuleRoot\internal\scripts\message-transforms.ps1"
+. Import-ModuleFile -Path (Resolve-Path -Path "$script:PSModuleRoot\internal\scripts\message-transforms.ps1")
 Write-ImportTime -Text "Loading Message Transforms"
 
 # Load scripts that must be individually run at the end #
 #-------------------------------------------------------#
 
 # Start the logging system (requires the configuration system up and running)
-. Import-ModuleFile "$script:PSModuleRoot\internal\scripts\logfilescript.ps1"
+. Import-ModuleFile -Path (Resolve-Path -Path "$script:PSModuleRoot\internal\scripts\logfilescript.ps1")
 Write-ImportTime -Text "Script: Logging"
 
-# Start the tepp asynchronous update system (requires the configuration system up and running)
-. Import-ModuleFile "$script:PSModuleRoot\internal\scripts\updateTeppAsync.ps1"
-Write-ImportTime -Text "Script: Asynchronous TEPP Cache"
+if (($PSVersionTable.Keys -contains "Platform") -and $PSVersionTable.Platform -ne "Win32NT") {
+    Write-Verbose -Message "Skipping tepp configuration. Not Core compatible yet."
+} else {
+    # Start the tepp asynchronous update system (requires the configuration system up and running)
+    . Import-ModuleFile -Path (Resolve-Path -Path "$script:PSModuleRoot\internal\scripts\updateTeppAsync.ps1")
+    Write-ImportTime -Text "Script: Asynchronous TEPP Cache"
+}
 
 # Start the maintenance system (requires pretty much everything else already up and running)
-. Import-ModuleFile "$script:PSModuleRoot\internal\scripts\dbatools-maintenance.ps1"
+. Import-ModuleFile -Path (Resolve-Path -Path "$script:PSModuleRoot\internal\scripts\dbatools-maintenance.ps1")
 Write-ImportTime -Text "Script: Maintenance"
 
 #region Aliases
@@ -871,10 +892,6 @@ $script:renames = @(
         "Definition" = "Export-DbaCmsRegServer"
     },
     @{
-        "AliasName"  = "Get-DbaRegisteredServer"
-        "Definition" = "Get-DbaCmsRegServer"
-    },
-    @{
         "AliasName"  = "Get-DbaRegisteredServerGroup"
         "Definition" = "Get-DbaCmsRegServerGroup"
     },
@@ -978,6 +995,10 @@ $script:renames | ForEach-Object {
     @{
         "AliasName"  = "Detach-DbaDatabase"
         "Definition" = "Dismount-DbaDatabase"
+    },
+    @{
+        "AliasName"  = "Get-DbaRegisteredServer"
+        "Definition" = "Get-DbaCmsRegServer"
     }
 ) | ForEach-Object {
     if (-not (Test-Path Alias:$($_.AliasName))) { Set-Alias -Scope Global -Name $($_.AliasName) -Value $($_.Definition) }
@@ -1025,7 +1046,7 @@ if ($script:dbatoolsConfigRunspace) {
 Write-ImportTime -Text "Waiting for runspaces to finish"
 
 if ($PSCommandPath -like "*.psm1") {
-    Update-TypeData -AppendPath "$script:PSModuleRoot\xml\dbatools.Types.ps1xml"
+    Update-TypeData -AppendPath (Resolve-Path -Path "$script:PSModuleRoot\xml\dbatools.Types.ps1xml")
     Write-ImportTime -Text "Loaded type extensions"
 }
 #. Import-ModuleFile "$script:PSModuleRoot\bin\type-extensions.ps1"

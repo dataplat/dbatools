@@ -16,8 +16,12 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         }
     }
 }
-<#
-    Integration test should appear below and are custom to the command you are writing.
-    Read https://github.com/sqlcollaborative/dbatools/blob/development/contributing.md#tests
-    for more guidence.
-#>
+
+Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
+    Context "Gets the CPU Usage" {
+        $results = Get-DbaCPUUsage -SqlInstance $script:instance2
+        It "Results are not empty" {
+            $results | Should Not Be $Null
+        }
+    }
+}

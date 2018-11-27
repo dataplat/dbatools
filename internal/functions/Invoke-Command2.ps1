@@ -84,13 +84,15 @@ function Invoke-Command2 {
         }
         if (-not $currentSession) {
             Write-Message -Level Debug "Creating new $Authentication session [$sessionName] for $($ComputerName.ComputerName)"
-            $timeout = New-PSSessionOption -IdleTimeout (New-TimeSpan -Minutes 10).TotalMilliSeconds
             $psSessionSplat = @{
                 ComputerName   = $ComputerName.ComputerName
                 Authentication = $Authentication
                 Name           = $sessionName
-                SessionOption  = $timeout
                 ErrorAction    = 'Stop'
+            }
+            if (Test-Windows -NoWarn) {
+                $timeout = New-PSSessionOption -IdleTimeout (New-TimeSpan -Minutes 10).TotalMilliSeconds
+                $psSessionSplat += @{ SessionOption  = $timeout }
             }
             if ($Credential) {
                 $psSessionSplat += @{ Credential = $Credential }

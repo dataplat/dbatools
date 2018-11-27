@@ -157,11 +157,11 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     Context "Copying with renames using backup/restore" {
         BeforeAll {
             Get-DbaProcess -SqlInstance $script:instance2, $script:instance3 -Program 'dbatools PowerShell module - dbatools.io' | Stop-DbaProcess -WarningAction SilentlyContinue
-            Get-DbaDatabase -SqlInstance $script:instance3 -ExcludeAllSystemDb | Remove-DbaDatabase -Confirm:$false
+            Get-DbaDatabase -SqlInstance $script:instance3 -ExcludeSystem | Remove-DbaDatabase -Confirm:$false
         }
         AfterAll {
             Get-DbaProcess -SqlInstance $script:instance2, $script:instance3 -Program 'dbatools PowerShell module - dbatools.io' | Stop-DbaProcess -WarningAction SilentlyContinue
-            Get-DbaDatabase -SqlInstance $script:instance3 -ExcludeAllSystemDb | Remove-DbaDatabase -Confirm:$false
+            Get-DbaDatabase -SqlInstance $script:instance3 -ExcludeSystem | Remove-DbaDatabase -Confirm:$false
         }
         It "Should have renamed a single db" {
             $newname = "copy$(Get-Random)"

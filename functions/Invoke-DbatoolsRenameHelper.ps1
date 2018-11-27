@@ -57,7 +57,7 @@ function Invoke-DbatoolsRenameHelper {
         the resulting changes would be written to disk as Ascii encoded.
 
     #>
-    [CmdletBinding(SupportsShouldProcess = $true)]
+    [CmdletBinding(SupportsShouldProcess)]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
         [System.IO.FileInfo[]]$InputObject,
@@ -113,7 +113,7 @@ function Invoke-DbatoolsRenameHelper {
             },
             @{
                 "AliasName"  = "NoSystemDb"
-                "Definition" = "ExcludeSystemDatabases"
+                "Definition" = "ExcludeSystem"
             },
             @{
                 "AliasName"  = "NoSystemObjects"
@@ -126,6 +126,14 @@ function Invoke-DbatoolsRenameHelper {
             @{
                 "AliasName"  = "NoQueryTextColumn"
                 "Definition" = "ExcludeQueryTextColumn"
+            },
+            @{
+                "AliasName"  = "ExcludeAllSystemDb"
+                "Definition" = "ExcludeSystem"
+            },
+            @{
+                "AliasName"  = "ExcludeAllUserDb"
+                "Definition" = "ExcludeUser"
             }
         )
 
