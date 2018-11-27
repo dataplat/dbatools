@@ -97,7 +97,7 @@ function Remove-DbaOrphanUser {
         [Alias("Databases")]
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
-        [parameter(Mandatory = $false, ValueFromPipeline)]
+        [parameter(ValueFromPipeline)]
         [object[]]$User,
         [switch]$Force,
         [Alias('Silent')]

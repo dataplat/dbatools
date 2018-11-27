@@ -63,7 +63,6 @@ function Remove-DbaAgentJobCategory {
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [Parameter(Mandatory = $false)]
         [ValidateNotNullOrEmpty()]
         [string[]]$Category,
         [switch]$Force,
