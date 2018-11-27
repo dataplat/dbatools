@@ -42,7 +42,7 @@ function Invoke-Command2 {
 
             Executes the scriptblock '{ dir }' on the computer sql2014 using the credentials stored in $Credential.
             If $Credential is null, no harm done.
-       #>
+    #>
     [CmdletBinding()]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUsePSCredentialType", "")]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingPlainTextForPassword", "")]
@@ -92,7 +92,7 @@ function Invoke-Command2 {
             }
             if (Test-Windows -NoWarn) {
                 $timeout = New-PSSessionOption -IdleTimeout (New-TimeSpan -Minutes 10).TotalMilliSeconds
-                $psSessionSplat += @{ SessionOption  = $timeout }
+                $psSessionSplat += @{ SessionOption = $timeout }
             }
             if ($Credential) {
                 $psSessionSplat += @{ Credential = $Credential }
