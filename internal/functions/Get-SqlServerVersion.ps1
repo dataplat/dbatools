@@ -30,8 +30,7 @@ function Get-SqlServerVersion {
                 $versions += $currentVersion | Add-Member -Name 'Edition' -MemberType NoteProperty -Value $component.Edition -PassThru
             }
         } catch {
-            Stop-Function -Message "Failed to process SQL versions" -ErrorRecord $_
-            return
+            Stop-Function -Message "Failed to process SQL versions" -ErrorRecord $_ -EnableException $false
         }
     }
     end {
