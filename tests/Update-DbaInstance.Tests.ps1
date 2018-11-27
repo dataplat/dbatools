@@ -63,8 +63,9 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
             Assert-MockCalled -CommandName Get-SqlServerVersion -Exactly 1 -Scope It -ModuleName dbatools
             Assert-MockCalled -CommandName Invoke-Program -Exactly 2 -Scope It -ModuleName dbatools
             Assert-MockCalled -CommandName Restart-Computer -Exactly 1 -Scope It -ModuleName dbatools
-            Assert-MockCalled -CommandName Register-RemoteSessionConfiguration -Exactly 0 -Scope It -ModuleName dbatools
-            Assert-MockCalled -CommandName Unregister-RemoteSessionConfiguration -Exactly 1 -Scope It -ModuleName dbatools
+            #no remote execution in tests
+            #Assert-MockCalled -CommandName Register-RemoteSessionConfiguration -Exactly 0 -Scope It -ModuleName dbatools
+            #Assert-MockCalled -CommandName Unregister-RemoteSessionConfiguration -Exactly 1 -Scope It -ModuleName dbatools
 
             $result | Should -Not -BeNullOrEmpty
             $result.MajorVersion | Should -Be 2008
@@ -81,8 +82,9 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
             Assert-MockCalled -CommandName Get-SqlServerVersion -Exactly 2 -Scope It -ModuleName dbatools
             Assert-MockCalled -CommandName Invoke-Program -Exactly 2 -Scope It -ModuleName dbatools
             Assert-MockCalled -CommandName Restart-Computer -Exactly 1 -Scope It -ModuleName dbatools
-            Assert-MockCalled -CommandName Register-RemoteSessionConfiguration -Exactly 0 -Scope It -ModuleName dbatools
-            Assert-MockCalled -CommandName Unregister-RemoteSessionConfiguration -Exactly 1 -Scope It -ModuleName dbatools
+            #no remote execution in tests
+            #Assert-MockCalled -CommandName Register-RemoteSessionConfiguration -Exactly 0 -Scope It -ModuleName dbatools
+            #Assert-MockCalled -CommandName Unregister-RemoteSessionConfiguration -Exactly 1 -Scope It -ModuleName dbatools
 
             $result | Should -Not -BeNullOrEmpty
             $result.MajorVersion | Should -Be 2008
@@ -99,8 +101,9 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
             Assert-MockCalled -CommandName Get-SqlServerVersion -Exactly 1 -Scope It -ModuleName dbatools
             Assert-MockCalled -CommandName Invoke-Program -Exactly 2 -Scope It -ModuleName dbatools
             Assert-MockCalled -CommandName Restart-Computer -Exactly 1 -Scope It -ModuleName dbatools
-            Assert-MockCalled -CommandName Register-RemoteSessionConfiguration -Exactly 0 -Scope It -ModuleName dbatools
-            Assert-MockCalled -CommandName Unregister-RemoteSessionConfiguration -Exactly 1 -Scope It -ModuleName dbatools
+            #no remote execution in tests
+            #Assert-MockCalled -CommandName Register-RemoteSessionConfiguration -Exactly 0 -Scope It -ModuleName dbatools
+            #Assert-MockCalled -CommandName Unregister-RemoteSessionConfiguration -Exactly 1 -Scope It -ModuleName dbatools
 
             $result | Should -Not -BeNullOrEmpty
             $result.MajorVersion | Should -Be 2016
@@ -117,8 +120,9 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
             Assert-MockCalled -CommandName Get-SqlServerVersion -Exactly 4 -Scope It -ModuleName dbatools
             Assert-MockCalled -CommandName Invoke-Program -Exactly 6 -Scope It -ModuleName dbatools
             Assert-MockCalled -CommandName Restart-Computer -Exactly 3 -Scope It -ModuleName dbatools
-            Assert-MockCalled -CommandName Register-RemoteSessionConfiguration -Exactly 0 -Scope It -ModuleName dbatools
-            Assert-MockCalled -CommandName Unregister-RemoteSessionConfiguration -Exactly 1 -Scope It -ModuleName dbatools
+            #no remote execution in tests
+            #Assert-MockCalled -CommandName Register-RemoteSessionConfiguration -Exactly 0 -Scope It -ModuleName dbatools
+            #Assert-MockCalled -CommandName Unregister-RemoteSessionConfiguration -Exactly 1 -Scope It -ModuleName dbatools
 
             ($results | Measure-Object).Count | Should -Be 3
 
@@ -160,8 +164,9 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
             Assert-MockCalled -CommandName Get-SqlServerVersion -Exactly 1 -Scope It -ModuleName dbatools
             Assert-MockCalled -CommandName Invoke-Program -Exactly 2 -Scope It -ModuleName dbatools
             Assert-MockCalled -CommandName Restart-Computer -Exactly 0 -Scope It -ModuleName dbatools
-            Assert-MockCalled -CommandName Register-RemoteSessionConfiguration -Exactly 0 -Scope It -ModuleName dbatools
-            Assert-MockCalled -CommandName Unregister-RemoteSessionConfiguration -Exactly 1 -Scope It -ModuleName dbatools
+            #no remote execution in tests
+            #Assert-MockCalled -CommandName Register-RemoteSessionConfiguration -Exactly 0 -Scope It -ModuleName dbatools
+            #Assert-MockCalled -CommandName Unregister-RemoteSessionConfiguration -Exactly 1 -Scope It -ModuleName dbatools
 
             $warningVar | Should -BeLike '*restart * to complete the installation of SQL2008SP3*'
             $result | Should -Not -BeNullOrEmpty
@@ -206,8 +211,9 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
             Assert-MockCalled -CommandName Get-SqlServerVersion -Exactly 1 -Scope It -ModuleName dbatools
             Assert-MockCalled -CommandName Invoke-Program -Exactly 2 -Scope It -ModuleName dbatools
             Assert-MockCalled -CommandName Restart-Computer -Exactly 1 -Scope It -ModuleName dbatools
-            Assert-MockCalled -CommandName Register-RemoteSessionConfiguration -Exactly 0 -Scope It -ModuleName dbatools
-            Assert-MockCalled -CommandName Unregister-RemoteSessionConfiguration -Exactly 1 -Scope It -ModuleName dbatools
+            #no remote execution in tests
+            #Assert-MockCalled -CommandName Register-RemoteSessionConfiguration -Exactly 0 -Scope It -ModuleName dbatools
+            #Assert-MockCalled -CommandName Unregister-RemoteSessionConfiguration -Exactly 1 -Scope It -ModuleName dbatools
 
             $result | Should -Not -BeNullOrEmpty
             $result.MajorVersion | Should -Be 2008
@@ -224,8 +230,9 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
             Assert-MockCalled -CommandName Get-SqlServerVersion -Exactly 1 -Scope It -ModuleName dbatools
             Assert-MockCalled -CommandName Invoke-Program -Exactly 4 -Scope It -ModuleName dbatools
             Assert-MockCalled -CommandName Restart-Computer -Exactly 2 -Scope It -ModuleName dbatools
-            Assert-MockCalled -CommandName Register-RemoteSessionConfiguration -Exactly 0 -Scope It -ModuleName dbatools
-            Assert-MockCalled -CommandName Unregister-RemoteSessionConfiguration -Exactly 1 -Scope It -ModuleName dbatools
+            #no remote execution in tests
+            #Assert-MockCalled -CommandName Register-RemoteSessionConfiguration -Exactly 0 -Scope It -ModuleName dbatools
+            #Assert-MockCalled -CommandName Unregister-RemoteSessionConfiguration -Exactly 1 -Scope It -ModuleName dbatools
 
             ($results | Measure-Object).Count | Should -Be 2
 
@@ -273,6 +280,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
                 'SQLServer2008-KB2738350-x64-ENU.exe'
                 'SQLServer2016-KB4040714-x64.exe'
                 'SQLServer2008-KB2738350-x64-ENU.exe'
+                'SQLServer2016-KB4024305-x64-ENU.exe'
             )
             foreach ($kb in $kbs) {
                 $null = New-Item -ItemType File -Path (Join-Path $exeDir $kb) -Force
@@ -288,8 +296,9 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
             Assert-MockCalled -CommandName Get-SqlServerVersion -Exactly 1 -Scope It -ModuleName dbatools
             Assert-MockCalled -CommandName Invoke-Program -Exactly 2 -Scope It -ModuleName dbatools
             Assert-MockCalled -CommandName Restart-Computer -Exactly 1 -Scope It -ModuleName dbatools
-            Assert-MockCalled -CommandName Register-RemoteSessionConfiguration -Exactly 0 -Scope It -ModuleName dbatools
-            Assert-MockCalled -CommandName Unregister-RemoteSessionConfiguration -Exactly 1 -Scope It -ModuleName dbatools
+            #no remote execution in tests
+            #Assert-MockCalled -CommandName Register-RemoteSessionConfiguration -Exactly 0 -Scope It -ModuleName dbatools
+            #Assert-MockCalled -CommandName Unregister-RemoteSessionConfiguration -Exactly 1 -Scope It -ModuleName dbatools
 
             $result | Should -Not -BeNullOrEmpty
             $result.MajorVersion | Should -Be 2008
@@ -301,21 +310,22 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
             $result.Message | Should -BeNullOrEmpty
             $result.ExtractPath | Should -BeLike '*\dbatools_KB*Extract'
         }
-        It "Should mock-upgrade SQL2008 to SP2CU5 (KB979450 + KB2555408) " {
-            $result = Update-DbaInstance -ComputerName $script:instance1 -Kb 979450, 2555408 -RepositoryPath $exeDir -Restart -EnableException -Confirm:$false
+        It "Should mock-upgrade SQL2016 to SP1CU4 (KB3182545 + KB4024305) " {
+            $result = Update-DbaInstance -ComputerName $script:instance1 -Kb 3182545, 4024305 -RepositoryPath $exeDir -Restart -EnableException -Confirm:$false
             Assert-MockCalled -CommandName Get-SqlServerVersion -Exactly 2 -Scope It -ModuleName dbatools
             Assert-MockCalled -CommandName Invoke-Program -Exactly 2 -Scope It -ModuleName dbatools
             Assert-MockCalled -CommandName Restart-Computer -Exactly 1 -Scope It -ModuleName dbatools
-            Assert-MockCalled -CommandName Register-RemoteSessionConfiguration -Exactly 0 -Scope It -ModuleName dbatools
-            Assert-MockCalled -CommandName Unregister-RemoteSessionConfiguration -Exactly 1 -Scope It -ModuleName dbatools
+            #no remote execution in tests
+            #Assert-MockCalled -CommandName Register-RemoteSessionConfiguration -Exactly 0 -Scope It -ModuleName dbatools
+            #Assert-MockCalled -CommandName Unregister-RemoteSessionConfiguration -Exactly 1 -Scope It -ModuleName dbatools
 
             $result | Should -Not -BeNullOrEmpty
-            $result.MajorVersion | Should -Be 2008
-            $result.TargetLevel | Should -Be SP2CU5
-            $result.KB | Should -Be 2555408
+            $result.MajorVersion | Should -Be 2016
+            $result.TargetLevel | Should -Be SP1CU4
+            $result.KB | Should -Be 4024305
             $result.Successful | Should -Be $true
             $result.Restarted | Should -Be $true
-            $result.Installer | Should -Be (Join-Path $exeDir 'SQLServer2008-KB2555408-x64-ENU.exe')
+            $result.Installer | Should -Be (Join-Path $exeDir 'SQLServer2016-KB4024305-x64-ENU.exe')
             $result.Message | Should -BeNullOrEmpty
             $result.ExtractPath | Should -BeLike '*\dbatools_KB*Extract'
         }
@@ -324,8 +334,9 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
             Assert-MockCalled -CommandName Get-SqlServerVersion -Exactly 4 -Scope It -ModuleName dbatools
             Assert-MockCalled -CommandName Invoke-Program -Exactly 6 -Scope It -ModuleName dbatools
             Assert-MockCalled -CommandName Restart-Computer -Exactly 3 -Scope It -ModuleName dbatools
-            Assert-MockCalled -CommandName Register-RemoteSessionConfiguration -Exactly 0 -Scope It -ModuleName dbatools
-            Assert-MockCalled -CommandName Unregister-RemoteSessionConfiguration -Exactly 1 -Scope It -ModuleName dbatools
+            #no remote execution in tests
+            #Assert-MockCalled -CommandName Register-RemoteSessionConfiguration -Exactly 0 -Scope It -ModuleName dbatools
+            #Assert-MockCalled -CommandName Unregister-RemoteSessionConfiguration -Exactly 1 -Scope It -ModuleName dbatools
 
             ($results | Measure-Object).Count | Should -Be 3
 

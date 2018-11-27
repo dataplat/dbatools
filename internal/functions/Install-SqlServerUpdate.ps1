@@ -122,8 +122,9 @@ function Install-SqlServerUpdate {
                 }
                 if ($targetKB) {
                     $targetLevel = "$($targetKB.SPLevel | Where-Object { $_ -ne 'LATEST' })$($targetKB.CULevel)"
-                    Write-Message -Level Verbose -Message "Upgrading SQL$($targetKB.NameLevel) to $targetLevel (KB$($targetKB.KBLevel))"
-                    $kbLookupParams.KB = $targetKB.KBLevel
+                    $targetKBLevel = $targetKB.KBLevel | Select-Object -First 1
+                    Write-Message -Level Verbose -Message "Upgrading SQL$($targetKB.NameLevel) to $targetLevel (KB$($targetKBLevel))"
+                    $kbLookupParams.KB = $targetKBLevel
                 } else {
                     Stop-Function -Message "Could not find a KB$KB reference for $currentMajorVersion SP $ServicePack CU $CumulativeUpdate" -EnableException $true
                 }
