@@ -4,10 +4,10 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        $paramCount = 5
+        $paramCount = 9
         $defaultParamCount = 11
         [object[]]$params = (Get-ChildItem function:\Get-DbaBuildReference).Parameters.Keys
-        $knownParameters = 'Build', 'SqlInstance', 'SqlCredential', 'Update', 'EnableException'
+        $knownParameters = 'Build', 'SqlInstance', 'SqlCredential', 'Update', 'EnableException','KB','SqlServerVersion','ServicePack','CumulativeUpdate'
         It "Should contain our specific parameters" {
             ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
         }
@@ -152,6 +152,16 @@ Describe "$commandname Integration Tests" -Tags 'IntegrationTests' {
         It "Should return an exact match" {
             foreach ($r in $results) {
                 $r.MatchType | Should Be "Exact"
+                $kbMatch = Get-DbaBuildReference -KB ($r.KBLevel | Select-Object -First 1)
+                foreach ($m in $kbMatch) {
+                    $m.MatchType | Should Be "Exact"
+                    $m.KBLevel | Should BeIn $r.KBLevel
+                }
+                $versionMatch = Get-DbaBuildReference -SqlServerVersion $r.NameLevel -ServicePack ($r.SPLevel | Where-Object { $_ -ne 'LATEST' }) -CumulativeUpdate $r.CULevel
+                foreach ($v in $versionMatch) {
+                    $v.MatchType | Should Be "Exact"
+                    $v.KBLevel | Should BeIn $r.KBLevel
+                }
             }
         }
     }
