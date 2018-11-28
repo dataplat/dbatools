@@ -7,7 +7,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         $paramCount = 9
         $defaultParamCount = 11
         [object[]]$params = (Get-ChildItem function:\Get-DbaBuildReference).Parameters.Keys
-        $knownParameters = 'Build', 'SqlInstance', 'SqlCredential', 'Update', 'EnableException','KB','SqlServerVersion','ServicePack','CumulativeUpdate'
+        $knownParameters = 'Build', 'SqlInstance', 'SqlCredential', 'Update', 'EnableException','KB','MajorVersion','ServicePack','CumulativeUpdate'
         It "Should contain our specific parameters" {
             ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
         }
@@ -157,7 +157,7 @@ Describe "$commandname Integration Tests" -Tags 'IntegrationTests' {
                     $m.MatchType | Should Be "Exact"
                     $m.KBLevel | Should BeIn $r.KBLevel
                 }
-                $versionMatch = Get-DbaBuildReference -SqlServerVersion $r.NameLevel -ServicePack ($r.SPLevel | Where-Object { $_ -ne 'LATEST' }) -CumulativeUpdate $r.CULevel
+                $versionMatch = Get-DbaBuildReference -MajorVersion $r.NameLevel -ServicePack ($r.SPLevel | Where-Object { $_ -ne 'LATEST' }) -CumulativeUpdate $r.CULevel
                 foreach ($v in $versionMatch) {
                     $v.MatchType | Should Be "Exact"
                     $v.KBLevel | Should BeIn $r.KBLevel

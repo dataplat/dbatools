@@ -14,7 +14,7 @@ function Get-DbaBuildReference {
     .PARAMETER Kb
         Get a KB information based on its number. Supported format: KBXXXXXX, or simply XXXXXX.
 
-    .PARAMETER SqlServerVersion
+    .PARAMETER MajorVersion
         Get a KB information based on SQL Server version. Can be refined further by -ServicePack and -CumulativeUpdate parameters.
         Examples: SQL2008 | 2008R2 | 2016
 
@@ -86,7 +86,7 @@ function Get-DbaBuildReference {
         [Parameter(Mandatory, ParameterSetName = 'HFLevel')]
         [ValidateNotNullOrEmpty()]
         [string]
-        $SqlServerVersion,
+        $MajorVersion,
 
         [Parameter(ParameterSetName = 'HFLevel')]
         [ValidateNotNullOrEmpty()]
@@ -119,8 +119,8 @@ function Get-DbaBuildReference {
     begin {
         #region verifying parameters
         if ($PSCmdlet.ParameterSetName -eq 'HFLevel') {
-            if ($SqlServerVersion -match '^(SQL)?(\d{4}(R2)?)$') {
-                $SqlServerVersion = $Matches[2]
+            if ($MajorVersion -match '^(SQL)?(\d{4}(R2)?)$') {
+                $MajorVersion = $Matches[2]
             } else {
                 Stop-Function -Message "Incorrect SQL Server version format: use SQL2XXX or just 2XXXX - SQL2012, SQL2008R2"
                 return
@@ -265,7 +265,7 @@ function Get-DbaBuildReference {
 
                 [Parameter(Mandatory, ParameterSetName = 'HFLevel')]
                 [string]
-                $SqlServerVersion,
+                $MajorVersion,
 
                 [Parameter(ParameterSetName = 'HFLevel')]
                 [string]
@@ -297,9 +297,9 @@ function Get-DbaBuildReference {
                     Stop-Function -Message "Wrong KB name $kb"
                     return
                 }
-            } elseif ($SqlServerVersion) {
-                Write-Message -Level Verbose -Message "Looking for SQL $SqlServerVersion SP $ServicePack CU $CumulativeUpdate"
-                $kbVersion = $Data | Where-Object Name -eq $SqlServerVersion
+            } elseif ($MajorVersion) {
+                Write-Message -Level Verbose -Message "Looking for SQL $MajorVersion SP $ServicePack CU $CumulativeUpdate"
+                $kbVersion = $Data | Where-Object Name -eq $MajorVersion
                 $IdxVersion = $Data | Where-Object Version -like "$($kbVersion.VersionObject.Major).$($kbVersion.VersionObject.Minor).*"
             }
 
@@ -339,7 +339,7 @@ function Get-DbaBuildReference {
                 if (($Build -and $el.Version -eq $Build) -or ($Kb -and $el.KBList -eq $currentKb)) {
                     $Detected.MatchType = 'Exact'
                     break
-                } elseif ($SqlServerVersion -and $Detected.SP -contains $ServicePack -and (!$CumulativeUpdate -or ($el.CU -and $el.CU -eq $CumulativeUpdate))) {
+                } elseif ($MajorVersion -and $Detected.SP -contains $ServicePack -and (!$CumulativeUpdate -or ($el.CU -and $el.CU -eq $CumulativeUpdate))) {
                     $Detected.MatchType = 'Exact'
                     break
                 }
@@ -426,7 +426,7 @@ function Get-DbaBuildReference {
         }
 
         if ($PSCmdlet.ParameterSetName -eq 'HFLevel') {
-            $Detected = Resolve-DbaBuild -SqlServerVersion $SqlServerVersion -ServicePack $ServicePack -CumulativeUpdate $CumulativeUpdate -Data $IdxRef -EnableException $EnableException
+            $Detected = Resolve-DbaBuild -MajorVersion $MajorVersion -ServicePack $ServicePack -CumulativeUpdate $CumulativeUpdate -Data $IdxRef -EnableException $EnableException
 
             [PSCustomObject]@{
                 SqlInstance    = $null

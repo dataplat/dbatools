@@ -89,7 +89,7 @@ function Install-SqlServerUpdate {
                         Write-Message -Level Verbose -Message "Upgrading SQL$($targetKB.NameLevel) to a latest Cumulative Update $targetLevel (KB$($targetKB.KBLevel))"
                         $kbLookupParams.KB = $targetKB.KBLevel
                     } elseif ($Type -eq 'ServicePack') {
-                        $targetKB = Get-DbaBuildReference -SqlServerVersion $targetKB.NameLevel -ServicePack $targetSP
+                        $targetKB = Get-DbaBuildReference -MajorVersion $targetKB.NameLevel -ServicePack $targetSP
                         $targetLevel = $targetKB.SPLevel | Where-Object { $_ -ne 'LATEST' }
                         Write-Message -Level Verbose -Message "Upgrading SQL$($targetKB.NameLevel) to a latest Service Pack $targetLevel (KB$($targetKB.KBLevel))"
                         $kbLookupParams.KB = $targetKB.KBLevel
@@ -104,15 +104,15 @@ function Install-SqlServerUpdate {
                     #Cumulative update is present - installing CU
                     if (Test-Bound -Parameter ServicePack) {
                         #Service pack is present - using it as a reference
-                        $targetKB = Get-DbaBuildReference -SqlServerVersion $currentVersion.NameLevel -ServicePack $ServicePack -CumulativeUpdate $CumulativeUpdate
+                        $targetKB = Get-DbaBuildReference -MajorVersion $currentVersion.NameLevel -ServicePack $ServicePack -CumulativeUpdate $CumulativeUpdate
                     } else {
                         #Service pack not present - using current SP level
                         $targetSP = $currentVersion.SPLevel | Where-Object { $_ -ne 'LATEST' } | Select-Object -First 1
-                        $targetKB = Get-DbaBuildReference -SqlServerVersion $currentVersion.NameLevel -ServicePack $targetSP -CumulativeUpdate $CumulativeUpdate
+                        $targetKB = Get-DbaBuildReference -MajorVersion $currentVersion.NameLevel -ServicePack $targetSP -CumulativeUpdate $CumulativeUpdate
                     }
                 } elseif ($ServicePack -gt 0) {
                     #Service pack number was passed without CU - installing service pack
-                    $targetKB = Get-DbaBuildReference -SqlServerVersion $currentVersion.NameLevel -ServicePack $ServicePack
+                    $targetKB = Get-DbaBuildReference -MajorVersion $currentVersion.NameLevel -ServicePack $ServicePack
                 } elseif ($KB) {
                     $targetKB = Get-DbaBuildReference -KB $KB
                     if ($targetKB -and $currentVersion.NameLevel -ne $targetKB.NameLevel) {
