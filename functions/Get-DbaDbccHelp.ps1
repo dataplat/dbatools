@@ -48,7 +48,7 @@ function Get-DbaDbccHelp {
 
         Sets TraeFlag 2588 on for session and then runs the command DBCC HELP(WritePage) WITH NO_INFOMSGS against the SQL Server instance SQLInstance
 
-          #>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
@@ -92,9 +92,9 @@ function Get-DbaDbccHelp {
             }
 
             [PSCustomObject]@{
-                Operation    = $DbccStatement
-                Cmd          = "DBCC HELP($DbccStatement)"
-                Output       = $results
+                Operation = $DbccStatement
+                Cmd       = "DBCC HELP($DbccStatement)"
+                Output    = $results
             }
 
         }

@@ -47,7 +47,7 @@ function Get-DbaDbccUserOptions {
 
         Connects using sqladmin credential and gets results of DBCC USEROPTIONS for Instance Server1 using
 
-       #>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
@@ -76,8 +76,7 @@ function Get-DbaDbccUserOptions {
             } catch {
                 Stop-Function -Message "Failure running $query against $instance" -ErrorRecord $_ -Target $server -Continue
             }
-            foreach ($row in $results)
-            {
+            foreach ($row in $results) {
                 [PSCustomObject]@{
                     ComputerName = $server.ComputerName
                     InstanceName = $server.ServiceName

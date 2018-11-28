@@ -42,7 +42,7 @@ function Get-DbaDbccMemoryStatus {
 
         Get output of DBCC MEMORYSTATUS for all servers in Server Central Management Server
 
-          #>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]

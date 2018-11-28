@@ -47,7 +47,7 @@ function Get-DbaDbccProcCache {
 
         Connects using sqladmin credential and gets results of DBCC PROCCACHE for Instance Server1 using
 
-          #>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]

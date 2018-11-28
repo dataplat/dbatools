@@ -101,7 +101,7 @@ function Invoke-DbaDbccFreeCache {
 
         Runs the command DBCC FREESYSTEMCACHE ('ALL', default) WITH MARK_IN_USE_FOR_REMOVAL against the instance SqlServer2017 using Windows Authentication. This will to release entries once the entries become unused for all the caches with entries specific to the resource pool named "default".
 
-          #>
+    #>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess, ConfirmImpact = 'High')]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
