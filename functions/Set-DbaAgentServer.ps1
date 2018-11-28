@@ -151,8 +151,7 @@ function Set-DbaAgentServer {
         [switch]$SqlAgentRestart,
         [switch]$SqlServerRestart,
         [switch]$WriteOemErrorLog,
-        [switch][Alias('Silent')]
-        $EnableException
+        [switch]$EnableException
 
 #$AgentLogLevel             Property   Microsoft.SqlServer.Management.Smo.Agent.AgentLogLevels AgentLogLevel {get;set;}
 #$AgentMailType             Property   Microsoft.SqlServer.Management.Smo.Agent.AgentMailType AgentMailType {get;set;}
