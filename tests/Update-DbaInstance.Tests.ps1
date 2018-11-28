@@ -504,3 +504,35 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         }
     }
 }
+
+Describe "$CommandName Integration Tests" -Tag 'IntegrationTests' {
+    BeforeAll {
+        #ignore restart requirements
+        Mock -CommandName Test-PendingReboot -MockWith { $false } -ModuleName dbatools
+        #ignore elevation requirements
+        Mock -CommandName Test-ElevationRequirement -MockWith { $null } -ModuleName dbatools
+        #no restarts
+        Mock -CommandName Restart-Computer -MockWith { $null } -ModuleName dbatools
+        #Mock Get-Item and Get-ChildItem with a dummy file
+        Mock -CommandName Get-ChildItem -ModuleName dbatools -MockWith {
+            [pscustomobject]@{
+                FullName = 'c:\mocked\filename.exe'
+            }
+        }
+        Mock -CommandName Get-Item -ModuleName dbatools -MockWith { 'c:\mocked' }
+    }
+    Context "WhatIf upgrade all local versions to latest SPCU" {
+        It "Should whatif-upgrade to latest SPCU" {
+            $results = Update-DbaInstance -ComputerName $script:instance1 -Latest -Type ServicePack -Path $exeDir -Restart -EnableException -WhatIf 3>$null
+            foreach ($result in $results) {
+                $result.MajorVersion | Should -BeLike 20*
+                $result.TargetLevel | Should -BeLike 'SP*'
+                $result.KB | Should -Not -BeNullOrEmpty
+                $result.Successful | Should -Be $false
+                $result.Restarted | Should -Be $false
+                $result.Installer | Should -Be 'c:\mocked\filename.exe'
+                $result.Message | Should -Be 'The installation was not performed - running in WhatIf mode'
+            }
+        }
+    }
+}
