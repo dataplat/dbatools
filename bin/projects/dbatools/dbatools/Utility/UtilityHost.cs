@@ -1,7 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
+using System.IO.Compression;
 using System.Management.Automation;
 using System.Reflection;
+using System.Text;
 
 namespace Sqlcollaborative.Dbatools.Utility
 {
@@ -126,6 +129,40 @@ namespace Sqlcollaborative.Dbatools.Utility
             }
             // Return true if all characters matched
             return (matched == String.Length);
+        }
+
+        /// <summary>
+        /// Compress string using default zip algorithms
+        /// </summary>
+        /// <param name="String">The string to compress</param>
+        /// <returns>Returns a compressed string.</returns>
+        public static string CompressString(string String)
+        {
+            byte[] bytes = Encoding.UTF8.GetBytes(String);
+            MemoryStream outputStream = new MemoryStream();
+            GZipStream gZipStream = new GZipStream(outputStream, CompressionMode.Compress);
+            gZipStream.Write(bytes, 0, bytes.Length);
+            gZipStream.Close();
+            outputStream.Close();
+            return Convert.ToBase64String(outputStream.ToArray());
+        }
+
+        /// <summary>
+        /// Expand a string using default zig algorithms
+        /// </summary>
+        /// <param name="CompressedString">The compressed string to expand</param>
+        /// <returns>Returns an expanded string.</returns>
+        public static string ExpandString(string CompressedString)
+        {
+            MemoryStream inputStream = new MemoryStream(Convert.FromBase64String(CompressedString));
+            MemoryStream outputStream = new MemoryStream();
+            GZipStream converter = new GZipStream(inputStream, CompressionMode.Decompress);
+            converter.CopyTo(outputStream);
+            converter.Close();
+            inputStream.Close();
+            string result = Encoding.UTF8.GetString(outputStream.ToArray());
+            outputStream.Close();
+            return result;
         }
 
         /// <summary>
