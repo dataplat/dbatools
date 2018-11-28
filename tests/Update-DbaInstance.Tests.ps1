@@ -21,7 +21,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
         $defaultParamCount = 13
         [object[]]$params = (Get-ChildItem function:\$CommandName).Parameters.Keys
-        $knownParameters = 'ComputerName', 'Credential', 'SqlServerVersion', 'MajorVersion', 'Type', 'Latest', 'RepositoryPath', 'Restart', 'EnableException','Kb'
+        $knownParameters = 'ComputerName', 'Credential', 'Version', 'MajorVersion', 'Type', 'Latest', 'RepositoryPath', 'Restart', 'EnableException','Kb'
         $paramCount = $knownParameters.Count
         It "Should contain our specific parameters" {
             ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
@@ -422,7 +422,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
                         $cuLevel = $tLevel
                     }
                     It "$v to $cuLevel" {
-                        $results = Update-DbaInstance -SqlServerVersion "$v$cuLevel" -RepositoryPath 'mocked' -Restart -EnableException -Confirm:$false
+                        $results = Update-DbaInstance -Version "$v$cuLevel" -RepositoryPath 'mocked' -Restart -EnableException -Confirm:$false
                         Assert-MockCalled -CommandName Get-SqlServerVersion -Exactly $steps -Scope It -ModuleName dbatools
                         Assert-MockCalled -CommandName Invoke-Program -Exactly ($steps*2) -Scope It -ModuleName dbatools
                         Assert-MockCalled -CommandName Restart-Computer -Exactly $steps -Scope It -ModuleName dbatools
@@ -473,18 +473,18 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         It "fails when a reboot is pending" {
             #override default mock
             Mock -CommandName Test-PendingReboot -MockWith { $true } -ModuleName dbatools
-            { Update-DbaInstance -SqlServerVersion 2008SP3CU7 -EnableException } | Should throw 'Reboot the computer before proceeding'
+            { Update-DbaInstance -Version 2008SP3CU7 -EnableException } | Should throw 'Reboot the computer before proceeding'
             #revert default mock
             Mock -CommandName Test-PendingReboot -MockWith { $false } -ModuleName dbatools
         }
-        It "fails when SqlServerVersion string is incorrect" {
-            { Update-DbaInstance -SqlServerVersion '' -EnableException } | Should throw 'Cannot validate argument on parameter ''SqlServerVersion'''
-            { Update-DbaInstance -SqlServerVersion $null -EnableException } | Should throw 'Cannot validate argument on parameter ''SqlServerVersion'''
-            { Update-DbaInstance -SqlServerVersion SQL2008 -EnableException } | Should throw 'Either SP or CU should be specified'
-            { Update-DbaInstance -SqlServerVersion SQL2008-SP3 -EnableException } | Should throw 'is an incorrect SqlServerVersion value'
-            { Update-DbaInstance -SqlServerVersion SP2CU -EnableException } | Should throw 'is an incorrect SqlServerVersion value'
-            { Update-DbaInstance -SqlServerVersion SPCU2 -EnableException } | Should throw 'is an incorrect SqlServerVersion value'
-            { Update-DbaInstance -SqlServerVersion SQLSP2CU2 -EnableException } | Should throw 'is an incorrect SqlServerVersion value'
+        It "fails when Version string is incorrect" {
+            { Update-DbaInstance -Version '' -EnableException } | Should throw 'Cannot validate argument on parameter ''Version'''
+            { Update-DbaInstance -Version $null -EnableException } | Should throw 'Cannot validate argument on parameter ''Version'''
+            { Update-DbaInstance -Version SQL2008 -EnableException } | Should throw 'Either SP or CU should be specified'
+            { Update-DbaInstance -Version SQL2008-SP3 -EnableException } | Should throw 'is an incorrect Version value'
+            { Update-DbaInstance -Version SP2CU -EnableException } | Should throw 'is an incorrect Version value'
+            { Update-DbaInstance -Version SPCU2 -EnableException } | Should throw 'is an incorrect Version value'
+            { Update-DbaInstance -Version SQLSP2CU2 -EnableException } | Should throw 'is an incorrect Version value'
         }
         It "fails when MajorVersion string is incorrect" {
             { Update-DbaInstance -MajorVersion 08 -Latest -EnableException } | Should throw 'is an incorrect MajorVersion value'
@@ -492,14 +492,14 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         }
         It "fails when KB is missing in the folder" {
             { Update-DbaInstance -Latest -RepositoryPath $exeDir -EnableException } | Should throw 'Could not find installer for the SQL2008 update KB'
-            { Update-DbaInstance -SqlServerVersion 2008SP3CU7 -RepositoryPath $exeDir -EnableException } | Should throw 'Could not find installer for the SQL2008 update KB'
+            { Update-DbaInstance -Version 2008SP3CU7 -RepositoryPath $exeDir -EnableException } | Should throw 'Could not find installer for the SQL2008 update KB'
         }
         It "fails when SP level is lower than required" {
             { Update-DbaInstance -Latest -Type CumulativeUpdate -EnableException } | Should throw 'Current SP version SQL2008SP2 is not the latest available'
         }
         It "fails when repository is not available" {
-            { Update-DbaInstance -SqlServerVersion 2008SP3CU7 -RepositoryPath .\NonExistingFolder -EnableException } | Should throw 'Cannot find path'
-            { Update-DbaInstance -SqlServerVersion 2008SP3CU7 -EnableException } | Should throw 'Path to SQL Server updates folder is not set'
+            { Update-DbaInstance -Version 2008SP3CU7 -RepositoryPath .\NonExistingFolder -EnableException } | Should throw 'Cannot find path'
+            { Update-DbaInstance -Version 2008SP3CU7 -EnableException } | Should throw 'Path to SQL Server updates folder is not set'
         }
     }
 }

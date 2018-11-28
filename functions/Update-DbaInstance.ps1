@@ -32,7 +32,7 @@ function Update-DbaInstance {
     .PARAMETER KB
         Install a specific update or list of updates. Can be a number of a string KBXXXXXXX.
 
-    .PARAMETER SqlServerVersion
+    .PARAMETER Version
         A target version of the installation you want to reach. Can be defined using the following general pattern: <MajorVersion><SPX><CUX>.
         Any part of the pattern can be ommitted if needed:
         2008R2SP1 - will update SQL 2008R2 to SP1
@@ -81,7 +81,7 @@ function Update-DbaInstance {
         Requires Local Admin rights on destination computer(s).
 
     .EXAMPLE
-        PS C:\> Update-DbaInstance -ComputerName SQL1 -SqlServerVersion SP3 -RepositoryPath \\network\share
+        PS C:\> Update-DbaInstance -ComputerName SQL1 -Version SP3 -RepositoryPath \\network\share
 
         Updates all applicable SQL Server installations on SQL1 to SP3.
         SP3 binary files will be
@@ -114,7 +114,7 @@ function Update-DbaInstance {
         [pscredential]$Credential,
         [Parameter(Mandatory, ParameterSetName = 'Version')]
         [ValidateNotNullOrEmpty()]
-        [string[]]$SqlServerVersion,
+        [string[]]$Version,
         [Parameter(ParameterSetName = 'Latest')]
         [string[]]$MajorVersion,
         [Parameter(ParameterSetName = 'Latest')]
@@ -134,8 +134,8 @@ function Update-DbaInstance {
     }
     process {
         if ($PSCmdlet.ParameterSetName -eq 'Version') {
-            if ($SqlServerVersion -notmatch '^((SQL)?\d{4}(R2)?)?\s*(RTM|SP\d+)?\s*(CU\d+)?$') {
-                Stop-Function -Message "$SqlServerVersion is an incorrect SqlServerVersion value, please refer to Get-Help Update-DbaInstance -Parameter SqlServerVersion"
+            if ($Version -notmatch '^((SQL)?\d{4}(R2)?)?\s*(RTM|SP\d+)?\s*(CU\d+)?$') {
+                Stop-Function -Message "$Version is an incorrect Version value, please refer to Get-Help Update-DbaInstance -Parameter Version"
                 return
             }
         } elseif ($PSCmdlet.ParameterSetName -eq 'Latest') {
@@ -177,12 +177,12 @@ function Update-DbaInstance {
             }
         } else {
             if ($PSCmdlet.ParameterSetName -eq 'Version') {
-                foreach ($ver in $SqlServerVersion) {
+                foreach ($ver in $Version) {
                     $currentAction = @{}
                     if ($ver -and $ver -match '^(SQL)?(\d{4}(R2)?)?\s*(RTM|SP)?(\d+)?(CU)?(\d+)?') {
-                        Write-Message -Level Debug "Parsed SqlServerVersion as $($Matches[2,5,7] | ConvertTo-Json -Depth 1 -Compress)"
+                        Write-Message -Level Debug "Parsed Version as $($Matches[2,5,7] | ConvertTo-Json -Depth 1 -Compress)"
                         if (-not ($Matches[5] -or $Matches[7])) {
-                            Stop-Function -Message "Either SP or CU should be specified in $ver, please refer to Get-Help Update-DbaInstance -Parameter SqlServerVersion"
+                            Stop-Function -Message "Either SP or CU should be specified in $ver, please refer to Get-Help Update-DbaInstance -Parameter Version"
                             return
                         }
                         if ($null -ne $Matches[2]) {
@@ -198,7 +198,7 @@ function Update-DbaInstance {
                             $actions += $currentAction.Clone() + @{ CumulativeUpdate = $Matches[7] }
                         }
                     } else {
-                        Stop-Function -Message "$ver is an incorrect SqlServerVersion value, please refer to Get-Help Update-DbaInstance -Parameter SqlServerVersion"
+                        Stop-Function -Message "$ver is an incorrect Version value, please refer to Get-Help Update-DbaInstance -Parameter Version"
                         return
                     }
                 }
