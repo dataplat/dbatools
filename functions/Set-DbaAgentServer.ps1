@@ -40,8 +40,9 @@ function Set-DbaAgentServer {
     .PARAMETER IdleCpuPercentage
         Idle CPU Percentage value to be used
 
-    .PARAMETER IsCpuPollingEnabled
-        Enable the Polling. If you want to set it to false you should use -IsCpuPollingEnabled:$false
+    .PARAMETER CpuPolling
+        Enable or Disable the Polling.
+        Allowed values Enabled, Disabled
 
     .PARAMETER LocalHostAlias
         The value for Local Host Alias configuration
@@ -58,26 +59,32 @@ function Set-DbaAgentServer {
     .PARAMETER NetSendRecipient
         The Net send recipient value
 
-    .PARAMETER ReplaceAlertTokensEnabled
-        Enable the Token replacement property. If you want to set it to false you should use -ReplaceAlertTokensEnabled:$false
+    .PARAMETER ReplaceAlertTokens
+        Enable or Disable the Token replacement property.
+        Allowed values Enabled, Disabled
 
     .PARAMETER SaveInSentFolder
-        Specify if a Copy of the sent messages is save in the Sent Items folder. If you want to set it to false you should use -SaveInSentFolder:$false
+        Enable or Disable the copy of the sent messages is save in the Sent Items folder.
+        Allowed values Enabled, Disabled
 
     .PARAMETER SqlAgentAutoStart
-        Enable the SQL Agent Auto Start. If you want to set it to false you should use -SqlAgentAutoStart:$false
+        Enable or Disable the SQL Agent Auto Start.
+        Allowed values Enabled, Disabled
 
     .PARAMETER SqlAgentMailProfile
         The SQL Server Agent Mail Profile to be used. Must exists on database mail profiles.
 
     .PARAMETER SqlAgentRestart
-        Enable the SQL Agent Restart. If you want to set it to false you should use -SqlAgentRestart:$false
+        Enable or Disable the SQL Agent Restart.
+        Allowed values Enabled, Disabled
 
     .PARAMETER SqlServerRestart
-        Enable the SQL Server Restart. If you want to set it to false you should use -SqlServerRestart:$false
+        Enable or Disable the SQL Server Restart.
+        Allowed values Enabled, Disabled
 
     .PARAMETER WriteOemErrorLog
-        Enable the Write OEM Error Log. If you want to set it to false you should use -WriteOemErrorLog:$false
+        Enable or Disable the Write OEM Error Log.
+        Allowed values Enabled, Disabled
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
@@ -107,7 +114,7 @@ function Set-DbaAgentServer {
         Changes the job history retention to 10000 rows with an maximum of 100 rows per job.
 
     .EXAMPLE
-        PS C:\> Set-DbaAgentServer -SqlInstance sql1 -IsCpuPollingEnabled
+        PS C:\> Set-DbaAgentServer -SqlInstance sql1 -CpuPolling Enabled
 
         Enable the CPU Polling configurations.
 
@@ -117,7 +124,7 @@ function Set-DbaAgentServer {
         Set the agent log level to Errors and Warnings on multiple servers.
 
     .EXAMPLE
-        PS C:\> Set-DbaAgentServer -SqlInstance sql1 -IsCpuPollingEnabled:$false
+        PS C:\> Set-DbaAgentServer -SqlInstance sql1 -CpuPolling Disabled
 
         Disable the CPU Polling configurations.
 
@@ -138,19 +145,26 @@ function Set-DbaAgentServer {
         [string]$ErrorLogFile,
         [int]$IdleCpuDuration,
         [int]$IdleCpuPercentage,
-        [switch]$IsCpuPollingEnabled,
+        [ValidateSet("Enabled", "Disabled")]
+        [string]$CpuPolling,
         [string]$LocalHostAlias,
         [int]$LoginTimeout,
         [int]$MaximumHistoryRows,
         [int]$MaximumJobHistoryRows,
         [string]$NetSendRecipient,
-        [switch]$ReplaceAlertTokensEnabled,
-        [switch]$SaveInSentFolder,
-        [switch]$SqlAgentAutoStart,
+        [ValidateSet("Enabled", "Disabled")]
+        [string]$ReplaceAlertTokens,
+        [ValidateSet("Enabled", "Disabled")]
+        [string]$SaveInSentFolder,
+        [ValidateSet("Enabled", "Disabled")]
+        [string]$SqlAgentAutoStart,
         [string]$SqlAgentMailProfile,
-        [switch]$SqlAgentRestart,
-        [switch]$SqlServerRestart,
-        [switch]$WriteOemErrorLog,
+        [ValidateSet("Enabled", "Disabled")]
+        [string]$SqlAgentRestart,
+        [ValidateSet("Enabled", "Disabled")]
+        [string]$SqlServerRestart,
+        [ValidateSet("Enabled", "Disabled")]
+        [string]$WriteOemErrorLog,
         [switch]$EnableException
     )
 
@@ -230,9 +244,9 @@ function Set-DbaAgentServer {
                 $jobServer.IdleCpuPercentage = $IdleCpuPercentage
             }
 
-            if (-not ($null -eq $IsCpuPollingEnabled)) {
+            if ($CpuPolling) {
                 Write-Message -Message "Setting agent server IsCpuPollingEnabled to $IsCpuPollingEnabled" -Level Verbose
-                $jobServer.IsCpuPollingEnabled = $IsCpuPollingEnabled
+                $jobServer.IsCpuPollingEnabled = if ($CpuPolling -eq "Enabled") {$true} else {$false}
             }
 
             if ($LocalHostAlias) {
@@ -260,39 +274,39 @@ function Set-DbaAgentServer {
                 $jobServer.NetSendRecipient = $NetSendRecipient
             }
 
-            if (-not ($null -eq $ReplaceAlertTokensEnabled)) {
-                Write-Message -Message "Setting agent server ReplaceAlertTokensEnabled to $ReplaceAlertTokensEnabled" -Level Verbose
-                $jobServer.ReplaceAlertTokensEnabled = $ReplaceAlertTokensEnabled
+            if ($ReplaceAlertTokens) {
+                Write-Message -Message "Setting agent server ReplaceAlertTokensEnabled to $ReplaceAlertTokens" -Level Verbose
+                $jobServer.ReplaceAlertTokens = if ($ReplaceAlertTokens -eq "Enabled") {$true} else {$false}
             }
 
-            if (-not ($null -eq $SaveInSentFolder)) {
+            if ($SaveInSentFolder) {
                 Write-Message -Message "Setting agent server SaveInSentFolder to $SaveInSentFolder" -Level Verbose
-                $jobServer.SaveInSentFolder = $SaveInSentFolder
+                $jobServer.SaveInSentFolder = if ($SaveInSentFolder -eq "Enabled") {$true} else {$false}
             }
 
-            if (-not ($null -eq $SqlAgentAutoStart)) {
+            if ($SqlAgentAutoStart) {
                 Write-Message -Message "Setting agent server SqlAgentAutoStart to $SqlAgentAutoStart" -Level Verbose
-                $jobServer.SqlAgentAutoStart = $SqlAgentAutoStart
+                $jobServer.SqlAgentAutoStart = if ($SqlAgentAutoStart -eq "Enabled") {$true} else {$false}
             }
 
-            if (-not ($null -eq $SqlAgentMailProfile)) {
+            if ($SqlAgentMailProfile) {
                 Write-Message -Message "Setting agent server SqlAgentMailProfile to $SqlAgentMailProfile" -Level Verbose
                 $jobServer.SqlAgentMailProfile = $SqlAgentMailProfile
             }
 
-            if (-not ($null -eq $SqlAgentRestart)) {
+            if ($SqlAgentRestart) {
                 Write-Message -Message "Setting agent server SqlAgentRestart to $SqlAgentRestart" -Level Verbose
-                $jobServer.SqlAgentRestart = $SqlAgentRestart
+                $jobServer.SqlAgentRestart = if ($SqlAgentRestart -eq "Enabled") {$true} else {$false}
             }
 
-            if (-not ($null -eq $SqlServerRestart)) {
+            if ($SqlServerRestart) {
                 Write-Message -Message "Setting agent server SqlServerRestart to $SqlServerRestart" -Level Verbose
-                $jobServer.SqlServerRestart = $SqlServerRestart
+                $jobServer.SqlServerRestart = if ($SqlServerRestart -eq "Enabled") {$true} else {$false}
             }
 
-            if (-not ($null -eq $WriteOemErrorLog)) {
+            if ($WriteOemErrorLog) {
                 Write-Message -Message "Setting agent server WriteOemErrorLog to $WriteOemErrorLog" -Level Verbose
-                $jobServer.WriteOemErrorLog = $WriteOemErrorLog
+                $jobServer.WriteOemErrorLog = if ($WriteOemErrorLog -eq "Enabled") {$true} else {$false}
             }
 
             #endregion server agent options
