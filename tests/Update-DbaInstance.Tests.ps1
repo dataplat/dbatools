@@ -528,7 +528,7 @@ Describe "$CommandName Integration Tests" -Tag 'IntegrationTests' {
                 $result.MajorVersion | Should -BeLike 20*
                 $result.TargetLevel | Should -BeLike 'SP*'
                 $result.KB | Should -Not -BeNullOrEmpty
-                $result.Successful | Should -Be $false
+                $result.Successful | Should -Be $true
                 $result.Restarted | Should -Be $false
                 $result.Installer | Should -Be 'c:\mocked\filename.exe'
                 $result.Message | Should -Be 'The installation was not performed - running in WhatIf mode'

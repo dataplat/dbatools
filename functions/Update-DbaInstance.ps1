@@ -222,12 +222,12 @@ function Update-DbaInstance {
 				}
                 Write-Message -Level Verbose -Message "Launching installation on $resolvedName with following params: $($actionParam | ConvertTo-Json -Depth 1 -Compress)"
                 $install = Install-SqlServerUpdate @actionParam -ComputerName $resolvedName -Credential $Credential -Restart $Restart -Path $Path
-                if ($install.Successful -contains $false) {
-					#Exit the actions loop altogether - upgrade failed
-                    Stop-Function -Message "Update failed to install on $resolvedName" -Continue -ContinueLabel computers
-				}
 				if ($install) {
-					$install
+                    $install
+                    if ($install.Successful -contains $false) {
+                        #Exit the actions loop altogether - upgrade failed
+                        Stop-Function -Message "Update failed to install on $resolvedName" -Continue -ContinueLabel computers
+                    }
 					if ($install.Restarted -contains $false) {
 						Stop-Function -Message "Please restart $($install.ComputerName) to complete the installation of SQL$($install.MajorVersion)$($install.TargetLevel). No further updates will be installed on this computer." -EnableException $false -Continue -ContinueLabel computers
 					}

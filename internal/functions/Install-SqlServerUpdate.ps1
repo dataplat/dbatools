@@ -197,6 +197,7 @@ function Install-SqlServerUpdate {
                 }
             } else {
                 $message = 'The installation was not performed - running in WhatIf mode'
+                $success = $true
             }
             # return resulting object. This function throws, so all results here are expected to be shown only in a positive light
             [psobject]@{
