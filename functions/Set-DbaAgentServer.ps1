@@ -15,8 +15,8 @@ function Set-DbaAgentServer {
     .PARAMETER InputObject
         Enables piping agent server objects
 
-    .PARAMETER AgentLogType
-        Specifies the agent log type.
+    .PARAMETER AgentLogLevel
+        Specifies the agent log level.
         Allowed values 1, "Errors", 2, "Warnings", 3, "Errors, Warnings", 4, "Informational", 5, "Errors, Informational", 6, "Warnings, Informational", 7, "All"
         The text value can either be lowercase, uppercase or something in between as long as the text is correct.
 
@@ -152,10 +152,6 @@ function Set-DbaAgentServer {
         [switch]$SqlServerRestart,
         [switch]$WriteOemErrorLog,
         [switch]$EnableException
-
-#$AgentLogLevel             Property   Microsoft.SqlServer.Management.Smo.Agent.AgentLogLevels AgentLogLevel {get;set;}
-#$AgentMailType             Property   Microsoft.SqlServer.Management.Smo.Agent.AgentMailType AgentMailType {get;set;}
-#$UserData                  Property   System.Object UserData {get;set;}
     )
 
     begin {
