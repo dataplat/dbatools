@@ -81,15 +81,15 @@ function Get-DbaDbccProcCache {
             If ($Pscmdlet.ShouldProcess("console", "Outputting object")) {
                 foreach ($row in $results) {
                     [PSCustomObject]@{
-                        ComputerName       = $server.ComputerName
-                        InstanceName       = $server.ServiceName
-                        SqlInstance        = $server.DomainInstanceName
-                        Count              = $row[0]
-                        Used               = $row[1]
-                        Active             = $row[2]
-                        CacheSize          = $row[3]
-                        CacheUsed          = $row[4]
-                        CacheActive        = $row[5]
+                        ComputerName = $server.ComputerName
+                        InstanceName = $server.ServiceName
+                        SqlInstance  = $server.DomainInstanceName
+                        Count        = $row[0]
+                        Used         = $row[1]
+                        Active       = $row[2]
+                        CacheSize    = $row[3]
+                        CacheUsed    = $row[4]
+                        CacheActive  = $row[5]
                     }
                 }
             }
