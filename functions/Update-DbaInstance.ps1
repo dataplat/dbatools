@@ -134,7 +134,7 @@ function Update-DbaInstance {
     }
     process {
         if ($PSCmdlet.ParameterSetName -eq 'Version') {
-            if ($SqlServerVersion -notmatch '^((SQL)?\d{4}(R2)?)?\s*(SP\d+)?\s*(CU\d+)?$') {
+            if ($SqlServerVersion -notmatch '^((SQL)?\d{4}(R2)?)?\s*(RTM|SP\d+)?\s*(CU\d+)?$') {
                 Stop-Function -Message "$SqlServerVersion is an incorrect SqlServerVersion value, please refer to Get-Help Update-DbaInstance -Parameter SqlServerVersion"
                 return
             }
@@ -179,20 +179,22 @@ function Update-DbaInstance {
             if ($PSCmdlet.ParameterSetName -eq 'Version') {
                 foreach ($ver in $SqlServerVersion) {
                     $currentAction = @{}
-                    if ($ver -and $ver -match '^(SQL)?(\d{4}(R2)?)?\s*(SP)?(\d+)?(CU)?(\d+)?') {
+                    if ($ver -and $ver -match '^(SQL)?(\d{4}(R2)?)?\s*(RTM|SP)?(\d+)?(CU)?(\d+)?') {
                         Write-Message -Level Debug "Parsed SqlServerVersion as $($Matches[2,5,7] | ConvertTo-Json -Depth 1 -Compress)"
                         if (-not ($Matches[5] -or $Matches[7])) {
                             Stop-Function -Message "Either SP or CU should be specified in $ver, please refer to Get-Help Update-DbaInstance -Parameter SqlServerVersion"
                             return
                         }
-                        if ($Matches[2]) {
+                        if ($null -ne $Matches[2]) {
                             $currentAction += @{ MajorVersion = $Matches[2]}
                         }
-                        if ($Matches[5]) {
+                        if ($null -ne $Matches[5]) {
                             $currentAction += @{ ServicePack = $Matches[5]}
-                            $actions += $currentAction
+                            if ($Matches[5] -ne '0') {
+                                $actions += $currentAction
+                            }
                         }
-                        if ($Matches[7]) {
+                        if ($null -ne $Matches[7]) {
                             $actions += $currentAction.Clone() + @{ CumulativeUpdate = $Matches[7] }
                         }
                     } else {

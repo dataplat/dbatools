@@ -29,7 +29,7 @@ function Install-SqlServerUpdate {
     )
     process {
         # check if any type of the update was specified
-        if ($PSCmdlet.ParameterSetName -eq 'Number' -and -not ($ServicePack -or $CumulativeUpdate)) {
+        if ($PSCmdlet.ParameterSetName -eq 'Number' -and -not ((Test-Bound ServicePack) -or (Test-Bound CumulativeUpdate))) {
             Stop-Function -Message "No update was specified, provide at least one value for either SP/CU" -EnableException $true
         }
         $computer = $ComputerName.ComputerName
@@ -116,11 +116,11 @@ function Install-SqlServerUpdate {
                 } elseif ($KB) {
                     $targetKB = Get-DbaBuildReference -KB $KB
                     if ($targetKB -and $currentVersion.NameLevel -ne $targetKB.NameLevel) {
-                        Write-Message -Level Debug -Message "Not a target Major version, skipping"
+                        Write-Message -Level Debug -Message "$($targetKB.NameLevel) is not a target Major version $($currentVersion.NameLevel), skipping"
                         continue
                     }
                 }
-                if ($targetKB) {
+                if ($targetKB.KBLevel) {
                     if ($targetKB.MatchType -ne 'Exact') {
                         Stop-Function -Message "Couldn't find an exact build match with specified parameters while updating $currentMajorVersion" -EnableException $true
                     }
