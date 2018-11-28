@@ -1,5 +1,5 @@
 function Update-DbaInstance {
-    <#
+	<#
     .SYNOPSIS
         Invokes installation of SQL Server Service Packs and Cumulative Updates.
 
@@ -57,7 +57,8 @@ function Update-DbaInstance {
         Consider setting the following configuration if you want to omit this parameter: `Set-DbatoolsConfig -Name Path.SQLServerUpdates -Value '\\path\to\updates'`
 
     .PARAMETER Restart
-        Restart automatically if required.
+        Restart computer automatically after a successful installation of a patch and wait until it comes back online.
+        Using this parameter is the only way to chain-install more than 1 patch on a computer, since every single patch will require a restart of said computer.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
@@ -84,163 +85,165 @@ function Update-DbaInstance {
         PS C:\> Update-DbaInstance -ComputerName SQL1 -Version SP3 -Path \\network\share
 
         Updates all applicable SQL Server installations on SQL1 to SP3.
-        SP3 binary files will be
+        Binary files for the update will be searched among all files and folders recursively in \\network\share.
 
     .EXAMPLE
-        PS C:\> Update-DbaInstance -ComputerName SQL1, SQL2 -Latest -Restart
+        PS C:\> Update-DbaInstance -ComputerName SQL1, SQL2 -Latest -Restart -Path \\network\share
 
         Updates all applicable SQL Server installations on SQL1 and SQL2 with the most recent patch.
         It will install latest ServicePack, restart the computers, install latest Cumulative Update, and finally restart the computer once again.
+        Binary files for the update will be searched among all files and folders recursively in \\network\share.
 
     .EXAMPLE
-        PS C:\> Update-DbaInstance -ComputerName SQL1 -Latest -MajorVersion 2012 -Type ServicePack
+        PS C:\> Update-DbaInstance -ComputerName SQL1 -Latest -MajorVersion 2012 -Type ServicePack -Path \\network\share
 
         Updates SQL Server 2012 on SQL1 with the most recent ServicePack found in your patch repository.
+        Binary files for the update will be searched among all files and folders recursively in \\network\share.
 
     .EXAMPLE
-        PS C:\> Update-DbaInstance -ComputerName SQL1 -KB 123456 -Restart
+        PS C:\> Update-DbaInstance -ComputerName SQL1 -KB 123456 -Restart -Path \\network\share
 
         Installs KB 123456 on SQL1 and restarts the computer.
-
+        Binary files for the update will be searched among all files and folders recursively in \\network\share.
 
     #>
-    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSShouldProcess", "")]
-    # Shouldprocess is handled by internal function Install-SqlServerUpdate
-    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
-    Param (
-        [parameter(ValueFromPipeline)]
-        [Alias("cn", "host", "Server")]
-        [DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,
-        [pscredential]$Credential,
-        [Parameter(Mandatory, ParameterSetName = 'Version')]
-        [ValidateNotNullOrEmpty()]
-        [string[]]$Version,
-        [Parameter(ParameterSetName = 'Latest')]
-        [string[]]$MajorVersion,
-        [Parameter(ParameterSetName = 'Latest')]
-        [ValidateSet('All', 'ServicePack', 'CumulativeUpdate')]
-        [string]$Type = 'All',
-        [Parameter(Mandatory, ParameterSetName = 'Latest')]
-        [switch]$Latest,
-        [Parameter(Mandatory, ParameterSetName = 'KB')]
-        [ValidateNotNullOrEmpty()]
-        [string[]]$KB,
-        [string[]]$Path,
-        [switch]$Restart,
-        [switch]$EnableException
-    )
-    begin {
+	[Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSShouldProcess", "")]
+	# Shouldprocess is handled by internal function Install-SqlServerUpdate
+	[CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
+	Param (
+		[parameter(ValueFromPipeline)]
+		[Alias("cn", "host", "Server")]
+		[DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,
+		[pscredential]$Credential,
+		[Parameter(Mandatory, ParameterSetName = 'Version')]
+		[ValidateNotNullOrEmpty()]
+		[string[]]$Version,
+		[Parameter(ParameterSetName = 'Latest')]
+		[string[]]$MajorVersion,
+		[Parameter(ParameterSetName = 'Latest')]
+		[ValidateSet('All', 'ServicePack', 'CumulativeUpdate')]
+		[string]$Type = 'All',
+		[Parameter(Mandatory, ParameterSetName = 'Latest')]
+		[switch]$Latest,
+		[Parameter(Mandatory, ParameterSetName = 'KB')]
+		[ValidateNotNullOrEmpty()]
+		[string[]]$KB,
+		[string[]]$Path,
+		[switch]$Restart,
+		[switch]$EnableException
+	)
+	begin {
 
-    }
-    process {
-        if ($PSCmdlet.ParameterSetName -eq 'Version') {
-            if ($Version -notmatch '^((SQL)?\d{4}(R2)?)?\s*(RTM|SP\d+)?\s*(CU\d+)?$') {
-                Stop-Function -Message "$Version is an incorrect Version value, please refer to Get-Help Update-DbaInstance -Parameter Version"
-                return
-            }
-        } elseif ($PSCmdlet.ParameterSetName -eq 'Latest') {
-            $majorVersions = @()
-            foreach ($mv in $MajorVersion) {
-                if ($mv -match '^(SQL)?(\d{4}(R2)?)$') {
-                    $majorVersions += $Matches[2]
-                } else {
-                    Stop-Function -Message "$mv is an incorrect MajorVersion value, please refer to Get-Help Update-DbaInstance -Parameter MajorVersion"
-                    return
-                }
-            }
-        } elseif ($PSCmdlet.ParameterSetName -eq 'KB') {
-            $kbList = @()
-            foreach ($kbItem in $KB) {
-                if ($kbItem -match '^(KB)?(\d+)$') {
-                    $kbList += $Matches[2]
-                } else {
-                    Stop-Function -Message "$kbItem is an incorrect KB value, please refer to Get-Help Update-DbaInstance -Parameter KB"
-                    return
-                }
-            }
-        }
-        $actions = @()
-        if ($Latest) {
-            if ($Type -in 'All', 'ServicePack') {
-                $actions += @{
-                    Type         = 'ServicePack'
-                    Latest       = $true
-                    MajorVersion = $majorVersions
-                }
-            }
-            if ($Type -in 'All', 'CumulativeUpdate') {
-                $actions += @{
-                    Type         = 'CumulativeUpdate'
-                    Latest       = $true
-                    MajorVersion = $majorVersions
-                }
-            }
-        } else {
-            if ($PSCmdlet.ParameterSetName -eq 'Version') {
-                foreach ($ver in $Version) {
-                    $currentAction = @{}
-                    if ($ver -and $ver -match '^(SQL)?(\d{4}(R2)?)?\s*(RTM|SP)?(\d+)?(CU)?(\d+)?') {
-                        Write-Message -Level Debug "Parsed Version as $($Matches[2,5,7] | ConvertTo-Json -Depth 1 -Compress)"
-                        if (-not ($Matches[5] -or $Matches[7])) {
-                            Stop-Function -Message "Either SP or CU should be specified in $ver, please refer to Get-Help Update-DbaInstance -Parameter Version"
-                            return
-                        }
-                        if ($null -ne $Matches[2]) {
-                            $currentAction += @{ MajorVersion = $Matches[2]}
-                        }
-                        if ($null -ne $Matches[5]) {
-                            $currentAction += @{ ServicePack = $Matches[5]}
-                            if ($Matches[5] -ne '0') {
-                                $actions += $currentAction
-                            }
-                        }
-                        if ($null -ne $Matches[7]) {
-                            $actions += $currentAction.Clone() + @{ CumulativeUpdate = $Matches[7] }
-                        }
-                    } else {
-                        Stop-Function -Message "$ver is an incorrect Version value, please refer to Get-Help Update-DbaInstance -Parameter Version"
-                        return
-                    }
-                }
-            } elseif ($PSCmdlet.ParameterSetName -eq 'KB') {
-                foreach ($kbItem in $kbList) {
-                    $actions += @{
-                        KB = $kbItem
-                    }
-                }
-            }
-        }
-        #Resolve all the provided names
-        $resolvedComputers = @()
-        foreach ($computer in $ComputerName) {
-            if ($resolvedComputer = Resolve-DbaNetworkName -ComputerName $computer.ComputerName) {
-                $resolvedComputers += $resolvedComputer.FullComputerName
-            }
-        }
-        #Initialize installations for each computer
-        :computers foreach ($resolvedName in $resolvedComputers) {
-            :actions foreach ($actionParam in $actions) {
-                if (Test-PendingReboot -ComputerName $resolvedName) {
-                    #Exit the actions loop altogether - nothing can be installed here anyways
-                    Stop-Function -Message "$resolvedName is pending a reboot. Reboot the computer before proceeding." -Continue -ContinueLabel computers
-                }
-                try {
-                    Write-Message -Level Verbose -Message "Launching installation on $resolvedName with following params: $($actionParam | ConvertTo-Json -Depth 1 -Compress)"
-                    $install = Install-SqlServerUpdate @actionParam -ComputerName $resolvedName -Credential $Credential -Restart $Restart -Path $Path
-                } catch {
-                    #Exit the actions loop altogether - upgrade failed
-                    Stop-Function -Message "Update failed to install on $resolvedName" -ErrorRecord $_ -Continue -ContinueLabel computers
-                }
-                if ($install) {
-                    $install
-                    if ($install.Restarted -contains $false) {
-                        Stop-Function -Message "Please restart $($install.ComputerName) to complete the installation of SQL$($install.MajorVersion)$($install.TargetLevel). No further updates will be installed on this computer." -EnableException $false -Continue -ContinueLabel computers
-                    }
-                }
-            }
-        }
-    }
-    end {
+	}
+	process {
+		if ($PSCmdlet.ParameterSetName -eq 'Version') {
+			if ($Version -notmatch '^((SQL)?\d{4}(R2)?)?\s*(RTM|SP\d+)?\s*(CU\d+)?$') {
+				Stop-Function -Message "$Version is an incorrect Version value, please refer to Get-Help Update-DbaInstance -Parameter Version"
+				return
+			}
+		} elseif ($PSCmdlet.ParameterSetName -eq 'Latest') {
+			$majorVersions = @()
+			foreach ($mv in $MajorVersion) {
+				if ($mv -match '^(SQL)?(\d{4}(R2)?)$') {
+					$majorVersions += $Matches[2]
+				} else {
+					Stop-Function -Message "$mv is an incorrect MajorVersion value, please refer to Get-Help Update-DbaInstance -Parameter MajorVersion"
+					return
+				}
+			}
+		} elseif ($PSCmdlet.ParameterSetName -eq 'KB') {
+			$kbList = @()
+			foreach ($kbItem in $KB) {
+				if ($kbItem -match '^(KB)?(\d+)$') {
+					$kbList += $Matches[2]
+				} else {
+					Stop-Function -Message "$kbItem is an incorrect KB value, please refer to Get-Help Update-DbaInstance -Parameter KB"
+					return
+				}
+			}
+		}
+		$actions = @()
+		if ($Latest) {
+			if ($Type -in 'All', 'ServicePack') {
+				$actions += @{
+					Type         = 'ServicePack'
+					Latest       = $true
+					MajorVersion = $majorVersions
+				}
+			}
+			if ($Type -in 'All', 'CumulativeUpdate') {
+				$actions += @{
+					Type         = 'CumulativeUpdate'
+					Latest       = $true
+					MajorVersion = $majorVersions
+				}
+			}
+		} else {
+			if ($PSCmdlet.ParameterSetName -eq 'Version') {
+				foreach ($ver in $Version) {
+					$currentAction = @{}
+					if ($ver -and $ver -match '^(SQL)?(\d{4}(R2)?)?\s*(RTM|SP)?(\d+)?(CU)?(\d+)?') {
+						Write-Message -Level Debug "Parsed Version as $($Matches[2,5,7] | ConvertTo-Json -Depth 1 -Compress)"
+						if (-not ($Matches[5] -or $Matches[7])) {
+							Stop-Function -Message "Either SP or CU should be specified in $ver, please refer to Get-Help Update-DbaInstance -Parameter Version"
+							return
+						}
+						if ($null -ne $Matches[2]) {
+							$currentAction += @{ MajorVersion = $Matches[2]}
+						}
+						if ($null -ne $Matches[5]) {
+							$currentAction += @{ ServicePack = $Matches[5]}
+							if ($Matches[5] -ne '0') {
+								$actions += $currentAction
+							}
+						}
+						if ($null -ne $Matches[7]) {
+							$actions += $currentAction.Clone() + @{ CumulativeUpdate = $Matches[7] }
+						}
+					} else {
+						Stop-Function -Message "$ver is an incorrect Version value, please refer to Get-Help Update-DbaInstance -Parameter Version"
+						return
+					}
+				}
+			} elseif ($PSCmdlet.ParameterSetName -eq 'KB') {
+				foreach ($kbItem in $kbList) {
+					$actions += @{
+						KB = $kbItem
+					}
+				}
+			}
+		}
+		#Resolve all the provided names
+		$resolvedComputers = @()
+		foreach ($computer in $ComputerName) {
+			if ($resolvedComputer = Resolve-DbaNetworkName -ComputerName $computer.ComputerName) {
+				$resolvedComputers += $resolvedComputer.FullComputerName
+			}
+		}
+		#Initialize installations for each computer
+		:computers foreach ($resolvedName in $resolvedComputers) {
+			:actions foreach ($actionParam in $actions) {
+				if (Test-PendingReboot -ComputerName $resolvedName) {
+					#Exit the actions loop altogether - nothing can be installed here anyways
+					Stop-Function -Message "$resolvedName is pending a reboot. Reboot the computer before proceeding." -Continue -ContinueLabel computers
+				}
+				try {
+					Write-Message -Level Verbose -Message "Launching installation on $resolvedName with following params: $($actionParam | ConvertTo-Json -Depth 1 -Compress)"
+					$install = Install-SqlServerUpdate @actionParam -ComputerName $resolvedName -Credential $Credential -Restart $Restart -Path $Path
+				} catch {
+					#Exit the actions loop altogether - upgrade failed
+					Stop-Function -Message "Update failed to install on $resolvedName" -ErrorRecord $_ -Continue -ContinueLabel computers
+				}
+				if ($install) {
+					$install
+					if ($install.Restarted -contains $false) {
+						Stop-Function -Message "Please restart $($install.ComputerName) to complete the installation of SQL$($install.MajorVersion)$($install.TargetLevel). No further updates will be installed on this computer." -EnableException $false -Continue -ContinueLabel computers
+					}
+				}
+			}
+		}
+	}
+	end {
 
-    }
+	}
 }
