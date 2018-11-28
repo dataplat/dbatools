@@ -75,36 +75,30 @@ function Get-DbaBuildReference {
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "")]
     [CmdletBinding(DefaultParameterSetName = 'Build')]
     param (
-        [Parameter(Mandatory, ParameterSetName = 'Build')]
         [version[]]
         $Build,
 
-        [Parameter(Mandatory, ParameterSetName = 'Kb')]
         [string[]]
         $Kb,
 
-        [Parameter(Mandatory, ParameterSetName = 'HFLevel')]
         [ValidateNotNullOrEmpty()]
         [string]
         $MajorVersion,
 
-        [Parameter(ParameterSetName = 'HFLevel')]
         [ValidateNotNullOrEmpty()]
         [string]
         [Alias('SP')]
         $ServicePack = 'RTM',
 
-        [Parameter(ParameterSetName = 'HFLevel')]
         [string]
         [Alias('CU')]
         $CumulativeUpdate,
 
-        [Parameter(Mandatory, ParameterSetName = 'Instance', ValueFromPipeline)]
+        [Parameter(ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]
         $SqlInstance,
 
-        [Parameter(ParameterSetName = 'Instance')]
         [Alias("Credential")]
         [PsCredential]
         $SqlCredential,
@@ -113,12 +107,35 @@ function Get-DbaBuildReference {
         $Update,
 
         [switch]
-        [Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        $EnableException
     )
 
     begin {
         #region verifying parameters
-        if ($PSCmdlet.ParameterSetName -eq 'HFLevel') {
+        $ComplianceSpec = @()
+        $ComplianceSpecExclusiveParams = @('Build', 'Kb', @( 'MajorVersion','ServicePack', 'CumulativeUpdate'), 'SqlInstance')
+        foreach ($exclParamGroup in $ComplianceSpecExclusiveParams) {
+            foreach ($exclParam in $exclParamGroup) {
+                if (Test-Bound -Parameter $exclParam) {
+                    $ComplianceSpec += $exclParam
+                    break
+                }
+            }
+        }
+        if ($ComplianceSpec.Length -gt 1) {
+            Stop-Function -Category InvalidArgument -Message "$($ComplianceSpec -join ', ') are mutually exclusive. Please choose one or the other. Quitting."
+            return
+        }
+        if ($ComplianceSpec.Length -eq 0) {
+            Stop-Function -Category InvalidArgument -Message "You need to choose at least one parameter."
+            return
+        }
+        if (((Test-Bound -Parameter ServicePack) -or (Test-Bound -Parameter CumulativeUpdate)) -and (Test-Bound -Not -Parameter MajorVersion)) {
+            Stop-Function -Category InvalidArgument -Message "-MajorVersion is required when specifying SP or CU."
+            return
+        }
+        if ($MajorVersion) {
             if ($MajorVersion -match '^(SQL)?(\d{4}(R2)?)$') {
                 $MajorVersion = $Matches[2]
             } else {
@@ -425,7 +442,7 @@ function Get-DbaBuildReference {
             } | Select-DefaultView -ExcludeProperty SqlInstance
         }
 
-        if ($PSCmdlet.ParameterSetName -eq 'HFLevel') {
+        if ($MajorVersion) {
             $Detected = Resolve-DbaBuild -MajorVersion $MajorVersion -ServicePack $ServicePack -CumulativeUpdate $CumulativeUpdate -Data $IdxRef -EnableException $EnableException
 
             [PSCustomObject]@{
