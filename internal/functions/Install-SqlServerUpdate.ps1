@@ -69,9 +69,9 @@ function Install-SqlServerUpdate {
             $currentMajorVersion = "SQL" + $currentVersion.NameLevel
             # create a parameter set for Find-SqlServerUpdate
             $kbLookupParams = @{
-                Architecture   = $arch
-                MajorVersion   = $currentVersion.NameLevel
-                Path = $Path
+                Architecture = $arch
+                MajorVersion = $currentVersion.NameLevel
+                Path         = $Path
             }
             # Find target KB number based on provided SP/CU levels or KB numbers
             if ($CumulativeUpdate -gt 0) {
