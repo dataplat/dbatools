@@ -147,6 +147,7 @@ function Install-SqlServerUpdate {
                 $invProgParams = @{
                     ComputerName = $computer
                     Credential   = $Credential
+                    ErrorAction  = 'Stop'
                 }
                 # Find a temporary folder to extract to - the drive that has most free space
                 $chosenDrive = (Get-DbaDiskSpace -ComputerName $computer -Credential $Credential | Sort-Object -Property Free -Descending | Select-Object -First 1).Name
@@ -173,7 +174,7 @@ function Install-SqlServerUpdate {
                                 if ($args[0] -like '*\dbatools_KB*_Extract' -and (Test-Path $args[0])) {
                                     Remove-Item -Recurse -Force -LiteralPath $args[0] -ErrorAction Stop
                                 }
-                            } -Raw -ArgumentList $spExtractPath
+                            } -Raw -ArgumentList $spExtractPath -ErrorAction Stop
                         } catch {
                             Write-Message -Level Warning -Message "Failed to cleanup temp folder on computer $computer`: $($_.Exception.Message) "
                         }
