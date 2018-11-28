@@ -26,8 +26,8 @@ function Invoke-DbaDbccFreeCache {
         DBCC Operation to Perform - Supports specific set of operations
 
     .PARAMETER InputValue
-        Value used for DBCC Operation - meaning depends on Operation
-        FREEPROCCACHE accepts
+        Value used for Operation - meaning depends on Operation
+        DBCC FREEPROCCACHE accepts
             a plan_handle of type varbinary(64)
             a sql_handle of type varbinary(64)
             or the name of a Resource Governor resource pool of type sysname
