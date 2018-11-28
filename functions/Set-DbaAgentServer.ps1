@@ -216,82 +216,82 @@ function Set-DbaAgentServer {
             }
 
             if ($ErrorLogFile) {
-                Write-Message -Message "Setting alert to ErrorLogFile" -Level Verbose
+                Write-Message -Message "Setting agent server ErrorLogFile to $ErrorLogFile" -Level Verbose
                 $jobServer.ErrorLogFile = $ErrorLogFile
             }
 
             if ($IdleCpuDuration) {
-                Write-Message -Message "Setting alert to IdleCpuDuration" -Level Verbose
+                Write-Message -Message "Setting agent server IdleCpuDuration to $IdleCpuDuration" -Level Verbose
                 $jobServer.IdleCpuDuration = $IdleCpuDuration
             }
 
             if ($IdleCpuPercentage) {
-                Write-Message -Message "Setting alert to IdleCpuPercentage" -Level Verbose
+                Write-Message -Message "Setting agent server IdleCpuPercentage to $IdleCpuPercentage" -Level Verbose
                 $jobServer.IdleCpuPercentage = $IdleCpuPercentage
             }
 
             if (-not ($null -eq $IsCpuPollingEnabled)) {
-                Write-Message -Message "Setting alert to IsCpuPollingEnabled" -Level Verbose
+                Write-Message -Message "Setting agent server IsCpuPollingEnabled to $IsCpuPollingEnabled" -Level Verbose
                 $jobServer.IsCpuPollingEnabled = $IsCpuPollingEnabled
             }
 
             if ($LocalHostAlias) {
-                Write-Message -Message "Setting alert to LocalHostAlias" -Level Verbose
+                Write-Message -Message "Setting agent server LocalHostAlias to $LocalHostAlias" -Level Verbose
                 $jobServer.LocalHostAlias = $LocalHostAlias
             }
 
             if ($LoginTimeout) {
-                Write-Message -Message "Setting alert to LoginTimeout" -Level Verbose
+                Write-Message -Message "Setting agent server LoginTimeout to $LoginTimeout" -Level Verbose
                 $jobServer.LoginTimeout = $LoginTimeout
             }
 
             if ($MaximumHistoryRows) {
-                Write-Message -Message "Setting alert to MaximumHistoryRows" -Level Verbose
+                Write-Message -Message "Setting agent server MaximumHistoryRows to $MaximumHistoryRows" -Level Verbose
                 $jobServer.MaximumHistoryRows = $MaximumHistoryRows
             }
 
             if ($MaximumJobHistoryRows) {
-                Write-Message -Message "Setting alert to MaximumJobHistoryRows" -Level Verbose
+                Write-Message -Message "Setting agent server MaximumJobHistoryRows to $MaximumJobHistoryRows" -Level Verbose
                 $jobServer.MaximumJobHistoryRows = $MaximumJobHistoryRows
             }
 
             if ($NetSendRecipient) {
-                Write-Message -Message "Setting alert to NetSendRecipient" -Level Verbose
+                Write-Message -Message "Setting agent server NetSendRecipient to $NetSendRecipient" -Level Verbose
                 $jobServer.NetSendRecipient = $NetSendRecipient
             }
 
             if (-not ($null -eq $ReplaceAlertTokensEnabled)) {
-                Write-Message -Message "Setting alert to ReplaceAlertTokensEnabled" -Level Verbose
+                Write-Message -Message "Setting agent server ReplaceAlertTokensEnabled to $ReplaceAlertTokensEnabled" -Level Verbose
                 $jobServer.ReplaceAlertTokensEnabled = $ReplaceAlertTokensEnabled
             }
 
             if (-not ($null -eq $SaveInSentFolder)) {
-                Write-Message -Message "Setting alert to SaveInSentFolder" -Level Verbose
+                Write-Message -Message "Setting agent server SaveInSentFolder to $SaveInSentFolder" -Level Verbose
                 $jobServer.SaveInSentFolder = $SaveInSentFolder
             }
 
             if (-not ($null -eq $SqlAgentAutoStart)) {
-                Write-Message -Message "Setting alert to SqlAgentAutoStart" -Level Verbose
+                Write-Message -Message "Setting agent server SqlAgentAutoStart to $SqlAgentAutoStart" -Level Verbose
                 $jobServer.SqlAgentAutoStart = $SqlAgentAutoStart
             }
 
             if (-not ($null -eq $SqlAgentMailProfile)) {
-                Write-Message -Message "Setting alert to SqlAgentMailProfile" -Level Verbose
+                Write-Message -Message "Setting agent server SqlAgentMailProfile to $SqlAgentMailProfile" -Level Verbose
                 $jobServer.SqlAgentMailProfile = $SqlAgentMailProfile
             }
 
             if (-not ($null -eq $SqlAgentRestart)) {
-                Write-Message -Message "Setting alert to SqlAgentRestart" -Level Verbose
+                Write-Message -Message "Setting agent server SqlAgentRestart to $SqlAgentRestart" -Level Verbose
                 $jobServer.SqlAgentRestart = $SqlAgentRestart
             }
 
             if (-not ($null -eq $SqlServerRestart)) {
-                Write-Message -Message "Setting alert to SqlServerRestart" -Level Verbose
+                Write-Message -Message "Setting agent server SqlServerRestart to $SqlServerRestart" -Level Verbose
                 $jobServer.SqlServerRestart = $SqlServerRestart
             }
 
             if (-not ($null -eq $WriteOemErrorLog)) {
-                Write-Message -Message "Setting alert to WriteOemErrorLog" -Level Verbose
+                Write-Message -Message "Setting agent server WriteOemErrorLog to $WriteOemErrorLog" -Level Verbose
                 $jobServer.WriteOemErrorLog = $WriteOemErrorLog
             }
 
