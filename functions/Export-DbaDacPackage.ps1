@@ -201,6 +201,7 @@ function Export-DbaDacPackage {
             }
 
             foreach ($db in $dbs) {
+                $resultstime = [diagnostics.stopwatch]::StartNew()
                 $dbname = $db.name
                 $connstring = $server.ConnectionContext.ConnectionString
                 if ($connstring -notmatch 'Database=') {
@@ -258,7 +259,6 @@ function Export-DbaDacPackage {
                     $cmdConnString = $connstring.Replace('"', "'")
 
                     $sqlPackageArgs = "/action:$action /tf:""$currentFileName"" /SourceConnectionString:""$cmdConnString"" $ExtendedParameters $ExtendedProperties"
-                    $resultstime = [diagnostics.stopwatch]::StartNew()
 
                     try {
                         $startprocess = New-Object System.Diagnostics.ProcessStartInfo
