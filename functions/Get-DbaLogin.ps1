@@ -153,7 +153,9 @@ function Get-DbaLogin {
         [switch]$EnableException
     )
     begin {
-        Test-DbaDeprecation -DeprecatedOn 1.0.0 -Parameter SQLLogins, WindowsLogins
+        Test-DbaDeprecation -DeprecatedOn 1.0.0 -Parameter SQLLogins
+        Test-DbaDeprecation -DeprecatedOn 1.0.0 -Parameter WindowsLogins
+
         if ($SQLLogins) {
             $Type = "SQL"
         }
