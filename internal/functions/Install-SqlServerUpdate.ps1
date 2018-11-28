@@ -25,7 +25,7 @@ function Install-SqlServerUpdate {
         [ValidateNotNullOrEmpty()]
         [string]$KB,
         [bool]$Restart,
-        [string[]]$RepositoryPath
+        [string[]]$Path
     )
     process {
         # check if any type of the update was specified
@@ -71,7 +71,7 @@ function Install-SqlServerUpdate {
             $kbLookupParams = @{
                 Architecture   = $arch
                 MajorVersion   = $currentVersion.NameLevel
-                RepositoryPath = $RepositoryPath
+                Path = $Path
             }
             if ($Latest) {
                 #Find latest SQL Server build and corresponding SP and CU KBs

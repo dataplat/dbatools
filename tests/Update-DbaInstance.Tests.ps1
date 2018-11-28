@@ -21,7 +21,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
         $defaultParamCount = 13
         [object[]]$params = (Get-ChildItem function:\$CommandName).Parameters.Keys
-        $knownParameters = 'ComputerName', 'Credential', 'Version', 'MajorVersion', 'Type', 'Latest', 'RepositoryPath', 'Restart', 'EnableException','Kb'
+        $knownParameters = 'ComputerName', 'Credential', 'Version', 'MajorVersion', 'Type', 'Latest', 'Path', 'Restart', 'EnableException','Kb'
         $paramCount = $knownParameters.Count
         It "Should contain our specific parameters" {
             ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
@@ -75,7 +75,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
             }
         }
         It "Should mock-upgrade SQL2008 to latest SP" {
-            $result = Update-DbaInstance -MajorVersion 2008 -Latest -Type ServicePack -RepositoryPath $exeDir -Restart -EnableException -Confirm:$false
+            $result = Update-DbaInstance -MajorVersion 2008 -Latest -Type ServicePack -Path $exeDir -Restart -EnableException -Confirm:$false
             Assert-MockCalled -CommandName Get-SqlServerVersion -Exactly 1 -Scope It -ModuleName dbatools
             Assert-MockCalled -CommandName Invoke-Program -Exactly 2 -Scope It -ModuleName dbatools
             Assert-MockCalled -CommandName Restart-Computer -Exactly 1 -Scope It -ModuleName dbatools
@@ -94,7 +94,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
             $result.ExtractPath | Should -BeLike '*\dbatools_KB*Extract'
         }
         It "Should mock-upgrade both versions to latest SPs" {
-            $results = Update-DbaInstance -Type ServicePack -Latest -RepositoryPath $exeDir -Restart -EnableException -Confirm:$false
+            $results = Update-DbaInstance -Type ServicePack -Latest -Path $exeDir -Restart -EnableException -Confirm:$false
             Assert-MockCalled -CommandName Get-SqlServerVersion -Exactly 1 -Scope It -ModuleName dbatools
             Assert-MockCalled -CommandName Invoke-Program -Exactly 4 -Scope It -ModuleName dbatools
             Assert-MockCalled -CommandName Restart-Computer -Exactly 2 -Scope It -ModuleName dbatools
@@ -178,7 +178,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
             }
         }
         It "Should mock-upgrade SQL2008 to SP3 (KB2546951)" {
-            $result = Update-DbaInstance -Kb KB2546951 -RepositoryPath $exeDir -Restart -EnableException -Confirm:$false
+            $result = Update-DbaInstance -Kb KB2546951 -Path $exeDir -Restart -EnableException -Confirm:$false
             Assert-MockCalled -CommandName Get-SqlServerVersion -Exactly 1 -Scope It -ModuleName dbatools
             Assert-MockCalled -CommandName Invoke-Program -Exactly 2 -Scope It -ModuleName dbatools
             Assert-MockCalled -CommandName Restart-Computer -Exactly 1 -Scope It -ModuleName dbatools
@@ -197,7 +197,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
             $result.ExtractPath | Should -BeLike '*\dbatools_KB*Extract'
         }
         It "Should mock-upgrade SQL2016 to SP1CU4 (KB3182545 + KB4024305) " {
-            $result = Update-DbaInstance -Kb 3182545, 4024305 -RepositoryPath $exeDir -Restart -EnableException -Confirm:$false
+            $result = Update-DbaInstance -Kb 3182545, 4024305 -Path $exeDir -Restart -EnableException -Confirm:$false
             Assert-MockCalled -CommandName Get-SqlServerVersion -Exactly 2 -Scope It -ModuleName dbatools
             Assert-MockCalled -CommandName Invoke-Program -Exactly 2 -Scope It -ModuleName dbatools
             Assert-MockCalled -CommandName Restart-Computer -Exactly 1 -Scope It -ModuleName dbatools
@@ -216,7 +216,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
             $result.ExtractPath | Should -BeLike '*\dbatools_KB*Extract'
         }
         It "Should mock-upgrade both versions to different KBs" {
-            $results = Update-DbaInstance -Kb 3182545, 4040714, KB2546951, KB2738350 -RepositoryPath $exeDir -Restart -EnableException -Confirm:$false
+            $results = Update-DbaInstance -Kb 3182545, 4040714, KB2546951, KB2738350 -Path $exeDir -Restart -EnableException -Confirm:$false
             Assert-MockCalled -CommandName Get-SqlServerVersion -Exactly 4 -Scope It -ModuleName dbatools
             Assert-MockCalled -CommandName Invoke-Program -Exactly 6 -Scope It -ModuleName dbatools
             Assert-MockCalled -CommandName Restart-Computer -Exactly 3 -Scope It -ModuleName dbatools
@@ -422,7 +422,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
                         $cuLevel = $tLevel
                     }
                     It "$v to $cuLevel" {
-                        $results = Update-DbaInstance -Version "$v$cuLevel" -RepositoryPath 'mocked' -Restart -EnableException -Confirm:$false
+                        $results = Update-DbaInstance -Version "$v$cuLevel" -Path 'mocked' -Restart -EnableException -Confirm:$false
                         Assert-MockCalled -CommandName Get-SqlServerVersion -Exactly $steps -Scope It -ModuleName dbatools
                         Assert-MockCalled -CommandName Invoke-Program -Exactly ($steps*2) -Scope It -ModuleName dbatools
                         Assert-MockCalled -CommandName Restart-Computer -Exactly $steps -Scope It -ModuleName dbatools
@@ -491,14 +491,14 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
             { Update-DbaInstance -MajorVersion 2008SP3 -Latest -EnableException } | Should throw 'is an incorrect MajorVersion value'
         }
         It "fails when KB is missing in the folder" {
-            { Update-DbaInstance -Latest -RepositoryPath $exeDir -EnableException } | Should throw 'Could not find installer for the SQL2008 update KB'
-            { Update-DbaInstance -Version 2008SP3CU7 -RepositoryPath $exeDir -EnableException } | Should throw 'Could not find installer for the SQL2008 update KB'
+            { Update-DbaInstance -Latest -Path $exeDir -EnableException } | Should throw 'Could not find installer for the SQL2008 update KB'
+            { Update-DbaInstance -Version 2008SP3CU7 -Path $exeDir -EnableException } | Should throw 'Could not find installer for the SQL2008 update KB'
         }
         It "fails when SP level is lower than required" {
             { Update-DbaInstance -Latest -Type CumulativeUpdate -EnableException } | Should throw 'Current SP version SQL2008SP2 is not the latest available'
         }
         It "fails when repository is not available" {
-            { Update-DbaInstance -Version 2008SP3CU7 -RepositoryPath .\NonExistingFolder -EnableException } | Should throw 'Cannot find path'
+            { Update-DbaInstance -Version 2008SP3CU7 -Path .\NonExistingFolder -EnableException } | Should throw 'Cannot find path'
             { Update-DbaInstance -Version 2008SP3CU7 -EnableException } | Should throw 'Path to SQL Server updates folder is not set'
         }
     }

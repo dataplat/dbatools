@@ -8,7 +8,7 @@ function Update-DbaInstance {
         The command will:
         * Search for SQL Server installations in a remote registry
         * Check if current settings are applicable to the current SQL Server versions
-        * Search for a KB executable in a folder specified in -RepositoryPath
+        * Search for a KB executable in a folder specified in -Path
         * Establish a PSRemote connection to the target machine if necessary
         * Extract KB to a temporary folder in a current user's profile
         * Run the installation from the temporary folder updating all instances on the computer at once
@@ -49,7 +49,7 @@ function Update-DbaInstance {
 
         Note: `-Latest -Type CumulativeUpdate` will try to install CU from the latest SP available. Make sure to upgrate servers to proper SP beforehand.
 
-    .PARAMETER RepositoryPath
+    .PARAMETER Path
         Path to the folder(s) with SQL Server patches downloaded. It will be scanned recursively for available patches.
         Path should be available from both server with SQL Server installation and client that runs the command.
         All file names should match the pattern used by Microsoft: SQLServer####*-KB###-*x##*.exe
@@ -81,7 +81,7 @@ function Update-DbaInstance {
         Requires Local Admin rights on destination computer(s).
 
     .EXAMPLE
-        PS C:\> Update-DbaInstance -ComputerName SQL1 -Version SP3 -RepositoryPath \\network\share
+        PS C:\> Update-DbaInstance -ComputerName SQL1 -Version SP3 -Path \\network\share
 
         Updates all applicable SQL Server installations on SQL1 to SP3.
         SP3 binary files will be
@@ -125,7 +125,7 @@ function Update-DbaInstance {
         [Parameter(Mandatory, ParameterSetName = 'KB')]
         [ValidateNotNullOrEmpty()]
         [string[]]$KB,
-        [string[]]$RepositoryPath,
+        [string[]]$Path,
         [switch]$Restart,
         [switch]$EnableException
     )
@@ -226,7 +226,7 @@ function Update-DbaInstance {
                 }
                 try {
                     Write-Message -Level Verbose -Message "Launching installation on $resolvedName with following params: $($actionParam | ConvertTo-Json -Depth 1 -Compress)"
-                    $install = Install-SqlServerUpdate @actionParam -ComputerName $resolvedName -Credential $Credential -Restart $Restart -RepositoryPath $RepositoryPath
+                    $install = Install-SqlServerUpdate @actionParam -ComputerName $resolvedName -Credential $Credential -Restart $Restart -Path $Path
                 } catch {
                     #Exit the actions loop altogether - upgrade failed
                     Stop-Function -Message "Update failed to install on $resolvedName" -ErrorRecord $_ -Continue -ContinueLabel computers
