@@ -6,7 +6,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
         $defaultParamCount = 13
         [object[]]$params = (Get-ChildItem function:\Set-DbaAgentServer).Parameters.Keys
-        $knownParameters = 'SqlInstance', 'SqlCredential', 'InputObject', 'AgentLogLevel', 'AgentMailType', 'AgentShutdownWaitTime', 'DatabaseMailProfile', 'ErrorLogFile', 'IdleCpuDuration', 'IdleCpuPercentage', 'IsCpuPollingEnabled', 'LocalHostAlias', 'LoginTimeout', 'MaximumHistoryRows', 'MaximumJobHistoryRows', 'NetSendRecipient', 'ReplaceAlertTokensEnabled', 'SaveInSentFolder', 'SqlAgentAutoStart', 'SqlAgentMailProfile', 'SqlAgentRestart', 'SqlServerRestart', 'WriteOemErrorLog', 'EnableException'
+        $knownParameters = 'SqlInstance', 'SqlCredential', 'InputObject', 'AgentLogLevel', 'AgentMailType', 'AgentShutdownWaitTime', 'DatabaseMailProfile', 'ErrorLogFile', 'IdleCpuDuration', 'IdleCpuPercentage', 'CpuPolling', 'LocalHostAlias', 'LoginTimeout', 'MaximumHistoryRows', 'MaximumJobHistoryRows', 'NetSendRecipient', 'ReplaceAlertTokens', 'SaveInSentFolder', 'SqlAgentAutoStart', 'SqlAgentMailProfile', 'SqlAgentRestart', 'SqlServerRestart', 'WriteOemErrorLog', 'EnableException'
         $paramCount = $knownParameters.Count
         It "Should contain our specific parameters" {
             ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
@@ -28,7 +28,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         $results.IsCpuPollingEnabled | Should Be $true
     }
 
-    $results = Set-DbaAgentServer -SqlInstance $script:instance2 -CpuPolling Disable
+    $results = Set-DbaAgentServer -SqlInstance $script:instance2 -CpuPolling Disabled
     It "changes agent server CPU Polling to false" {
         $results.IsCpuPollingEnabled | Should Be $false
     }
