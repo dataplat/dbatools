@@ -4,10 +4,10 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        $paramCount = 24
         $defaultParamCount = 13
         [object[]]$params = (Get-ChildItem function:\Set-DbaAgentServer).Parameters.Keys
-        $knownParameters = 'SqlInstance', 'SqlCredential', 'InputObject', 'AgentLogLevel', 'AgentMailType', 'AgentShutdownWaitTime', 'DatabaseMailProfile ', 'ErrorLogFile ', 'IdleCpuDuration', 'IdleCpuPercentage ', 'IsCpuPollingEnabled ', 'LocalHostAlias ', 'LoginTimeout ', 'MaximumHistoryRows', 'MaximumJobHistoryRows', 'NetSendRecipient', 'ReplaceAlertTokensEnabled', 'SaveInSentFolder', 'SqlAgentAutoStart ', 'SqlAgentMailProfile ', 'SqlAgentRestart', 'SqlServerRestart', 'WriteOemErrorLog', 'EnableException'
+        $knownParameters = 'SqlInstance', 'SqlCredential', 'InputObject', 'AgentLogLevel', 'AgentMailType', 'AgentShutdownWaitTime', 'DatabaseMailProfile', 'ErrorLogFile', 'IdleCpuDuration', 'IdleCpuPercentage', 'IsCpuPollingEnabled', 'LocalHostAlias', 'LoginTimeout', 'MaximumHistoryRows', 'MaximumJobHistoryRows', 'NetSendRecipient', 'ReplaceAlertTokensEnabled', 'SaveInSentFolder', 'SqlAgentAutoStart', 'SqlAgentMailProfile', 'SqlAgentRestart', 'SqlServerRestart', 'WriteOemErrorLog', 'EnableException'
+        $paramCount = $knownParameters.Count
         It "Should contain our specific parameters" {
             ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
         }
