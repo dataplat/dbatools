@@ -9,6 +9,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         # Prevent the functions from executing dangerous stuff and getting right responses where needed
         Mock -CommandName Invoke-Program -MockWith { $null } -ModuleName dbatools
         Mock -CommandName Test-PendingReboot -MockWith { $false } -ModuleName dbatools
+        Mock -CommandName Test-ElevationRequirement -MockWith { $null } -ModuleName dbatools
         Mock -CommandName Restart-Computer -MockWith { $null } -ModuleName dbatools
         Mock -CommandName Register-RemoteSessionConfiguration -ModuleName dbatools -MockWith {
             [pscustomobject]@{ 'Name' = 'dbatoolsInstallSqlServerUpdate' ; Successful = $true ; Status = 'Dummy' }

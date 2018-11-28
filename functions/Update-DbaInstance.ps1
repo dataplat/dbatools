@@ -216,6 +216,7 @@ function Update-DbaInstance {
 		#Resolve all the provided names
 		$resolvedComputers = @()
 		foreach ($computer in $ComputerName) {
+            $null = Test-ElevationRequirement -Computer $computer -Continue
 			if ($resolvedComputer = Resolve-DbaNetworkName -ComputerName $computer.ComputerName) {
 				$resolvedComputers += $resolvedComputer.FullComputerName
 			}
