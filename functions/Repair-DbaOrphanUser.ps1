@@ -98,7 +98,7 @@ function Repair-DbaOrphanUser {
         [Alias("Databases")]
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
-        [parameter(Mandatory = $false, ValueFromPipeline)]
+        [parameter(ValueFromPipeline)]
         [object[]]$Users,
         [switch]$RemoveNotExisting,
         [switch]$Force,

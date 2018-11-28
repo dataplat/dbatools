@@ -122,9 +122,7 @@ function Backup-DbaDbCertificate {
         [object[]]$Database,
         [parameter(ParameterSetName = "instance")]
         [object[]]$ExcludeDatabase,
-        [parameter(Mandatory = $false)]
         [Security.SecureString]$EncryptionPassword,
-        [parameter(Mandatory = $false)]
         [Security.SecureString]$DecryptionPassword,
         [System.IO.FileInfo]$Path,
         [string]$Suffix = "$(Get-Date -format 'yyyyMMddHHmmssms')",

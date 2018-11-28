@@ -74,7 +74,7 @@ function Remove-DbaSpn {
         [Parameter(Mandatory, ValueFromPipelineByPropertyName)]
         [Alias("InstanceServiceAccount", "AccountName")]
         [string]$ServiceAccount,
-        [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName)]
+        [Parameter(ValueFromPipelineByPropertyName)]
         [PSCredential]$Credential,
         [Alias('Silent')]
         [switch]$EnableException
