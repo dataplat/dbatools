@@ -23,11 +23,5 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         It "Should get 1 agent server" {
             $results.count | Should Be 1
         }
-
-        It "returns the correct properties" {
-            $ExpectedProps = 'ComputerName,InstanceName,SqlInstance,AgentDomainGroup,AgentLogLevel,AgentMailType,AgentShutdownWaitTime,ErrorLogFile,IdleCpuDuration,IdleCpuPercentage,IsCpuPollingEnabled,JobServerType,LoginTimeout,JobHistoryIsEnabled,MaximumHistoryRows,MaximumJobHistoryRows,MsxAccountCredentialName,MsxAccountName,MsxServerName,Name,NetSendRecipient,ServiceAccount,ServiceStartMode,SqlAgentAutoStart,SqlAgentMailProfile,SqlAgentRestart,SqlServerRestart,State,SysAdminOnly'.Split(',')
-            ($results.PsObject.Properties.Name | Sort-Object) | Should -Be ($ExpectedProps | Sort-Object)
-        }
-
     }
 }
