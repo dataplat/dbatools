@@ -133,7 +133,7 @@ function Update-DbaInstance {
         #Validating parameters
 		if ($PSCmdlet.ParameterSetName -eq 'Version') {
 			if ($Version -notmatch '^((SQL)?\d{4}(R2)?)?\s*(RTM|SP\d+)?\s*(CU\d+)?$') {
-				Stop-Function -Message "$Version is an incorrect Version value, please refer to Get-Help Update-DbaInstance -Parameter Version"
+				Stop-Function -Category InvalidArgument -Message "$Version is an incorrect Version value, please refer to Get-Help Update-DbaInstance -Parameter Version"
 				return
 			}
 		} elseif ($PSCmdlet.ParameterSetName -eq 'Latest') {
@@ -142,7 +142,7 @@ function Update-DbaInstance {
 				if ($mv -match '^(SQL)?(\d{4}(R2)?)$') {
 					$majorVersions += $Matches[2]
 				} else {
-					Stop-Function -Message "$mv is an incorrect MajorVersion value, please refer to Get-Help Update-DbaInstance -Parameter MajorVersion"
+					Stop-Function -Category InvalidArgument -Message "$mv is an incorrect MajorVersion value, please refer to Get-Help Update-DbaInstance -Parameter MajorVersion"
 					return
 				}
 			}
@@ -152,7 +152,7 @@ function Update-DbaInstance {
 				if ($kbItem -match '^(KB)?(\d+)$') {
 					$kbList += $Matches[2]
 				} else {
-					Stop-Function -Message "$kbItem is an incorrect KB value, please refer to Get-Help Update-DbaInstance -Parameter KB"
+					Stop-Function -Category InvalidArgument -Message "$kbItem is an incorrect KB value, please refer to Get-Help Update-DbaInstance -Parameter KB"
 					return
 				}
 			}
@@ -178,7 +178,7 @@ function Update-DbaInstance {
                 if ($ver -and $ver -match '^(SQL)?(\d{4}(R2)?)?\s*(RTM|SP)?(\d+)?(CU)?(\d+)?') {
                     Write-Message -Level Debug "Parsed Version as $($Matches[2,5,7] | ConvertTo-Json -Depth 1 -Compress)"
                     if (-not ($Matches[5] -or $Matches[7])) {
-                        Stop-Function -Message "Either SP or CU should be specified in $ver, please refer to Get-Help Update-DbaInstance -Parameter Version"
+                        Stop-Function -Category InvalidArgument -Message "Either SP or CU should be specified in $ver, please refer to Get-Help Update-DbaInstance -Parameter Version"
                         return
                     }
                     if ($null -ne $Matches[2]) {
@@ -194,7 +194,7 @@ function Update-DbaInstance {
                         $actions += $currentAction.Clone() + @{ CumulativeUpdate = $Matches[7] }
                     }
                 } else {
-                    Stop-Function -Message "$ver is an incorrect Version value, please refer to Get-Help Update-DbaInstance -Parameter Version"
+                    Stop-Function -Category InvalidArgument -Message "$ver is an incorrect Version value, please refer to Get-Help Update-DbaInstance -Parameter Version"
                     return
                 }
             }
