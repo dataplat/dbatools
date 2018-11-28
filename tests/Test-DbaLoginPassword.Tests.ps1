@@ -16,23 +16,6 @@ Describe "$CommandName Unit Tests" -Tag UnitTests, Get-DbaLogin {
             $params.Count - $defaultParamCount | Should Be $paramCount
         }
     }
-    Context "$Command Name Input" {
-        $Params = (Get-Command Get-DbaLogin).Parameters
-        It "Should have a mandatory parameter SQLInstance" {
-            $Params['SQLInstance'].Attributes.Mandatory | Should be $true
-        }
-        It "Should have Alias of ServerInstance and SqlServer for Parameter SQLInstance" {
-            $params['SQLInstance'].Aliases | Should Be @('ServerInstance', 'SqlServer')
-        }
-        It "Should have a parameter SqlCredential" {
-            $Params['SqlCredential'].Count | Should Be 1
-        }
-        # took Dictionary out cuz it failed even though it existed
-        It "Should have a parameter EnableException" {
-            $Params['EnableException'].Count | Should Be 1
-        }
-    }
-
 }
 
 Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
