@@ -116,7 +116,7 @@ function Invoke-DbaDbccFreeCache {
     )
     begin {
 
-        if (Test-Bound -ParameterName $Operation) {
+        if (Test-Bound -ParameterName Operation) {
             $Operation = $Operation.ToUpper()
         } else {
             Write-Message -Level Warning -Message "You must specify an operation "
