@@ -84,12 +84,12 @@ function Get-DbaDbccProcCache {
                         ComputerName       = $server.ComputerName
                         InstanceName       = $server.ServiceName
                         SqlInstance        = $server.DomainInstanceName
-                        NumProcBuffs       = $row[0]
-                        NumProcBuffsUsed   = $row[1]
-                        NumProcBuffsActive = $row[2]
-                        ProcCacheSize      = $row[3]
-                        ProcCacheUsed      = $row[4]
-                        ProcCacheActive    = $row[5]
+                        Count              = $row[0]
+                        Used               = $row[1]
+                        Active             = $row[2]
+                        CacheSize          = $row[3]
+                        CacheUsed          = $row[4]
+                        CacheActive        = $row[5]
                     }
                 }
             }

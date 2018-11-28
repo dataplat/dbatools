@@ -4,7 +4,7 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        $knownParameters = 'SqlInstance', 'SqlCredential', 'DbccStatement', 'IncludeUndocumented', 'EnableException'
+        $knownParameters = 'SqlInstance', 'SqlCredential', 'Statement', 'IncludeUndocumented', 'EnableException'
         $paramCount = $knownParameters.Count
         $SupportShouldProcess = $false
         if ($SupportShouldProcess) {
@@ -25,7 +25,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 }
 Describe "$commandname Integration Test" -Tag "IntegrationTests" {
     $props = 'Operation', 'Cmd', 'Output'
-    $result = Get-DbaDbccHelp -SqlInstance $script:instance3 -DbccStatement FREESYSTEMCACHE
+    $result = Get-DbaDbccHelp -SqlInstance $script:instance2 -Statement FREESYSTEMCACHE
 
     Context "Validate standard output" {
         foreach ($prop in $props) {
@@ -44,7 +44,7 @@ Describe "$commandname Integration Test" -Tag "IntegrationTests" {
         }
 
         It "returns the right results for PAGE" {
-            $result = Get-DbaDbccHelp -SqlInstance $script:instance3 -DbccStatement PAGE -IncludeUndocumented
+            $result = Get-DbaDbccHelp -SqlInstance $script:instance2 -Statement PAGE -IncludeUndocumented
             $result.Operation | Should Be 'PAGE'
             $result.Cmd | Should Be 'DBCC HELP(PAGE)'
             $result.Output | Should Not Be $null

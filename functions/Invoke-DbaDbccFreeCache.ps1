@@ -25,7 +25,7 @@ function Invoke-DbaDbccFreeCache {
     .PARAMETER Operation
         DBCC Operation to Perform - Supports specific set of operations
 
-    .PARAMETER DBCCInputValue
+    .PARAMETER InputValue
         Value used for DBCC Operation - meaning depends on Operation
         FREEPROCCACHE accepts
             a plan_handle of type varbinary(64)
@@ -82,22 +82,22 @@ function Invoke-DbaDbccFreeCache {
         Runs the command DBCC FREESYSTEMCACHE WITH NO_INFOMSGS against the instance SqlServer2017 using Windows Authentication
 
     .EXAMPLE
-        PS C:\> Invoke-DbaDbccFreeCache -SqlInstance SqlServer2017 -Operation FREEPROCCACHE -DBCCInputValue 0x060006001ECA270EC0215D05000000000000000000000000
+        PS C:\> Invoke-DbaDbccFreeCache -SqlInstance SqlServer2017 -Operation FREEPROCCACHE -InputValue 0x060006001ECA270EC0215D05000000000000000000000000
 
         Remove a specific plan with plan_handle 0x060006001ECA270EC0215D05000000000000000000000000 from the cache via the command DBCC FREEPROCCACHE(0x060006001ECA270EC0215D05000000000000000000000000) against the instance SqlServer2017 using Windows Authentication
 
     .EXAMPLE
-        PS C:\> Invoke-DbaDbccFreeCache -SqlInstance SqlServer2017 -Operation FREEPROCCACHE -DBCCInputValue default
+        PS C:\> Invoke-DbaDbccFreeCache -SqlInstance SqlServer2017 -Operation FREEPROCCACHE -InputValue default
 
         Runs the command DBCC FREEPROCCACHE('default') against the instance SqlServer2017 using Windows Authentication. This clears all cache entries associated with a resource pool 'default'.
 
     .EXAMPLE
-        PS C:\> Invoke-DbaDbccFreeCache -SqlInstance SqlServer2017 -Operation FREESYSTEMCACHE -DBCCInputValue default
+        PS C:\> Invoke-DbaDbccFreeCache -SqlInstance SqlServer2017 -Operation FREESYSTEMCACHE -InputValue default
 
         Runs the command DBCC FREESYSTEMCACHE ('ALL', default) against the instance SqlServer2017 using Windows Authentication. This will clean all the caches with entries specific to the resource pool named "default".
 
     .EXAMPLE
-        PS C:\> Invoke-DbaDbccFreeCache -SqlInstance SqlServer2017 -Operation FREESYSTEMCACHE -DBCCInputValue default -MarkInUseForRemoval
+        PS C:\> Invoke-DbaDbccFreeCache -SqlInstance SqlServer2017 -Operation FREESYSTEMCACHE -InputValue default -MarkInUseForRemoval
 
         Runs the command DBCC FREESYSTEMCACHE ('ALL', default) WITH MARK_IN_USE_FOR_REMOVAL against the instance SqlServer2017 using Windows Authentication. This will to release entries once the entries become unused for all the caches with entries specific to the resource pool named "default".
 
@@ -107,14 +107,21 @@ function Invoke-DbaDbccFreeCache {
         [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [ValidateSet('FREEPROCCACHE', 'FREESESSIONCACHE', 'FREESYSTEMCACHE')]
-        [string]$Operation = "FREEPROCCACHE",
-        [string]$DBCCInputValue,
+        [ValidateSet('FreeProcCache', 'FreeSessionCache', 'FreeSystemCache')]
+        [string]$Operation = "FreeProcCache",
+        [string]$InputValue,
         [switch]$NoInformationalMessages,
         [switch]$MarkInUseForRemoval,
         [switch]$EnableException
     )
     begin {
+
+        if (Test-Bound -ParameterName $Operation) {
+            $Operation = $Operation.ToUpper()
+        } else {
+            Write-Message -Level Warning -Message "You must specify an operation "
+            continue
+        }
 
         $stringBuilder = New-Object System.Text.StringBuilder
         if ($Operation -eq 'FREESESSIONCACHE') {
@@ -124,11 +131,11 @@ function Invoke-DbaDbccFreeCache {
             }
         }
         if ($Operation -eq 'FREEPROCCACHE') {
-            if (Test-Bound -ParameterName DBCCInputValue) {
-                if ($DBCCInputValue.StartsWith('0x')) {
-                    $null = $stringBuilder.Append("DBCC $Operation($DBCCInputValue)")
+            if (Test-Bound -ParameterName InputValue) {
+                if ($InputValue.StartsWith('0x')) {
+                    $null = $stringBuilder.Append("DBCC $Operation($InputValue)")
                 } else {
-                    $null = $stringBuilder.Append("DBCC $Operation('$DBCCInputValue')")
+                    $null = $stringBuilder.Append("DBCC $Operation('$InputValue')")
                 }
                 if (Test-Bound -ParameterName NoInformationalMessages) {
                     $null = $stringBuilder.Append(" WITH NO_INFOMSGS")
@@ -141,8 +148,8 @@ function Invoke-DbaDbccFreeCache {
             }
         }
         if ($Operation -eq 'FREESYSTEMCACHE') {
-            if (Test-Bound -ParameterName DBCCInputValue) {
-                $null = $stringBuilder.Append("DBCC FREESYSTEMCACHE('ALL', $DBCCInputValue)")
+            if (Test-Bound -ParameterName InputValue) {
+                $null = $stringBuilder.Append("DBCC FREESYSTEMCACHE('ALL', $InputValue)")
             } else {
                 $null = $stringBuilder.Append("DBCC FREESYSTEMCACHE('ALL')")
             }

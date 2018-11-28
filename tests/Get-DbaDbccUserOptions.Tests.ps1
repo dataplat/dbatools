@@ -25,7 +25,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 }
 Describe "$commandname  Integration Test" -Tag "IntegrationTests" {
     $props = 'ComputerName', 'InstanceName', 'SqlInstance', 'SetOption', 'Value'
-    $result = Get-DbaDbccUserOptions -SqlInstance $script:instance3
+    $result = Get-DbaDbccUserOptions -SqlInstance $script:instance2
 
     Context "Validate standard output" {
         foreach ($prop in $props) {

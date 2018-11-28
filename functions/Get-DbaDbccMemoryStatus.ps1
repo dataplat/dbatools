@@ -90,9 +90,9 @@ function Get-DbaDbccMemoryStatus {
                             RecordSet    = $RecordSet
                             RowId        = $RowId
                             RecordSetId  = $RecordSetId
-                            MemObjType   = $dataSection
-                            MemObjName   = $Row[0]
-                            MemObjValue  = $Row[1]
+                            Type         = $dataSection
+                            Name         = $Row[0]
+                            Value        = $Row[1]
                             ValueType    = $dataType
                         }
                     }

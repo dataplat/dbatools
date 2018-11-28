@@ -24,7 +24,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     }
 }
 Describe "$commandname  Integration Test" -Tag "IntegrationTests" {
-    $props = 'ComputerName', 'InstanceName', 'RecordSet', 'RowId', 'RecordSetId', 'MemObjType', 'MemObjName', 'MemObjValue', 'ValueType'
+    $props = 'ComputerName', 'InstanceName', 'RecordSet', 'RowId', 'RecordSetId', 'Type', 'Name', 'Value', 'ValueType'
     $result = Get-DbaDbccMemoryStatus -SqlInstance $script:instance3
 
     Context "Validate standard output" {

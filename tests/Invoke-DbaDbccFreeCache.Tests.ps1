@@ -4,7 +4,7 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        $knownParameters = 'SqlInstance', 'SqlCredential', 'Operation', 'DBCCInputValue', 'NoInformationalMessages', 'MarkInUseForRemoval', 'EnableException'
+        $knownParameters = 'SqlInstance', 'SqlCredential', 'Operation', 'InputValue', 'NoInformationalMessages', 'MarkInUseForRemoval', 'EnableException'
         $paramCount = $knownParameters.Count
         $SupportShouldProcess = $true
         if ($SupportShouldProcess) {
@@ -25,7 +25,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 }
 Describe "$commandname Integration Test" -Tag "IntegrationTests" {
     $props = 'ComputerName', 'InstanceName', 'SqlInstance', 'Operation', 'Cmd', 'Output'
-    $result = Invoke-DbaDbccFreeCache -SqlInstance $script:instance3 -Operation FREESYSTEMCACHE -Confirm:$false
+    $result = Invoke-DbaDbccFreeCache -SqlInstance $script:instance2 -Operation FreeSystemCache -Confirm:$false
 
     Context "Validate standard output" {
         foreach ($prop in $props) {
@@ -43,19 +43,19 @@ Describe "$commandname Integration Test" -Tag "IntegrationTests" {
         }
 
         It "returns the right results for FREESESSIONCACHE" {
-            $result = Invoke-DbaDbccFreeCache -SqlInstance $script:instance3 -Operation FREESESSIONCACHE -Confirm:$false
+            $result = Invoke-DbaDbccFreeCache -SqlInstance $script:instance2 -Operation FreeSessionCache -Confirm:$false
             $result.Operation -match 'FREESESSIONCACHE' | Should Be $true
             $result.Output -match 'DBCC execution completed. If DBCC printed error messages, contact your system administrator.' | Should Be $true
         }
 
         It "returns the right results for FREEPROCCACHE" {
-            $result = Invoke-DbaDbccFreeCache -SqlInstance $script:instance3 -Operation FREEPROCCACHE -Confirm:$false
+            $result = Invoke-DbaDbccFreeCache -SqlInstance $script:instance2 -Operation FREEPROCCACHE -Confirm:$false
             $result.Operation -match 'FREEPROCCACHE' | Should Be $true
             $result.Output -match 'DBCC execution completed. If DBCC printed error messages, contact your system administrator.' | Should Be $true
         }
 
         It "returns the right results for FREESESSIONCACHE and using NoInformationalMessages" {
-            $result = Invoke-DbaDbccFreeCache -SqlInstance $script:instance3 -Operation FREESESSIONCACHE -NoInformationalMessages -Confirm:$false
+            $result = Invoke-DbaDbccFreeCache -SqlInstance $script:instance2 -Operation FreeSessionCache -NoInformationalMessages -Confirm:$false
             $result.Operation -match 'FREESESSIONCACHE' | Should Be $true
             $result.Output | Should Be $null
         }
