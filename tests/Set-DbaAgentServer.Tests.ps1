@@ -23,12 +23,12 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         $results.MaximumJobHistoryRows | Should Be 100
     }
 
-    $results = Set-DbaAgentServer -SqlInstance $script:instance2 -IsCpuPollingEnabled
+    $results = Set-DbaAgentServer -SqlInstance $script:instance2 -CpuPolling Enabled
     It "changes agent server CPU Polling to true" {
         $results.IsCpuPollingEnabled | Should Be $true
     }
 
-    $results = Set-DbaAgentServer -SqlInstance $script:instance2 -IsCpuPollingEnabled:$false
+    $results = Set-DbaAgentServer -SqlInstance $script:instance2 -CpuPolling Disable
     It "changes agent server CPU Polling to false" {
         $results.IsCpuPollingEnabled | Should Be $false
     }
