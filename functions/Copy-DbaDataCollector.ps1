@@ -185,7 +185,7 @@ function Copy-DbaDataCollector {
                             Write-Message -Level Verbose -Message "Collection Set '$collectionName' was skipped because it already exists on $destinstance. Use -Force to drop and recreate"
 
                             $copyCollectionSetStatus.Status = "Skipped"
-                            $copyCollectionSetStatus.Notes = "Already exists"
+                            $copyCollectionSetStatus.Notes = "Already exists on destination"
                             $copyCollectionSetStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                         }
                         continue
