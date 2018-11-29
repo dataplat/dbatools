@@ -1411,7 +1411,8 @@ $windowsonly = @(
     'Read-DbaXEFile',
     'Watch-DbaXESession',
     
-    # CM and Windows functions'Invoke-DbaPfRelog',
+    # CM and Windows functions
+    'Invoke-DbaPfRelog',
     'Get-DbaPfDataCollectorCounter',
     'Get-DbaPfDataCollectorCounterSample',
     'Get-DbaPfDataCollector',
