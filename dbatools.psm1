@@ -1537,17 +1537,19 @@ $script:windowsonly = @(
 )
 
 
-if (($PSVersionTable.Keys -contains "Platform")) {
-    if ($psversiontable.Platform -ne "Win32NT") {
-        Export-ModuleMember -Function $script:xplat
+if (-not $env:appveyor) {
+    if (($PSVersionTable.Keys -contains "Platform")) {
+        if ($psversiontable.Platform -ne "Win32NT") {
+            Export-ModuleMember -Function $script:xplat
+        } else {
+            Export-ModuleMember -Function $script:xplat
+            Export-ModuleMember -Function $script:windowsonly
+        }
     } else {
         Export-ModuleMember -Function $script:xplat
         Export-ModuleMember -Function $script:windowsonly
+        Export-ModuleMember -Function $script:noncoresmo
     }
-} else {
-    Export-ModuleMember -Function $script:xplat
-    Export-ModuleMember -Function $script:windowsonly
-    Export-ModuleMember -Function $script:noncoresmo
 }
 
 Export-ModuleMember -Alias $script:renames
