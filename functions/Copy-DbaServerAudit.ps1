@@ -138,7 +138,7 @@ function Copy-DbaServerAudit {
                     if ($force -eq $false) {
                         if ($Pscmdlet.ShouldProcess($destinstance, "Server audit $auditName exists at destination. Use -Force to drop and migrate.")) {
                             $copyAuditStatus.Status = "Skipped"
-                            $copyAuditStatus.Notes = "Already exists"
+                            $copyAuditStatus.Notes = "Already exists on destination"
                             Write-Message -Level Verbose -Message "Server audit $auditName exists at destination. Use -Force to drop and migrate."
                         }
                         continue

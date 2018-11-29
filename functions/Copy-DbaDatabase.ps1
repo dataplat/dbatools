@@ -1089,7 +1089,7 @@ function Copy-DbaDatabase {
                             Write-Message -Level Verbose -Message "$DestinationdbName exists at destination. Use -Force to drop and migrate. Aborting routine for this database."
 
                             $copyDatabaseStatus.Status = "Skipped"
-                            $copyDatabaseStatus.Notes = "Already exists"
+                            $copyDatabaseStatus.Notes = "Already exists on destination"
                             $copyDatabaseStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                         }
                         continue

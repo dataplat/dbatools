@@ -65,7 +65,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
         It "Should say skipped" {
             $results = Copy-DbaDatabase -Source $script:instance2 -Destination $script:instance3 -Database $detachattachdb -DetachAttach -Reattach
             $results.Status | Should be "Skipped"
-            $results.Notes | Should be "Already exists"
+            $results.Notes | Should be "Already exists on destination"
         }
     }
 
@@ -92,7 +92,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
         It  "Should say skipped" {
             $result = Copy-DbaDatabase -Source $script:instance2 -Destination $script:instance3 -Database $backuprestoredb2 -BackupRestore -SharedPath $NetworkPath 3>$null
             $result.Status | Should be "Skipped"
-            $result.Notes | Should be "Already exists"
+            $result.Notes | Should be "Already exists on destination"
         }
 
         # needs regr test once #3377 is fixed
