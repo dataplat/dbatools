@@ -1355,11 +1355,18 @@ $xplat = @(
     'Get-DbaMemoryCondition',
     'Remove-DbaDbBackupRestoreHistory',
     'New-DbaDatabase'
-    'New-DbaDacOption'
+    'New-DbaDacOption',
+    'Get-DbaDbccHelp',
+    'Get-DbaDbccMemoryStatus',
+    'Get-DbaDbccProcCache',
+    'Get-DbaDbccUserOptions',
+    'Get-DbaAgentServer',
+    'Set-DbaAgentServer'
 )
 
-$windowsonly = @(
+$noncoresmo = @(
     # SMO issues
+    'Export-DbaUser',
     'Get-DbaSsisExecutionHistory',
     'Get-DbaRepDistributor',
     'Get-DbaCmsRegServerStore',
@@ -1367,7 +1374,6 @@ $windowsonly = @(
     'Copy-DbaDataCollector',
     'Get-DbaCmsRegServer',
     'Copy-DbaSsisCatalog',
-    'Export-DbaUser',
     'New-DbaSsisCatalog',
     'Get-DbaSsisEnvironmentVariable',
     'Get-DbaPbmCategory',
@@ -1387,15 +1393,10 @@ $windowsonly = @(
     'Get-DbaRepPublication',
     'Test-DbaRepLatency',
     'Export-DbaRepServerSetting',
-    'Get-DbaRepServer',
-    'Rename-DbaDatabase',
-    'Get-DbaDbccHelp',
-    'Get-DbaDbccMemoryStatus',
-    'Get-DbaDbccProcCache',
-    'Get-DbaDbccUserOptions',
-    'Get-DbaAgentServer',
-    'Set-DbaAgentServer'
-    # solvable filesystem issues
+    'Get-DbaRepServer'
+)
+$windowsonly = @(
+    # solvable filesystem issues or other workarounds
     'Install-DbaSqlWatch',
     'Uninstall-DbaSqlWatch',
     'Get-DbaRegistryRoot',
@@ -1415,8 +1416,9 @@ $windowsonly = @(
     'Install-DbaFirstResponderKit',
     'Read-DbaXEFile',
     'Watch-DbaXESession',
+    'Test-DbaMaxMemory', # can be fixed by not testing remote when linux is detected
+    'Rename-DbaDatabase',# can maybebe fixed by not remoting when linux is detected
     # CM and Windows functions
-    'Test-DbaMaxMemory', # can be fixed by not testing remote
     'Invoke-DbaPfRelog',
     'Get-DbaPfDataCollectorCounter',
     'Get-DbaPfDataCollectorCounterSample',
@@ -1530,12 +1532,23 @@ $windowsonly = @(
     'Test-DbaManagementObject'
 )
 
-if (($PSVersionTable.Keys -contains "Platform") -and $psversiontable.Platform -ne "Win32NT") {
-    Export-ModuleMember -Alias "$($script:renames, $forever)" -Function $xplat
+if (($PSVersionTable.Keys -contains "Platform")) {
+    if ($psversiontable.Platform -ne "Win32NT") {
+        Export-ModuleMember -Alias $script:renames
+        Export-ModuleMember -Alias $forever
+        Export-ModuleMember -Function $xplat
+    } else {
+        Export-ModuleMember -Alias $script:renames
+        Export-ModuleMember -Alias $forever
+        Export-ModuleMember -Function $xplat
+        Export-ModuleMember -Function $windowsonly
+    }
 } else {
-    Export-ModuleMember -Alias "$($script:renames, $forever)"    
+    Export-ModuleMember -Alias $script:renames
+    Export-ModuleMember -Alias $forever
     Export-ModuleMember -Function $xplat
     Export-ModuleMember -Function $windowsonly
+    Export-ModuleMember -Function $noncoresmo
 }
 
 #region Post-Import Cleanup
