@@ -1235,7 +1235,6 @@ $xplat = @(
     'Test-DbaBackupInformation',
     'Invoke-DbaBalanceDataFiles',
     'Select-DbaBackupInformation',
-    'Rename-DbaDatabase',
     'Publish-DbaDacPackage',
     'Copy-DbaDbTableData',
     'Invoke-DbaQuery',
@@ -1389,7 +1388,14 @@ $windowsonly = @(
     'Test-DbaRepLatency',
     'Export-DbaRepServerSetting',
     'Get-DbaRepServer',
-
+    'Rename-DbaDatabase',
+    'Get-DbaDbccHelp',
+    'Get-DbaDbccMemoryStatus',
+    'Get-DbaDbccProcCache',
+    'Get-DbaDbccUserOptions',
+    'Get-DbaAgentServer',
+    'Set-DbaAgentServer'
+    
     # solvable filesystem issues
     'Install-DbaSqlWatch',
     'Uninstall-DbaSqlWatch',
@@ -1412,6 +1418,7 @@ $windowsonly = @(
     'Watch-DbaXESession',
     
     # CM and Windows functions
+    'Test-DbaMaxMemory', # can be fixed by not testing remote
     'Invoke-DbaPfRelog',
     'Get-DbaPfDataCollectorCounter',
     'Get-DbaPfDataCollectorCounterSample',
@@ -1433,7 +1440,6 @@ $windowsonly = @(
     'Set-DbaPrivilege',
     'Set-DbaTcpPort',
     'Set-DbaCmConnection',
-    'Test-DbaMaxMemory', # can be fixed by not testing remote
     'Get-DbaUptime',
     'Get-DbaMemoryUsage',
     'Clear-DbaConnectionPool',
@@ -1532,9 +1538,9 @@ $windowsonly = @(
 )
 
 if (($PSVersionTable.Keys -contains "Platform") -and $psversiontable.Platform -ne "Win32NT") {
-    #Export-ModuleMember -Alias "$($script:renames, $forever)" -Function "$xplat"
+    Export-ModuleMember -Alias "$($script:renames, $forever)" -Function "$xplat"
 } else {
-    #Export-ModuleMember -Alias "$($script:renames, $forever)" -Function "$($xplat, $windowsonly)"
+    Export-ModuleMember -Alias "$($script:renames, $forever)" -Function "$($xplat, $windowsonly)"
 }
 
 #region Post-Import Cleanup
