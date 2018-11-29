@@ -85,7 +85,7 @@ function Remove-DbaPfDataCollectorCounter {
         }
     }
     process {
-        if (-not (Test-Windows)) { return }
+        
         
         if ($InputObject.Credential -and (Test-Bound -ParameterName Credential -Not)) {
             $Credential = $InputObject.Credential
