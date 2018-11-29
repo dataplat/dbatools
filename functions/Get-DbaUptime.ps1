@@ -71,7 +71,7 @@ function Get-DbaUptime {
     }
     process {
         # uses cim commands
-        if (-not (Test-Windows)) { return }
+        
         
         foreach ($instance in $SqlInstance) {
             if ($instance.Gettype().FullName -eq [System.Management.Automation.PSCustomObject] ) {
