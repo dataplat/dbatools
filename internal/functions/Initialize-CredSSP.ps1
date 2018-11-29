@@ -29,8 +29,7 @@ function Initialize-CredSSP {
 #>
 
     Param (
-        [Parameter(Mandatory = $true,
-            Position = 1)]
+        [Parameter(Mandatory, Position = 1)]
         [string]$ComputerName,
         [pscredential]$Credential,
         [bool]$EnableException
@@ -45,7 +44,7 @@ function Initialize-CredSSP {
         return
     }
 
-    if ($sspList[0] -notmatch "wsman\/$([regex]::Escape($ComputerName))[\,$]") {
+    if ($sspList -and $sspList[0] -notmatch "wsman\/$([regex]::Escape($ComputerName))[\,$]") {
         Write-Message -Level Verbose -Message "Configuring local host to use CredSSP"
         try {
             # Start local WinRM service

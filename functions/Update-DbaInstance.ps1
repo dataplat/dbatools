@@ -107,7 +107,7 @@ function Update-DbaInstance {
     # Shouldprocess is handled by internal function Install-SqlServerUpdate
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High', DefaultParameterSetName = 'Latest')]
     Param (
-        [parameter(ValueFromPipeline)]
+        [parameter(ValueFromPipeline, Position = 1)]
         [Alias("cn", "host", "Server")]
         [DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,
         [pscredential]$Credential,

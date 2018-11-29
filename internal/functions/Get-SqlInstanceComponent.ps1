@@ -63,7 +63,7 @@ function Get-SQLInstanceComponent {
     [CmdletBinding()]
     param
     (
-        [Parameter(ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true)]
+        [Parameter(ValueFromPipeline, ValueFromPipelineByPropertyName)]
         [Alias('Computer', 'DNSHostName', 'IPAddress')]
         [DbaInstanceParameter[]]$ComputerName = $Env:COMPUTERNAME,
         [ValidateSet('SSDS', 'SSAS', 'SSRS')]
