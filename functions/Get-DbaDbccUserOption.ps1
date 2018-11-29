@@ -1,4 +1,4 @@
-function Get-DbaDbccUserOptions {
+function Get-DbaDbccUserOption {
     <#
     .SYNOPSIS
         Execution of Database Console Command DBCC USEROPTIONS
@@ -14,6 +14,10 @@ function Get-DbaDbccUserOptions {
 
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+
+
+    .PARAMETER Option
+        Return only specific options. Returns all results if not specified.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -53,6 +57,7 @@ function Get-DbaDbccUserOptions {
         [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
+        [string[]]$Option,
         [switch]$EnableException
     )
     begin {
@@ -77,12 +82,14 @@ function Get-DbaDbccUserOptions {
                 Stop-Function -Message "Failure running $query against $instance" -ErrorRecord $_ -Target $server -Continue
             }
             foreach ($row in $results) {
-                [PSCustomObject]@{
-                    ComputerName = $server.ComputerName
-                    InstanceName = $server.ServiceName
-                    SqlInstance  = $server.DomainInstanceName
-                    SetOption    = $row[0]
-                    Value        = $row[1]
+                if ((Test-Bound -Not -ParameterName Option) -or ($row[0] -in $Option)) {
+                    [PSCustomObject]@{
+                        ComputerName = $server.ComputerName
+                        InstanceName = $server.ServiceName
+                        SqlInstance  = $server.DomainInstanceName
+                        Option       = $row[0]
+                        Value        = $row[1]
+                    }
                 }
             }
         }
