@@ -337,6 +337,9 @@ function Get-DbaBackupInformation {
                 $group.UserName = Get-HashString -InString $group.UserName
                 $group.Path = Get-HashString -InString  $Group.Path
                 $group.FullName = Get-HashString -InString $Group.Fullname
+                $group.FileList = ($group.FileList | Select-Object Type,
+                  @{Name="LogicalName";Expression={Get-HashString -InString $_."LogicalName"}},
+                  @{Name="PhysicalName";Expression={Get-HashString -InString $_."PhysicalName"}})
             }
         }
         if ((Test-Bound -parameterName exportpath) -and $null -ne $ExportPath) {
