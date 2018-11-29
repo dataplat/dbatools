@@ -185,8 +185,8 @@ function New-DbaAgentJobStep {
             return
         }
 
-        if($Subsystem -in 'AnalysisScripting','AnalysisCommand','AnalysisQuery'){
-            if(-not $SubsystemServer){
+        if ($Subsystem -in 'AnalysisScripting', 'AnalysisCommand', 'AnalysisQuery') {
+            if (-not $SubsystemServer) {
                 Stop-Function -Message "Please enter the server value using -SubSystemServer for subsystem $Subsystem." -Target $Subsystem
                 return
             }
@@ -272,7 +272,7 @@ function New-DbaAgentJobStep {
                         $JobStep.Subsystem = $Subsystem
                     }
 
-                    if($SubsystemServer){
+                    if ($SubsystemServer) {
                         Write-Message -Message "Setting job step subsystem server to $SubsystemServer" -Level Verbose
                         $JobStep.Server = $SubsystemServer
                     }
