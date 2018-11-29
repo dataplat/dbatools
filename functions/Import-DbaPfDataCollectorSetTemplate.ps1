@@ -169,7 +169,7 @@ function Import-DbaPfDataCollectorSetTemplate {
         }
     }
     process {
-        if (-not (Test-Windows)) { return }
+        
         
         if ((Test-Bound -ParameterName Path -Not) -and (Test-Bound -ParameterName Template -Not)) {
             Stop-Function -Message "You must specify Path or Template"

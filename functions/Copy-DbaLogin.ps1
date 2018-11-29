@@ -229,7 +229,7 @@ function Copy-DbaLogin {
                     if ($Pscmdlet.ShouldProcess("console", "Stating $userName is skipped because it exists at destination.")) {
                         Write-Message -Level Verbose -Message "$userName already exists in destination. Use -Force to drop and recreate."
                         $copyLoginStatus.Status = "Skipped"
-                        $copyLoginStatus.Notes = "Already exists"
+                        $copyLoginStatus.Notes = "Already exists on destination"
                         $copyLoginStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                     }
                     continue

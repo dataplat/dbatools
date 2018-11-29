@@ -134,10 +134,10 @@ function Export-DbaDacPackage {
                 $fileName = $fileItem.FullName
             }
         }
-        
+
         if (-not $script:core) {
             $dacfxPath = Resolve-Path -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Dac.dll"
-            
+
             if ((Test-Path $dacfxPath) -eq $false) {
                 Stop-Function -Message 'Dac Fx library not found.' -EnableException $EnableException
                 return
@@ -151,7 +151,7 @@ function Export-DbaDacPackage {
                 }
             }
         }
-        
+
         #check that at least one of the DB selection parameters was specified
         if (!$AllUserDatabases -and !$Database) {
             Stop-Function -Message "Either -Database or -AllUserDatabases should be specified" -Continue
@@ -201,6 +201,7 @@ function Export-DbaDacPackage {
             }
 
             foreach ($db in $dbs) {
+                $resultstime = [diagnostics.stopwatch]::StartNew()
                 $dbname = $db.name
                 $connstring = $server.ConnectionContext.ConnectionString
                 if ($connstring -notmatch 'Database=') {
@@ -258,7 +259,6 @@ function Export-DbaDacPackage {
                     $cmdConnString = $connstring.Replace('"', "'")
 
                     $sqlPackageArgs = "/action:$action /tf:""$currentFileName"" /SourceConnectionString:""$cmdConnString"" $ExtendedParameters $ExtendedProperties"
-                    $resultstime = [diagnostics.stopwatch]::StartNew()
 
                     try {
                         $startprocess = New-Object System.Diagnostics.ProcessStartInfo

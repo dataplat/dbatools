@@ -144,6 +144,7 @@ function Copy-DbaLinkedServer {
                     if (!$force) {
                         if ($Pscmdlet.ShouldProcess($destinstance, "$linkedServerName exists $($destServer.Name). Skipping.")) {
                             $copyLinkedServer.Status = "Skipped"
+                            $copyLinkedServer.Notes = "Already exists on destination"
                             $copyLinkedServer | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
                             Write-Message -Level Verbose -Message "$linkedServerName exists $($destServer.Name). Skipping."

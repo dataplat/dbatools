@@ -163,6 +163,3 @@ function Set-DbaAgentAlert {
         }
     }
 }
-{
-    Write-Message -Message "Finished changing alert(s)" -Level Verbose
-}
