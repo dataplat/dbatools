@@ -142,6 +142,7 @@ function Copy-DbaDbMail {
                     if ($force -eq $false) {
                         If ($pscmdlet.ShouldProcess($destinstance, "Account $accountName exists at destination. Use -Force to drop and migrate.")) {
                             $copyMailAccountStatus.Status = "Skipped"
+                            $copyMailAccountStatus.Notes = "Already exists on destination"
                             $copyMailAccountStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                             Write-Message -Message "Account $accountName exists at destination. Use -Force to drop and migrate." -Level Verbose
                         }
@@ -206,7 +207,7 @@ function Copy-DbaDbMail {
                     if ($force -eq $false) {
                         If ($pscmdlet.ShouldProcess($destinstance, "Profile $profileName exists at destination. Use -Force to drop and migrate.")) {
                             $copyMailProfileStatus.Status = "Skipped"
-                            $copyMailProfileStatus.Notes = "Already exists"
+                            $copyMailProfileStatus.Notes = "Already exists on destination"
                             $copyMailProfileStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                             Write-Message -Message "Profile $profileName exists at destination. Use -Force to drop and migrate." -Level Verbose
                         }
@@ -270,7 +271,7 @@ function Copy-DbaDbMail {
                     if ($force -eq $false) {
                         if ($pscmdlet.ShouldProcess($destinstance, "Mail server $mailServerName exists at destination. Use -Force to drop and migrate.")) {
                             $copyMailServerStatus.Status = "Skipped"
-                            $copyMailServerStatus.Notes = "Already exists"
+                            $copyMailServerStatus.Notes = "Already exists on destination"
                             $copyMailServerStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                             Write-Message -Message "Mail server $mailServerName exists at destination. Use -Force to drop and migrate." -Level Verbose
                         }
