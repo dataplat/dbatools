@@ -23,15 +23,17 @@ function Find-SqlServerUpdate {
         [string]$KB,
         [ValidateSet('x86', 'x64')]
         [string]$Architecture = 'x64',
-        [string[]]$Path = (Get-DbatoolsConfigValue -Name 'Path.SQLServerUpdates')
+        [string[]]$Path = (Get-DbatoolsConfigValue -Name 'Path.SQLServerUpdates'),
+        [bool]$EnableException = $EnableException
 
     )
     begin {
-        if (!$Path) {
-            Stop-Function -Message "Path to SQL Server updates folder is not set. Consider running Set-DbatoolsConfig -Name Path.SQLServerUpdates -Value '\\path\to\updates' or specify the path in the original command" -EnableException $true
-        }
     }
     process {
+        if (!$Path) {
+            Stop-Function -Message "Path to SQL Server updates folder is not set. Consider running Set-DbatoolsConfig -Name Path.SQLServerUpdates -Value '\\path\to\updates' or specify the path in the original command"
+            return
+        }
         $filter = "SQLServer$MajorVersion*-KB$KB-*$Architecture*.exe"
         Write-Message -Level Verbose -Message "Using filter [$filter] to check for updates in $Path"
         try {
@@ -42,7 +44,8 @@ function Find-SqlServerUpdate {
                 }
             }
         } catch {
-            Stop-Function -Message "Failed to enumerate files in $Path" -ErrorRecord $_ -EnableException $true
+            Stop-Function -Message "Failed to enumerate files in $Path" -ErrorRecord $_
+            return
         }
     }
 }
