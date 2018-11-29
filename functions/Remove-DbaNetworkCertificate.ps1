@@ -61,7 +61,7 @@ function Remove-DbaNetworkCertificate {
     )
     process {
         # Registry access
-        if (-not (Test-Windows)) { return }
+        
         
         foreach ($instance in $sqlinstance) {
             Write-Message -Level VeryVerbose -Message "Processing $instance" -Target $instance

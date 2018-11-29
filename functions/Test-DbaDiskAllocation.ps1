@@ -180,7 +180,7 @@ function Test-DbaDiskAllocation {
 
     process {
         # uses cim commands
-        if (-not (Test-Windows)) { return }
+        
         
         foreach ($computer in $ComputerName) {
 

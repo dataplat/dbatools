@@ -157,7 +157,8 @@ function Copy-DbaAgentProxy {
 
                     if ($force -eq $false) {
                         $copyAgentProxyAccountStatus.Status = "Skipped"
-                        $copyAgentProxyAccountStatus
+                        $copyAgentProxyAccountStatus.Notes = "Already exists on destination"
+                        $copyAgentProxyAccountStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                         Stop-Function -Message "Server proxy account $proxyName exists at destination. Use -Force to drop and migrate." -Continue
                     } else {
                         if ($Pscmdlet.ShouldProcess($destinstance, "Dropping server proxy account $proxyName and recreating")) {
