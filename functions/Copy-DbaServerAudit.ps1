@@ -26,7 +26,7 @@ function Copy-DbaServerAudit {
     .PARAMETER ExcludeAudit
         The audit(s) to exclude. Options for this list are auto-populated from the server.
 
-    .PARAMETER FilePath
+    .PARAMETER Path
         Destination file path. If not specified, the file path of the source will be used (or the default data directory).
 
     .PARAMETER WhatIf
@@ -72,7 +72,7 @@ function Copy-DbaServerAudit {
         Shows what would happen if the command were executed using force.
 
     .EXAMPLE
-        PS C:\> Copy-DbaServerAudit -Source sqlserver-0 -Destination sqlserver-1 -Audit audit1 -FilePath 'C:\audit1'
+        PS C:\> Copy-DbaServerAudit -Source sqlserver-0 -Destination sqlserver-1 -Audit audit1 -Path 'C:\audit1'
 
         Copies audit audit1 from sqlserver-0 to sqlserver-1. The file path on sqlserver-1 will be set to 'C:\audit1'.
     #>
@@ -88,7 +88,7 @@ function Copy-DbaServerAudit {
         $DestinationSqlCredential,
         [object[]]$Audit,
         [object[]]$ExcludeAudit,
-        [string]$FilePath,
+        [string]$Path,
         [switch]$Force,
         [Alias('Silent')]
         [switch]$EnableException
@@ -130,8 +130,8 @@ function Copy-DbaServerAudit {
                     continue
                 }
 
-                if ($FilePath) {
-                    $currentAudit.Filepath = $FilePath
+                if ($Path) {
+                    $currentAudit.FilePath = $Path
                 }
 
                 if ($destAudits.Name -contains $auditName) {
