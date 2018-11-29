@@ -154,7 +154,7 @@ function Copy-DbaAgentAlert {
                     if ($force -eq $false) {
                         if ($PSCmdlet.ShouldProcess($destinstance, "Alert [$alertName] exists at destination. Use -Force to drop and migrate.")) {
                             $copyAgentAlertStatus.Status = "Skipped"
-                            $copyAgentAlertStatus.Notes = "Already exists"
+                            $copyAgentAlertStatus.Notes = "Already exists on destination"
                             $copyAgentAlertStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                             Write-Message -Message "Alert [$alertName] exists at destination. Use -Force to drop and migrate." -Level Verbose
                         }

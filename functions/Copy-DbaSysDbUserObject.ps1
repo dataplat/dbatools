@@ -136,7 +136,7 @@ function Copy-DbaSysDbUserObject {
                         if ($destschema) {
                             if (-not $force) {
                                 $copyobject.Status = "Skipped"
-                                $copyobject.Notes = "$schema exists on destination"
+                                $copyobject.Notes = "Already exists on destination"
                                 $schmadoit = $false
                             } else {
                                 if ($PSCmdlet.ShouldProcess($destServer, "Dropping schema $schema in $systemDb")) {
@@ -191,7 +191,7 @@ function Copy-DbaSysDbUserObject {
                         if ($desttable) {
                             if (-not $force) {
                                 $copyobject.Status = "Skipped"
-                                $copyobject.Notes = "$table exists on destination"
+                                $copyobject.Notes = "Already exists on destination"
                                 $doit = $false
                             } else {
                                 if ($PSCmdlet.ShouldProcess($destServer, "Dropping table $table in $systemDb")) {
@@ -256,7 +256,7 @@ function Copy-DbaSysDbUserObject {
                                 Write-Message -Level Verbose -Message "Found $name in $db on $destinstance"
                                 if (-not $Force) {
                                     $copyobject.Status = "Skipped"
-                                    $copyobject.Notes = "$name exists on destination"
+                                    $copyobject.Notes = "Already exists on destination"
                                 } else {
                                     $smobject = switch ($userobject.Type) {
                                         "VIEW" { $smodb.Views.Item($userobject.Name, $userobject.SchemaName) }
