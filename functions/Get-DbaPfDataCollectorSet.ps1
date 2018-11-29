@@ -177,7 +177,7 @@ function Get-DbaPfDataCollectorSet {
         'SubdirectoryFormatPattern', 'Task', 'TaskArguments', 'TaskRunAsSelf', 'TaskUserTextArguments', 'UserAccount'
     }
     process {
-        if (-not (Test-Windows)) { return }
+        
         
         foreach ($computer in $ComputerName.ComputerName) {
             try {
