@@ -1,13 +1,13 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
+Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
         $paramCount = 3
         $defaultParamCount = 11
-        [object[]]$params = (Get-ChildItem function:\Get-DbaPrivilege).Parameters.Keys
-        $knownParameters = 'ComputerName', 'Credential', 'EnableException'
+        [object[]]$params = (Get-ChildItem function:\Get-DbaAgentServer).Parameters.Keys
+        $knownParameters = 'SqlInstance', 'SqlCredential', 'EnableException'
         It "Should contain our specific parameters" {
             ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
         }
@@ -18,11 +18,10 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 }
 
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
-
-    Context "Gets Instance Privilege" {
-        $results = Get-DbaPrivilege -ComputerName $env:ComputerName
-        It "Gets results" {
-            $results | Should Not Be $null
+    Context "Command gets server agent" {
+        $results = Get-DbaAgentServer -SqlInstance $script:instance2
+        It "Should get 1 agent server" {
+            $results.count | Should Be 1
         }
     }
 }
