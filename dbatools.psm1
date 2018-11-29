@@ -1395,7 +1395,6 @@ $windowsonly = @(
     'Get-DbaDbccUserOptions',
     'Get-DbaAgentServer',
     'Set-DbaAgentServer'
-    
     # solvable filesystem issues
     'Install-DbaSqlWatch',
     'Uninstall-DbaSqlWatch',
@@ -1416,7 +1415,6 @@ $windowsonly = @(
     'Install-DbaFirstResponderKit',
     'Read-DbaXEFile',
     'Watch-DbaXESession',
-    
     # CM and Windows functions
     'Test-DbaMaxMemory', # can be fixed by not testing remote
     'Invoke-DbaPfRelog',
@@ -1434,7 +1432,6 @@ $windowsonly = @(
     'Remove-DbaPfDataCollectorCounter',
     'Get-DbaPfAvailableCounter',
     'Export-DbaXECsv',
-    'Export-DbaDacPackage', # relies on sqlpackage.exe
     'Get-DbaOperatingSystem',
     'Get-DbaComputerSystem',
     'Set-DbaPrivilege',
@@ -1513,24 +1510,20 @@ $windowsonly = @(
     'Get-DbaService',
     'Get-DbaClientProtocol',
     'Get-DbaWindowsLog',
-
     # WPF
     'Show-DbaServerFileSystem',
     'Show-DbaDbList',
-
     # AD?
     'Test-DbaWindowsLogin',
     'Find-DbaLoginInGroup',
-
     # 3rd party non-core DLL or exe
     'Import-DbaCsv',
-
+    'Export-DbaDacPackage', # relies on sqlpackage.exe
     # Config system
     'Get-DbatoolsConfig',
     'Get-DbatoolsConfigValue',
     'Set-DbatoolsConfig',
     'Register-DbatoolsConfig',
-
     # Unknown
     'Get-DbaErrorLog',
     'Get-DbaManagementObject',
@@ -1538,9 +1531,11 @@ $windowsonly = @(
 )
 
 if (($PSVersionTable.Keys -contains "Platform") -and $psversiontable.Platform -ne "Win32NT") {
-    Export-ModuleMember -Alias "$($script:renames, $forever)" -Function "$xplat"
+    Export-ModuleMember -Alias "$($script:renames, $forever)" -Function $xplat
 } else {
-    Export-ModuleMember -Alias "$($script:renames, $forever)" -Function "$($xplat, $windowsonly)"
+    Export-ModuleMember -Alias "$($script:renames, $forever)"    
+    Export-ModuleMember -Function $xplat
+    Export-ModuleMember -Function $windowsonly
 }
 
 #region Post-Import Cleanup
