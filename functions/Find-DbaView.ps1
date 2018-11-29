@@ -65,7 +65,7 @@ function Find-DbaView {
 
         Searches in "mydb" database views for "runtime" in the text body
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Position = 0, Mandatory, ValueFromPipeline)]
@@ -199,4 +199,3 @@ function Find-DbaView {
         Write-Message -Level Verbose -Message "Evaluated $everyservervwcount total views"
     }
 }
-

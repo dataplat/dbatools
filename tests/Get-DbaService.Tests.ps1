@@ -10,8 +10,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         $SupportShouldProcess = $false
         if ($SupportShouldProcess) {
             $defaultParamCount = 13
-        }
-        else {
+        } else {
             $defaultParamCount = 11
         }
         [object[]]$params = (Get-ChildItem function:\Get-DbaService).Parameters.Keys

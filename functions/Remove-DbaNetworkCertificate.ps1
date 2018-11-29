@@ -50,22 +50,19 @@ function Remove-DbaNetworkCertificate {
 
         Shows what would happen if the command were run
 
-#>
+    #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low", DefaultParameterSetName = 'Default')]
     param (
         [Parameter(ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer", "ComputerName")]
-        [DbaInstanceParameter[]]
-        $SqlInstance = $env:COMPUTERNAME,
-
-        [PSCredential]
-
-        $Credential,
-
-        [switch]
-        [Alias('Silent')]$EnableException
+        [DbaInstanceParameter[]]$SqlInstance = $env:COMPUTERNAME,
+        [PSCredential]$Credential,
+        [switch]$EnableException
     )
     process {
+        # Registry access
+        
+        
         foreach ($instance in $sqlinstance) {
             Write-Message -Level VeryVerbose -Message "Processing $instance" -Target $instance
             $null = Test-ElevationRequirement -ComputerName $instance -Continue
@@ -137,4 +134,3 @@ function Remove-DbaNetworkCertificate {
         }
     }
 }
-

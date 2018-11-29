@@ -7,7 +7,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         $paramCount = 10
         $defaultParamCount = 11
         [object[]]$params = (Get-ChildItem function:\Export-DbaRepServerSetting).Parameters.Keys
-        $knownParameters = 'SqlInstance','SqlCredential','Path','ScriptOption','InputObject','Encoding','Passthru','NoClobber','Append','EnableException'
+        $knownParameters = 'SqlInstance', 'SqlCredential', 'Path', 'ScriptOption', 'InputObject', 'Encoding', 'Passthru', 'NoClobber', 'Append', 'EnableException'
         It "Should contain our specific parameters" {
             ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
         }
@@ -21,4 +21,3 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Read https://github.com/sqlcollaborative/dbatools/blob/development/contributing.md#tests
     for more guidence.
 #>
-

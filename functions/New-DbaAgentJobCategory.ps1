@@ -55,9 +55,9 @@ function New-DbaAgentJobCategory {
 
         Creates a new job category with the name 'Category 2' and assign the category type for a multi server job.
 
-#>
+    #>
 
-    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "Low")]
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
@@ -127,4 +127,3 @@ function New-DbaAgentJobCategory {
     }
 
 }
-

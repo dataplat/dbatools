@@ -28,7 +28,7 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
 
             Mock Connect-ReplicationDB -MockWith {
                 [object]@{
-                    Name = 'TestDB'
+                    Name              = 'TestDB'
                     TransPublications = @{
                         Name = 'TestDB_pub'
                         Type = 'Transactional'
@@ -39,18 +39,18 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
 
             Mock Connect-SqlInstance -MockWith {
                 [object]@{
-                    Name      = "MockServerName"
-                    ComputerName   = 'MockComputerName'
-                    Databases = @{
-                                    Name = 'TestDB'
-                                    #state
-                                    #status
-                                    ID = 5
-                                    ReplicationOptions = 'Published'
-                                }
+                    Name              = "MockServerName"
+                    ComputerName      = 'MockComputerName'
+                    Databases         = @{
+                        Name               = 'TestDB'
+                        #state
+                        #status
+                        ID                 = 5
+                        ReplicationOptions = 'Published'
+                    }
                     ConnectionContext = @{
-                                           SqlConnectionObject = 'FakeConnectionContext'
-                                        }
+                        SqlConnectionObject = 'FakeConnectionContext'
+                    }
                 }
             }
 
@@ -68,7 +68,7 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
 
                 Mock Connect-ReplicationDB -MockWith {
                     [object]@{
-                        Name = 'TestDB'
+                        Name              = 'TestDB'
                         TransPublications = @{
                             Name = 'TestDB_pub'
                             Type = 'Snapshot'
@@ -82,11 +82,11 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
             }
 
             It "Stops if the SqlInstance does not exist" {
-            
+
                 Mock Connect-SqlInstance -MockWith { Throw }
-        
+
                 { Get-DbaRepPublication -sqlinstance MockServerName -EnableException} | should Throw
-                
+
             }
 
             It "Stops if validate set for PublicationType is not met" {
@@ -97,4 +97,3 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
         }
     }
 }
-

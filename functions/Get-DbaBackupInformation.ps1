@@ -42,7 +42,7 @@ function Get-DbaBackupInformation {
         If specified the provided path/directory will be traversed (only applies if not using XpDirTree)
 
     .PARAMETER Anonymise
-        If specified we will output the results with ComputerName, InstanceName, Database, UserName, and Paths hashed out
+        If specified we will output the results with ComputerName, InstanceName, Database, UserName, Paths, and Logical and Physical Names hashed out
         This options is mainly for use if we need you to submit details for fault finding to the dbatools team
 
     .PARAMETER ExportPath
@@ -122,7 +122,7 @@ function Get-DbaBackupInformation {
 
         As we know we are dealing with an Ola Hallengren style backup folder from the MaintenanceSolution switch, when IgnoreLogBackup is also included we can ignore the LOG folder to skip any scanning of log backups. Note this also means they WON'T be restored
 
-#>
+    #>
     [CmdletBinding( DefaultParameterSetName = "Create")]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingPlainTextForPassword", "", Justification = "For Parameter AzureCredential")]
     param (
@@ -305,8 +305,8 @@ function Get-DbaBackupInformation {
                 $historyObject.Duration = ([DateTime]$group.Group[0].BackupFinishDate - [DateTime]$group.Group[0].BackupStartDate)
                 $historyObject.Path = [string[]]$Group.Group.BackupPath
                 $historyObject.FileList = ($group.Group.FileList | Select-Object Type, LogicalName, PhysicalName)
-                $historyObject.TotalSize = ($Group.Group.BackupSize | Measure-Object -Sum).Sum
-                $HistoryObject.CompressedBackupSize = ($Group.Group.CompressedBackupSize | Measure-Object -Sum).Sum
+                $historyObject.TotalSize = ($Group.Group.BackupSize.Byte | Measure-Object -Sum).Sum
+                $HistoryObject.CompressedBackupSize = ($Group.Group.CompressedBackupSize.Byte | Measure-Object -Sum).Sum
                 $historyObject.Type = $description
                 $historyObject.BackupSetId = $group.group[0].BackupSetGUID
                 $historyObject.DeviceType = 'Disk'
@@ -337,6 +337,9 @@ function Get-DbaBackupInformation {
                 $group.UserName = Get-HashString -InString $group.UserName
                 $group.Path = Get-HashString -InString  $Group.Path
                 $group.FullName = Get-HashString -InString $Group.Fullname
+                $group.FileList = ($group.FileList | Select-Object Type,
+                    @{Name = "LogicalName"; Expression = {Get-HashString -InString $_."LogicalName"}},
+                    @{Name = "PhysicalName"; Expression = {Get-HashString -InString $_."PhysicalName"}})
             }
         }
         if ((Test-Bound -parameterName exportpath) -and $null -ne $ExportPath) {
@@ -348,4 +351,3 @@ function Get-DbaBackupInformation {
         $groupResults | Sort-Object -Property End -Descending
     }
 }
-

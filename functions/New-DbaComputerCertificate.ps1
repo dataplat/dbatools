@@ -35,7 +35,7 @@ function New-DbaComputerCertificate {
     .PARAMETER ClusterInstanceName
         When creating certs for a cluster, use this parameter to create the certificate for the cluster node name. Use ComputerName for each of the nodes.
 
-    .PARAMETER Password
+    .PARAMETER SecurePassword
         Password to encrypt/decrypt private key for export to remote machine
 
     .PARAMETER FriendlyName
@@ -107,8 +107,8 @@ function New-DbaComputerCertificate {
 
         Creates a self-signed certificate
 
-#>
-    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "Low")]
+    #>
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseOutputTypeCorrectly", "", Justification = "PSSA Rule Ignored by BOH")]
     param (
         [parameter(ValueFromPipeline)]
@@ -118,7 +118,8 @@ function New-DbaComputerCertificate {
         [string]$CaServer,
         [string]$CaName,
         [string]$ClusterInstanceName,
-        [securestring]$Password,
+        [Alias("Password")]
+        [securestring]$SecurePassword,
         [string]$FriendlyName = "SQL Server",
         [string]$CertificateTemplate = "WebServer",
         [int]$KeyLength = 1024,
@@ -228,6 +229,9 @@ function New-DbaComputerCertificate {
 
     process {
         if (Test-FunctionInterrupt) { return }
+
+        # uses dos command locally
+        
 
         foreach ($computer in $ComputerName) {
 
@@ -344,7 +348,7 @@ function New-DbaComputerCertificate {
                 if (!$secondaryNode) {
                     if ($PScmdlet.ShouldProcess("local", "Generating pfx and reading from disk")) {
                         Write-Message -Level Output -Message "Exporting PFX with password to $tempPfx"
-                        $certdata = $storedCert.Export([System.Security.Cryptography.X509Certificates.X509ContentType]::PFX, $password)
+                        $certdata = $storedCert.Export([System.Security.Cryptography.X509Certificates.X509ContentType]::PFX, $SecurePassword)
                     }
 
                     if ($PScmdlet.ShouldProcess("local", "Removing cert from disk but keeping it in memory")) {
@@ -367,7 +371,7 @@ function New-DbaComputerCertificate {
 
                 if ($PScmdlet.ShouldProcess("local", "Connecting to $computer to import new cert")) {
                     try {
-                        Invoke-Command2 -ComputerName $computer -Credential $Credential -ArgumentList $certdata, $Password, $Store, $Folder -ScriptBlock $scriptblock -ErrorAction Stop |
+                        Invoke-Command2 -ComputerName $computer -Credential $Credential -ArgumentList $certdata, $SecurePassword, $Store, $Folder -ScriptBlock $scriptblock -ErrorAction Stop |
                             Select-DefaultView -Property DnsNameList, Thumbprint, NotBefore, NotAfter, Subject, Issuer
                     } catch {
                         Stop-Function -Message "Issue importing new cert on $computer" -ErrorRecord $_ -Target $computer -Continue
@@ -384,4 +388,3 @@ function New-DbaComputerCertificate {
         }
     }
 }
-

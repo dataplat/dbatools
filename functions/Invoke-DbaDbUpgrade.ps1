@@ -90,7 +90,7 @@ function Invoke-DbaDbUpgrade {
 
         Get only specific databases using GridView and pass those to Invoke-DbaDbUpgrade
 
-#>
+    #>
     [CmdletBinding(SupportsShouldProcess)]
     param (
         [parameter(Position = 0)]
@@ -278,4 +278,3 @@ function Invoke-DbaDbUpgrade {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Invoke-DbaDatabaseUpgrade
     }
 }
-

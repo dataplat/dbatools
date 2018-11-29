@@ -22,6 +22,9 @@ function Test-DbaPowerPlan {
     .PARAMETER Detailed
         Output all properties, will be deprecated in 1.0.0 release.
 
+    .PARAMETER InputObject
+        Enables piping from Get-DbaPowerPlan
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -48,15 +51,16 @@ function Test-DbaPowerPlan {
 
         Checks the Power Plan settings for sqlserver2014a and indicates whether or not it is set to the custom plan "Maximum Performance".
 
-#>
+       #>
     param (
         [parameter(ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer", "SqlInstance")]
         [DbaInstance[]]$ComputerName = $env:COMPUTERNAME,
         [PSCredential]$Credential,
         [string]$CustomPowerPlan,
+        [parameter(ValueFromPipeline)]
+        [pscustomobject]$InputObject,
         [switch]$Detailed,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 
@@ -70,12 +74,19 @@ function Test-DbaPowerPlan {
     }
 
     process {
-        foreach ($computer in $ComputerName) {
+        if (Test-Bound -ParameterName ComputerName) {
+            $InputObject += Get-DbaPowerPlan -ComputerName $ComputerName -Credential $Credential
+        }
+
+        foreach ($powerPlan in $InputObject) {
+            $computer = $powerPlan.ComputerName
+            $Credential = $powerPlan.Credential
+
             $server = Resolve-DbaNetworkName -ComputerName $computer -Credential $Credential
 
             $computerResolved = $server.FullComputerName
 
-            if (!$computerResolved) {
+            if (-not $computerResolved) {
                 Stop-Function -Message "Couldn't resolve hostname. Skipping." -Continue
             }
 
@@ -83,6 +94,7 @@ function Test-DbaPowerPlan {
                 ComputerName    = $computerResolved
                 EnableException = $true
             }
+
             if (Test-Bound "Credential") {
                 $splatDbaCmObject["Credential"] = $Credential
             }
@@ -90,7 +102,7 @@ function Test-DbaPowerPlan {
             Write-Message -Level Verbose -Message "Getting Power Plan information from $computer."
 
             try {
-                $powerPlans = Get-DbaCmObject @splatDbaCmObject -ClassName Win32_PowerPlan -Namespace "root\cimv2\power"  | Select-Object ElementName, InstanceId, IsActive
+                $powerPlans = Get-DbaCmObject @splatDbaCmObject -ClassName Win32_PowerPlan -Namespace "root\cimv2\power" | Select-Object ElementName, InstanceId, IsActive
             } catch {
                 if ($_.Exception -match "namespace") {
                     Stop-Function -Message "Can't get Power Plan Info for $computer. Unsupported operating system." -Continue -ErrorRecord $_ -Target $computer
@@ -102,11 +114,18 @@ function Test-DbaPowerPlan {
             $powerPlan = $powerPlans | Where-Object IsActive -eq 'True' | Select-Object ElementName, InstanceID
             $powerPlan.InstanceID = $powerPlan.InstanceID.Split('{')[1].Split('}')[0]
 
-            if ($CustomPowerPlan.Length -gt 0) {
+            if ($null -eq $powerPlan.InstanceID) {
+                $powerPlan.ElementName = "Unknown"
+            }
+            if ($CustomPowerPlan) {
                 $bpPowerPlan.ElementName = $CustomPowerPlan
-                $bpPowerPlan.InstanceID = $($powerPlans | Where-Object { $_.ElementName -eq $CustomPowerPlan }).InstanceID
+                $bpPowerPlan.InstanceID = $($powerPlans | Where-Object {
+                        $_.ElementName -eq $CustomPowerPlan
+                    }).InstanceID
             } else {
-                $bpPowerPlan.ElementName = $($powerPlans | Where-Object { $_.InstanceID.Split('{')[1].Split('}')[0] -eq $bpPowerPlan.InstanceID }).ElementName
+                $bpPowerPlan.ElementName = $($powerPlans | Where-Object {
+                        $_.InstanceID.Split('{')[1].Split('}')[0] -eq $bpPowerPlan.InstanceID
+                    }).ElementName
                 if ($null -eq $bpPowerplan.ElementName) {
                     $bpPowerPlan.ElementName = "You do not have the high performance plan installed on this machine."
                 }
@@ -129,8 +148,8 @@ function Test-DbaPowerPlan {
                 ActivePowerPlan      = $powerPlan.ElementName
                 RecommendedPowerPlan = $bpPowerPlan.ElementName
                 isBestPractice       = $isBestPractice
-            }
+                Credential           = $Credential
+            } | Select-DefaultView -ExcludeProperty Credential
         }
     }
 }
-

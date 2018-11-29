@@ -44,7 +44,6 @@ function global:New-DbaTeppCompletionResult {
         [System.Management.Automation.CompletionResultType]
         $CompletionResultType = [System.Management.Automation.CompletionResultType]::ParameterValue,
 
-        [Parameter(Mandatory = $false)]
         [switch]
         $NoQuotes = $false
     )
@@ -77,4 +76,3 @@ function global:New-DbaTeppCompletionResult {
 }
 
 (Get-Item Function:\New-DbaTeppCompletionResult).Visibility = "Private"
-

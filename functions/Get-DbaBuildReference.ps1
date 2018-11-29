@@ -56,14 +56,14 @@ function Get-DbaBuildReference {
 
         Integrate with other cmdlets to have builds checked for all your registered servers on sqlserver2014a
 
-#>
+    #>
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "")]
     [CmdletBinding()]
     param (
         [version[]]
         $Build,
 
-        [parameter(Mandatory = $false, ValueFromPipeline)]
+        [parameter(ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]
         $SqlInstance,
@@ -296,4 +296,3 @@ function Get-DbaBuildReference {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-DbaSqlBuildReference
     }
 }
-

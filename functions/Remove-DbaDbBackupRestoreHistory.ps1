@@ -67,11 +67,10 @@ function Remove-DbaDbBackupRestoreHistory {
         PS C:\> Get-DbaDatabase -SqlInstance sql2016 | Remove-DbaDbBackupRestoreHistory -WhatIf
 
         Remove complete backup and restore history for all databases on SQL Server sql2016
-       #>
+    #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
     param (
         [DbaInstanceParameter[]]$SqlInstance,
-        [parameter(Mandatory = $false)]
         [PSCredential]$SqlCredential,
         [int]$KeepDays = 30,
         [string[]]$Database,

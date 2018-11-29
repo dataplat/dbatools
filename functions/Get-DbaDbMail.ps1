@@ -44,7 +44,7 @@ function Get-DbaDbMail {
 
         Returns the db mail server object for "sql2014","sql2016" and "sqlcluster\sharepoint"
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [Parameter(ValueFromPipeline, Mandatory)]
@@ -75,4 +75,3 @@ function Get-DbaDbMail {
         }
     }
 }
-

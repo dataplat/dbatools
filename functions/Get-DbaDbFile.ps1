@@ -50,7 +50,7 @@ function Get-DbaDbFile {
 
         Will return an object containing all file groups and their contained files for the Impromptu and Trading databases on the sql2016 SQL Server instance
 
-#>
+    #>
     [CmdletBinding(DefaultParameterSetName = "Default")]
     param (
         [parameter(ParameterSetName = "Pipe", Mandatory, ValueFromPipeline)]
@@ -132,8 +132,8 @@ function Get-DbaDbFile {
             fg.groupid as FileGroupDataSpaceId,
             NULL as FileGroupType,
             NULL AS FileGroupTypeDescription,
-            CAST(fg.Status & 0x10 as BIT) as FileGroupDefault,
-            CAST(fg.Status & 0x8 as BIT) as FileGroupReadOnly
+            CAST(fg.status & 0x10 as BIT) as FileGroupDefault,
+            CAST(fg.status & 0x8 as BIT) as FileGroupReadOnly
             from sysfiles df
             left outer join  sysfilegroups fg on df.groupid=fg.groupid"
 
@@ -148,14 +148,15 @@ function Get-DbaDbFile {
             }
 
             foreach ($db in $InputObject) {
-                if (!$db.IsAccessible) {
-                    Write-Message -Level Warning -Message "Database $db is not accessible. Skipping"
-                    continue
-                }
+
                 Write-Message -Level Verbose -Message "Querying database $db"
 
-                $version = Test-DbaDbCompatibility -SqlInstance $server -Database $db.Name | Select-Object DatabaseCompatibility
-                $version = + ($version.DatabaseCompatibility.ToString().replace("Version", "")) / 10
+                try {
+                    $version = $server.Query("SELECT compatibility_level FROM sys.databases WHERE name = '$($db.Name)'")
+                    $version = [int]($version.compatibility_level / 10)
+                } catch {
+                    $version = 8
+                }
 
                 if ($version -ge 11) {
                     $query = ($sql, $sql2008, $sqlfrom, $sql2008from) -Join "`n"
@@ -167,7 +168,11 @@ function Get-DbaDbFile {
 
                 Write-Message -Level Debug -Message "SQL Statement: $query"
 
-                $results = $server.Query($query, $db.Name)
+                try {
+                    $results = $server.Query($query, $db.Name)
+                } catch {
+                    Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
+                }
 
                 foreach ($result in $results) {
                     $size = [dbasize]($result.Size * 8192)
@@ -208,7 +213,7 @@ ON fd.Drive = LEFT(df.physical_name, 1);
                             $free = $disks | Where-Object {
                                 $_.drive -eq $result.PhysicalName.Substring(0, 1)
                             } | Select-Object $MbFreeColName
-                            
+
                             $VolumeFreeSpace = [dbasize](($free.MB_Free) * 1024 * 1024)
                         }
                     }
@@ -261,4 +266,3 @@ ON fd.Drive = LEFT(df.physical_name, 1);
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-DbaDatabaseFIle
     }
 }
-

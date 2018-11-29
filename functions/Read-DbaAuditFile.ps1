@@ -46,7 +46,7 @@ function Read-DbaAuditFile {
 
         Reads remote Audit details by accessing the file over the admin UNC share.
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
@@ -142,4 +142,3 @@ function Read-DbaAuditFile {
         }
     }
 }
-

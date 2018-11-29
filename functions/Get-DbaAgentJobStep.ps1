@@ -18,7 +18,7 @@ function Get-DbaAgentJobStep {
     .PARAMETER ExcludeJob
         The job(s) to exclude - this list is auto-populated from the server.
 
-    .PARAMETER NoDisabledJobs
+    .PARAMETER ExcludeDisabledJobs
         Switch will exclude disabled jobs from the output.
 
     .PARAMETER EnableException
@@ -58,7 +58,7 @@ function Get-DbaAgentJobStep {
         Returns all SQL Agent Job Steps for the local SQL Server instances, except for the BackupDiff Job.
 
     .EXAMPLE
-        PS C:\> Get-DbaAgentJobStep -SqlInstance localhost -NoDisabledJobs
+        PS C:\> Get-DbaAgentJobStep -SqlInstance localhost -ExcludeDisabledJobs
 
         Returns all SQL Agent Job Steps for the local SQL Server instances, excluding the disabled jobs.
 
@@ -67,7 +67,7 @@ function Get-DbaAgentJobStep {
 
         Find all of your Job Steps from SQL Server instances in the $servers collection
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Position = 0, Mandatory, ValueFromPipeline)]
@@ -77,7 +77,7 @@ function Get-DbaAgentJobStep {
         $SqlCredential,
         [object[]]$Job,
         [object[]]$ExcludeJob,
-        [switch]$NoDisabledJobs,
+        [switch]$ExcludeDisabledJobs,
         [Alias('Silent')]
         [switch]$EnableException
     )
@@ -99,7 +99,7 @@ function Get-DbaAgentJobStep {
             if ($ExcludeJob) {
                 $jobs = $jobs | Where-Object Name -NotIn $ExcludeJob
             }
-            if ($NoDisabledJobs) {
+            if ($ExcludeDisabledJobs) {
                 $jobs = $Jobs | Where-Object IsEnabled -eq $true
             }
             Write-Message -Level Verbose -Message "Collecting job steps on $instance"
@@ -114,4 +114,3 @@ function Get-DbaAgentJobStep {
         }
     }
 }
-

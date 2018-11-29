@@ -26,10 +26,9 @@ function Convert-ByteToHexString {
     Convert-ByteToHexString 18,52
 
     Returns hex string '0x1234'
-#>
+    #>
     param ([byte[]]$InputObject)
     $outString = "0x"
     $InputObject | ForEach-Object { $outString += ("{0:X}" -f $_).PadLeft(2, "0") }
     $outString
 }
-

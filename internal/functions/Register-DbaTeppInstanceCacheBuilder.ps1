@@ -32,7 +32,7 @@ function Register-DbaTeppInstanceCacheBuilder {
 
         .NOTES
             Additional information about the function.
-    #>
+       #>
     [CmdletBinding()]
     param (
         [Parameter(Mandatory)]
@@ -49,5 +49,3 @@ function Register-DbaTeppInstanceCacheBuilder {
         [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::TeppGatherScriptsFast.Add($ScriptBlock)
     }
 }
-
-

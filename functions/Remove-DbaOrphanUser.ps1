@@ -85,8 +85,8 @@ function Remove-DbaOrphanUser {
 
         Removes user OrphanUser from all databases even if they have a matching Login. Any schema that the user owns will change ownership to dbo.
 
-#>
-    [CmdletBinding(SupportsShouldProcess = $true)]
+    #>
+    [CmdletBinding(SupportsShouldProcess)]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
@@ -97,7 +97,7 @@ function Remove-DbaOrphanUser {
         [Alias("Databases")]
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
-        [parameter(Mandatory = $false, ValueFromPipeline)]
+        [parameter(ValueFromPipeline)]
         [object[]]$User,
         [switch]$Force,
         [Alias('Silent')]
@@ -148,14 +148,12 @@ function Remove-DbaOrphanUser {
                         } else {
                             Write-Message -Level Verbose -Message "Validating users on database $db."
 
-                            if ($User.Count -eq 0) {
-                                #the third validation will remove from list sql users without login. The rule here is Sid with length higher than 16
-                                $User = $db.Users | Where-Object { $_.Login -eq "" -and ($_.ID -gt 4) -and (($_.Sid.Length -gt 16 -and $_.LoginType -eq [Microsoft.SqlServer.Management.Smo.LoginType]::SqlLogin) -eq $false) }
+                            if ($User.Count -ge 1) {
+                                #the third validation will remove from list sql users without login  or mapped to certificate. The rule here is Sid with length higher than 16
+                                $User = $db.Users | Where-Object { $_.Login -eq "" -and ($_.ID -gt 4) -and (($_.Sid.Length -gt 16 -and $_.LoginType -in @([Microsoft.SqlServer.Management.Smo.LoginType]::SqlLogin, [Microsoft.SqlServer.Management.Smo.LoginType]::Certificate)) -eq $false) }
                             } else {
-
-                                #the fourth validation will remove from list sql users without login. The rule here is Sid with length higher than 16
-                                $User = $db.Users | Where-Object { $_.Login -eq "" -and ($_.ID -gt 4) -and ($User -contains $_.Name) -and (($_.Sid.Length -gt 16 -and $_.LoginType -eq [Microsoft.SqlServer.Management.Smo.LoginType]::SqlLogin) -eq $false) }
-
+                                #the fourth validation will remove from list sql users without login or mapped to certificate. The rule here is Sid with length higher than 16
+                                $User = $db.Users | Where-Object { $_.Login -eq "" -and ($_.ID -gt 4) -and ($User -contains $_.Name) -and (($_.Sid.Length -gt 16 -and $_.LoginType -in @([Microsoft.SqlServer.Management.Smo.LoginType]::SqlLogin, [Microsoft.SqlServer.Management.Smo.LoginType]::Certificate)) -eq $false) }
                             }
                         }
 
@@ -315,4 +313,3 @@ function Remove-DbaOrphanUser {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Remove-SqlOrphanUser
     }
 }
-

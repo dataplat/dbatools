@@ -92,7 +92,7 @@ function Add-DbaAgReplica {
         PS C:\> Get-DbaAvailabilityGroup -SqlInstance sql2017a -AvailabilityGroup SharePoint | Add-DbaAgReplica -SqlInstance sql2017b -FailoverMode Manual
 
         Adds sql2017b to the SharePoint availability group on sql2017a with a manual failover mode.
-#>
+    #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Low')]
     param (
         [DbaInstanceParameter[]]$SqlInstance,
@@ -174,7 +174,7 @@ function Add-DbaAgReplica {
                         $replica.ReadonlyRoutingConnectionUrl = $ReadonlyRoutingConnectionUrl
                     }
 
-                    if ($SeedingMode) {
+                    if ($SeedingMode -and $server.VersionMajor -ge 13) {
                         $replica.SeedingMode = $SeedingMode
                     }
 

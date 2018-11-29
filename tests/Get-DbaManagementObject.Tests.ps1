@@ -7,7 +7,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         $paramCount = 4
         $defaultParamCount = 11
         [object[]]$params = (Get-ChildItem function:\Get-DbaManagementObject).Parameters.Keys
-        $knownParameters = 'ComputerName','Credential','VersionNumber','EnableException'
+        $knownParameters = 'ComputerName', 'Credential', 'VersionNumber', 'EnableException'
         It "Should contain our specific parameters" {
             ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
         }
@@ -37,10 +37,4 @@ Describe "Get-DbaManagementObject Integration Test" -Tag "IntegrationTests" {
     It "Returns the version specified" {
         $results | Should Not Be $null
     }
-
-    It "Should return nothing if unable to connect to server" {
-        $result = Get-DbaManagementObject -ComputerName 'Melton5312' -WarningAction SilentlyContinue
-        $result | Should Be $null
-    }
 }
-

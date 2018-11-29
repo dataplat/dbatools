@@ -4,10 +4,10 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        $paramCount = 8
-        $defaultParamCount = 11
+        $paramCount = 9
+        $defaultParamCount = 13
         [object[]]$params = (Get-ChildItem function:\Invoke-DbaDbClone).Parameters.Keys
-        $knownParameters = 'SqlInstance','SqlCredential','Database','CloneDatabase','ExcludeStatistics','ExcludeQueryStore','UpdateStatistics','EnableException'
+        $knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'CloneDatabase', 'ExcludeStatistics', 'ExcludeQueryStore', 'UpdateStatistics', 'EnableException', 'InputObject'
         It "Should contain our specific parameters" {
             ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
         }

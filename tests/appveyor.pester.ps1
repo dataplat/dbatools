@@ -61,7 +61,7 @@ function Split-ArrayInParts($array, [int]$parts) {
     $counter = [pscustomobject] @{ Value = 0 }
     $groups = $array | Group-Object -Property { [math]::Floor($counter.Value++ / $size) }
     $rtn = @()
-    foreach($g in $groups) {
+    foreach ($g in $groups) {
         $rtn += , @($g.Group)
     }
     $rtn
@@ -235,8 +235,7 @@ function Get-TestsForScenario {
             }
         }
         $AllScenarioTests = $ScanTests
-    }
-    else {
+    } else {
         $AllScenarioTests = $AllTests | Where-Object { ($_.Name -replace '\.Tests\.ps1$', '') -in $TestsRunGroups[$Scenario] }
     }
     return $AllScenarioTests
@@ -264,8 +263,7 @@ if (-not $Finalize) {
         if ($AllTests.Count -eq 0) {
             throw "something went wrong, nothing to test"
         }
-    }
-    else {
+    } else {
         $TestsToRun = "*.Tests.*"
     }
 
@@ -274,8 +272,7 @@ if (-not $Finalize) {
         # if so, do we have a group with tests to run ?
         if ($env:SCENARIO -in $TestsRunGroups.Keys) {
             $AllScenarioTests = Get-TestsForScenario -scenario $env:SCENARIO -AllTest $AllTests
-        }
-        else {
+        } else {
             $AllTestsToExclude = @()
             $validScenarios = $TestsRunGroups.Keys | Where-Object { $_ -notin @('disabled', 'appveyor_disabled') }
             foreach ($k in $validScenarios) {
@@ -283,8 +280,7 @@ if (-not $Finalize) {
             }
             $AllScenarioTests = $AllTests | Where-Object { $_ -notin $AllTestsToExclude }
         }
-    }
-    else {
+    } else {
         $AllScenarioTests = $AllTests
     }
     Write-Host -ForegroundColor DarkGreen "Test Groups   : Reduced to $($AllScenarioTests.Count) out of $($AllDbatoolsTests.Count) tests"
@@ -294,9 +290,9 @@ if (-not $Finalize) {
             [int]$num, [int]$denom = $env:PART.Split('/')
             Write-Host -ForegroundColor DarkGreen "Test Parts    : part $($env:PART) on total $($AllScenarioTests.Count)"
             #shuffle things a bit (i.e. with natural sorting most of the *get* fall into the first part, all the *set* in the last, etc)
-            $AllScenarioTestsShuffled = $AllScenarioTests | Sort-Object -Property @{Expression={ $_.Name.Split('-')[-1].Replace('Dba', '') }; Ascending = $true}
+            $AllScenarioTestsShuffled = $AllScenarioTests | Sort-Object -Property @{Expression = { $_.Name.Split('-')[-1].Replace('Dba', '') }; Ascending = $true}
             $scenarioParts = Split-ArrayInParts -array $AllScenarioTestsShuffled -parts $denom
-            $AllScenarioTests = $scenarioParts[$num-1] | Sort-Object -Property Name
+            $AllScenarioTests = $scenarioParts[$num - 1] | Sort-Object -Property Name
         } catch {
         }
     }
@@ -337,8 +333,7 @@ if (-not $Finalize) {
         $PesterRun | Export-Clixml -Path "$ModuleBase\PesterResults$PSVersion$Counter.xml"
         Update-AppveyorTest -Name $f.Name -Framework NUnit -FileName $f.FullName -Outcome Passed -Duration $PesterRun.Time.TotalMilliseconds
     }
-}
-else {
+} else {
     # Unsure why we're uploading so I removed it for now
     <#
     #If finalize is specified, check for failures and  show status

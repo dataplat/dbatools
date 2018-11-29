@@ -52,7 +52,7 @@ function Get-DbaDbTrigger {
 
         Returns all triggers for database supa on sql2017
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [DbaInstanceParameter[]]$SqlInstance,
@@ -84,4 +84,3 @@ function Get-DbaDbTrigger {
         }
     }
 }
-

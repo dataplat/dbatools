@@ -58,7 +58,7 @@ function Set-DbaTcpPort {
 
         Sets the port number 1337 for all IP Addresses on SqlInstance sql2017 and sql2019 using the credentials for ad\dba. Prompts for confirmation.
 
-#>
+       #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "High")]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
@@ -106,21 +106,21 @@ function Set-DbaTcpPort {
                 $tcpport.value = $port
                 $tcp.Alter()
                 [pscustomobject]@{
-                    ComputerName  = $computername
-                    InstanceName  = $wmiinstancename
-                    SqlInstance   = $sqlinstanceName
-                    OldPortNumber = $oldport
-                    PortNumber    = $Port
-                    Status        = "Success"
+                    ComputerName       = $computername
+                    InstanceName       = $wmiinstancename
+                    SqlInstance        = $sqlinstanceName
+                    PreviousPortNumber = $oldport
+                    PortNumber         = $Port
+                    Status             = "Success"
                 }
             } catch {
                 [pscustomobject]@{
-                    ComputerName  = $computername
-                    InstanceName  = $wmiinstancename
-                    SqlInstance   = $sqlinstanceName
-                    OldPortNumber = $oldport
-                    PortNumber    = $Port
-                    Status        = "Failed: $_"
+                    ComputerName       = $computername
+                    InstanceName       = $wmiinstancename
+                    SqlInstance        = $sqlinstanceName
+                    PreviousPortNumber = $oldport
+                    PortNumber         = $Port
+                    Status             = "Failed: $_"
                 }
             }
         }

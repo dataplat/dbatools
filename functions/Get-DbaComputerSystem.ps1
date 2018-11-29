@@ -47,7 +47,7 @@ function Get-DbaComputerSystem {
 
         Returns information about the sql2016's computer system and includes additional properties around the EC2 instance.
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [Parameter(ValueFromPipeline)]
@@ -153,4 +153,3 @@ function Get-DbaComputerSystem {
         }
     }
 }
-

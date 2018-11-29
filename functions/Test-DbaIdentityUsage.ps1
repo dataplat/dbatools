@@ -21,7 +21,7 @@ function Test-DbaIdentityUsage {
     .PARAMETER Threshold
         Allows you to specify a minimum % of the seed range being utilized.  This can be used to ignore seeds that have only utilized a small fraction of the range.
 
-    .PARAMETER ExcludeSystemDb
+    .PARAMETER ExcludeSystem
         Allows you to suppress output on system databases
 
     .PARAMETER EnableException
@@ -55,7 +55,7 @@ function Test-DbaIdentityUsage {
 
         Check identity seeds on server sql2008 for only the TestDB database, limiting results to 20% utilization of seed range or higher
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Position = 0, Mandatory, ValueFromPipeline)]
@@ -65,17 +65,17 @@ function Test-DbaIdentityUsage {
         [Alias("Databases")]
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
-        [parameter(Position = 1, Mandatory = $false)]
+        [parameter(Position = 1)]
         [int]$Threshold = 0,
-        [parameter(Position = 2, Mandatory = $false)]
-        [Alias("NoSystemDb")]
-        [switch]$ExcludeSystemDb,
+        [parameter(Position = 2)]
+        [Alias("ExcludeSystemDb")]
+        [switch]$ExcludeSystem,
         [Alias('Silent')]
         [switch]$EnableException
     )
 
     begin {
-        Test-DbaDeprecation -DeprecatedOn 1.0.0 -Parameter NoSystemDb
+        Test-DbaDeprecation -DeprecatedOn 1.0.0 -Parameter ExcludeSystem
 
         $sql = ";WITH CT_DT AS
         (
@@ -162,7 +162,7 @@ function Test-DbaIdentityUsage {
                 $dbs = $dbs | Where-Object Name -NotIn $ExcludeDatabase
             }
 
-            if ($ExcludeSystemDb) {
+            if ($ExcludeSystem) {
                 $dbs = $dbs | Where-Object IsSystemObject -EQ $false
             }
 
@@ -206,4 +206,3 @@ function Test-DbaIdentityUsage {
         }
     }
 }
-

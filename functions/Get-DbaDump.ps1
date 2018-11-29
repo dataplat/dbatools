@@ -38,7 +38,7 @@ function Get-DbaDump {
 
         Shows the detailed information for memory dump(s) located on sql2016 instance. Logs into the SQL Server using the SQL login 'sqladmin'
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
@@ -76,4 +76,3 @@ function Get-DbaDump {
         }
     }
 }
-

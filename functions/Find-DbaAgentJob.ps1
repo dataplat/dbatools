@@ -108,7 +108,7 @@ function Find-DbaAgentJob {
 
         Queries CMS server to return all SQL instances in the Production folder and then list out all agent jobs that have either been disabled or have no schedule.
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Position = 0, Mandatory, ValueFromPipeline)]
@@ -233,4 +233,3 @@ function Find-DbaAgentJob {
         }
     }
 }
-

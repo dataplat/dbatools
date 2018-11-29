@@ -8,7 +8,7 @@ Describe "$CommandName Unit Tests" -Tag UnitTests, Get-DbaLogin {
         $paramCount = 6
         $defaultParamCount = 11
         [object[]]$params = (Get-ChildItem function:\Test-DbaLoginPassword).Parameters.Keys
-        $knownParameters = 'SqlInstance','SqlCredential','Dictionary','Login','InputObject','EnableException'
+        $knownParameters = 'SqlInstance', 'SqlCredential', 'Dictionary', 'Login', 'InputObject', 'EnableException'
         It "Should contain our specific parameters" {
             ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
         }
@@ -16,23 +16,6 @@ Describe "$CommandName Unit Tests" -Tag UnitTests, Get-DbaLogin {
             $params.Count - $defaultParamCount | Should Be $paramCount
         }
     }
-    Context "$Command Name Input" {
-        $Params = (Get-Command Get-DbaLogin).Parameters
-        It "Should have a mandatory parameter SQLInstance" {
-            $Params['SQLInstance'].Attributes.Mandatory | Should be $true
-        }
-        It "Should have Alias of ServerInstance and SqlServer for Parameter SQLInstance" {
-            $params['SQLInstance'].Aliases | Should Be @('ServerInstance', 'SqlServer')
-        }
-        It "Should have a parameter SqlCredential" {
-            $Params['SqlCredential'].Count | Should Be 1
-        }
-        # took Dictionary out cuz it failed even though it existed
-        It "Should have a parameter EnableException" {
-            $Params['EnableException'].Count | Should Be 1
-        }
-    }
-
 }
 
 Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
@@ -45,8 +28,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     AfterAll {
         try {
             $newlogin.Drop()
-        }
-        catch {
+        } catch {
             # don't care
         }
     }

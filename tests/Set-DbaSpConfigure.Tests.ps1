@@ -7,7 +7,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         $paramCount = 6
         $defaultParamCount = 13
         [object[]]$params = (Get-ChildItem function:\Set-DbaSpConfigure).Parameters.Keys
-        $knownParameters = 'SqlInstance','SqlCredential','Value','Name','InputObject','EnableException'
+        $knownParameters = 'SqlInstance', 'SqlCredential', 'Value', 'Name', 'InputObject', 'EnableException'
         It "Should contain our specific parameters" {
             ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
         }
@@ -31,13 +31,13 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 
         It "changes the remote query timeout from $remotequerytimeout to $newtimeout" {
             $results = Set-DbaSpConfigure -SqlInstance $script:instance1 -ConfigName RemoteQueryTimeout -Value $newtimeout
-            $results.OldValue | Should Be $remotequerytimeout
+            $results.PreviousValue | Should Be $remotequerytimeout
             $results.NewValue | Should Be $newtimeout
         }
 
         It "changes the remote query timeout from $newtimeout to $remotequerytimeout" {
             $results = Set-DbaSpConfigure -SqlInstance $script:instance1 -ConfigName RemoteQueryTimeout -Value $remotequerytimeout
-            $results.OldValue | Should Be $newtimeout
+            $results.PreviousValue | Should Be $newtimeout
             $results.NewValue | Should Be $remotequerytimeout
         }
 

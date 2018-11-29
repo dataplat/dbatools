@@ -45,7 +45,7 @@ function Get-DbaAgentSchedule {
         PS C:\> Get-DbaAgentSchedule -SqlInstance sql2016 -Schedule "Maintenance10min","Maintenance60min"
 
         Returns the "Maintenance10min" & "Maintenance60min" schedules from the sql2016 SQL Server instance
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Position = 0, Mandatory, ValueFromPipeline)]
@@ -262,4 +262,3 @@ function Get-DbaAgentSchedule {
 
     }
 }
-

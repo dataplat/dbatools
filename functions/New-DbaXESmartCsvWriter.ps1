@@ -57,7 +57,7 @@ function New-DbaXESmartCsvWriter {
 
         Writes Extended Events to the file "C:\temp\workload.csv".
 
-#>
+    #>
     [CmdletBinding(SupportsShouldProcess)]
     param (
         [parameter(Mandatory)]
@@ -101,4 +101,3 @@ function New-DbaXESmartCsvWriter {
         }
     }
 }
-

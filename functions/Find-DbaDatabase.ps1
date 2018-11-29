@@ -58,7 +58,7 @@ function Find-DbaDatabase {
 
         Returns all database from the SqlInstances that have the same Service Broker GUID with a detailed output
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [Parameter(Mandatory, ValueFromPipeline)]
@@ -116,7 +116,7 @@ function Find-DbaDatabase {
                     InstanceName       = $server.ServiceName
                     SqlInstance        = $server.Name
                     Name               = $db.Name
-                    SizeMB             = $db.Size
+                    Size               = [dbasize]($db.Size * 1024 * 1024)
                     Owner              = $db.Owner
                     CreateDate         = $db.CreateDate
                     ServiceBrokerGuid  = $db.ServiceBrokerGuid
@@ -124,10 +124,8 @@ function Find-DbaDatabase {
                     StoredProcedures   = ($db.StoredProcedures | Where-Object { $_.IsSystemObject -eq $false }).Count
                     Views              = ($db.Views | Where-Object { $_.IsSystemObject -eq $false }).Count
                     ExtendedProperties = $extendedproperties
-                    Database           = $db
-                } | Select-DefaultView -ExcludeProperty Database, ExtendedProperties, ServiceBrokerGuid, StoredProcedures, Tables, Views
+                }
             }
         }
     }
 }
-

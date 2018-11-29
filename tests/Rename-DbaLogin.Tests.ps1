@@ -7,7 +7,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         $paramCount = 5
         $defaultParamCount = 13
         [object[]]$params = (Get-ChildItem function:\Rename-DbaLogin).Parameters.Keys
-        $knownParameters = 'SqlInstance','SqlCredential','Login','NewLogin','EnableException'
+        $knownParameters = 'SqlInstance', 'SqlCredential', 'Login', 'NewLogin', 'EnableException'
         It "Should contain our specific parameters" {
             ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
         }
@@ -33,7 +33,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     It "renames the login" {
         $results = Rename-DbaLogin -SqlInstance $script:instance1 -Login $login -NewLogin $renamed
         $results.Status -eq "Successful"
-        $results.OldLogin = $login
+        $results.PreviousLogin = $login
         $results.NewLogin = $renamed
         $login1 = Get-Dbalogin -SqlInstance $script:instance1 -login $renamed
         $null -ne $login1

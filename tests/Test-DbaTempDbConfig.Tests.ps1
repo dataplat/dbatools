@@ -37,7 +37,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $ExpectedProps = 'ComputerName,InstanceName,SqlInstance,Rule,Recommended,CurrentSetting,IsBestPractice,Notes'.Split(',')
             ($results[0].PsObject.Properties.Name | Sort-Object) | Should Be ($ExpectedProps | Sort-Object)
         }
-        
+
         $rule = 'File Location'
         It "Should return false for IsBestPractice with rule: $rule" {
             ($results | Where-Object Rule -match $rule).IsBestPractice | Should Be $false

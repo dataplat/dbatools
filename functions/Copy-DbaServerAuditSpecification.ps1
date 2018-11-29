@@ -68,8 +68,8 @@ function Copy-DbaServerAuditSpecification {
 
         Shows what would happen if the command were executed using force.
 
-#>
-    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
+    #>
+    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess)]
     param (
         [parameter(Mandatory)]
         [DbaInstanceParameter]$Source,
@@ -151,6 +151,7 @@ function Copy-DbaServerAuditSpecification {
                         Write-Message -Level Verbose -Message "Server audit $auditSpecName exists at destination. Use -Force to drop and migrate."
 
                         $copyAuditSpecStatus.Status = "Skipped"
+                        $copyAuditSpecStatus.Notes = "Already exists on destination"
                         $copyAuditSpecStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                         continue
                     } else {
@@ -192,4 +193,3 @@ function Copy-DbaServerAuditSpecification {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-SqlAuditSpecification
     }
 }
-

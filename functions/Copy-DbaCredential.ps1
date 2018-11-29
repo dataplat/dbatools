@@ -78,7 +78,7 @@ function Copy-DbaCredential {
 
         Copies over one SQL Server Credential (PowerShell Proxy Account) from sqlserver to sqlcluster. If the Credential already exists on the destination, it will be dropped and recreated.
 
-#>
+    #>
     [CmdletBinding(SupportsShouldProcess)]
     param (
         [parameter(Mandatory)]
@@ -140,7 +140,7 @@ function Copy-DbaCredential {
                 if ($null -ne $destServer.Credentials[$credentialName]) {
                     if (!$force) {
                         $copyCredentialStatus.Status = "Skipping"
-                        $copyCredentialStatus.Notes = "Already exists"
+                        $copyCredentialStatus.Notes = "Already exists on destination"
                         $copyCredentialStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
                         Write-Message -Level Verbose -Message "$credentialName exists $($destServer.Name). Skipping."
@@ -217,4 +217,3 @@ function Copy-DbaCredential {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-SqlCredential
     }
 }
-

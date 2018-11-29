@@ -2099,12 +2099,6 @@
             </summary>
             <param name="Credential">The credentials to use</param>
         </member>
-        <member name="M:Sqlcollaborative.Dbatools.Parameter.DbaCredentialParameter.#ctor(System.String)">
-            <summary>
-            Creates a credential parameter from a string only. Will prompt the user for the rest of the input. Will provide an option to remember the credential under the name provided
-            </summary>
-            <param name="UserName">The username (and domain name as may be the case) to put a credential around</param>
-        </member>
         <member name="M:Sqlcollaborative.Dbatools.Parameter.DbaCredentialParameter.#ctor(System.Object)">
             <summary>
             Creates a credential parameter from anything it nows how to handle
@@ -2140,13 +2134,6 @@
             Legacy wrapper. While there exists implicit conversion, this allows using the object as before, avoiding errors for unknown method.
             </summary>
             <returns>A network credential object with the same credentials as the original object</returns>
-        </member>
-        <member name="M:Sqlcollaborative.Dbatools.Parameter.DbaCredentialParameter.PromptForCredential(System.String)">
-            <summary>
-            Prompts the user for a password to complete a credentials object
-            </summary>
-            <param name="Name">The name of the user. If specified, this will be added to the prompt.</param>
-            <returns>The finished PSCredential object</returns>
         </member>
         <member name="F:Sqlcollaborative.Dbatools.Parameter.DbaCredentialParameter.CredentialStore">
             <summary>
@@ -2556,58 +2543,6 @@
             </summary>
             <param name="type">The type to validate</param>
             <returns>Whether it's a supported conversion</returns>
-        </member>
-        <member name="T:Sqlcollaborative.Dbatools.Utility.CredentialPrompt">
-            <summary>
-            Dedicated class to prompt for credentials
-            </summary>
-        </member>
-        <member name="F:Sqlcollaborative.Dbatools.Utility.CredentialPrompt.Name">
-            <summary>
-            The name of the user to pre-fill the username field
-            </summary>
-        </member>
-        <member name="F:Sqlcollaborative.Dbatools.Utility.CredentialPrompt.Window">
-            <summary>
-            The window of the prompt that was shown
-            </summary>
-        </member>
-        <member name="F:Sqlcollaborative.Dbatools.Utility.CredentialPrompt.Username">
-            <summary>
-            The final, resulting username
-            </summary>
-        </member>
-        <member name="F:Sqlcollaborative.Dbatools.Utility.CredentialPrompt.Password">
-            <summary>
-            The final, result password
-            </summary>
-        </member>
-        <member name="F:Sqlcollaborative.Dbatools.Utility.CredentialPrompt.Remember">
-            <summary>
-            Whether the password should be remembered
-            </summary>
-        </member>
-        <member name="F:Sqlcollaborative.Dbatools.Utility.CredentialPrompt.Finished">
-            <summary>
-            Marker indicating that execution has finished
-            </summary>
-        </member>
-        <member name="F:Sqlcollaborative.Dbatools.Utility.CredentialPrompt.Cancelled">
-            <summary>
-            Whether the windoww was cancelled
-            </summary>
-        </member>
-        <member name="M:Sqlcollaborative.Dbatools.Utility.CredentialPrompt.PromptForCredential">
-            <summary>
-            Start asking away
-            </summary>
-        </member>
-        <member name="M:Sqlcollaborative.Dbatools.Utility.CredentialPrompt.GetCredential(System.String)">
-            <summary>
-            Executes a request for credentials on a dedicated STA thread
-            </summary>
-            <param name="Name">THe name of the user to put in the prompt</param>
-            <returns>The result object</returns>
         </member>
         <member name="T:Sqlcollaborative.Dbatools.Utility.DbaValidatePatternAttribute">
             <summary>

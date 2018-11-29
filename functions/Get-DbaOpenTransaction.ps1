@@ -39,7 +39,7 @@ function Get-DbaOpenTransaction {
 
         Logs into sqlserver2014a using the login "sqladmin"
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Position = 0, Mandatory, ValueFromPipeline)]
@@ -99,4 +99,3 @@ function Get-DbaOpenTransaction {
         }
     }
 }
-

@@ -47,7 +47,7 @@ function Get-DbaDbFeatureUsage {
         Shows features that are enabled in the testdb and db2 databases but
         not supported on the all the editions of SQL Server.
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [Alias("ServerInstance", "SqlServer", "SqlServers")]
@@ -86,4 +86,3 @@ function Get-DbaDbFeatureUsage {
         }
     }
 }
-

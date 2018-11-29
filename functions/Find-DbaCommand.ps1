@@ -82,8 +82,8 @@ function Find-DbaCommand {
 
         Finds all commands searching the entire help for "snapshot", rebuilding the index (good for developers)
 
-#>
-    [CmdletBinding(SupportsShouldProcess = $true)]
+    #>
+    [CmdletBinding(SupportsShouldProcess)]
     param (
         [String]$Pattern,
         [String[]]$Tag,
@@ -223,4 +223,3 @@ function Find-DbaCommand {
         Select-DefaultView -InputObject $result -Property CommandName, Synopsis
     }
 }
-

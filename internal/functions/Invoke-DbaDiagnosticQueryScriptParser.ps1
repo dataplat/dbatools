@@ -5,8 +5,8 @@ function Invoke-DbaDiagnosticQueryScriptParser {
         [parameter(Mandatory)]
         [ValidateScript( {Test-Path $_})]
         [System.IO.FileInfo]$filename,
-        [Switch]$NoQueryTextColumn,
-        [Switch]$NoPlanColumn,
+        [Switch]$ExcludeQueryTextColumn,
+        [Switch]$ExcludePlanColumn,
         [Switch]$NoColumnParsing
     )
 
@@ -22,8 +22,8 @@ function Invoke-DbaDiagnosticQueryScriptParser {
     $querynr = 0
     $DBSpecific = $false
 
-    if ($NoQueryTextColumn) {$QueryTextColumn = ""}  else {$QueryTextColumn = ", t.[text] AS [Complete Query Text]"}
-    if ($NoPlanColumn) {$PlanTextColumn = ""} else {$PlanTextColumn = ", qp.query_plan AS [Query Plan]"}
+    if ($ExcludeQueryTextColumn) {$QueryTextColumn = ""}  else {$QueryTextColumn = ", t.[text] AS [Complete Query Text]"}
+    if ($ExcludePlanColumn) {$PlanTextColumn = ""} else {$PlanTextColumn = ", qp.query_plan AS [Query Plan]"}
 
     foreach ($line in $fullscript) {
         if ($start -eq $false) {
@@ -70,5 +70,3 @@ function Invoke-DbaDiagnosticQueryScriptParser {
     $ParsedScript += $newscript
     $ParsedScript
 }
-
-

@@ -7,7 +7,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         $paramCount = 3
         $defaultParamCount = 11
         [object[]]$params = (Get-ChildItem function:\Get-DbaPrivilege).Parameters.Keys
-        $knownParameters = 'ComputerName','Credential','EnableException'
+        $knownParameters = 'ComputerName', 'Credential', 'EnableException'
         It "Should contain our specific parameters" {
             ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
         }
@@ -16,9 +16,13 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         }
     }
 }
-<#
-    Integration test should appear below and are custom to the command you are writing.
-    Read https://github.com/sqlcollaborative/dbatools/blob/development/contributing.md#tests
-    for more guidence.
-#>
 
+Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
+
+    Context "Gets Instance Privilege" {
+        $results = Get-DbaPrivilege -ComputerName $env:ComputerName
+        It "Gets results" {
+            $results | Should Not Be $null
+        }
+    }
+}

@@ -1,5 +1,4 @@
 #ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
-
 function Read-DbaBackupHeader {
     <#
     .SYNOPSIS
@@ -70,9 +69,9 @@ function Read-DbaBackupHeader {
         Also returns detailed information about each of the datafiles contained in the backupset.
 
     .EXAMPLE
-        PS C:\> "C:\temp\myfile.bak", "\backupserver\backups\myotherfile.bak" | Read-DbaBackupHeader -SqlInstance sql2016
+        PS C:\> "C:\temp\myfile.bak", "\backupserver\backups\myotherfile.bak" | Read-DbaBackupHeader -SqlInstance sql2016  | Where-Object { $_.BackupSize.Megabyte -gt 100 }
 
-        Similar to running Read-DbaBackupHeader -SqlInstance sql2016 -Path "C:\temp\myfile.bak", "\backupserver\backups\myotherfile.bak"
+        Reads the two files and returns only backups larger than 100 MB
 
     .EXAMPLE
         PS C:\> Get-ChildItem \\nas\sql\*.bak | Read-DbaBackupHeader -SqlInstance sql2016
@@ -84,9 +83,8 @@ function Read-DbaBackupHeader {
 
         Gets the backup header information from the SQL Server backup file stored at https://dbatoolsaz.blob.core.windows.net/azbackups/restoretime/restoretime_201705131850.bak on Azure
 
-#>
-    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingPlainTextForPassword", '')]
-    <# AzureCredential is utilized in this command is not a formal Credential object. #>
+    #>
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingPlainTextForPassword", 'AzureCredential', Justification = "For Parameter AzureCredential")]
     [CmdletBinding()]
     param (
         [parameter(Mandatory)]
@@ -134,31 +132,27 @@ function Read-DbaBackupHeader {
             $device = New-Object Microsoft.SqlServer.Management.Smo.BackupDeviceItem $Path, $DeviceType
             $restore.Devices.Add($device)
             $dataTable = $restore.ReadBackupHeader($server)
-
             $null = $dataTable.Columns.Add("FileList", [object])
-
-            $mb = $dataTable.Columns.Add("BackupSizeMB", [int])
-            $mb.Expression = "BackupSize / 1024 / 1024"
-            $gb = $dataTable.Columns.Add("BackupSizeGB")
-            $gb.Expression = "BackupSizeMB / 1024"
-
-            if ($null -eq $dataTable.Columns['CompressedBackupSize']) {
-                $formula = "0"
-            } else {
-                $formula = "CompressedBackupSize / 1024 / 1024"
-            }
-
-            $cmb = $dataTable.Columns.Add("CompressedBackupSizeMB", [int])
-            $cmb.Expression = $formula
-            $cgb = $dataTable.Columns.Add("CompressedBackupSizeGB")
-            $cgb.Expression = "CompressedBackupSizeMB / 1024"
-
             $null = $dataTable.Columns.Add("SqlVersion")
-
             $null = $dataTable.Columns.Add("BackupPath")
 
             foreach ($row in $dataTable) {
                 $row.BackupPath = $Path
+                
+                $backupsize = $row.BackupSize
+                $null = $dataTable.Columns.Remove("BackupSize")
+                $null = $dataTable.Columns.Add("BackupSize", [dbasize])
+                if ($backupsize -isnot [dbnull]) {
+                    $row.BackupSize = [dbasize]$backupsize
+                }
+                
+                $cbackupsize = $row.CompressedBackupSize
+                $null = $dataTable.Columns.Remove("CompressedBackupSize")
+                $null = $dataTable.Columns.Add("CompressedBackupSize", [dbasize])
+                if ($cbackupsize -isnot [dbnull]) {
+                    $row.CompressedBackupSize = [dbasize]$cbackupsize
+                }
+                
                 $restore.FileNumber = $row.Position
                 <# Select-Object does a quick and dirty conversion from datatable to PS object #>
                 $row.FileList = $restore.ReadFileList($server) | Select-Object *
@@ -264,7 +258,7 @@ function Read-DbaBackupHeader {
                         }
                     }
                     if ($Simple) {
-                        $dataTable | Select-Object DatabaseName, BackupFinishDate, RecoveryModel, BackupSizeMB, CompressedBackupSizeMB, DatabaseCreationDate, UserName, ServerName, SqlVersion, BackupPath
+                        $dataTable | Select-Object DatabaseName, BackupFinishDate, RecoveryModel, BackupSize, CompressedBackupSize, DatabaseCreationDate, UserName, ServerName, SqlVersion, BackupPath
                     } elseif ($FileList) {
                         $dataTable.filelist
                     } else {
@@ -281,4 +275,3 @@ function Read-DbaBackupHeader {
         [System.Management.Automation.Runspaces.Runspace]::DefaultRunspace = $defaultrunspace
     }
 }
-

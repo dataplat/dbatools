@@ -49,7 +49,7 @@ function Get-DbaOperatingSystem {
         PS C:\> Get-Content .\servers.txt | Get-DbaOperatingSystem
 
         Returns information about all the servers operating system that are stored in the file. Every line in the file can only contain one hostname for a server.
-#>
+    #>
     [CmdletBinding()]
     param (
         [Parameter(ValueFromPipeline)]
@@ -182,5 +182,3 @@ function Get-DbaOperatingSystem {
         }
     }
 }
-
-

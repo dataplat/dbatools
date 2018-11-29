@@ -4,13 +4,12 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 
 Describe "$commandname Unit Tests" -Tag "UnitTests", Set-DbaMaxDop {
     Context "Validate parameters" {
-        $knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'MaxDop', 'Collection', 'AllDatabases', 'EnableException'
+        $knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'MaxDop', 'InputObject', 'AllDatabases', 'EnableException'
         $SupportShouldProcess = $true
         $paramCount = $knownParameters.Count
         if ($SupportShouldProcess) {
             $defaultParamCount = 13
-        }
-        else {
+        } else {
             $defaultParamCount = 11
         }
         $command = Get-Command -Name $CommandName
@@ -34,10 +33,10 @@ Describe "$commandname Unit Tests" -Tag "UnitTests", Set-DbaMaxDop {
         }
         It "Validates that Stop Function Mock has been called" {
             $assertMockParams = @{
-                'CommandName'  = 'Stop-Function'
-                'Times'        = 1
-                'Exactly'      = $true
-                'Module'       = 'dbatools'
+                'CommandName' = 'Stop-Function'
+                'Times'       = 1
+                'Exactly'     = $true
+                'Module'      = 'dbatools'
             }
             Assert-MockCalled @assertMockParams
         }

@@ -96,7 +96,7 @@ function Publish-DbaDacPackage {
         PS C:\> Publish-DbaDacPackage -SqlInstance sql2017 -Database WideWorldImporters -Path C:\temp\sql2016-WideWorldImporters.dacpac -PublishXml C:\temp\sql2016-WideWorldImporters-publish.xml -GenerateDeploymentReport -ScriptOnly
 
         Does not deploy the changes, but will generate the deployment report that would be executed against WideWorldImporters.
-#>
+    #>
     [CmdletBinding(DefaultParameterSetName = 'Obj')]
     param (
         [Alias("ServerInstance", "SqlServer")]
@@ -161,21 +161,23 @@ function Publish-DbaDacPackage {
 
             return $instance.ToString().Replace('\', '-').Replace('(', '').Replace(')', '')
         }
-        if (Test-Bound -Not -ParameterName 'DacfxPath') {
+        
+        if ((Test-Bound -Not -ParameterName 'DacfxPath') -and (-not $script:core)) {
             $dacfxPath = "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Dac.dll"
-        }
-
-        if ((Test-Path $dacfxPath) -eq $false) {
-            Stop-Function -Message 'No usable version of Dac Fx found.' -EnableException $EnableException
-            return
-        } else {
-            try {
-                Add-Type -Path $dacfxPath
-                Write-Message -Level Verbose -Message "Dac Fx loaded."
-            } catch {
-                Stop-Function -Message 'No usable version of Dac Fx found.' -EnableException $EnableException -ErrorRecord $_
+            
+            if ((Test-Path $dacfxPath) -eq $false) {
+                Stop-Function -Message 'No usable version of Dac Fx found.' -EnableException $EnableException
+                return
+            } else {
+                try {
+                    Add-Type -Path $dacfxPath
+                    Write-Message -Level Verbose -Message "Dac Fx loaded."
+                } catch {
+                    Stop-Function -Message 'No usable version of Dac Fx found.' -EnableException $EnableException -ErrorRecord $_
+                }
             }
         }
+        
         #Check Option object types - should have a specific type
         if ($Type -eq 'Dacpac') {
             if ($DacOption -and $DacOption -isnot [Microsoft.SqlServer.Dac.PublishOptions]) {
@@ -358,4 +360,3 @@ function Publish-DbaDacPackage {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Publish-DbaDacpac
     }
 }
-

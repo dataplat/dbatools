@@ -59,7 +59,7 @@ function Add-DbaPfDataCollectorCounter {
 
         Allows you to select which Data Collector you'd like to add the counter '\LogicalDisk(*)\Avg. Disk Queue Length' on localhost and prompts for confirmation.
 
-#>
+    #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
     param (
         [DbaInstance[]]$ComputerName = $env:COMPUTERNAME,
@@ -139,4 +139,3 @@ function Add-DbaPfDataCollectorCounter {
         }
     }
 }
-

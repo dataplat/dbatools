@@ -9,8 +9,7 @@ Describe "$CommandName Unit Tests" -Tags "UnitTests" {
         $paramCount = $knownParameters.Count
         if ($SupportShouldProcess) {
             $defaultParamCount = 13
-        }
-        else {
+        } else {
             $defaultParamCount = 11
         }
         $command = Get-Command -Name $CommandName

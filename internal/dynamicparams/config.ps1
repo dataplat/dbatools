@@ -69,4 +69,3 @@ $ScriptBlock = {
 
 Register-DbaTeppScriptblock -ScriptBlock $ScriptBlock -Name configmodule
 #endregion Tepp Data return: Module
-

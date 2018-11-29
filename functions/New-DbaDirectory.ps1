@@ -52,7 +52,7 @@ function New-DbaDirectory {
 
         If the SQL Server instance sqlcluster can create the path L:\MSAS12.MSSQLSERVER\OLAP it will do and return $true, if not it will return $false. Uses a SqlCredential to connect
 
-#>
+    #>
     [CmdletBinding(SupportsShouldProcess)]
     param (
         [Parameter(Mandatory)]
@@ -100,4 +100,3 @@ function New-DbaDirectory {
         }
     }
 }
-

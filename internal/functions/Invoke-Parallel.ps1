@@ -150,10 +150,10 @@ function Invoke-Parallel {
     #>
     [cmdletbinding(DefaultParameterSetName = 'ScriptBlock')]
     param (
-        [Parameter(Mandatory = $false, position = 0, ParameterSetName = 'ScriptBlock')]
+        [Parameter(Position = 0, ParameterSetName = 'ScriptBlock')]
         [System.Management.Automation.ScriptBlock]$ScriptBlock,
 
-        [Parameter(Mandatory = $false, ParameterSetName = 'ScriptFile')]
+        [Parameter(ParameterSetName = 'ScriptFile')]
         [ValidateScript( {Test-Path $_ -pathtype leaf})]
         $ScriptFile,
 
@@ -217,7 +217,7 @@ function Invoke-Parallel {
 
             if ($ImportVariables) {
                 #Exclude common parameters, bound parameters, and automatic variables
-                Function _temp {[cmdletbinding(SupportsShouldProcess = $True)] param() }
+                Function _temp {[cmdletbinding(SupportsShouldProcess)] param() }
                 $VariablesToExclude = @( (Get-Command _temp | Select-Object -ExpandProperty parameters).Keys + $PSBoundParameters.Keys + $StandardUserEnv.Variables )
                 Write-Verbose "Excluding variables $( ($VariablesToExclude | Sort-Object ) -join ", ")"
 

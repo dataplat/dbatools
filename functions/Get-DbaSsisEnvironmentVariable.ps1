@@ -104,21 +104,16 @@ function Get-DbaSsisEnvironmentVariable {
         Gets all variables from Environments other than 'DEV' and 'PROD' on 'localhost' server,
         selects Name and Value properties for variables that names start with letter 'a' and outputs it as the GridView
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
         [Alias('SqlServer', 'ServerInstance')]
         [DbaInstanceParameter[]]$SqlInstance,
-        [Parameter(Mandatory = $false)]
         [PSCredential]$SqlCredential,
-        [parameter(Mandatory = $false)]
         [object[]]$Environment,
-        [parameter(Mandatory = $false)]
         [object[]]$EnvironmentExclude,
-        [parameter(Mandatory = $false)]
         [object[]]$Folder,
-        [parameter(Mandatory = $false)]
         [object[]]$FolderExclude,
         [Alias('Silent')]
         [switch]$EnableException
@@ -253,4 +248,3 @@ function Get-DbaSsisEnvironmentVariable {
         }
     }
 }
-

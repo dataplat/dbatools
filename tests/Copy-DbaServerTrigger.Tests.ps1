@@ -7,7 +7,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         $paramCount = 8
         $defaultParamCount = 13
         [object[]]$params = (Get-ChildItem function:\Copy-DbaServerTrigger).Parameters.Keys
-        $knownParameters = 'Source','SourceSqlCredential','Destination','DestinationSqlCredential','ServerTrigger','ExcludeServerTrigger','Force','EnableException'
+        $knownParameters = 'Source', 'SourceSqlCredential', 'Destination', 'DestinationSqlCredential', 'ServerTrigger', 'ExcludeServerTrigger', 'Force', 'EnableException'
         It "Should contain our specific parameters" {
             ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
         }
@@ -34,8 +34,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             try {
                 $server1 = Connect-DbaInstance -SqlInstance $script:instance2
                 $server1.Query("DROP TRIGGER [$triggername] ON ALL SERVER")
-            }
-            catch {
+            } catch {
                 # don't care
             }
         }
