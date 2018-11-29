@@ -70,7 +70,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         $results = Copy-DbaLogin -Source $script:instance1 -Destination $script:instance2 -Login tester
         It "Should say skipped" {
             $results.Status | Should be "Skipped"
-            $results.Notes | Should be "Already exists"
+            $results.Notes | Should be "Already exists on destination"
         }
     }
 
