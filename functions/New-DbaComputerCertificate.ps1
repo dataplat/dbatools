@@ -231,7 +231,7 @@ function New-DbaComputerCertificate {
         if (Test-FunctionInterrupt) { return }
 
         # uses dos command locally
-        if (-not (Test-Windows)) { return }
+        
 
         foreach ($computer in $ComputerName) {
 

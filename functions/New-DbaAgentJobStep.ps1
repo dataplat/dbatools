@@ -27,6 +27,9 @@ function New-DbaAgentJobStep {
         Allowed values 'ActiveScripting','AnalysisCommand','AnalysisQuery','CmdExec','Distribution','LogReader','Merge','PowerShell','QueueReader','Snapshot','Ssis','TransactSql'
         The default is 'TransactSql'
 
+    .PARAMETER SubSystemServer
+        The subsystems AnalysisScripting, AnalysisCommand, AnalysisQuery ned the server property to be able to apply
+
     .PARAMETER Command
         The commands to be executed by SQLServerAgent service through subsystem.
 
@@ -147,6 +150,7 @@ function New-DbaAgentJobStep {
         [string]$StepName,
         [ValidateSet('ActiveScripting', 'AnalysisCommand', 'AnalysisQuery', 'CmdExec', 'Distribution', 'LogReader', 'Merge', 'PowerShell', 'QueueReader', 'Snapshot', 'Ssis', 'TransactSql')]
         [string]$Subsystem = 'TransactSql',
+        [string]$SubsystemServer,
         [string]$Command,
         [int]$CmdExecSuccessCode,
         [ValidateSet('QuitWithSuccess', 'QuitWithFailure', 'GoToNextStep', 'GoToStep')]
@@ -179,6 +183,13 @@ function New-DbaAgentJobStep {
         if (($OnFailAction -ne 'GoToStep') -and ($OnFailStepId -ge 1)) {
             Stop-Function -Message "Parameter OnFailStepId can only be used with OnFailAction 'GoToStep'." -Target $SqlInstance
             return
+        }
+
+        if ($Subsystem -in 'AnalysisScripting', 'AnalysisCommand', 'AnalysisQuery') {
+            if (-not $SubsystemServer) {
+                Stop-Function -Message "Please enter the server value using -SubSystemServer for subsystem $Subsystem." -Target $Subsystem
+                return
+            }
         }
     }
 
@@ -259,6 +270,11 @@ function New-DbaAgentJobStep {
                     if ($Subsystem) {
                         Write-Message -Message "Setting job step subsystem to $Subsystem" -Level Verbose
                         $JobStep.Subsystem = $Subsystem
+                    }
+
+                    if ($SubsystemServer) {
+                        Write-Message -Message "Setting job step subsystem server to $SubsystemServer" -Level Verbose
+                        $JobStep.Server = $SubsystemServer
                     }
 
                     if ($Command) {

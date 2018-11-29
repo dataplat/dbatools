@@ -134,10 +134,10 @@ function Export-DbaDacPackage {
                 $fileName = $fileItem.FullName
             }
         }
-        
+
         if (-not $script:core) {
             $dacfxPath = Resolve-Path -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Dac.dll"
-            
+
             if ((Test-Path $dacfxPath) -eq $false) {
                 Stop-Function -Message 'Dac Fx library not found.' -EnableException $EnableException
                 return
@@ -151,7 +151,7 @@ function Export-DbaDacPackage {
                 }
             }
         }
-        
+
         #check that at least one of the DB selection parameters was specified
         if (!$AllUserDatabases -and !$Database) {
             Stop-Function -Message "Either -Database or -AllUserDatabases should be specified" -Continue
