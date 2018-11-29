@@ -11,7 +11,7 @@
     RootModule             = 'dbatools.psm1'
 
     # Version number of this module.
-    ModuleVersion          = '0.9.533'
+    ModuleVersion          = '0.9.534'
 
     # ID used to uniquely identify this module
     GUID                   = '9d139310-ce45-41ce-8e8b-d76335aa1789'
@@ -571,7 +571,13 @@
         'Get-DbaMemoryCondition',
         'Remove-DbaDbBackupRestoreHistory',
         'New-DbaDatabase',
-        'Get-DbaPowerPlan'
+        'Get-DbaPowerPlan',
+        'Get-DbaDbccHelp',
+        'Get-DbaDbccMemoryStatus',
+        'Get-DbaDbccProcCache',
+        'Get-DbaDbccUserOptions',
+        'Get-DbaAgentServer',
+        'Set-DbaAgentServer'
     )
 
     # Cmdlets to export from this module
