@@ -1006,7 +1006,7 @@ $forever | ForEach-Object {
 }
 #endregion Aliases
 
-$xplat = @(
+$script:xplat = @(
     'Start-DbaMigration',
     'Copy-DbaDatabase',
     'Copy-DbaLogin',
@@ -1364,7 +1364,7 @@ $xplat = @(
     'Set-DbaAgentServer'
 )
 
-$noncoresmo = @(
+$script:noncoresmo = @(
     # SMO issues
     'Export-DbaUser',
     'Get-DbaSsisExecutionHistory',
@@ -1395,7 +1395,7 @@ $noncoresmo = @(
     'Export-DbaRepServerSetting',
     'Get-DbaRepServer'
 )
-$windowsonly = @(
+$script:windowsonly = @(
     # solvable filesystem issues or other workarounds
     'Install-DbaSqlWatch',
     'Uninstall-DbaSqlWatch',
@@ -1535,15 +1535,15 @@ $windowsonly = @(
 
 if (($PSVersionTable.Keys -contains "Platform")) {
     if ($psversiontable.Platform -ne "Win32NT") {
-        Export-ModuleMember -Function $xplat
+        Export-ModuleMember -Function $script:xplat
     } else {
-        Export-ModuleMember -Function $xplat
-        Export-ModuleMember -Function $windowsonly
+        Export-ModuleMember -Function $script:xplat
+        Export-ModuleMember -Function $script:windowsonly
     }
 } else {
-    Export-ModuleMember -Function $xplat
-    Export-ModuleMember -Function $windowsonly
-    Export-ModuleMember -Function $noncoresmo
+    Export-ModuleMember -Function $script:xplat
+    Export-ModuleMember -Function $script:windowsonly
+    Export-ModuleMember -Function $script:noncoresmo
 }
 
 Export-ModuleMember -Alias $script:renames
