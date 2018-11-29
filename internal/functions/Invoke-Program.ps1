@@ -60,7 +60,7 @@ function Invoke-Program {
         [string]$WorkingDirectory,
         [ValidateNotNullOrEmpty()]
         [uint32[]]$SuccessReturnCode = @(0, 3010),
-        [switch]$UsePSSessionConfiguration
+        [bool]$UsePSSessionConfiguration = (Get-DbatoolsConfigValue -Name 'psremoting.Sessions.UsePSSessionConfiguration')
     )
     process {
         $startProcess = {
