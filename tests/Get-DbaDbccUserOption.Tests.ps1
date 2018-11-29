@@ -4,7 +4,7 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        $knownParameters = 'SqlInstance', 'SqlCredential', 'EnableException'
+        $knownParameters = 'SqlInstance', 'SqlCredential', 'Option', 'EnableException'
         $paramCount = $knownParameters.Count
         $SupportShouldProcess = $false
         if ($SupportShouldProcess) {
@@ -25,7 +25,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 }
 Describe "$commandname  Integration Test" -Tag "IntegrationTests" {
     $props = 'ComputerName', 'InstanceName', 'SqlInstance', 'Option', 'Value'
-    $result = Get-DbaDbccUserOptions -SqlInstance $script:instance2
+    $result = Get-DbaDbccUserOption -SqlInstance $script:instance2
 
     Context "Validate standard output" {
         foreach ($prop in $props) {
@@ -39,6 +39,16 @@ Describe "$commandname  Integration Test" -Tag "IntegrationTests" {
     Context "Command returns proper info" {
         It "returns results for DBCC USEROPTIONS" {
             $result.Count -gt 0 | Should Be $true
+        }
+    }
+
+    Context "Accepts an Option Value" {
+        $result = Get-DbaDbccUserOption -SqlInstance $script:instance2 -Option ansi_nulls
+        It "Gets results" {
+            $result | Should Not Be $null
+        }
+        It "Returns only one result" {
+            $result.Option -eq 'ansi_nulls' | Should Be $true
         }
     }
 }

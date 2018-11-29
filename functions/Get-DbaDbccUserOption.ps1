@@ -15,9 +15,9 @@ function Get-DbaDbccUserOption {
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-
     .PARAMETER Option
         Return only specific options. Returns all results if not specified.
+        Accepts any values in set 'ansi_null_dflt_on', 'ansi_nulls', 'ansi_padding', 'ansi_warnings', 'arithabort', 'concat_null_yields_null', 'datefirst', 'dateformat', 'isolation level', 'language', 'lock_timeout', 'quoted_identifier', 'textsize'
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -49,7 +49,12 @@ function Get-DbaDbccUserOption {
         PS C:\> $cred = Get-Credential sqladmin
         PS C:\> Get-DbaDbccUserOptions -SqlInstance Server1 -SqlCredential $cred
 
-        Connects using sqladmin credential and gets results of DBCC USEROPTIONS for Instance Server1 using
+        Connects using sqladmin credential and gets results of DBCC USEROPTIONS for Instance Server1
+
+    .EXAMPLE
+        PS C:\> Get-DbaDbccUserOptions -SqlInstance Server1 -Option ansi_nulls, ansi_warnings, datefirst
+
+        Gets results of DBCC USEROPTIONS for Instance Server1. Only display results for the options ansi_nulls, ansi_warnings, datefirst
 
     #>
     [CmdletBinding()]
@@ -57,6 +62,7 @@ function Get-DbaDbccUserOption {
         [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
+        [ValidateSet('ansi_null_dflt_on', 'ansi_nulls', 'ansi_padding', 'ansi_warnings', 'arithabort', 'concat_null_yields_null', 'datefirst', 'dateformat', 'isolation level', 'language', 'lock_timeout', 'quoted_identifier', 'textsize')]
         [string[]]$Option,
         [switch]$EnableException
     )
