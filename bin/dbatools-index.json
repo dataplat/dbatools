@@ -9913,7 +9913,7 @@
                        ],
                        [
                            "Anonymise",
-                           "If specified we will output the results with ComputerName, InstanceName, Database, UserName, and Paths hashed out\r\nThis options is mainly for use if we need you to submit details for fault finding to the dbatools team",
+                           "If specified we will output the results with ComputerName, InstanceName, Database, UserName, Paths, and Logical and Physical Names hashed out\r\nThis options is mainly for use if we need you to submit details for fault finding to the dbatools team",
                            "Anonymize",
                            false,
                            "false",
@@ -10978,6 +10978,139 @@
         "Links":  "https://dbatools.io/Get-DbaDbAssembly",
         "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaDbAssembly -SqlInstance localhost\nReturns all Database Assembly on the local default SQL Server instance\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaDbAssembly -SqlInstance localhost, sql2016\nReturns all Database Assembly for the local and sql2016 SQL Server instances",
         "Syntax":  "Get-DbaDbAssembly [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
+    },
+    {
+        "CommandName":  "Get-DbaDbccHelp",
+        "Description":  "Returns the results of DBCC HELP\n\nRead more:\n    - https://docs.microsoft.com/en-us/sql/t-sql/database-console-commands/dbcc-help-transact-sql",
+        "Tags":  "DBCC",
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "The target SQL Server instance or instances.",
+                           "",
+                           true,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
+                           "SqlCredential",
+                           "Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Statement",
+                           "Is the name of the DBCC command for which to receive syntax information.\r\nProvide only the part of the DBCC command that follows DBCC,\r\n    for example, CHECKDB instead of DBCC CHECKDB.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "IncludeUndocumented",
+                           "Allows getting help for undocumented DBCC commands. Requires Traceflag 2588\r\nThis only works for SQL Server 2005 or Higher",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ]
+                   ],
+        "Alias":  "",
+        "Author":  "Patrick Flynn (@sqllensman)",
+        "Synopsis":  "Execution of Database Console Command DBCC HELP",
+        "Name":  "Get-DbaDbccHelp",
+        "Links":  "https://dbatools.io/Get-DbaDbccUserOptions",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaDbccHelp -SqlInstance SQLInstance -Statement FREESYSTEMCACHE -Verbose | Format-List\nRuns the command DBCC HELP(FREESYSTEMCACHE) WITH NO_INFOMSGS against the SQL Server instance SQLInstance\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaDbccHelp -SqlInstance LensmanSB -Statement WritePage -IncludeUndocumented | Format-List\nSets TraeFlag 2588 on for session and then runs the command DBCC HELP(WritePage) WITH NO_INFOMSGS against the SQL Server instance SQLInstance",
+        "Syntax":  "Get-DbaDbccHelp [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Statement] \u003cString\u003e] [-IncludeUndocumented] [-EnableException] [\u003cCommonParameters\u003e]"
+    },
+    {
+        "CommandName":  "Get-DbaDbccMemoryStatus",
+        "Description":  "This command is used to run the DBCC MEMORYSTATUS comand and collect results in a single usable recordset\n\nReference:\n    - https://blogs.msdn.microsoft.com/timchapman/2012/08/16/how-to-parse-dbcc-memorystatus-via-powershell/\n    - https://support.microsoft.com/en-us/help/907877/how-to-use-the-dbcc-memorystatus-command-to-monitor-memory-usage-on-sq",
+        "Tags":  [
+                     "DBCC",
+                     "Memory"
+                 ],
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "The target SQL Server instance or instances.",
+                           "",
+                           true,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
+                           "SqlCredential",
+                           "Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ]
+                   ],
+        "Alias":  "",
+        "Author":  "Patrick Flynn (@sqllensman)",
+        "Synopsis":  "Gets the results of DBCC MEMORYSTATUS.  Works on SQL Server 2000-2019.",
+        "Name":  "Get-DbaDbccMemoryStatus",
+        "Links":  "https://dbatools.io/Get-DbaMemoryStatus",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaDbccMemoryStatus -SqlInstance sqlcluster, sqlserver2012\nGet output of DBCC MEMORYSTATUS for instances \"sqlcluster\" and \"sqlserver2012\". Returns results in a single recordset.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaCmsRegServer -SqlInstance sqlcluster | Get-DbaDbccMemoryStatus\nGet output of DBCC MEMORYSTATUS for all servers in Server Central Management Server",
+        "Syntax":  "Get-DbaDbccMemoryStatus [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
+    },
+    {
+        "CommandName":  "Get-DbaDbccProcCache",
+        "Description":  "Returns the results of DBCC PROCCACHE\n\nRead more:\n    - https://docs.microsoft.com/en-us/sql/t-sql/database-console-commands/dbcc-proccache-transact-sql",
+        "Tags":  "DBCC",
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "The target SQL Server instance or instances.",
+                           "",
+                           true,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
+                           "SqlCredential",
+                           "Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ]
+                   ],
+        "Alias":  "",
+        "Author":  "Patrick Flynn (@sqllensman)",
+        "Synopsis":  "Execution of Database Console Command DBCC PROCCACHE",
+        "Name":  "Get-DbaDbccProcCache",
+        "Links":  "https://dbatools.io/Get-DbaDbccProcCache",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaDbccProcCache -SqlInstance Server1\nGet results of DBCC PROCCACHE for Instance Server1\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003e\u0027Sql1\u0027,\u0027Sql2/sqlexpress\u0027 | Get-DbaDbccProcCache\nGet results of DBCC PROCCACHE for Instances Sql1 and Sql2/sqlexpress\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003e$cred = Get-Credential sqladmin\nPS C:\\\u003e Get-DbaDbccProcCache -SqlInstance Server1 -SqlCredential $cred\nConnects using sqladmin credential and gets results of DBCC PROCCACHE for Instance Server1 using",
+        "Syntax":  "Get-DbaDbccProcCache [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
         "CommandName":  "Get-DbaDbCertificate",
@@ -24418,6 +24551,14 @@
                            "TransactSql"
                        ],
                        [
+                           "SubsystemServer",
+                           "The subsystems AnalysisScripting, AnalysisCommand, AnalysisQuery ned the server property to be able to apply",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
                            "Command",
                            "The commands to be executed by SQLServerAgent service through subsystem.",
                            "",
@@ -24560,7 +24701,7 @@
         "Name":  "New-DbaAgentJobStep",
         "Links":  "https://dbatools.io/New-DbaAgentJobStep",
         "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eNew-DbaAgentJobStep -SqlInstance sql1 -Job Job1 -StepName Step1\nCreate a step in \"Job1\" with the name Step1 with the default subsystem TransactSql.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eNew-DbaAgentJobStep -SqlInstance sql1 -Job Job1 -StepName Step1 -Database msdb\nCreate a step in \"Job1\" with the name Step1 where the database will the msdb\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eNew-DbaAgentJobStep -SqlInstance sql1, sql2, sql3 -Job Job1 -StepName Step1 -Database msdb\nCreate a step in \"Job1\" with the name Step1 where the database will the \"msdb\" for multiple servers\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eNew-DbaAgentJobStep -SqlInstance sql1, sql2, sql3 -Job Job1, Job2, \u0027Job Three\u0027 -StepName Step1 -Database msdb\nCreate a step in \"Job1\" with the name Step1 where the database will the \"msdb\" for multiple servers for multiple jobs\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003esql1, sql2, sql3 | New-DbaAgentJobStep -Job Job1 -StepName Step1 -Database msdb\nCreate a step in \"Job1\" with the name Step1 where the database will the \"msdb\" for multiple servers using pipeline",
-        "Syntax":  "New-DbaAgentJobStep [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [-Job] \u003cObject[]\u003e [[-StepId] \u003cInt32\u003e] [-StepName] \u003cString\u003e [[-Subsystem] \u003cString\u003e] [[-Command] \u003cString\u003e] [[-CmdExecSuccessCode] \u003cInt32\u003e] [[-OnSuccessAction] \u003cString\u003e] [[-OnSuccessStepId] \u003cInt32\u003e] [[-OnFailAction] \u003cString\u003e] [[-OnFailStepId] \u003cInt32\u003e] [[-Database] \u003cObject\u003e] [[-DatabaseUser] \u003cString\u003e] [[-RetryAttempts] \u003cInt32\u003e] [[-RetryInterval] \u003cInt32\u003e] [[-OutputFileName] \u003cString\u003e] [[-Flag] \u003cString[]\u003e] [[-ProxyName] \u003cString\u003e] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "New-DbaAgentJobStep [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [-Job] \u003cObject[]\u003e [[-StepId] \u003cInt32\u003e] [-StepName] \u003cString\u003e [[-Subsystem] \u003cString\u003e] [[-SubsystemServer] \u003cString\u003e] [[-Command] \u003cString\u003e] [[-CmdExecSuccessCode] \u003cInt32\u003e] [[-OnSuccessAction] \u003cString\u003e] [[-OnSuccessStepId] \u003cInt32\u003e] [[-OnFailAction] \u003cString\u003e] [[-OnFailStepId] \u003cInt32\u003e] [[-Database] \u003cObject\u003e] [[-DatabaseUser] \u003cString\u003e] [[-RetryAttempts] \u003cInt32\u003e] [[-RetryInterval] \u003cInt32\u003e] [[-OutputFileName] \u003cString\u003e] [[-Flag] \u003cString[]\u003e] [[-ProxyName] \u003cString\u003e] [-Force] [-EnableException] [-WhatIf] [-Confirm] \r\n[\u003cCommonParameters\u003e]"
     },
     {
         "CommandName":  "New-DbaAgentProxy",
