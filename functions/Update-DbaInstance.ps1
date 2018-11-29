@@ -19,6 +19,11 @@ function Update-DbaInstance {
         The impact of this function is set to High, if you don't want to receive interactive prompts, set -Confirm to $false.
         Credentials are a required parameter for remote machines. Without specifying -Credential, the installation will fail due to lack of permissions.
 
+        CredSSP is a recommended transport for running the updates remotely. Update-DbaInstance will attempt to reconfigure
+        local and remote hosts to support CredSSP, which is why it is desirable to run this command in an elevated console at all times.
+        CVE-2018-0886 security update is required for both local and remote hosts. If CredSSP connections are failing, make sure to
+        apply recent security updates prior to doing anything else.
+
     .PARAMETER ComputerName
         Target SQL Server computer.
 
