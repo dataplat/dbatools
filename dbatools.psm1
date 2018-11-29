@@ -1006,7 +1006,7 @@ $forever | ForEach-Object {
 }
 #endregion Aliases
 
-$allfunctions = @(
+$xplat = @(
     'Start-DbaMigration',
     'Copy-DbaDatabase',
     'Copy-DbaLogin',
@@ -1533,10 +1533,10 @@ $windowsonly = @(
     
 )
 
-if ($true) {
-    Export-ModuleMember -Alias "$($script:renames, $forever)" -Function $allfunctions
+if (($PSVersionTable.Keys -contains "Platform") -and $psversiontable.Platform -ne "Win32NT") {
+    Export-ModuleMember -Alias "$($script:renames, $forever)" -Function "$xplat"
 } else {
-Export-ModuleMember -Alias "$($script:renames, $forever)" -Function "$($allfunctions, $windowsonly)"
+    Export-ModuleMember -Alias "$($script:renames, $forever)" -Function "$($xplat, $windowsonly)"
 }
 
 #region Post-Import Cleanup
