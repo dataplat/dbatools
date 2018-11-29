@@ -1532,24 +1532,22 @@ $windowsonly = @(
     'Test-DbaManagementObject'
 )
 
+
 if (($PSVersionTable.Keys -contains "Platform")) {
     if ($psversiontable.Platform -ne "Win32NT") {
-        Export-ModuleMember -Alias $script:renames
-        Export-ModuleMember -Alias $forever
         Export-ModuleMember -Function $xplat
     } else {
-        Export-ModuleMember -Alias $script:renames
-        Export-ModuleMember -Alias $forever
         Export-ModuleMember -Function $xplat
         Export-ModuleMember -Function $windowsonly
     }
 } else {
-    Export-ModuleMember -Alias $script:renames
-    Export-ModuleMember -Alias $forever
     Export-ModuleMember -Function $xplat
     Export-ModuleMember -Function $windowsonly
     Export-ModuleMember -Function $noncoresmo
 }
+
+Export-ModuleMember -Alias $script:renames
+Export-ModuleMember -Alias $forever
 
 #region Post-Import Cleanup
 Write-ImportTime -Text "Loading Aliases"
