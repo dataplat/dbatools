@@ -140,7 +140,7 @@ function Copy-DbaXESession {
                     if ($force -eq $false) {
                         if ($Pscmdlet.ShouldProcess($destinstance, "Extended Event Session '$sessionName' was skipped because it already exists on $destinstance.")) {
                             $copyXeSessionStatus.Status = "Skipped"
-                            $copyXeSessionStatus.Notes = "Already exists"
+                            $copyXeSessionStatus.Notes = "Already exists on destination"
                             $copyXeSessionStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
                             Write-Message -Level Verbose -Message "Extended Event Session '$sessionName' was skipped because it already exists on $destinstance."

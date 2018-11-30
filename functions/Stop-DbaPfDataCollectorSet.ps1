@@ -91,7 +91,7 @@ function Stop-DbaPfDataCollectorSet {
         }
     }
     process {
-        if (-not (Test-Windows)) { return }
+        
         
         if (-not $InputObject -or ($InputObject -and (Test-Bound -ParameterName ComputerName))) {
             foreach ($computer in $ComputerName) {

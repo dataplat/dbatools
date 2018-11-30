@@ -4461,6 +4461,14 @@
                            ""
                        ],
                        [
+                           "Path",
+                           "Destination file path. If not specified, the file path of the source will be used (or the default data directory).",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
                            "Force",
                            "If this switch is enabled, the audits will be dropped and recreated on Destination.",
                            "",
@@ -4498,8 +4506,8 @@
         "Synopsis":  "Copy-DbaServerAudit migrates server audits from one SQL Server to another.",
         "Name":  "Copy-DbaServerAudit",
         "Links":  "https://dbatools.io/Copy-DbaServerAudit",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eCopy-DbaServerAudit -Source sqlserver2014a -Destination sqlcluster\nCopies all server audits from sqlserver2014a to sqlcluster, using Windows credentials. If audits with the same name exist on sqlcluster, they will be skipped.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eCopy-DbaServerAudit -Source sqlserver2014a -Destination sqlcluster -Audit tg_noDbDrop -SourceSqlCredential $cred -Force\nCopies a single audit, the tg_noDbDrop audit from sqlserver2014a to sqlcluster, using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster. If an audit with the same name exists \r\non sqlcluster, it will be dropped and recreated because -Force was used.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eCopy-DbaServerAudit -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force\nShows what would happen if the command were executed using force.",
-        "Syntax":  "Copy-DbaServerAudit [-Source] \u003cDbaInstanceParameter\u003e [[-SourceSqlCredential] \u003cPSCredential\u003e] [-Destination] \u003cDbaInstanceParameter[]\u003e [[-DestinationSqlCredential] \u003cPSCredential\u003e] [[-Audit] \u003cObject[]\u003e] [[-ExcludeAudit] \u003cObject[]\u003e] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eCopy-DbaServerAudit -Source sqlserver2014a -Destination sqlcluster\nCopies all server audits from sqlserver2014a to sqlcluster, using Windows credentials. If audits with the same name exist on sqlcluster, they will be skipped.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eCopy-DbaServerAudit -Source sqlserver2014a -Destination sqlcluster -Audit tg_noDbDrop -SourceSqlCredential $cred -Force\nCopies a single audit, the tg_noDbDrop audit from sqlserver2014a to sqlcluster, using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster. If an audit with the same name exists \r\non sqlcluster, it will be dropped and recreated because -Force was used.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eCopy-DbaServerAudit -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force\nShows what would happen if the command were executed using force.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eCopy-DbaServerAudit -Source sqlserver-0 -Destination sqlserver-1 -Audit audit1 -Path \u0027C:\\audit1\u0027\nCopies audit audit1 from sqlserver-0 to sqlserver-1. The file path on sqlserver-1 will be set to \u0027C:\\audit1\u0027.",
+        "Syntax":  "Copy-DbaServerAudit [-Source] \u003cDbaInstanceParameter\u003e [[-SourceSqlCredential] \u003cPSCredential\u003e] [-Destination] \u003cDbaInstanceParameter[]\u003e [[-DestinationSqlCredential] \u003cPSCredential\u003e] [[-Audit] \u003cObject[]\u003e] [[-ExcludeAudit] \u003cObject[]\u003e] [[-Path] \u003cString\u003e] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "CommandName":  "Copy-DbaServerAuditSpecification",
@@ -9282,6 +9290,47 @@
         "Syntax":  "Get-DbaAgentSchedule [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [-Schedule \u003cObject[]\u003e] [-SqlCredential \u003cPSCredential\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
+        "CommandName":  "Get-DbaAgentServer",
+        "Description":  "The Get-DbaAgentServer returns connected SMO object for SQL Agent Server information for each instance(s) of SQL Server.",
+        "Tags":  [
+                     "Job",
+                     "Agent"
+                 ],
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.",
+                           "ServerInstance,SqlServer",
+                           true,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
+                           "SqlCredential",
+                           "Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ]
+                   ],
+        "Alias":  "",
+        "Author":  "Cláudio Silva (@claudioessilva), https://claudioessilva.eu",
+        "Synopsis":  "Gets SQL Agent Server information for each instance(s) of SQL Server.",
+        "Name":  "Get-DbaAgentServer",
+        "Links":  "https://dbatools.io/Get-DbaAgentServer",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaAgentServer -SqlInstance localhost\nReturns SQL Agent Server on the local default SQL Server instance\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaAgentServer -SqlInstance localhost, sql2016\nReturns SQL Agent Servers for the localhost and sql2016 SQL Server instances",
+        "Syntax":  "Get-DbaAgentServer [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
+    },
+    {
         "CommandName":  "Get-DbaAgHadr",
         "Description":  "Gets the Hadr setting, from the service level, and returns true or false for the specified SQL Server instance.",
         "Tags":  [
@@ -9864,7 +9913,7 @@
                        ],
                        [
                            "Anonymise",
-                           "If specified we will output the results with ComputerName, InstanceName, Database, UserName, and Paths hashed out\r\nThis options is mainly for use if we need you to submit details for fault finding to the dbatools team",
+                           "If specified we will output the results with ComputerName, InstanceName, Database, UserName, Paths, and Logical and Physical Names hashed out\r\nThis options is mainly for use if we need you to submit details for fault finding to the dbatools team",
                            "Anonymize",
                            false,
                            "false",
@@ -9909,6 +9958,38 @@
                            ""
                        ],
                        [
+                           "Kb",
+                           "Get a KB information based on its number. Supported format: KBXXXXXX, or simply XXXXXX.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "MajorVersion",
+                           "Get a KB information based on SQL Server version. Can be refined further by -ServicePack and -CumulativeUpdate parameters.\r\nExamples: SQL2008 | 2008R2 | 2016",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "ServicePack",
+                           "Get a KB information based on SQL Server Service Pack version. Can be refined further by -CumulativeUpdate parameter.\r\nExamples: SP0 | 2 | RTM",
+                           "SP",
+                           false,
+                           "false",
+                           "RTM"
+                       ],
+                       [
+                           "CumulativeUpdate",
+                           "Get a KB information based on SQL Server Cumulative Update version.\r\n Examples: CU0 | CU13 | CU0",
+                           "CU",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
                            "SqlInstance",
                            "Target any number of instances, in order to return their build state.",
                            "ServerInstance,SqlServer",
@@ -9947,7 +10028,7 @@
         "Name":  "Get-DbaBuildReference",
         "Links":  "https://dbatools.io/Get-DbaBuildReference",
         "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaBuildReference -Build \"12.00.4502\"\nReturns information about a build identified by  \"12.00.4502\" (which is SQL 2014 with SP1 and CU11)\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaBuildReference -Build \"12.00.4502\" -Update\nReturns information about a build trying to fetch the most up to date index online. When the online version is newer, the local one gets overwritten\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaBuildReference -Build \"12.0.4502\",\"10.50.4260\"\nReturns information builds identified by these versions strings\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaCmsRegServer -SqlInstance sqlserver2014a | Get-DbaBuildReference\nIntegrate with other cmdlets to have builds checked for all your registered servers on sqlserver2014a",
-        "Syntax":  "Get-DbaBuildReference [[-Build] \u003cVersion[]\u003e] [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [-Update] [-EnableException] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Get-DbaBuildReference [[-Build] \u003cVersion[]\u003e] [[-Kb] \u003cString[]\u003e] [[-MajorVersion] \u003cString\u003e] [[-ServicePack] \u003cString\u003e] [[-CumulativeUpdate] \u003cString\u003e] [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [-Update] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
         "CommandName":  "Get-DbaClientAlias",
@@ -10929,6 +11010,185 @@
         "Links":  "https://dbatools.io/Get-DbaDbAssembly",
         "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaDbAssembly -SqlInstance localhost\nReturns all Database Assembly on the local default SQL Server instance\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaDbAssembly -SqlInstance localhost, sql2016\nReturns all Database Assembly for the local and sql2016 SQL Server instances",
         "Syntax":  "Get-DbaDbAssembly [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
+    },
+    {
+        "CommandName":  "Get-DbaDbccHelp",
+        "Description":  "Returns the results of DBCC HELP\n\nRead more:\n    - https://docs.microsoft.com/en-us/sql/t-sql/database-console-commands/dbcc-help-transact-sql",
+        "Tags":  "DBCC",
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "The target SQL Server instance or instances.",
+                           "",
+                           true,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
+                           "SqlCredential",
+                           "Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Statement",
+                           "Is the name of the DBCC command for which to receive syntax information.\r\nProvide only the part of the DBCC command that follows DBCC,\r\n    for example, CHECKDB instead of DBCC CHECKDB.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "IncludeUndocumented",
+                           "Allows getting help for undocumented DBCC commands. Requires Traceflag 2588\r\nThis only works for SQL Server 2005 or Higher",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ]
+                   ],
+        "Alias":  "",
+        "Author":  "Patrick Flynn (@sqllensman)",
+        "Synopsis":  "Execution of Database Console Command DBCC HELP",
+        "Name":  "Get-DbaDbccHelp",
+        "Links":  "https://dbatools.io/Get-DbaDbccUserOptions",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaDbccHelp -SqlInstance SQLInstance -Statement FREESYSTEMCACHE -Verbose | Format-List\nRuns the command DBCC HELP(FREESYSTEMCACHE) WITH NO_INFOMSGS against the SQL Server instance SQLInstance\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaDbccHelp -SqlInstance LensmanSB -Statement WritePage -IncludeUndocumented | Format-List\nSets TraeFlag 2588 on for session and then runs the command DBCC HELP(WritePage) WITH NO_INFOMSGS against the SQL Server instance SQLInstance",
+        "Syntax":  "Get-DbaDbccHelp [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Statement] \u003cString\u003e] [-IncludeUndocumented] [-EnableException] [\u003cCommonParameters\u003e]"
+    },
+    {
+        "CommandName":  "Get-DbaDbccMemoryStatus",
+        "Description":  "This command is used to run the DBCC MEMORYSTATUS comand and collect results in a single usable recordset\n\nReference:\n    - https://blogs.msdn.microsoft.com/timchapman/2012/08/16/how-to-parse-dbcc-memorystatus-via-powershell/\n    - https://support.microsoft.com/en-us/help/907877/how-to-use-the-dbcc-memorystatus-command-to-monitor-memory-usage-on-sq",
+        "Tags":  [
+                     "DBCC",
+                     "Memory"
+                 ],
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "The target SQL Server instance or instances.",
+                           "",
+                           true,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
+                           "SqlCredential",
+                           "Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ]
+                   ],
+        "Alias":  "",
+        "Author":  "Patrick Flynn (@sqllensman)",
+        "Synopsis":  "Gets the results of DBCC MEMORYSTATUS.  Works on SQL Server 2000-2019.",
+        "Name":  "Get-DbaDbccMemoryStatus",
+        "Links":  "https://dbatools.io/Get-DbaMemoryStatus",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaDbccMemoryStatus -SqlInstance sqlcluster, sqlserver2012\nGet output of DBCC MEMORYSTATUS for instances \"sqlcluster\" and \"sqlserver2012\". Returns results in a single recordset.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaCmsRegServer -SqlInstance sqlcluster | Get-DbaDbccMemoryStatus\nGet output of DBCC MEMORYSTATUS for all servers in Server Central Management Server",
+        "Syntax":  "Get-DbaDbccMemoryStatus [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
+    },
+    {
+        "CommandName":  "Get-DbaDbccProcCache",
+        "Description":  "Returns the results of DBCC PROCCACHE\n\nRead more:\n    - https://docs.microsoft.com/en-us/sql/t-sql/database-console-commands/dbcc-proccache-transact-sql",
+        "Tags":  "DBCC",
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "The target SQL Server instance or instances.",
+                           "",
+                           true,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
+                           "SqlCredential",
+                           "Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ]
+                   ],
+        "Alias":  "",
+        "Author":  "Patrick Flynn (@sqllensman)",
+        "Synopsis":  "Execution of Database Console Command DBCC PROCCACHE",
+        "Name":  "Get-DbaDbccProcCache",
+        "Links":  "https://dbatools.io/Get-DbaDbccProcCache",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaDbccProcCache -SqlInstance Server1\nGet results of DBCC PROCCACHE for Instance Server1\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003e\u0027Sql1\u0027,\u0027Sql2/sqlexpress\u0027 | Get-DbaDbccProcCache\nGet results of DBCC PROCCACHE for Instances Sql1 and Sql2/sqlexpress\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003e$cred = Get-Credential sqladmin\nPS C:\\\u003e Get-DbaDbccProcCache -SqlInstance Server1 -SqlCredential $cred\nConnects using sqladmin credential and gets results of DBCC PROCCACHE for Instance Server1 using",
+        "Syntax":  "Get-DbaDbccProcCache [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
+    },
+    {
+        "CommandName":  "Get-DbaDbccUserOption",
+        "Description":  "Returns the results of DBCC USEROPTIONS\n\nRead more:\n    - https://docs.microsoft.com/en-us/sql/t-sql/database-console-commands/dbcc-useroptions-transact-sql",
+        "Tags":  "DBCC",
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "The target SQL Server instance or instances.",
+                           "",
+                           true,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
+                           "SqlCredential",
+                           "Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Option",
+                           "Return only specific options. Returns all results if not specified.\r\nAccepts any values in set \u0027ansi_null_dflt_on\u0027, \u0027ansi_nulls\u0027, \u0027ansi_padding\u0027, \u0027ansi_warnings\u0027, \u0027arithabort\u0027, \u0027concat_null_yields_null\u0027, \u0027datefirst\u0027, \u0027dateformat\u0027, \u0027isolation level\u0027, \u0027language\u0027, \r\n\u0027lock_timeout\u0027, \u0027quoted_identifier\u0027, \u0027textsize\u0027",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ]
+                   ],
+        "Alias":  "",
+        "Author":  "Patrick Flynn (@sqllensman)",
+        "Synopsis":  "Execution of Database Console Command DBCC USEROPTIONS",
+        "Name":  "Get-DbaDbccUserOption",
+        "Links":  "https://dbatools.io/Get-DbaDbccUserOptions",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaDbccUserOptions -SqlInstance Server1\nGet results of DBCC USEROPTIONS for Instance Server1\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003e\u0027Sql1\u0027,\u0027Sql2/sqlexpress\u0027 | Get-DbaDbccUserOptions\nGet results of DBCC USEROPTIONS for Instances Sql1 and Sql2/sqlexpress\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003e$cred = Get-Credential sqladmin\nPS C:\\\u003e Get-DbaDbccUserOptions -SqlInstance Server1 -SqlCredential $cred\nConnects using sqladmin credential and gets results of DBCC USEROPTIONS for Instance Server1\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaDbccUserOptions -SqlInstance Server1 -Option ansi_nulls, ansi_warnings, datefirst\nGets results of DBCC USEROPTIONS for Instance Server1. Only display results for the options ansi_nulls, ansi_warnings, datefirst",
+        "Syntax":  "Get-DbaDbccUserOption [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Option] \u003cString[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
         "CommandName":  "Get-DbaDbCertificate",
@@ -14752,8 +15012,8 @@
         "Params":  [
                        [
                            "SqlInstance",
-                           "TThe target SQL Server instance or instances.You must have sysadmin access and server version must be SQL Server version 2000 or higher.",
-                           "ServerInstance,SqlServer",
+                           "The target SQL Server instance or instances.You must have sysadmin access and server version must be SQL Server version 2000 or higher.",
+                           "",
                            true,
                            "true (ByValue)",
                            ""
@@ -14799,16 +15059,32 @@
                            ""
                        ],
                        [
-                           "ExcludeSystemLogins",
+                           "ExcludeSystemLogin",
                            "A Switch to remove System Logins from the output.",
+                           "ExcludeSystemLogins",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "Type",
+                           "Filters logins by their type. Valid options are Windows and SQL.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "HasAccess",
+                           "A Switch to return Logins that have access to the instance of SQL Server.",
                            "",
                            false,
                            "false",
                            "False"
                        ],
                        [
-                           "SQLLogins",
-                           "A Switch to return Logins of type SQLLogin only.",
+                           "SqlLogins",
+                           "Deprecated. Please use -Type SQL",
                            "",
                            false,
                            "false",
@@ -14816,15 +15092,7 @@
                        ],
                        [
                            "WindowsLogins",
-                           "A Switch to return Logins of type Windows only.",
-                           "",
-                           false,
-                           "false",
-                           "False"
-                       ],
-                       [
-                           "HasAccess",
-                           "A Switch to return Logins that have access to the instance of SQL Server.",
+                           "Deprecated. Please use -Type Windows.",
                            "",
                            false,
                            "false",
@@ -14849,7 +15117,7 @@
                        [
                            "EnableException",
                            "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
-                           "Silent",
+                           "",
                            false,
                            "false",
                            "False"
@@ -14857,11 +15125,11 @@
                    ],
         "Alias":  "",
         "Author":  "Mitchell Hamann (@SirCaptainMitch) | Rob Sewell (@SQLDBaWithBeard)",
-        "Synopsis":  "Function to get an SMO login object of the logins for a given SQL Instance. Takes a server object from the pipe",
+        "Synopsis":  "Function to get an SMO login object of the logins for a given SQL Server instance. Takes a server object from the pipeline.",
         "Name":  "Get-DbaLogin",
         "Links":  "https://dbatools.io/Get-DbaLogin",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaLogin -SqlInstance sql2016\nGets all the logins from server sql2016 using NT authentication and returns the SMO login objects\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaLogin -SqlInstance sql2016 -SqlCredential $sqlcred\nGets all the logins for a given SQL Server using a passed credential object and returns the SMO login objects\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaLogin -SqlInstance sql2016 -SqlCredential $sqlcred -Login dbatoolsuser,TheCaptain\nGet specific logins from server sql2016 returned as SMO login objects.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaLogin -SqlInstance sql2016 -IncludeFilter \u0027##*\u0027,\u0027NT *\u0027\nGet all user objects from server sql2016 beginning with \u0027##\u0027 or \u0027NT \u0027, returned as SMO login objects.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eGet-DbaLogin -SqlInstance sql2016 -ExcludeLogin dbatoolsuser\nGet all user objects from server sql2016 except the login dbatoolsuser, returned as SMO login objects.\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eGet-DbaLogin -SqlInstance sql2016 -WindowsLogins\nGet all user objects from server sql2016 that are Windows Logins\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003eGet-DbaLogin -SqlInstance sql2016 -WindowsLogins -IncludeFilter *Rob*\nGet all user objects from server sql2016 that are Windows Logins and have Rob in the name\n-------------------------- EXAMPLE 8 --------------------------\nPS C:\\\u003eGet-DbaLogin -SqlInstance sql2016 -SQLLogins\nGet all user objects from server sql2016 that are SQLLogins\n-------------------------- EXAMPLE 9 --------------------------\nPS C:\\\u003eGet-DbaLogin -SqlInstance sql2016 -SQLLogins -IncludeFilter *Rob*\nGet all user objects from server sql2016 that are SQLLogins  and have Rob in the name\n-------------------------- EXAMPLE 10 --------------------------\nPS C:\\\u003eGet-DbaLogin -SqlInstance sql2016 -ExcludeSystemLogins\nGet all user objects from server sql2016 that are not system objects\n-------------------------- EXAMPLE 11 --------------------------\nPS C:\\\u003eGet-DbaLogin -SqlInstance sql2016 -ExcludeFilter \u0027##*\u0027,\u0027NT *\u0027\nGet all user objects from server sql2016 except any beginning with \u0027##\u0027 or \u0027NT \u0027, returned as SMO login objects.\n-------------------------- EXAMPLE 12 --------------------------\nPS C:\\\u003e\u0027sql2016\u0027, \u0027sql2014\u0027 | Get-DbaLogin -SqlCredential $sqlcred\nUsing Get-DbaLogin on the pipeline, you can also specify which names you would like with -Login.\n-------------------------- EXAMPLE 13 --------------------------\nPS C:\\\u003e\u0027sql2016\u0027, \u0027sql2014\u0027 | Get-DbaLogin -SqlCredential $sqlcred -Locked\nUsing Get-DbaLogin on the pipeline to get all locked logins on servers sql2016 and sql2014.\n-------------------------- EXAMPLE 14 --------------------------\nPS C:\\\u003e\u0027sql2016\u0027, \u0027sql2014\u0027 | Get-DbaLogin -SqlCredential $sqlcred -HasAccess -Disabled\nUsing Get-DbaLogin on the pipeline to get all Disabled logins that have access on servers sql2016 or sql2014.",
-        "Syntax":  "Get-DbaLogin [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Login \u003cObject[]\u003e] [-IncludeFilter \u003cObject[]\u003e] [-ExcludeLogin \u003cObject[]\u003e] [-ExcludeFilter \u003cObject[]\u003e] [-ExcludeSystemLogins] [-SQLLogins] [-WindowsLogins] [-HasAccess] [-Locked] [-Disabled] [-EnableException] [\u003cCommonParameters\u003e]"
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaLogin -SqlInstance sql2016\nGets all the logins from server sql2016 using NT authentication and returns the SMO login objects\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaLogin -SqlInstance sql2016 -SqlCredential $sqlcred\nGets all the logins for a given SQL Server using a passed credential object and returns the SMO login objects\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaLogin -SqlInstance sql2016 -SqlCredential $sqlcred -Login dbatoolsuser,TheCaptain\nGet specific logins from server sql2016 returned as SMO login objects.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaLogin -SqlInstance sql2016 -IncludeFilter \u0027##*\u0027,\u0027NT *\u0027\nGet all user objects from server sql2016 beginning with \u0027##\u0027 or \u0027NT \u0027, returned as SMO login objects.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eGet-DbaLogin -SqlInstance sql2016 -ExcludeLogin dbatoolsuser\nGet all user objects from server sql2016 except the login dbatoolsuser, returned as SMO login objects.\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eGet-DbaLogin -SqlInstance sql2016 -Type Windows\nGet all user objects from server sql2016 that are Windows Logins\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003eGet-DbaLogin -SqlInstance sql2016 -Type Windows -IncludeFilter *Rob*\nGet all user objects from server sql2016 that are Windows Logins and have Rob in the name\n-------------------------- EXAMPLE 8 --------------------------\nPS C:\\\u003eGet-DbaLogin -SqlInstance sql2016 -Type SQL\nGet all user objects from server sql2016 that are SQL Logins\n-------------------------- EXAMPLE 9 --------------------------\nPS C:\\\u003eGet-DbaLogin -SqlInstance sql2016 -Type SQL -IncludeFilter *Rob*\nGet all user objects from server sql2016 that are SQL Logins and have Rob in the name\n-------------------------- EXAMPLE 10 --------------------------\nPS C:\\\u003eGet-DbaLogin -SqlInstance sql2016 -ExcludeSystemLogin\nGet all user objects from server sql2016 that are not system objects\n-------------------------- EXAMPLE 11 --------------------------\nPS C:\\\u003eGet-DbaLogin -SqlInstance sql2016 -ExcludeFilter \u0027##*\u0027,\u0027NT *\u0027\nGet all user objects from server sql2016 except any beginning with \u0027##\u0027 or \u0027NT \u0027, returned as SMO login objects.\n-------------------------- EXAMPLE 12 --------------------------\nPS C:\\\u003e\u0027sql2016\u0027, \u0027sql2014\u0027 | Get-DbaLogin -SqlCredential $sqlcred\nUsing Get-DbaLogin on the pipeline, you can also specify which names you would like with -Login.\n-------------------------- EXAMPLE 13 --------------------------\nPS C:\\\u003e\u0027sql2016\u0027, \u0027sql2014\u0027 | Get-DbaLogin -SqlCredential $sqlcred -Locked\nUsing Get-DbaLogin on the pipeline to get all locked logins on servers sql2016 and sql2014.\n-------------------------- EXAMPLE 14 --------------------------\nPS C:\\\u003e\u0027sql2016\u0027, \u0027sql2014\u0027 | Get-DbaLogin -SqlCredential $sqlcred -HasAccess -Disabled\nUsing Get-DbaLogin on the pipeline to get all Disabled logins that have access on servers sql2016 or sql2014.",
+        "Syntax":  "Get-DbaLogin [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Login \u003cObject[]\u003e] [-IncludeFilter \u003cObject[]\u003e] [-ExcludeLogin \u003cObject[]\u003e] [-ExcludeFilter \u003cObject[]\u003e] [-ExcludeSystemLogin] [-Type \u003cString\u003e] [-HasAccess] [-SqlLogins] [-WindowsLogins] [-Locked] [-Disabled] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
         "CommandName":  "Get-DbaMaintenanceSolutionLog",
@@ -17532,7 +17800,7 @@
                        ],
                        [
                            "Type",
-                           "Use -Type to collect only services of the desired SqlServiceType.\r\nCan be one of the following: \"Agent\",\"Browser\",\"Engine\",\"FullText\",\"SSAS\",\"SSIS\",\"SSRS\"",
+                           "Use -Type to collect only services of the desired SqlServiceType.\r\nCan be one of the following: \"Agent\",\"Browser\",\"Engine\",\"FullText\",\"SSAS\",\"SSIS\",\"SSRS\", \"PolyBase\"",
                            "",
                            false,
                            "false",
@@ -17907,7 +18175,7 @@
                        [
                            "EnableException",
                            "If this switch is enabled, exceptions will be thrown to the caller, which will need to perform its own exception processing. Otherwise, the function will try to catch the exception, interpret it and \r\nprovide a friendly error message.",
-                           "Silent",
+                           "",
                            false,
                            "false",
                            "False"
@@ -21120,6 +21388,92 @@
         "Syntax":  "Invoke-DbaCycleErrorLog [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Type] \u003cString\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
+        "CommandName":  "Invoke-DbaDbccFreeCache",
+        "Description":  "Allows execution of Database Console Commands that act at Server Level to clear Memory caches\n\nAllows execution of the following commands\n    DBCC FREEPROCCACHE\n    DBCC FREESESSIONCACHE\n    DBCC FREESYSTEMCACHE\n\nRead more:\n    - https://docs.microsoft.com/en-us/sql/t-sql/database-console-commands/dbcc-freeproccache-transact-sql\n    - https://docs.microsoft.com/en-us/sql/t-sql/database-console-commands/dbcc-freesessioncache-transact-sql\n    - https://docs.microsoft.com/en-us/sql/t-sql/database-console-commands/dbcc-freesystemcache-transact-sql",
+        "Tags":  "DBCC",
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "The target SQL Server instance or instances.",
+                           "",
+                           true,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
+                           "SqlCredential",
+                           "Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Operation",
+                           "DBCC Operation to Perform - Supports specific set of operations",
+                           "",
+                           false,
+                           "false",
+                           "FreeProcCache"
+                       ],
+                       [
+                           "InputValue",
+                           "Value used for Operation - meaning depends on Operation\r\nDBCC FREEPROCCACHE accepts\r\n    a plan_handle of type varbinary(64)\r\n    a sql_handle of type varbinary(64)\r\n    or the name of a Resource Governor resource pool of type sysname\r\n    If blank then clears all elements from the plan cache\r\nDBCC FREESYSTEMCACHE accepts\r\n    \u0027ALL\u0027 for ALL specifies all supported caches\r\n    or name of a Resource Governor pool cache\r\nNot required for other values",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "NoInformationalMessages",
+                           "Suppresses all informational messages.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "MarkInUseForRemoval",
+                           "Used when Operation = DBCC FREESYSTEMCACHE\r\nAsynchronously frees currently used entries from their respective caches after they become unused",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "WhatIf",
+                           "Shows what would happen if the cmdlet runs. The cmdlet is not run.",
+                           "wi",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Confirm",
+                           "Prompts you for confirmation before running the cmdlet.",
+                           "cf",
+                           false,
+                           "false",
+                           ""
+                       ]
+                   ],
+        "Alias":  "",
+        "Author":  "Patrick Flynn (@sqllensman)",
+        "Synopsis":  "Execution of Database Console Commands that clear Server level Memory caches",
+        "Name":  "Invoke-DbaDbccFreeCache",
+        "Links":  "https://dbatools.io/Invoke-DbaDbccFreeCache",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eInvoke-DbaDbccFreeCache -SqlInstance SqlServer2017 -Operation FREEPROCCACHE\nRuns the command DBCC FREEPROCCACHE against the instance SqlServer2017 using Windows Authentication\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eInvoke-DbaDbccFreeCache -SqlInstance SqlServer2017 -Operation FREESESSIONCACHE -NoInformationalMessages\nRuns the command DBCC FREESESSIONCACHE WITH NO_INFOMSGS against the instance SqlServer2017 using Windows Authentication\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eInvoke-DbaDbccFreeCache -SqlInstance SqlServer2017 -Operation FREESYSTEMCACHE -NoInformationalMessages\nRuns the command DBCC FREESYSTEMCACHE WITH NO_INFOMSGS against the instance SqlServer2017 using Windows Authentication\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eInvoke-DbaDbccFreeCache -SqlInstance SqlServer2017 -Operation FREEPROCCACHE -InputValue 0x060006001ECA270EC0215D05000000000000000000000000\nRemove a specific plan with plan_handle 0x060006001ECA270EC0215D05000000000000000000000000 from the cache via the command DBCC FREEPROCCACHE(0x060006001ECA270EC0215D05000000000000000000000000) \r\nagainst the instance SqlServer2017 using Windows Authentication\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eInvoke-DbaDbccFreeCache -SqlInstance SqlServer2017 -Operation FREEPROCCACHE -InputValue default\nRuns the command DBCC FREEPROCCACHE(\u0027default\u0027) against the instance SqlServer2017 using Windows Authentication. This clears all cache entries associated with a resource pool \u0027default\u0027.\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eInvoke-DbaDbccFreeCache -SqlInstance SqlServer2017 -Operation FREESYSTEMCACHE -InputValue default\nRuns the command DBCC FREESYSTEMCACHE (\u0027ALL\u0027, default) against the instance SqlServer2017 using Windows Authentication. This will clean all the caches with entries specific to the resource pool named \r\n\"default\".\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003eInvoke-DbaDbccFreeCache -SqlInstance SqlServer2017 -Operation FREESYSTEMCACHE -InputValue default -MarkInUseForRemoval\nRuns the command DBCC FREESYSTEMCACHE (\u0027ALL\u0027, default) WITH MARK_IN_USE_FOR_REMOVAL against the instance SqlServer2017 using Windows Authentication. This will to release entries once the entries \r\nbecome unused for all the caches with entries specific to the resource pool named \"default\".",
+        "Syntax":  "Invoke-DbaDbccFreeCache [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Operation] \u003cString\u003e] [[-InputValue] \u003cString\u003e] [-NoInformationalMessages] [-MarkInUseForRemoval] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+    },
+    {
         "CommandName":  "Invoke-DbaDbClone",
         "Description":  "Clones a database schema and statistics.\n\nThis can be useful for testing query performance without requiring all the space needed for the data in the database.\n\nRead more:\n    - https://sqlperformance.com/2016/08/sql-statistics/expanding-dbcc-clonedatabase\n    - https://support.microsoft.com/en-us/help/3177838/how-to-use-dbcc-clonedatabase-to-generate-a-schema-and-statistics-only\n\nThanks to Microsoft Tiger Team for the code and idea https://github.com/Microsoft/tigertoolbox/",
         "Tags":  [
@@ -23393,125 +23747,6 @@
         "Syntax":  "Invoke-DbaXeReplay [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString[]\u003e] [[-Event] \u003cString[]\u003e] [-InputObject] \u003cObject\u003e [-Raw] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
-        "CommandName":  "Invoke-Sqlcmd2",
-        "Description":  "Runs a T-SQL script. Invoke-Sqlcmd2 runs the whole script and only captures the first selected result set, such as the output of PRINT statements when -verbose parameter is specified.\nParameterized queries are supported.\n\nHelp details below borrowed from Invoke-Sqlcmd",
-        "Params":  [
-                       [
-                           "ServerInstance",
-                           "Specifies the SQL Server instance(s) to execute the query against.",
-                           "Instance,Instances,ComputerName,Server,Servers,SqlInstance",
-                           true,
-                           "true (ByValue, ByPropertyName)",
-                           ""
-                       ],
-                       [
-                           "Database",
-                           "Specifies the name of the database to execute the query against. If specified, this database will be used in the ConnectionString when establishing the connection to SQL Server.\nIf a SQLConnection is provided, the default database for that connection is overridden with this database.",
-                           "",
-                           false,
-                           "true (ByPropertyName)",
-                           ""
-                       ],
-                       [
-                           "Query",
-                           "Specifies one or more queries to be run. The queries can be Transact-SQL, XQuery statements, or sqlcmd commands. Multiple queries in a single batch may be separated by a semicolon.\nDo not specify the sqlcmd GO separator (or, use the ParseGo parameter). Escape any double quotation marks included in the string.\nConsider using bracketed identifiers such as [MyTable] instead of quoted identifiers such as \"MyTable\".",
-                           "",
-                           true,
-                           "true (ByPropertyName)",
-                           ""
-                       ],
-                       [
-                           "InputFile",
-                           "Specifies the full path to a file to be used as the query input to Invoke-Sqlcmd2. The file can contain Transact-SQL statements, XQuery statements, sqlcmd commands and scripting variables.",
-                           "",
-                           true,
-                           "true (ByPropertyName)",
-                           ""
-                       ],
-                       [
-                           "Credential",
-                           "Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)\nSECURITY NOTE: If you use the -Debug switch, the connectionstring including plain text password will be sent to the debug stream.",
-                           "SqlCredential",
-                           false,
-                           "true (ByPropertyName)",
-                           ""
-                       ],
-                       [
-                           "Encrypt",
-                           "If this switch is enabled, the connection to SQL Server will be made using SSL.\nThis requires that the SQL Server has been set up to accept SSL requests. For information regarding setting up SSL on SQL Server, see \r\nhttps://technet.microsoft.com/en-us/library/ms189067(v=sql.105).aspx",
-                           "",
-                           false,
-                           "false",
-                           "False"
-                       ],
-                       [
-                           "QueryTimeout",
-                           "Specifies the number of seconds before the queries time out.",
-                           "",
-                           false,
-                           "true (ByPropertyName)",
-                           "600"
-                       ],
-                       [
-                           "ConnectionTimeout",
-                           "Specifies the number of seconds before Invoke-Sqlcmd2 times out if it cannot successfully connect to an instance of the Database Engine. The timeout value must be an integer between 0 and 65534. If 0 \r\nis specified, connection attempts do not time out.",
-                           "",
-                           false,
-                           "true (ByPropertyName)",
-                           "15"
-                       ],
-                       [
-                           "As",
-                           "Specifies output type. Valid options for this parameter are \u0027DataSet\u0027, \u0027DataTable\u0027, \u0027DataRow\u0027, \u0027PSObject\u0027, and \u0027SingleValue\u0027\nPSObject output introduces overhead but adds flexibility for working with results: http://powershell.org/wp/forums/topic/dealing-with-dbnull/",
-                           "",
-                           false,
-                           "true (ByPropertyName)",
-                           "DataRow"
-                       ],
-                       [
-                           "SqlParameters",
-                           "Specifies a hashtable of parameters for parameterized SQL queries.  http://blog.codinghorror.com/give-me-parameterized-sql-or-give-me-death/\nExample:",
-                           "",
-                           false,
-                           "true (ByPropertyName)",
-                           ""
-                       ],
-                       [
-                           "AppendServerInstance",
-                           "If this switch is enabled, the SQL Server instance will be appended to PSObject and DataRow output.",
-                           "",
-                           false,
-                           "false",
-                           "False"
-                       ],
-                       [
-                           "ParseGO",
-                           "If this switch is enabled, \"GO\" statements will be handled automatically.\r\nEvery \"GO\" will effectively run in a separate query, like if you issued multiple Invoke-SqlCmd2 commands.\r\n\"GO\"s will be recognized if they are on a single line, as this covers\r\nthe 95% of the cases \"GO\" parsing is needed\r\nNote:\r\nQueries will always target that database, e.g. if you have this Query:\r\nUSE DATABASE [dbname]\r\nGO\r\nSELECT * from sys.tables\r\nand you call it via\r\nInvoke-SqlCmd2 -ServerInstance instance -Database msdb -Query ...\r\nyou\u0027ll get back tables from msdb, not dbname.",
-                           "",
-                           false,
-                           "false",
-                           "False"
-                       ],
-                       [
-                           "SQLConnection",
-                           "Specifies an existing SQLConnection object to use in connecting to SQL Server. If the connection is closed, an attempt will be made to open it.",
-                           "Connection,Conn",
-                           false,
-                           "false",
-                           ""
-                       ]
-                   ],
-        "Alias":  "",
-        "Synopsis":  "Runs a T-SQL script.",
-        "Name":  "Invoke-Sqlcmd2",
-        "Links":  [
-                      "https://github.com/sqlcollaborative/Invoke-SqlCmd2",
-                      "https://github.com/RamblingCookieMonster/PowerShell"
-                  ],
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eInvoke-Sqlcmd2 -ServerInstance \"MyComputer\\MyInstance\" -Query \"SELECT login_time AS \u0027StartTime\u0027 FROM sysprocesses WHERE spid = 1\"\nConnects to a named instance of the Database Engine on a computer and runs a basic T-SQL query.\nStartTime\r\n-----------\r\n2010-08-12 21:21:03.593\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eInvoke-Sqlcmd2 -ServerInstance \"MyComputer\\MyInstance\" -InputFile \"C:\\MyFolder\\tsqlscript.sql\" | Out-File -filePath \"C:\\MyFolder\\tsqlscript.rpt\"\nReads a file containing T-SQL statements, runs the file, and writes the output to another file.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eInvoke-Sqlcmd2  -ServerInstance \"MyComputer\\MyInstance\" -Query \"PRINT \u0027hello world\u0027\" -Verbose\nUses the PowerShell -Verbose parameter to return the message output of the PRINT command.\r\nVERBOSE: hello world\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eInvoke-Sqlcmd2 -ServerInstance MyServer\\MyInstance -Query \"SELECT ServerName, VCNumCPU FROM tblServerInfo\" -as PSObject | ?{$_.VCNumCPU -gt 8}\nInvoke-Sqlcmd2 -ServerInstance MyServer\\MyInstance -Query \"SELECT ServerName, VCNumCPU FROM tblServerInfo\" -as PSObject | ?{$_.VCNumCPU}\nThis example uses the PSObject output type to allow more flexibility when working with results.\nIf we used DataRow rather than PSObject, we would see the following behavior:\r\nEach row where VCNumCPU does not exist would produce an error in the first example\r\nResults would include rows where VCNumCPU has DBNull value in the second example\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003e\u0027Instance1\u0027, \u0027Server1/Instance1\u0027, \u0027Server2\u0027 | Invoke-Sqlcmd2 -query \"Sp_databases\" -as psobject -AppendServerInstance\nThis example lists databases for each instance.  It includes a column for the ServerInstance in question.\r\nDATABASE_NAME          DATABASE_SIZE REMARKS        ServerInstance\r\n-------------          ------------- -------        --------------\r\nREDACTED                       88320                Instance1\r\nmaster                         17920                Instance1\r\n...\r\nmsdb                          618112                Server1/Instance1\r\ntempdb                        563200                Server1/Instance1\r\n...\r\nOperationsManager           20480000                Server2\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003e#Construct a query using SQL parameters\n$Query = \"SELECT ServerName, VCServerClass, VCServerContact FROM tblServerInfo WHERE VCServerContact LIKE @VCServerContact AND VCServerClass LIKE @VCServerClass\"\n#Run the query, specifying values for SQL parameters\r\nInvoke-Sqlcmd2 -ServerInstance SomeServer\\NamedInstance -Database ServerDB -query $query -SqlParameters @{ VCServerContact=\"%cookiemonster%\"; VCServerClass=\"Prod\" }\nServerName    VCServerClass VCServerContact\r\n----------    ------------- ---------------\r\nSomeServer1   Prod          cookiemonster, blah\r\nSomeServer2   Prod          cookiemonster\r\nSomeServer3   Prod          blah, cookiemonster\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003eInvoke-Sqlcmd2 -SQLConnection $Conn -Query \"SELECT login_time AS \u0027StartTime\u0027 FROM sysprocesses WHERE spid = 1\"\nUses an existing SQLConnection and runs a basic T-SQL query against it\nStartTime\r\n-----------\r\n2010-08-12 21:21:03.593\n-------------------------- EXAMPLE 8 --------------------------\nPS C:\\\u003eInvoke-SqlCmd -SQLConnection $Conn -Query \"SELECT ServerName FROM tblServerInfo WHERE ServerName LIKE @ServerName\" -SqlParameters @{\"ServerName = \"c-is-hyperv-1\"}\nExecutes a parameterized query against the existing SQLConnection, with a collection of one parameter to be passed to the query when executed.",
-        "Syntax":  "Invoke-Sqlcmd2 [-ServerInstance] \u003cString[]\u003e [[-Database] \u003cString\u003e] [-Query] \u003cString\u003e [[-Credential] \u003cPSCredential\u003e] [[-Encrypt]] [[-QueryTimeout] \u003cInt32\u003e] [[-ConnectionTimeout] \u003cInt32\u003e] [[-As] \u003cString\u003e] [[-SqlParameters] \u003cIDictionary\u003e] [[-AppendServerInstance]] [[-ParseGO]] [\u003cCommonParameters\u003e]\nInvoke-Sqlcmd2 [-ServerInstance] \u003cString[]\u003e [[-Database] \u003cString\u003e] [-InputFile] \u003cString\u003e [[-Credential] \u003cPSCredential\u003e] [[-Encrypt]] [[-QueryTimeout] \u003cInt32\u003e] [[-ConnectionTimeout] \u003cInt32\u003e] [[-As] \u003cString\u003e] [[-SqlParameters] \u003cIDictionary\u003e] [[-AppendServerInstance]] [[-ParseGO]] [\u003cCommonParameters\u003e]\nInvoke-Sqlcmd2 [[-Database] \u003cString\u003e] [-Query] \u003cString\u003e [[-QueryTimeout] \u003cInt32\u003e] [[-As] \u003cString\u003e] [[-SqlParameters] \u003cIDictionary\u003e] [[-AppendServerInstance]] [[-ParseGO]] [[-SQLConnection] \u003cSqlConnection\u003e] [\u003cCommonParameters\u003e]\nInvoke-Sqlcmd2 [[-Database] \u003cString\u003e] [-InputFile] \u003cString\u003e [[-QueryTimeout] \u003cInt32\u003e] [[-As] \u003cString\u003e] [[-SqlParameters] \u003cIDictionary\u003e] [[-AppendServerInstance]] [[-ParseGO]] [[-SQLConnection] \u003cSqlConnection\u003e] [\u003cCommonParameters\u003e]"
-    },
-    {
         "CommandName":  "Join-DbaAvailabilityGroup",
         "Description":  "Joins a secondary replica to an availability group on a SQL Server instance.",
         "Tags":  [
@@ -24361,6 +24596,14 @@
                            "TransactSql"
                        ],
                        [
+                           "SubsystemServer",
+                           "The subsystems AnalysisScripting, AnalysisCommand, AnalysisQuery ned the server property to be able to apply",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
                            "Command",
                            "The commands to be executed by SQLServerAgent service through subsystem.",
                            "",
@@ -24503,7 +24746,7 @@
         "Name":  "New-DbaAgentJobStep",
         "Links":  "https://dbatools.io/New-DbaAgentJobStep",
         "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eNew-DbaAgentJobStep -SqlInstance sql1 -Job Job1 -StepName Step1\nCreate a step in \"Job1\" with the name Step1 with the default subsystem TransactSql.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eNew-DbaAgentJobStep -SqlInstance sql1 -Job Job1 -StepName Step1 -Database msdb\nCreate a step in \"Job1\" with the name Step1 where the database will the msdb\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eNew-DbaAgentJobStep -SqlInstance sql1, sql2, sql3 -Job Job1 -StepName Step1 -Database msdb\nCreate a step in \"Job1\" with the name Step1 where the database will the \"msdb\" for multiple servers\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eNew-DbaAgentJobStep -SqlInstance sql1, sql2, sql3 -Job Job1, Job2, \u0027Job Three\u0027 -StepName Step1 -Database msdb\nCreate a step in \"Job1\" with the name Step1 where the database will the \"msdb\" for multiple servers for multiple jobs\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003esql1, sql2, sql3 | New-DbaAgentJobStep -Job Job1 -StepName Step1 -Database msdb\nCreate a step in \"Job1\" with the name Step1 where the database will the \"msdb\" for multiple servers using pipeline",
-        "Syntax":  "New-DbaAgentJobStep [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [-Job] \u003cObject[]\u003e [[-StepId] \u003cInt32\u003e] [-StepName] \u003cString\u003e [[-Subsystem] \u003cString\u003e] [[-Command] \u003cString\u003e] [[-CmdExecSuccessCode] \u003cInt32\u003e] [[-OnSuccessAction] \u003cString\u003e] [[-OnSuccessStepId] \u003cInt32\u003e] [[-OnFailAction] \u003cString\u003e] [[-OnFailStepId] \u003cInt32\u003e] [[-Database] \u003cObject\u003e] [[-DatabaseUser] \u003cString\u003e] [[-RetryAttempts] \u003cInt32\u003e] [[-RetryInterval] \u003cInt32\u003e] [[-OutputFileName] \u003cString\u003e] [[-Flag] \u003cString[]\u003e] [[-ProxyName] \u003cString\u003e] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "New-DbaAgentJobStep [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [-Job] \u003cObject[]\u003e [[-StepId] \u003cInt32\u003e] [-StepName] \u003cString\u003e [[-Subsystem] \u003cString\u003e] [[-SubsystemServer] \u003cString\u003e] [[-Command] \u003cString\u003e] [[-CmdExecSuccessCode] \u003cInt32\u003e] [[-OnSuccessAction] \u003cString\u003e] [[-OnSuccessStepId] \u003cInt32\u003e] [[-OnFailAction] \u003cString\u003e] [[-OnFailStepId] \u003cInt32\u003e] [[-Database] \u003cObject\u003e] [[-DatabaseUser] \u003cString\u003e] [[-RetryAttempts] \u003cInt32\u003e] [[-RetryInterval] \u003cInt32\u003e] [[-OutputFileName] \u003cString\u003e] [[-Flag] \u003cString[]\u003e] [[-ProxyName] \u003cString\u003e] [-Force] [-EnableException] [-WhatIf] [-Confirm] \r\n[\u003cCommonParameters\u003e]"
     },
     {
         "CommandName":  "New-DbaAgentProxy",
@@ -33585,6 +33828,231 @@
         "Links":  "https://dbatools.io/Set-DbaAgentSchedule",
         "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eSet-DbaAgentSchedule -SqlInstance sql1 -Job Job1 -ScheduleName daily -Enabled\nChanges the schedule for Job1 with the name \u0027daily\u0027 to enabled\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eSet-DbaAgentSchedule -SqlInstance sql1 -Job Job1 -ScheduleName daily -NewName weekly -FrequencyType Weekly -FrequencyInterval Monday, Wednesday, Friday\nChanges the schedule for Job1 with the name daily to have a new name weekly\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eSet-DbaAgentSchedule -SqlInstance sql1 -Job Job1, Job2, Job3 -ScheduleName daily -StartTime \u0027230000\u0027\nChanges the start time of the schedule for Job1 to 11 PM for multiple jobs\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eSet-DbaAgentSchedule -SqlInstance sql1, sql2, sql3 -Job Job1 -ScheduleName daily -Enabled\nChanges the schedule for Job1 with the name daily to enabled on multiple servers\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003esql1, sql2, sql3 | Set-DbaAgentSchedule -Job Job1 -ScheduleName \u0027daily\u0027 -Enabled\nChanges the schedule for Job1 with the name \u0027daily\u0027 to enabled on multiple servers using pipe line",
         "Syntax":  "Set-DbaAgentSchedule [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [-Job] \u003cObject[]\u003e [-ScheduleName] \u003cString\u003e [[-NewName] \u003cString\u003e] [-Enabled] [-Disabled] [[-FrequencyType] \u003cObject\u003e] [[-FrequencyInterval] \u003cObject[]\u003e] [[-FrequencySubdayType] \u003cObject\u003e] [[-FrequencySubdayInterval] \u003cInt32\u003e] [[-FrequencyRelativeInterval] \u003cObject\u003e] [[-FrequencyRecurrenceFactor] \u003cInt32\u003e] [[-StartDate] \u003cString\u003e] [[-EndDate] \u003cString\u003e] [[-StartTime] \u003cString\u003e] [[-EndTime] \u003cString\u003e] [-EnableException] [-Force] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+    },
+    {
+        "CommandName":  "Set-DbaAgentServer",
+        "Description":  "Set-DbaAgentServer updates properties in the SQL Server Server with parameters supplied.",
+        "Tags":  [
+                     "Agent",
+                     "Server"
+                 ],
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "The target SQL Server instance or instances. You must have sysadmin access and server version must be SQL Server version 2000 or greater.",
+                           "ServerInstance,SqlServer",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "SqlCredential",
+                           "Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "InputObject",
+                           "Enables piping agent server objects",
+                           "",
+                           false,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
+                           "AgentLogLevel",
+                           "Specifies the agent log level.\r\nAllowed values 1, \"Errors\", 2, \"Warnings\", 3, \"Errors, Warnings\", 4, \"Informational\", 5, \"Errors, Informational\", 6, \"Warnings, Informational\", 7, \"All\"\r\nThe text value can either be lowercase, uppercase or something in between as long as the text is correct.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "AgentMailType",
+                           "Specifies the agent mail type.\r\nAllowed values 0, \"SqlAgentMail\", 1, \"DatabaseMail\"\r\nThe text value can either be lowercase, uppercase or something in between as long as the text is correct.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "AgentShutdownWaitTime",
+                           "The Agent Shutdown Wait Time value of the server agent.",
+                           "",
+                           false,
+                           "false",
+                           "0"
+                       ],
+                       [
+                           "DatabaseMailProfile",
+                           "The Database Mail Profile to be used. Must exists on database mail profiles.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "ErrorLogFile",
+                           "Error log file location",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "IdleCpuDuration",
+                           "Idle CPU Duration value to be used",
+                           "",
+                           false,
+                           "false",
+                           "0"
+                       ],
+                       [
+                           "IdleCpuPercentage",
+                           "Idle CPU Percentage value to be used",
+                           "",
+                           false,
+                           "false",
+                           "0"
+                       ],
+                       [
+                           "CpuPolling",
+                           "Enable or Disable the Polling.\r\nAllowed values Enabled, Disabled",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "LocalHostAlias",
+                           "The value for Local Host Alias configuration",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "LoginTimeout",
+                           "The value for Login Timeout configuration",
+                           "",
+                           false,
+                           "false",
+                           "0"
+                       ],
+                       [
+                           "MaximumHistoryRows",
+                           "Indicates the Maximum job history log size (in rows). If you want to turn it off use the value -1",
+                           "",
+                           false,
+                           "false",
+                           "0"
+                       ],
+                       [
+                           "MaximumJobHistoryRows",
+                           "Indicates the Maximum job history rows per job. If you want to turn it off use the value 0",
+                           "",
+                           false,
+                           "false",
+                           "0"
+                       ],
+                       [
+                           "NetSendRecipient",
+                           "The Net send recipient value",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "ReplaceAlertTokens",
+                           "Enable or Disable the Token replacement property.\r\nAllowed values Enabled, Disabled",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "SaveInSentFolder",
+                           "Enable or Disable the copy of the sent messages is save in the Sent Items folder.\r\nAllowed values Enabled, Disabled",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "SqlAgentAutoStart",
+                           "Enable or Disable the SQL Agent Auto Start.\r\nAllowed values Enabled, Disabled",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "SqlAgentMailProfile",
+                           "The SQL Server Agent Mail Profile to be used. Must exists on database mail profiles.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "SqlAgentRestart",
+                           "Enable or Disable the SQL Agent Restart.\r\nAllowed values Enabled, Disabled",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "SqlServerRestart",
+                           "Enable or Disable the SQL Server Restart.\r\nAllowed values Enabled, Disabled",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "WriteOemErrorLog",
+                           "Enable or Disable the Write OEM Error Log.\r\nAllowed values Enabled, Disabled",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "WhatIf",
+                           "Shows what would happen if the command were to run. No actions are actually performed.",
+                           "wi",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Confirm",
+                           "Prompts you for confirmation before executing any changing operations within the command.",
+                           "cf",
+                           false,
+                           "false",
+                           ""
+                       ]
+                   ],
+        "Alias":  "",
+        "Author":  "Cláudio Silva (@claudioessilva), https://claudioessilva.com",
+        "Synopsis":  "Set-DbaAgentServer updates properties of a SQL Agent Server.",
+        "Name":  "Set-DbaAgentServer",
+        "Links":  "https://dbatools.io/Set-DbaAgentServer",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eSet-DbaAgentServer -SqlInstance sql1 -MaximumHistoryRows 10000 -MaximumJobHistoryRows 100\nChanges the job history retention to 10000 rows with an maximum of 100 rows per job.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eSet-DbaAgentServer -SqlInstance sql1 -CpuPolling Enabled\nEnable the CPU Polling configurations.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eSet-DbaAgentServer -SqlInstance sql1, sql2, sql3 -AgentLogLevel \u0027Errors, Warnings\u0027\nSet the agent log level to Errors and Warnings on multiple servers.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eSet-DbaAgentServer -SqlInstance sql1 -CpuPolling Disabled\nDisable the CPU Polling configurations.",
+        "Syntax":  "Set-DbaAgentServer [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-InputObject] \u003cJobServer[]\u003e] [[-AgentLogLevel] \u003cObject\u003e] [[-AgentMailType] \u003cObject\u003e] [[-AgentShutdownWaitTime] \u003cInt32\u003e] [[-DatabaseMailProfile] \u003cString\u003e] [[-ErrorLogFile] \u003cString\u003e] [[-IdleCpuDuration] \u003cInt32\u003e] [[-IdleCpuPercentage] \u003cInt32\u003e] [[-CpuPolling] \u003cString\u003e] [[-LocalHostAlias] \u003cString\u003e] [[-LoginTimeout] \u003cInt32\u003e] [[-MaximumHistoryRows] \u003cInt32\u003e] [[-MaximumJobHistoryRows] \u003cInt32\u003e] [[-NetSendRecipient] \u003cString\u003e] [[-ReplaceAlertTokens] \u003cString\u003e] [[-SaveInSentFolder] \u003cString\u003e] \r\n[[-SqlAgentAutoStart] \u003cString\u003e] [[-SqlAgentMailProfile] \u003cString\u003e] [[-SqlAgentRestart] \u003cString\u003e] [[-SqlServerRestart] \u003cString\u003e] [[-WriteOemErrorLog] \u003cString\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "CommandName":  "Set-DbaAgListener",

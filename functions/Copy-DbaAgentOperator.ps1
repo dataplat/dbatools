@@ -127,7 +127,7 @@ function Copy-DbaAgentOperator {
                     if ($force -eq $false) {
                         if ($Pscmdlet.ShouldProcess($destinstance, "Operator $operatorName exists at destination. Use -Force to drop and migrate.")) {
                             $copyOperatorStatus.Status = "Skipped"
-                            $copyOperatorStatus.Notes = "Already exists"
+                            $copyOperatorStatus.Notes = "Already exists on destination"
                             $copyOperatorStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                             Write-Message -Level Verbose -Message "Operator $operatorName exists at destination. Use -Force to drop and migrate."
                         }
