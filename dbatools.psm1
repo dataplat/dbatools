@@ -171,13 +171,8 @@ Write-ImportTime -Text "Loading dbatools library"
 
 # Load configuration system
 # Should always go after library and path setting
-if (-not ([Sqlcollaborative.Dbatools.dbaSystem.SystemHost]::ModuleImported)) {
-    . Import-ModuleFile "$script:PSModuleRoot\internal\configurations\configuration.ps1"
-    Write-ImportTime -Text "Configuration System"
-}
-if (-not ([Sqlcollaborative.Dbatools.Message.LogHost]::LoggingPath)) {
-    [Sqlcollaborative.Dbatools.Message.LogHost]::LoggingPath = Resolve-Path "$($env:AppData)\PowerShell\dbatools"
-}
+. Import-ModuleFile "$script:PSModuleRoot\internal\configurations\configuration.ps1"
+Write-ImportTime -Text "Configuration System"
 
 if ($script:multiFileImport) {
     # All internal functions privately available within the toolset
@@ -202,6 +197,12 @@ else {
 
     . Import-ModuleFile (Resolve-Path -Path "$script:PSModuleRoot\internal\scripts\cmdlets.ps1")
     Write-ImportTime -Text "Registering cmdlets"
+}
+
+# Resolving the path was causing trouble when it didn't exist yet
+# Not converting the path separators based on OS was also an issue.
+if (-not ([Sqlcollaborative.Dbatools.Message.LogHost]::LoggingPath)) {
+    [Sqlcollaborative.Dbatools.Message.LogHost]::LoggingPath = Join-DbaPath $script:AppData "PowerShell" "dbatools"
 }
 
 # Run all optional code
