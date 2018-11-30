@@ -1421,9 +1421,10 @@ $script:windowsonly = @(
     'Install-DbaFirstResponderKit',
     'Read-DbaXEFile',
     'Watch-DbaXESession',
-    'Test-DbaMaxMemory', # can be fixed by not testing remote when linux is detected
-    'Rename-DbaDatabase',# can maybebe fixed by not remoting when linux is detected
+    'Test-DbaMaxMemory',  # can be fixed by not testing remote when linux is detected
+    'Rename-DbaDatabase', # can maybebe fixed by not remoting when linux is detected
     # CM and Windows functions
+    'Update-DbaInstance',
     'Invoke-DbaPfRelog',
     'Get-DbaPfDataCollectorCounter',
     'Get-DbaPfDataCollectorCounterSample',
