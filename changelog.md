@@ -4,14 +4,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
     and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [unreleased] - 2018-11-30
+## [0.9.538] - 2018-11-30
 ### Added
 * Update-DbaInstance 🎉
 
 ### Fixed
-* ComputerName resolution in Connect-*Instance
+* ComputerName resolution for fqdn in Connect-*Instance
 * Stop-Function -Continue bug in Set-DbaPrivilege
-
 
 ## [0.9.537] - 2018-11-29
 ### Added
