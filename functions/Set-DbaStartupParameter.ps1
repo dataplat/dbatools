@@ -214,7 +214,7 @@ function Set-DbaStartupParameter {
         $currentstartup = Get-DbaStartupParameter -SqlInstance $server -Credential $Credential
         $originalparamstring = $currentstartup.ParameterString
 
-        Write-Message -Level Output -Message "Original startup parameter string: $originalparamstring"
+        Write-Message -Level Verbose -Message "Original startup parameter string: $originalparamstring"
 
         if ('startUpconfig' -in $PsBoundParameters.keys) {
             Write-Message -Level VeryVerbose -Message "StartupObject passed in"
@@ -375,11 +375,6 @@ function Set-DbaStartupParameter {
 
         $displayname = "SQL Server ($instancename)"
 
-        if ($originalparamstring -eq "$ParameterString" -or "$originalparamstring;" -eq "$ParameterString") {
-            Stop-Function -Message "New parameter string would be the same as the old parameter string. Nothing to do." -Target $ParameterString
-            return
-        }
-
         $Scriptblock = {
             #Variable marked as unused by PSScriptAnalyzer
             #$instance = $args[0]
@@ -409,11 +404,10 @@ function Set-DbaStartupParameter {
                     $null = Invoke-ManagedComputerCommand -ComputerName $instance -ScriptBlock $Scriptblock -ArgumentList $instance, $displayname, $ParameterString -EnableException
                     $output = Get-DbaStartupParameter -SqlInstance $server.ComputerName -EnableException
                     Add-Member -Force -InputObject $output -MemberType NoteProperty -Name OriginalStartupParameters -Value $originalparamstring
+                    Add-Member -Force -InputObject $output -MemberType NoteProperty -Name Notes -Value "Startup parameters changed on $SqlInstance. You must restart SQL Server for changes to take effect."
                 }
 
                 $output
-
-                Write-Message -Level Output -Message "Startup parameters changed on $SqlInstance. You must restart SQL Server for changes to take effect."
             } catch {
                 Stop-Function -Message "Startup parameters failed to change on $SqlInstance. " -Target $SqlInstance -ErrorRecord $_
                 return
