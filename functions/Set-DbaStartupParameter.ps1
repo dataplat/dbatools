@@ -211,7 +211,7 @@ function Set-DbaStartupParameter {
         }
 
         #Get Current parameters:
-        $currentstartup = Get-DbaStartupParameter -SqlInstance $server -Credential $Credential
+        $currentstartup = Get-DbaStartupParameter -SqlInstance $SqlInstance -Credential $Credential
         $originalparamstring = $currentstartup.ParameterString
 
         Write-Message -Level Verbose -Message "Original startup parameter string: $originalparamstring"
