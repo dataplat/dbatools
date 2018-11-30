@@ -402,12 +402,12 @@ function Set-DbaStartupParameter {
                 if ($Credential) {
                     #Variable $response marked as unused by PSScriptAnalyzer replace with $null to catch output
                     $null = Invoke-ManagedComputerCommand -ComputerName $instance -Credential $Credential -ScriptBlock $Scriptblock -ArgumentList $instance, $displayname, $ParameterString -EnableException
-                    $output = Get-DbaStartupParameter -SqlInstance $server -Credential $Credential -EnableException
+                    $output = Get-DbaStartupParameter -SqlInstance $server.ComputerName -Credential $Credential -EnableException
                     Add-Member -Force -InputObject $output -MemberType NoteProperty -Name OriginalStartupParameters -Value $originalparamstring
                 } else {
                     #Variable $response marked as unused by PSScriptAnalyzer replace with $null to catch output
                     $null = Invoke-ManagedComputerCommand -ComputerName $instance -ScriptBlock $Scriptblock -ArgumentList $instance, $displayname, $ParameterString -EnableException
-                    $output = Get-DbaStartupParameter -SqlInstance $server -EnableException
+                    $output = Get-DbaStartupParameter -SqlInstance $server.ComputerName -EnableException
                     Add-Member -Force -InputObject $output -MemberType NoteProperty -Name OriginalStartupParameters -Value $originalparamstring
                 }
 

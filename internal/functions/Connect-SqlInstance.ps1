@@ -57,7 +57,7 @@ function Connect-SqlInstance {
         Connect-SqlInstance -SqlInstance sql2014
 
         Connect to the Server sql2014 with native credentials.
-       #>
+    #>
     [CmdletBinding()]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidDefaultValueSwitchParameter", "")]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingEmptyCatchBlock", "")]
@@ -178,9 +178,11 @@ function Connect-SqlInstance {
 
         # Make ComputerName easily available in the server object
         if (-not $server.ComputerName) {
-            $parsedcomputername = $server.NetName
-            if (-not $parsedcomputername) {
+
+            if (-not $server.NetName -or $SqlInstance -match '\.') {
                 $parsedcomputername = ([dbainstance]$SqlInstance).ComputerName
+            } else {
+                $parsedcomputername = $server.NetName
             }
             Add-Member -InputObject $server -NotePropertyName ComputerName -NotePropertyValue $parsedcomputername -Force
         }
@@ -193,7 +195,7 @@ function Connect-SqlInstance {
     $server = New-Object Microsoft.SqlServer.Management.Smo.Server $ConvertedSqlInstance.FullSmoName
     $server.ConnectionContext.ApplicationName = "dbatools PowerShell module - dbatools.io"
     if ($ConvertedSqlInstance.IsConnectionString) { $server.ConnectionContext.ConnectionString = $ConvertedSqlInstance.InputObject }
-    
+
     try {
         if (Test-Bound -ParameterName 'StatementTimeout') {
             $server.ConnectionContext.StatementTimeout = $StatementTimeout
@@ -202,7 +204,7 @@ function Connect-SqlInstance {
 
         if ($null -ne $SqlCredential.UserName) {
             $username = ($SqlCredential.UserName).TrimStart("\")
-            
+
             # support both ad\username and username@ad
             if ($username -like "*\*" -or $username -like "*@*") {
                 if ($username -like "*\*") {
@@ -216,7 +218,7 @@ function Connect-SqlInstance {
                 } else {
                     $formatteduser = $SqlCredential.UserName
                 }
-                
+
                 $server.ConnectionContext.LoginSecure = $true
                 $server.ConnectionContext.ConnectAsUser = $true
                 $server.ConnectionContext.ConnectAsUserName = $formatteduser
