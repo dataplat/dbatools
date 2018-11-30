@@ -178,9 +178,8 @@ function Connect-SqlInstance {
 
         # Make ComputerName easily available in the server object
         if (-not $server.ComputerName) {
-
             if (-not $server.NetName -or $SqlInstance -match '\.') {
-                $parsedcomputername = ([dbainstance]$SqlInstance).ComputerName
+                $parsedcomputername = $ConvertedSqlInstance.ComputerName
             } else {
                 $parsedcomputername = $server.NetName
             }
@@ -354,9 +353,10 @@ function Connect-SqlInstance {
     }
 
     if (-not $server.ComputerName) {
-        $parsedcomputername = $server.NetName
-        if (-not $parsedcomputername) {
-            $parsedcomputername = ([dbainstance]$SqlInstance).ComputerName
+        if (-not $server.NetName -or $SqlInstance -match '\.') {
+            $parsedcomputername = $ConvertedSqlInstance.ComputerName
+        } else {
+            $parsedcomputername = $server.NetName
         }
         Add-Member -InputObject $server -NotePropertyName ComputerName -NotePropertyValue $parsedcomputername -Force
     }

@@ -214,7 +214,7 @@ function Connect-DbaInstance {
         } else {
             $EnableException = $true
         }
-
+        
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Connect-DbaServer
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-DbaInstance
 
@@ -241,7 +241,21 @@ function Connect-DbaInstance {
         $Fields201x_Login = $Fields200x_Login + @('PasswordHashAlgorithm')
     }
     process {
-        foreach ($instance in $SqlInstance) {
+        foreach ($instance in $SqlInstance){
+            #region Safely convert input into instance parameters
+            if ($instance.GetType() -eq [Sqlcollaborative.Dbatools.Parameter.DbaInstanceParameter]) {
+                [DbaInstanceParameter]$ConvertedSqlInstance = $instance
+                if ($ConvertedSqlInstance.Type -like "SqlConnection") {
+                    [DbaInstanceParameter]$ConvertedSqlInstance = New-Object Microsoft.SqlServer.Management.Smo.Server($ConvertedSqlInstance.InputObject)
+                }
+            } else {
+                [DbaInstanceParameter]$ConvertedSqlInstance = [DbaInstanceParameter]($instance | Select-Object -First 1)
+                
+                if ($instance.Count -gt 1) {
+                    Write-Message -Level Warning -EnableException $true -Message "More than on server was specified when calling Connect-SqlInstance from $((Get-PSCallStack)[1].Command)"
+                }
+            }
+            #endregion Safely convert input into instance parameters
             if ($instance.Type -like "Server") {
                 if ($instance.InputObject.ConnectionContext.IsOpen -eq $false) {
                     $instance.InputObject.ConnectionContext.Connect()
@@ -263,7 +277,7 @@ function Connect-DbaInstance {
                 } else {
                     if (-not $server.ComputerName) {
                         if (-not $server.NetName -or $SqlInstance -match '\.') {
-                            $parsedcomputername = ([dbainstance]$SqlInstance).ComputerName
+                            $parsedcomputername = $ConvertedSqlInstance.ComputerName
                         } else {
                             $parsedcomputername = $server.NetName
                         }
@@ -442,9 +456,10 @@ function Connect-DbaInstance {
                 return $server.ConnectionContext.SqlConnectionObject
             } else {
                 if (-not $server.ComputerName) {
-                    $parsedcomputername = $server.NetName
-                    if (-not $parsedcomputername) {
-                        $parsedcomputername = ([dbainstance]$instance).ComputerName
+                    if (-not $server.NetName -or $SqlInstance -match '\.') {
+                        $parsedcomputername = $ConvertedSqlInstance.ComputerName
+                    } else {
+                        $parsedcomputername = $server.NetName
                     }
                     Add-Member -InputObject $server -NotePropertyName ComputerName -NotePropertyValue $parsedcomputername -Force
                 }
