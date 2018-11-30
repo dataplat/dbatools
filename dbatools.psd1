@@ -425,6 +425,12 @@
         'Get-DbaAgentServer',
         'Set-DbaAgentServer',
         'Invoke-DbaDbccFreeCache',
+        'Export-DbatoolsConfig',
+        'Import-DbatoolsConfig',
+        'Reset-DbatoolsConfig',
+        'Unregister-DbatoolsConfig',
+        'Join-DbaPath',
+        'Resolve-DbaPath',
         # noncoresmo
         # SMO issues
         'Export-DbaUser',
@@ -594,8 +600,11 @@
     )
 
     # Cmdlets to export from this module
-    CmdletsToExport        = 'Select-DbaObject', 'Set-DbatoolsConfig'
-
+    CmdletsToExport        = @(
+        'Select-DbaObject',
+        'Set-DbatoolsConfig'
+        )
+        
     # Variables to export from this module
     VariablesToExport      = ''
 
