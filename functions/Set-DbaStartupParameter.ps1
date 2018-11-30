@@ -396,12 +396,12 @@ function Set-DbaStartupParameter {
             try {
                 if ($Credential) {
                     #Variable $response marked as unused by PSScriptAnalyzer replace with $null to catch output
-                    $null = Invoke-ManagedComputerCommand -ComputerName $instance -Credential $Credential -ScriptBlock $Scriptblock -ArgumentList $instance, $displayname, $ParameterString -EnableException
+                    $null = Invoke-ManagedComputerCommand -ComputerName $server.ComputerName -Credential $Credential -ScriptBlock $Scriptblock -ArgumentList $server.ComputerName, $displayname, $ParameterString -EnableException
                     $output = Get-DbaStartupParameter -SqlInstance $server.ComputerName -Credential $Credential -EnableException
                     Add-Member -Force -InputObject $output -MemberType NoteProperty -Name OriginalStartupParameters -Value $originalparamstring
                 } else {
                     #Variable $response marked as unused by PSScriptAnalyzer replace with $null to catch output
-                    $null = Invoke-ManagedComputerCommand -ComputerName $instance -ScriptBlock $Scriptblock -ArgumentList $instance, $displayname, $ParameterString -EnableException
+                    $null = Invoke-ManagedComputerCommand -ComputerName $server.ComputerName -ScriptBlock $Scriptblock -ArgumentList $server.ComputerName, $displayname, $ParameterString -EnableException
                     $output = Get-DbaStartupParameter -SqlInstance $server.ComputerName -EnableException
                     Add-Member -Force -InputObject $output -MemberType NoteProperty -Name OriginalStartupParameters -Value $originalparamstring
                     Add-Member -Force -InputObject $output -MemberType NoteProperty -Name Notes -Value "Startup parameters changed on $SqlInstance. You must restart SQL Server for changes to take effect."
