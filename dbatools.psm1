@@ -1367,6 +1367,12 @@ $script:xplat = @(
     'Get-DbaAgentServer',
     'Set-DbaAgentServer',
     'Invoke-DbaDbccFreeCache'
+    'Export-DbatoolsConfig',
+    'Import-DbatoolsConfig',
+    'Reset-DbatoolsConfig',
+    'Unregister-DbatoolsConfig',
+    'Join-DbaPath',
+    'Resolve-DbaPath'
 )
 
 $script:noncoresmo = @(
