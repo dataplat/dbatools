@@ -9958,6 +9958,38 @@
                            ""
                        ],
                        [
+                           "Kb",
+                           "Get a KB information based on its number. Supported format: KBXXXXXX, or simply XXXXXX.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "MajorVersion",
+                           "Get a KB information based on SQL Server version. Can be refined further by -ServicePack and -CumulativeUpdate parameters.\r\nExamples: SQL2008 | 2008R2 | 2016",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "ServicePack",
+                           "Get a KB information based on SQL Server Service Pack version. Can be refined further by -CumulativeUpdate parameter.\r\nExamples: SP0 | 2 | RTM",
+                           "SP",
+                           false,
+                           "false",
+                           "RTM"
+                       ],
+                       [
+                           "CumulativeUpdate",
+                           "Get a KB information based on SQL Server Cumulative Update version.\r\n Examples: CU0 | CU13 | CU0",
+                           "CU",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
                            "SqlInstance",
                            "Target any number of instances, in order to return their build state.",
                            "ServerInstance,SqlServer",
@@ -9996,7 +10028,7 @@
         "Name":  "Get-DbaBuildReference",
         "Links":  "https://dbatools.io/Get-DbaBuildReference",
         "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaBuildReference -Build \"12.00.4502\"\nReturns information about a build identified by  \"12.00.4502\" (which is SQL 2014 with SP1 and CU11)\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaBuildReference -Build \"12.00.4502\" -Update\nReturns information about a build trying to fetch the most up to date index online. When the online version is newer, the local one gets overwritten\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaBuildReference -Build \"12.0.4502\",\"10.50.4260\"\nReturns information builds identified by these versions strings\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaCmsRegServer -SqlInstance sqlserver2014a | Get-DbaBuildReference\nIntegrate with other cmdlets to have builds checked for all your registered servers on sqlserver2014a",
-        "Syntax":  "Get-DbaBuildReference [[-Build] \u003cVersion[]\u003e] [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [-Update] [-EnableException] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Get-DbaBuildReference [[-Build] \u003cVersion[]\u003e] [[-Kb] \u003cString[]\u003e] [[-MajorVersion] \u003cString\u003e] [[-ServicePack] \u003cString\u003e] [[-CumulativeUpdate] \u003cString\u003e] [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [-Update] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
         "CommandName":  "Get-DbaClientAlias",
@@ -18143,7 +18175,7 @@
                        [
                            "EnableException",
                            "If this switch is enabled, exceptions will be thrown to the caller, which will need to perform its own exception processing. Otherwise, the function will try to catch the exception, interpret it and \r\nprovide a friendly error message.",
-                           "Silent",
+                           "",
                            false,
                            "false",
                            "False"
