@@ -169,11 +169,6 @@ Write-ImportTime -Text "Loading dbatools library"
 # Tell the library where the module is based, just in case
 [Sqlcollaborative.Dbatools.dbaSystem.SystemHost]::ModuleBase = $script:PSModuleRoot
 
-# Load configuration system
-# Should always go after library and path setting
-. Import-ModuleFile "$script:PSModuleRoot\internal\configurations\configuration.ps1"
-Write-ImportTime -Text "Configuration System"
-
 if ($script:multiFileImport) {
     # All internal functions privately available within the toolset
     foreach ($function in (Get-ChildItem -Path (Resolve-Path -Path "$script:PSModuleRoot\internal\functions\") -Recurse | Where-Object Extension -EQ '.ps1')) {
@@ -198,6 +193,11 @@ else {
     . Import-ModuleFile (Resolve-Path -Path "$script:PSModuleRoot\internal\scripts\cmdlets.ps1")
     Write-ImportTime -Text "Registering cmdlets"
 }
+
+# Load configuration system
+# Should always go after library and path setting
+. Import-ModuleFile "$script:PSModuleRoot\internal\configurations\configuration.ps1"
+Write-ImportTime -Text "Configuration System"
 
 # Resolving the path was causing trouble when it didn't exist yet
 # Not converting the path separators based on OS was also an issue.

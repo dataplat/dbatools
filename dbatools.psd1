@@ -201,7 +201,6 @@
         'Find-DbaCommand',
         'Get-DbatoolsConfig',
         'Get-DbatoolsConfigValue',
-        'Set-DbatoolsConfig',
         'Get-DbaClientProtocol',
         'Backup-DbaDatabase',
         'New-DbaDirectory',
@@ -575,7 +574,7 @@
     )
 
     # Cmdlets to export from this module
-    CmdletsToExport        = 'Select-DbaObject'
+    CmdletsToExport        = 'Select-DbaObject', 'Set-DbatoolsConfig'
 
     # Variables to export from this module
     VariablesToExport      = ''
