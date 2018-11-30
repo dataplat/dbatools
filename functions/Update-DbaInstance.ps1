@@ -64,6 +64,9 @@ function Update-DbaInstance {
         Restart computer automatically after a successful installation of a patch and wait until it comes back online.
         Using this parameter is the only way to chain-install more than 1 patch on a computer, since every single patch will require a restart of said computer.
 
+    .PARAMETER InstanceName
+        Only updates a specific instance(s).
+
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
 
@@ -130,6 +133,8 @@ function Update-DbaInstance {
         [Parameter(Mandatory, ParameterSetName = 'KB')]
         [ValidateNotNullOrEmpty()]
         [string[]]$KB,
+        [Alias("Instance")]
+        [string]$InstanceName,
         [string[]]$Path,
         [switch]$Restart,
         [switch]$EnableException
@@ -169,17 +174,20 @@ function Update-DbaInstance {
                 $actions += @{
                     Type         = 'ServicePack'
                     MajorVersion = $majorVersions
+                    InstanceName = $InstanceName
                 }
             }
             if ($Type -in 'All', 'CumulativeUpdate') {
                 $actions += @{
                     Type         = 'CumulativeUpdate'
                     MajorVersion = $majorVersions
+                    InstanceName = $InstanceName
                 }
             }
         } elseif ($PSCmdlet.ParameterSetName -eq 'Version') {
             foreach ($ver in $Version) {
                 $currentAction = @{
+                    InstanceName = $InstanceName
                 }
                 if ($ver -and $ver -match '^(SQL)?(\d{4}(R2)?)?\s*(RTM|SP)?(\d+)?(CU)?(\d+)?') {
                     Write-Message -Level Debug "Parsed Version as $($Matches[2, 5, 7] | ConvertTo-Json -Depth 1 -Compress)"
@@ -213,7 +221,8 @@ function Update-DbaInstance {
         } elseif ($PSCmdlet.ParameterSetName -eq 'KB') {
             foreach ($kbItem in $kbList) {
                 $actions += @{
-                    KB = $kbItem
+                    KB           = $kbItem
+                    InstanceName = $InstanceName
                 }
             }
         }
