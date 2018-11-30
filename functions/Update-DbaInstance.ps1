@@ -1,11 +1,12 @@
 function Update-DbaInstance {
     <#
     .SYNOPSIS
-        Invokes installation of SQL Server Service Packs and Cumulative Updates.
+        Invokes installation of SQL Server Service Packs and Cumulative Updates on local and remote servers.
 
     .DESCRIPTION
         Starts and automated process of updating SQL Server installation to a specific version defined in the parameters.
         The command will:
+
         * Search for SQL Server installations in a remote registry
         * Check if current settings are applicable to the current SQL Server versions
         * Search for a KB executable in a folder specified in -Path
@@ -24,8 +25,10 @@ function Update-DbaInstance {
         CVE-2018-0886 security update is required for both local and remote hosts. If CredSSP connections are failing, make sure to
         apply recent security updates prior to doing anything else.
 
+        Always backup databases and configurations prior to upgrade.
+
     .PARAMETER ComputerName
-        Target SQL Server computer.
+        Target computer with SQL instance or instsances.
 
     .PARAMETER Credential
         Windows Credential with permission to log on to the remote server. Must be specified for any remote connection.
@@ -132,9 +135,6 @@ function Update-DbaInstance {
         [switch]$EnableException
     )
     begin {
-
-    }
-    process {
         #Validating parameters
         if ($PSCmdlet.ParameterSetName -eq 'Version') {
             if ($Version -notmatch '^((SQL)?\d{4}(R2)?)?\s*(RTM|SP\d+)?\s*(CU\d+)?$') {
@@ -179,24 +179,31 @@ function Update-DbaInstance {
             }
         } elseif ($PSCmdlet.ParameterSetName -eq 'Version') {
             foreach ($ver in $Version) {
-                $currentAction = @{}
+                $currentAction = @{
+                }
                 if ($ver -and $ver -match '^(SQL)?(\d{4}(R2)?)?\s*(RTM|SP)?(\d+)?(CU)?(\d+)?') {
-                    Write-Message -Level Debug "Parsed Version as $($Matches[2,5,7] | ConvertTo-Json -Depth 1 -Compress)"
+                    Write-Message -Level Debug "Parsed Version as $($Matches[2, 5, 7] | ConvertTo-Json -Depth 1 -Compress)"
                     if (-not ($Matches[5] -or $Matches[7])) {
                         Stop-Function -Category InvalidArgument -Message "Either SP or CU should be specified in $ver, please refer to Get-Help Update-DbaInstance -Parameter Version"
                         return
                     }
                     if ($null -ne $Matches[2]) {
-                        $currentAction += @{ MajorVersion = $Matches[2]}
+                        $currentAction += @{
+                            MajorVersion = $Matches[2]
+                        }
                     }
                     if ($null -ne $Matches[5]) {
-                        $currentAction += @{ ServicePack = $Matches[5]}
+                        $currentAction += @{
+                            ServicePack = $Matches[5]
+                        }
                         if ($Matches[5] -ne '0') {
                             $actions += $currentAction
                         }
                     }
                     if ($null -ne $Matches[7]) {
-                        $actions += $currentAction.Clone() + @{ CumulativeUpdate = $Matches[7] }
+                        $actions += $currentAction.Clone() + @{
+                            CumulativeUpdate = $Matches[7]
+                        }
                     }
                 } else {
                     Stop-Function -Category InvalidArgument -Message "$ver is an incorrect Version value, please refer to Get-Help Update-DbaInstance -Parameter Version"
@@ -210,10 +217,14 @@ function Update-DbaInstance {
                 }
             }
         }
+    }
+    process {
+        if (Test-FunctionInterrupt) { return }
+        
         #Resolve all the provided names
         $resolvedComputers = @()
         foreach ($computer in $ComputerName) {
-            $null = Test-ElevationRequirement -Computer $computer -Continue
+            $null = Test-ElevationRequirement -ComputerName $computer -Continue
             if ($resolvedComputer = Resolve-DbaNetworkName -ComputerName $computer.ComputerName) {
                 $resolvedComputers += $resolvedComputer.FullComputerName
             }
@@ -239,8 +250,5 @@ function Update-DbaInstance {
                 }
             }
         }
-    }
-    end {
-
     }
 }
