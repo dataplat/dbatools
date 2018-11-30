@@ -173,8 +173,8 @@ function Test-DbaTempdbConfig {
                 SqlInstance    = $server.DomainInstanceName
                 Rule           = 'File MaxSize Set'
                 Recommended    = $false
-                CurrentSetting = $growthLimits -eq $false
-                IsBestPractice = $cdata -eq $false
+                CurrentSetting = $growthLimits
+                IsBestPractice = $growthLimits -eq $false
                 Notes          = "Consider setting your tempdb files to unlimited growth."
             }
 
