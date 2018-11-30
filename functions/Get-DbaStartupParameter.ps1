@@ -55,8 +55,7 @@ function Get-DbaStartupParameter {
         [Alias("SqlCredential")]
         [PSCredential]$Credential,
         [switch]$Simple,
-        [switch]
-        [Alias('Silent')]$EnableException
+        [switch]$EnableException
     )
 
     process {
