@@ -1,4 +1,4 @@
-﻿function Reset-DbatoolsConfig
+function Reset-DbatoolsConfig
 {
 <#
 	.SYNOPSIS

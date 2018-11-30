@@ -1,4 +1,4 @@
-﻿function Join-DbaPath
+function Join-DbaPath
 {
 <#
 	.SYNOPSIS
