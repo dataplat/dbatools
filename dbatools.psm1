@@ -1536,8 +1536,7 @@ $script:windowsonly = @(
     'Test-DbaManagementObject'
 )
 
-
-if (-not $env:appveyor) {
+if ((Get-PSCallStack)[0].Command -ne 'dbatools.psm1') {
     if (($PSVersionTable.Keys -contains "Platform")) {
         if ($psversiontable.Platform -ne "Win32NT") {
             Export-ModuleMember -Function $script:xplat
@@ -1550,12 +1549,12 @@ if (-not $env:appveyor) {
         Export-ModuleMember -Function $script:windowsonly
         Export-ModuleMember -Function $script:noncoresmo
     }
+
+    Export-ModuleMember -Alias $script:renames
+    Export-ModuleMember -Alias $forever
+    
+    Write-ImportTime -Text "Exported module member"
 }
-
-Export-ModuleMember -Alias $script:renames
-Export-ModuleMember -Alias $forever
-
-Write-ImportTime -Text "Exported module member"
 
 $timeout = 20000
 $timeSpent = 0
