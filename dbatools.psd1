@@ -425,6 +425,12 @@
         'Get-DbaAgentServer',
         'Set-DbaAgentServer',
         'Invoke-DbaDbccFreeCache',
+        'Export-DbatoolsConfig',
+        'Import-DbatoolsConfig',
+        'Reset-DbatoolsConfig',
+        'Unregister-DbatoolsConfig',
+        'Join-DbaPath',
+        'Resolve-DbaPath',
         # noncoresmo
         # SMO issues
         'Export-DbaUser',
