@@ -220,7 +220,7 @@ function Update-DbaInstance {
     }
     process {
         if (Test-FunctionInterrupt) { return }
-        
+
         #Resolve all the provided names
         $resolvedComputers = @()
         foreach ($computer in $ComputerName) {
