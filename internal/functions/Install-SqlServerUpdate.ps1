@@ -234,6 +234,7 @@ function Install-SqlServerUpdate {
                 KB           = $kbLookupParams.KB
                 Successful   = [bool]$success
                 Restarted    = [bool]$restarted
+                InstanceName = $InstanceName
                 Installer    = $installer.FullName
                 ExtractPath  = $spExtractPath
                 Message      = $message
