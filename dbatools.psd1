@@ -600,7 +600,10 @@
     )
 
     # Cmdlets to export from this module
-    CmdletsToExport        = 'Select-DbaObject'
+    CmdletsToExport        = @(
+        'Select-DbaObject',
+        'Set-DbatoolsConfig'
+        )
 
     # Variables to export from this module
     VariablesToExport      = ''
