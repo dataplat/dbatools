@@ -1363,9 +1363,10 @@ $script:xplat = @(
     'Get-DbaDbccHelp',
     'Get-DbaDbccMemoryStatus',
     'Get-DbaDbccProcCache',
-    'Get-DbaDbccUserOptions',
+    'Get-DbaDbccUserOption',
     'Get-DbaAgentServer',
-    'Set-DbaAgentServer'
+    'Set-DbaAgentServer',
+    'Invoke-DbaDbccFreeCache'
 )
 
 $script:noncoresmo = @(
