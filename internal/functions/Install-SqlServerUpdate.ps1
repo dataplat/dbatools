@@ -32,7 +32,10 @@ function Install-SqlServerUpdate {
             return
         }
         $computer = $ComputerName.ComputerName
+        $activity = "Updating SQL instance builds on $computer"
+
         ## Find the current version on the computer
+        Write-ProgressHelper -Activity $activity -StepNumber 0 -Message "Gathering all SQL Server instance versions"
         $currentVersions = Get-SQLServerVersion -ComputerName $computer
         if (!$currentVersions) {
             Stop-Function -Message "No SQL Server installations found on $computer"
@@ -70,7 +73,10 @@ function Install-SqlServerUpdate {
         $targetLevel = ''
         # Launch a setup sequence for each version found
         foreach ($currentVersion in $currentVersionGroups) {
+            $stepCounter = 0
             $currentMajorVersion = "SQL" + $currentVersion.NameLevel
+
+            Write-ProgressHelper -Activity $activity -StepNumber ($stepCounter++) -Message "Parsing versions"
             # create a parameter set for Find-SqlServerUpdate
             $kbLookupParams = @{
                 Architecture = $arch
@@ -139,11 +145,14 @@ function Install-SqlServerUpdate {
                 continue
             }
             ## Find the installer to use
+            Write-ProgressHelper -Activity $activity -StepNumber ($stepCounter++) -Message "Searching for update binaries"
+
             $installer = Find-SqlServerUpdate @kbLookupParams
             if (!$installer) {
                 Stop-Function -Message "Could not find installer for the $currentMajorVersion update KB$($kbLookupParams.KB)" -Continue
             }
             ## Apply patch
+            Write-ProgressHelper -Activity $activity -StepNumber ($stepCounter++) -Message "Installing $targetLevel KB$($targetKB.KBLevel) ($($installer.Name)) for $currentMajorVersion ($($currentVersion.BuildLevel))"
             if ($PSCmdlet.ShouldProcess($computer, "Install $targetLevel KB$($targetKB.KBLevel) ($($installer.Name)) for $currentMajorVersion ($($currentVersion.BuildLevel))")) {
                 $invProgParams = @{
                     ComputerName = $computer
@@ -160,9 +169,11 @@ function Install-SqlServerUpdate {
                 if ($spExtractPath) {
                     try {
                         # Extract file
+                        Write-ProgressHelper -Activity $activity -StepNumber ($stepCounter++) -Message "Extracting $installer to $spExtractPath"
                         Write-Message -Level Verbose -Message "Extracting $installer to $spExtractPath"
                         $null = Invoke-Program @invProgParams -Path $installer.FullName -ArgumentList "/x`:`"$spExtractPath`" /quiet"
                         # Install the patch
+                        Write-ProgressHelper -Activity $activity -StepNumber ($stepCounter++) -Message "Starting installation from $spExtractPath"
                         Write-Message -Level Verbose -Message "Starting installation from $spExtractPath"
                         $log = Invoke-Program @invProgParams -Path "$spExtractPath\setup.exe" -ArgumentList '/quiet /allinstances /IAcceptSQLServerLicenseTerms' -WorkingDirectory $spExtractPath
                         $success = $true
@@ -172,6 +183,7 @@ function Install-SqlServerUpdate {
                     } finally {
                         ## Cleanup temp
                         try {
+                            Write-ProgressHelper -Activity $activity -StepNumber ($stepCounter++) -Message "Removing temporary files"
                             $null = Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock {
                                 if ($args[0] -like '*\dbatools_KB*_Extract' -and (Test-Path $args[0])) {
                                     Remove-Item -Recurse -Force -LiteralPath $args[0] -ErrorAction Stop
@@ -183,6 +195,7 @@ function Install-SqlServerUpdate {
                     }
                 }
                 if ($Restart) {
+                    Write-ProgressHelper -Activity $activity -StepNumber ($stepCounter++) -Message "Restarting computer $computer and waiting for it to come back online"
                     Write-Message -Level Verbose "Restarting computer $computer and waiting for it to come back online"
                     try {
                         $restartParams = @{
@@ -216,7 +229,7 @@ function Install-SqlServerUpdate {
                 Message      = $message
                 Log          = $log
             }
-            if (!$restarted) {
+            if (-not $restarted) {
                 Write-Message -Level Verbose "No more installations for other versions on $computer - restart is pending"
                 return
             }
