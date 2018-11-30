@@ -311,9 +311,13 @@ function Invoke-DbaAdvancedRestore {
                             $pathSep = Get-DbaPathSep -Server $server
                             $RestoreDirectory = ((Split-Path $backup.FileList.PhysicalName -Parent) | Sort-Object -Unique).Replace('\', $pathSep) -Join ','
                             [PSCustomObject]@{
-                                SqlInstance            = $SqlInstance
+                                ComputerName           = $server.ComputerName
+                                InstanceName           = $server.ServiceName
+                                SqlInstance            = $server.DomainInstanceName
+                                Database               = $backup.Database
                                 DatabaseName           = $backup.Database
                                 DatabaseOwner          = $server.ConnectionContext.TrueLogin
+                                Owner                  = $server.ConnectionContext.TrueLogin
                                 NoRecovery             = $Restore.NoRecovery
                                 WithReplace            = $WithReplace
                                 RestoreComplete        = $RestoreComplete
@@ -332,7 +336,7 @@ function Invoke-DbaAdvancedRestore {
                                 FileRestoreTime        = New-TimeSpan -Seconds ((Get-Date) - $FileRestoreStartTime).TotalSeconds
                                 DatabaseRestoreTime    = New-TimeSpan -Seconds ((Get-Date) - $DatabaseRestoreStartTime).TotalSeconds
                                 ExitError              = $ExitError
-                            } | Select-DefaultView -ExcludeProperty BackupSizeMB, CompressedBackupSizeMB, ExitError, BackupFileRaw, RestoredFileFull
+                            } | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, BackupFile, BackupFilesCount, BackupSize, CompressedBackupSize, Database, Owner, DatabaseRestoreTime, FileRestoreTime, NoRecovery, RestoreComplete, RestoredFile, RestoredFilesCount, Script, RestoreDirectory, WithReplace
                         } else {
                             $script
                         }
