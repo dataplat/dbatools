@@ -1536,6 +1536,8 @@ $script:windowsonly = @(
     'Test-DbaManagementObject'
 )
 
+# If a developer or appveyor calls the psm1 directly, they want all functions
+# So do not explicity export because everything else is then implicity excluded
 if ((Get-PSCallStack)[0].Command -ne 'dbatools.psm1') {
     if (($PSVersionTable.Keys -contains "Platform")) {
         if ($psversiontable.Platform -ne "Win32NT") {
