@@ -47,7 +47,7 @@ function Get-DbaNetworkCertificate {
     
     process {
         # Registry access
-        if (-not (Test-Windows)) { return }
+        
         
         foreach ($computer in $computername) {
 

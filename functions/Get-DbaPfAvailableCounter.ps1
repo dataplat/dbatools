@@ -88,7 +88,7 @@ function Get-DbaPfAvailableCounter {
         $Pattern = $Pattern.Replace("*", ".*").Replace("..*", ".*")
     }
     process {
-        if (-not (Test-Windows)) { return }
+        
         
         foreach ($computer in $ComputerName) {
 

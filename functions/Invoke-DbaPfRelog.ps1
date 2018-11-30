@@ -169,7 +169,7 @@ function Invoke-DbaPfRelog {
         [switch]$EnableException
     )
     begin {
-        if (-not (Test-Windows)) { return }
+        
         
         if (Test-Bound -ParameterName BeginTime) {
             $script:beginstring = ($BeginTime -f 'M/d/yyyy hh:mm:ss' | Out-String).Trim()

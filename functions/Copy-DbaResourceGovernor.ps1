@@ -160,7 +160,7 @@ function Copy-DbaResourceGovernor {
                             } else {
                                 if ($Force -eq $false) {
                                     $copyResourceGovClassifierFunc.Status = "Skipped"
-                                    $copyResourceGovClassifierFunc.Notes = "A classifier function already exists"
+                                    $copyResourceGovClassifierFunc.Notes = "Already exists on destination"
                                     $copyResourceGovClassifierFunc | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                                 } else {
 
@@ -241,7 +241,7 @@ function Copy-DbaResourceGovernor {
                         Write-Message -Level Verbose -Message "Pool '$poolName' was skipped because it already exists on $destinstance. Use -Force to drop and recreate."
 
                         $copyResourceGovPool.Status = "Skipped"
-                        $copyResourceGovPool.Notes = "Already exists"
+                        $copyResourceGovPool.Notes = "Already exists on destination"
                         $copyResourceGovPool | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                         continue
                     } else {

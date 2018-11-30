@@ -66,7 +66,7 @@ function Get-DbaLocaleSetting {
     }
     process {
         # uses cim commands
-        if (-not (Test-Windows)) { return }
+        
         
         foreach ($computer in $ComputerName) {
             $props = @{ "ComputerName" = $computer }

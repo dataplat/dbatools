@@ -11,6 +11,21 @@ function Get-DbaBuildReference {
     .PARAMETER Build
         Instead of connecting to a real instance, pass a string identifying the build to get the info back.
 
+    .PARAMETER Kb
+        Get a KB information based on its number. Supported format: KBXXXXXX, or simply XXXXXX.
+
+    .PARAMETER MajorVersion
+        Get a KB information based on SQL Server version. Can be refined further by -ServicePack and -CumulativeUpdate parameters.
+        Examples: SQL2008 | 2008R2 | 2016
+
+    .PARAMETER ServicePack
+        Get a KB information based on SQL Server Service Pack version. Can be refined further by -CumulativeUpdate parameter.
+        Examples: SP0 | 2 | RTM
+
+    .PARAMETER CumulativeUpdate
+        Get a KB information based on SQL Server Cumulative Update version.
+         Examples: CU0 | CU13 | CU0
+
     .PARAMETER SqlInstance
         Target any number of instances, in order to return their build state.
 
@@ -58,12 +73,28 @@ function Get-DbaBuildReference {
 
     #>
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "")]
-    [CmdletBinding()]
+    [CmdletBinding(DefaultParameterSetName = 'Build')]
     param (
         [version[]]
         $Build,
 
-        [parameter(ValueFromPipeline)]
+        [string[]]
+        $Kb,
+
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $MajorVersion,
+
+        [ValidateNotNullOrEmpty()]
+        [string]
+        [Alias('SP')]
+        $ServicePack = 'RTM',
+
+        [string]
+        [Alias('CU')]
+        $CumulativeUpdate,
+
+        [Parameter(ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]
         $SqlInstance,
@@ -76,10 +107,68 @@ function Get-DbaBuildReference {
         $Update,
 
         [switch]
-        [Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        $EnableException
     )
 
     begin {
+        #region verifying parameters
+        $ComplianceSpec = @()
+        $ComplianceSpecExclusiveParams = @('Build', 'Kb', @( 'MajorVersion', 'ServicePack', 'CumulativeUpdate'), 'SqlInstance')
+        foreach ($exclParamGroup in $ComplianceSpecExclusiveParams) {
+            foreach ($exclParam in $exclParamGroup) {
+                if (Test-Bound -Parameter $exclParam) {
+                    $ComplianceSpec += $exclParam
+                    break
+                }
+            }
+        }
+        if ($ComplianceSpec.Length -gt 1) {
+            Stop-Function -Category InvalidArgument -Message "$($ComplianceSpec -join ', ') are mutually exclusive. Please choose one or the other. Quitting."
+            return
+        }
+        if ($ComplianceSpec.Length -eq 0) {
+            Stop-Function -Category InvalidArgument -Message "You need to choose at least one parameter."
+            return
+        }
+        if (((Test-Bound -Parameter ServicePack) -or (Test-Bound -Parameter CumulativeUpdate)) -and (Test-Bound -Not -Parameter MajorVersion)) {
+            Stop-Function -Category InvalidArgument -Message "-MajorVersion is required when specifying SP or CU."
+            return
+        }
+        if ($MajorVersion) {
+            if ($MajorVersion -match '^(SQL)?(\d{4}(R2)?)$') {
+                $MajorVersion = $Matches[2]
+            } else {
+                Stop-Function -Message "Incorrect SQL Server version format: use SQL2XXX or just 2XXXX - SQL2012, SQL2008R2"
+                return
+            }
+            if (!$ServicePack) {
+                $ServicePack = 'RTM'
+            }
+            if ($ServicePack -match '^(SP)?\s*(\d+)$') {
+                if ($Matches[2] -eq '0') {
+                    $ServicePack = 'RTM'
+                } else {
+                    $ServicePack = 'SP' + $Matches[2]
+                }
+            } elseif ($ServicePack -notmatch '^RTM$') {
+                Stop-Function -Message "Incorrect SQL Server service pack format: use SPX, X or RTM, where X is a service pack number"
+                return
+            }
+            if ($CumulativeUpdate) {
+                if ($CumulativeUpdate -match '^(CU)?\s*(\d+)$') {
+                    if ($Matches[2] -eq '0') {
+                        $CumulativeUpdate = ''
+                    } else {
+                        $CumulativeUpdate = 'CU' + $Matches[2]
+                    }
+                } else {
+                    Stop-Function -Message "Incorrect SQL Server cumulative update format: use CUX or X, where X is a cumulative update number"
+                    return
+                }
+            }
+        }
+        #endregion verifying parameters
         #region Helper functions
         function Get-DbaBuildReferenceIndex {
             [CmdletBinding()]
@@ -183,8 +272,27 @@ function Get-DbaBuildReference {
             [CmdletBinding()]
             [OutputType([System.Collections.Hashtable])]
             param (
+                [Parameter(Mandatory, ParameterSetName = 'Build')]
                 [version]
                 $Build,
+
+                [Parameter(Mandatory, ParameterSetName = 'KB')]
+                [string]
+                $Kb,
+
+                [Parameter(Mandatory, ParameterSetName = 'HFLevel')]
+                [string]
+                $MajorVersion,
+
+                [Parameter(ParameterSetName = 'HFLevel')]
+                [string]
+                [Alias('SP')]
+                $ServicePack = 'RTM',
+
+                [Parameter(ParameterSetName = 'HFLevel')]
+                [string]
+                [Alias('CU')]
+                $CumulativeUpdate,
 
                 $Data,
 
@@ -192,13 +300,31 @@ function Get-DbaBuildReference {
                 $EnableException
             )
 
-            Write-Message -Level Verbose -Message "Looking for $Build"
+            if ($Build) {
+                Write-Message -Level Verbose -Message "Looking for $Build"
 
-            $IdxVersion = $Data | Where-Object Version -like "$($Build.Major).$($Build.Minor).*"
+                $IdxVersion = $Data | Where-Object Version -like "$($Build.Major).$($Build.Minor).*"
+            } elseif ($Kb) {
+                Write-Message -Level Verbose -Message "Looking for KB $Kb"
+                if ($Kb -match '^(KB)?(\d+)$') {
+                    $currentKb = $Matches[2]
+                    $kbVersion = $Data | Where-Object KBList -contains $currentKb
+                    $IdxVersion = $Data | Where-Object Version -like "$($kbVersion.VersionObject.Major).$($kbVersion.VersionObject.Minor).*"
+                } else {
+                    Stop-Function -Message "Wrong KB name $kb"
+                    return
+                }
+            } elseif ($MajorVersion) {
+                Write-Message -Level Verbose -Message "Looking for SQL $MajorVersion SP $ServicePack CU $CumulativeUpdate"
+                $kbVersion = $Data | Where-Object Name -eq $MajorVersion
+                $IdxVersion = $Data | Where-Object Version -like "$($kbVersion.VersionObject.Major).$($kbVersion.VersionObject.Minor).*"
+            }
+
             $Detected = @{ }
             $Detected.MatchType = 'Approximate'
-            Write-Message -Level Verbose -Message "We have $($IdxVersion.Length) builds in store for this Release"
-            If ($IdxVersion.Length -eq 0) {
+            $idxCount = $IdxVersion | Measure-Object | Select-Object -ExpandProperty Count
+            Write-Message -Level Verbose -Message "We have $idxCount builds in store for this Release"
+            If ($idxCount -eq 0) {
                 Write-Message -Level Warning -Message "No info in store for this Release"
                 $Detected.Warning = "No info in store for this Release"
             } else {
@@ -208,12 +334,13 @@ function Get-DbaBuildReference {
                 if ($null -ne $el.Name) {
                     $Detected.Name = $el.Name
                 }
-                if ($el.VersionObject -gt $Build) {
+                if ($Build -and $el.VersionObject -gt $Build) {
                     $Detected.MatchType = 'Approximate'
                     $Detected.Warning = "$Build not found, closest build we have is $($LastVer.Version)"
                     break
                 }
                 $LastVer = $el
+                $Detected.BuildLevel = $el.VersionObject
                 if ($null -ne $el.SP) {
                     $Detected.SP = $el.SP
                     $Detected.CU = $null
@@ -224,8 +351,12 @@ function Get-DbaBuildReference {
                 if ($null -ne $el.SupportedUntil) {
                     $Detected.SupportedUntil = (Get-Date -date $el.SupportedUntil)
                 }
+                $Detected.Build = $el.Version
                 $Detected.KB = $el.KBList
-                if ($el.Version -eq $Build) {
+                if (($Build -and $el.Version -eq $Build) -or ($Kb -and $el.KBList -eq $currentKb)) {
+                    $Detected.MatchType = 'Exact'
+                    break
+                } elseif ($MajorVersion -and $Detected.SP -contains $ServicePack -and (!$CumulativeUpdate -or ($el.CU -and $el.CU -eq $CumulativeUpdate))) {
                     $Detected.MatchType = 'Exact'
                     break
                 }
@@ -270,6 +401,7 @@ function Get-DbaBuildReference {
                 SPLevel        = $Detected.SP
                 CULevel        = $Detected.CU
                 KBLevel        = $Detected.KB
+                BuildLevel     = $Detected.BuildLevel
                 SupportedUntil = $Detected.SupportedUntil
                 MatchType      = $Detected.MatchType
                 Warning        = $Detected.Warning
@@ -286,6 +418,41 @@ function Get-DbaBuildReference {
                 SPLevel        = $Detected.SP
                 CULevel        = $Detected.CU
                 KBLevel        = $Detected.KB
+                BuildLevel     = $Detected.BuildLevel
+                SupportedUntil = $Detected.SupportedUntil
+                MatchType      = $Detected.MatchType
+                Warning        = $Detected.Warning
+            } | Select-DefaultView -ExcludeProperty SqlInstance
+        }
+
+        foreach ($kbItem in $Kb) {
+            $Detected = Resolve-DbaBuild -Kb $kbItem -Data $IdxRef -EnableException $EnableException
+
+            [PSCustomObject]@{
+                SqlInstance    = $null
+                Build          = $Detected.Build
+                NameLevel      = $Detected.Name
+                SPLevel        = $Detected.SP
+                CULevel        = $Detected.CU
+                KBLevel        = $Detected.KB
+                BuildLevel     = $Detected.BuildLevel
+                SupportedUntil = $Detected.SupportedUntil
+                MatchType      = $Detected.MatchType
+                Warning        = $Detected.Warning
+            } | Select-DefaultView -ExcludeProperty SqlInstance
+        }
+
+        if ($MajorVersion) {
+            $Detected = Resolve-DbaBuild -MajorVersion $MajorVersion -ServicePack $ServicePack -CumulativeUpdate $CumulativeUpdate -Data $IdxRef -EnableException $EnableException
+
+            [PSCustomObject]@{
+                SqlInstance    = $null
+                Build          = $Detected.Build
+                NameLevel      = $Detected.Name
+                SPLevel        = $Detected.SP
+                CULevel        = $Detected.CU
+                KBLevel        = $Detected.KB
+                BuildLevel     = $Detected.BuildLevel
                 SupportedUntil = $Detected.SupportedUntil
                 MatchType      = $Detected.MatchType
                 Warning        = $Detected.Warning
