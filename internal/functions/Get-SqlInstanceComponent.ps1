@@ -1,17 +1,18 @@
 function Get-SQLInstanceComponent {
     <#
     .SYNOPSIS
-        Retrieves SQL server information from a local or remote servers. The majority of this function was created by
-        Boe Prox.
+        Retrieves SQL server information from a local or remote servers.
     .DESCRIPTION
         Retrieves SQL server information from a local or remote servers. Pulls all instances from a SQL server and
         detects if in a cluster or not.
     .PARAMETER ComputerName
         Local or remote systems to query for SQL information.
     .NOTES
-        Name: Get-SQLInstance
-        Author: Boe Prox
-        DateCreated: 07 SEPT 2013
+        Tags: Install, Patching, SP, CU, Instance
+        Author: Kirill Kravtsov (@nvarscar) https://nvarscar.wordpress.com/
+
+        Based on https://github.com/adbertram/PSSqlUpdater
+        The majority of this function was created by Boe Prox.
     .EXAMPLE
         Get-SQLInstanceComponent -ComputerName SQL01 -Component SSDS
         ComputerName  : BDT005-BT-SQL
@@ -68,7 +69,8 @@ function Get-SQLInstanceComponent {
         [DbaInstanceParameter[]]$ComputerName = $Env:COMPUTERNAME,
         [ValidateSet('SSDS', 'SSAS', 'SSRS')]
         [string[]]$Component = @('SSDS', 'SSAS', 'SSRS'),
-        [pscredential]$Credential
+        [pscredential]$Credential,
+        [bool]$EnableException = $EnableException
     )
 
     begin {
@@ -295,14 +297,24 @@ function Get-SQLInstanceComponent {
     process {
         foreach ($computer in $ComputerName) {
             try {
-                $result = Invoke-Command2 -ComputerName $computer -ScriptBlock $regScript -Credential $Credential -ErrorAction Stop -Raw -ArgumentList @($Component)
-                # Log is stored in the log property, pile it all into the debug log
-                foreach ($logEntry in $result.Log) {
-                    Write-Message -Level Debug -Message $logEntry
-                }
-                $result | Select-Object -ExcludeProperty Log
+                $results = Invoke-Command2 -ComputerName $computer -ScriptBlock $regScript -Credential $Credential -ErrorAction Stop -Raw -ArgumentList @($Component)
             } catch {
-                Stop-Function -Message "Failed to get instance components from $computer" -ErrorRecord $_ -Continue -EnableException $false
+                Stop-Function -Message "Failed to get instance components from $computer" -ErrorRecord $_ -Continue
+            }
+            # Log is stored in the log property, pile it all into the debug log
+            foreach ($logEntry in $results.Log) {
+                Write-Message -Level Debug -Message $logEntry
+            }
+            foreach ($result in $results) {
+                #Replace first decimal of the minor build with a 0, since we're using build numbers here
+                #Refer to https://sqlserverbuilds.blogspot.com/
+                Write-Message -Level Debug -Message "Converting version $($result.Version) to [version]"
+                $newVersion = New-Object -TypeName System.Version -ArgumentList ([string]$result.Version)
+                $newVersion = New-Object -TypeName System.Version -ArgumentList ($newVersion.Major , ($newVersion.Minor - $newVersion.Minor % 10), $newVersion.Build)
+                Write-Message -Level Debug -Message "Converted version $($result.Version) to $newVersion"
+                #Find a proper build reference and replace Version property
+                $result.Version = Get-DbaBuildReference -Build $newVersion
+                $result | Select-Object -ExcludeProperty Log
             }
         }
     }

@@ -22,6 +22,7 @@ function Install-SqlServerUpdate {
         [ValidateNotNullOrEmpty()]
         [string]$KB,
         [bool]$Restart,
+        [string]$InstanceName,
         [string[]]$Path,
         [bool]$EnableException = $EnableException
     )
@@ -36,18 +37,23 @@ function Install-SqlServerUpdate {
 
         ## Find the current version on the computer
         Write-ProgressHelper -ExcludePercent -Activity $activity -StepNumber 0 -Message "Gathering all SQL Server instance versions"
-        $currentVersions = Get-SQLServerVersion -ComputerName $computer
-        if (!$currentVersions) {
+        $currentComponents = Get-SQLInstanceComponent -ComputerName $computer -Credential $Credential
+        if (!$currentComponents) {
             Stop-Function -Message "No SQL Server installations found on $computer"
             return
         }
+        Write-Message -Level Debug -Message "Found $(($currentComponents | Measure-Object).Count) existing SQL Server instance(s): $($currentComponents.InstanceName -join ',')"
+        # Filter for specific instances
+        if ($InstanceName) {
+            $currentComponents = $currentComponents | Where-Object {$_.InstanceName -eq $InstanceName }
+        }
         # Group by version and select the earliest version installed
-        $currentVersionGroups = $currentVersions | Group-Object -Property NameLevel | ForEach-Object {
+        $currentVersionGroups = $currentComponents.Version | Group-Object -Property NameLevel | ForEach-Object {
             $_.Group | Sort-Object -Property Build | Select-Object -First 1
         }
         $verCount = ($currentVersionGroups | Measure-Object).Count
         $verDesc = ($currentVersionGroups | Foreach-Object { "$($_.NameLevel) ($($_.Build))" }) -join ', '
-        Write-Message -Level Debug -Message "Found $verCount existing SQL Server version(s): $verDesc"
+        Write-Message -Level Debug -Message "Selected $verCount existing SQL Server version(s): $verDesc"
         #Check if more than one version is found
         if (($currentVersionGroups | Measure-Object ).Count -gt 1 -and ($CumulativeUpdate -or $ServicePack) -and !$MajorVersion) {
             Stop-Function -Message "Updating multiple different versions of SQL Server to a specific SP/CU is not supported. Please specify a version of SQL Server on $computer that you want to update."
@@ -73,7 +79,6 @@ function Install-SqlServerUpdate {
         $targetLevel = ''
         # Launch a setup sequence for each version found
         foreach ($currentVersion in $currentVersionGroups) {
-            $stepCounter = 0
             $currentMajorVersion = "SQL" + $currentVersion.NameLevel
 
             Write-ProgressHelper -ExcludePercent -Activity $activity -Message "Parsing versions"
@@ -173,9 +178,14 @@ function Install-SqlServerUpdate {
                         Write-Message -Level Verbose -Message "Extracting $installer to $spExtractPath"
                         $null = Invoke-Program @invProgParams -Path $installer.FullName -ArgumentList "/x`:`"$spExtractPath`" /quiet"
                         # Install the patch
+                        if ($InstanceName) {
+                            $instanceClause = "/instancename=$InstanceName"
+                        } else {
+                            $instanceClause = '/allinstances'
+                        }
                         Write-ProgressHelper -ExcludePercent -Activity $activity -Message "Now installing update from $spExtractPath"
                         Write-Message -Level Verbose -Message "Starting installation from $spExtractPath"
-                        $log = Invoke-Program @invProgParams -Path "$spExtractPath\setup.exe" -ArgumentList '/quiet /allinstances /IAcceptSQLServerLicenseTerms' -WorkingDirectory $spExtractPath
+                        $log = Invoke-Program @invProgParams -Path "$spExtractPath\setup.exe" -ArgumentList @('/quiet', $instanceClause, '/IAcceptSQLServerLicenseTerms') -WorkingDirectory $spExtractPath
                         $success = $true
                     } catch {
                         Stop-Function -Message "Upgrade failed" -ErrorRecord $_
