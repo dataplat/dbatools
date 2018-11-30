@@ -12,8 +12,8 @@ function Convert-DbaMessageLevel {
         The level the message was originally written to
 
     .PARAMETER FromStopFunction
-        Whether the message was passed through Stop-PSFFunction first.
-        This is used to increment the automatic message level decrement counter by 1 (so it ignores the fact, that it was passed through Stop-PSFFunction).
+        Whether the message was passed through Stop-Function first.
+        This is used to increment the automatic message level decrement counter by 1 (so it ignores the fact, that it was passed through Stop-Function).
         The automatic message level decrement functionality allows users to make nested commands' messages be less verbose.
 
     .PARAMETER Tags

@@ -46,7 +46,8 @@ if (([System.Management.Automation.PSTypeName]'Sqlcollaborative.Dbatools.Configu
 #endregion Test whether the module had already been imported
 
 $libraryBase = (Resolve-Path -Path ($ExecutionContext.SessionState.Module.ModuleBase + "\bin"))
-$dll = (Resolve-Path -Path "$libraryBase\dbatools.dll" -ErrorAction Ignore)
+if ($PSVersionTable.PSVersion.Major -ge 6) { $dll = (Resolve-Path -Path "$libraryBase\netcoreapp2.1\dbatools.dll" -ErrorAction Ignore) }
+else { $dll = (Resolve-Path -Path "$libraryBase\net452\dbatools.dll" -ErrorAction Ignore) }
 
 if ($ImportLibrary) {
     #region Add Code
