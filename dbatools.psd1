@@ -604,7 +604,7 @@
         'Select-DbaObject',
         'Set-DbatoolsConfig'
         )
-
+        
     # Variables to export from this module
     VariablesToExport      = ''
 
