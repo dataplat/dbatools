@@ -11113,6 +11113,52 @@
         "Syntax":  "Get-DbaDbccProcCache [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
+        "CommandName":  "Get-DbaDbccUserOption",
+        "Description":  "Returns the results of DBCC USEROPTIONS\n\nRead more:\n    - https://docs.microsoft.com/en-us/sql/t-sql/database-console-commands/dbcc-useroptions-transact-sql",
+        "Tags":  "DBCC",
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "The target SQL Server instance or instances.",
+                           "",
+                           true,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
+                           "SqlCredential",
+                           "Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Option",
+                           "Return only specific options. Returns all results if not specified.\r\nAccepts any values in set \u0027ansi_null_dflt_on\u0027, \u0027ansi_nulls\u0027, \u0027ansi_padding\u0027, \u0027ansi_warnings\u0027, \u0027arithabort\u0027, \u0027concat_null_yields_null\u0027, \u0027datefirst\u0027, \u0027dateformat\u0027, \u0027isolation level\u0027, \u0027language\u0027, \r\n\u0027lock_timeout\u0027, \u0027quoted_identifier\u0027, \u0027textsize\u0027",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ]
+                   ],
+        "Alias":  "",
+        "Author":  "Patrick Flynn (@sqllensman)",
+        "Synopsis":  "Execution of Database Console Command DBCC USEROPTIONS",
+        "Name":  "Get-DbaDbccUserOption",
+        "Links":  "https://dbatools.io/Get-DbaDbccUserOptions",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaDbccUserOptions -SqlInstance Server1\nGet results of DBCC USEROPTIONS for Instance Server1\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003e\u0027Sql1\u0027,\u0027Sql2/sqlexpress\u0027 | Get-DbaDbccUserOptions\nGet results of DBCC USEROPTIONS for Instances Sql1 and Sql2/sqlexpress\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003e$cred = Get-Credential sqladmin\nPS C:\\\u003e Get-DbaDbccUserOptions -SqlInstance Server1 -SqlCredential $cred\nConnects using sqladmin credential and gets results of DBCC USEROPTIONS for Instance Server1\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaDbccUserOptions -SqlInstance Server1 -Option ansi_nulls, ansi_warnings, datefirst\nGets results of DBCC USEROPTIONS for Instance Server1. Only display results for the options ansi_nulls, ansi_warnings, datefirst",
+        "Syntax":  "Get-DbaDbccUserOption [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Option] \u003cString[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
+    },
+    {
         "CommandName":  "Get-DbaDbCertificate",
         "Description":  "Gets database certificates",
         "Tags":  "Certificate",
@@ -17722,7 +17768,7 @@
                        ],
                        [
                            "Type",
-                           "Use -Type to collect only services of the desired SqlServiceType.\r\nCan be one of the following: \"Agent\",\"Browser\",\"Engine\",\"FullText\",\"SSAS\",\"SSIS\",\"SSRS\"",
+                           "Use -Type to collect only services of the desired SqlServiceType.\r\nCan be one of the following: \"Agent\",\"Browser\",\"Engine\",\"FullText\",\"SSAS\",\"SSIS\",\"SSRS\", \"PolyBase\"",
                            "",
                            false,
                            "false",
@@ -21310,6 +21356,92 @@
         "Syntax":  "Invoke-DbaCycleErrorLog [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Type] \u003cString\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
+        "CommandName":  "Invoke-DbaDbccFreeCache",
+        "Description":  "Allows execution of Database Console Commands that act at Server Level to clear Memory caches\n\nAllows execution of the following commands\n    DBCC FREEPROCCACHE\n    DBCC FREESESSIONCACHE\n    DBCC FREESYSTEMCACHE\n\nRead more:\n    - https://docs.microsoft.com/en-us/sql/t-sql/database-console-commands/dbcc-freeproccache-transact-sql\n    - https://docs.microsoft.com/en-us/sql/t-sql/database-console-commands/dbcc-freesessioncache-transact-sql\n    - https://docs.microsoft.com/en-us/sql/t-sql/database-console-commands/dbcc-freesystemcache-transact-sql",
+        "Tags":  "DBCC",
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "The target SQL Server instance or instances.",
+                           "",
+                           true,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
+                           "SqlCredential",
+                           "Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Operation",
+                           "DBCC Operation to Perform - Supports specific set of operations",
+                           "",
+                           false,
+                           "false",
+                           "FreeProcCache"
+                       ],
+                       [
+                           "InputValue",
+                           "Value used for Operation - meaning depends on Operation\r\nDBCC FREEPROCCACHE accepts\r\n    a plan_handle of type varbinary(64)\r\n    a sql_handle of type varbinary(64)\r\n    or the name of a Resource Governor resource pool of type sysname\r\n    If blank then clears all elements from the plan cache\r\nDBCC FREESYSTEMCACHE accepts\r\n    \u0027ALL\u0027 for ALL specifies all supported caches\r\n    or name of a Resource Governor pool cache\r\nNot required for other values",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "NoInformationalMessages",
+                           "Suppresses all informational messages.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "MarkInUseForRemoval",
+                           "Used when Operation = DBCC FREESYSTEMCACHE\r\nAsynchronously frees currently used entries from their respective caches after they become unused",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "WhatIf",
+                           "Shows what would happen if the cmdlet runs. The cmdlet is not run.",
+                           "wi",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Confirm",
+                           "Prompts you for confirmation before running the cmdlet.",
+                           "cf",
+                           false,
+                           "false",
+                           ""
+                       ]
+                   ],
+        "Alias":  "",
+        "Author":  "Patrick Flynn (@sqllensman)",
+        "Synopsis":  "Execution of Database Console Commands that clear Server level Memory caches",
+        "Name":  "Invoke-DbaDbccFreeCache",
+        "Links":  "https://dbatools.io/Invoke-DbaDbccFreeCache",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eInvoke-DbaDbccFreeCache -SqlInstance SqlServer2017 -Operation FREEPROCCACHE\nRuns the command DBCC FREEPROCCACHE against the instance SqlServer2017 using Windows Authentication\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eInvoke-DbaDbccFreeCache -SqlInstance SqlServer2017 -Operation FREESESSIONCACHE -NoInformationalMessages\nRuns the command DBCC FREESESSIONCACHE WITH NO_INFOMSGS against the instance SqlServer2017 using Windows Authentication\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eInvoke-DbaDbccFreeCache -SqlInstance SqlServer2017 -Operation FREESYSTEMCACHE -NoInformationalMessages\nRuns the command DBCC FREESYSTEMCACHE WITH NO_INFOMSGS against the instance SqlServer2017 using Windows Authentication\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eInvoke-DbaDbccFreeCache -SqlInstance SqlServer2017 -Operation FREEPROCCACHE -InputValue 0x060006001ECA270EC0215D05000000000000000000000000\nRemove a specific plan with plan_handle 0x060006001ECA270EC0215D05000000000000000000000000 from the cache via the command DBCC FREEPROCCACHE(0x060006001ECA270EC0215D05000000000000000000000000) \r\nagainst the instance SqlServer2017 using Windows Authentication\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eInvoke-DbaDbccFreeCache -SqlInstance SqlServer2017 -Operation FREEPROCCACHE -InputValue default\nRuns the command DBCC FREEPROCCACHE(\u0027default\u0027) against the instance SqlServer2017 using Windows Authentication. This clears all cache entries associated with a resource pool \u0027default\u0027.\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eInvoke-DbaDbccFreeCache -SqlInstance SqlServer2017 -Operation FREESYSTEMCACHE -InputValue default\nRuns the command DBCC FREESYSTEMCACHE (\u0027ALL\u0027, default) against the instance SqlServer2017 using Windows Authentication. This will clean all the caches with entries specific to the resource pool named \r\n\"default\".\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003eInvoke-DbaDbccFreeCache -SqlInstance SqlServer2017 -Operation FREESYSTEMCACHE -InputValue default -MarkInUseForRemoval\nRuns the command DBCC FREESYSTEMCACHE (\u0027ALL\u0027, default) WITH MARK_IN_USE_FOR_REMOVAL against the instance SqlServer2017 using Windows Authentication. This will to release entries once the entries \r\nbecome unused for all the caches with entries specific to the resource pool named \"default\".",
+        "Syntax":  "Invoke-DbaDbccFreeCache [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Operation] \u003cString\u003e] [[-InputValue] \u003cString\u003e] [-NoInformationalMessages] [-MarkInUseForRemoval] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+    },
+    {
         "CommandName":  "Invoke-DbaDbClone",
         "Description":  "Clones a database schema and statistics.\n\nThis can be useful for testing query performance without requiring all the space needed for the data in the database.\n\nRead more:\n    - https://sqlperformance.com/2016/08/sql-statistics/expanding-dbcc-clonedatabase\n    - https://support.microsoft.com/en-us/help/3177838/how-to-use-dbcc-clonedatabase-to-generate-a-schema-and-statistics-only\n\nThanks to Microsoft Tiger Team for the code and idea https://github.com/Microsoft/tigertoolbox/",
         "Tags":  [
@@ -23581,125 +23713,6 @@
         "Links":  "https://dbatools.io/Invoke-DbaXEReplay",
         "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eRead-DbaXEFile -Path C:\\temp\\sample.xel | Invoke-DbaXeReplay -SqlInstance sql2017\nRuns all batch_text for sql_batch_completed against tempdb on sql2017.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eRead-DbaXEFile -Path C:\\temp\\sample.xel | Invoke-DbaXeReplay -SqlInstance sql2017 -Database planning -Event sql_batch_completed\nSets the *initial* database to planning then runs only sql_batch_completed against sql2017.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eRead-DbaXEFile -Path C:\\temp\\sample.xel | Invoke-DbaXeReplay -SqlInstance sql2017, sql2016\nRuns all batch_text for sql_batch_completed against tempdb on sql2017 and sql2016.",
         "Syntax":  "Invoke-DbaXeReplay [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString[]\u003e] [[-Event] \u003cString[]\u003e] [-InputObject] \u003cObject\u003e [-Raw] [-EnableException] [\u003cCommonParameters\u003e]"
-    },
-    {
-        "CommandName":  "Invoke-Sqlcmd2",
-        "Description":  "Runs a T-SQL script. Invoke-Sqlcmd2 runs the whole script and only captures the first selected result set, such as the output of PRINT statements when -verbose parameter is specified.\nParameterized queries are supported.\n\nHelp details below borrowed from Invoke-Sqlcmd",
-        "Params":  [
-                       [
-                           "ServerInstance",
-                           "Specifies the SQL Server instance(s) to execute the query against.",
-                           "Instance,Instances,ComputerName,Server,Servers,SqlInstance",
-                           true,
-                           "true (ByValue, ByPropertyName)",
-                           ""
-                       ],
-                       [
-                           "Database",
-                           "Specifies the name of the database to execute the query against. If specified, this database will be used in the ConnectionString when establishing the connection to SQL Server.\nIf a SQLConnection is provided, the default database for that connection is overridden with this database.",
-                           "",
-                           false,
-                           "true (ByPropertyName)",
-                           ""
-                       ],
-                       [
-                           "Query",
-                           "Specifies one or more queries to be run. The queries can be Transact-SQL, XQuery statements, or sqlcmd commands. Multiple queries in a single batch may be separated by a semicolon.\nDo not specify the sqlcmd GO separator (or, use the ParseGo parameter). Escape any double quotation marks included in the string.\nConsider using bracketed identifiers such as [MyTable] instead of quoted identifiers such as \"MyTable\".",
-                           "",
-                           true,
-                           "true (ByPropertyName)",
-                           ""
-                       ],
-                       [
-                           "InputFile",
-                           "Specifies the full path to a file to be used as the query input to Invoke-Sqlcmd2. The file can contain Transact-SQL statements, XQuery statements, sqlcmd commands and scripting variables.",
-                           "",
-                           true,
-                           "true (ByPropertyName)",
-                           ""
-                       ],
-                       [
-                           "Credential",
-                           "Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)\nSECURITY NOTE: If you use the -Debug switch, the connectionstring including plain text password will be sent to the debug stream.",
-                           "SqlCredential",
-                           false,
-                           "true (ByPropertyName)",
-                           ""
-                       ],
-                       [
-                           "Encrypt",
-                           "If this switch is enabled, the connection to SQL Server will be made using SSL.\nThis requires that the SQL Server has been set up to accept SSL requests. For information regarding setting up SSL on SQL Server, see \r\nhttps://technet.microsoft.com/en-us/library/ms189067(v=sql.105).aspx",
-                           "",
-                           false,
-                           "false",
-                           "False"
-                       ],
-                       [
-                           "QueryTimeout",
-                           "Specifies the number of seconds before the queries time out.",
-                           "",
-                           false,
-                           "true (ByPropertyName)",
-                           "600"
-                       ],
-                       [
-                           "ConnectionTimeout",
-                           "Specifies the number of seconds before Invoke-Sqlcmd2 times out if it cannot successfully connect to an instance of the Database Engine. The timeout value must be an integer between 0 and 65534. If 0 \r\nis specified, connection attempts do not time out.",
-                           "",
-                           false,
-                           "true (ByPropertyName)",
-                           "15"
-                       ],
-                       [
-                           "As",
-                           "Specifies output type. Valid options for this parameter are \u0027DataSet\u0027, \u0027DataTable\u0027, \u0027DataRow\u0027, \u0027PSObject\u0027, and \u0027SingleValue\u0027\nPSObject output introduces overhead but adds flexibility for working with results: http://powershell.org/wp/forums/topic/dealing-with-dbnull/",
-                           "",
-                           false,
-                           "true (ByPropertyName)",
-                           "DataRow"
-                       ],
-                       [
-                           "SqlParameters",
-                           "Specifies a hashtable of parameters for parameterized SQL queries.  http://blog.codinghorror.com/give-me-parameterized-sql-or-give-me-death/\nExample:",
-                           "",
-                           false,
-                           "true (ByPropertyName)",
-                           ""
-                       ],
-                       [
-                           "AppendServerInstance",
-                           "If this switch is enabled, the SQL Server instance will be appended to PSObject and DataRow output.",
-                           "",
-                           false,
-                           "false",
-                           "False"
-                       ],
-                       [
-                           "ParseGO",
-                           "If this switch is enabled, \"GO\" statements will be handled automatically.\r\nEvery \"GO\" will effectively run in a separate query, like if you issued multiple Invoke-SqlCmd2 commands.\r\n\"GO\"s will be recognized if they are on a single line, as this covers\r\nthe 95% of the cases \"GO\" parsing is needed\r\nNote:\r\nQueries will always target that database, e.g. if you have this Query:\r\nUSE DATABASE [dbname]\r\nGO\r\nSELECT * from sys.tables\r\nand you call it via\r\nInvoke-SqlCmd2 -ServerInstance instance -Database msdb -Query ...\r\nyou\u0027ll get back tables from msdb, not dbname.",
-                           "",
-                           false,
-                           "false",
-                           "False"
-                       ],
-                       [
-                           "SQLConnection",
-                           "Specifies an existing SQLConnection object to use in connecting to SQL Server. If the connection is closed, an attempt will be made to open it.",
-                           "Connection,Conn",
-                           false,
-                           "false",
-                           ""
-                       ]
-                   ],
-        "Alias":  "",
-        "Synopsis":  "Runs a T-SQL script.",
-        "Name":  "Invoke-Sqlcmd2",
-        "Links":  [
-                      "https://github.com/sqlcollaborative/Invoke-SqlCmd2",
-                      "https://github.com/RamblingCookieMonster/PowerShell"
-                  ],
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eInvoke-Sqlcmd2 -ServerInstance \"MyComputer\\MyInstance\" -Query \"SELECT login_time AS \u0027StartTime\u0027 FROM sysprocesses WHERE spid = 1\"\nConnects to a named instance of the Database Engine on a computer and runs a basic T-SQL query.\nStartTime\r\n-----------\r\n2010-08-12 21:21:03.593\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eInvoke-Sqlcmd2 -ServerInstance \"MyComputer\\MyInstance\" -InputFile \"C:\\MyFolder\\tsqlscript.sql\" | Out-File -filePath \"C:\\MyFolder\\tsqlscript.rpt\"\nReads a file containing T-SQL statements, runs the file, and writes the output to another file.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eInvoke-Sqlcmd2  -ServerInstance \"MyComputer\\MyInstance\" -Query \"PRINT \u0027hello world\u0027\" -Verbose\nUses the PowerShell -Verbose parameter to return the message output of the PRINT command.\r\nVERBOSE: hello world\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eInvoke-Sqlcmd2 -ServerInstance MyServer\\MyInstance -Query \"SELECT ServerName, VCNumCPU FROM tblServerInfo\" -as PSObject | ?{$_.VCNumCPU -gt 8}\nInvoke-Sqlcmd2 -ServerInstance MyServer\\MyInstance -Query \"SELECT ServerName, VCNumCPU FROM tblServerInfo\" -as PSObject | ?{$_.VCNumCPU}\nThis example uses the PSObject output type to allow more flexibility when working with results.\nIf we used DataRow rather than PSObject, we would see the following behavior:\r\nEach row where VCNumCPU does not exist would produce an error in the first example\r\nResults would include rows where VCNumCPU has DBNull value in the second example\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003e\u0027Instance1\u0027, \u0027Server1/Instance1\u0027, \u0027Server2\u0027 | Invoke-Sqlcmd2 -query \"Sp_databases\" -as psobject -AppendServerInstance\nThis example lists databases for each instance.  It includes a column for the ServerInstance in question.\r\nDATABASE_NAME          DATABASE_SIZE REMARKS        ServerInstance\r\n-------------          ------------- -------        --------------\r\nREDACTED                       88320                Instance1\r\nmaster                         17920                Instance1\r\n...\r\nmsdb                          618112                Server1/Instance1\r\ntempdb                        563200                Server1/Instance1\r\n...\r\nOperationsManager           20480000                Server2\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003e#Construct a query using SQL parameters\n$Query = \"SELECT ServerName, VCServerClass, VCServerContact FROM tblServerInfo WHERE VCServerContact LIKE @VCServerContact AND VCServerClass LIKE @VCServerClass\"\n#Run the query, specifying values for SQL parameters\r\nInvoke-Sqlcmd2 -ServerInstance SomeServer\\NamedInstance -Database ServerDB -query $query -SqlParameters @{ VCServerContact=\"%cookiemonster%\"; VCServerClass=\"Prod\" }\nServerName    VCServerClass VCServerContact\r\n----------    ------------- ---------------\r\nSomeServer1   Prod          cookiemonster, blah\r\nSomeServer2   Prod          cookiemonster\r\nSomeServer3   Prod          blah, cookiemonster\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003eInvoke-Sqlcmd2 -SQLConnection $Conn -Query \"SELECT login_time AS \u0027StartTime\u0027 FROM sysprocesses WHERE spid = 1\"\nUses an existing SQLConnection and runs a basic T-SQL query against it\nStartTime\r\n-----------\r\n2010-08-12 21:21:03.593\n-------------------------- EXAMPLE 8 --------------------------\nPS C:\\\u003eInvoke-SqlCmd -SQLConnection $Conn -Query \"SELECT ServerName FROM tblServerInfo WHERE ServerName LIKE @ServerName\" -SqlParameters @{\"ServerName = \"c-is-hyperv-1\"}\nExecutes a parameterized query against the existing SQLConnection, with a collection of one parameter to be passed to the query when executed.",
-        "Syntax":  "Invoke-Sqlcmd2 [-ServerInstance] \u003cString[]\u003e [[-Database] \u003cString\u003e] [-Query] \u003cString\u003e [[-Credential] \u003cPSCredential\u003e] [[-Encrypt]] [[-QueryTimeout] \u003cInt32\u003e] [[-ConnectionTimeout] \u003cInt32\u003e] [[-As] \u003cString\u003e] [[-SqlParameters] \u003cIDictionary\u003e] [[-AppendServerInstance]] [[-ParseGO]] [\u003cCommonParameters\u003e]\nInvoke-Sqlcmd2 [-ServerInstance] \u003cString[]\u003e [[-Database] \u003cString\u003e] [-InputFile] \u003cString\u003e [[-Credential] \u003cPSCredential\u003e] [[-Encrypt]] [[-QueryTimeout] \u003cInt32\u003e] [[-ConnectionTimeout] \u003cInt32\u003e] [[-As] \u003cString\u003e] [[-SqlParameters] \u003cIDictionary\u003e] [[-AppendServerInstance]] [[-ParseGO]] [\u003cCommonParameters\u003e]\nInvoke-Sqlcmd2 [[-Database] \u003cString\u003e] [-Query] \u003cString\u003e [[-QueryTimeout] \u003cInt32\u003e] [[-As] \u003cString\u003e] [[-SqlParameters] \u003cIDictionary\u003e] [[-AppendServerInstance]] [[-ParseGO]] [[-SQLConnection] \u003cSqlConnection\u003e] [\u003cCommonParameters\u003e]\nInvoke-Sqlcmd2 [[-Database] \u003cString\u003e] [-InputFile] \u003cString\u003e [[-QueryTimeout] \u003cInt32\u003e] [[-As] \u003cString\u003e] [[-SqlParameters] \u003cIDictionary\u003e] [[-AppendServerInstance]] [[-ParseGO]] [[-SQLConnection] \u003cSqlConnection\u003e] [\u003cCommonParameters\u003e]"
     },
     {
         "CommandName":  "Join-DbaAvailabilityGroup",
