@@ -132,8 +132,10 @@ if (Test-Path -Path "$script:PSModuleRoot\.git") { $script:multiFileImport = $tr
 Write-ImportTime -Text "Validated defines"
 #endregion Import Defines
 
-Get-ChildItem -Path (Resolve-Path "$script:PSModuleRoot\bin\") -Filter "*.dll" -Recurse | Unblock-File -ErrorAction Ignore
-Write-ImportTime -Text "Unblocking Files"
+if (($PSVersionTable.PSVersion.Major -le 5) -or $isWindows) {
+    Get-ChildItem -Path (Resolve-Path "$script:PSModuleRoot\bin\") -Filter "*.dll" -Recurse | Unblock-File -ErrorAction Ignore
+    Write-ImportTime -Text "Unblocking Files"
+}
 
 # Define folder in which to copy dll files before importing
 if (-not $script:copyDllMode) { $script:DllRoot = (Resolve-Path "$script:PSModuleRoot\bin\") }
