@@ -75,7 +75,6 @@ function Install-SqlServerUpdate {
         foreach ($currentVersion in $currentVersionGroups) {
             $stepCounter = 0
             $currentMajorVersion = "SQL" + $currentVersion.NameLevel
-
             Write-ProgressHelper -ExcludePercent -Activity $activity -Message "Parsing versions"
             # create a parameter set for Find-SqlServerUpdate
             $kbLookupParams = @{
@@ -146,7 +145,6 @@ function Install-SqlServerUpdate {
             }
             ## Find the installer to use
             Write-ProgressHelper -ExcludePercent -Activity $activity -Message "Searching for update binaries"
-
             $installer = Find-SqlServerUpdate @kbLookupParams
             if (!$installer) {
                 Stop-Function -Message "Could not find installer for the $currentMajorVersion update KB$($kbLookupParams.KB)" -Continue
