@@ -87,7 +87,7 @@ function Set-DbaJobOwner {
         [object[]]$Job,
         [object[]]$ExcludeJob,
         [Parameter(ValueFromPipeline)]
-        [Microsoft.SqlServer.Management.Smo.Agent.Job[]]$InputObject,        
+        [Microsoft.SqlServer.Management.Smo.Agent.Job[]]$InputObject,
         [Alias("TargetLogin")]
         [string]$Login,
         [Alias('Silent')]
@@ -115,7 +115,7 @@ function Set-DbaJobOwner {
             if ($ExcludeJob) {
                 $jobcollection = $jobcollection | Where-Object { $ExcludeJob -notcontains $_.Name }
             }
-            
+
             $InputObject += $jobcollection
         }
 
@@ -156,7 +156,7 @@ function Set-DbaJobOwner {
                                 Stop-Function -Message "Issue setting job owner on $jobName." -Target $jobName -InnerErrorRecord $_ -Category InvalidOperation
                             }
                         }
-                    }                    
+                    }
                 }
             }
             Add-Member -Force -InputObject $agentJob -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
@@ -164,7 +164,7 @@ function Set-DbaJobOwner {
             Add-Member -Force -InputObject $agentJob -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
             Add-Member -Force -InputObject $agentJob -MemberType NoteProperty -Name Status -value $status
             Add-Member -Force -InputObject $agentJob -MemberType NoteProperty -Name Notes -value $notes
-            Select-DefaultView -InputObject $agentJob -Property ComputerName, InstanceName, SqlInstance, Name, Category, OwnerLoginName, Status, Notes 
+            Select-DefaultView -InputObject $agentJob -Property ComputerName, InstanceName, SqlInstance, Name, Category, OwnerLoginName, Status, Notes
         }
     }
 }
