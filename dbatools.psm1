@@ -82,6 +82,12 @@ Write-ImportTime -Text "Resolved path to not SQLSERVER PSDrive"
 
 $script:PSModuleRoot = $PSScriptRoot
 
+if (($PSVersionTable.Keys -contains "PSEdition") -and ($PSVersionTable.PSEdition -ne 'Desktop')) {
+    $script:core = $true
+} else {
+    $script:core = $false
+}
+
 #region Import Defines
 $dbatoolsSystemUserNode = Get-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\WindowsPowerShell\dbatools\System" -ErrorAction Ignore
 $dbatoolsSystemSystemNode = Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\WindowsPowerShell\dbatools\System" -ErrorAction Ignore
@@ -126,15 +132,17 @@ if (Test-Path -Path "$script:PSModuleRoot\.git") { $script:multiFileImport = $tr
 Write-ImportTime -Text "Validated defines"
 #endregion Import Defines
 
-Get-ChildItem -Path (Resolve-Path "$script:PSModuleRoot\bin\") -Filter "*.dll" -Recurse
-Write-ImportTime -Text "Unblocking Files"
+if (($PSVersionTable.PSVersion.Major -le 5) -or $isWindows) {
+    Get-ChildItem -Path (Resolve-Path "$script:PSModuleRoot\bin\") -Filter "*.dll" -Recurse | Unblock-File -ErrorAction Ignore
+    Write-ImportTime -Text "Unblocking Files"
+}
 
 # Define folder in which to copy dll files before importing
 if (-not $script:copyDllMode) { $script:DllRoot = (Resolve-Path "$script:PSModuleRoot\bin\") }
 else {
-    $libraryTempPath = "$($env:TEMP)\dbatools-$(Get-Random -Minimum 1000000 -Maximum 9999999)"
+    $libraryTempPath = (Resolve-Path "$($env:TEMP)\dbatools-$(Get-Random -Minimum 1000000 -Maximum 9999999)")
     while (Test-Path -Path $libraryTempPath) {
-        $libraryTempPath = "$($env:TEMP)\dbatools-$(Get-Random -Minimum 1000000 -Maximum 9999999)"
+        $libraryTempPath = (Resolve-Path "$($env:TEMP)\dbatools-$(Get-Random -Minimum 1000000 -Maximum 9999999)")
     }
     $script:DllRoot = $libraryTempPath
     $null = New-Item -Path $libraryTempPath -ItemType Directory
@@ -163,71 +171,80 @@ Write-ImportTime -Text "Loading dbatools library"
 # Tell the library where the module is based, just in case
 [Sqlcollaborative.Dbatools.dbaSystem.SystemHost]::ModuleBase = $script:PSModuleRoot
 
-# Load configuration system
-# Should always go after library and path setting
-if (-not ([Sqlcollaborative.Dbatools.dbaSystem.SystemHost]::ModuleImported)) {
-    . Import-ModuleFile "$script:PSModuleRoot\internal\configurations\configuration.ps1"
-    Write-ImportTime -Text "Configuration System"
-}
-if (-not ([Sqlcollaborative.Dbatools.Message.LogHost]::LoggingPath)) {
-    [Sqlcollaborative.Dbatools.Message.LogHost]::LoggingPath = "$($env:AppData)\PowerShell\dbatools"
-}
-
 if ($script:multiFileImport) {
     # All internal functions privately available within the toolset
-    foreach ($function in (Get-ChildItem "$script:PSModuleRoot\internal\functions\*.ps1")) {
+    foreach ($function in (Get-ChildItem -Path (Resolve-Path -Path "$script:PSModuleRoot\internal\functions\") -Recurse | Where-Object Extension -EQ '.ps1')) {
         . Import-ModuleFile $function.FullName
     }
     Write-ImportTime -Text "Loading Internal Commands"
 
-    . Import-ModuleFile "$script:PSModuleRoot\internal\scripts\cmdlets.ps1"
+    . Import-ModuleFile -Path (Resolve-Path -Path "$script:PSModuleRoot\internal\scripts\cmdlets.ps1")
     Write-ImportTime -Text "Registering cmdlets"
-
+    
     # All exported functions
-    foreach ($function in (Get-ChildItem "$script:PSModuleRoot\functions\*.ps1")) {
+    foreach ($function in (Get-ChildItem -Path (Resolve-Path -Path "$script:PSModuleRoot\functions\") -Recurse | Where-Object Extension -EQ '.ps1')) {
         . Import-ModuleFile $function.FullName
     }
     Write-ImportTime -Text "Loading Public Commands"
-
+    
 }
 else {
-    . "$script:PSModuleRoot\allcommands.ps1"
+    . (Resolve-Path -Path "$script:PSModuleRoot\allcommands.ps1")
     Write-ImportTime -Text "Loading Public and Private Commands"
 
-    . Import-ModuleFile "$script:PSModuleRoot\internal\scripts\cmdlets.ps1"
+    . Import-ModuleFile (Resolve-Path -Path "$script:PSModuleRoot\internal\scripts\cmdlets.ps1")
     Write-ImportTime -Text "Registering cmdlets"
+}
+
+# Load configuration system
+# Should always go after library and path setting
+. Import-ModuleFile "$script:PSModuleRoot\internal\configurations\configuration.ps1"
+Write-ImportTime -Text "Configuration System"
+
+# Resolving the path was causing trouble when it didn't exist yet
+# Not converting the path separators based on OS was also an issue.
+if (-not ([Sqlcollaborative.Dbatools.Message.LogHost]::LoggingPath)) {
+    [Sqlcollaborative.Dbatools.Message.LogHost]::LoggingPath = Join-DbaPath $script:AppData "PowerShell" "dbatools"
 }
 
 # Run all optional code
 # Note: Each optional file must include a conditional governing whether it's run at all.
 # Validations were moved into the other files, in order to prevent having to update dbatools.psm1 every time
 # 96ms
-foreach ($function in (Get-ChildItem "$script:PSModuleRoot\optional\*.ps1")) {
+foreach ($function in (Get-ChildItem -Path (Resolve-Path -Path "$script:PSModuleRoot\optional\*.ps1"))) {
     . Import-ModuleFile $function.FullName
 }
 Write-ImportTime -Text "Loading Optional Commands"
 
-# Process TEPP parameters
-. Import-ModuleFile "$script:PSModuleRoot\internal\scripts\insertTepp.ps1"
-Write-ImportTime -Text "Loading TEPP"
+if (($PSVersionTable.Keys -contains "Platform") -and $PSVersionTable.Platform -ne "Win32NT") {
+    Write-Verbose -Message "Skipping tepp configuration. Not Core compatible yet."
+} else {
+    # Process TEPP parameters
+    . Import-ModuleFile -Path (Resolve-Path -Path "$script:PSModuleRoot\internal\scripts\insertTepp.ps1")
+    Write-ImportTime -Text "Loading TEPP"
+}
 
 # Process transforms
-. Import-ModuleFile "$script:PSModuleRoot\internal\scripts\message-transforms.ps1"
+. Import-ModuleFile -Path (Resolve-Path -Path "$script:PSModuleRoot\internal\scripts\message-transforms.ps1")
 Write-ImportTime -Text "Loading Message Transforms"
 
 # Load scripts that must be individually run at the end #
 #-------------------------------------------------------#
 
 # Start the logging system (requires the configuration system up and running)
-. Import-ModuleFile "$script:PSModuleRoot\internal\scripts\logfilescript.ps1"
+. Import-ModuleFile -Path (Resolve-Path -Path "$script:PSModuleRoot\internal\scripts\logfilescript.ps1")
 Write-ImportTime -Text "Script: Logging"
 
-# Start the tepp asynchronous update system (requires the configuration system up and running)
-. Import-ModuleFile "$script:PSModuleRoot\internal\scripts\updateTeppAsync.ps1"
-Write-ImportTime -Text "Script: Asynchronous TEPP Cache"
+if (($PSVersionTable.Keys -contains "Platform") -and $PSVersionTable.Platform -ne "Win32NT") {
+    Write-Verbose -Message "Skipping tepp configuration. Not Core compatible yet."
+} else {
+    # Start the tepp asynchronous update system (requires the configuration system up and running)
+    . Import-ModuleFile -Path (Resolve-Path -Path "$script:PSModuleRoot\internal\scripts\updateTeppAsync.ps1")
+    Write-ImportTime -Text "Script: Asynchronous TEPP Cache"
+}
 
 # Start the maintenance system (requires pretty much everything else already up and running)
-. Import-ModuleFile "$script:PSModuleRoot\internal\scripts\dbatools-maintenance.ps1"
+. Import-ModuleFile -Path (Resolve-Path -Path "$script:PSModuleRoot\internal\scripts\dbatools-maintenance.ps1")
 Write-ImportTime -Text "Script: Maintenance"
 
 #region Aliases
@@ -874,10 +891,6 @@ $script:renames = @(
         "Definition" = "Export-DbaCmsRegServer"
     },
     @{
-        "AliasName"  = "Get-DbaRegisteredServer"
-        "Definition" = "Get-DbaCmsRegServer"
-    },
-    @{
         "AliasName"  = "Get-DbaRegisteredServerGroup"
         "Definition" = "Get-DbaCmsRegServerGroup"
     },
@@ -973,7 +986,7 @@ $script:renames | ForEach-Object {
 
 
 # Leave forever
-@(
+$forever = @(
     @{
         "AliasName"  = "Attach-DbaDatabase"
         "Definition" = "Mount-DbaDatabase"
@@ -981,8 +994,13 @@ $script:renames | ForEach-Object {
     @{
         "AliasName"  = "Detach-DbaDatabase"
         "Definition" = "Dismount-DbaDatabase"
+    },
+    @{
+        "AliasName"  = "Get-DbaRegisteredServer"
+        "Definition" = "Get-DbaCmsRegServer"
     }
-) | ForEach-Object {
+)
+$forever | ForEach-Object {
     if (-not (Test-Path Alias:$($_.AliasName))) { Set-Alias -Scope Global -Name $($_.AliasName) -Value $($_.Definition) }
 }
 #endregion Aliases
@@ -990,9 +1008,566 @@ $script:renames | ForEach-Object {
 #region Post-Import Cleanup
 Write-ImportTime -Text "Loading Aliases"
 
+# region Commands
+$script:xplat = @(
+    'Start-DbaMigration',
+    'Copy-DbaDatabase',
+    'Copy-DbaLogin',
+    'Copy-DbaAgentServer',
+    'Copy-DbaSpConfigure',
+    'Copy-DbaDbMail',
+    'Copy-DbaDbAssembly',
+    'Copy-DbaAgentSchedule',
+    'Copy-DbaAgentOperator',
+    'Copy-DbaAgentJob',
+    'Copy-DbaCustomError',
+    'Copy-DbaServerAuditSpecification',
+    'Copy-DbaEndpoint',
+    'Copy-DbaServerAudit',
+    'Copy-DbaServerRole',
+    'Copy-DbaResourceGovernor',
+    'Copy-DbaXESession',
+    'Copy-DbaBackupDevice',
+    'Copy-DbaServerTrigger',
+    'Copy-DbaCmsRegServer',
+    'Copy-DbaSysDbUserObject',
+    'Copy-DbaAgentProxy',
+    'Copy-DbaAgentAlert',
+    'Get-DbaDetachedDatabaseInfo',
+    'Restore-DbaBackupFromDirectory',
+    'Copy-DbaAgentJobCategory',
+    'Test-DbaPath',
+    'Export-DbaLogin',
+    'Watch-DbaDbLogin',
+    'Expand-DbaDbLogFile',
+    'Test-DbaMigrationConstraint',
+    'Test-DbaNetworkLatency',
+    'Find-DbaDuplicateIndex',
+    'Remove-DbaDatabaseSafely',
+    'Set-DbaTempdbConfig',
+    'Test-DbaTempdbConfig',
+    'Repair-DbaOrphanUser',
+    'Remove-DbaOrphanUser',
+    'Find-DbaDbUnusedIndex',
+    'Get-DbaDbSpace',
+    'Test-DbaDbOwner',
+    'Set-DbaDbOwner',
+    'Test-DbaJobOwner',
+    'Set-DbaJobOwner',
+    'Test-DbaDbVirtualLogFile',
+    'Get-DbaDbRestoreHistory',
+    'Get-DbaTcpPort',
+    'Test-DbaDbCompatibility',
+    'Test-DbaDbCollation',
+    'Test-DbaConnectionAuthScheme',
+    'Test-DbaServerName',
+    'Repair-DbaServerName',
+    'Stop-DbaProcess',
+    'Find-DbaOrphanedFile',
+    'Get-DbaAvailabilityGroup',
+    'Get-DbaLastGoodCheckDb',
+    'Get-DbaProcess',
+    'Get-DbaRunningJob',
+    'Set-DbaMaxDop',
+    'Test-DbaDbRecoveryModel',
+    'Test-DbaMaxDop',
+    'Remove-DbaBackup',
+    'Get-DbaPermission',
+    'Get-DbaLastBackup',
+    'Connect-DbaInstance',
+    'Get-DbaBackupHistory',
+    'Read-DbaBackupHeader',
+    'Test-DbaLastBackup',
+    'Get-DbaMaxMemory',
+    'Set-DbaMaxMemory',
+    'Get-DbaDbSnapshot',
+    'Remove-DbaDbSnapshot',
+    'Get-DbaDbRoleMember',
+    'Get-DbaServerRoleMember',
+    'Resolve-DbaNetworkName',
+    'Export-DbaAvailabilityGroup',
+    'Write-DbaDataTable',
+    'New-DbaDbSnapshot',
+    'Restore-DbaDbSnapshot',
+    'Get-DbaServerTrigger',
+    'Get-DbaDbTrigger',
+    'Get-DbaDbState',
+    'Set-DbaDbState',
+    'Get-DbaHelpIndex',
+    'Get-DbaAgentAlert',
+    'Get-DbaAgentOperator',
+    'Get-DbaSpConfigure',
+    'Rename-DbaLogin',
+    'Find-DbaAgentJob',
+    'Find-DbaDatabase',
+    'Get-DbaXESession',
+    'Test-DbaOptimizeForAdHoc',
+    'Find-DbaStoredProcedure',
+    'Measure-DbaBackupThroughput',
+    'Get-DbaDatabase',
+    'Find-DbaUserObject',
+    'Get-DbaDependency',
+    'Find-DbaCommand',
+    'Backup-DbaDatabase',
+    'New-DbaDirectory',
+    'Get-DbaDbQueryStoreOption',
+    'Set-DbaDbQueryStoreOption',
+    'Restore-DbaDatabase',
+    'Copy-DbaDbQueryStoreOption',
+    'Get-DbaExecutionPlan',
+    'Export-DbaExecutionPlan',
+    'Set-DbaSpConfigure',
+    'Test-DbaIdentityUsage',
+    'Get-DbaDbAssembly',
+    'Get-DbaAgentJob',
+    'Get-DbaCustomError',
+    'Get-DbaCredential',
+    'Get-DbaBackupDevice',
+    'Get-DbaAgentProxy',
+    'Get-DbaDbEncryption',
+    'Remove-DbaDatabase',
+    'Get-DbaQueryExecutionTime',
+    'Get-DbaTempdbUsage',
+    'Find-DbaDbGrowthEvent',
+    'Test-DbaLinkedServerConnection',
+    'Get-DbaDbFile',
+    'Read-DbaTransactionLog',
+    'Get-DbaDbTable',
+    'Invoke-DbaDbShrink',
+    'Get-DbaEstimatedCompletionTime',
+    'Get-DbaLinkedServer',
+    'New-DbaAgentJob',
+    'Get-DbaLogin',
+    'New-DbaScriptingOption',
+    'Save-DbaDiagnosticQueryScript',
+    'Invoke-DbaDiagnosticQuery',
+    'Export-DbaDiagnosticQuery',
+    'Invoke-DbaWhoIsActive',
+    'Set-DbaAgentJob',
+    'Remove-DbaAgentJob',
+    'New-DbaAgentJobStep',
+    'Set-DbaAgentJobStep',
+    'Remove-DbaAgentJobStep',
+    'New-DbaAgentSchedule',
+    'Set-DbaAgentSchedule',
+    'Remove-DbaAgentSchedule',
+    'Backup-DbaDbCertificate',
+    'Get-DbaDbCertificate',
+    'Get-DbaEndpoint',
+    'Get-DbaDbMasterKey',
+    'Get-DbaSchemaChangeHistory',
+    'Get-DbaServerAudit',
+    'Get-DbaServerAuditSpecification',
+    'Get-DbaProductKey',
+    'Get-DbatoolsLog',
+    'Restore-DbaDbCertificate',
+    'New-DbaDbCertificate',
+    'New-DbaDbMasterKey',
+    'New-DbaServiceMasterKey',
+    'Remove-DbaDbCertificate',
+    'Remove-DbaDbMasterKey',
+    'New-DbaConnectionStringBuilder',
+    'Get-DbaInstanceProperty',
+    'Get-DbaInstanceUserOption',
+    'New-DbaConnectionString',
+    'Get-DbaAgentSchedule',
+    'Read-DbaTraceFile',
+    'Get-DbaServerInstallDate',
+    'Backup-DbaDbMasterKey',
+    'Get-DbaAgentJobHistory',
+    'Get-DbaMaintenanceSolutionLog',
+    'Invoke-DbaDbLogShipRecovery',
+    'Find-DbaTrigger',
+    'Find-DbaView',
+    'Invoke-DbaDbUpgrade',
+    'Get-DbaDbUser',
+    'Get-DbaAgentLog',
+    'Get-DbaDbMailLog',
+    'Get-DbaDbMailHistory',
+    'Get-DbaDbView',
+    'Get-DbaDbUdf',
+    'Get-DbaDbPartitionFunction',
+    'Get-DbaDbPartitionScheme',
+    'Get-DbaDefaultPath',
+    'Get-DbaDbStoredProcedure',
+    'Test-DbaDbCompression',
+    'Mount-DbaDatabase',
+    'Dismount-DbaDatabase',
+    'Get-DbaAgReplica',
+    'Get-DbaAgDatabase',
+    'Get-DbaModule',
+    'Sync-DbaLoginPermission',
+    'New-DbaCredential',
+    'Get-DbaFile',
+    'Set-DbaDbCompression',
+    'Get-DbaTraceFlag',
+    'Invoke-DbaCycleErrorLog',
+    'Get-DbaAvailableCollation',
+    'Get-DbaUserPermission',
+    'Get-DbaAgHadr',
+    'Find-DbaSimilarTable',
+    'Get-DbaTrace',
+    'Get-DbaSuspectPage',
+    'Get-DbaWaitStatistic',
+    'Clear-DbaWaitStatistics',
+    'Get-DbaTopResourceUsage',
+    'New-DbaLogin',
+    'Get-DbaAgListener',
+    'Invoke-DbaDbClone',
+    'Disable-DbaTraceFlag',
+    'Enable-DbaTraceFlag',
+    'Start-DbaAgentJob',
+    'Stop-DbaAgentJob',
+    'New-DbaAgentProxy',
+    'Test-DbaDbLogShipStatus',
+    'Get-DbaXESessionTarget',
+    'New-DbaXESmartTargetResponse',
+    'New-DbaXESmartTarget',
+    'Get-DbaDbVirtualLogFile',
+    'Get-DbaBackupInformation',
+    'Start-DbaXESession',
+    'Stop-DbaXESession',
+    'Set-DbaDbRecoveryModel',
+    'Get-DbaDbRecoveryModel',
+    'Get-DbaWaitingTask',
+    'Remove-DbaDbUser',
+    'Get-DbaDump',
+    'Invoke-DbaAdvancedRestore',
+    'Format-DbaBackupInformation',
+    'Get-DbaAgentJobStep',
+    'Test-DbaBackupInformation',
+    'Invoke-DbaBalanceDataFiles',
+    'Select-DbaBackupInformation',
+    'Publish-DbaDacPackage',
+    'Copy-DbaDbTableData',
+    'Invoke-DbaQuery',
+    'Remove-DbaLogin',
+    'Get-DbaAgentJobCategory',
+    'New-DbaAgentJobCategory',
+    'Remove-DbaAgentJobCategory',
+    'Set-DbaAgentJobCategory',
+    'Get-DbaDbRole',
+    'Get-DbaServerRole',
+    'Find-DbaBackup',
+    'Remove-DbaXESession',
+    'New-DbaXESession',
+    'Get-DbaXEStore',
+    'New-DbaXESmartTableWriter',
+    'New-DbaXESmartReplay',
+    'New-DbaXESmartEmail',
+    'New-DbaXESmartQueryExec',
+    'Start-DbaXESmartTarget',
+    'Get-DbaOrphanUser',
+    'Get-DbaOpenTransaction',
+    'Get-DbaDbLogShipError',
+    'Test-DbaBuild',
+    'Get-DbaXESessionTemplate',
+    'ConvertTo-DbaXESession',
+    'Start-DbaTrace',
+    'Stop-DbaTrace',
+    'Remove-DbaTrace',
+    'Set-DbaLogin',
+    'Copy-DbaXESessionTemplate',
+    'Get-DbaXEObject',
+    'ConvertTo-DbaDataTable',
+    'Find-DbaDisabledIndex',
+    'Get-DbaXESmartTarget',
+    'Remove-DbaXESmartTarget',
+    'Stop-DbaXESmartTarget',
+    'Get-DbaCmsRegServerGroup',
+    'New-DbaDbUser',
+    'Measure-DbaDiskSpaceRequirement',
+    'New-DbaXESmartCsvWriter',
+    'Invoke-DbaXeReplay',
+    'Find-DbaInstance',
+    'Test-DbaDiskSpeed',
+    'Get-DbaDbExtentDiff',
+    'Read-DbaAuditFile',
+    'Get-DbaDbCompression',
+    'Invoke-DbaDbDecryptObject',
+    'Get-DbaDbForeignKey',
+    'Get-DbaDbCheckConstraint',
+    'Set-DbaAgentAlert',
+    'Get-DbaWaitResource',
+    'Get-DbaDbPageInfo',
+    'Get-DbaConnection',
+    'Test-DbaLoginPassword',
+    'Get-DbaErrorLogConfig',
+    'Set-DbaErrorLogConfig',
+    'Get-DbaPlanCache',
+    'Clear-DbaPlanCache',
+    'ConvertTo-DbaTimeline',
+    'Get-DbaDbMail',
+    'Get-DbaDbMailAccount',
+    'Get-DbaDbMailProfile',
+    'Get-DbaDbMailConfig',
+    'Get-DbaDbMailServer',
+    'Get-DbaResourceGovernor',
+    'Get-DbaRgResourcePool',
+    'Get-DbaRgWorkloadGroup',
+    'Get-DbaRgClassifierFunction',
+    'Export-DbaInstance',
+    'Invoke-DbatoolsRenameHelper',
+    'Measure-DbatoolsImport',
+    'Get-DbaDeprecatedFeature',
+    'Test-DbaDeprecatedFeature'
+    'Get-DbaDbFeatureUsage',
+    'Stop-DbaEndpoint',
+    'Start-DbaEndpoint',
+    'Set-DbaDbMirror',
+    'Repair-DbaDbMirror',
+    'Remove-DbaEndpoint',
+    'Remove-DbaDbMirrorMonitor',
+    'Remove-DbaDbMirror',
+    'New-DbaEndpoint',
+    'Invoke-DbaDbMirroring',
+    'Invoke-DbaDbMirrorFailover',
+    'Get-DbaDbMirrorMonitor',
+    'Get-DbaDbMirror',
+    'Add-DbaDbMirrorMonitor',
+    'Test-DbaEndpoint',
+    'Get-DbaDbSharePoint',
+    'Get-DbaDbMemoryUsage',
+    'Clear-DbaLatchStatistics',
+    'Get-DbaCpuRingBuffer',
+    'Get-DbaIoLatency',
+    'Get-DbaLatchStatistic',
+    'Get-DbaSpinLockStatistic',
+    'Add-DbaAgDatabase',
+    'Add-DbaAgListener',
+    'Add-DbaAgReplica',
+    'Grant-DbaAgPermission',
+    'Invoke-DbaAgFailover',
+    'Join-DbaAvailabilityGroup',
+    'New-DbaAvailabilityGroup',
+    'Remove-DbaAgDatabase',
+    'Remove-DbaAgListener',
+    'Remove-DbaAvailabilityGroup',
+    'Revoke-DbaAgPermission',
+    'Get-DbaDbCompatibility',
+    'Set-DbaDbCompatibility',
+    'Invoke-DbatoolsFormatter',
+    'Remove-DbaAgReplica',
+    'Resume-DbaAgDbDataMovement',
+    'Set-DbaAgListener',
+    'Set-DbaAgReplica',
+    'Set-DbaAvailabilityGroup',
+    'Set-DbaEndpoint',
+    'Suspend-DbaAgDbDataMovement',
+    'Sync-DbaAvailabilityGroup',
+    'Get-DbaMemoryCondition',
+    'Remove-DbaDbBackupRestoreHistory',
+    'New-DbaDatabase'
+    'New-DbaDacOption',
+    'Get-DbaDbccHelp',
+    'Get-DbaDbccMemoryStatus',
+    'Get-DbaDbccProcCache',
+    'Get-DbaDbccUserOption',
+    'Get-DbaAgentServer',
+    'Set-DbaAgentServer',
+    'Invoke-DbaDbccFreeCache'
+    'Export-DbatoolsConfig',
+    'Import-DbatoolsConfig',
+    'Reset-DbatoolsConfig',
+    'Unregister-DbatoolsConfig',
+    'Join-DbaPath',
+    'Resolve-DbaPath'
+)
+
+$script:noncoresmo = @(
+    # SMO issues
+    'Export-DbaUser',
+    'Get-DbaSsisExecutionHistory',
+    'Get-DbaRepDistributor',
+    'Get-DbaCmsRegServerStore',
+    'Copy-DbaPolicyManagement',
+    'Copy-DbaDataCollector',
+    'Get-DbaCmsRegServer',
+    'Copy-DbaSsisCatalog',
+    'New-DbaSsisCatalog',
+    'Get-DbaSsisEnvironmentVariable',
+    'Get-DbaPbmCategory',
+    'Get-DbaPbmCategorySubscription',
+    'Get-DbaPbmCondition',
+    'Get-DbaPbmObjectSet',
+    'Get-DbaPbmPolicy',
+    'Get-DbaPbmStore',
+    'Add-DbaCmsRegServer',
+    'Add-DbaCmsRegServerGroup',
+    'Export-DbaCmsRegServer',
+    'Import-DbaCmsRegServer',
+    'Move-DbaCmsRegServer',
+    'Move-DbaCmsRegServerGroup',
+    'Remove-DbaCmsRegServer',
+    'Remove-DbaCmsRegServerGroup',
+    'Get-DbaRepPublication',
+    'Test-DbaRepLatency',
+    'Export-DbaRepServerSetting',
+    'Get-DbaRepServer'
+)
+$script:windowsonly = @(
+    # solvable filesystem issues or other workarounds
+    'Install-DbaSqlWatch',
+    'Uninstall-DbaSqlWatch',
+    'Get-DbaRegistryRoot',
+    'Install-DbaMaintenanceSolution',
+    'New-DbatoolsSupportPackage',
+    'Export-DbaScript',
+    'Get-DbaAgentJobOutputFile',
+    'Set-DbaAgentJobOutputFile',
+    'Get-DbaBuildReference',
+    'New-DbaDacProfile'
+    'Import-DbaXESessionTemplate',
+    'Export-DbaXESessionTemplate',
+    'Import-DbaSpConfigure',
+    'Export-DbaSpConfigure'
+    'Update-Dbatools',
+    'Install-DbaWhoIsActive',
+    'Install-DbaFirstResponderKit',
+    'Read-DbaXEFile',
+    'Watch-DbaXESession',
+    'Test-DbaMaxMemory',  # can be fixed by not testing remote when linux is detected
+    'Rename-DbaDatabase', # can maybebe fixed by not remoting when linux is detected
+    # CM and Windows functions
+    'Update-DbaInstance',
+    'Invoke-DbaPfRelog',
+    'Get-DbaPfDataCollectorCounter',
+    'Get-DbaPfDataCollectorCounterSample',
+    'Get-DbaPfDataCollector',
+    'Get-DbaPfDataCollectorSet',
+    'Start-DbaPfDataCollectorSet',
+    'Stop-DbaPfDataCollectorSet',
+    'Export-DbaPfDataCollectorSetTemplate',
+    'Get-DbaPfDataCollectorSetTemplate',
+    'Import-DbaPfDataCollectorSetTemplate',
+    'Remove-DbaPfDataCollectorSet',
+    'Add-DbaPfDataCollectorCounter',
+    'Remove-DbaPfDataCollectorCounter',
+    'Get-DbaPfAvailableCounter',
+    'Export-DbaXECsv',
+    'Get-DbaOperatingSystem',
+    'Get-DbaComputerSystem',
+    'Set-DbaPrivilege',
+    'Set-DbaTcpPort',
+    'Set-DbaCmConnection',
+    'Get-DbaUptime',
+    'Get-DbaMemoryUsage',
+    'Clear-DbaConnectionPool',
+    'Get-DbaLocaleSetting',
+    'Get-DbaFilestream',
+    'Enable-DbaFilestream',
+    'Disable-DbaFilestream',
+    'Get-DbaCpuUsage',
+    'Get-DbaPowerPlan',
+    'Get-DbaWsfcAvailableDisk',
+    'Get-DbaWsfcCluster',
+    'Get-DbaWsfcDisk',
+    'Get-DbaWsfcNetwork',
+    'Get-DbaWsfcNetworkInterface',
+    'Get-DbaWsfcNode',
+    'Get-DbaWsfcResource',
+    'Get-DbaWsfcResourceType',
+    'Get-DbaWsfcRole',
+    'Get-DbaWsfcSharedVolume',
+    'Export-DbaCredential',
+    'Export-DbaLinkedServer',
+    'Get-DbaFeature',
+    'Update-DbaServiceAccount',
+    'Remove-DbaClientAlias',
+    'Disable-DbaAgHadr',
+    'Enable-DbaAgHadr',
+    'Stop-DbaService',
+    'Start-DbaService',
+    'Restart-DbaService',
+    'New-DbaClientAlias',
+    'Get-DbaClientAlias',
+    'Remove-DbaNetworkCertificate',
+    'Enable-DbaForceNetworkEncryption',
+    'Disable-DbaForceNetworkEncryption',
+    'Get-DbaForceNetworkEncryption',
+    'Remove-DbaComputerCertificate',
+    'New-DbaComputerCertificate',
+    'Get-DbaComputerCertificate',
+    'Add-DbaComputerCertificate',
+    'Get-DbaNetworkCertificate',
+    'Set-DbaNetworkCertificate',
+    'Invoke-DbaDbLogShipping',
+    'New-DbaCmConnection',
+    'Get-DbaCmConnection',
+    'Remove-DbaCmConnection',
+    'Test-DbaCmConnection',
+    'Get-DbaCmObject',
+    'Set-DbaStartupParameter',
+    'Get-DbaNetworkActivity',
+    'Get-DbaServerProtocol'
+    'Watch-DbaUpdate',
+    'Uninstall-DbaWatchUpdate',
+    'Install-DbaWatchUpdate',
+    'Get-DbaPrivilege',
+    'Get-DbaMsdtc',
+    'Get-DbaPageFileSetting',
+    'Copy-DbaCredential',
+    'Test-DbaConnection',
+    'Reset-DbaAdmin',
+    'Copy-DbaLinkedServer',
+    'Get-DbaDiskSpace',
+    'Test-DbaDiskAllocation',
+    'Test-DbaPowerPlan',
+    'Set-DbaPowerPlan',
+    'Test-DbaDiskAlignment',
+    'Get-DbaStartupParameter',
+    'Get-DbaSpn',
+    'Test-DbaSpn',
+    'Set-DbaSpn',
+    'Remove-DbaSpn',
+    'Get-DbaService',
+    'Get-DbaClientProtocol',
+    'Get-DbaWindowsLog',
+    # WPF
+    'Show-DbaServerFileSystem',
+    'Show-DbaDbList',
+    # AD?
+    'Test-DbaWindowsLogin',
+    'Find-DbaLoginInGroup',
+    # 3rd party non-core DLL or exe
+    'Import-DbaCsv',
+    'Export-DbaDacPackage', # relies on sqlpackage.exe
+    # Config system
+    'Get-DbatoolsConfig',
+    'Get-DbatoolsConfigValue',
+    'Set-DbatoolsConfig',
+    'Register-DbatoolsConfig',
+    # Unknown
+    'Get-DbaErrorLog',
+    'Get-DbaManagementObject',
+    'Test-DbaManagementObject'
+)
+
+# If a developer or appveyor calls the psm1 directly, they want all functions
+# So do not explicity export because everything else is then implicity excluded
+if ((Get-PSCallStack)[0].Command -ne 'dbatools.psm1') {
+    if (($PSVersionTable.Keys -contains "Platform")) {
+        if ($psversiontable.Platform -ne "Win32NT") {
+            Export-ModuleMember -Function $script:xplat
+        } else {
+            Export-ModuleMember -Function $script:xplat
+            Export-ModuleMember -Function $script:windowsonly
+        }
+    } else {
+        Export-ModuleMember -Function $script:xplat
+        Export-ModuleMember -Function $script:windowsonly
+        Export-ModuleMember -Function $script:noncoresmo
+    }
+
+    Export-ModuleMember -Alias $script:renames
+    Export-ModuleMember -Alias $forever
+    
+    Write-ImportTime -Text "Exported module member"
+}
+
 $timeout = 20000
 $timeSpent = 0
-while (($script:smoRunspace.Runspace.RunspaceAvailability -eq 'Busy') -or ($script:dbatoolsConfigRunspace.Runspace.RunspaceAvailability -eq 'Busy')) {
+while ($script:smoRunspace.Runspace.RunspaceAvailability -eq 'Busy') {
     Start-Sleep -Milliseconds 50
     $timeSpent = $timeSpent + 50
 
@@ -1007,7 +1582,6 @@ https://dbatools.io/slack/
 Timeout waiting for temporary runspaces reached! The Module import will complete, but some things may not work as intended
 "@
         $global:smoRunspace = $script:smoRunspace
-        $global:dbatoolsConfigRunspace = $script:dbatoolsConfigRunspace
         break
     }
 }
@@ -1018,17 +1592,10 @@ if ($script:smoRunspace) {
     $script:smoRunspace.Dispose()
     Remove-Variable -Name smoRunspace -Scope script
 }
-
-if ($script:dbatoolsConfigRunspace) {
-    $script:dbatoolsConfigRunspace.Runspace.Close()
-    $script:dbatoolsConfigRunspace.Runspace.Dispose()
-    $script:dbatoolsConfigRunspace.Dispose()
-    Remove-Variable -Name dbatoolsConfigRunspace -Scope script
-}
 Write-ImportTime -Text "Waiting for runspaces to finish"
 
 if ($PSCommandPath -like "*.psm1") {
-    Update-TypeData -AppendPath "$script:PSModuleRoot\xml\dbatools.Types.ps1xml"
+    Update-TypeData -AppendPath (Resolve-Path -Path "$script:PSModuleRoot\xml\dbatools.Types.ps1xml")
     Write-ImportTime -Text "Loaded type extensions"
 }
 #. Import-ModuleFile "$script:PSModuleRoot\bin\type-extensions.ps1"
@@ -1039,7 +1606,7 @@ if ($PSCommandPath -like "*.psm1") {
 if (Get-Module -Name sqlserver, sqlps) {
     if (Get-DbatoolsConfigValue -FullName Import.SqlpsCheck) {
         Write-Warning -Message 'SQLPS or SqlServer was previously imported during this session. If you encounter weird issues with dbatools, please restart PowerShell, then import dbatools without loading SQLPS or SqlServer first.'
-        Write-Warning -Message 'To disable this message, type: Set-DbatoolsConfig -Name Import.SqlpsCheck -Value $false'
+        Write-Warning -Message 'To disable this message, type: Set-DbatoolsConfig -Name Import.SqlpsCheck -Value $false -PassThru | Register-DbatoolsConfig'
     }
 }
 

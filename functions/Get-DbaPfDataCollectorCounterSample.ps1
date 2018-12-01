@@ -106,7 +106,8 @@ function Get-DbaPfDataCollectorCounterSample {
         [switch]$EnableException
     )
     process {
-
+        
+        
         if ($InputObject.Credential -and (Test-Bound -ParameterName Credential -Not)) {
             $Credential = $InputObject.Credential
         }

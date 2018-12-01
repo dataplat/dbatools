@@ -74,13 +74,13 @@ function Get-DbaQueryExecutionTime {
         [Alias("Databases")]
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
-        [parameter(Position = 1, Mandatory = $false)]
+        [parameter(Position = 1)]
         [int]$MaxResultsPerDb = 100,
-        [parameter(Position = 2, Mandatory = $false)]
+        [parameter(Position = 2)]
         [int]$MinExecs = 100,
-        [parameter(Position = 3, Mandatory = $false)]
+        [parameter(Position = 3)]
         [int]$MinExecMs = 500,
-        [parameter(Position = 4, Mandatory = $false)]
+        [parameter(Position = 4)]
         [Alias("ExcludeSystemDatabases")]
         [switch]$ExcludeSystem,
         [Alias('Silent')]

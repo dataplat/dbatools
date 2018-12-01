@@ -46,7 +46,7 @@ function Set-DbaAgentJobOutputFile {
         Sets the Job step for The Agent job on SERVERNAME to E:\Logs\AgentJobStepOutput.txt
 
     #>
-    [CmdletBinding(SupportsShouldProcess = $true)]
+    [CmdletBinding(SupportsShouldProcess)]
     param (
         [Parameter(Mandatory, HelpMessage = 'The SQL Server Instance',
             ValueFromPipeline,
@@ -57,13 +57,13 @@ function Set-DbaAgentJobOutputFile {
         [ValidateNotNullOrEmpty()]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
-        [Parameter(Mandatory = $false, HelpMessage = 'SQL Credential',
+        [Parameter(HelpMessage = 'SQL Credential',
             ValueFromPipeline,
             ValueFromPipelineByPropertyName = $true,
             ValueFromRemainingArguments = $false)]
         [PSCredential]$SqlCredential,
         [object[]]$Job,
-        [Parameter(Mandatory = $false, HelpMessage = 'The Job Step name',
+        [Parameter(HelpMessage = 'The Job Step name',
             ValueFromPipeline,
             ValueFromPipelineByPropertyName = $true)]
         [ValidateNotNull()]

@@ -26,6 +26,9 @@ function Copy-DbaServerAudit {
     .PARAMETER ExcludeAudit
         The audit(s) to exclude. Options for this list are auto-populated from the server.
 
+    .PARAMETER Path
+        Destination file path. If not specified, the file path of the source will be used (or the default data directory).
+
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
@@ -68,8 +71,12 @@ function Copy-DbaServerAudit {
 
         Shows what would happen if the command were executed using force.
 
+    .EXAMPLE
+        PS C:\> Copy-DbaServerAudit -Source sqlserver-0 -Destination sqlserver-1 -Audit audit1 -Path 'C:\audit1'
+
+        Copies audit audit1 from sqlserver-0 to sqlserver-1. The file path on sqlserver-1 will be set to 'C:\audit1'.
     #>
-    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
+    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess)]
     param (
         [parameter(Mandatory)]
         [DbaInstanceParameter]$Source,
@@ -81,13 +88,13 @@ function Copy-DbaServerAudit {
         $DestinationSqlCredential,
         [object[]]$Audit,
         [object[]]$ExcludeAudit,
+        [string]$Path,
         [switch]$Force,
         [Alias('Silent')]
         [switch]$EnableException
     )
 
     begin {
-
         try {
             $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -MinimumVersion 10
         } catch {
@@ -123,13 +130,15 @@ function Copy-DbaServerAudit {
                     continue
                 }
 
-                $sql = $currentAudit.Script() | Out-String
+                if ($Path) {
+                    $currentAudit.FilePath = $Path
+                }
 
                 if ($destAudits.Name -contains $auditName) {
                     if ($force -eq $false) {
                         if ($Pscmdlet.ShouldProcess($destinstance, "Server audit $auditName exists at destination. Use -Force to drop and migrate.")) {
                             $copyAuditStatus.Status = "Skipped"
-                            $copyAuditStatus.Notes = "Already exists"
+                            $copyAuditStatus.Notes = "Already exists on destination"
                             Write-Message -Level Verbose -Message "Server audit $auditName exists at destination. Use -Force to drop and migrate."
                         }
                         continue
@@ -168,8 +177,6 @@ function Copy-DbaServerAudit {
                         Write-Message -Level Verbose -Message "Force specified. Creating directory."
 
                         $destNetBios = Resolve-NetBiosName $destServer
-                        #Variable marked as unused by PSScriptAnalyzer
-                        #$path = Join-AdminUnc $destNetBios $currentAudit.Filepath
                         $root = $currentAudit.Filepath.Substring(0, 3)
                         $rootUnc = Join-AdminUnc $destNetBios $root
 
@@ -180,12 +187,12 @@ function Copy-DbaServerAudit {
                                 } catch {
                                     Write-Message -Level Warning -Message "Couldn't create directory $($currentAudit.Filepath). Using default data directory."
                                     $datadir = Get-SqlDefaultPaths $destServer data
-                                    $sql = $sql.Replace($currentAudit.FilePath, $datadir)
+                                    $currentAudit.FilePath = $datadir
                                 }
                             }
                         } else {
                             $datadir = Get-SqlDefaultPaths $destServer data
-                            $sql = $sql.Replace($currentAudit.FilePath, $datadir)
+                            $currentAudit.FilePath = $datadir
                         }
                     }
                 }
@@ -193,8 +200,8 @@ function Copy-DbaServerAudit {
                     try {
                         Write-Message -Level Verbose -Message "File path $($currentAudit.Filepath) exists on $destinstance."
                         Write-Message -Level Verbose -Message "Copying server audit $auditName."
+                        $sql = $currentAudit.Script() | Out-String
                         $destServer.Query($sql)
-
                         $copyAuditStatus.Status = "Successful"
                         $copyAuditStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                     } catch {

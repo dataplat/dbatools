@@ -50,7 +50,7 @@ Which ships with PowerShell Version 5 but will run under v3.
         #>
         [CmdletBinding(
             DefaultParameterSetName = "Path",
-            SupportsShouldProcess = $true,
+            SupportsShouldProcess,
             HelpUri = "http://go.microsoft.com/fwlink/?LinkID=393253")]
         param
         (
@@ -73,7 +73,7 @@ Which ships with PowerShell Version 5 but will run under v3.
             [string]
             $LiteralPath,
 
-            [parameter (mandatory = $false,
+            [parameter (
                 Position = 1,
                 ValueFromPipeline = $false,
                 ValueFromPipelineByPropertyName = $false)]
@@ -81,7 +81,7 @@ Which ships with PowerShell Version 5 but will run under v3.
             [string]
             $DestinationPath,
 
-            [parameter (mandatory = $false,
+            [parameter (
                 ValueFromPipeline = $false,
                 ValueFromPipelineByPropertyName = $false)]
             [switch]

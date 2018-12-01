@@ -119,11 +119,11 @@ function Connect-DbaInstance {
 
     .PARAMETER DisableException
         By default in most of our commands, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-        
+
         This command, however, gifts you  with "sea of red" exceptions, by default, because it is useful for advanced scripting.
-    
+
         Using this switch turns our "nice by default" feature on which makes errors into pretty warnings.
-    
+
     .NOTES
         Tags: Connect, Connection
         Author: Chrissy LeMaire (@cl), netnerds.net
@@ -214,11 +214,13 @@ function Connect-DbaInstance {
         } else {
             $EnableException = $true
         }
-        
+
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Connect-DbaServer
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-DbaInstance
 
-        $loadedSmoVersion = [AppDomain]::CurrentDomain.GetAssemblies() | Where-Object { $_.Fullname -like "Microsoft.SqlServer.SMO,*" }
+        $loadedSmoVersion = [AppDomain]::CurrentDomain.GetAssemblies() | Where-Object {
+            $_.Fullname -like "Microsoft.SqlServer.SMO,*"
+        }
 
         if ($loadedSmoVersion) {
             $loadedSmoVersion = $loadedSmoVersion | ForEach-Object {
@@ -234,18 +236,35 @@ function Connect-DbaInstance {
         $Fields200x_Db = $Fields2000_Db + @('BrokerEnabled', 'DatabaseSnapshotBaseName', 'IsMirroringEnabled', 'Trustworthy')
         $Fields201x_Db = $Fields200x_Db + @('ActiveConnections', 'AvailabilityDatabaseSynchronizationState', 'AvailabilityGroupName', 'ContainmentType', 'EncryptionEnabled')
 
-        $Fields2000_Login = 'CreateDate' , 'DateLastModified' , 'DefaultDatabase' , 'DenyWindowsLogin' , 'IsSystemObject' , 'Language' , 'LanguageAlias' , 'LoginType' , 'Name' , 'Sid' , 'WindowsLoginAccessType'
+        $Fields2000_Login = 'CreateDate', 'DateLastModified', 'DefaultDatabase', 'DenyWindowsLogin', 'IsSystemObject', 'Language', 'LanguageAlias', 'LoginType', 'Name', 'Sid', 'WindowsLoginAccessType'
         $Fields200x_Login = $Fields2000_Login + @('AsymmetricKey', 'Certificate', 'Credential', 'ID', 'IsDisabled', 'IsLocked', 'IsPasswordExpired', 'MustChangePassword', 'PasswordExpirationEnabled', 'PasswordPolicyEnforced')
         $Fields201x_Login = $Fields200x_Login + @('PasswordHashAlgorithm')
     }
     process {
         foreach ($instance in $SqlInstance) {
+            #region Safely convert input into instance parameters
+            if ($instance.GetType() -eq [Sqlcollaborative.Dbatools.Parameter.DbaInstanceParameter]) {
+                [DbaInstanceParameter]$ConvertedSqlInstance = $instance
+                if ($ConvertedSqlInstance.Type -like "SqlConnection") {
+                    [DbaInstanceParameter]$ConvertedSqlInstance = New-Object Microsoft.SqlServer.Management.Smo.Server($ConvertedSqlInstance.InputObject)
+                }
+            } else {
+                [DbaInstanceParameter]$ConvertedSqlInstance = [DbaInstanceParameter]($instance | Select-Object -First 1)
+
+                if ($instance.Count -gt 1) {
+                    Write-Message -Level Warning -EnableException $true -Message "More than on server was specified when calling Connect-SqlInstance from $((Get-PSCallStack)[1].Command)"
+                }
+            }
+            #endregion Safely convert input into instance parameters
             if ($instance.Type -like "Server") {
                 if ($instance.InputObject.ConnectionContext.IsOpen -eq $false) {
                     $instance.InputObject.ConnectionContext.Connect()
                 }
-                if ($SqlConnectionOnly) { return $instance.InputObject.ConnectionContext.SqlConnectionObject }
-                else { return $instance.InputObject }
+                if ($SqlConnectionOnly) {
+                    return $instance.InputObject.ConnectionContext.SqlConnectionObject
+                } else {
+                    return $instance.InputObject
+                }
             }
             if ($instance.Type -like "SqlConnection") {
                 $server = New-Object Microsoft.SqlServer.Management.Smo.Server($instance.InputObject)
@@ -253,12 +272,14 @@ function Connect-DbaInstance {
                 if ($server.ConnectionContext.IsOpen -eq $false) {
                     $server.ConnectionContext.Connect()
                 }
-                if ($SqlConnectionOnly) { return $server.ConnectionContext.SqlConnectionObject }
-                else {
+                if ($SqlConnectionOnly) {
+                    return $server.ConnectionContext.SqlConnectionObject
+                } else {
                     if (-not $server.ComputerName) {
-                        $parsedcomputername = $server.NetName
-                        if (-not $parsedcomputername) {
-                            $parsedcomputername = ([dbainstance]$instance).ComputerName
+                        if (-not $server.NetName -or $SqlInstance -match '\.') {
+                            $parsedcomputername = $ConvertedSqlInstance.ComputerName
+                        } else {
+                            $parsedcomputername = $server.NetName
                         }
                         Add-Member -InputObject $server -NotePropertyName ComputerName -NotePropertyValue $parsedcomputername -Force
                     }
@@ -266,8 +287,11 @@ function Connect-DbaInstance {
                 }
             }
 
-            if ($instance.IsConnectionString) { $server = New-Object Microsoft.SqlServer.Management.Smo.Server($instance.InputObject) }
-            else { $server = New-Object Microsoft.SqlServer.Management.Smo.Server $instance.FullSmoName }
+            if ($instance.IsConnectionString) {
+                $server = New-Object Microsoft.SqlServer.Management.Smo.Server($instance.InputObject)
+            } else {
+                $server = New-Object Microsoft.SqlServer.Management.Smo.Server $instance.FullSmoName
+            }
 
             if ($AppendConnectionString) {
                 $connstring = $server.ConnectionContext.ConnectionString
@@ -277,28 +301,68 @@ function Connect-DbaInstance {
 
                 $server.ConnectionContext.ApplicationName = $ClientName
 
-                if (Test-Bound -ParameterName 'AccessToken') { $server.ConnectionContext.AccessToken = $AccessToken }
-                if (Test-Bound -ParameterName 'BatchSeparator') { $server.ConnectionContext.BatchSeparator = $BatchSeparator }
-                if (Test-Bound -ParameterName 'ConnectTimeout') { $server.ConnectionContext.ConnectTimeout = $ConnectTimeout }
-                if (Test-Bound -ParameterName 'Database') { $server.ConnectionContext.DatabaseName = $Database }
-                if (Test-Bound -ParameterName 'EncryptConnection') { $server.ConnectionContext.EncryptConnection = $true }
-                if (Test-Bound -ParameterName 'LockTimeout') { $server.ConnectionContext.LockTimeout = $LockTimeout }
-                if (Test-Bound -ParameterName 'MaxPoolSize') { $server.ConnectionContext.MaxPoolSize = $MaxPoolSize }
-                if (Test-Bound -ParameterName 'MinPoolSize') { $server.ConnectionContext.MinPoolSize = $MinPoolSize }
-                if (Test-Bound -ParameterName 'MultipleActiveResultSets') { $server.ConnectionContext.MultipleActiveResultSets = $true }
-                if (Test-Bound -ParameterName 'NetworkProtocol') { $server.ConnectionContext.NetworkProtocol = $NetworkProtocol }
-                if (Test-Bound -ParameterName 'NonPooledConnection') { $server.ConnectionContext.NonPooledConnection = $true }
-                if (Test-Bound -ParameterName 'PacketSize') { $server.ConnectionContext.PacketSize = $PacketSize }
-                if (Test-Bound -ParameterName 'PooledConnectionLifetime') { $server.ConnectionContext.PooledConnectionLifetime = $PooledConnectionLifetime }
-                if (Test-Bound -ParameterName 'StatementTimeout') { $server.ConnectionContext.StatementTimeout = $StatementTimeout }
-                if (Test-Bound -ParameterName 'SqlExecutionModes') { $server.ConnectionContext.SqlExecutionModes = $SqlExecutionModes }
-                if (Test-Bound -ParameterName 'TrustServerCertificate') { $server.ConnectionContext.TrustServerCertificate = $true }
-                if (Test-Bound -ParameterName 'WorkstationId') { $server.ConnectionContext.WorkstationId = $WorkstationId }
+                if (Test-Bound -ParameterName 'AccessToken') {
+                    $server.ConnectionContext.AccessToken = $AccessToken
+                }
+                if (Test-Bound -ParameterName 'BatchSeparator') {
+                    $server.ConnectionContext.BatchSeparator = $BatchSeparator
+                }
+                if (Test-Bound -ParameterName 'ConnectTimeout') {
+                    $server.ConnectionContext.ConnectTimeout = $ConnectTimeout
+                }
+                if (Test-Bound -ParameterName 'Database') {
+                    $server.ConnectionContext.DatabaseName = $Database
+                }
+                if (Test-Bound -ParameterName 'EncryptConnection') {
+                    $server.ConnectionContext.EncryptConnection = $true
+                }
+                if (Test-Bound -ParameterName 'LockTimeout') {
+                    $server.ConnectionContext.LockTimeout = $LockTimeout
+                }
+                if (Test-Bound -ParameterName 'MaxPoolSize') {
+                    $server.ConnectionContext.MaxPoolSize = $MaxPoolSize
+                }
+                if (Test-Bound -ParameterName 'MinPoolSize') {
+                    $server.ConnectionContext.MinPoolSize = $MinPoolSize
+                }
+                if (Test-Bound -ParameterName 'MultipleActiveResultSets') {
+                    $server.ConnectionContext.MultipleActiveResultSets = $true
+                }
+                if (Test-Bound -ParameterName 'NetworkProtocol') {
+                    $server.ConnectionContext.NetworkProtocol = $NetworkProtocol
+                }
+                if (Test-Bound -ParameterName 'NonPooledConnection') {
+                    $server.ConnectionContext.NonPooledConnection = $true
+                }
+                if (Test-Bound -ParameterName 'PacketSize') {
+                    $server.ConnectionContext.PacketSize = $PacketSize
+                }
+                if (Test-Bound -ParameterName 'PooledConnectionLifetime') {
+                    $server.ConnectionContext.PooledConnectionLifetime = $PooledConnectionLifetime
+                }
+                if (Test-Bound -ParameterName 'StatementTimeout') {
+                    $server.ConnectionContext.StatementTimeout = $StatementTimeout
+                }
+                if (Test-Bound -ParameterName 'SqlExecutionModes') {
+                    $server.ConnectionContext.SqlExecutionModes = $SqlExecutionModes
+                }
+                if (Test-Bound -ParameterName 'TrustServerCertificate') {
+                    $server.ConnectionContext.TrustServerCertificate = $true
+                }
+                if (Test-Bound -ParameterName 'WorkstationId') {
+                    $server.ConnectionContext.WorkstationId = $WorkstationId
+                }
 
                 $connstring = $server.ConnectionContext.ConnectionString
-                if (Test-Bound -ParameterName 'MultiSubnetFailover') { $connstring = "$connstring;MultiSubnetFailover=True" }
-                if (Test-Bound -ParameterName 'FailoverPartner') { $connstring = "$connstring;Failover Partner=$FailoverPartner" }
-                if (Test-Bound -ParameterName 'ApplicationIntent') { $connstring = "$connstring;ApplicationIntent=$ApplicationIntent" }
+                if (Test-Bound -ParameterName 'MultiSubnetFailover') {
+                    $connstring = "$connstring;MultiSubnetFailover=True"
+                }
+                if (Test-Bound -ParameterName 'FailoverPartner') {
+                    $connstring = "$connstring;Failover Partner=$FailoverPartner"
+                }
+                if (Test-Bound -ParameterName 'ApplicationIntent') {
+                    $connstring = "$connstring;ApplicationIntent=$ApplicationIntent"
+                }
 
                 if ($connstring -ne $server.ConnectionContext.ConnectionString) {
                     $server.ConnectionContext.ConnectionString = $connstring
@@ -307,7 +371,7 @@ function Connect-DbaInstance {
                 try {
                     if ($null -ne $SqlCredential.UserName) {
                         $username = ($SqlCredential.UserName).TrimStart("\")
-                        
+
                         # support both ad\username and username@ad
                         if ($username -like "*\*" -or $username -like "*@*") {
                             if ($username -like "*\*") {
@@ -321,7 +385,7 @@ function Connect-DbaInstance {
                             } else {
                                 $formatteduser = $SqlCredential.UserName
                             }
-                            
+
                             $server.ConnectionContext.LoginSecure = $true
                             $server.ConnectionContext.ConnectAsUser = $true
                             $server.ConnectionContext.ConnectAsUserName = $formatteduser
@@ -355,7 +419,7 @@ function Connect-DbaInstance {
                     $message = ($message -Split '-->')[0]
                     $message = ($message -Split 'at System.Data.SqlClient')[0]
                     $message = ($message -Split 'at System.Data.ProviderBase')[0]
-                    
+
                     Stop-Function -Message "Can't connect to $instance" -ErrorRecord $_ -Continue
                 }
             }
@@ -369,9 +433,7 @@ function Connect-DbaInstance {
                     [void]$initFieldsLogin.AddRange($Fields2000_Login)
                     $server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Database], $initFieldsDb)
                     $server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Login], $initFieldsLogin)
-                }
-
-                elseif ($server.VersionMajor -eq 9 -or $server.VersionMajor -eq 10) {
+                } elseif ($server.VersionMajor -eq 9 -or $server.VersionMajor -eq 10) {
                     # 2005 and 2008
                     $initFieldsDb = New-Object System.Collections.Specialized.StringCollection
                     [void]$initFieldsDb.AddRange($Fields200x_Db)
@@ -379,9 +441,7 @@ function Connect-DbaInstance {
                     [void]$initFieldsLogin.AddRange($Fields200x_Login)
                     $server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Database], $initFieldsDb)
                     $server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Login], $initFieldsLogin)
-                }
-
-                else {
+                } else {
                     # 2012 and above
                     $initFieldsDb = New-Object System.Collections.Specialized.StringCollection
                     [void]$initFieldsDb.AddRange($Fields201x_Db)
@@ -396,9 +456,10 @@ function Connect-DbaInstance {
                 return $server.ConnectionContext.SqlConnectionObject
             } else {
                 if (-not $server.ComputerName) {
-                    $parsedcomputername = $server.NetName
-                    if (-not $parsedcomputername) {
-                        $parsedcomputername = ([dbainstance]$instance).ComputerName
+                    if (-not $server.NetName -or $SqlInstance -match '\.') {
+                        $parsedcomputername = $ConvertedSqlInstance.ComputerName
+                    } else {
+                        $parsedcomputername = $server.NetName
                     }
                     Add-Member -InputObject $server -NotePropertyName ComputerName -NotePropertyValue $parsedcomputername -Force
                 }

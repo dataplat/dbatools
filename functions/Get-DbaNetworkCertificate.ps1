@@ -42,11 +42,13 @@ function Get-DbaNetworkCertificate {
         [Alias("ServerInstance", "SqlServer", "SqlInstance")]
         [DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,
         [PSCredential]$Credential,
-        [Alias('Silent')]
         [switch]$EnableException
     )
-
+    
     process {
+        # Registry access
+        
+        
         foreach ($computer in $computername) {
 
             try {

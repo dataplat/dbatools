@@ -1,13 +1,13 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
+Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        $paramCount = 13
+        $paramCount = 3
         $defaultParamCount = 11
-        [object[]]$params = (Get-ChildItem function:\Set-DbatoolsConfig).Parameters.Keys
-        $knownParameters = 'FullName', 'Name', 'Module', 'Value', 'Description', 'Validation', 'Handler', 'Hidden', 'Default', 'Initialize', 'DisableValidation', 'DisableHandler', 'EnableException'
+        [object[]]$params = (Get-ChildItem function:\Get-DbaAgentServer).Parameters.Keys
+        $knownParameters = 'SqlInstance', 'SqlCredential', 'EnableException'
         It "Should contain our specific parameters" {
             ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
         }
@@ -16,8 +16,12 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         }
     }
 }
-<#
-    Integration test should appear below and are custom to the command you are writing.
-    Read https://github.com/sqlcollaborative/dbatools/blob/development/contributing.md#tests
-    for more guidence.
-#>
+
+Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
+    Context "Command gets server agent" {
+        $results = Get-DbaAgentServer -SqlInstance $script:instance2
+        It "Should get 1 agent server" {
+            $results.count | Should Be 1
+        }
+    }
+}

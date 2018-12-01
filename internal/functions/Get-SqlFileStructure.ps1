@@ -12,7 +12,7 @@ function Get-SqlFileStructure {
         [Parameter(Mandatory, Position = 1)]
         [ValidateNotNullOrEmpty()]
         [object]$destination,
-        [Parameter(Mandatory = $false, Position = 2)]
+        [Parameter(Position = 2)]
         [bool]$ReuseSourceFolderStructure,
         [PSCredential]$SourceSqlCredential,
         [PSCredential]$DestinationSqlCredential

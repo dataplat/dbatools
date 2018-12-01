@@ -135,12 +135,11 @@ function Set-DbaAgentJobStep {
         Changes the database of the step in "Job1" with the name Step1 to msdb for multiple servers using pipeline
 
     #>
-    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "Low")]
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
-        [Parameter(Mandatory = $false)]
         [PSCredential]$SqlCredential,
         [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
@@ -148,44 +147,27 @@ function Set-DbaAgentJobStep {
         [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [string]$StepName,
-        [Parameter(Mandatory = $false)]
         [string]$NewName,
-        [Parameter(Mandatory = $false)]
         [ValidateSet('ActiveScripting', 'AnalysisCommand', 'AnalysisQuery', 'CmdExec', 'Distribution', 'LogReader', 'Merge', 'PowerShell', 'QueueReader', 'Snapshot', 'Ssis', 'TransactSql')]
         [string]$Subsystem,
-        [Parameter(Mandatory = $false)]
         [string]$Command,
-        [Parameter(Mandatory = $false)]
         [int]$CmdExecSuccessCode,
-        [Parameter(Mandatory = $false)]
         [ValidateSet('QuitWithSuccess', 'QuitWithFailure', 'GoToNextStep', 'GoToStep')]
         [string]$OnSuccessAction,
-        [Parameter(Mandatory = $false)]
         [int]$OnSuccessStepId,
-        [Parameter(Mandatory = $false)]
         [ValidateSet('QuitWithSuccess', 'QuitWithFailure', 'GoToNextStep', 'GoToStep')]
         [string]$OnFailAction,
-        [Parameter(Mandatory = $false)]
         [int]$OnFailStepId,
-        [Parameter(Mandatory = $false)]
         [string]$Database,
-        [Parameter(Mandatory = $false)]
         [string]$DatabaseUser,
-        [Parameter(Mandatory = $false)]
         [int]$RetryAttempts,
-        [Parameter(Mandatory = $false)]
         [int]$RetryInterval,
-        [Parameter(Mandatory = $false)]
         [string]$OutputFileName,
-        [Parameter(Mandatory = $false)]
         [ValidateSet('AppendAllCmdExecOutputToJobHistory', 'AppendToJobHistory', 'AppendToLogFile', 'LogToTableWithOverwrite', 'None', 'ProvideStopProcessEvent')]
         [string[]]$Flag,
-        [Parameter(Mandatory = $false)]
         [string]$ProxyName,
-        [Parameter(Mandatory = $false)]
         [Alias('Silent')]
         [switch]$EnableException,
-        [Parameter(Mandatory = $false)]
         [switch]$Force
     )
 
