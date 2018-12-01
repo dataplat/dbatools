@@ -108,7 +108,7 @@ function New-DbaComputerCertificate {
         Creates a self-signed certificate
 
     #>
-    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "Low")]
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseOutputTypeCorrectly", "", Justification = "PSSA Rule Ignored by BOH")]
     param (
         [parameter(ValueFromPipeline)]
@@ -229,6 +229,9 @@ function New-DbaComputerCertificate {
 
     process {
         if (Test-FunctionInterrupt) { return }
+
+        # uses dos command locally
+        
 
         foreach ($computer in $ComputerName) {
 

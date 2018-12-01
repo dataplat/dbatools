@@ -69,7 +69,7 @@ function Copy-DbaAgentProxy {
         Shows what would happen if the command were executed using force.
 
     #>
-    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
+    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess)]
     param (
         [parameter(Mandatory)]
         [DbaInstanceParameter]$Source,
@@ -122,11 +122,11 @@ function Copy-DbaAgentProxy {
                     Notes             = $null
                     DateTime          = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
                 }
-                
+
                 $credentialName = $account.CredentialName
                 $copyAgentProxyAccountStatus.Name = $proxyName
                 $copyAgentProxyAccountStatus.Type = "Credential"
-                
+
                 # Proxy accounts rely on Credential accounts
                 if (-not $CredentialName) {
                     $copyAgentProxyAccountStatus.Status = "Skipped"
@@ -135,14 +135,14 @@ function Copy-DbaAgentProxy {
                     Write-Message -Level Verbose -Message "Skipping migration of $proxyName due to misconfigured (empty) credential name"
                     continue
                 }
-                
+
                 try {
                     $credentialtest = $destServer.Credentials[$CredentialName]
                 } catch {
                     #here to avoid an empty catch
                     $null = 1
                 }
-                
+
                 if ($null -eq $credentialtest) {
                     $copyAgentProxyAccountStatus.Status = "Skipped"
                     $copyAgentProxyAccountStatus.Notes = "Associated credential account, $CredentialName, does not exist on $destinstance"
@@ -157,7 +157,8 @@ function Copy-DbaAgentProxy {
 
                     if ($force -eq $false) {
                         $copyAgentProxyAccountStatus.Status = "Skipped"
-                        $copyAgentProxyAccountStatus
+                        $copyAgentProxyAccountStatus.Notes = "Already exists on destination"
+                        $copyAgentProxyAccountStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                         Stop-Function -Message "Server proxy account $proxyName exists at destination. Use -Force to drop and migrate." -Continue
                     } else {
                         if ($Pscmdlet.ShouldProcess($destinstance, "Dropping server proxy account $proxyName and recreating")) {

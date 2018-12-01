@@ -192,6 +192,9 @@ function Set-DbaPowerPlan {
     }
 
     process {
+        # uses cim commands
+        
+        
         if (Test-Bound -ParameterName ComputerName) {
             $InputObject += Get-DbaPowerPlan -ComputerName $ComputerName -Credential $Credential
         }

@@ -42,7 +42,7 @@ function Get-DbaBackupInformation {
         If specified the provided path/directory will be traversed (only applies if not using XpDirTree)
 
     .PARAMETER Anonymise
-        If specified we will output the results with ComputerName, InstanceName, Database, UserName, and Paths hashed out
+        If specified we will output the results with ComputerName, InstanceName, Database, UserName, Paths, and Logical and Physical Names hashed out
         This options is mainly for use if we need you to submit details for fault finding to the dbatools team
 
     .PARAMETER ExportPath
@@ -337,6 +337,9 @@ function Get-DbaBackupInformation {
                 $group.UserName = Get-HashString -InString $group.UserName
                 $group.Path = Get-HashString -InString  $Group.Path
                 $group.FullName = Get-HashString -InString $Group.Fullname
+                $group.FileList = ($group.FileList | Select-Object Type,
+                    @{Name = "LogicalName"; Expression = {Get-HashString -InString $_."LogicalName"}},
+                    @{Name = "PhysicalName"; Expression = {Get-HashString -InString $_."PhysicalName"}})
             }
         }
         if ((Test-Bound -parameterName exportpath) -and $null -ne $ExportPath) {

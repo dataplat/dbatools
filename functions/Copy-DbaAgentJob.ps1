@@ -73,7 +73,7 @@ function Copy-DbaAgentJob {
         Shows what would happen if the command were executed using force.
 
     #>
-    [cmdletbinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
+    [cmdletbinding(DefaultParameterSetName = "Default", SupportsShouldProcess)]
     param (
         [parameter(Mandatory)]
         [DbaInstanceParameter]$Source,
@@ -209,7 +209,7 @@ function Copy-DbaAgentJob {
                     if ($force -eq $false) {
                         if ($Pscmdlet.ShouldProcess($destinstance, "Job $jobName exists at destination. Use -Force to drop and migrate.")) {
                             $copyJobStatus.Status = "Skipped"
-                            $copyJobStatus.Notes = "Job already exists on destination"
+                            $copyJobStatus.Notes = "Already exists on destination"
                             $copyJobStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                             Write-Message -Level Verbose -Message "Job $jobName exists at destination. Use -Force to drop and migrate."
                         }

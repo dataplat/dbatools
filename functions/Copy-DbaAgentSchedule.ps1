@@ -58,7 +58,7 @@ function Copy-DbaAgentSchedule {
         Shows what would happen if the command were executed using force.
 
     #>
-    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
+    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess)]
     param (
         [parameter(Mandatory)]
         [DbaInstanceParameter]$Source,
@@ -112,7 +112,7 @@ function Copy-DbaAgentSchedule {
                     if ($force -eq $false) {
                         if ($Pscmdlet.ShouldProcess($destinstance, "Shared job schedule $scheduleName exists at destination. Use -Force to drop and migrate.")) {
                             $copySharedScheduleStatus.Status = "Skipped"
-                            $copySharedScheduleStatus.Notes = "Already exists"
+                            $copySharedScheduleStatus.Notes = "Already exists on destination"
                             $copySharedScheduleStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                             Write-Message -Level Verbose -Message "Shared job schedule $scheduleName exists at destination. Use -Force to drop and migrate."
                             continue

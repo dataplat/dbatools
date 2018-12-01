@@ -65,9 +65,9 @@ function Test-DbaIdentityUsage {
         [Alias("Databases")]
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
-        [parameter(Position = 1, Mandatory = $false)]
+        [parameter(Position = 1)]
         [int]$Threshold = 0,
-        [parameter(Position = 2, Mandatory = $false)]
+        [parameter(Position = 2)]
         [Alias("ExcludeSystemDb")]
         [switch]$ExcludeSystem,
         [Alias('Silent')]

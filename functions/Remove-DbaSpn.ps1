@@ -66,7 +66,7 @@ function Remove-DbaSpn {
         Removes all set SPNs for sql2005 and the relative delegations
 
     #>
-    [cmdletbinding(SupportsShouldProcess = $true, DefaultParameterSetName = "Default")]
+    [cmdletbinding(SupportsShouldProcess, DefaultParameterSetName = "Default")]
     param (
         [Parameter(Mandatory, ValueFromPipelineByPropertyName)]
         [Alias("RequiredSPN")]
@@ -74,7 +74,7 @@ function Remove-DbaSpn {
         [Parameter(Mandatory, ValueFromPipelineByPropertyName)]
         [Alias("InstanceServiceAccount", "AccountName")]
         [string]$ServiceAccount,
-        [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName)]
+        [Parameter(ValueFromPipelineByPropertyName)]
         [PSCredential]$Credential,
         [Alias('Silent')]
         [switch]$EnableException

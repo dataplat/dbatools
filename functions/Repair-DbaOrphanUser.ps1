@@ -89,7 +89,7 @@ function Repair-DbaOrphanUser {
         Finds all orphan users of all databases present on server 'sqlserver2014a'. Removes all users that do not have  matching Logins.
 
     #>
-    [CmdletBinding(SupportsShouldProcess = $true)]
+    [CmdletBinding(SupportsShouldProcess)]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
@@ -98,7 +98,7 @@ function Repair-DbaOrphanUser {
         [Alias("Databases")]
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
-        [parameter(Mandatory = $false, ValueFromPipeline)]
+        [parameter(ValueFromPipeline)]
         [object[]]$Users,
         [switch]$RemoveNotExisting,
         [switch]$Force,

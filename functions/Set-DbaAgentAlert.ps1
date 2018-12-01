@@ -74,7 +74,7 @@ function Set-DbaAgentAlert {
         Doesn't Change the alert but shows what would happen.
 
     #>
-    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "Low")]
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
     param (
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
@@ -162,7 +162,4 @@ function Set-DbaAgentAlert {
             }
         }
     }
-}
-{
-    Write-Message -Message "Finished changing alert(s)" -Level Verbose
 }

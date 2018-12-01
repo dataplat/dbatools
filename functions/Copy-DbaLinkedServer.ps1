@@ -68,7 +68,7 @@ function Copy-DbaLinkedServer {
         Copies over two SQL Server Linked Servers (SQL2K and SQL2K2) from sqlserver to sqlcluster. If the credential already exists on the destination, it will be dropped.
 
     #>
-    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
+    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess)]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseSingularNouns", "", Justification = "Internal functions are ignored")]
     param (
         [parameter(Mandatory)]
@@ -144,6 +144,7 @@ function Copy-DbaLinkedServer {
                     if (!$force) {
                         if ($Pscmdlet.ShouldProcess($destinstance, "$linkedServerName exists $($destServer.Name). Skipping.")) {
                             $copyLinkedServer.Status = "Skipped"
+                            $copyLinkedServer.Notes = "Already exists on destination"
                             $copyLinkedServer | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
                             Write-Message -Level Verbose -Message "$linkedServerName exists $($destServer.Name). Skipping."
