@@ -7021,6 +7021,98 @@
         "Syntax":  "Export-DbaSpConfigure [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Path] \u003cString\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
+        "CommandName":  "Export-DbatoolsConfig",
+        "Description":  "Exports configuration items to a Json file.",
+        "Params":  [
+                       [
+                           "FullName",
+                           "Select the configuration objects to export by filtering by their full name.",
+                           "",
+                           true,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Module",
+                           "Select the configuration objects to export by filtering by their module name.",
+                           "",
+                           true,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Name",
+                           "Select the configuration objects to export by filtering by their name.",
+                           "",
+                           false,
+                           "false",
+                           "*"
+                       ],
+                       [
+                           "Config",
+                           "The configuration object(s) to export.\r\nReturned by Get-DbatoolsConfig.",
+                           "",
+                           true,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
+                           "ModuleName",
+                           "Exports all configuration pertinent to a module to a predefined path.\r\nExported configuration items include all settings marked as \u0027ModuleExport\u0027 that have been changed from the default value.",
+                           "",
+                           true,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "ModuleVersion",
+                           "The configuration version of the module-settings to write.",
+                           "",
+                           false,
+                           "false",
+                           "1"
+                       ],
+                       [
+                           "Scope",
+                           "Which predefined path to write module specific settings to.\r\nOnly file scopes are considered.\r\nBy default it writes to the suer profile.",
+                           "",
+                           false,
+                           "false",
+                           "FileUserShared"
+                       ],
+                       [
+                           "OutPath",
+                           "The path (filename included) to export to.\r\nWill fail if the folder does not exist, will overwrite the file if it exists.",
+                           "",
+                           true,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "SkipUnchanged",
+                           "If set, configuration objects whose value was not changed from its original value will not be exported.\r\n(Note: Settings that were updated with the same value as the original default will still be considered changed)",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "EnableException",
+                           "This parameters disables user-friendly warnings and enables the throwing of exceptions.\r\nThis is less user friendly, but allows catching exceptions in calling scripts.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ]
+                   ],
+        "Alias":  "",
+        "Synopsis":  "Exports configuration items to a Json file.",
+        "Name":  "Export-DbatoolsConfig",
+        "Links":  null,
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbatoolsConfig | Export-DbatoolsConfig -OutPath \u0027~/export.json\u0027\nExports all current settings to json.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eExport-DbatoolsConfig -Module message -OutPath \u0027~/export.json\u0027 -SkipUnchanged\nExports all settings of the module \u0027message\u0027 that are no longer the original default values to json.",
+        "Syntax":  "Export-DbatoolsConfig [-FullName] \u003cString\u003e [-OutPath] \u003cString\u003e [-SkipUnchanged] [-EnableException] [\u003cCommonParameters\u003e]\nExport-DbatoolsConfig [-Module] \u003cString\u003e [[-Name] \u003cString\u003e] [-OutPath] \u003cString\u003e [-SkipUnchanged] [-EnableException] [\u003cCommonParameters\u003e]\nExport-DbatoolsConfig [-Config] \u003cConfig[]\u003e [-OutPath] \u003cString\u003e [-SkipUnchanged] [-EnableException] [\u003cCommonParameters\u003e]\nExport-DbatoolsConfig -ModuleName \u003cString\u003e [-ModuleVersion \u003cInt32\u003e] [-Scope {UserDefault | UserMandatory | SystemDefault | SystemMandatory | FileUserLocal | FileUserShared | FileSystem}] [-SkipUnchanged] [-EnableException] [\u003cCommonParameters\u003e]"
+    },
+    {
         "CommandName":  "Export-DbaUser",
         "Description":  "Exports users creation and its permissions to a T-SQL file or host. Export includes user, create and add to role(s), database level permissions, object level permissions.",
         "Tags":  [
@@ -20466,6 +20558,82 @@
         "Syntax":  "Import-DbaSpConfigure [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nImport-DbaSpConfigure [-Source \u003cDbaInstanceParameter\u003e] [-Destination \u003cDbaInstanceParameter\u003e] [-SourceSqlCredential \u003cPSCredential\u003e] [-DestinationSqlCredential \u003cPSCredential\u003e] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nImport-DbaSpConfigure [-SqlInstance \u003cDbaInstanceParameter\u003e] [-Path \u003cString\u003e] [-SqlCredential \u003cPSCredential\u003e] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
+        "CommandName":  "Import-DbatoolsConfig",
+        "Description":  "Imports a json configuration file into the configuration system.",
+        "Params":  [
+                       [
+                           "Path",
+                           "The path to the json file to import.",
+                           "",
+                           true,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
+                           "ModuleName",
+                           "Import configuration items specific to a module from the default configuration paths.",
+                           "",
+                           true,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "ModuleVersion",
+                           "The configuration version of the module-settings to load.",
+                           "",
+                           false,
+                           "false",
+                           "1"
+                       ],
+                       [
+                           "Scope",
+                           "Where to import the module specific configuration items form.\r\nOnly file-based scopes are supported for this.\r\nBy default, all locations are queried, with user settings beating system settings.",
+                           "",
+                           false,
+                           "false",
+                           "FileUserLocal, FileUserShared, FileSystem"
+                       ],
+                       [
+                           "IncludeFilter",
+                           "If specified, only elements with names that are similar (-like) to names in this list will be imported.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "ExcludeFilter",
+                           "Elements that are similar (-like) to names in this list will not be imported.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Peek",
+                           "Rather than applying the setting, return the configuration items that would have been applied.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "EnableException",
+                           "This parameters disables user-friendly warnings and enables the throwing of exceptions.\r\nThis is less user friendly, but allows catching exceptions in calling scripts.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ]
+                   ],
+        "Alias":  "",
+        "Synopsis":  "Imports a json configuration file into the configuration system.",
+        "Name":  "Import-DbatoolsConfig",
+        "Links":  null,
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eImport-DbatoolsConfig -Path \u0027.\\config.json\u0027\nImports the configuration stored in \u0027.\\config.json\u0027\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eImport-DbatoolsConfig -ModuleName message\nImports all the module specific settings that have been persisted in any of the default file system paths.",
+        "Syntax":  "Import-DbatoolsConfig -Path \u003cString[]\u003e [-IncludeFilter \u003cString[]\u003e] [-ExcludeFilter \u003cString[]\u003e] [-Peek] [-EnableException] [\u003cCommonParameters\u003e]\nImport-DbatoolsConfig -ModuleName \u003cString\u003e [-ModuleVersion \u003cInt32\u003e] [-Scope {UserDefault | UserMandatory | SystemDefault | SystemMandatory | FileUserLocal | FileUserShared | FileSystem}] [-EnableException] [\u003cCommonParameters\u003e]"
+    },
+    {
         "CommandName":  "Import-DbaXESessionTemplate",
         "Description":  "Imports a new XESession XML Template either from the dbatools repository or a file you specify.",
         "Tags":  [
@@ -23827,6 +23995,34 @@
         "Links":  "https://dbatools.io/Join-DbaAvailabilityGroup",
         "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaAvailabilityGroup -SqlInstance sql01 -AvailabilityGroup SharePoint | Join-DbaAvailabilityGroup -SqlInstance sql02\nJoins sql02 to the SharePoint availability group on sql01\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003e$ag = Get-DbaAvailabilityGroup -SqlInstance sql01 -AvailabilityGroup SharePoint\nPS C:\\\u003e Join-DbaAvailabilityGroup -SqlInstance sql02 -InputObject $ag\nJoins sql02 to the SharePoint availability group on sql01\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaAvailabilityGroup -SqlInstance sql01 -AvailabilityGroup SharePoint | Join-DbaAvailabilityGroup -SqlInstance sql02 -WhatIf\nShows what would happen if the command were to run. No actions are actually performed.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaAvailabilityGroup -SqlInstance sql01 -AvailabilityGroup SharePoint | Join-DbaAvailabilityGroup -SqlInstance sql02 -Confirm\nPrompts for confirmation then joins sql02 to the SharePoint availability group on sql01.",
         "Syntax":  "Join-DbaAvailabilityGroup [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-AvailabilityGroup] \u003cString[]\u003e] [[-ClusterType] \u003cString\u003e] [[-InputObject] \u003cAvailabilityGroup[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+    },
+    {
+        "CommandName":  "Join-DbaPath",
+        "Description":  "Performs multisegment path joins.",
+        "Params":  [
+                       [
+                           "Path",
+                           "The basepath to join on.",
+                           "",
+                           true,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Child",
+                           "Any number of child paths to add.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ]
+                   ],
+        "Alias":  "",
+        "Synopsis":  "Performs multisegment path joins.",
+        "Name":  "Join-DbaPath",
+        "Links":  null,
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eJoin-DbaPath -Path \u0027C:\\temp\u0027 \u0027Foo\u0027 \u0027Bar\u0027\nReturns \u0027C:\\temp\\Foo\\Bar\u0027 on windows.\r\nReturns \u0027C:/temp/Foo/Bar\u0027 on non-windows.",
+        "Syntax":  "Join-DbaPath [-Path] \u003cString\u003e [-Child \u003cString[]\u003e] [\u003cCommonParameters\u003e]"
     },
     {
         "CommandName":  "Measure-DbaBackupThroughput",
@@ -28619,14 +28815,10 @@
     {
         "CommandName":  "Register-DbatoolsConfig",
         "Description":  "Registers an existing configuration object in registry.\nThis allows simple persisting of settings across powershell consoles.\nIt also can be used to generate a registry template, which can then be used to create policies.",
-        "Tags":  [
-                     "Config",
-                     "Module"
-                 ],
         "Params":  [
                        [
                            "Config",
-                           "The configuration object to write to registry. Can be retrieved using Get-DbatoolsConfig.",
+                           "The configuration object to write to registry.\r\nCan be retrieved using Get-DbatoolsConfig.",
                            "",
                            false,
                            "true (ByValue)",
@@ -28666,7 +28858,7 @@
                        ],
                        [
                            "EnableException",
-                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "This parameters disables user-friendly warnings and enables the throwing of exceptions.\r\nThis is less user friendly, but allows catching exceptions in calling scripts.",
                            "",
                            false,
                            "false",
@@ -28674,12 +28866,11 @@
                        ]
                    ],
         "Alias":  "Register-DbaConfig",
-        "Author":  "Friedrich Weinmann (@FredWeinmann)",
         "Synopsis":  "Registers an existing configuration object in registry.",
         "Name":  "Register-DbatoolsConfig",
         "Links":  null,
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbatoolsConfig message.* | Register-DbatoolsConfig\nRetrieves all configuration items that that start with message. and registers them in registry for the current user.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eRegister-DbatoolsConfig -FullName \"developer.mode.enable\" -Scope SystemDefault\nRetrieves the configuration item \"developer.mode.enable\" and registers it in registry as the default setting for all users on this machine.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eRegister-DbatoolsConfig -Module message -Scope SystemMandatory\nRetrieves all configuration items of the module MyModule, then registers them in registry to enforce them for all users on the current system.",
-        "Syntax":  "Register-DbatoolsConfig [[-Config] \u003cConfig[]\u003e] [[-FullName] \u003cString[]\u003e] [-Scope {UserDefault | UserMandatory | SystemDefault | SystemMandatory}] [-EnableException] [\u003cCommonParameters\u003e]\nRegister-DbatoolsConfig [-Module] \u003cString\u003e [[-Name] \u003cString\u003e] [-Scope {UserDefault | UserMandatory | SystemDefault | SystemMandatory}] [-EnableException] [\u003cCommonParameters\u003e]"
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbatoolsConfig message.style.* | Register-DbatoolsConfig\nRetrieves all configuration items that that start with message.style. and registers them in registry for the current user.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eRegister-DbatoolsConfig -FullName \"message.consoleoutput.disable\" -Scope SystemDefault\nRetrieves the configuration item \"message.consoleoutput.disable\" and registers it in registry as the default setting for all users on this machine.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eRegister-DbatoolsConfig -Module Message -Scope SystemMandatory\nRetrieves all configuration items of the module Message, then registers them in registry to enforce them for all users on the current system.",
+        "Syntax":  "Register-DbatoolsConfig [[-Config] \u003cConfig[]\u003e] [[-FullName] \u003cString[]\u003e] [-Scope {UserDefault | UserMandatory | SystemDefault | SystemMandatory | FileUserLocal | FileUserShared | FileSystem}] [-EnableException] [\u003cCommonParameters\u003e]\nRegister-DbatoolsConfig [-Module] \u003cString\u003e [[-Name] \u003cString\u003e] [-Scope {UserDefault | UserMandatory | SystemDefault | SystemMandatory | FileUserLocal | FileUserShared | FileSystem}] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
         "CommandName":  "Remove-DbaAgDatabase",
@@ -31858,6 +32049,58 @@
         "Syntax":  "Reset-DbaAdmin [-SqlInstance] \u003cDbaInstanceParameter\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Login] \u003cString\u003e] [[-SecurePassword] \u003cSecureString\u003e] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
+        "CommandName":  "Reset-DbatoolsConfig",
+        "Description":  "This command can be used to revert a configuration item to the value it was initialized with.\nGenerally, this amounts to reverting it to its default value.\n\nIn order for a reset to be possible, two conditions must be met:\n- The setting must have been initialized.\n- The setting cannot have been enforced by policy.",
+        "Params":  [
+                       [
+                           "ConfigurationItem",
+                           "A configuration object as returned by Get-DbatoolsConfig.",
+                           "",
+                           false,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
+                           "FullName",
+                           "The full name of the setting to reset, offering the maximum of precision.",
+                           "",
+                           false,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
+                           "Module",
+                           "The name of the module, from which configurations should be reset.\r\nUsed in conjunction with the -Name parameter to filter a specific set of items.",
+                           "",
+                           true,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Name",
+                           "Used in conjunction with the -Module parameter to select which settings to reset using wildcard comparison.",
+                           "",
+                           false,
+                           "false",
+                           "*"
+                       ],
+                       [
+                           "EnableException",
+                           "This parameters disables user-friendly warnings and enables the throwing of exceptions.\r\nThis is less user friendly, but allows catching exceptions in calling scripts.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ]
+                   ],
+        "Alias":  "",
+        "Synopsis":  "Reverts a configuration item to its default value.",
+        "Name":  "Reset-DbatoolsConfig",
+        "Links":  null,
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eReset-DbatoolsConfig -Module MyModule\nResets all configuration items of the MyModule to default.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbatoolsConfig | Reset-DbatoolsConfig\nResets ALL configuration items to default.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eReset-DbatoolsConfig -FullName MyModule.Group.Setting1\nResets the configuration item named \u0027MyModule.Group.Setting1\u0027.",
+        "Syntax":  "Reset-DbatoolsConfig [-ConfigurationItem \u003cConfig[]\u003e] [-FullName \u003cString[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]\nReset-DbatoolsConfig -Module \u003cString\u003e [-Name \u003cString\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
+    },
+    {
         "CommandName":  "Resolve-DbaNetworkName",
         "Description":  "Retrieves the IPAddress, ComputerName from one computer.\nThe object can be used to take action against its name or IPAddress.\n\nFirst ICMP is used to test the connection, and get the connected IPAddress.\n\nMultiple protocols (e.g. WMI, CIM, etc) are attempted before giving up.\n\nImportant: Remember that FQDN doesn\u0027t always match \"ComputerName dot Domain\" as AD intends.\nThere are network setup (google \"disjoint domain\") where AD and DNS do not match.\n\"Full computer name\" (as reported by sysdm.cpl) is the only match between the two,\nand it matches the \"DNSHostName\"  property of the computer object stored in AD.\nThis means that the notation of FQDN that matches \"ComputerName dot Domain\" is incorrect\nin those scenarios.\nIn other words, the \"suffix\" of the FQDN CAN be different from the AD Domain.\n\nThis cmdlet has been providing good results since its inception but for lack of useful\nnames some doubts may arise.\nLet this clear the doubts:\n- InputName: whatever has been passed in\n- ComputerName: hostname only\n- IPAddress: IP Address\n- DNSHostName: hostname only, coming strictly from DNS (as reported from the calling computer)\n- DNSDomain: domain only, coming strictly from DNS (as reported from the calling computer)\n- Domain: domain only, coming strictly from AD (i.e. the domain the ComputerName is joined to)\n- DNSHostEntry: Fully name as returned by DNS [System.Net.Dns]::GetHostEntry\n- FQDN: \"legacy\" notation of ComputerName \"dot\" Domain (coming from AD)\n- FullComputerName: Full name as configured from within the Computer (i.e. the only secure match between AD and DNS)\n\nSo, if you need to use something, go with FullComputerName, always, as it is the most correct in every scenario.",
         "Tags":  [
@@ -31905,6 +32148,50 @@
         "Links":  "https://dbatools.io/Resolve-DbaNetworkName",
         "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eResolve-DbaNetworkName -ComputerName ServerA\nReturns a custom object displaying InputName, ComputerName, IPAddress, DNSHostName, DNSDomain, Domain, DNSHostEntry, FQDN, DNSHostEntry for ServerA\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eResolve-DbaNetworkName -SqlInstance sql2016\\sqlexpress\nReturns a custom object displaying InputName, ComputerName, IPAddress, DNSHostName, DNSDomain, Domain, DNSHostEntry, FQDN, DNSHostEntry  for the SQL instance sql2016\\sqlexpress\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eResolve-DbaNetworkName -SqlInstance sql2016\\sqlexpress, sql2014\nReturns a custom object displaying InputName, ComputerName, IPAddress, DNSHostName, DNSDomain, Domain, DNSHostEntry, FQDN, DNSHostEntry  for the SQL instance sql2016\\sqlexpress and sql2014\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaCmsRegServer -SqlInstance sql2014 | Resolve-DbaNetworkName\nReturns a custom object displaying InputName, ComputerName, IPAddress, DNSHostName, Domain, FQDN for all SQL Servers returned by Get-DbaCmsRegServer",
         "Syntax":  "Resolve-DbaNetworkName [[-ComputerName] \u003cDbaInstanceParameter[]\u003e] [[-Credential] \u003cPSCredential\u003e] [-Turbo] [-EnableException] [\u003cCommonParameters\u003e]"
+    },
+    {
+        "CommandName":  "Resolve-DbaPath",
+        "Description":  "Resolves a path.\nWill try to resolve to paths including some basic path validation and resolution.\nWill fail if the path cannot be resolved (so an existing path must be reached at).",
+        "Params":  [
+                       [
+                           "Path",
+                           "The path to validate.",
+                           "",
+                           true,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
+                           "Provider",
+                           "Ensure the path is of the expected provider.\r\nAllows ensuring one does not operate in the wrong provider.\r\nCommon providers include the filesystem, the registry or the active directory.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "SingleItem",
+                           "Ensure the path should resolve to a single path only.\r\nThis may - intentionally or not - trip up wildcard paths.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "NewChild",
+                           "Assumes one wishes to create a new child item.\r\nThe parent path will be resolved and must validate true.\r\nThe final leaf will be treated as a leaf item that does not exist yet.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ]
+                   ],
+        "Alias":  "",
+        "Synopsis":  "Resolves a path.",
+        "Name":  "Resolve-DbaPath",
+        "Links":  null,
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eResolve-DbaPath -Path report.log -Provider FileSystem -NewChild -SingleItem\nEnsures the resolved path is a FileSystem path.\r\nThis will resolve to the current folder and the file report.log.\r\nWill not ensure the file exists or doesn\u0027t exist.\r\nIf the current path is in a different provider, it will throw an exception.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eResolve-DbaPath -Path ..\\*\nThis will resolve all items in the parent folder, whatever the current path or drive might be.",
+        "Syntax":  "Resolve-DbaPath [-Path] \u003cString[]\u003e [-Provider \u003cString\u003e] [-SingleItem] [-NewChild] [\u003cCommonParameters\u003e]"
     },
     {
         "CommandName":  "Restart-DbaService",
@@ -36766,127 +37053,6 @@
         "Syntax":  "Set-DbaTempdbConfig [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-DataFileCount] \u003cInt32\u003e] [-DataFileSize] \u003cInt32\u003e [[-LogFileSize] \u003cInt32\u003e] [[-DataFileGrowth] \u003cInt32\u003e] [[-LogFileGrowth] \u003cInt32\u003e] [[-DataPath] \u003cString\u003e] [[-LogPath] \u003cString\u003e] [[-OutFile] \u003cString\u003e] [-OutputScriptOnly] [-DisableGrowth] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
-        "CommandName":  "Set-DbatoolsConfig",
-        "Description":  "This function creates or changes configuration values.\nThese are used in dbatools to provide dynamic configuration information outside the PowerShell variable system.",
-        "Tags":  [
-                     "Config",
-                     "Module"
-                 ],
-        "Params":  [
-                       [
-                           "FullName",
-                           "The full name of a configuration element. Must be namespaced \u003cModule\u003e.\u003cName\u003e.\r\nThe name can have any number of sub-segments, in order to better group configurations thematically.",
-                           "",
-                           true,
-                           "false",
-                           ""
-                       ],
-                       [
-                           "Name",
-                           "Name of the configuration entry. If an entry of exactly this non-casesensitive name already exists, its value will be overwritten.\r\nDuplicate names across different modules are possible and will be treated separately.\r\nIf a name contains namespace notation and no module is set, the first namespace element will be used as module instead of name. Example:\r\n-Name \"Nordwind.Server\"\r\nIs Equivalent to\r\n-Name \"Server\" -Module \"Nordwind\"",
-                           "",
-                           true,
-                           "false",
-                           ""
-                       ],
-                       [
-                           "Module",
-                           "This allows grouping configuration elements into groups based on the module/component they server.\r\nIf this parameter is not set, the configuration element is stored under its name only, which increases the likelihood of name conflicts in large environments.",
-                           "",
-                           false,
-                           "false",
-                           ""
-                       ],
-                       [
-                           "Value",
-                           "The value to assign to the named configuration element.",
-                           "",
-                           false,
-                           "false",
-                           ""
-                       ],
-                       [
-                           "Description",
-                           "Using this, the configuration setting is given a description, making it easier for a user to comprehend, what a specific setting is for.",
-                           "",
-                           false,
-                           "false",
-                           ""
-                       ],
-                       [
-                           "Validation",
-                           "The name of the validation script used for input validation.\r\nThese can be used to validate make sure that input is of the proper data type.\r\nNew validation scripts can be registered using Register-DbatoolsConfigValidation",
-                           "",
-                           false,
-                           "false",
-                           ""
-                       ],
-                       [
-                           "Handler",
-                           "A scriptblock that is executed when a value is being set.\r\nIs only executed if the validation was successful (assuming there was a validation, of course)",
-                           "",
-                           false,
-                           "false",
-                           ""
-                       ],
-                       [
-                           "Hidden",
-                           "Setting this parameter hides the configuration from casual discovery. Configurations with this set will only be returned by Get-Config, if the parameter \"-Force\" is used.\r\nThis should be set for all system settings a user should have no business changing (e.g. for Infrastructure related settings such as mail server).",
-                           "",
-                           false,
-                           "false",
-                           "False"
-                       ],
-                       [
-                           "Default",
-                           "Setting this parameter causes the system to treat this configuration as a default setting. If the configuration already exists, no changes will be performed.\r\nUseful in scenarios where for some reason it is not practical to automatically set defaults before loading user profiles.",
-                           "",
-                           false,
-                           "false",
-                           "False"
-                       ],
-                       [
-                           "Initialize",
-                           "Use this when setting configurations as part of module import.\r\nWhen initializing a configuration, it will only do a thing if the configuration hasn\u0027t already been initialized (So if you load the module multiple times or in multiple runspaces, it won\u0027t make a \r\ndifference)\r\nAlso, if there already was a non-initialized setting set for a given configuration, it will then try to set the old value again.\r\nThis value will be processed by handlers, if any are set.",
-                           "",
-                           false,
-                           "false",
-                           "False"
-                       ],
-                       [
-                           "DisableValidation",
-                           "This parameters disables the input validation - if any - when processing a setting.\r\nNormally this shouldn\u0027t be circumvented, but just in case, it can be disabled.",
-                           "",
-                           false,
-                           "false",
-                           "False"
-                       ],
-                       [
-                           "DisableHandler",
-                           "Internal Use Only.\r\nThis parameter disables the configuration handlers.\r\nConfiguration handlers are designed to automatically validate and process input set to a config value, in addition to writing the value.\r\nIn many cases, this is used to improve performance, by forking the value location also to a static C#-field, which is then used, rather than searching a Hashtable.\r\nSometimes it may only be used to introduce input validation.\r\nDuring module import, some handlers are registered and many values written to configuration.\r\nHowever, some of those values actually are already set as default values within the library. Processing a handler will cost a few ms.\r\nAdd up a couple dozen such events and the delay is very notable.",
-                           "",
-                           false,
-                           "false",
-                           "False"
-                       ],
-                       [
-                           "EnableException",
-                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
-                           "",
-                           false,
-                           "false",
-                           "False"
-                       ]
-                   ],
-        "Alias":  "Set-DbaConfig",
-        "Author":  "Friedrich Weinmann",
-        "Synopsis":  "Sets configuration entries.",
-        "Name":  "Set-DbatoolsConfig",
-        "Links":  null,
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eSet-DbatoolsConfig -Name \u0027User\u0027 -Value \"Friedrich\" -Description \"The user under which the show must go on.\"\nCreates a configuration entry named \"User\" with the value \"Friedrich\"\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eSet-DbatoolsConfig -Name \u0027mymodule.User\u0027 -Value \"Friedrich\" -Description \"The user under which the show must go on.\" -Handler $scriptBlock -Initialize -Validation String\nCreates a configuration entry ...\r\n- Named \"mymodule.user\"\r\n- With the value \"Friedrich\"\r\n- It adds a description as noted\r\n- It registers the scriptblock stored in $scriptBlock as handler\r\n- It initializes the script. This block only executes the first time a it is run like this. Subsequent calls will be ignored.\r\n- It registers the basic string input type validator\r\nThis is the default example for modules using the configuration system.\r\nNote: While the -Handler parameter is optional, it is important to add it at the initial initialize call, if you are planning to add it.\r\nOnly then will the system validate previous settings (such as what a user might have placed in his user profile)\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eSet-DbatoolsConfig \u0027ConfigLink\u0027 \u0027https://www.example.com/config.xml\u0027 \u0027Company\u0027 -Hidden\nCreates a configuration entry named \"ConfigLink\" in the \"Company\" module with the value \u0027https://www.example.com/config.xml\u0027.\r\nThis entry is hidden from casual discovery using Get-Config.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eSet-DbatoolsConfig \u0027Network.Firewall\u0027 \u002710.0.0.2\u0027 -Default\nCreates a configuration entry named \"Firewall\" in the \"Network\" module with the value \u002710.0.0.2\u0027\r\nThis is only set, if the setting does not exist yet. If it does, this command will apply no changes.",
-        "Syntax":  "Set-DbatoolsConfig [-FullName] \u003cString\u003e [[-Value] \u003cObject\u003e] [-Description \u003cString\u003e] [-Validation \u003cString\u003e] [-Handler \u003cScriptBlock\u003e] [-Hidden] [-Default] [-Initialize] [-DisableValidation] [-DisableHandler] [-EnableException] [\u003cCommonParameters\u003e]\nSet-DbatoolsConfig [-Name] \u003cString\u003e [[-Module] \u003cString\u003e] [[-Value] \u003cObject\u003e] [-Description \u003cString\u003e] [-Validation \u003cString\u003e] [-Handler \u003cScriptBlock\u003e] [-Hidden] [-Default] [-Initialize] [-DisableValidation] [-DisableHandler] [-EnableException] [\u003cCommonParameters\u003e]"
-    },
-    {
         "CommandName":  "Show-DbaDbList",
         "Description":  "Shows a list of databases in a GUI. Returns a string holding the name of the selected database. Hitting cancel returns null.",
         "Tags":  [
@@ -41205,6 +41371,166 @@
         "Links":  "https://dbatools.io/Uninstall-DbaWatchUpdate",
         "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eUninstall-DbaWatchUpdate\nRemoves the scheduled task created by Install-DbaWatchUpdate.",
         "Syntax":  "Uninstall-DbaWatchUpdate [\u003cCommonParameters\u003e]"
+    },
+    {
+        "CommandName":  "Unregister-DbatoolsConfig",
+        "Description":  "Removes registered configuration settings.\nThis function can be used to remove settings that have been persisted for either user or computer.\n\nNote: This command has no effect on configuration setings currently in memory.",
+        "Params":  [
+                       [
+                           "ConfigurationItem",
+                           "A configuration object as returned by Get-DbatoolsConfig.",
+                           "",
+                           false,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
+                           "FullName",
+                           "The full name of the configuration setting to purge.",
+                           "",
+                           false,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
+                           "Module",
+                           "The module, amongst which settings should be unregistered.",
+                           "",
+                           true,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Name",
+                           "The name of the setting to unregister.\r\nFor use together with the module parameter, to limit the amount of settings that are unregistered.",
+                           "",
+                           false,
+                           "false",
+                           "*"
+                       ],
+                       [
+                           "Scope",
+                           "Settings can be set to either default or enforced, for user or the entire computer.\r\nBy default, only DefaultSettings for the user are unregistered.\r\nUse this parameter to choose the actual scope for the command to process.",
+                           "",
+                           false,
+                           "false",
+                           "UserDefault"
+                       ]
+                   ],
+        "Alias":  "",
+        "Synopsis":  "Removes registered configuration settings.",
+        "Name":  "Unregister-DbatoolsConfig",
+        "Links":  null,
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbatoolsConfig | Unregister-DbatoolsConfig\nCompletely removes all registered configurations currently loaded in memory.\r\nIn most cases, this will mean removing all registered configurations.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eUnregister-DbatoolsConfig -Scope SystemDefault -FullName \u0027MyModule.Path.DefaultExport\u0027\nUnregisters the setting \u0027MyModule.Path.DefaultExport\u0027 from the list of computer-wide defaults.\r\nNote: Changing system wide settings requires running the console with elevation.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eUnregister-DbatoolsConfig -Module MyModule\nUnregisters all configuration settings for the module MyModule.",
+        "Syntax":  "Unregister-DbatoolsConfig [-ConfigurationItem \u003cConfig[]\u003e] [-FullName \u003cString[]\u003e] [-Scope {UserDefault | UserMandatory | SystemDefault | SystemMandatory | FileUserLocal | FileUserShared | FileSystem}] [\u003cCommonParameters\u003e]\nUnregister-DbatoolsConfig -Module \u003cString\u003e [-Name \u003cString\u003e] [-Scope {UserDefault | UserMandatory | SystemDefault | SystemMandatory | FileUserLocal | FileUserShared | FileSystem}] [\u003cCommonParameters\u003e]"
+    },
+    {
+        "CommandName":  "Update-DbaInstance",
+        "Description":  "Starts and automated process of updating SQL Server installation to a specific version defined in the parameters.\nThe command will:\n\n* Search for SQL Server installations in a remote registry\n* Check if current settings are applicable to the current SQL Server versions\n* Search for a KB executable in a folder specified in -Path\n* Establish a PSRemote connection to the target machine if necessary\n* Extract KB to a temporary folder in a current user\u0027s profile\n* Run the installation from the temporary folder updating all instances on the computer at once\n* Remove temporary files\n* Restart the computer (if -Restart is specified)\n* Repeat for each consequent KB and computer\n\nThe impact of this function is set to High, if you don\u0027t want to receive interactive prompts, set -Confirm to $false.\nCredentials are a required parameter for remote machines. Without specifying -Credential, the installation will fail due to lack of permissions.\n\nCredSSP is a recommended transport for running the updates remotely. Update-DbaInstance will attempt to reconfigure\nlocal and remote hosts to support CredSSP, which is why it is desirable to run this command in an elevated console at all times.\nCVE-2018-0886 security update is required for both local and remote hosts. If CredSSP connections are failing, make sure to\napply recent security updates prior to doing anything else.\n\nAlways backup databases and configurations prior to upgrade.",
+        "Tags":  [
+                     "Install",
+                     "Patching",
+                     "SP",
+                     "CU",
+                     "Instance"
+                 ],
+        "Params":  [
+                       [
+                           "ComputerName",
+                           "Target computer with SQL instance or instsances.",
+                           "cn,host,Server",
+                           false,
+                           "true (ByValue)",
+                           "$env:COMPUTERNAME"
+                       ],
+                       [
+                           "Credential",
+                           "Windows Credential with permission to log on to the remote server. Must be specified for any remote connection.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Version",
+                           "A target version of the installation you want to reach. If not specified, a latest available version would be used by default.\r\nCan be defined using the following general pattern: \u003cMajorVersion\u003e\u003cSPX\u003e\u003cCUX\u003e.\r\nAny part of the pattern can be ommitted if needed:\r\n2008R2SP1 - will update SQL 2008R2 to SP1\r\n2016CU3 - will update SQL 2016 to CU3 of current Service Pack installed\r\nSP0CU3 - will update all existing SQL Server versions to RTM CU3 without installing any service packs\r\nSP1CU7 - will update all existing SQL Server versions to SP1 and then (after restart if -Restart is specified) to SP1CU7\r\nCU7 - will update all existing SQL Server versions to CU7 of current Service Pack installed",
+                           "",
+                           true,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "MajorVersion",
+                           "When -Version is not specified, it allows user to only update specific version(s) of SQL Server. Syntax: SQL20XX or simply 20XX.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Type",
+                           "Type of the update: All | ServicePack | CumulativeUpdate. Mutually exclusive with -Version.\r\nDefault: All",
+                           "",
+                           false,
+                           "false",
+                           "All"
+                       ],
+                       [
+                           "KB",
+                           "Install a specific update or list of updates. Can be a number of a string KBXXXXXXX.",
+                           "",
+                           true,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Path",
+                           "Path to the folder(s) with SQL Server patches downloaded. It will be scanned recursively for available patches.\r\nPath should be available from both server with SQL Server installation and client that runs the command.\r\nAll file names should match the pattern used by Microsoft: SQLServer####*-KB###-*x##*.exe\r\nIf a file is missing in the repository, the installation will fail.\r\nConsider setting the following configuration if you want to omit this parameter: `Set-DbatoolsConfig -Name Path.SQLServerUpdates -Value \u0027\\\\path\\to\\updates\u0027`",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Restart",
+                           "Restart computer automatically after a successful installation of a patch and wait until it comes back online.\r\nUsing this parameter is the only way to chain-install more than 1 patch on a computer, since every single patch will require a restart of said computer.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "WhatIf",
+                           "Shows what would happen if the command were to run. No actions are actually performed.",
+                           "wi",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Confirm",
+                           "Prompts you for confirmation before executing any changing operations within the command.",
+                           "cf",
+                           false,
+                           "false",
+                           ""
+                       ]
+                   ],
+        "Alias":  "",
+        "Author":  "Kirill Kravtsov (@nvarscar) https://nvarscar.wordpress.com/",
+        "Synopsis":  "Invokes installation of SQL Server Service Packs and Cumulative Updates on local and remote servers.",
+        "Name":  "Update-DbaInstance",
+        "Links":  null,
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eUpdate-DbaInstance -ComputerName SQL1 -Version SP3 -Path \\\\network\\share\nUpdates all applicable SQL Server installations on SQL1 to SP3.\r\nBinary files for the update will be searched among all files and folders recursively in \\\\network\\share.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eUpdate-DbaInstance -ComputerName SQL1, SQL2 -Restart -Path \\\\network\\share\nUpdates all applicable SQL Server installations on SQL1 and SQL2 with the most recent patch.\r\nIt will install latest ServicePack, restart the computers, install latest Cumulative Update, and finally restart the computer once again.\r\nBinary files for the update will be searched among all files and folders recursively in \\\\network\\share.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eUpdate-DbaInstance -ComputerName SQL1 -MajorVersion 2012 -Type ServicePack -Path \\\\network\\share\nUpdates SQL Server 2012 on SQL1 with the most recent ServicePack found in your patch repository.\r\nBinary files for the update will be searched among all files and folders recursively in \\\\network\\share.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eUpdate-DbaInstance -ComputerName SQL1 -KB 123456 -Restart -Path \\\\network\\share\nInstalls KB 123456 on SQL1 and restarts the computer.\r\nBinary files for the update will be searched among all files and folders recursively in \\\\network\\share.",
+        "Syntax":  "Update-DbaInstance [[-ComputerName] \u003cDbaInstanceParameter[]\u003e] [-Credential \u003cPSCredential\u003e] [-MajorVersion \u003cString[]\u003e] [-Type \u003cString\u003e] [-Path \u003cString[]\u003e] [-Restart] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nUpdate-DbaInstance [[-ComputerName] \u003cDbaInstanceParameter[]\u003e] [-Credential \u003cPSCredential\u003e] -Version \u003cString[]\u003e [-Path \u003cString[]\u003e] [-Restart] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nUpdate-DbaInstance [[-ComputerName] \u003cDbaInstanceParameter[]\u003e] [-Credential \u003cPSCredential\u003e] -KB \u003cString[]\u003e [-Path \u003cString[]\u003e] [-Restart] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "CommandName":  "Update-DbaServiceAccount",
