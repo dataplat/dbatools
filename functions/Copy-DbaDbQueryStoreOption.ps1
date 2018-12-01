@@ -151,15 +151,15 @@ function Copy-DbaDbQueryStoreOption {
 
                             $setDbaDbQueryStoreOptionParameters = @{
 
-                                SqlInstance = $destinationServer;
-                                SqlCredential = $DestinationSqlCredential;
-                                Database = $db.name;
-                                State = $SourceQSConfig.ActualState;
-                                FlushInterval = $SourceQSConfig.DataFlushIntervalInSeconds;
-                                CollectionInterval = $SourceQSConfig.StatisticsCollectionIntervalInMinutes;
-                                MaxSize = $SourceQSConfig.MaxStorageSizeInMB;
-                                CaptureMode = $SourceQSConfig.QueryCaptureMode;
-                                CleanupMode = $SourceQSConfig.SizeBasedCleanupMode;
+                                SqlInstance         = $destinationServer;
+                                SqlCredential       = $DestinationSqlCredential;
+                                Database            = $db.name;
+                                State               = $SourceQSConfig.ActualState;
+                                FlushInterval       = $SourceQSConfig.DataFlushIntervalInSeconds;
+                                CollectionInterval  = $SourceQSConfig.StatisticsCollectionIntervalInMinutes;
+                                MaxSize             = $SourceQSConfig.MaxStorageSizeInMB;
+                                CaptureMode         = $SourceQSConfig.QueryCaptureMode;
+                                CleanupMode         = $SourceQSConfig.SizeBasedCleanupMode;
                                 StaleQueryThreshold = $SourceQSConfig.StaleQueryThresholdInDays;
                             }
 
