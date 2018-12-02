@@ -1371,7 +1371,8 @@ $script:xplat = @(
     'Reset-DbatoolsConfig',
     'Unregister-DbatoolsConfig',
     'Join-DbaPath',
-    'Resolve-DbaPath'
+    'Resolve-DbaPath',
+    'Import-DbaCsv'
 )
 
 $script:noncoresmo = @(
@@ -1530,7 +1531,6 @@ $script:windowsonly = @(
     'Test-DbaWindowsLogin',
     'Find-DbaLoginInGroup',
     # 3rd party non-core DLL or exe
-    'Import-DbaCsv',
     'Export-DbaDacPackage', # relies on sqlpackage.exe
     # Config system
     'Get-DbatoolsConfig',
