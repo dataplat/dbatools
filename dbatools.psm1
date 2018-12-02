@@ -190,7 +190,7 @@ if ($script:multiFileImport) {
 }
 else {
     Add-Type -Assembly System.IO.Compression.FileSystem
-	$zip = [System.IO.Compression.ZipFile]::OpenRead("$script:PSModuleRoot\allcommands.zip")
+	$zip = [System.IO.Compression.ZipFile]::OpenRead((Resolve-Path -Path "$script:PSModuleRoot\allcommands.zip"))
 	$stream = $zip.Entries.Open()
 	$reader = New-Object IO.StreamReader($stream)
 	$ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create(($reader.ReadToEnd()))), $null, $null)
