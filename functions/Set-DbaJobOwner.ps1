@@ -4,9 +4,12 @@ function Set-DbaJobOwner {
         Sets SQL Agent job owners with a desired login if jobs do not match that owner.
 
     .DESCRIPTION
-        This function alters SQL Agent Job ownership to match a specified login if their current owner does not match the target login. By default, the target login will be 'sa', but the the user may specify a different login for ownership. This be applied to all jobs or only to a select collection of jobs.
+        This function alters SQL Agent Job ownership to match a specified login if their current owner does not match the target login. By default, the target login will be 'sa',
+        but the the user may specify a different login for ownership. This be applied to all jobs or only to a select collection of jobs.
 
         Best practice reference: http://sqlmag.com/blog/sql-server-tip-assign-ownership-jobs-sysadmin-account
+
+        If the 'sa' account was renamed, the new name will be used.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
@@ -19,6 +22,9 @@ function Set-DbaJobOwner {
 
     .PARAMETER ExcludeJob
         Specifies the job(s) to exclude from processing. Options for this list are auto-populated from the server.
+
+    .PARAMETER InputObject
+        Enables piped input from Get-DbaAgentJob
 
     .PARAMETER Login
         Specifies the login that you wish check for ownership. This defaults to 'sa' or the sysadmin name if sa was renamed. This must be a valid security principal which exists on the target server.
@@ -53,7 +59,7 @@ function Set-DbaJobOwner {
     .EXAMPLE
         PS C:\> Set-DbaJobOwner -SqlInstance localhost -Login DOMAIN\account
 
-        Sets SQL Agent Job owner to sa on all jobs where the owner does not match 'DOMAIN\account'. Note
+        Sets SQL Agent Job owner to 'DOMAIN\account' on all jobs where the owner does not match 'DOMAIN\account'. Note
         that Login must be a valid security principal that exists on the target server.
 
     .EXAMPLE
@@ -66,16 +72,22 @@ function Set-DbaJobOwner {
 
         Sets SQL Agent Job owner to sa on all jobs where the owner does not match sa on both sqlserver and sql2016.
 
+    .EXAMPLE
+        PS C:\> Get-DbaAgentJob -SqlInstance vmsql | Where-Object OwnerLoginName -eq login1 | Set-DbaJobOwner -TargetLogin login2 | Out-Gridview
+
+        Sets SQL Agent Job owner to login2 where their current owner is login1 on instance vmsql. Send result to gridview.
     #>
     [CmdletBinding(SupportsShouldProcess)]
     param (
-        [parameter(Mandatory, ValueFromPipeline)]
+        [parameter(ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [Alias("Jobs")]
         [object[]]$Job,
         [object[]]$ExcludeJob,
+        [Parameter(ValueFromPipeline)]
+        [Microsoft.SqlServer.Management.Smo.Agent.Job[]]$InputObject,
         [Alias("TargetLogin")]
         [string]$Login,
         [Alias('Silent')]
@@ -84,57 +96,75 @@ function Set-DbaJobOwner {
 
     process {
         foreach ($instance in $SqlInstance) {
-            #connect to the instance
-            $server = Connect-SqlInstance $instance -SqlCredential $SqlCredential
-
-            # dynamic sa name for orgs who have changed their sa name
-            if (!$Login) {
-                $Login = ($server.logins | Where-Object { $_.id -eq 1 }).Name
+            try {
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
+            } catch {
+                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
-            #Validate login
-            if (($server.Logins.Name) -notcontains $Login) {
-                if ($SqlInstance.count -eq 1) {
-                    throw -Message "Invalid login: $Login."
-                } else {
-                    Write-Message -Level Warning -Message "$Login is not a valid login on $instance. Moving on."
-                    Continue
-                }
-            }
-
-            if ($server.logins[$Login].LoginType -eq 'WindowsGroup') {
-                throw "$Login is a Windows Group and can not be a job owner."
-            }
-
-            #Get database list. If value for -Job is passed, massage to make it a string array.
+            #Get job list. If value for -Job is passed, massage to make it a string array.
             #Otherwise, use all jobs on the instance where owner not equal to -TargetLogin
             Write-Message -Level Verbose -Message "Gathering jobs to update."
 
             if ($Job) {
-                $jobcollection = $server.JobServer.Jobs | Where-Object { $_.OwnerLoginName -ne $Login -and $Job -contains $_.Name }
+                $jobcollection = $server.JobServer.Jobs | Where-Object {$Job -contains $_.Name}
             } else {
-                $jobcollection = $server.JobServer.Jobs | Where-Object { $_.OwnerLoginName -ne $Login }
+                $jobcollection = $server.JobServer.Jobs
             }
 
             if ($ExcludeJob) {
                 $jobcollection = $jobcollection | Where-Object { $ExcludeJob -notcontains $_.Name }
             }
 
-            Write-Message -Level Verbose -Message "Updating $($jobcollection.Count) job(s)."
-            foreach ($j in $jobcollection) {
-                $jobname = $j.name
+            $InputObject += $jobcollection
+        }
 
-                if ($PSCmdlet.ShouldProcess($instance, "Setting job owner for $jobname to $Login")) {
-                    try {
-                        Write-Message -Level Verbose -Message "Setting job owner for $jobname to $Login on $instance."
-                        #Set job owner to $TargetLogin (default 'sa')
-                        $j.OwnerLoginName = $Login
-                        $j.Alter()
-                    } catch {
-                        Stop-Function -Message "Issue setting job owner on $jobName." -Target $jobName -InnerErrorRecord $_ -Category InvalidOperation
+        Write-Message -Level Verbose -Message "Updating $($InputObject.Count) job(s)."
+        foreach ($agentJob in $InputObject) {
+            $jobname = $agentJob.Name
+            $server = $agentJob.Parent.Parent
+
+            if (-not $Login) {
+                # dynamic sa name for orgs who have changed their sa name
+                $newLogin = ($server.logins | Where-Object { $_.id -eq 1 }).Name
+            } else {
+                $newLogin = $Login
+            }
+
+            #Validate login
+            if ($agentJob.OwnerLoginName -eq $newLogin) {
+                $status = 'Skipped'
+                $notes = "Owner already set"
+            } else {
+                if (($server.Logins.Name) -notcontains $newLogin) {
+                    $status = 'Failed'
+                    $notes = "Login $newLogin not valid"
+                } else {
+                    if ($server.logins[$newLogin].LoginType -eq 'WindowsGroup') {
+                        $status = 'Failed'
+                        $notes = "$newLogin is a Windows Group and can not be a job owner."
+                    } else {
+                        if ($PSCmdlet.ShouldProcess($instance, "Setting job owner for $jobname to $newLogin")) {
+                            try {
+                                Write-Message -Level Verbose -Message "Setting job owner for $jobname to $newLogin on $instance."
+                                #Set job owner to $TargetLogin (default 'sa')
+                                $agentJob.OwnerLoginName = $newLogin
+                                $agentJob.Alter()
+                                $status = 'Succesful'
+                                $notes = ''
+                            } catch {
+                                Stop-Function -Message "Issue setting job owner on $jobName." -Target $jobName -InnerErrorRecord $_ -Category InvalidOperation
+                            }
+                        }
                     }
                 }
             }
+            Add-Member -Force -InputObject $agentJob -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
+            Add-Member -Force -InputObject $agentJob -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
+            Add-Member -Force -InputObject $agentJob -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
+            Add-Member -Force -InputObject $agentJob -MemberType NoteProperty -Name Status -value $status
+            Add-Member -Force -InputObject $agentJob -MemberType NoteProperty -Name Notes -value $notes
+            Select-DefaultView -InputObject $agentJob -Property ComputerName, InstanceName, SqlInstance, Name, Category, OwnerLoginName, Status, Notes
         }
     }
 }
