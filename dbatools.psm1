@@ -17,12 +17,12 @@ function Import-ModuleFile {
         PS C:\> Import-ModuleFile -Path $function.FullName
 
         Imports the file stored at '$function.FullName'
-#>
+    #>
     [CmdletBinding()]
     param (
         $Path
     )
-    
+
     if ($script:doDotSource) {
         . (Resolve-Path -Path $Path)
     } else {
@@ -58,8 +58,7 @@ function Write-ImportTime {
 
     if (([System.Management.Automation.PSTypeName]'Sqlcollaborative.Dbatools.Configuration.Config').Type -eq $null) {
         $script:dbatools_ImportPerformance += New-Object PSObject -Property @{ Time = $timestamp; Action = $Text }
-    }
-    else {
+    } else {
         if ([Sqlcollaborative.Dbatools.dbaSystem.DebugHost]::ImportTimeEntries.Count -eq 0) {
             foreach ($entry in $script:dbatools_ImportPerformance) { [Sqlcollaborative.Dbatools.dbaSystem.DebugHost]::ImportTimeEntries.Add((New-Object Sqlcollaborative.Dbatools.dbaSystem.StartTimeEntry($entry.Action, $entry.Time, ([System.Management.Automation.Runspaces.Runspace]::DefaultRunspace.InstanceId)))) }
         }
@@ -180,16 +179,22 @@ if ($script:multiFileImport) {
 
     . Import-ModuleFile -Path (Resolve-Path -Path "$script:PSModuleRoot\internal\scripts\cmdlets.ps1")
     Write-ImportTime -Text "Registering cmdlets"
-    
+
     # All exported functions
     foreach ($function in (Get-ChildItem -Path (Resolve-Path -Path "$script:PSModuleRoot\functions\") -Recurse | Where-Object Extension -EQ '.ps1')) {
         . Import-ModuleFile $function.FullName
     }
     Write-ImportTime -Text "Loading Public Commands"
-    
-}
-else {
-    . (Resolve-Path -Path "$script:PSModuleRoot\allcommands.ps1")
+
+} else {
+    Add-Type -Assembly System.IO.Compression.FileSystem
+    $zip = [System.IO.Compression.ZipFile]::OpenRead((Resolve-Path -Path "$script:PSModuleRoot\allcommands.zip"))
+    $stream = $zip.Entries.Open()
+    $reader = New-Object IO.StreamReader($stream)
+    $ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create(($reader.ReadToEnd()))), $null, $null)
+    $reader.Close()
+    $stream.Close()
+    $zip.Dispose()
     Write-ImportTime -Text "Loading Public and Private Commands"
 
     . Import-ModuleFile (Resolve-Path -Path "$script:PSModuleRoot\internal\scripts\cmdlets.ps1")
@@ -1427,7 +1432,7 @@ $script:windowsonly = @(
     'Install-DbaFirstResponderKit',
     'Read-DbaXEFile',
     'Watch-DbaXESession',
-    'Test-DbaMaxMemory',  # can be fixed by not testing remote when linux is detected
+    'Test-DbaMaxMemory', # can be fixed by not testing remote when linux is detected
     'Rename-DbaDatabase', # can maybebe fixed by not remoting when linux is detected
     # CM and Windows functions
     'Update-DbaInstance',
@@ -1561,7 +1566,7 @@ if ((Get-PSCallStack)[0].Command -ne 'dbatools.psm1') {
 
     Export-ModuleMember -Alias $script:renames
     Export-ModuleMember -Alias $forever
-    
+
     Write-ImportTime -Text "Exported module member"
 }
 
