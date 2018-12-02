@@ -368,7 +368,11 @@ function Write-DbaDataTable {
         
         # Load the basics
         if (-not $script:core) {
-            Add-Type -ReferencedAssemblies $script:systemdata -TypeDefinition $source -ErrorAction SilentlyContinue
+            try {
+            Add-Type -ReferencedAssemblies System.Data.dll -TypeDefinition $sourcecode -ErrorAction Stop
+            Add-Type -ReferencedAssemblies $script:systemdata -TypeDefinition $source -ErrorAction Stop
+        } catch {
+            $null = 1
         }
         #endregion Prepare type for bulk copy
 

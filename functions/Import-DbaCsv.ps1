@@ -285,8 +285,9 @@ function Import-DbaCsv {
             }
         }
     '
-        try {
-            # SilentContinue isn't enough
+        if (-not $script:core) {
+            try {
+            Add-Type -ReferencedAssemblies System.Data.dll -TypeDefinition $sourcecode -ErrorAction Stop
             Add-Type -ReferencedAssemblies $script:systemdata -TypeDefinition $source -ErrorAction Stop
         } catch {
             $null = 1
