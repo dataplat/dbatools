@@ -201,13 +201,15 @@ function Copy-DbaDbTableData {
             }
         }'
         
+        Add-Type -ReferencedAssemblies System.Data.dll -TypeDefinition $sourcecode -ErrorAction Stop
         if (-not $script:core) {
             try {
-            Add-Type -ReferencedAssemblies System.Data.dll -TypeDefinition $sourcecode -ErrorAction Stop
-            Add-Type -ReferencedAssemblies $script:systemdata -TypeDefinition $source -ErrorAction Stop
-        } catch {
-            $null = 1
+                Add-Type -ReferencedAssemblies System.Data.dll -TypeDefinition $sourcecode -ErrorAction Stop
+            } catch {
+                $null = 1
+            }
         }
+        
         $bulkCopyOptions = 0
         $options = "TableLock", "CheckConstraints", "FireTriggers", "KeepIdentity", "KeepNulls", "Default"
 

@@ -202,14 +202,14 @@ function Import-DbaCsv {
     begin {
         $FirstRowHeader = $NoHeaderRow -eq $false
         $scriptelapsed = [System.Diagnostics.Stopwatch]::StartNew()
-        
+
         try {
             # SilentContinue isn't enough
             Add-Type -Path "$script:PSModuleRoot\bin\csv\LumenWorks.Framework.IO.dll" -ErrorAction Stop
         } catch {
             $null = 1
         }
-        
+
         function New-SqlTable {
             <#
                 .SYNOPSIS
@@ -268,7 +268,7 @@ function Import-DbaCsv {
         # Getting the total rows copied is a challenge. Use SqlBulkCopyExtension.
         # http://stackoverflow.com/questions/1188384/sqlbulkcopy-row-count-when-complete
 
-        $source = 'namespace System.Data.SqlClient
+        $sourcecode = 'namespace System.Data.SqlClient
         {
             using Reflection;
 
@@ -287,10 +287,10 @@ function Import-DbaCsv {
     '
         if (-not $script:core) {
             try {
-            Add-Type -ReferencedAssemblies System.Data.dll -TypeDefinition $sourcecode -ErrorAction Stop
-            Add-Type -ReferencedAssemblies $script:systemdata -TypeDefinition $source -ErrorAction Stop
-        } catch {
-            $null = 1
+                Add-Type -ReferencedAssemblies System.Data.dll -TypeDefinition $sourcecode -ErrorAction Stop
+            } catch {
+                $null = 1
+            }
         }
     }
     process {
@@ -496,7 +496,7 @@ function Import-DbaCsv {
                         } else {
                             $rowscopied = [System.Data.SqlClient.SqlBulkCopyExtension]::RowsCopiedCount($bulkcopy)
                         }
-                        
+
                         Write-Message -Level Verbose -Message "$rowscopied total rows copied"
 
                         [pscustomobject]@{
