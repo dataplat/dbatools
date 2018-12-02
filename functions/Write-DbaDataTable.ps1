@@ -365,8 +365,11 @@ function Write-DbaDataTable {
                 }
             }
         }'
-
-        Add-Type -ReferencedAssemblies 'System.Data.dll' -TypeDefinition $source -ErrorAction SilentlyContinue
+        
+        # Load the basics
+        if (-not $script:core) {
+            Add-Type -ReferencedAssemblies $script:systemdata -TypeDefinition $source -ErrorAction SilentlyContinue
+        }
         #endregion Prepare type for bulk copy
 
         #region Resolve Full Qualified Table Name

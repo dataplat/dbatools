@@ -202,7 +202,14 @@ function Import-DbaCsv {
     begin {
         $FirstRowHeader = $NoHeaderRow -eq $false
         $scriptelapsed = [System.Diagnostics.Stopwatch]::StartNew()
-
+        
+        try {
+            # SilentContinue isn't enough
+            Add-Type -Path "$script:PSModuleRoot\bin\csv\LumenWorks.Framework.IO.dll" -ErrorAction Stop
+        } catch {
+            $null = 1
+        }
+        
         function New-SqlTable {
             <#
                 .SYNOPSIS
@@ -258,9 +265,6 @@ function Import-DbaCsv {
 
         Write-Message -Level Verbose -Message "Started at $(Get-Date)"
 
-        # Load the basics
-        [void][Reflection.Assembly]::LoadWithPartialName("System.Data")
-
         # Getting the total rows copied is a challenge. Use SqlBulkCopyExtension.
         # http://stackoverflow.com/questions/1188384/sqlbulkcopy-row-count-when-complete
 
@@ -283,8 +287,7 @@ function Import-DbaCsv {
     '
         try {
             # SilentContinue isn't enough
-            Add-Type -ReferencedAssemblies 'System.Data.dll' -TypeDefinition $source -ErrorAction Stop
-            Add-Type -Path "$script:PSModuleRoot\bin\csv\LumenWorks.Framework.IO.dll" -ErrorAction Stop
+            Add-Type -ReferencedAssemblies $script:systemdata -TypeDefinition $source -ErrorAction Stop
         } catch {
             $null = 1
         }
@@ -480,14 +483,19 @@ function Import-DbaCsv {
                         if ($resultcount -is [int]) {
                             Write-Progress -id 1 -activity "Inserting $resultcount rows" -status "Failed" -Completed
                         }
-                        Stop-Function -Continue -Message $errormessage
+                        Stop-Function -Continue -Message "Failure" -ErrorRecord $_
                     }
                 }
                 if ($PSCmdlet.ShouldProcess($instance, "Committing transaction")) {
                     if ($completed) {
                         # "Note: This count does not take into consideration the number of rows actually inserted when Ignore Duplicates is set to ON."
                         $null = $transaction.Commit()
-                        $rowscopied = [System.Data.SqlClient.SqlBulkCopyExtension]::RowsCopiedCount($bulkcopy)
+                        if ($script:core) {
+                            $rowscopied = "Unsupported in Core"
+                        } else {
+                            $rowscopied = [System.Data.SqlClient.SqlBulkCopyExtension]::RowsCopiedCount($bulkcopy)
+                        }
+                        
                         Write-Message -Level Verbose -Message "$rowscopied total rows copied"
 
                         [pscustomobject]@{
