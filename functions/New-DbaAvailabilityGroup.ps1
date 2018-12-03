@@ -480,7 +480,12 @@ function New-DbaAvailabilityGroup {
         }
 
         # Add listener
-        Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Adding listener"
+        if ($IPAddress -or $Dhcp) {
+            $progressmsg = "Adding listener"
+        } else {
+            $progressmsg = "Joining availability group"
+        }
+        Write-ProgressHelper -StepNumber ($stepCounter++) -Message $progressmsg
 
         if ($IPAddress) {
             if ($Pscmdlet.ShouldProcess($Primary, "Adding static IP listener for $Name to the Primary replica")) {
@@ -571,10 +576,9 @@ function New-DbaAvailabilityGroup {
         }
 
         # Add databases
-
         Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Adding databases"
 
-        Add-DbaAgDatabase -SqlInstance $Primary -AvailabilityGroup $Name -Database $Database -SeedingMode $SeedingMode -SharedPath $SharedPath
+        $null = Add-DbaAgDatabase -SqlInstance $Primary -SqlCredential $PrimarySqlCredential -AvailabilityGroup $Name -Database $Database -SeedingMode $SeedingMode -SharedPath $SharedPath -Secondary $Secondary -SecondarySqlCredential $SecondarySqlCredential
 
         foreach ($second in $secondaries) {
             if ($server.HostPlatform -ne "Linux" -and $second.HostPlatform -ne "Linux") {
