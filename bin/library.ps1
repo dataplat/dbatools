@@ -46,8 +46,12 @@ if (([System.Management.Automation.PSTypeName]'Sqlcollaborative.Dbatools.Configu
 #endregion Test whether the module had already been imported
 
 $libraryBase = (Resolve-Path -Path ($ExecutionContext.SessionState.Module.ModuleBase + "\bin"))
-if ($PSVersionTable.PSVersion.Major -ge 6) { $dll = (Resolve-Path -Path "$libraryBase\netcoreapp2.1\dbatools.dll" -ErrorAction Ignore) }
-else { $dll = (Resolve-Path -Path "$libraryBase\net452\dbatools.dll" -ErrorAction Ignore) }
+
+if ($PSVersionTable.PSVersion.Major -ge 6) {
+    $dll = (Resolve-Path -Path "$libraryBase\netcoreapp2.1\dbatools.dll" -ErrorAction Ignore)
+} else {
+    $dll = (Resolve-Path -Path "$libraryBase\net452\dbatools.dll" -ErrorAction Ignore)
+}
 
 if ($ImportLibrary) {
     #region Add Code
@@ -85,7 +89,7 @@ else {
                     $script:DllRoot = Resolve-Path -Path $script:DllRoot
                     Write-Verbose -Message "Found library, trying to copy & import"
                     # this looks excessive but for some reason the explicit string to string is required
-                    if ("$($dll)" -ne "$(Join-Path -Path $script:DllRoot -ChildPath dbatools.dll)") {
+                    if (("$($dll)" -ne "$(Join-Path -Path $script:DllRoot -ChildPath dbatools.dll)") -and $script:isWindows) {
                         Copy-Item -Path $dll -Destination $script:DllRoot -Force -ErrorAction Stop
                     }
                     Add-Type -Path (Resolve-Path -Path "$script:DllRoot\dbatools.dll") -ErrorAction Stop
