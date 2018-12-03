@@ -189,7 +189,7 @@ function Update-SqlPermission {
                 continue
             }
             if (-not $destDb.IsAccessible) {
-                Write-Message -Level Verbose -Message "Database [$($sourceDb.Name)] is not accessible on $source. Skipping."
+                Write-Message -Level Verbose -Message "Database [$($sourceDb.Name)] is not accessible on destination. Skipping."
                 continue
             }
             if ((Get-DbaAgDatabase -SqlInstance $DestServer -Database $dbName)) {
