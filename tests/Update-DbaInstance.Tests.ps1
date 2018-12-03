@@ -22,7 +22,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
         $defaultParamCount = 13
         [object[]]$params = (Get-ChildItem function:\$CommandName).Parameters.Keys
-        $knownParameters = 'ComputerName', 'Credential', 'Version', 'Type', 'Path', 'Restart', 'EnableException', 'Kb', 'InstanceName'
+        $knownParameters = 'ComputerName', 'Credential', 'Version', 'Type', 'Path', 'Restart', 'EnableException', 'Kb', 'InstanceName', 'Continue'
         $paramCount = $knownParameters.Count
         It "Should contain our specific parameters" {
             ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
@@ -262,6 +262,54 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
             $result.Successful | Should -Be $true
             $result.Restarted | Should -Be $true
             $result.Installer | Should -Be (Join-Path $exeDir 'SQLServer2008-KB2738350-x64-ENU.exe')
+            $result.Message | Should -BeNullOrEmpty
+            $result.ExtractPath | Should -BeLike '*\dbatools_KB*Extract'
+        }
+    }
+    Context "Validate upgrade to the same version when installation failed" {
+        BeforeAll {
+            #this is our 'currently installed' versions
+            Mock -CommandName Get-SQLInstanceComponent -ModuleName dbatools -MockWith {
+                [pscustomobject]@{
+                    InstanceName = 'LAB'
+                    Version      = [pscustomobject]@{
+                        "SqlInstance" = $null
+                        "Build"       = "11.0.5058"
+                        "NameLevel"   = "2012"
+                        "SPLevel"     = "SP2"
+                        "CULevel"     = $null
+                        "KBLevel"     = "2958429"
+                        "BuildLevel"  = [version]'11.0.5058'
+                        "MatchType"   = "Exact"
+                    }
+                    Resume = $true
+                }
+            }
+            #Mock Get-Item and Get-ChildItem with a dummy file
+            Mock -CommandName Get-ChildItem -ModuleName dbatools -MockWith {
+                [pscustomobject]@{
+                    FullName = 'c:\mocked\filename.exe'
+                }
+            }
+            Mock -CommandName Get-Item -ModuleName dbatools -MockWith { 'c:\mocked' }
+        }
+        It "Should mock-upgrade interrupted setup of SQL2012 SP2" {
+            $result = Update-DbaInstance -Continue -InstanceName LAB -Version 2012SP2 -Path $exeDir -Restart -EnableException -Confirm:$false
+            Assert-MockCalled -CommandName Get-SQLInstanceComponent -Exactly 1 -Scope It -ModuleName dbatools
+            Assert-MockCalled -CommandName Invoke-Program -Exactly 2 -Scope It -ModuleName dbatools
+            Assert-MockCalled -CommandName Restart-Computer -Exactly 1 -Scope It -ModuleName dbatools
+            #no remote execution in tests
+            #Assert-MockCalled -CommandName Register-RemoteSessionConfiguration -Exactly 0 -Scope It -ModuleName dbatools
+            #Assert-MockCalled -CommandName Unregister-RemoteSessionConfiguration -Exactly 1 -Scope It -ModuleName dbatools
+
+            $result | Should -Not -BeNullOrEmpty
+            $result.MajorVersion | Should -Be 2012
+            $result.TargetLevel | Should -Be SP2
+            $result.KB | Should -Be 2958429
+            $result.Successful | Should -Be $true
+            $result.Restarted | Should -Be $true
+            $result.InstanceName | Should -Be LAB
+            $result.Installer | Should -Be 'c:\mocked\filename.exe'
             $result.Message | Should -BeNullOrEmpty
             $result.ExtractPath | Should -BeLike '*\dbatools_KB*Extract'
         }

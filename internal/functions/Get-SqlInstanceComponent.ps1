@@ -166,6 +166,14 @@ function Get-SQLInstanceComponent {
                         }
                         #endregion Get SQL edition
 
+                        #region Get resume value
+                        try {
+                            $resume = [bool][int]$instanceRegSetup.GetValue("Resume");
+                        } catch {
+                            $resume = $false;
+                        }
+                        #endregion Get resume value
+
                         #region Get SQL version
                         $version = $null
                         try {
@@ -251,6 +259,7 @@ function Get-SQLInstanceComponent {
                                 }
                             }.InvokeReturnAsIs();
                             Log           = $log
+                            Resume        = $resume
                         }
                         #endregion Generate return object
                     }
