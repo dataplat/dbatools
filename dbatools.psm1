@@ -132,7 +132,7 @@ $script:multiFileImport = $false
 if ($dbatools_multiFileImport) { $script:multiFileImport = $true }
 if ($dbatoolsSystemSystemNode.MultiFileImport) { $script:multiFileImport = $true }
 if ($dbatoolsSystemUserNode.MultiFileImport) { $script:multiFileImport = $true }
-if (Test-Path -Path "$script:PSModuleRoot\.git") { $script:multiFileImport = $true }
+if (Test-Path -Path (Resolve-Path -Path "$script:PSModuleRoot\.git" -ErrorAction Ignore)) { $script:multiFileImport = $true }
 #endregion Multi File Import
 
 Write-ImportTime -Text "Validated defines"
@@ -1551,7 +1551,7 @@ $script:windowsonly = @(
 
 # If a developer or appveyor calls the psm1 directly, they want all functions
 # So do not explicity export because everything else is then implicity excluded
-if ((Get-PSCallStack)[0].Command -ne 'dbatools.psm1' -or (-not $script:isWindows)) {
+if (-not $script:multiFileImport) {
     if (($PSVersionTable.Keys -contains "Platform")) {
         if ($PSVersionTable.Platform -ne "Win32NT") {
             Export-ModuleMember -Function $script:xplat
