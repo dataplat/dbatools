@@ -145,9 +145,10 @@ if (($PSVersionTable.PSVersion.Major -le 5) -or $script:isWindows) {
 }
 
 
-$script:DllRoot = (Resolve-Path "$script:PSModuleRoot\bin\")
+$script:DllRoot = (Resolve-Path -Path "$script:PSModuleRoot\bin\")
 
 <#
+# Removed this because it doesn't seem to work well xplat and on win7 and it doesn't provide enough value
 # Define folder in which to copy dll files before importing
 if (-not $script:copyDllMode) { $script:DllRoot = (Resolve-Path "$script:PSModuleRoot\bin\") }
 else {
