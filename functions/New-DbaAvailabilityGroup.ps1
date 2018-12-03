@@ -479,14 +479,14 @@ function New-DbaAvailabilityGroup {
             return
         }
 
-         # Add listener
+        # Add listener
         if ($IPAddress -or $Dhcp) {
-            $progressmsg ="Adding listener"
+            $progressmsg = "Adding listener"
         } else {
-            $progressmsg ="Joining availability group"
+            $progressmsg = "Joining availability group"
         }
         Write-ProgressHelper -StepNumber ($stepCounter++) -Message $progressmsg
-        
+
         if ($IPAddress) {
             if ($Pscmdlet.ShouldProcess($Primary, "Adding static IP listener for $Name to the Primary replica")) {
                 $null = Add-DbaAgListener -InputObject $ag -IPAddress $IPAddress[0] -SubnetMask $SubnetMask -Port $Port -Dhcp:$Dhcp
