@@ -1,5 +1,12 @@
 $start = Get-Date
 
+if (($PSVersionTable.PSVersion.Major -lt 6) -or ($PSVersionTable.Keys -contains "Platform" -and $PSVersionTable.Platform -eq "Win32NT")) {
+    $script:isWindows = $true
+} else {
+    $script:isWindows = $false
+}
+
+   
 #region Import helper functions
 function Import-ModuleFile {
     <#
@@ -131,7 +138,7 @@ if (Test-Path -Path "$script:PSModuleRoot\.git") { $script:multiFileImport = $tr
 Write-ImportTime -Text "Validated defines"
 #endregion Import Defines
 
-if (($PSVersionTable.PSVersion.Major -le 5) -or $isWindows) {
+if (($PSVersionTable.PSVersion.Major -le 5) -or $script:isWindows) {
     Get-ChildItem -Path (Resolve-Path "$script:PSModuleRoot\bin\") -Filter "*.dll" -Recurse | Unblock-File -ErrorAction Ignore
     Write-ImportTime -Text "Unblocking Files"
 }
@@ -1544,7 +1551,7 @@ $script:windowsonly = @(
 
 # If a developer or appveyor calls the psm1 directly, they want all functions
 # So do not explicity export because everything else is then implicity excluded
-if ((Get-PSCallStack)[0].Command -ne 'dbatools.psm1' -or (-not $isWindows)) {
+if ((Get-PSCallStack)[0].Command -ne 'dbatools.psm1' -or (-not $script:isWindows)) {
     if (($PSVersionTable.Keys -contains "Platform")) {
         if ($PSVersionTable.Platform -ne "Win32NT") {
             Export-ModuleMember -Function $script:xplat
