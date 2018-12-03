@@ -25,7 +25,7 @@ function Add-DbaAgDatabase {
 
     .PARAMETER Secondary
         Not required - the command will figure this out. But if you'd like to be explicit about replicas, this will help.
-    
+
     .PARAMETER SecondarySqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
@@ -132,13 +132,13 @@ function Add-DbaAgDatabase {
             if ($ag.AvailabilityDatabases.Name -contains $db.Name) {
                 Stop-Function -Message "$($db.Name) is already joined to $($ag.Name)" -Continue
             }
-            
+
             if (-not $Secondary) {
                 $secondaryReplicas = $ag.AvailabilityReplicas | Where-Object Role -eq Secondary
             } else {
                 $secondaryReplicas = Get-DbaAgReplica -SqlInstance $Secondary -SqlCredential $SecondarySqlCredential -AvailabilityGroup $ag.Name | Where-Object Role -eq Secondary
             }
-            
+
             if ($SeedingMode -eq "Automatic") {
                 # first check
                 if ($Pscmdlet.ShouldProcess($Primary, "Backing up $db to NUL")) {
