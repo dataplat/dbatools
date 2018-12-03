@@ -184,8 +184,16 @@ function Update-SqlPermission {
         $dbLogin = $db.LoginName
 
         if ($null -ne $sourceDb) {
-            if (!$sourceDb.IsAccessible) {
+            if (-not $sourceDb.IsAccessible) {
                 Write-Message -Level Verbose -Message "Database [$($sourceDb.Name)] is not accessible on $source. Skipping."
+                continue
+            }
+            if (-not $destDb.IsAccessible) {
+                Write-Message -Level Verbose -Message "Database [$($sourceDb.Name)] is not accessible on $source. Skipping."
+                continue
+            }
+            if ((Get-DbaAgDatabase -SqlInstance $DestServer -Database $dbName)) {
+                Write-Message -Level Verbose -Message "Database [$dbName] is part of an availability group. Skipping."
                 continue
             }
             if ($null -eq $sourceDb.Users[$dbUsername] -and $null -eq $destDb.Users[$dbUsername]) {
@@ -261,8 +269,13 @@ function Update-SqlPermission {
         $dbLogin = $db.LoginName
 
         if ($null -ne $destDb) {
-            if (!$destDb.IsAccessible) {
+            if (-not $destDb.IsAccessible) {
                 Write-Message -Level Verbose -Message "Database [$dbName] is not accessible. Skipping."
+                continue
+            }
+            
+            if ((Get-DbaAgDatabase -SqlInstance $DestServer -Database $dbName)) {
+                Write-Message -Level Verbose -Message "Database [$dbName] is part of an availability group. Skipping."
                 continue
             }
             if ($null -eq $destDb.Users[$dbUsername]) {
