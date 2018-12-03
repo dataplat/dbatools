@@ -62,6 +62,9 @@ function Update-DbaInstance {
         Restart computer automatically after a successful installation of a patch and wait until it comes back online.
         Using this parameter is the only way to chain-install more than 1 patch on a computer, since every single patch will require a restart of said computer.
 
+    .PARAMETER Continue
+        Continues a failed installation attempt when specified. Will abort a previously failed installation otherwise.
+
     .PARAMETER InstanceName
         Only updates a specific instance(s).
 
@@ -133,6 +136,7 @@ function Update-DbaInstance {
         [string]$InstanceName,
         [string[]]$Path,
         [switch]$Restart,
+        [switch]$Continue,
         [switch]$EnableException
     )
     begin {
@@ -156,14 +160,15 @@ function Update-DbaInstance {
             }
         }
         $actions = @()
+        $actionTemplate = @{}
+        if ($InstanceName) { $actionTemplate.InstanceName = $InstanceName }
+        if ($Continue) { $actionTemplate.Continue = $Continue }
         #Putting together list of actions based on current ParameterSet
         if ($PSCmdlet.ParameterSetName -eq 'Version') {
             if ($Type -contains 'All') { $typeList = @('ServicePack', 'CumulativeUpdate') }
             else { $typeList = $Type | Sort-Object -Descending }
             foreach ($ver in $Version) {
-                $currentAction = @{
-                    InstanceName = $InstanceName
-                }
+                $currentAction = $actionTemplate.Clone()
                 if ($ver -and $ver -match '^(SQL)?(\d{4}(R2)?)?\s*(RTM|SP)?(\d+)?(CU)?(\d+)?') {
                     $majorV, $spV, $cuV = $Matches[2, 5, 7]
                     Write-Message -Level Debug -Message "Parsed Version as Major $majorV SP $spV CU $cuV"
@@ -202,18 +207,16 @@ function Update-DbaInstance {
             # If no version specified, simply apply latest $currentType
             if (!$Version) {
                 foreach ($currentType in $typeList) {
-                    $currentAction = @{
-                        Type         = $currentType
-                        InstanceName = $InstanceName
+                    $currentAction = $actionTemplate.Clone() + @{
+                        Type = $currentType
                     }
                     $actions += $currentAction
                 }
             }
         } elseif ($PSCmdlet.ParameterSetName -eq 'KB') {
             foreach ($kbItem in $kbList) {
-                $currentAction = @{
-                    KB           = $kbItem
-                    InstanceName = $InstanceName
+                $currentAction = $actionTemplate.Clone() + @{
+                    KB = $kbItem
                 }
                 $actions += $currentAction
             }
