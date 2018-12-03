@@ -10,7 +10,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         #>
         $defaultParamCount = 13
         [object[]]$params = (Get-ChildItem function:\Add-DbaAgDatabase).Parameters.Keys
-        $knownParameters = 'SqlInstance', 'SqlCredential', 'AvailabilityGroup', 'Database', 'InputObject', 'EnableException', 'SeedingMode', 'SharedPath', 'UseLastBackup'
+        $knownParameters = 'SqlInstance', 'SqlCredential', 'AvailabilityGroup', 'Database', 'InputObject', 'EnableException', 'SeedingMode', 'SharedPath', 'UseLastBackup', 'Secondary', 'SecondarySqlCredential'
         $paramCount = $knownParameters.Count
         It "Should contain our specific parameters" {
             ((Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count) | Should Be $paramCount
