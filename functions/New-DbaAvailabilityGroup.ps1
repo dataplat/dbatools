@@ -187,17 +187,17 @@ function New-DbaAvailabilityGroup {
     .EXAMPLE
         PS C:\> $cred = Get-Credential sqladmin
         PS C:\> $params = @{
-                    >> Primary = "sql1"
-                    >> PrimarySqlCredential = $cred
-                    >> Secondary = "sql2"
-                    >> SecondarySqlCredential = $cred
-                    >> Name = "test-ag"
-                    >> Database = "pubs"
-                    >> ClusterType = "None"
-                    >> SeedingMode = "Automatic"
-                    >> FailoverMode = "Manual"
-                    >> Confirm = $false
-                >> }
+        >> Primary = "sql1"
+        >> PrimarySqlCredential = $cred
+        >> Secondary = "sql2"
+        >> SecondarySqlCredential = $cred
+        >> Name = "test-ag"
+        >> Database = "pubs"
+        >> ClusterType = "None"
+        >> SeedingMode = "Automatic"
+        >> FailoverMode = "Manual"
+        >> Confirm = $false
+        >> }
         PS C:\> New-DbaAvailabilityGroup @params
 
         This exact command was used to create an availability group on docker!
@@ -480,7 +480,12 @@ function New-DbaAvailabilityGroup {
         }
 
         # Add listener
-        Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Adding listener"
+        if ($IPAddress -or $Dhcp) {
+            $progressmsg = "Adding listener"
+        } else {
+            $progressmsg = "Joining availability group"
+        }
+        Write-ProgressHelper -StepNumber ($stepCounter++) -Message $progressmsg
 
         if ($IPAddress) {
             if ($Pscmdlet.ShouldProcess($Primary, "Adding static IP listener for $Name to the Primary replica")) {
@@ -571,10 +576,9 @@ function New-DbaAvailabilityGroup {
         }
 
         # Add databases
-
         Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Adding databases"
 
-        Add-DbaAgDatabase -SqlInstance $Primary -AvailabilityGroup $Name -Database $Database -SeedingMode $SeedingMode -SharedPath $SharedPath
+        $null = Add-DbaAgDatabase -SqlInstance $Primary -SqlCredential $PrimarySqlCredential -AvailabilityGroup $Name -Database $Database -SeedingMode $SeedingMode -SharedPath $SharedPath -Secondary $Secondary -SecondarySqlCredential $SecondarySqlCredential
 
         foreach ($second in $secondaries) {
             if ($server.HostPlatform -ne "Linux" -and $second.HostPlatform -ne "Linux") {
