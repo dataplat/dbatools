@@ -85,7 +85,7 @@ else {
                     $script:DllRoot = Resolve-Path -Path $script:DllRoot
                     Write-Verbose -Message "Found library, trying to copy & import"
                     # this looks excessive but for some reason the explicit string to string is required
-                    if ("$($dll)" -ne "$(Join-Path -Path $script:DllRoot -ChildPath dbatools.dll)") {
+                    if ("$($dll)" -ne "$(Join-Path -Path $script:DllRoot -ChildPath dbatools.dll)" -and (-not $isWindows)) {
                         Copy-Item -Path $dll -Destination $script:DllRoot -Force -ErrorAction Stop
                     }
                     Add-Type -Path (Resolve-Path -Path "$script:DllRoot\dbatools.dll") -ErrorAction Stop
