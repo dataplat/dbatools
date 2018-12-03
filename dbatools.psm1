@@ -1574,6 +1574,8 @@ if (-not $script:multiFileImport) {
 
     Export-ModuleMember -Alias $script:renames
     Export-ModuleMember -Alias $forever
+    
+    Export-ModuleMember -Cmdlet Select-DbaObject, Set-DbatoolsConfig
 
     Write-ImportTime -Text "Exported module member"
 }
