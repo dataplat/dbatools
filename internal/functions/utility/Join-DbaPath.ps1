@@ -31,7 +31,7 @@ function Join-DbaPath
     )
     
     $resultingPath = $Path
-    if (($PSVersionTable.PSVersion.Major -ge 6) -and (-not $isWindows))
+    if (($PSVersionTable.PSVersion.Major -ge 6) -and (-not $script:isWindows))
     {
         $resultingPath = $resultingPath.Replace("\", "/")
     }
