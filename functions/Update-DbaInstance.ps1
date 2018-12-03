@@ -34,8 +34,9 @@ function Update-DbaInstance {
         Windows Credential with permission to log on to the remote server. Must be specified for any remote connection.
 
     .PARAMETER Type
-        Type of the update: All | ServicePack | CumulativeUpdate. Mutually exclusive with -Version.
+        Type of the update: All | ServicePack | CumulativeUpdate.
         Default: All
+        Use -Version to limit upgrade to a certain Major version of SQL Server.
 
     .PARAMETER KB
         Install a specific update or list of updates. Can be a number of a string KBXXXXXXX.
@@ -49,9 +50,6 @@ function Update-DbaInstance {
         SP0CU3 - will update all existing SQL Server versions to RTM CU3 without installing any service packs
         SP1CU7 - will update all existing SQL Server versions to SP1 and then (after restart if -Restart is specified) to SP1CU7
         CU7 - will update all existing SQL Server versions to CU7 of current Service Pack installed
-
-    .PARAMETER MajorVersion
-        When -Version is not specified, it allows user to only update specific version(s) of SQL Server. Syntax: SQL20XX or simply 20XX.
 
     .PARAMETER Path
         Path to the folder(s) with SQL Server patches downloaded. It will be scanned recursively for available patches.
@@ -102,7 +100,7 @@ function Update-DbaInstance {
         Binary files for the update will be searched among all files and folders recursively in \\network\share.
 
     .EXAMPLE
-        PS C:\> Update-DbaInstance -ComputerName SQL1 -MajorVersion 2012 -Type ServicePack -Path \\network\share
+        PS C:\> Update-DbaInstance -ComputerName SQL1 -Version 2012 -Type ServicePack -Path \\network\share
 
         Updates SQL Server 2012 on SQL1 with the most recent ServicePack found in your patch repository.
         Binary files for the update will be searched among all files and folders recursively in \\network\share.
@@ -116,20 +114,18 @@ function Update-DbaInstance {
     #>
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSShouldProcess", "")]
     # Shouldprocess is handled by internal function Install-SqlServerUpdate
-    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High', DefaultParameterSetName = 'Latest')]
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High', DefaultParameterSetName = 'Version')]
     Param (
         [parameter(ValueFromPipeline, Position = 1)]
         [Alias("cn", "host", "Server")]
         [DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,
         [pscredential]$Credential,
-        [Parameter(Mandatory, ParameterSetName = 'Version')]
+        [Parameter(ParameterSetName = 'Version')]
         [ValidateNotNullOrEmpty()]
         [string[]]$Version,
-        [Parameter(ParameterSetName = 'Latest')]
-        [string[]]$MajorVersion,
-        [Parameter(ParameterSetName = 'Latest')]
+        [Parameter(ParameterSetName = 'Version')]
         [ValidateSet('All', 'ServicePack', 'CumulativeUpdate')]
-        [string]$Type = 'All',
+        [string[]]$Type = @('All'),
         [Parameter(Mandatory, ParameterSetName = 'KB')]
         [ValidateNotNullOrEmpty()]
         [string[]]$KB,
@@ -142,17 +138,9 @@ function Update-DbaInstance {
     begin {
         #Validating parameters
         if ($PSCmdlet.ParameterSetName -eq 'Version') {
-            if ($Version -notmatch '^((SQL)?\d{4}(R2)?)?\s*(RTM|SP\d+)?\s*(CU\d+)?$') {
-                Stop-Function -Category InvalidArgument -Message "$Version is an incorrect Version value, please refer to Get-Help Update-DbaInstance -Parameter Version"
-                return
-            }
-        } elseif ($PSCmdlet.ParameterSetName -eq 'Latest') {
-            $majorVersions = @()
-            foreach ($mv in $MajorVersion) {
-                if ($mv -match '^(SQL)?(\d{4}(R2)?)$') {
-                    $majorVersions += $Matches[2]
-                } else {
-                    Stop-Function -Category InvalidArgument -Message "$mv is an incorrect MajorVersion value, please refer to Get-Help Update-DbaInstance -Parameter MajorVersion"
+            foreach ($v in $Version) {
+                if ($v -notmatch '^((SQL)?\d{4}(R2)?)?\s*(RTM|SP\d+)?\s*(CU\d+)?$') {
+                    Stop-Function -Category InvalidArgument -Message "$Version is an incorrect Version value, please refer to Get-Help Update-DbaInstance -Parameter Version"
                     return
                 }
             }
@@ -169,62 +157,70 @@ function Update-DbaInstance {
         }
         $actions = @()
         #Putting together list of actions based on current ParameterSet
-        if ($PSCmdlet.ParameterSetName -eq 'Latest') {
-            if ($Type -in 'All', 'ServicePack') {
-                $actions += @{
-                    Type         = 'ServicePack'
-                    MajorVersion = $majorVersions
-                    InstanceName = $InstanceName
-                }
-            }
-            if ($Type -in 'All', 'CumulativeUpdate') {
-                $actions += @{
-                    Type         = 'CumulativeUpdate'
-                    MajorVersion = $majorVersions
-                    InstanceName = $InstanceName
-                }
-            }
-        } elseif ($PSCmdlet.ParameterSetName -eq 'Version') {
+        if ($PSCmdlet.ParameterSetName -eq 'Version') {
+            if ($Type -contains 'All') { $typeList = @('ServicePack', 'CumulativeUpdate') }
+            else { $typeList = $Type | Sort-Object -Descending }
             foreach ($ver in $Version) {
                 $currentAction = @{
                     InstanceName = $InstanceName
                 }
                 if ($ver -and $ver -match '^(SQL)?(\d{4}(R2)?)?\s*(RTM|SP)?(\d+)?(CU)?(\d+)?') {
-                    Write-Message -Level Debug "Parsed Version as $($Matches[2, 5, 7] | ConvertTo-Json -Depth 1 -Compress)"
-                    if (-not ($Matches[5] -or $Matches[7])) {
-                        Stop-Function -Category InvalidArgument -Message "Either SP or CU should be specified in $ver, please refer to Get-Help Update-DbaInstance -Parameter Version"
-                        return
-                    }
-                    if ($null -ne $Matches[2]) {
+                    $majorV, $spV, $cuV = $Matches[2, 5, 7]
+                    Write-Message -Level Debug -Message "Parsed Version as Major $majorV SP $spV CU $cuV"
+                    # Add appropriate fields to the splat
+                    # Add version to every field
+                    if ($null -ne $majorV) {
                         $currentAction += @{
-                            MajorVersion = $Matches[2]
+                            MajorVersion = $majorV
+                        }
+                        # When version is the only thing that is specified, we want all the types added
+                        if ($null -eq $spV -and $null -eq $cuV) {
+                            foreach ($currentType in $typeList) {
+                                $actions += $currentAction.Clone() + @{ Type = $currentType }
+                            }
                         }
                     }
-                    if ($null -ne $Matches[5]) {
+                    #when SP# is specified
+                    if ($null -ne $spV) {
                         $currentAction += @{
-                            ServicePack = $Matches[5]
+                            ServicePack = $spV
                         }
-                        if ($Matches[5] -ne '0') {
-                            $actions += $currentAction
+                        # ignore SP0 and trigger only when SP is in Type
+                        if ($spV -ne '0' -and 'ServicePack' -in $typeList) {
+                            $actions += $currentAction.Clone()
                         }
                     }
-                    if ($null -ne $Matches[7]) {
-                        $actions += $currentAction.Clone() + @{
-                            CumulativeUpdate = $Matches[7]
-                        }
+                    # When CU# is specified, but ignore CU0 and trigger only when CU is in Type
+                    if ($null -ne $cuV -and $cuV -ne '0' -and 'CumulativeUpdate' -in $typeList) {
+                        $actions += $currentAction.Clone() + @{ CumulativeUpdate = $cuV }
                     }
                 } else {
                     Stop-Function -Category InvalidArgument -Message "$ver is an incorrect Version value, please refer to Get-Help Update-DbaInstance -Parameter Version"
                     return
                 }
             }
+            # If no version specified, simply apply latest $currentType
+            if (!$Version) {
+                foreach ($currentType in $typeList) {
+                    $currentAction = @{
+                        Type         = $currentType
+                        InstanceName = $InstanceName
+                    }
+                    $actions += $currentAction
+                }
+            }
         } elseif ($PSCmdlet.ParameterSetName -eq 'KB') {
             foreach ($kbItem in $kbList) {
-                $actions += @{
+                $currentAction = @{
                     KB           = $kbItem
                     InstanceName = $InstanceName
                 }
+                $actions += $currentAction
             }
+        }
+        # debug message
+        foreach ($a in $actions) {
+            Write-Message -Level Debug -Message "Added installation action $($a | ConvertTo-Json -Depth 1 -Compress)"
         }
     }
     process {

@@ -22,7 +22,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
         $defaultParamCount = 13
         [object[]]$params = (Get-ChildItem function:\$CommandName).Parameters.Keys
-        $knownParameters = 'ComputerName', 'Credential', 'Version', 'MajorVersion', 'Type', 'Path', 'Restart', 'EnableException', 'Kb', 'InstanceName'
+        $knownParameters = 'ComputerName', 'Credential', 'Version', 'Type', 'Path', 'Restart', 'EnableException', 'Kb', 'InstanceName'
         $paramCount = $knownParameters.Count
         It "Should contain our specific parameters" {
             ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
@@ -78,7 +78,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
             }
         }
         It "Should mock-upgrade SQL2008\LAB2 to latest SP" {
-            $result = Update-DbaInstance -MajorVersion 2008 -InstanceName LAB2 -Type ServicePack -Path $exeDir -Restart -EnableException -Confirm:$false
+            $result = Update-DbaInstance -Version 2008 -InstanceName LAB2 -Type ServicePack -Path $exeDir -Restart -EnableException -Confirm:$false
             Assert-MockCalled -CommandName Get-SQLInstanceComponent -Exactly 1 -Scope It -ModuleName dbatools
             Assert-MockCalled -CommandName Invoke-Program -Exactly 2 -Scope It -ModuleName dbatools
             Assert-MockCalled -CommandName Restart-Computer -Exactly 1 -Scope It -ModuleName dbatools
@@ -492,15 +492,10 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         It "fails when Version string is incorrect" {
             { Update-DbaInstance -Version '' -EnableException } | Should throw 'Cannot validate argument on parameter ''Version'''
             { Update-DbaInstance -Version $null -EnableException } | Should throw 'Cannot validate argument on parameter ''Version'''
-            { Update-DbaInstance -Version SQL2008 -EnableException } | Should throw 'Either SP or CU should be specified'
             { Update-DbaInstance -Version SQL2008-SP3 -EnableException } | Should throw 'is an incorrect Version value'
             { Update-DbaInstance -Version SP2CU -EnableException } | Should throw 'is an incorrect Version value'
             { Update-DbaInstance -Version SPCU2 -EnableException } | Should throw 'is an incorrect Version value'
             { Update-DbaInstance -Version SQLSP2CU2 -EnableException } | Should throw 'is an incorrect Version value'
-        }
-        It "fails when MajorVersion string is incorrect" {
-            { Update-DbaInstance -MajorVersion 08 -EnableException } | Should throw 'is an incorrect MajorVersion value'
-            { Update-DbaInstance -MajorVersion 2008SP3 -EnableException } | Should throw 'is an incorrect MajorVersion value'
         }
         It "fails when KB is missing in the folder" {
             { Update-DbaInstance -Path $exeDir -EnableException } | Should throw 'Could not find installer for the SQL2008 update KB'
