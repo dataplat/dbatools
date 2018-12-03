@@ -1544,7 +1544,7 @@ $script:windowsonly = @(
 
 # If a developer or appveyor calls the psm1 directly, they want all functions
 # So do not explicity export because everything else is then implicity excluded
-if ((Get-PSCallStack)[0].Command -ne 'dbatools.psm1' -or (($PSVersionTable.Keys -contains "Platform") -and ($PSVersionTable.Platform -ne "Win32NT"))) {
+if ((Get-PSCallStack)[0].Command -ne 'dbatools.psm1' -or (-not $isWindows)) {
     if (($PSVersionTable.Keys -contains "Platform")) {
         if ($PSVersionTable.Platform -ne "Win32NT") {
             Export-ModuleMember -Function $script:xplat
