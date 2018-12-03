@@ -1,5 +1,12 @@
 $start = Get-Date
 
+if (($PSVersionTable.PSVersion.Major -lt 6) -or ($PSVersionTable.Keys -contains "Platform" -and $PSVersionTable.Platform -eq "Win32NT")) {
+    $script:isWindows = $true
+} else {
+    $script:isWindows = $false
+}
+
+   
 #region Import helper functions
 function Import-ModuleFile {
     <#
@@ -126,16 +133,22 @@ if ($dbatools_multiFileImport) { $script:multiFileImport = $true }
 if ($dbatoolsSystemSystemNode.MultiFileImport) { $script:multiFileImport = $true }
 if ($dbatoolsSystemUserNode.MultiFileImport) { $script:multiFileImport = $true }
 if (Test-Path -Path "$script:PSModuleRoot\.git") { $script:multiFileImport = $true }
+if (Test-Path -Path "$script:PSModuleRoot/.git") { $script:multiFileImport = $true }
 #endregion Multi File Import
 
 Write-ImportTime -Text "Validated defines"
 #endregion Import Defines
 
-if (($PSVersionTable.PSVersion.Major -le 5) -or $isWindows) {
+if (($PSVersionTable.PSVersion.Major -le 5) -or $script:isWindows) {
     Get-ChildItem -Path (Resolve-Path "$script:PSModuleRoot\bin\") -Filter "*.dll" -Recurse | Unblock-File -ErrorAction Ignore
     Write-ImportTime -Text "Unblocking Files"
 }
 
+
+$script:DllRoot = (Resolve-Path -Path "$script:PSModuleRoot\bin\")
+
+<#
+# Removed this because it doesn't seem to work well xplat and on win7 and it doesn't provide enough value
 # Define folder in which to copy dll files before importing
 if (-not $script:copyDllMode) { $script:DllRoot = (Resolve-Path "$script:PSModuleRoot\bin\") }
 else {
@@ -146,6 +159,7 @@ else {
     $script:DllRoot = $libraryTempPath
     $null = New-Item -Path $libraryTempPath -ItemType Directory
 }
+#>
 
 if (-not ([System.Management.Automation.PSTypeName]'Microsoft.SqlServer.Management.Smo.Server').Type) {
     . Import-ModuleFile "$script:PSModuleRoot\internal\scripts\smoLibraryImport.ps1"
@@ -221,13 +235,10 @@ foreach ($function in (Get-ChildItem -Path (Resolve-Path -Path "$script:PSModule
 }
 Write-ImportTime -Text "Loading Optional Commands"
 
-if (($PSVersionTable.Keys -contains "Platform") -and $PSVersionTable.Platform -ne "Win32NT") {
-    Write-Verbose -Message "Skipping tepp configuration. Not Core compatible yet."
-} else {
-    # Process TEPP parameters
-    . Import-ModuleFile -Path (Resolve-Path -Path "$script:PSModuleRoot\internal\scripts\insertTepp.ps1")
-    Write-ImportTime -Text "Loading TEPP"
-}
+# Process TEPP parameters
+. Import-ModuleFile -Path (Resolve-Path -Path "$script:PSModuleRoot\internal\scripts\insertTepp.ps1")
+Write-ImportTime -Text "Loading TEPP"
+
 
 # Process transforms
 . Import-ModuleFile -Path (Resolve-Path -Path "$script:PSModuleRoot\internal\scripts\message-transforms.ps1")
@@ -240,13 +251,10 @@ Write-ImportTime -Text "Loading Message Transforms"
 . Import-ModuleFile -Path (Resolve-Path -Path "$script:PSModuleRoot\internal\scripts\logfilescript.ps1")
 Write-ImportTime -Text "Script: Logging"
 
-if (($PSVersionTable.Keys -contains "Platform") -and $PSVersionTable.Platform -ne "Win32NT") {
-    Write-Verbose -Message "Skipping tepp configuration. Not Core compatible yet."
-} else {
-    # Start the tepp asynchronous update system (requires the configuration system up and running)
-    . Import-ModuleFile -Path (Resolve-Path -Path "$script:PSModuleRoot\internal\scripts\updateTeppAsync.ps1")
-    Write-ImportTime -Text "Script: Asynchronous TEPP Cache"
-}
+# Start the tepp asynchronous update system (requires the configuration system up and running)
+. Import-ModuleFile -Path (Resolve-Path -Path "$script:PSModuleRoot\internal\scripts\updateTeppAsync.ps1")
+Write-ImportTime -Text "Script: Asynchronous TEPP Cache"
+
 
 # Start the maintenance system (requires pretty much everything else already up and running)
 . Import-ModuleFile -Path (Resolve-Path -Path "$script:PSModuleRoot\internal\scripts\dbatools-maintenance.ps1")
@@ -1550,9 +1558,9 @@ $script:windowsonly = @(
 
 # If a developer or appveyor calls the psm1 directly, they want all functions
 # So do not explicity export because everything else is then implicity excluded
-if ((Get-PSCallStack)[0].Command -ne 'dbatools.psm1') {
+if (-not $script:multiFileImport) {
     if (($PSVersionTable.Keys -contains "Platform")) {
-        if ($psversiontable.Platform -ne "Win32NT") {
+        if ($PSVersionTable.Platform -ne "Win32NT") {
             Export-ModuleMember -Function $script:xplat
         } else {
             Export-ModuleMember -Function $script:xplat
