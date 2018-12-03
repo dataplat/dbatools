@@ -144,6 +144,10 @@ if (($PSVersionTable.PSVersion.Major -le 5) -or $script:isWindows) {
     Write-ImportTime -Text "Unblocking Files"
 }
 
+
+$script:DllRoot = (Resolve-Path "$script:PSModuleRoot\bin\")
+
+<#
 # Define folder in which to copy dll files before importing
 if (-not $script:copyDllMode) { $script:DllRoot = (Resolve-Path "$script:PSModuleRoot\bin\") }
 else {
@@ -154,6 +158,7 @@ else {
     $script:DllRoot = $libraryTempPath
     $null = New-Item -Path $libraryTempPath -ItemType Directory
 }
+#>
 
 if (-not ([System.Management.Automation.PSTypeName]'Microsoft.SqlServer.Management.Smo.Server').Type) {
     . Import-ModuleFile "$script:PSModuleRoot\internal\scripts\smoLibraryImport.ps1"
