@@ -8,7 +8,7 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
         <#
             Get commands, Default count = 11
             Commands with SupportShouldProcess = 13
-               #>
+        #>
         $defaultParamCount = 13
         [object[]]$params = (Get-ChildItem function:\New-DbaAvailabilityGroup).Parameters.Keys
         $knownParameters = 'Primary', 'PrimarySqlCredential', 'Secondary', 'SecondarySqlCredential', 'Name', 'DtcSupport', 'ClusterType', 'AutomatedBackupPreference', 'FailureConditionLevel', 'HealthCheckTimeout', 'Basic', 'DatabaseHealthTrigger', 'Passthru', 'Database', 'SharedPath', 'UseLastBackup', 'Force', 'AvailabilityMode', 'FailoverMode', 'BackupPriority', 'ConnectionModeInPrimaryRole', 'ConnectionModeInSecondaryRole', 'SeedingMode', 'Endpoint', 'ReadonlyRoutingConnectionUrl', 'Certificate', 'IPAddress', 'SubnetMask', 'Port', 'Dhcp', 'EnableException'
