@@ -78,7 +78,7 @@ function Invoke-DbaAgFailover {
         if ($SqlInstance) {
             $InputObject += Get-DbaAvailabilityGroup -SqlInstance $SqlInstance -SqlCredential $SqlCredential -AvailabilityGroup $AvailabilityGroup
         }
-        
+
         foreach ($ag in $InputObject) {
             try {
                 $server = $ag.Parent
