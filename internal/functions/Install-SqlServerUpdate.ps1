@@ -163,7 +163,6 @@ function Install-SqlServerUpdate {
             }
             ## Find the installer to use
             Write-ProgressHelper -ExcludePercent -Activity $activity -Message "Searching for update binaries"
-
             $installer = Find-SqlServerUpdate @kbLookupParams
             if (!$installer) {
                 Stop-Function -Message "Could not find installer for the $currentMajorVersion update KB$($kbLookupParams.KB)" -Continue

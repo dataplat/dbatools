@@ -64,7 +64,7 @@
 
     # Modules to import as nested modules of the module specified in ModuleToProcess
     NestedModules          = @()
-    
+
     # Functions to export from this module
     # Specific functions to export for Core, etc are also found in psm1
     # FunctionsToExport specifically helps with AUTO-LOADING so do not remove
@@ -603,7 +603,7 @@
         'Select-DbaObject',
         'Set-DbatoolsConfig'
         )
-        
+
     # Variables to export from this module
     VariablesToExport      = ''
 
