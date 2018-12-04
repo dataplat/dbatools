@@ -73,7 +73,7 @@ function Copy-DbaAgentJob {
         Shows what would happen if the command were executed using force.
         
     .EXAMPLE
-        PS C:\> Get-DbaAgentJob -SqlInstance sqlserver2014a | Where-Object {$_.Category -eq "Report Server"} | ForEach-Object {Copy-DbaAgentJob -Source $_.ComputerName -Job $_.Name -Destination sqlserver2014b}
+        PS C:\> Get-DbaAgentJob -SqlInstance sqlserver2014a | Where-Object Category -eq "Report Server" | ForEach-Object {Copy-DbaAgentJob -Source $_.SqlInstance -Job $_.Name -Destination sqlserver2014b}
         
         Copies all SSRS jobs (subscriptions) from AlwaysOn Primary SQL instance sqlserver2014a to AlwaysOn Secondary SQL instance sqlserver2014b
     #>
