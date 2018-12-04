@@ -78,21 +78,25 @@ function Invoke-DbaAgFailover {
         if ($SqlInstance) {
             $InputObject += Get-DbaAvailabilityGroup -SqlInstance $SqlInstance -SqlCredential $SqlCredential -AvailabilityGroup $AvailabilityGroup
         }
-
+        
         foreach ($ag in $InputObject) {
-            $server = $ag.Parent
-            if ($Force) {
-                if ($Pscmdlet.ShouldProcess($server.Name, "Forcefully failing over $($ag.Name), allowing potential data loss")) {
-                    $ag.FailoverWithPotentialDataLoss()
-                    $ag.Refresh()
-                    $ag
+            try {
+                $server = $ag.Parent
+                if ($Force) {
+                    if ($Pscmdlet.ShouldProcess($server.Name, "Forcefully failing over $($ag.Name), allowing potential data loss")) {
+                        $ag.FailoverWithPotentialDataLoss()
+                        $ag.Refresh()
+                        $ag
+                    }
+                } else {
+                    if ($Pscmdlet.ShouldProcess($server.Name, "Gracefully failing over $($ag.Name)")) {
+                        $ag.Failover()
+                        $ag.Refresh()
+                        $ag
+                    }
                 }
-            } else {
-                if ($Pscmdlet.ShouldProcess($server.Name, "Gracefully failing over $($ag.Name)")) {
-                    $ag.Failover()
-                    $ag.Refresh()
-                    $ag
-                }
+            } catch {
+                Stop-Function -Continue -Message "Failure" -ErrorRecord $_
             }
         }
     }
