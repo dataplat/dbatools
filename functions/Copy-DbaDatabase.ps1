@@ -77,7 +77,7 @@ function Copy-DbaDatabase {
         Use of this switch requires -BackupRestore or -DetachAttach as well.
 
     .PARAMETER InputObject
-        A collection of dbobjects from the pipeline.
+        Enables piped input from Get-DbaDatabase
 
     .PARAMETER UseLastBackup
         Use the last full, diff and logs instead of performing backups. Note that the backups must exist in a location accessible by all destination servers, such a network share.
