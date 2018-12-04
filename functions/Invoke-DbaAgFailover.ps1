@@ -46,17 +46,17 @@ function Invoke-DbaAgFailover {
     .EXAMPLE
         PS C:\> Invoke-DbaAgFailover -SqlInstance sql2017 -AvailabilityGroup SharePoint
 
-        Safely (no potential data loss) fails over the SharePoint AG on sql2017. Prompts for confirmation.
+        Safely (no potential data loss) fails over the SharePoint AG to sql2017. Prompts for confirmation.
 
     .EXAMPLE
         PS C:\> Get-DbaAvailabilityGroup -SqlInstance sql2017 | Out-GridView -Passthru | Invoke-DbaAgFailover -Confirm:$false
 
-        Safely (no potential data loss) fails over the selected availability groups on sql2017. Does not prompt for confirmation.
+        Safely (no potential data loss) fails over the selected availability groups to sql2017. Does not prompt for confirmation.
 
     .EXAMPLE
         PS C:\> Invoke-DbaAgFailover -SqlInstance sql2017 -AvailabilityGroup SharePoint -Force
 
-        Forcefully (with potential data loss) fails over the SharePoint AG on sql2017. Prompts for confirmation.
+        Forcefully (with potential data loss) fails over the SharePoint AG to sql2017. Prompts for confirmation.
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
     param (
@@ -80,19 +80,23 @@ function Invoke-DbaAgFailover {
         }
 
         foreach ($ag in $InputObject) {
-            $server = $ag.Parent
-            if ($Force) {
-                if ($Pscmdlet.ShouldProcess($server.Name, "Forcefully failing over $($ag.Name), allowing potential data loss")) {
-                    $ag.FailoverWithPotentialDataLoss()
-                    $ag.Refresh()
-                    $ag
+            try {
+                $server = $ag.Parent
+                if ($Force) {
+                    if ($Pscmdlet.ShouldProcess($server.Name, "Forcefully failing over $($ag.Name), allowing potential data loss")) {
+                        $ag.FailoverWithPotentialDataLoss()
+                        $ag.Refresh()
+                        $ag
+                    }
+                } else {
+                    if ($Pscmdlet.ShouldProcess($server.Name, "Gracefully failing over $($ag.Name)")) {
+                        $ag.Failover()
+                        $ag.Refresh()
+                        $ag
+                    }
                 }
-            } else {
-                if ($Pscmdlet.ShouldProcess($server.Name, "Gracefully failing over $($ag.Name)")) {
-                    $ag.Failover()
-                    $ag.Refresh()
-                    $ag
-                }
+            } catch {
+                Stop-Function -Continue -Message "Failure" -ErrorRecord $_
             }
         }
     }
