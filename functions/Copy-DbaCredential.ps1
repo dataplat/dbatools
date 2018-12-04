@@ -100,8 +100,12 @@ function Copy-DbaCredential {
         [Alias('Silent')]
         [switch]$EnableException
     )
-
+    
     begin {
+        if (-not $script:isWindows) {
+            Stop-Function -Message "Copy-DbaCredential is only supported on Windows"
+            return
+        }
         $null = Test-ElevationRequirement -ComputerName $Source.ComputerName
 
         function Copy-Credential {
