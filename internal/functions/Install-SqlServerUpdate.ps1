@@ -22,8 +22,10 @@ function Install-SqlServerUpdate {
         [ValidateNotNullOrEmpty()]
         [string]$KB,
         [bool]$Restart,
+        [string]$InstanceName,
         [string[]]$Path,
-        [bool]$EnableException = $EnableException
+        [bool]$EnableException = $EnableException,
+        [bool]$Continue
     )
     process {
         # check if any type of the update was specified
@@ -36,29 +38,29 @@ function Install-SqlServerUpdate {
 
         ## Find the current version on the computer
         Write-ProgressHelper -ExcludePercent -Activity $activity -StepNumber 0 -Message "Gathering all SQL Server instance versions"
-        $currentVersions = Get-SQLServerVersion -ComputerName $computer
-        if (!$currentVersions) {
+        $components = Get-SQLInstanceComponent -ComputerName $computer -Credential $Credential
+        if (!$components) {
             Stop-Function -Message "No SQL Server installations found on $computer"
             return
         }
-        # Group by version and select the earliest version installed
-        $currentVersionGroups = $currentVersions | Group-Object -Property NameLevel | ForEach-Object {
-            $_.Group | Sort-Object -Property Build | Select-Object -First 1
+        Write-Message -Level Debug -Message "Found $(($components | Measure-Object).Count) existing SQL Server instance components: $(($components | Foreach-Object { "$($_.InstanceName)($($_.InstanceType))" }) -join ',')"
+        # Filter for specific instances
+        if ($InstanceName) {
+            $components = $components | Where-Object {$_.InstanceName -eq $InstanceName }
         }
-        $verCount = ($currentVersionGroups | Measure-Object).Count
-        $verDesc = ($currentVersionGroups | Foreach-Object { "$($_.NameLevel) ($($_.Build))" }) -join ', '
-        Write-Message -Level Debug -Message "Found $verCount existing SQL Server version(s): $verDesc"
+        if ($MajorVersion) {
+            $components = $components | Where-Object { $_.Version.NameLevel -in $MajorVersion }
+        }
+        $verCount = ($components | Measure-Object).Count
+        $verDesc = ($components | Foreach-Object { "$($_.Version.NameLevel) ($($_.Version.Build))" }) -join ', '
+        Write-Message -Level Debug -Message "Selected $verCount existing SQL Server version(s): $verDesc"
+        # Group by version
+        $currentVersionGroups = $components | Group-Object -Property { $_.Version.NameLevel }
         #Check if more than one version is found
         if (($currentVersionGroups | Measure-Object ).Count -gt 1 -and ($CumulativeUpdate -or $ServicePack) -and !$MajorVersion) {
             Stop-Function -Message "Updating multiple different versions of SQL Server to a specific SP/CU is not supported. Please specify a version of SQL Server on $computer that you want to update."
             return
         }
-        if ($MajorVersion) {
-            $currentVersionGroups = $currentVersionGroups | Where-Object { $_.NameLevel -in $MajorVersion }
-        }
-        $verCount = ($currentVersionGroups | Measure-Object).Count
-        $verDesc = ($currentVersionGroups | Foreach-Object { "$($_.NameLevel) ($($_.Build))" }) -join ', '
-        Write-Message -Level Verbose -Message "Found $verCount applicable SQL Server version(s): $verDesc"
         ## Find the architecture of the computer
         if ($arch = (Get-DbaCmObject -ComputerName $computer -ClassName 'Win32_ComputerSystem').SystemType) {
             if ($arch -eq 'x64-based PC') {
@@ -72,14 +74,18 @@ function Install-SqlServerUpdate {
         }
         $targetLevel = ''
         # Launch a setup sequence for each version found
-        foreach ($currentVersion in $currentVersionGroups) {
-            $stepCounter = 0
-            $currentMajorVersion = "SQL" + $currentVersion.NameLevel
+        foreach ($currentGroup in $currentVersionGroups) {
+            $currentMajorVersion = "SQL" + $currentGroup.Name
+            $currentMajorNumber = $currentGroup.Name
+
+            # Use the earliest version in case specifics are needed
+            $currentVersion = $currentGroup.Group | Sort-Object -Property { $_.Version.BuildLevel } | Select-Object -ExpandProperty Version -First 1
+
             Write-ProgressHelper -ExcludePercent -Activity $activity -Message "Parsing versions"
             # create a parameter set for Find-SqlServerUpdate
             $kbLookupParams = @{
                 Architecture = $arch
-                MajorVersion = $currentVersion.NameLevel
+                MajorVersion = $currentGroup.Name
                 Path         = $Path
             }
             # Find target KB number based on provided SP/CU levels or KB numbers
@@ -87,24 +93,24 @@ function Install-SqlServerUpdate {
                 #Cumulative update is present - installing CU
                 if (Test-Bound -Parameter ServicePack) {
                     #Service pack is present - using it as a reference
-                    $targetKB = Get-DbaBuildReference -MajorVersion $currentVersion.NameLevel -ServicePack $ServicePack -CumulativeUpdate $CumulativeUpdate
+                    $targetKB = Get-DbaBuildReference -MajorVersion $currentMajorNumber -ServicePack $ServicePack -CumulativeUpdate $CumulativeUpdate
                 } else {
                     #Service pack not present - using current SP level
                     $targetSP = $currentVersion.SPLevel | Where-Object { $_ -ne 'LATEST' } | Select-Object -First 1
-                    $targetKB = Get-DbaBuildReference -MajorVersion $currentVersion.NameLevel -ServicePack $targetSP -CumulativeUpdate $CumulativeUpdate
+                    $targetKB = Get-DbaBuildReference -MajorVersion $currentMajorNumber -ServicePack $targetSP -CumulativeUpdate $CumulativeUpdate
                 }
             } elseif ($ServicePack -gt 0) {
                 #Service pack number was passed without CU - installing service pack
-                $targetKB = Get-DbaBuildReference -MajorVersion $currentVersion.NameLevel -ServicePack $ServicePack
+                $targetKB = Get-DbaBuildReference -MajorVersion $currentMajorNumber -ServicePack $ServicePack
             } elseif ($KB) {
                 $targetKB = Get-DbaBuildReference -KB $KB
-                if ($targetKB -and $currentVersion.NameLevel -ne $targetKB.NameLevel) {
-                    Write-Message -Level Debug -Message "$($targetKB.NameLevel) is not a target Major version $($currentVersion.NameLevel), skipping"
+                if ($targetKB -and $currentMajorNumber -ne $targetKB.NameLevel) {
+                    Write-Message -Level Debug -Message "$($targetKB.NameLevel) is not a target Major version $($currentMajorNumber), skipping"
                     continue
                 }
             } else {
                 #No parameters = latest patch. Find latest SQL Server build and corresponding SP and CU KBs
-                $latestCU = Test-DbaBuild -Build $currentVersion.Build -MaxBehind '0CU'
+                $latestCU = Test-DbaBuild -Build $currentVersion.BuildLevel -MaxBehind '0CU'
                 if (!$latestCU.Compliant) {
                     #more recent build is found, get KB number depending on what is the current upgrade $Type
                     $targetKB = Get-DbaBuildReference -Build $latestCU.BuildTarget
@@ -139,7 +145,19 @@ function Install-SqlServerUpdate {
             }
 
             # Compare versions - whether to proceed with the installation
-            if ($currentVersion.BuildLevel -ge $targetKB.BuildLevel) {
+            $needsUpgrade = $false
+            foreach ($currentComponent in $currentGroup.Group) {
+                $groupVersion = $currentComponent.Version
+                #target version is less than requested
+                if ($groupVersion.BuildLevel -lt $targetKB.BuildLevel) {
+                    $needsUpgrade = $true
+                }
+                #target version is the same but installation has failed last time
+                elseif ($groupVersion.BuildLevel -eq $targetKB.BuildLevel -and $Continue -and $currentComponent.Resume) {
+                    $needsUpgrade = $true
+                }
+            }
+            if (!$needsUpgrade) {
                 Write-Message -Message "Current $currentMajorVersion version $($currentVersion.BuildLevel) on computer [$($computer)] matches or already higher than target version $($targetKB.BuildLevel)" -Level Verbose
                 continue
             }
@@ -171,9 +189,14 @@ function Install-SqlServerUpdate {
                         Write-Message -Level Verbose -Message "Extracting $installer to $spExtractPath"
                         $null = Invoke-Program @invProgParams -Path $installer.FullName -ArgumentList "/x`:`"$spExtractPath`" /quiet"
                         # Install the patch
+                        if ($InstanceName) {
+                            $instanceClause = "/instancename=$InstanceName"
+                        } else {
+                            $instanceClause = '/allinstances'
+                        }
                         Write-ProgressHelper -ExcludePercent -Activity $activity -Message "Now installing update from $spExtractPath"
                         Write-Message -Level Verbose -Message "Starting installation from $spExtractPath"
-                        $log = Invoke-Program @invProgParams -Path "$spExtractPath\setup.exe" -ArgumentList '/quiet /allinstances /IAcceptSQLServerLicenseTerms' -WorkingDirectory $spExtractPath
+                        $log = Invoke-Program @invProgParams -Path "$spExtractPath\setup.exe" -ArgumentList @('/quiet', $instanceClause, '/IAcceptSQLServerLicenseTerms') -WorkingDirectory $spExtractPath
                         $success = $true
                     } catch {
                         Stop-Function -Message "Upgrade failed" -ErrorRecord $_
@@ -222,6 +245,7 @@ function Install-SqlServerUpdate {
                 KB           = $kbLookupParams.KB
                 Successful   = [bool]$success
                 Restarted    = [bool]$restarted
+                InstanceName = $InstanceName
                 Installer    = $installer.FullName
                 ExtractPath  = $spExtractPath
                 Message      = $message

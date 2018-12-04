@@ -36,6 +36,12 @@ function Initialize-CredSSP {
     )
 
     #Configure local machine
+    #Start local WinRM service
+    if ((Get-Service WinRM).Status -ne 'Running') {
+        $null = Get-Service WinRM -ErrorAction Stop | Start-Service -ErrorAction Stop
+        Start-Sleep -Seconds 1
+    }
+    #Get current config
     try {
         $sspList = Get-WSManCredSSP -ErrorAction Stop
 
@@ -43,12 +49,10 @@ function Initialize-CredSSP {
         Stop-Function -Message "Failed to get a list of CredSSP hosts" -ErrorRecord $_
         return
     }
-
+    #Enable delegation to a remote server if not declared already
     if ($sspList -and $sspList[0] -notmatch "wsman\/$([regex]::Escape($ComputerName))[\,$]") {
         Write-Message -Level Verbose -Message "Configuring local host to use CredSSP"
         try {
-            # Start local WinRM service
-            $null = Get-Service WinRM -ErrorAction Stop | Start-Service -ErrorAction Stop
             # Enable client SSP on local machine
             $null = Enable-WSManCredSSP -role Client -DelegateComputer $ComputerName -Force -ErrorAction Stop
         } catch {
@@ -64,6 +68,7 @@ function Initialize-CredSSP {
             if ($sspList[1] -ne 'This computer is configured to receive credentials from a remote client computer.') {
                 $null = Enable-WSManCredSSP -Role Server -Force -ErrorAction Stop
             }
+            # netsh http add iplisten 127.0.0.1 - whaattt?
         }
     } catch {
         Stop-Function -Message "Failed to configure remote CredSSP on $ComputerName as a server" -ErrorRecord $_
