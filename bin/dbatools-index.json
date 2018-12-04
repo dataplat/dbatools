@@ -3182,7 +3182,7 @@
                        ],
                        [
                            "InputObject",
-                           "A collection of dbobjects from the pipeline.",
+                           "Enables piped input from Get-DbaDatabase",
                            "",
                            false,
                            "true (ByValue)",
@@ -37560,7 +37560,7 @@
         "Synopsis":  "Migrates SQL Server *ALL* databases, logins, database mail profiles/accounts, credentials, SQL Agent objects, linked servers,\nCentral Management Server objects, server configuration settings (sp_configure), user objects in systems databases,\nsystem triggers and backup devices from one SQL Server to another.\n\nFor more granular control, please use Exclude or use the other functions available within the dbatools module.",
         "Name":  "Start-DbaMigration",
         "Links":  "https://dbatools.io/Start-DbaMigration",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eStart-DbaMigration -Source sqlserver\\instance -Destination sqlcluster -DetachAttach\nAll databases, logins, job objects and sp_configure options will be migrated from sqlserver\\instance to sqlcluster. Databases will be migrated using the detach/copy files/attach method. Dbowner will \r\nbe updated. User passwords, SIDs, database roles and server roles will be migrated along with the login.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003e$params = @{\n\u003e\u003e Source = \"sqlcluster\"\r\n\u003e\u003e Destination = \"sql2016\"\r\n\u003e\u003e SourceSqlCredential = $scred\r\n\u003e\u003e DestinationSqlCredential = $cred\r\n\u003e\u003e SharedPath = \"\\\\fileserver\\share\\sqlbackups\\Migration\"\r\n\u003e\u003e BackupRestore = $true\r\n\u003e\u003e ReuseSourceFolderStructure\" = $true\r\n\u003e\u003e Force = $true\r\n\u003e\u003e }\r\n\u003e\u003e\r\nPS C:\\\u003e Start-DbaMigration @params -Verbose\nUtilizes splatting technique to set all the needed parameters. This will migrate databases using the backup/restore method. It will also include migration of the logins, database mail configuration, \r\ncredentials, SQL Agent, Central Management Server, and SQL Server global configuration.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eStart-DbaMigration -Verbose -Source sqlcluster -Destination sql2016 -DetachAttach -Reattach -SetSourceReadonly\nMigrates databases using detach/copy/attach. Reattach at source and set source databases read-only. Also migrates everything else.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003e$PSDefaultParameters = @{\n\u003e\u003e \"dbatools:Source\" = \"sqlcluster\"\r\n\u003e\u003e \"dbatools:Destination\" = \"sql2016\"\r\n\u003e\u003e }\r\n\u003e\u003e\r\nPS C:\\\u003e Start-DbaMigration -Verbose -Exclude Databases, Logins\nUtilizes the PSDefaultParameterValues system variable, and sets the Source and Destination parameters for any function in the module that has those parameter names. This prevents the need from \r\npassing them in constantly.\r\nThe execution of the function will migrate everything but logins and databases.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eStart-DbaMigration -Source sqlserver\\instance -Destination sqlcluster -DetachAttach\nAll databases, logins, job objects and sp_configure options will be migrated from sqlserver\\instance to sqlcluster. Databases will be migrated using the detach/copy files/attach method. Dbowner will \r\nbe updated. User passwords, SIDs, database roles and server roles will be migrated along with the login.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003e$params = @{\n\u003e\u003e Source = \"sqlcluster\"\r\n\u003e\u003e Destination = \"sql2016\"\r\n\u003e\u003e SourceSqlCredential = $scred\r\n\u003e\u003e DestinationSqlCredential = $cred\r\n\u003e\u003e SharedPath = \"\\\\fileserver\\share\\sqlbackups\\Migration\"\r\n\u003e\u003e BackupRestore = $true\r\n\u003e\u003e ReuseSourceFolderStructure = $true\r\n\u003e\u003e Force = $true\r\n\u003e\u003e }\r\n\u003e\u003e\r\nPS C:\\\u003e Start-DbaMigration @params -Verbose\nUtilizes splatting technique to set all the needed parameters. This will migrate databases using the backup/restore method. It will also include migration of the logins, database mail configuration, \r\ncredentials, SQL Agent, Central Management Server, and SQL Server global configuration.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eStart-DbaMigration -Verbose -Source sqlcluster -Destination sql2016 -DetachAttach -Reattach -SetSourceReadonly\nMigrates databases using detach/copy/attach. Reattach at source and set source databases read-only. Also migrates everything else.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003e$PSDefaultParameters = @{\n\u003e\u003e \"dbatools:Source\" = \"sqlcluster\"\r\n\u003e\u003e \"dbatools:Destination\" = \"sql2016\"\r\n\u003e\u003e }\r\n\u003e\u003e\r\nPS C:\\\u003e Start-DbaMigration -Verbose -Exclude Databases, Logins\nUtilizes the PSDefaultParameterValues system variable, and sets the Source and Destination parameters for any function in the module that has those parameter names. This prevents the need from \r\npassing them in constantly.\r\nThe execution of the function will migrate everything but logins and databases.",
         "Syntax":  "Start-DbaMigration [[-Source] \u003cDbaInstanceParameter\u003e] [[-Destination] \u003cDbaInstanceParameter[]\u003e] [-DetachAttach] [-Reattach] [-BackupRestore] [[-SharedPath] \u003cString\u003e] [-WithReplace] [-NoRecovery] [-SetSourceReadOnly] [-ReuseSourceFolderStructure] [-IncludeSupportDbs] [[-SourceSqlCredential] \u003cPSCredential\u003e] [[-DestinationSqlCredential] \u003cPSCredential\u003e] [[-Exclude] \u003cString[]\u003e] [-DisableJobsOnDestination] [-DisableJobsOnSource] [-ExcludeSaRename] [-UseLastBackup] [-Continue] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
@@ -39686,9 +39686,17 @@
                            "False"
                        ],
                        [
+                           "InputObject",
+                           "Enables piped input from Get-DbaDatabase.",
+                           "",
+                           false,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
                            "EnableException",
                            "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
-                           "Silent",
+                           "",
                            false,
                            "false",
                            "False"
@@ -39700,7 +39708,7 @@
         "Name":  "Test-DbaDbOwner",
         "Links":  "https://dbatools.io/Test-DbaDbOwner",
         "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eTest-DbaDbOwner -SqlInstance localhost\nReturns all databases where the owner does not match \u0027sa\u0027.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eTest-DbaDbOwner -SqlInstance localhost -TargetLogin \u0027DOMAIN\\account\u0027\nReturns all databases where the owner does not match \u0027DOMAIN\\account\u0027.",
-        "Syntax":  "Test-DbaDbOwner [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cObject[]\u003e] [[-ExcludeDatabase] \u003cObject[]\u003e] [[-TargetLogin] \u003cString\u003e] [-Detailed] [-EnableException] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Test-DbaDbOwner [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cObject[]\u003e] [[-ExcludeDatabase] \u003cObject[]\u003e] [[-TargetLogin] \u003cString\u003e] [-Detailed] [[-InputObject] \u003cDatabase[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
         "CommandName":  "Test-DbaDbRecoveryModel",
