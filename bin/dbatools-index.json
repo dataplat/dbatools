@@ -41,6 +41,22 @@
                            ""
                        ],
                        [
+                           "Secondary",
+                           "Not required - the command will figure this out. But if you\u0027d like to be explicit about replicas, this will help.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "SecondarySqlCredential",
+                           "Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
                            "InputObject",
                            "Enables piping from Get-DbaDatabase, Get-DbaDbSharePoint and more.",
                            "",
@@ -103,7 +119,7 @@
         "Name":  "Add-DbaAgDatabase",
         "Links":  "https://dbatools.io/Add-DbaAgDatabase",
         "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eAdd-DbaAgDatabase -SqlInstance sql2017a -AvailabilityGroup ag1 -Database db1, db2 -Confirm\nAdds db1 and db2 to ag1 on sql2017a. Prompts for confirmation.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaDatabase -SqlInstance sql2017a | Out-GridView -Passthru | Add-DbaAgDatabase -AvailabilityGroup ag1\nAdds selected databases from sql2017a to ag1\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaDbSharePoint -SqlInstance sqlcluster | Add-DbaAgDatabase -AvailabilityGroup SharePoint\nAdds SharePoint databases as found in SharePoint_Config on sqlcluster to ag1 on sqlcluster\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaDbSharePoint -SqlInstance sqlcluster -ConfigDatabase SharePoint_Config_2019 | Add-DbaAgDatabase -AvailabilityGroup SharePoint\nAdds SharePoint databases as found in SharePoint_Config_2019 on sqlcluster to ag1 on sqlcluster",
-        "Syntax":  "Add-DbaAgDatabase [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [-AvailabilityGroup] \u003cString\u003e [[-Database] \u003cString[]\u003e] [[-InputObject] \u003cDatabase[]\u003e] [[-SeedingMode] \u003cString\u003e] [[-SharedPath] \u003cString\u003e] [-UseLastBackup] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Add-DbaAgDatabase [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [-AvailabilityGroup] \u003cString\u003e [[-Database] \u003cString[]\u003e] [[-Secondary] \u003cDbaInstanceParameter[]\u003e] [[-SecondarySqlCredential] \u003cPSCredential\u003e] [[-InputObject] \u003cDatabase[]\u003e] [[-SeedingMode] \u003cString\u003e] [[-SharedPath] \u003cString\u003e] [-UseLastBackup] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "CommandName":  "Add-DbaAgListener",
@@ -21396,7 +21412,7 @@
         "Synopsis":  "Failover an availability group.",
         "Name":  "Invoke-DbaAgFailover",
         "Links":  "https://dbatools.io/Invoke-DbaAgFailover",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eInvoke-DbaAgFailover -SqlInstance sql2017 -AvailabilityGroup SharePoint\nSafely (no potential data loss) fails over the SharePoint AG on sql2017. Prompts for confirmation.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaAvailabilityGroup -SqlInstance sql2017 | Out-GridView -Passthru | Invoke-DbaAgFailover -Confirm:$false\nSafely (no potential data loss) fails over the selected availability groups on sql2017. Does not prompt for confirmation.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eInvoke-DbaAgFailover -SqlInstance sql2017 -AvailabilityGroup SharePoint -Force\nForcefully (with potential data loss) fails over the SharePoint AG on sql2017. Prompts for confirmation.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eInvoke-DbaAgFailover -SqlInstance sql2017 -AvailabilityGroup SharePoint\nSafely (no potential data loss) fails over the SharePoint AG to sql2017. Prompts for confirmation.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaAvailabilityGroup -SqlInstance sql2017 | Out-GridView -Passthru | Invoke-DbaAgFailover -Confirm:$false\nSafely (no potential data loss) fails over the selected availability groups to sql2017. Does not prompt for confirmation.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eInvoke-DbaAgFailover -SqlInstance sql2017 -AvailabilityGroup SharePoint -Force\nForcefully (with potential data loss) fails over the SharePoint AG to sql2017. Prompts for confirmation.",
         "Syntax":  "Invoke-DbaAgFailover [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-AvailabilityGroup] \u003cString[]\u003e] [[-InputObject] \u003cAvailabilityGroup[]\u003e] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
@@ -25518,7 +25534,7 @@
         "Synopsis":  "Automates the creation of availability groups.",
         "Name":  "New-DbaAvailabilityGroup",
         "Links":  "https://dbatools.io/New-DbaAvailabilityGroup",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eNew-DbaAvailabilityGroup -Primary sql2016a -Name SharePoint\nCreates a new availability group on sql2016a named SharePoint\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eNew-DbaAvailabilityGroup -Primary sql2016a -Name SharePoint -Secondary sql2016b\nCreates a new availability group on sql2016b named SharePoint with a secondary replica, sql2016b\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eNew-DbaAvailabilityGroup -Primary sql2016std -Name BAG1 -Basic -Confirm:$false\nCreates a basic availability group named BAG1 on sql2016std and does not confirm when setting up\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eNew-DbaAvailabilityGroup -Primary sql2016b -Name AG1 -ClusterType Wsfc -Dhcp -Database db1 -UseLastBackup\nCreates an availability group on sql2016b with the name ag1. Uses the last backups available to add the database db1 to the AG.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eNew-DbaAvailabilityGroup -Primary sql2017 -Name SharePoint -ClusterType None -FailoverMode Manual\nCreates a new availability group on sql2017 named SharePoint with a cluster type of none and a failover mode of manual\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eNew-DbaAvailabilityGroup -Primary sql1 -Secondary sql2 -Name ag1 -Database pubs -ClusterType None -SeedingMode Automatic -FailoverMode Manual\nCreates a new availability group with a primary replica on sql1 and a secondary on sql2. Automatically adds the database pubs.\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003e$cred = Get-Credential sqladmin\nPS C:\\\u003e $params = @{\r\n            \u003e\u003e Primary = \"sql1\"\r\n            \u003e\u003e PrimarySqlCredential = $cred\r\n            \u003e\u003e Secondary = \"sql2\"\r\n            \u003e\u003e SecondarySqlCredential = $cred\r\n            \u003e\u003e Name = \"test-ag\"\r\n            \u003e\u003e Database = \"pubs\"\r\n            \u003e\u003e ClusterType = \"None\"\r\n            \u003e\u003e SeedingMode = \"Automatic\"\r\n            \u003e\u003e FailoverMode = \"Manual\"\r\n            \u003e\u003e Confirm = $false\r\n        \u003e\u003e }\r\nPS C:\\\u003e New-DbaAvailabilityGroup @params\nThis exact command was used to create an availability group on docker!",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eNew-DbaAvailabilityGroup -Primary sql2016a -Name SharePoint\nCreates a new availability group on sql2016a named SharePoint\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eNew-DbaAvailabilityGroup -Primary sql2016a -Name SharePoint -Secondary sql2016b\nCreates a new availability group on sql2016b named SharePoint with a secondary replica, sql2016b\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eNew-DbaAvailabilityGroup -Primary sql2016std -Name BAG1 -Basic -Confirm:$false\nCreates a basic availability group named BAG1 on sql2016std and does not confirm when setting up\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eNew-DbaAvailabilityGroup -Primary sql2016b -Name AG1 -ClusterType Wsfc -Dhcp -Database db1 -UseLastBackup\nCreates an availability group on sql2016b with the name ag1. Uses the last backups available to add the database db1 to the AG.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eNew-DbaAvailabilityGroup -Primary sql2017 -Name SharePoint -ClusterType None -FailoverMode Manual\nCreates a new availability group on sql2017 named SharePoint with a cluster type of none and a failover mode of manual\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eNew-DbaAvailabilityGroup -Primary sql1 -Secondary sql2 -Name ag1 -Database pubs -ClusterType None -SeedingMode Automatic -FailoverMode Manual\nCreates a new availability group with a primary replica on sql1 and a secondary on sql2. Automatically adds the database pubs.\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003e$cred = Get-Credential sqladmin\nPS C:\\\u003e $params = @{\r\n\u003e\u003e Primary = \"sql1\"\r\n\u003e\u003e PrimarySqlCredential = $cred\r\n\u003e\u003e Secondary = \"sql2\"\r\n\u003e\u003e SecondarySqlCredential = $cred\r\n\u003e\u003e Name = \"test-ag\"\r\n\u003e\u003e Database = \"pubs\"\r\n\u003e\u003e ClusterType = \"None\"\r\n\u003e\u003e SeedingMode = \"Automatic\"\r\n\u003e\u003e FailoverMode = \"Manual\"\r\n\u003e\u003e Confirm = $false\r\n\u003e\u003e }\r\nPS C:\\\u003e New-DbaAvailabilityGroup @params\nThis exact command was used to create an availability group on docker!",
         "Syntax":  "New-DbaAvailabilityGroup [[-Primary] \u003cDbaInstanceParameter\u003e] [[-PrimarySqlCredential] \u003cPSCredential\u003e] [[-Secondary] \u003cDbaInstanceParameter[]\u003e] [[-SecondarySqlCredential] \u003cPSCredential\u003e] [-Name] \u003cString\u003e [-DtcSupport] [[-ClusterType] \u003cString\u003e] [[-AutomatedBackupPreference] \u003cString\u003e] [[-FailureConditionLevel] \u003cString\u003e] [[-HealthCheckTimeout] \u003cInt32\u003e] [-Basic] [-DatabaseHealthTrigger] [-Passthru] [[-Database] \u003cString[]\u003e] [[-SharedPath] \u003cString\u003e] [-UseLastBackup] [-Force] [[-AvailabilityMode] \u003cString\u003e] [[-FailoverMode] \u003cString\u003e] [[-BackupPriority] \u003cInt32\u003e] [[-ConnectionModeInPrimaryRole] \u003cString\u003e] \r\n[[-ConnectionModeInSecondaryRole] \u003cString\u003e] [[-SeedingMode] \u003cString\u003e] [[-Endpoint] \u003cString\u003e] [[-ReadonlyRoutingConnectionUrl] \u003cString\u003e] [[-Certificate] \u003cString\u003e] [[-IPAddress] \u003cIPAddress[]\u003e] [[-SubnetMask] \u003cIPAddress\u003e] [[-Port] \u003cInt32\u003e] [-Dhcp] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
@@ -35867,7 +35883,7 @@
     },
     {
         "CommandName":  "Set-DbaJobOwner",
-        "Description":  "This function alters SQL Agent Job ownership to match a specified login if their current owner does not match the target login. By default, the target login will be \u0027sa\u0027, but the the user may specify a different login for ownership. This be applied to all jobs or only to a select collection of jobs.\n\nBest practice reference: http://sqlmag.com/blog/sql-server-tip-assign-ownership-jobs-sysadmin-account",
+        "Description":  "This function alters SQL Agent Job ownership to match a specified login if their current owner does not match the target login. By default, the target login will be \u0027sa\u0027,\nbut the the user may specify a different login for ownership. This be applied to all jobs or only to a select collection of jobs.\n\nBest practice reference: http://sqlmag.com/blog/sql-server-tip-assign-ownership-jobs-sysadmin-account\n\nIf the \u0027sa\u0027 account was renamed, the new name will be used.",
         "Tags":  [
                      "Agent",
                      "Job"
@@ -35877,7 +35893,7 @@
                            "SqlInstance",
                            "The target SQL Server instance or instances.",
                            "ServerInstance,SqlServer",
-                           true,
+                           false,
                            "true (ByValue)",
                            ""
                        ],
@@ -35903,6 +35919,14 @@
                            "",
                            false,
                            "false",
+                           ""
+                       ],
+                       [
+                           "InputObject",
+                           "Enables piped input from Get-DbaAgentJob",
+                           "",
+                           false,
+                           "true (ByValue)",
                            ""
                        ],
                        [
@@ -35943,8 +35967,8 @@
         "Synopsis":  "Sets SQL Agent job owners with a desired login if jobs do not match that owner.",
         "Name":  "Set-DbaJobOwner",
         "Links":  "https://dbatools.io/Set-DbaJobOwner",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eSet-DbaJobOwner -SqlInstance localhost\nSets SQL Agent Job owner to sa on all jobs where the owner does not match sa.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eSet-DbaJobOwner -SqlInstance localhost -Login DOMAIN\\account\nSets SQL Agent Job owner to sa on all jobs where the owner does not match \u0027DOMAIN\\account\u0027. Note\r\nthat Login must be a valid security principal that exists on the target server.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eSet-DbaJobOwner -SqlInstance localhost -Job job1, job2\nSets SQL Agent Job owner to \u0027sa\u0027 on the job1 and job2 jobs if their current owner does not match \u0027sa\u0027.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003e\u0027sqlserver\u0027,\u0027sql2016\u0027 | Set-DbaJobOwner\nSets SQL Agent Job owner to sa on all jobs where the owner does not match sa on both sqlserver and sql2016.",
-        "Syntax":  "Set-DbaJobOwner [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Job] \u003cObject[]\u003e] [[-ExcludeJob] \u003cObject[]\u003e] [[-Login] \u003cString\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eSet-DbaJobOwner -SqlInstance localhost\nSets SQL Agent Job owner to sa on all jobs where the owner does not match sa.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eSet-DbaJobOwner -SqlInstance localhost -Login DOMAIN\\account\nSets SQL Agent Job owner to \u0027DOMAIN\\account\u0027 on all jobs where the owner does not match \u0027DOMAIN\\account\u0027. Note\r\nthat Login must be a valid security principal that exists on the target server.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eSet-DbaJobOwner -SqlInstance localhost -Job job1, job2\nSets SQL Agent Job owner to \u0027sa\u0027 on the job1 and job2 jobs if their current owner does not match \u0027sa\u0027.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003e\u0027sqlserver\u0027,\u0027sql2016\u0027 | Set-DbaJobOwner\nSets SQL Agent Job owner to sa on all jobs where the owner does not match sa on both sqlserver and sql2016.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eGet-DbaAgentJob -SqlInstance vmsql | Where-Object OwnerLoginName -eq login1 | Set-DbaJobOwner -TargetLogin login2 | Out-Gridview\nSets SQL Agent Job owner to login2 where their current owner is login1 on instance vmsql. Send result to gridview.",
+        "Syntax":  "Set-DbaJobOwner [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Job] \u003cObject[]\u003e] [[-ExcludeJob] \u003cObject[]\u003e] [[-InputObject] \u003cJob[]\u003e] [[-Login] \u003cString\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "CommandName":  "Set-DbaLogin",
@@ -41455,31 +41479,31 @@
                            "Version",
                            "A target version of the installation you want to reach. If not specified, a latest available version would be used by default.\r\nCan be defined using the following general pattern: \u003cMajorVersion\u003e\u003cSPX\u003e\u003cCUX\u003e.\r\nAny part of the pattern can be ommitted if needed:\r\n2008R2SP1 - will update SQL 2008R2 to SP1\r\n2016CU3 - will update SQL 2016 to CU3 of current Service Pack installed\r\nSP0CU3 - will update all existing SQL Server versions to RTM CU3 without installing any service packs\r\nSP1CU7 - will update all existing SQL Server versions to SP1 and then (after restart if -Restart is specified) to SP1CU7\r\nCU7 - will update all existing SQL Server versions to CU7 of current Service Pack installed",
                            "",
-                           true,
-                           "false",
-                           ""
-                       ],
-                       [
-                           "MajorVersion",
-                           "When -Version is not specified, it allows user to only update specific version(s) of SQL Server. Syntax: SQL20XX or simply 20XX.",
-                           "",
                            false,
                            "false",
                            ""
                        ],
                        [
                            "Type",
-                           "Type of the update: All | ServicePack | CumulativeUpdate. Mutually exclusive with -Version.\r\nDefault: All",
+                           "Type of the update: All | ServicePack | CumulativeUpdate.\r\nDefault: All\r\nUse -Version to limit upgrade to a certain Major version of SQL Server.",
                            "",
                            false,
                            "false",
-                           "All"
+                           "@(\u0027All\u0027)"
                        ],
                        [
                            "KB",
                            "Install a specific update or list of updates. Can be a number of a string KBXXXXXXX.",
                            "",
                            true,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "InstanceName",
+                           "Only updates a specific instance(s).",
+                           "Instance",
+                           false,
                            "false",
                            ""
                        ],
@@ -41494,6 +41518,14 @@
                        [
                            "Restart",
                            "Restart computer automatically after a successful installation of a patch and wait until it comes back online.\r\nUsing this parameter is the only way to chain-install more than 1 patch on a computer, since every single patch will require a restart of said computer.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "Continue",
+                           "Continues a failed installation attempt when specified. Will abort a previously failed installation otherwise.",
                            "",
                            false,
                            "false",
@@ -41529,8 +41561,8 @@
         "Synopsis":  "Invokes installation of SQL Server Service Packs and Cumulative Updates on local and remote servers.",
         "Name":  "Update-DbaInstance",
         "Links":  null,
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eUpdate-DbaInstance -ComputerName SQL1 -Version SP3 -Path \\\\network\\share\nUpdates all applicable SQL Server installations on SQL1 to SP3.\r\nBinary files for the update will be searched among all files and folders recursively in \\\\network\\share.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eUpdate-DbaInstance -ComputerName SQL1, SQL2 -Restart -Path \\\\network\\share\nUpdates all applicable SQL Server installations on SQL1 and SQL2 with the most recent patch.\r\nIt will install latest ServicePack, restart the computers, install latest Cumulative Update, and finally restart the computer once again.\r\nBinary files for the update will be searched among all files and folders recursively in \\\\network\\share.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eUpdate-DbaInstance -ComputerName SQL1 -MajorVersion 2012 -Type ServicePack -Path \\\\network\\share\nUpdates SQL Server 2012 on SQL1 with the most recent ServicePack found in your patch repository.\r\nBinary files for the update will be searched among all files and folders recursively in \\\\network\\share.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eUpdate-DbaInstance -ComputerName SQL1 -KB 123456 -Restart -Path \\\\network\\share\nInstalls KB 123456 on SQL1 and restarts the computer.\r\nBinary files for the update will be searched among all files and folders recursively in \\\\network\\share.",
-        "Syntax":  "Update-DbaInstance [[-ComputerName] \u003cDbaInstanceParameter[]\u003e] [-Credential \u003cPSCredential\u003e] [-MajorVersion \u003cString[]\u003e] [-Type \u003cString\u003e] [-Path \u003cString[]\u003e] [-Restart] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nUpdate-DbaInstance [[-ComputerName] \u003cDbaInstanceParameter[]\u003e] [-Credential \u003cPSCredential\u003e] -Version \u003cString[]\u003e [-Path \u003cString[]\u003e] [-Restart] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nUpdate-DbaInstance [[-ComputerName] \u003cDbaInstanceParameter[]\u003e] [-Credential \u003cPSCredential\u003e] -KB \u003cString[]\u003e [-Path \u003cString[]\u003e] [-Restart] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eUpdate-DbaInstance -ComputerName SQL1 -Version SP3 -Path \\\\network\\share\nUpdates all applicable SQL Server installations on SQL1 to SP3.\r\nBinary files for the update will be searched among all files and folders recursively in \\\\network\\share.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eUpdate-DbaInstance -ComputerName SQL1, SQL2 -Restart -Path \\\\network\\share\nUpdates all applicable SQL Server installations on SQL1 and SQL2 with the most recent patch.\r\nIt will install latest ServicePack, restart the computers, install latest Cumulative Update, and finally restart the computer once again.\r\nBinary files for the update will be searched among all files and folders recursively in \\\\network\\share.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eUpdate-DbaInstance -ComputerName SQL1 -Version 2012 -Type ServicePack -Path \\\\network\\share\nUpdates SQL Server 2012 on SQL1 with the most recent ServicePack found in your patch repository.\r\nBinary files for the update will be searched among all files and folders recursively in \\\\network\\share.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eUpdate-DbaInstance -ComputerName SQL1 -KB 123456 -Restart -Path \\\\network\\share\nInstalls KB 123456 on SQL1 and restarts the computer.\r\nBinary files for the update will be searched among all files and folders recursively in \\\\network\\share.",
+        "Syntax":  "Update-DbaInstance [[-ComputerName] \u003cDbaInstanceParameter[]\u003e] [-Credential \u003cPSCredential\u003e] [-Version \u003cString[]\u003e] [-Type \u003cString[]\u003e] [-InstanceName \u003cString\u003e] [-Path \u003cString[]\u003e] [-Restart] [-Continue] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nUpdate-DbaInstance [[-ComputerName] \u003cDbaInstanceParameter[]\u003e] [-Credential \u003cPSCredential\u003e] -KB \u003cString[]\u003e [-InstanceName \u003cString\u003e] [-Path \u003cString[]\u003e] [-Restart] [-Continue] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "CommandName":  "Update-DbaServiceAccount",

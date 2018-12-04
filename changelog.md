@@ -4,6 +4,43 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
     and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.709] - 2018-12-4
+### Fixed
+* Invoke-DbaAgFailover try/catch wrap to make errors pretty.
+
+## [0.9.708] - 2018-12-4
+### Fixed
+* Sync AG bug having to do with read-only dbs
+
+# Added
+* Update-DbaInstance final touches
+
+
+## [0.9.707] - 2018-12-3
+### Fixed
+* Explicit export of cmdlet module members (fixes older OS/PS issues)
+
+## [0.9.705] - 2018-12-3
+### Fixed
+* Docker support for AGs
+
+## [0.9.704] - 2018-12-3
+### Fixed
+* Issue where the dll was repeatedly copied in Windows
+* Command exports
+
+## [0.9.703] - 2018-12-3
+### Added
+* Faster import by uisng zip instead of big ol' ps1
+
+## [0.9.702] - 2018-12-2
+### Fixed
+* Core support for Copy-DbaDbDatatable, Write-DbaDataTable, 
+* Parameter names for Copy-DbaDbQueryStoreOption
+
+### Added
+* Core support for Import-DbaCsv
+
 ## [0.9.700] - 2018-12-1
 ### Added
 * For real true xplat including library and configs 🎉🎉🎉🎉🎉

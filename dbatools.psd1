@@ -11,7 +11,7 @@
     RootModule             = 'dbatools.psm1'
 
     # Version number of this module.
-    ModuleVersion          = '0.9.701'
+    ModuleVersion          = '0.9.709'
 
     # ID used to uniquely identify this module
     GUID                   = '9d139310-ce45-41ce-8e8b-d76335aa1789'
@@ -64,7 +64,7 @@
 
     # Modules to import as nested modules of the module specified in ModuleToProcess
     NestedModules          = @()
-    
+
     # Functions to export from this module
     # Specific functions to export for Core, etc are also found in psm1
     # FunctionsToExport specifically helps with AUTO-LOADING so do not remove
@@ -603,7 +603,7 @@
         'Select-DbaObject',
         'Set-DbatoolsConfig'
         )
-        
+
     # Variables to export from this module
     VariablesToExport      = ''
 
