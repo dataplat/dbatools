@@ -41479,31 +41479,31 @@
                            "Version",
                            "A target version of the installation you want to reach. If not specified, a latest available version would be used by default.\r\nCan be defined using the following general pattern: \u003cMajorVersion\u003e\u003cSPX\u003e\u003cCUX\u003e.\r\nAny part of the pattern can be ommitted if needed:\r\n2008R2SP1 - will update SQL 2008R2 to SP1\r\n2016CU3 - will update SQL 2016 to CU3 of current Service Pack installed\r\nSP0CU3 - will update all existing SQL Server versions to RTM CU3 without installing any service packs\r\nSP1CU7 - will update all existing SQL Server versions to SP1 and then (after restart if -Restart is specified) to SP1CU7\r\nCU7 - will update all existing SQL Server versions to CU7 of current Service Pack installed",
                            "",
-                           true,
-                           "false",
-                           ""
-                       ],
-                       [
-                           "MajorVersion",
-                           "When -Version is not specified, it allows user to only update specific version(s) of SQL Server. Syntax: SQL20XX or simply 20XX.",
-                           "",
                            false,
                            "false",
                            ""
                        ],
                        [
                            "Type",
-                           "Type of the update: All | ServicePack | CumulativeUpdate. Mutually exclusive with -Version.\r\nDefault: All",
+                           "Type of the update: All | ServicePack | CumulativeUpdate.\r\nDefault: All\r\nUse -Version to limit upgrade to a certain Major version of SQL Server.",
                            "",
                            false,
                            "false",
-                           "All"
+                           "@(\u0027All\u0027)"
                        ],
                        [
                            "KB",
                            "Install a specific update or list of updates. Can be a number of a string KBXXXXXXX.",
                            "",
                            true,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "InstanceName",
+                           "Only updates a specific instance(s).",
+                           "Instance",
+                           false,
                            "false",
                            ""
                        ],
@@ -41518,6 +41518,14 @@
                        [
                            "Restart",
                            "Restart computer automatically after a successful installation of a patch and wait until it comes back online.\r\nUsing this parameter is the only way to chain-install more than 1 patch on a computer, since every single patch will require a restart of said computer.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "Continue",
+                           "Continues a failed installation attempt when specified. Will abort a previously failed installation otherwise.",
                            "",
                            false,
                            "false",
@@ -41553,8 +41561,8 @@
         "Synopsis":  "Invokes installation of SQL Server Service Packs and Cumulative Updates on local and remote servers.",
         "Name":  "Update-DbaInstance",
         "Links":  null,
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eUpdate-DbaInstance -ComputerName SQL1 -Version SP3 -Path \\\\network\\share\nUpdates all applicable SQL Server installations on SQL1 to SP3.\r\nBinary files for the update will be searched among all files and folders recursively in \\\\network\\share.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eUpdate-DbaInstance -ComputerName SQL1, SQL2 -Restart -Path \\\\network\\share\nUpdates all applicable SQL Server installations on SQL1 and SQL2 with the most recent patch.\r\nIt will install latest ServicePack, restart the computers, install latest Cumulative Update, and finally restart the computer once again.\r\nBinary files for the update will be searched among all files and folders recursively in \\\\network\\share.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eUpdate-DbaInstance -ComputerName SQL1 -MajorVersion 2012 -Type ServicePack -Path \\\\network\\share\nUpdates SQL Server 2012 on SQL1 with the most recent ServicePack found in your patch repository.\r\nBinary files for the update will be searched among all files and folders recursively in \\\\network\\share.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eUpdate-DbaInstance -ComputerName SQL1 -KB 123456 -Restart -Path \\\\network\\share\nInstalls KB 123456 on SQL1 and restarts the computer.\r\nBinary files for the update will be searched among all files and folders recursively in \\\\network\\share.",
-        "Syntax":  "Update-DbaInstance [[-ComputerName] \u003cDbaInstanceParameter[]\u003e] [-Credential \u003cPSCredential\u003e] [-MajorVersion \u003cString[]\u003e] [-Type \u003cString\u003e] [-Path \u003cString[]\u003e] [-Restart] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nUpdate-DbaInstance [[-ComputerName] \u003cDbaInstanceParameter[]\u003e] [-Credential \u003cPSCredential\u003e] -Version \u003cString[]\u003e [-Path \u003cString[]\u003e] [-Restart] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nUpdate-DbaInstance [[-ComputerName] \u003cDbaInstanceParameter[]\u003e] [-Credential \u003cPSCredential\u003e] -KB \u003cString[]\u003e [-Path \u003cString[]\u003e] [-Restart] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eUpdate-DbaInstance -ComputerName SQL1 -Version SP3 -Path \\\\network\\share\nUpdates all applicable SQL Server installations on SQL1 to SP3.\r\nBinary files for the update will be searched among all files and folders recursively in \\\\network\\share.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eUpdate-DbaInstance -ComputerName SQL1, SQL2 -Restart -Path \\\\network\\share\nUpdates all applicable SQL Server installations on SQL1 and SQL2 with the most recent patch.\r\nIt will install latest ServicePack, restart the computers, install latest Cumulative Update, and finally restart the computer once again.\r\nBinary files for the update will be searched among all files and folders recursively in \\\\network\\share.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eUpdate-DbaInstance -ComputerName SQL1 -Version 2012 -Type ServicePack -Path \\\\network\\share\nUpdates SQL Server 2012 on SQL1 with the most recent ServicePack found in your patch repository.\r\nBinary files for the update will be searched among all files and folders recursively in \\\\network\\share.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eUpdate-DbaInstance -ComputerName SQL1 -KB 123456 -Restart -Path \\\\network\\share\nInstalls KB 123456 on SQL1 and restarts the computer.\r\nBinary files for the update will be searched among all files and folders recursively in \\\\network\\share.",
+        "Syntax":  "Update-DbaInstance [[-ComputerName] \u003cDbaInstanceParameter[]\u003e] [-Credential \u003cPSCredential\u003e] [-Version \u003cString[]\u003e] [-Type \u003cString[]\u003e] [-InstanceName \u003cString\u003e] [-Path \u003cString[]\u003e] [-Restart] [-Continue] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nUpdate-DbaInstance [[-ComputerName] \u003cDbaInstanceParameter[]\u003e] [-Credential \u003cPSCredential\u003e] -KB \u003cString[]\u003e [-InstanceName \u003cString\u003e] [-Path \u003cString[]\u003e] [-Restart] [-Continue] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "CommandName":  "Update-DbaServiceAccount",
