@@ -82,6 +82,7 @@ function Copy-DbaBackupDevice {
     begin {
         if (-not $script:isWindows) {
             Stop-Function -Message "Copy-DbaBackupDevice does not support Linux yet though it looks doable"
+            return
         }
         try {
             $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
