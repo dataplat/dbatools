@@ -278,7 +278,7 @@ function Copy-DbaDatabase {
 
             )
 
-            if ($script:sameserver) {
+            if ($script:sameserver -or (-not $script:isWindows)) {
                 return $filepath
             }
             if (-not $filepath) {
