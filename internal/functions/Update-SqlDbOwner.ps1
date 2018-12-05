@@ -19,7 +19,7 @@ function Update-SqlDbOwner {
     )
 
     $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
-    $destServer = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $SqlCredential
+    $destServer = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
 
     $source = $sourceServer.DomainInstanceName
     $destination = $destServer.DomainInstanceName
