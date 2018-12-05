@@ -28,6 +28,9 @@ function Test-DbaDbOwner {
     .PARAMETER Detailed
         Will be deprecated in 1.0.0 release.
 
+    .PARAMETER InputObject
+        Enables piped input from Get-DbaDatabase.
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -64,9 +67,10 @@ function Test-DbaDbOwner {
         [Alias("Databases")]
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
-        [string]$TargetLogin ,
+        [string]$TargetLogin,
         [Switch]$Detailed,
-        [Alias('Silent')]
+        [parameter(ValueFromPipeline)]
+        [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
         [Switch]$EnableException
     )
 
@@ -74,37 +78,25 @@ function Test-DbaDbOwner {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -Parameter "Detailed"
     }
     process {
-        foreach ($instance in $SqlInstance) {
-            try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
-            } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
-            }
+        if ($SqlInstance) {
+            $InputObject += Get-DbaDatabase -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database -ExcludeDatabase $ExcludeDatabase | Where-Object IsAccessible
+        }
+
+        #for each database, create custom object for return set.
+        foreach ($db in $InputObject) {
+            $server = $db.Parent
 
             # dynamic sa name for orgs who have changed their sa name
             if (Test-Bound -ParameterName TargetLogin -Not) {
-                $TargetLogin = ($server.logins | Where-Object { $_.id -eq 1 }).Name
+                $TargetLogin = ($server.logins | Where-Object {
+                        $_.id -eq 1
+                    }).Name
             }
 
             #Validate login
             if (($server.Logins.Name) -notmatch [Regex]::Escape($TargetLogin)) {
                 Write-Message -Level Verbose -Message "$TargetLogin is not a login on $instance" -Target $instance
             }
-        }
-        #use online/available dbs
-        $dbs = $server.Databases | Where-Object IsAccessible
-
-        #filter database collection based on parameters
-        if ($Database) {
-            $dbs = $dbs | Where-Object { $Database -contains $_.Name }
-        }
-
-        if ($ExcludeDatabase) {
-            $dbs = $dbs | Where-Object Name -NotIn $ExcludeDatabase
-        }
-
-        #for each database, create custom object for return set.
-        foreach ($db in $dbs) {
 
             if ($db.IsAccessible -eq $false) {
                 Stop-Function -Message "The database $db is not accessible. Skipping database." -Continue -Target $db
