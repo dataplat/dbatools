@@ -266,7 +266,7 @@ function Update-DbaInstance {
             if ($InstanceName) {
                 $components = $components | Where-Object {$_.InstanceName -eq $InstanceName }
             }
-            $installs = @()
+            $upgrades = @()
             :actions foreach ($currentAction in $actions) {
                 if (Test-PendingReboot -ComputerName $resolvedName) {
                     #Exit the actions loop altogether - nothing can be installed here anyways
@@ -279,34 +279,34 @@ function Update-DbaInstance {
                 }
                 Write-ProgressHelper -ExcludePercent -Activity $activity -Message "Looking for a KB file for a chosen version"
                 Write-Message -Level Verbose -Message "Looking for appropriate KB file on $resolvedName with following params: $($currentAction | ConvertTo-Json -Depth 1 -Compress)"
-                $install = Install-SqlServerUpdate @currentAction -ComputerName $resolvedName -Credential $Credential -Restart $Restart -Path $Path -Component $components
-                if ($install.Successful -contains $false) {
+                $upgradeDetails = Get-SqlServerUpdate @currentAction -ComputerName $resolvedName -Credential $Credential -Restart $Restart -Path $Path -Component $components
+                if ($upgradeDetails.Successful -contains $false) {
                     #Exit the actions loop altogether - upgrade cannot be performed
-                    $install
-                    Stop-Function -Message "Update cannot be applied to $resolvedName | $($install.Message)" -Continue -ContinueLabel computers
+                    $upgradeDetails
+                    Stop-Function -Message "Update cannot be applied to $resolvedName | $($upgradeDetails.Message)" -Continue -ContinueLabel computers
                 } else {
                     # update components to mirror the updated version - will be used for multi-step upgrades
                     foreach ($component in $components) {
-                        if ($component.Version.NameLevel -in $install.TargetVersion.NameLevel) {
-                            $component.Version = $install.TargetVersion | Where-Object NameLevel -eq $component.Version.NameLevel
+                        if ($component.Version.NameLevel -in $upgradeDetails.TargetVersion.NameLevel) {
+                            $component.Version = $upgradeDetails.TargetVersion | Where-Object NameLevel -eq $component.Version.NameLevel
                         }
                     }
-                    $installs += $install
+                    $upgrades += $upgradeDetails
                 }
             }
-            if ($installs) {
+            if ($upgrades) {
                 Write-ProgressHelper -ExcludePercent -Activity $activity -Message "Preparing installation"
-                $chosenVersions = ($installs | ForEach-Object { "$($_.MajorVersion) to $($_.TargetLevel) ($($_.KB))" }) -join ', '
+                $chosenVersions = ($upgrades | ForEach-Object { "$($_.MajorVersion) to $($_.TargetLevel) ($($_.KB))" }) -join ', '
                 if ($PSCmdlet.ShouldProcess($resolvedName, "Update $chosenVersions")) {
                     $installActions += [pscustomobject]@{
                         ComputerName = $resolvedName
-                        Actions      = $installs
+                        Actions      = $upgrades
                     }
                 } else {
-                    foreach ($install in $installs) {
-                        $install.Message = 'The installation was not performed - running in WhatIf mode'
-                        $install.Successful = $true
-                        $install | ForEach-Object -Process $outputHandler
+                    foreach ($upgradeDetails in $upgrades) {
+                        $upgradeDetails.Message = 'The installation was not performed - running in WhatIf mode'
+                        $upgradeDetails.Successful = $true
+                        $upgradeDetails | ForEach-Object -Process $outputHandler
                     }
                 }
             }
@@ -317,11 +317,11 @@ function Update-DbaInstance {
             $computer = $_.ComputerName
             Write-Message -Level Debug -Message "Processing $($computer) with $(($_.Actions | Measure-Object).Count) actions" -FunctionName Update-DbaInstance
             $activity = "Updating SQL Server components on $computer"
-            #foreach action passed to the script
+            #foreach action passed to the script for this particular computer
             foreach ($currentAction in $_.Actions) {
                 $output = $currentAction
                 $output.Successful = $false
-                ## Apply patch
+                ## Start the installation sequence
                 Write-ProgressHelper -ExcludePercent -Activity $activity -Message "Launching installation of $($currentAction.TargetLevel) KB$($currentAction.KB) ($($currentAction.Installer)) for SQL$($currentAction.MajorVersion) ($($currentAction.Build))"
                 $execParams = @{
                     ComputerName = $computer
@@ -374,6 +374,7 @@ function Update-DbaInstance {
                     }
                 }
                 if ($Restart) {
+                    # Restart the computer
                     Write-ProgressHelper -ExcludePercent -Activity $activity -Message "Restarting computer $($computer) and waiting for it to come back online"
                     Write-Message -Level Verbose "Restarting computer $($computer) and waiting for it to come back online" -FunctionName Update-DbaInstance
                     try {
