@@ -7,7 +7,7 @@ $exeDir = "C:\Temp\dbatools_$CommandName"
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     BeforeAll {
         # Prevent the functions from executing dangerous stuff and getting right responses where needed
-        Mock -CommandName Invoke-Program -MockWith { $null } -ModuleName dbatools
+        Mock -CommandName Invoke-Program -MockWith { [pscustomobject]@{ Successful = $true } } -ModuleName dbatools
         Mock -CommandName Test-PendingReboot -MockWith { $false } -ModuleName dbatools
         Mock -CommandName Test-ElevationRequirement -MockWith { $null } -ModuleName dbatools
         Mock -CommandName Restart-Computer -MockWith { $null } -ModuleName dbatools
@@ -556,6 +556,20 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
             { Update-DbaInstance -Version 2008SP3CU7 -Path .\NonExistingFolder -EnableException } | Should throw 'Cannot find path'
             { Update-DbaInstance -Version 2008SP3CU7 -EnableException } | Should throw 'Path to SQL Server updates folder is not set'
         }
+        It "fails when update execution has failed" {
+            #Mock Get-Item and Get-ChildItem with a dummy file
+            Mock -CommandName Get-ChildItem -ModuleName dbatools -MockWith {
+                [pscustomobject]@{
+                    FullName = 'c:\mocked\filename.exe'
+                }
+            }
+            Mock -CommandName Get-Item -ModuleName dbatools -MockWith { 'c:\mocked' }
+            #override default mock
+            Mock -CommandName Invoke-Program -MockWith { [pscustomobject]@{ Successful = $false; ExitCode = 12345 } } -ModuleName dbatools
+            { Update-DbaInstance -Version 2008SP3 -EnableException -Path 'mocked' -Confirm:$false } | Should throw 'failed with exit code 12345'
+            #revert default mock
+            Mock -CommandName Invoke-Program -MockWith { [pscustomobject]@{ Successful = $true } } -ModuleName dbatools
+        }
     }
 }
 
@@ -577,16 +591,7 @@ Describe "$CommandName Integration Tests" -Tag 'IntegrationTests' {
     }
     Context "WhatIf upgrade all local versions to latest SPCU" {
         It "Should whatif-upgrade to latest SPCU" {
-            $results = Update-DbaInstance -ComputerName $script:instance1 -Type ServicePack -Path $exeDir -Restart -EnableException -WhatIf 3>$null
-            foreach ($result in $results) {
-                $result.MajorVersion | Should -BeLike 20*
-                $result.TargetLevel | Should -BeLike 'SP*'
-                $result.KB | Should -Not -BeNullOrEmpty
-                $result.Successful | Should -Be $true
-                $result.Restarted | Should -Be $false
-                $result.Installer | Should -Be 'c:\mocked\filename.exe'
-                $result.Message | Should -Be 'The installation was not performed - running in WhatIf mode'
-            }
+            { Update-DbaInstance -ComputerName $script:instance1 -Path $exeDir -Restart -EnableException -WhatIf 3>$null } | Should Not Throw
         }
     }
 }
