@@ -990,6 +990,10 @@ $script:renames = @(
     @{
         "AliasName"  = "Import-DbaCsvToSql"
         "Definition" = "Import-DbaCsv"
+    },
+    @{
+        "AliasName"  = "Set-DbaJobOwner"
+        "Definition" = "Set-DbaAgentJobOwner"
     }
 )
 
@@ -1066,7 +1070,7 @@ $script:xplat = @(
     'Test-DbaDbOwner',
     'Set-DbaDbOwner',
     'Test-DbaJobOwner',
-    'Set-DbaJobOwner',
+    'Set-DbaAgentJobOwner',
     'Test-DbaDbVirtualLogFile',
     'Get-DbaDbRestoreHistory',
     'Get-DbaTcpPort',
