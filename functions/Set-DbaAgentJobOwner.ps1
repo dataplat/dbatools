@@ -1,4 +1,4 @@
-function Set-DbaJobOwner {
+function Set-DbaAgentJobOwner {
     <#
     .SYNOPSIS
         Sets SQL Agent job owners with a desired login if jobs do not match that owner.
@@ -49,31 +49,31 @@ function Set-DbaJobOwner {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Set-DbaJobOwner
+        https://dbatools.io/Set-DbaAgentJobOwner
 
     .EXAMPLE
-        PS C:\> Set-DbaJobOwner -SqlInstance localhost
+        PS C:\> Set-DbaAgentJobOwner -SqlInstance localhost
 
         Sets SQL Agent Job owner to sa on all jobs where the owner does not match sa.
 
     .EXAMPLE
-        PS C:\> Set-DbaJobOwner -SqlInstance localhost -Login DOMAIN\account
+        PS C:\> Set-DbaAgentJobOwner -SqlInstance localhost -Login DOMAIN\account
 
         Sets SQL Agent Job owner to 'DOMAIN\account' on all jobs where the owner does not match 'DOMAIN\account'. Note
         that Login must be a valid security principal that exists on the target server.
 
     .EXAMPLE
-        PS C:\> Set-DbaJobOwner -SqlInstance localhost -Job job1, job2
+        PS C:\> Set-DbaAgentJobOwner -SqlInstance localhost -Job job1, job2
 
         Sets SQL Agent Job owner to 'sa' on the job1 and job2 jobs if their current owner does not match 'sa'.
 
     .EXAMPLE
-        PS C:\> 'sqlserver','sql2016' | Set-DbaJobOwner
+        PS C:\> 'sqlserver','sql2016' | Set-DbaAgentJobOwner
 
         Sets SQL Agent Job owner to sa on all jobs where the owner does not match sa on both sqlserver and sql2016.
 
     .EXAMPLE
-        PS C:\> Get-DbaAgentJob -SqlInstance vmsql | Where-Object OwnerLoginName -eq login1 | Set-DbaJobOwner -TargetLogin login2 | Out-Gridview
+        PS C:\> Get-DbaAgentJob -SqlInstance vmsql | Where-Object OwnerLoginName -eq login1 | Set-DbaAgentJobOwner -TargetLogin login2 | Out-Gridview
 
         Sets SQL Agent Job owner to login2 where their current owner is login1 on instance vmsql. Send result to gridview.
     #>
@@ -93,7 +93,9 @@ function Set-DbaJobOwner {
         [Alias('Silent')]
         [switch]$EnableException
     )
-
+    begin {
+        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Set-DbaJobOwner
+    }
     process {
         foreach ($instance in $SqlInstance) {
             try {

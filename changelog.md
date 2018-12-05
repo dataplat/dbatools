@@ -4,9 +4,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
     and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.710] - 2018-12-5
+### Fixed
+* Start-DbaMigration xplat support
+
+
 ## [0.9.709] - 2018-12-4
 ### Fixed
 * Invoke-DbaAgFailover try/catch wrap to make errors pretty.
+* Renamed Set-DbaJobOwner to Set-DbaAgentJobOwner
+* Failed logic in Remove-DbaOrphanUser
+* Removed ability to specify both KeepDays and Database from Remove-DbaDbBackupRestoreHistory
+
+# Added
+* VSCode default settings
+* Pipe support in Test-DbaDbOwner
 
 ## [0.9.708] - 2018-12-4
 ### Fixed
@@ -14,7 +26,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 # Added
 * Update-DbaInstance final touches
-
 
 ## [0.9.707] - 2018-12-3
 ### Fixed

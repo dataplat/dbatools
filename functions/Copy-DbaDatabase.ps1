@@ -77,7 +77,7 @@ function Copy-DbaDatabase {
         Use of this switch requires -BackupRestore or -DetachAttach as well.
 
     .PARAMETER InputObject
-        A collection of dbobjects from the pipeline.
+        Enables piped input from Get-DbaDatabase
 
     .PARAMETER UseLastBackup
         Use the last full, diff and logs instead of performing backups. Note that the backups must exist in a location accessible by all destination servers, such a network share.
@@ -278,7 +278,7 @@ function Copy-DbaDatabase {
 
             )
 
-            if ($script:sameserver) {
+            if ($script:sameserver -or (-not $script:isWindows)) {
                 return $filepath
             }
             if (-not $filepath) {
@@ -798,23 +798,6 @@ function Copy-DbaDatabase {
             Write-Message -Level Verbose -Message "Checking to ensure the source isn't the same as the destination."
             if ($source -eq $destinstance) {
                 Stop-Function -Message "Source and Destination SQL Servers instances are the same. Quitting." -Continue
-            }
-
-            if ($SharedPath) {
-                Write-Message -Level Verbose -Message "Checking to ensure network path is valid."
-                if (-not ($SharedPath.StartsWith("\\")) -and -not $script:sameserver) {
-                    Stop-Function -Message "Network share must be a valid UNC path (\\server\share)." -Continue
-                }
-
-                if (-not $script:sameserver) {
-                    try {
-                        if ((Test-Path $SharedPath -ErrorAction Stop)) {
-                            Write-Message -Level Verbose -Message "$SharedPath share can be accessed."
-                        }
-                    } catch {
-                        Write-Message -Level Verbose -Message "$SharedPath share cannot be accessed. Still trying anyway, in case the SQL Server service accounts have access."
-                    }
-                }
             }
 
             Write-Message -Level Verbose -Message "Checking to ensure server is not SQL Server 7 or below."

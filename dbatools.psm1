@@ -990,6 +990,10 @@ $script:renames = @(
     @{
         "AliasName"  = "Import-DbaCsvToSql"
         "Definition" = "Import-DbaCsv"
+    },
+    @{
+        "AliasName"  = "Set-DbaJobOwner"
+        "Definition" = "Set-DbaAgentJobOwner"
     }
 )
 
@@ -1040,7 +1044,6 @@ $script:xplat = @(
     'Copy-DbaServerRole',
     'Copy-DbaResourceGovernor',
     'Copy-DbaXESession',
-    'Copy-DbaBackupDevice',
     'Copy-DbaServerTrigger',
     'Copy-DbaCmsRegServer',
     'Copy-DbaSysDbUserObject',
@@ -1066,7 +1069,7 @@ $script:xplat = @(
     'Test-DbaDbOwner',
     'Set-DbaDbOwner',
     'Test-DbaJobOwner',
-    'Set-DbaJobOwner',
+    'Set-DbaAgentJobOwner',
     'Test-DbaDbVirtualLogFile',
     'Get-DbaDbRestoreHistory',
     'Get-DbaTcpPort',
@@ -1421,6 +1424,7 @@ $script:noncoresmo = @(
 )
 $script:windowsonly = @(
     # solvable filesystem issues or other workarounds
+    'Copy-DbaBackupDevice',
     'Install-DbaSqlWatch',
     'Uninstall-DbaSqlWatch',
     'Get-DbaRegistryRoot',
