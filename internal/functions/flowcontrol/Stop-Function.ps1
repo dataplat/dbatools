@@ -45,11 +45,11 @@ function Stop-Function {
         That in turn allows easily figuring out, which exception belonged to which function when checking out the $error variable.
 
     .PARAMETER File
-        The file in which Stop-PSFFunction was called.
+        The file in which Stop-Function was called.
         Will be automatically set, but can be overridden when necessary.
 
     .PARAMETER Line
-        The line on which Stop-PSFFunction was called.
+        The line on which Stop-Function was called.
         Will be automatically set, but can be overridden when necessary.
 
     .PARAMETER Target

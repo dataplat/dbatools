@@ -248,6 +248,10 @@ function Update-DbaInstance {
                 Write-Message -Level Warning -Message $_.$message
             }
         }
+        # debug message
+        foreach ($a in $actions) {
+            Write-Message -Level Debug -Message "Added installation action $($a | ConvertTo-Json -Depth 1 -Compress)"
+        }
     }
     process {
         if (Test-FunctionInterrupt) { return }

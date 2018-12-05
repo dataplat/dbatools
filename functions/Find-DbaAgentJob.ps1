@@ -1,7 +1,7 @@
 function Find-DbaAgentJob {
     <#
     .SYNOPSIS
-        Find-DbaAgentJob finds agent job/s that fit certain search filters.
+        Find-DbaAgentJob finds agent jobs that fit certain search filters.
 
     .DESCRIPTION
         This command filters SQL Agent jobs giving the DBA a list of jobs that may need attention or could possibly be options for removal.

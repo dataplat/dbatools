@@ -1,4 +1,4 @@
-function Test-DbaJobOwner {
+function Test-DbaAgentJobOwner {
     <#
     .SYNOPSIS
         Checks SQL Agent Job owners against a login to validate which jobs do not match that owner.
@@ -41,20 +41,20 @@ function Test-DbaJobOwner {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Test-DbaJobOwner
+        https://dbatools.io/Test-DbaAgentJobOwner
 
     .EXAMPLE
-        PS C:\> Test-DbaJobOwner -SqlInstance localhost
+        PS C:\> Test-DbaAgentJobOwner -SqlInstance localhost
 
         Returns all SQL Agent Jobs where the owner does not match 'sa'.
 
     .EXAMPLE
-        PS C:\> Test-DbaJobOwner -SqlInstance localhost -ExcludeJob 'syspolicy_purge_history'
+        PS C:\> Test-DbaAgentJobOwner -SqlInstance localhost -ExcludeJob 'syspolicy_purge_history'
 
         Returns SQL Agent Jobs except for the syspolicy_purge_history job
 
     .EXAMPLE
-        PS C:\> Test-DbaJobOwner -SqlInstance localhost -Login DOMAIN\account
+        PS C:\> Test-DbaAgentJobOwner -SqlInstance localhost -Login DOMAIN\account
 
         Returns all SQL Agent Jobs where the owner does not match DOMAIN\account. Note
         that Login must be a valid security principal that exists on the target server.

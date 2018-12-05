@@ -23,6 +23,12 @@ function Add-DbaAgDatabase {
     .PARAMETER AvailabilityGroup
         The availability group where the databases will be added.
 
+    .PARAMETER Secondary
+        Not required - the command will figure this out. But if you'd like to be explicit about replicas, this will help.
+
+    .PARAMETER SecondarySqlCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+
     .PARAMETER InputObject
         Enables piping from Get-DbaDatabase, Get-DbaDbSharePoint and more.
 
@@ -93,6 +99,8 @@ function Add-DbaAgDatabase {
         [parameter(Mandatory)]
         [string]$AvailabilityGroup,
         [string[]]$Database,
+        [DbaInstanceParameter[]]$Secondary,
+        [PSCredential]$SecondarySqlCredential,
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
         [ValidateSet('Automatic', 'Manual')]
@@ -125,7 +133,11 @@ function Add-DbaAgDatabase {
                 Stop-Function -Message "$($db.Name) is already joined to $($ag.Name)" -Continue
             }
 
-            $secondaryReplicas = $ag.AvailabilityReplicas | Where-Object Role -eq Secondary | Select-Object -Unique -ExpandProperty Name
+            if (-not $Secondary) {
+                $secondaryReplicas = $ag.AvailabilityReplicas | Where-Object Role -eq Secondary
+            } else {
+                $secondaryReplicas = Get-DbaAgReplica -SqlInstance $Secondary -SqlCredential $SecondarySqlCredential -AvailabilityGroup $ag.Name | Where-Object Role -eq Secondary
+            }
 
             if ($SeedingMode -eq "Automatic") {
                 # first check
@@ -147,7 +159,7 @@ function Add-DbaAgDatabase {
 
             foreach ($replica in $secondaryReplicas) {
 
-                $agreplica = Get-DbaAgReplica -SqlInstance $Primary -AvailabilityGroup $ag.name -Replica $replica
+                $agreplica = Get-DbaAgReplica -SqlInstance $Primary -SqlCredential $SqlCredential -AvailabilityGroup $ag.name -Replica $replica.Name
 
                 if ($SeedingMode) {
                     $agreplica.SeedingMode = $SeedingMode
@@ -172,21 +184,21 @@ function Add-DbaAgDatabase {
                         }
                         if ($Pscmdlet.ShouldProcess("$Secondary", "restoring full and log backups of $primarydb from $Primary")) {
                             # keep going to ensure output is shown even if dbs aren't added well.
-                            $null = $allbackups[$db] | Restore-DbaDatabase -SqlInstance $replica -WithReplace -NoRecovery -TrustDbBackupHistory -EnableException
+                            $null = $allbackups[$db] | Restore-DbaDatabase -SqlInstance $replica.Parent.Parent -WithReplace -NoRecovery -TrustDbBackupHistory -EnableException
                         }
                     } catch {
                         Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
                     }
                 }
 
-                $replicadb = Get-DbaAgDatabase -SqlInstance $replica -SqlCredential $SqlCredential -Database $db.Name -AvailabilityGroup $ag.Name   #credential of secondary !!
+                $replicadb = Get-DbaAgDatabase -SqlInstance $replica.Parent.Parent -Database $db.Name -AvailabilityGroup $ag.Name   #credential of secondary !!
 
                 if ($replicadb -and -not ($SeedingModeReplica -eq 'Automatic')) {
                     if ($Pscmdlet.ShouldProcess($ag.Parent.Name, "Joining availability group $db to $($db.Parent.Name)")) {
                         $timeout = 1
                         do {
                             try {
-                                Write-Message -Level Verbose -Message "Trying to add $($replicadb.Name) to $replica"
+                                Write-Message -Level Verbose -Message "Trying to add $($replicadb.Name) to $($replica.Name)"
                                 $timeout++
                                 $replicadb.JoinAvailablityGroup()
                                 $replicadb.Refresh()
@@ -199,7 +211,7 @@ function Add-DbaAgDatabase {
                         if ($replicadb.IsJoined) {
                             $replicadb
                         } else {
-                            Stop-Function -Continue -Message "Could not join $($replicadb.Name) to $replica"
+                            Stop-Function -Continue -Message "Could not join $($replicadb.Name) to $($replica.Name)"
                         }
                     }
                 } else {
