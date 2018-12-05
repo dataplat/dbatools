@@ -2120,7 +2120,7 @@
         "Synopsis":  "Copy-DbaAgentJob migrates jobs from one SQL Server to another.",
         "Name":  "Copy-DbaAgentJob",
         "Links":  "https://dbatools.io/Copy-DbaAgentJob",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eCopy-DbaAgentJob -Source sqlserver2014a -Destination sqlcluster\nCopies all jobs from sqlserver2014a to sqlcluster, using Windows credentials. If jobs with the same name exist on sqlcluster, they will be skipped.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eCopy-DbaAgentJob -Source sqlserver2014a -Destination sqlcluster -Job PSJob -SourceSqlCredential $cred -Force\nCopies a single job, the PSJob job from sqlserver2014a to sqlcluster, using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster. If a job with the same name exists on \r\nsqlcluster, it will be dropped and recreated because -Force was used.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eCopy-DbaAgentJob -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force\nShows what would happen if the command were executed using force.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eCopy-DbaAgentJob -Source sqlserver2014a -Destination sqlcluster\nCopies all jobs from sqlserver2014a to sqlcluster, using Windows credentials. If jobs with the same name exist on sqlcluster, they will be skipped.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eCopy-DbaAgentJob -Source sqlserver2014a -Destination sqlcluster -Job PSJob -SourceSqlCredential $cred -Force\nCopies a single job, the PSJob job from sqlserver2014a to sqlcluster, using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster. If a job with the same name exists on \r\nsqlcluster, it will be dropped and recreated because -Force was used.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eCopy-DbaAgentJob -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force\nShows what would happen if the command were executed using force.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaAgentJob -SqlInstance sqlserver2014a | Where-Object Category -eq \"Report Server\" | ForEach-Object {Copy-DbaAgentJob -Source $_.SqlInstance -Job $_.Name -Destination sqlserver2014b}\nCopies all SSRS jobs (subscriptions) from AlwaysOn Primary SQL instance sqlserver2014a to AlwaysOn Secondary SQL instance sqlserver2014b",
         "Syntax":  "Copy-DbaAgentJob [-Source] \u003cDbaInstanceParameter\u003e [[-SourceSqlCredential] \u003cPSCredential\u003e] [-Destination] \u003cDbaInstanceParameter[]\u003e [[-DestinationSqlCredential] \u003cPSCredential\u003e] [[-Job] \u003cObject[]\u003e] [[-ExcludeJob] \u003cObject[]\u003e] [-DisableOnSource] [-DisableOnDestination] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
@@ -7472,7 +7472,7 @@
                    ],
         "Alias":  "",
         "Author":  "Stephen Bennett (https://sqlnotesfromtheunderground.wordpress.com/)",
-        "Synopsis":  "Find-DbaAgentJob finds agent job/s that fit certain search filters.",
+        "Synopsis":  "Find-DbaAgentJob finds agent jobs that fit certain search filters.",
         "Name":  "Find-DbaAgentJob",
         "Links":  "https://dbatools.io/Find-DbaAgentJob",
         "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eFind-DbaAgentJob -SqlInstance Dev01 -JobName *backup*\nReturns all agent job(s) that have backup in the name\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eFind-DbaAgentJob -SqlInstance Dev01, Dev02 -JobName Mybackup\nReturns all agent job(s) that are named exactly Mybackup\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eFind-DbaAgentJob -SqlInstance Dev01 -LastUsed 10\nReturns all agent job(s) that have not ran in 10 days\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eFind-DbaAgentJob -SqlInstance Dev01 -IsDisabled -IsNoEmailNotification -IsNotScheduled\nReturns all agent job(s) that are either disabled, have no email notification or don\u0027t have a schedule. returned with detail\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003e$servers | Find-DbaAgentJob -IsFailed | Start-DbaAgentJob\nFinds all failed job then starts them. Consider using a -WhatIf at the end of Start-DbaAgentJob to see what it\u0027ll do first\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eFind-DbaAgentJob -SqlInstance Dev01 -LastUsed 10 -Exclude \"Yearly - RollUp Workload\", \"SMS - Notification\"\nReturns all agent jobs that have not ran in the last 10 days ignoring jobs \"Yearly - RollUp Workload\" and \"SMS - Notification\"\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003eFind-DbaAgentJob -SqlInstance Dev01 -Category \"REPL-Distribution\", \"REPL-Snapshot\" | Format-Table -AutoSize -Wrap\nReturns all job/s on Dev01 that are in either category \"REPL-Distribution\" or \"REPL-Snapshot\"\n-------------------------- EXAMPLE 8 --------------------------\nPS C:\\\u003eFind-DbaAgentJob -SqlInstance Dev01, Dev02 -IsFailed -Since \u00272016-07-01 10:47:00\u0027\nReturns all agent job(s) on Dev01 and Dev02 that have failed since July of 2016 (and still have history in msdb)\n-------------------------- EXAMPLE 9 --------------------------\nPS C:\\\u003eGet-DbaCmsRegServer -SqlInstance CMSServer -Group Production | Find-DbaAgentJob -Disabled -IsNotScheduled | Format-Table -AutoSize -Wrap\nQueries CMS server to return all SQL instances in the Production folder and then list out all agent jobs that have either been disabled or have no schedule.",
@@ -8908,7 +8908,7 @@
         "Synopsis":  "Gets SQL Agent Job information for each instance(s) of SQL Server.",
         "Name":  "Get-DbaAgentJob",
         "Links":  "https://dbatools.io/Get-DbaAgentJob",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaAgentJob -SqlInstance localhost\nReturns all SQL Agent Jobs on the local default SQL Server instance\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaAgentJob -SqlInstance localhost, sql2016\nReturns all SQl Agent Jobs for the local and sql2016 SQL Server instances\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaAgentJob -SqlInstance localhost -Job BackupData, BackupDiff\nReturns all SQL Agent Jobs named BackupData and BackupDiff from the local SQL Server instance.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaAgentJob -SqlInstance localhost -ExcludeJob BackupDiff\nReturns all SQl Agent Jobs for the local SQL Server instances, except the BackupDiff Job.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eGet-DbaAgentJob -SqlInstance localhost -ExcludeDisabledJobs\nReturns all SQl Agent Jobs for the local SQL Server instances, excluding the disabled jobs.\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003e$servers | Get-DbaAgentJob | Out-GridView -PassThru | Start-DbaAgentJob -WhatIf\nFind all of your Jobs from SQL Server instances in the $servers collection, select the jobs you want to start then see jobs would start if you ran Start-DbaAgentJob",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaAgentJob -SqlInstance localhost\nReturns all SQL Agent Jobs on the local default SQL Server instance\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaAgentJob -SqlInstance localhost, sql2016\nReturns all SQl Agent Jobs for the local and sql2016 SQL Server instances\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaAgentJob -SqlInstance localhost -Job BackupData, BackupDiff\nReturns all SQL Agent Jobs named BackupData and BackupDiff from the local SQL Server instance.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaAgentJob -SqlInstance localhost -ExcludeJob BackupDiff\nReturns all SQl Agent Jobs for the local SQL Server instances, except the BackupDiff Job.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eGet-DbaAgentJob -SqlInstance localhost -ExcludeDisabledJobs\nReturns all SQl Agent Jobs for the local SQL Server instances, excluding the disabled jobs.\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003e$servers | Get-DbaAgentJob | Out-GridView -PassThru | Start-DbaAgentJob -WhatIf\nFind all of your Jobs from SQL Server instances in the $servers collection, select the jobs you want to start then see jobs would start if you ran Start-DbaAgentJob\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003eGet-DbaAgentJob -SqlInstance sqlserver2014a | Where-Object Category -eq \"Report Server\" | Export-DbaScript -Path \"C:\\temp\\sqlserver2014a_SSRSJobs.sql\"\nExports all SSRS jobs from SQL instance sqlserver2014a to a file.",
         "Syntax":  "Get-DbaAgentJob [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Job \u003cString[]\u003e] [-ExcludeJob \u003cString[]\u003e] [-Database \u003cString[]\u003e] [-Category \u003cString[]\u003e] [-ExcludeDisabledJobs] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
@@ -30238,7 +30238,7 @@
                            "",
                            false,
                            "false",
-                           "30"
+                           "0"
                        ],
                        [
                            "Database",
@@ -33745,6 +33745,95 @@
         "Syntax":  "Set-DbaAgentJobOutputFile [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Job \u003cObject[]\u003e] [-Step \u003cObject[]\u003e] -OutputFile \u003cString\u003e [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
+        "CommandName":  "Set-DbaAgentJobOwner",
+        "Description":  "This function alters SQL Agent Job ownership to match a specified login if their current owner does not match the target login. By default, the target login will be \u0027sa\u0027,\nbut the the user may specify a different login for ownership. This be applied to all jobs or only to a select collection of jobs.\n\nBest practice reference: http://sqlmag.com/blog/sql-server-tip-assign-ownership-jobs-sysadmin-account\n\nIf the \u0027sa\u0027 account was renamed, the new name will be used.",
+        "Tags":  [
+                     "Agent",
+                     "Job"
+                 ],
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "The target SQL Server instance or instances.",
+                           "ServerInstance,SqlServer",
+                           false,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
+                           "SqlCredential",
+                           "Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Job",
+                           "Specifies the job(s) to process. Options for this list are auto-populated from the server. If unspecified, all jobs will be processed.",
+                           "Jobs",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "ExcludeJob",
+                           "Specifies the job(s) to exclude from processing. Options for this list are auto-populated from the server.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "InputObject",
+                           "Enables piped input from Get-DbaAgentJob",
+                           "",
+                           false,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
+                           "Login",
+                           "Specifies the login that you wish check for ownership. This defaults to \u0027sa\u0027 or the sysadmin name if sa was renamed. This must be a valid security principal which exists on the target server.",
+                           "TargetLogin",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "Silent",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "WhatIf",
+                           "If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.",
+                           "wi",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Confirm",
+                           "If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.",
+                           "cf",
+                           false,
+                           "false",
+                           ""
+                       ]
+                   ],
+        "Alias":  "Set-DbaJobOwner",
+        "Author":  "Michael Fal (@Mike_Fal), http://mikefal.net",
+        "Synopsis":  "Sets SQL Agent job owners with a desired login if jobs do not match that owner.",
+        "Name":  "Set-DbaAgentJobOwner",
+        "Links":  "https://dbatools.io/Set-DbaAgentJobOwner",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eSet-DbaAgentJobOwner -SqlInstance localhost\nSets SQL Agent Job owner to sa on all jobs where the owner does not match sa.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eSet-DbaAgentJobOwner -SqlInstance localhost -Login DOMAIN\\account\nSets SQL Agent Job owner to \u0027DOMAIN\\account\u0027 on all jobs where the owner does not match \u0027DOMAIN\\account\u0027. Note\r\nthat Login must be a valid security principal that exists on the target server.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eSet-DbaAgentJobOwner -SqlInstance localhost -Job job1, job2\nSets SQL Agent Job owner to \u0027sa\u0027 on the job1 and job2 jobs if their current owner does not match \u0027sa\u0027.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003e\u0027sqlserver\u0027,\u0027sql2016\u0027 | Set-DbaAgentJobOwner\nSets SQL Agent Job owner to sa on all jobs where the owner does not match sa on both sqlserver and sql2016.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eGet-DbaAgentJob -SqlInstance vmsql | Where-Object OwnerLoginName -eq login1 | Set-DbaAgentJobOwner -TargetLogin login2 | Out-Gridview\nSets SQL Agent Job owner to login2 where their current owner is login1 on instance vmsql. Send result to gridview.",
+        "Syntax":  "Set-DbaAgentJobOwner [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Job] \u003cObject[]\u003e] [[-ExcludeJob] \u003cObject[]\u003e] [[-InputObject] \u003cJob[]\u003e] [[-Login] \u003cString\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+    },
+    {
         "CommandName":  "Set-DbaAgentJobStep",
         "Description":  "Set-DbaAgentJobStep updates a job step in the SQL Server Agent with parameters supplied.",
         "Tags":  [
@@ -35880,95 +35969,6 @@
         "Links":  "https://dbatools.io/Set-DbaErrorLogConfig",
         "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eSet-DbaErrorLogConfig -SqlInstance sql2017,sql2014 -LogCount 25\nSets the number of error log files to 25 on sql2017 and sql2014\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eSet-DbaErrorLogConfig -SqlInstance sql2014 -LogSize 102400\nSets the size of the error log file, before it rolls over, to 102400 KB (100 MB) on sql2014\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eSet-DbaErrorLogConfig -SqlInstance sql2012 -LogCount 25 -LogSize 500\nSets the number of error log files to 25 and size before it will roll over to 500 KB on sql2012",
         "Syntax":  "Set-DbaErrorLogConfig [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-LogCount] \u003cInt32\u003e] [[-LogSize] \u003cInt32\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
-    },
-    {
-        "CommandName":  "Set-DbaJobOwner",
-        "Description":  "This function alters SQL Agent Job ownership to match a specified login if their current owner does not match the target login. By default, the target login will be \u0027sa\u0027,\nbut the the user may specify a different login for ownership. This be applied to all jobs or only to a select collection of jobs.\n\nBest practice reference: http://sqlmag.com/blog/sql-server-tip-assign-ownership-jobs-sysadmin-account\n\nIf the \u0027sa\u0027 account was renamed, the new name will be used.",
-        "Tags":  [
-                     "Agent",
-                     "Job"
-                 ],
-        "Params":  [
-                       [
-                           "SqlInstance",
-                           "The target SQL Server instance or instances.",
-                           "ServerInstance,SqlServer",
-                           false,
-                           "true (ByValue)",
-                           ""
-                       ],
-                       [
-                           "SqlCredential",
-                           "Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)",
-                           "",
-                           false,
-                           "false",
-                           ""
-                       ],
-                       [
-                           "Job",
-                           "Specifies the job(s) to process. Options for this list are auto-populated from the server. If unspecified, all jobs will be processed.",
-                           "Jobs",
-                           false,
-                           "false",
-                           ""
-                       ],
-                       [
-                           "ExcludeJob",
-                           "Specifies the job(s) to exclude from processing. Options for this list are auto-populated from the server.",
-                           "",
-                           false,
-                           "false",
-                           ""
-                       ],
-                       [
-                           "InputObject",
-                           "Enables piped input from Get-DbaAgentJob",
-                           "",
-                           false,
-                           "true (ByValue)",
-                           ""
-                       ],
-                       [
-                           "Login",
-                           "Specifies the login that you wish check for ownership. This defaults to \u0027sa\u0027 or the sysadmin name if sa was renamed. This must be a valid security principal which exists on the target server.",
-                           "TargetLogin",
-                           false,
-                           "false",
-                           ""
-                       ],
-                       [
-                           "EnableException",
-                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
-                           "Silent",
-                           false,
-                           "false",
-                           "False"
-                       ],
-                       [
-                           "WhatIf",
-                           "If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.",
-                           "wi",
-                           false,
-                           "false",
-                           ""
-                       ],
-                       [
-                           "Confirm",
-                           "If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.",
-                           "cf",
-                           false,
-                           "false",
-                           ""
-                       ]
-                   ],
-        "Alias":  "",
-        "Author":  "Michael Fal (@Mike_Fal), http://mikefal.net",
-        "Synopsis":  "Sets SQL Agent job owners with a desired login if jobs do not match that owner.",
-        "Name":  "Set-DbaJobOwner",
-        "Links":  "https://dbatools.io/Set-DbaJobOwner",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eSet-DbaJobOwner -SqlInstance localhost\nSets SQL Agent Job owner to sa on all jobs where the owner does not match sa.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eSet-DbaJobOwner -SqlInstance localhost -Login DOMAIN\\account\nSets SQL Agent Job owner to \u0027DOMAIN\\account\u0027 on all jobs where the owner does not match \u0027DOMAIN\\account\u0027. Note\r\nthat Login must be a valid security principal that exists on the target server.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eSet-DbaJobOwner -SqlInstance localhost -Job job1, job2\nSets SQL Agent Job owner to \u0027sa\u0027 on the job1 and job2 jobs if their current owner does not match \u0027sa\u0027.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003e\u0027sqlserver\u0027,\u0027sql2016\u0027 | Set-DbaJobOwner\nSets SQL Agent Job owner to sa on all jobs where the owner does not match sa on both sqlserver and sql2016.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eGet-DbaAgentJob -SqlInstance vmsql | Where-Object OwnerLoginName -eq login1 | Set-DbaJobOwner -TargetLogin login2 | Out-Gridview\nSets SQL Agent Job owner to login2 where their current owner is login1 on instance vmsql. Send result to gridview.",
-        "Syntax":  "Set-DbaJobOwner [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Job] \u003cObject[]\u003e] [[-ExcludeJob] \u003cObject[]\u003e] [[-InputObject] \u003cJob[]\u003e] [[-Login] \u003cString\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "CommandName":  "Set-DbaLogin",
@@ -40226,80 +40226,6 @@
         "Links":  "https://dbatools.io/Test-DbaIdentityUsage",
         "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eTest-DbaIdentityUsage -SqlInstance sql2008, sqlserver2012\nCheck identity seeds for servers sql2008 and sqlserver2012.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eTest-DbaIdentityUsage -SqlInstance sql2008 -Database TestDB\nCheck identity seeds on server sql2008 for only the TestDB database\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eTest-DbaIdentityUsage -SqlInstance sql2008 -Database TestDB -Threshold 20\nCheck identity seeds on server sql2008 for only the TestDB database, limiting results to 20% utilization of seed range or higher",
         "Syntax":  "Test-DbaIdentityUsage [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Database \u003cObject[]\u003e] [-ExcludeDatabase \u003cObject[]\u003e] [[-Threshold] \u003cInt32\u003e] [[-ExcludeSystem]] [-EnableException] [\u003cCommonParameters\u003e]"
-    },
-    {
-        "CommandName":  "Test-DbaJobOwner",
-        "Description":  "This function checks all SQL Agent Jobs on an instance against a SQL login to validate if that login owns those SQL Agent Jobs or not. By default, the function checks against \u0027sa\u0027 for ownership, but the user can pass a specific login if they use something else.\n\nOnly SQL Agent Jobs that do not match this ownership will be displayed.\nBest practice reference: http://sqlmag.com/blog/sql-server-tip-assign-ownership-jobs-sysadmin-account",
-        "Tags":  [
-                     "Agent",
-                     "Job",
-                     "Owner"
-                 ],
-        "Params":  [
-                       [
-                           "SqlInstance",
-                           "The target SQL Server instance or instances.",
-                           "ServerInstance,SqlServer",
-                           true,
-                           "true (ByValue)",
-                           ""
-                       ],
-                       [
-                           "SqlCredential",
-                           "Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)",
-                           "",
-                           false,
-                           "false",
-                           ""
-                       ],
-                       [
-                           "Job",
-                           "Specifies the job(s) to process. Options for this list are auto-populated from the server. If unspecified, all jobs will be processed.",
-                           "Jobs",
-                           false,
-                           "false",
-                           ""
-                       ],
-                       [
-                           "ExcludeJob",
-                           "Specifies the job(s) to exclude from processing. Options for this list are auto-populated from the server.",
-                           "",
-                           false,
-                           "false",
-                           ""
-                       ],
-                       [
-                           "Login",
-                           "Specifies the login that you wish check for ownership. This defaults to \u0027sa\u0027 or the sysadmin name if sa was renamed. This must be a valid security principal which exists on the target server.",
-                           "TargetLogin",
-                           false,
-                           "false",
-                           ""
-                       ],
-                       [
-                           "Detailed",
-                           "Output all properties, will be deprecated in 1.0.0 release.",
-                           "",
-                           false,
-                           "false",
-                           "False"
-                       ],
-                       [
-                           "EnableException",
-                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
-                           "Silent",
-                           false,
-                           "false",
-                           "False"
-                       ]
-                   ],
-        "Alias":  "",
-        "Author":  "Michael Fal (@Mike_Fal), http://mikefal.net",
-        "Synopsis":  "Checks SQL Agent Job owners against a login to validate which jobs do not match that owner.",
-        "Name":  "Test-DbaJobOwner",
-        "Links":  "https://dbatools.io/Test-DbaJobOwner",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eTest-DbaJobOwner -SqlInstance localhost\nReturns all SQL Agent Jobs where the owner does not match \u0027sa\u0027.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eTest-DbaJobOwner -SqlInstance localhost -ExcludeJob \u0027syspolicy_purge_history\u0027\nReturns SQL Agent Jobs except for the syspolicy_purge_history job\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eTest-DbaJobOwner -SqlInstance localhost -Login DOMAIN\\account\nReturns all SQL Agent Jobs where the owner does not match DOMAIN\\account. Note\r\nthat Login must be a valid security principal that exists on the target server.",
-        "Syntax":  "Test-DbaJobOwner [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Job] \u003cObject[]\u003e] [[-ExcludeJob] \u003cObject[]\u003e] [[-Login] \u003cString\u003e] [-Detailed] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
         "CommandName":  "Test-DbaLastBackup",
