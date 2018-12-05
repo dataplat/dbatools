@@ -128,7 +128,7 @@ function Add-DbaAgReplica {
                     Stop-Function -Message "Certificate $Certificate does not exist on $instance" -ErrorRecord $_ -Target $Certificate -Continue
                 }
             }
-            
+
             $ep = Get-DbaEndpoint -SqlInstance $server -Type DatabaseMirroring
 
             if (-not $ep) {
@@ -174,14 +174,14 @@ function Add-DbaAgReplica {
                     $agreplica = $InputObject.AvailabilityReplicas[$Name]
                     if ($InputObject.State -eq 'Existing') {
                         Invoke-Create -Object $replica
-                         $null = Join-DbaAvailabilityGroup -SqlInstance $instance -SqlCredential $SqlCredential -AvailabilityGroup $InputObject.Name
+                        $null = Join-DbaAvailabilityGroup -SqlInstance $instance -SqlCredential $SqlCredential -AvailabilityGroup $InputObject.Name
                     }
                     Add-Member -Force -InputObject $agreplica -MemberType NoteProperty -Name ComputerName -value $agreplica.Parent.ComputerName
                     Add-Member -Force -InputObject $agreplica -MemberType NoteProperty -Name InstanceName -value $agreplica.Parent.InstanceName
                     Add-Member -Force -InputObject $agreplica -MemberType NoteProperty -Name SqlInstance -value $agreplica.Parent.SqlInstance
                     Add-Member -Force -InputObject $agreplica -MemberType NoteProperty -Name AvailabilityGroup -value $agreplica.Parent.Name
                     Add-Member -Force -InputObject $agreplica -MemberType NoteProperty -Name Replica -value $agreplica.Name # backwards compat
-                    
+
                     Select-DefaultView -InputObject $agreplica -Property $defaults
                 } catch {
                     $msg = $_.Exception.InnerException.InnerException.Message
