@@ -1,7 +1,8 @@
-function Install-SqlServerUpdate {
+function Get-SqlServerUpdate {
     <#
     Originally based on https://github.com/adbertram/PSSqlUpdater
-    Internal function. Invokes installation of a single SQL Server KB based on provided parameters.
+    Internal function. Provides information on the update path for a specific set of SQL Server instances based on current and target SQL Server levels.
+    Component parameter is using the output object of Get-SqlInstanceComponent.
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High', DefaultParameterSetName = 'Latest')]
     param
