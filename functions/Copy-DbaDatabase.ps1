@@ -800,23 +800,6 @@ function Copy-DbaDatabase {
                 Stop-Function -Message "Source and Destination SQL Servers instances are the same. Quitting." -Continue
             }
 
-            if ($SharedPath) {
-                Write-Message -Level Verbose -Message "Checking to ensure network path is valid."
-                if (-not ($SharedPath.StartsWith("\\")) -and -not $script:sameserver) {
-                    Stop-Function -Message "Network share must be a valid UNC path (\\server\share)." -Continue
-                }
-
-                if (-not $script:sameserver) {
-                    try {
-                        if ((Test-Path $SharedPath -ErrorAction Stop)) {
-                            Write-Message -Level Verbose -Message "$SharedPath share can be accessed."
-                        }
-                    } catch {
-                        Write-Message -Level Verbose -Message "$SharedPath share cannot be accessed. Still trying anyway, in case the SQL Server service accounts have access."
-                    }
-                }
-            }
-
             Write-Message -Level Verbose -Message "Checking to ensure server is not SQL Server 7 or below."
             if ($sourceServer.VersionMajor -lt 8 -and $destServer.VersionMajor -lt 8) {
                 Stop-Function -Message "This script can only be run on SQL Server 2000 and above. Quitting." -Continue
