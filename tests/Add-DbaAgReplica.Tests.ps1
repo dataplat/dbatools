@@ -10,13 +10,9 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
                #>
         $defaultParamCount = 13
         [object[]]$params = (Get-ChildItem function:\Add-DbaAgReplica).Parameters.Keys
-        $knownParameters = 'SqlInstance', 'SqlCredential', 'AvailabilityGroup', 'Name', 'AvailabilityMode', 'FailoverMode', 'BackupPriority', 'ConnectionModeInPrimaryRole', 'ConnectionModeInSecondaryRole', 'SeedingMode', 'Endpoint', 'Passthru', 'ReadonlyRoutingConnectionUrl', 'Certificate', 'InputObject', 'EnableException'
-        $paramCount = $knownParameters.Count
+        $knownParameters = 'SqlInstance', 'SqlCredential', 'Name', 'AvailabilityMode', 'FailoverMode', 'BackupPriority', 'ConnectionModeInPrimaryRole', 'ConnectionModeInSecondaryRole', 'SeedingMode', 'Endpoint', 'Passthru', 'ReadonlyRoutingConnectionUrl', 'Certificate', 'InputObject', 'EnableException'
         It "Should contain our specific parameters" {
-            ((Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count) | Should Be $paramCount
-        }
-        It "Should only contain $paramCount parameters" {
-            $params.Count - $defaultParamCount | Should Be $paramCount
+            ((Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count) | Should Be $knownParameters.Count
         }
     }
 }

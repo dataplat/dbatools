@@ -18,9 +18,6 @@ function Add-DbaAgReplica {
     .PARAMETER Name
         The name of the replica. Defaults to the SQL Server instance name.
 
-    .PARAMETER AvailabilityGroup
-        The Availability Group to which a replica will be bestowed upon.
-
     .PARAMETER AvailabilityMode
         Sets the availability mode of the availability group replica. Options are: AsynchronousCommit and SynchronousCommit. SynchronousCommit is default.
 
@@ -97,7 +94,6 @@ function Add-DbaAgReplica {
     param (
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [string]$AvailabilityGroup,
         [string]$Name,
         [ValidateSet('AsynchronousCommit', 'SynchronousCommit')]
         [string]$AvailabilityMode = "SynchronousCommit",
@@ -114,16 +110,11 @@ function Add-DbaAgReplica {
         [switch]$Passthru,
         [string]$ReadonlyRoutingConnectionUrl,
         [string]$Certificate,
-        [parameter(ValueFromPipeline)]
+        [parameter(ValueFromPipeline, Mandatory)]
         [Microsoft.SqlServer.Management.Smo.AvailabilityGroup]$InputObject,
         [switch]$EnableException
     )
     process {
-        if (-not $AvailabilityGroup -and -not $InputObject) {
-            Stop-Function -Message "You must specify either AvailabilityGroup or pipe in an availabilty group to continue."
-            return
-        }
-
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 11
@@ -137,11 +128,7 @@ function Add-DbaAgReplica {
                     Stop-Function -Message "Certificate $Certificate does not exist on $instance" -ErrorRecord $_ -Target $Certificate -Continue
                 }
             }
-
-            if ($AvailabilityGroup) {
-                $InputObject = Get-DbaAvailabilityGroup -SqlInstance $server -AvailabilityGroup $AvailabilityGroup
-            }
-
+            
             $ep = Get-DbaEndpoint -SqlInstance $server -Type DatabaseMirroring
 
             if (-not $ep) {
@@ -183,9 +170,9 @@ function Add-DbaAgReplica {
                     }
 
                     $defaults = 'ComputerName', 'InstanceName', 'SqlInstance', 'AvailabilityGroup', 'Name', 'Role', 'RollupSynchronizationState', 'AvailabilityMode', 'BackupPriority', 'EndpointUrl', 'SessionTimeout', 'FailoverMode', 'ReadonlyRoutingList'
-
                     $InputObject.AvailabilityReplicas.Add($replica)
                     $agreplica = $InputObject.AvailabilityReplicas[$Name]
+                    Invoke-Create -Object $replica
                     Add-Member -Force -InputObject $agreplica -MemberType NoteProperty -Name ComputerName -value $agreplica.Parent.ComputerName
                     Add-Member -Force -InputObject $agreplica -MemberType NoteProperty -Name InstanceName -value $agreplica.Parent.InstanceName
                     Add-Member -Force -InputObject $agreplica -MemberType NoteProperty -Name SqlInstance -value $agreplica.Parent.SqlInstance
