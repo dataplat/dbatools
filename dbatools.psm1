@@ -1,5 +1,12 @@
 $start = Get-Date
 
+if (($PSVersionTable.PSVersion.Major -lt 6) -or ($PSVersionTable.Keys -contains "Platform" -and $PSVersionTable.Platform -eq "Win32NT")) {
+    $script:isWindows = $true
+} else {
+    $script:isWindows = $false
+}
+
+   
 #region Import helper functions
 function Import-ModuleFile {
     <#
@@ -17,12 +24,12 @@ function Import-ModuleFile {
         PS C:\> Import-ModuleFile -Path $function.FullName
 
         Imports the file stored at '$function.FullName'
-#>
+    #>
     [CmdletBinding()]
     param (
         $Path
     )
-    
+
     if ($script:doDotSource) {
         . (Resolve-Path -Path $Path)
     } else {
@@ -58,8 +65,7 @@ function Write-ImportTime {
 
     if (([System.Management.Automation.PSTypeName]'Sqlcollaborative.Dbatools.Configuration.Config').Type -eq $null) {
         $script:dbatools_ImportPerformance += New-Object PSObject -Property @{ Time = $timestamp; Action = $Text }
-    }
-    else {
+    } else {
         if ([Sqlcollaborative.Dbatools.dbaSystem.DebugHost]::ImportTimeEntries.Count -eq 0) {
             foreach ($entry in $script:dbatools_ImportPerformance) { [Sqlcollaborative.Dbatools.dbaSystem.DebugHost]::ImportTimeEntries.Add((New-Object Sqlcollaborative.Dbatools.dbaSystem.StartTimeEntry($entry.Action, $entry.Time, ([System.Management.Automation.Runspaces.Runspace]::DefaultRunspace.InstanceId)))) }
         }
@@ -127,24 +133,33 @@ if ($dbatools_multiFileImport) { $script:multiFileImport = $true }
 if ($dbatoolsSystemSystemNode.MultiFileImport) { $script:multiFileImport = $true }
 if ($dbatoolsSystemUserNode.MultiFileImport) { $script:multiFileImport = $true }
 if (Test-Path -Path "$script:PSModuleRoot\.git") { $script:multiFileImport = $true }
+if (Test-Path -Path "$script:PSModuleRoot/.git") { $script:multiFileImport = $true }
 #endregion Multi File Import
 
 Write-ImportTime -Text "Validated defines"
 #endregion Import Defines
 
-Get-ChildItem -Path (Resolve-Path "$script:PSModuleRoot\bin\") -Filter "*.dll" -Recurse
-Write-ImportTime -Text "Unblocking Files"
+if (($PSVersionTable.PSVersion.Major -le 5) -or $script:isWindows) {
+    Get-ChildItem -Path (Resolve-Path "$script:PSModuleRoot\bin\") -Filter "*.dll" -Recurse | Unblock-File -ErrorAction Ignore
+    Write-ImportTime -Text "Unblocking Files"
+}
 
+
+$script:DllRoot = (Resolve-Path -Path "$script:PSModuleRoot\bin\")
+
+<#
+# Removed this because it doesn't seem to work well xplat and on win7 and it doesn't provide enough value
 # Define folder in which to copy dll files before importing
 if (-not $script:copyDllMode) { $script:DllRoot = (Resolve-Path "$script:PSModuleRoot\bin\") }
 else {
-    $libraryTempPath = "$($env:TEMP)\dbatools-$(Get-Random -Minimum 1000000 -Maximum 9999999)"
+    $libraryTempPath = (Resolve-Path "$($env:TEMP)\dbatools-$(Get-Random -Minimum 1000000 -Maximum 9999999)")
     while (Test-Path -Path $libraryTempPath) {
-        $libraryTempPath = "$($env:TEMP)\dbatools-$(Get-Random -Minimum 1000000 -Maximum 9999999)"
+        $libraryTempPath = (Resolve-Path "$($env:TEMP)\dbatools-$(Get-Random -Minimum 1000000 -Maximum 9999999)")
     }
     $script:DllRoot = $libraryTempPath
     $null = New-Item -Path $libraryTempPath -ItemType Directory
 }
+#>
 
 if (-not ([System.Management.Automation.PSTypeName]'Microsoft.SqlServer.Management.Smo.Server').Type) {
     . Import-ModuleFile "$script:PSModuleRoot\internal\scripts\smoLibraryImport.ps1"
@@ -169,43 +184,46 @@ Write-ImportTime -Text "Loading dbatools library"
 # Tell the library where the module is based, just in case
 [Sqlcollaborative.Dbatools.dbaSystem.SystemHost]::ModuleBase = $script:PSModuleRoot
 
-# Load configuration system
-# Should always go after library and path setting
-if (($PSVersionTable.Keys -contains "Platform") -and $PSVersionTable.Platform -ne "Win32NT") {
-    Write-Verbose -Message "Skipping configuration. Not Core compatible yet."
-} else {
-    if (-not ([Sqlcollaborative.Dbatools.dbaSystem.SystemHost]::ModuleImported)) {
-        . Import-ModuleFile "$script:PSModuleRoot\internal\configurations\configuration.ps1"
-        Write-ImportTime -Text "Configuration System"
-    }
-    if (-not ([Sqlcollaborative.Dbatools.Message.LogHost]::LoggingPath)) {
-        [Sqlcollaborative.Dbatools.Message.LogHost]::LoggingPath = "$($env:AppData)\PowerShell\dbatools"
-    }
-}
-
 if ($script:multiFileImport) {
     # All internal functions privately available within the toolset
-    foreach ($function in (Get-ChildItem -Path (Resolve-Path -Path "$script:PSModuleRoot\internal\functions\*.ps1"))) {
+    foreach ($function in (Get-ChildItem -Path (Resolve-Path -Path "$script:PSModuleRoot\internal\functions\") -Recurse | Where-Object Extension -EQ '.ps1')) {
         . Import-ModuleFile $function.FullName
     }
     Write-ImportTime -Text "Loading Internal Commands"
 
     . Import-ModuleFile -Path (Resolve-Path -Path "$script:PSModuleRoot\internal\scripts\cmdlets.ps1")
     Write-ImportTime -Text "Registering cmdlets"
-    
+
     # All exported functions
-    foreach ($function in (Get-ChildItem -Path (Resolve-Path -Path "$script:PSModuleRoot\functions\*.ps1"))) {
+    foreach ($function in (Get-ChildItem -Path (Resolve-Path -Path "$script:PSModuleRoot\functions\") -Recurse | Where-Object Extension -EQ '.ps1')) {
         . Import-ModuleFile $function.FullName
     }
     Write-ImportTime -Text "Loading Public Commands"
-    
-}
-else {
-    . (Resolve-Path -Path "$script:PSModuleRoot\allcommands.ps1")
+
+} else {
+    Add-Type -Assembly System.IO.Compression.FileSystem
+    $zip = [System.IO.Compression.ZipFile]::OpenRead((Resolve-Path -Path "$script:PSModuleRoot\allcommands.zip"))
+    $stream = $zip.Entries.Open()
+    $reader = New-Object IO.StreamReader($stream)
+    $ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create(($reader.ReadToEnd()))), $null, $null)
+    $reader.Close()
+    $stream.Close()
+    $zip.Dispose()
     Write-ImportTime -Text "Loading Public and Private Commands"
 
     . Import-ModuleFile (Resolve-Path -Path "$script:PSModuleRoot\internal\scripts\cmdlets.ps1")
     Write-ImportTime -Text "Registering cmdlets"
+}
+
+# Load configuration system
+# Should always go after library and path setting
+. Import-ModuleFile "$script:PSModuleRoot\internal\configurations\configuration.ps1"
+Write-ImportTime -Text "Configuration System"
+
+# Resolving the path was causing trouble when it didn't exist yet
+# Not converting the path separators based on OS was also an issue.
+if (-not ([Sqlcollaborative.Dbatools.Message.LogHost]::LoggingPath)) {
+    [Sqlcollaborative.Dbatools.Message.LogHost]::LoggingPath = Join-DbaPath $script:AppData "PowerShell" "dbatools"
 }
 
 # Run all optional code
@@ -217,13 +235,10 @@ foreach ($function in (Get-ChildItem -Path (Resolve-Path -Path "$script:PSModule
 }
 Write-ImportTime -Text "Loading Optional Commands"
 
-if (($PSVersionTable.Keys -contains "Platform") -and $PSVersionTable.Platform -ne "Win32NT") {
-    Write-Verbose -Message "Skipping tepp configuration. Not Core compatible yet."
-} else {
-    # Process TEPP parameters
-    . Import-ModuleFile -Path (Resolve-Path -Path "$script:PSModuleRoot\internal\scripts\insertTepp.ps1")
-    Write-ImportTime -Text "Loading TEPP"
-}
+# Process TEPP parameters
+. Import-ModuleFile -Path (Resolve-Path -Path "$script:PSModuleRoot\internal\scripts\insertTepp.ps1")
+Write-ImportTime -Text "Loading TEPP"
+
 
 # Process transforms
 . Import-ModuleFile -Path (Resolve-Path -Path "$script:PSModuleRoot\internal\scripts\message-transforms.ps1")
@@ -236,13 +251,10 @@ Write-ImportTime -Text "Loading Message Transforms"
 . Import-ModuleFile -Path (Resolve-Path -Path "$script:PSModuleRoot\internal\scripts\logfilescript.ps1")
 Write-ImportTime -Text "Script: Logging"
 
-if (($PSVersionTable.Keys -contains "Platform") -and $PSVersionTable.Platform -ne "Win32NT") {
-    Write-Verbose -Message "Skipping tepp configuration. Not Core compatible yet."
-} else {
-    # Start the tepp asynchronous update system (requires the configuration system up and running)
-    . Import-ModuleFile -Path (Resolve-Path -Path "$script:PSModuleRoot\internal\scripts\updateTeppAsync.ps1")
-    Write-ImportTime -Text "Script: Asynchronous TEPP Cache"
-}
+# Start the tepp asynchronous update system (requires the configuration system up and running)
+. Import-ModuleFile -Path (Resolve-Path -Path "$script:PSModuleRoot\internal\scripts\updateTeppAsync.ps1")
+Write-ImportTime -Text "Script: Asynchronous TEPP Cache"
+
 
 # Start the maintenance system (requires pretty much everything else already up and running)
 . Import-ModuleFile -Path (Resolve-Path -Path "$script:PSModuleRoot\internal\scripts\dbatools-maintenance.ps1")
@@ -978,6 +990,10 @@ $script:renames = @(
     @{
         "AliasName"  = "Import-DbaCsvToSql"
         "Definition" = "Import-DbaCsv"
+    },
+    @{
+        "AliasName"  = "Set-DbaJobOwner"
+        "Definition" = "Set-DbaAgentJobOwner"
     }
 )
 
@@ -1028,7 +1044,6 @@ $script:xplat = @(
     'Copy-DbaServerRole',
     'Copy-DbaResourceGovernor',
     'Copy-DbaXESession',
-    'Copy-DbaBackupDevice',
     'Copy-DbaServerTrigger',
     'Copy-DbaCmsRegServer',
     'Copy-DbaSysDbUserObject',
@@ -1054,7 +1069,7 @@ $script:xplat = @(
     'Test-DbaDbOwner',
     'Set-DbaDbOwner',
     'Test-DbaJobOwner',
-    'Set-DbaJobOwner',
+    'Set-DbaAgentJobOwner',
     'Test-DbaDbVirtualLogFile',
     'Get-DbaDbRestoreHistory',
     'Get-DbaTcpPort',
@@ -1367,6 +1382,13 @@ $script:xplat = @(
     'Get-DbaAgentServer',
     'Set-DbaAgentServer',
     'Invoke-DbaDbccFreeCache'
+    'Export-DbatoolsConfig',
+    'Import-DbatoolsConfig',
+    'Reset-DbatoolsConfig',
+    'Unregister-DbatoolsConfig',
+    'Join-DbaPath',
+    'Resolve-DbaPath',
+    'Import-DbaCsv'
 )
 
 $script:noncoresmo = @(
@@ -1402,6 +1424,7 @@ $script:noncoresmo = @(
 )
 $script:windowsonly = @(
     # solvable filesystem issues or other workarounds
+    'Copy-DbaBackupDevice',
     'Install-DbaSqlWatch',
     'Uninstall-DbaSqlWatch',
     'Get-DbaRegistryRoot',
@@ -1421,7 +1444,7 @@ $script:windowsonly = @(
     'Install-DbaFirstResponderKit',
     'Read-DbaXEFile',
     'Watch-DbaXESession',
-    'Test-DbaMaxMemory',  # can be fixed by not testing remote when linux is detected
+    'Test-DbaMaxMemory', # can be fixed by not testing remote when linux is detected
     'Rename-DbaDatabase', # can maybebe fixed by not remoting when linux is detected
     # CM and Windows functions
     'Update-DbaInstance',
@@ -1525,7 +1548,6 @@ $script:windowsonly = @(
     'Test-DbaWindowsLogin',
     'Find-DbaLoginInGroup',
     # 3rd party non-core DLL or exe
-    'Import-DbaCsv',
     'Export-DbaDacPackage', # relies on sqlpackage.exe
     # Config system
     'Get-DbatoolsConfig',
@@ -1540,9 +1562,9 @@ $script:windowsonly = @(
 
 # If a developer or appveyor calls the psm1 directly, they want all functions
 # So do not explicity export because everything else is then implicity excluded
-if ((Get-PSCallStack)[0].Command -ne 'dbatools.psm1') {
+if (-not $script:multiFileImport) {
     if (($PSVersionTable.Keys -contains "Platform")) {
-        if ($psversiontable.Platform -ne "Win32NT") {
+        if ($PSVersionTable.Platform -ne "Win32NT") {
             Export-ModuleMember -Function $script:xplat
         } else {
             Export-ModuleMember -Function $script:xplat
@@ -1557,12 +1579,14 @@ if ((Get-PSCallStack)[0].Command -ne 'dbatools.psm1') {
     Export-ModuleMember -Alias $script:renames
     Export-ModuleMember -Alias $forever
     
+    Export-ModuleMember -Cmdlet Select-DbaObject, Set-DbatoolsConfig
+
     Write-ImportTime -Text "Exported module member"
 }
 
 $timeout = 20000
 $timeSpent = 0
-while (($script:smoRunspace.Runspace.RunspaceAvailability -eq 'Busy') -or ($script:dbatoolsConfigRunspace.Runspace.RunspaceAvailability -eq 'Busy')) {
+while ($script:smoRunspace.Runspace.RunspaceAvailability -eq 'Busy') {
     Start-Sleep -Milliseconds 50
     $timeSpent = $timeSpent + 50
 
@@ -1577,7 +1601,6 @@ https://dbatools.io/slack/
 Timeout waiting for temporary runspaces reached! The Module import will complete, but some things may not work as intended
 "@
         $global:smoRunspace = $script:smoRunspace
-        $global:dbatoolsConfigRunspace = $script:dbatoolsConfigRunspace
         break
     }
 }
@@ -1587,13 +1610,6 @@ if ($script:smoRunspace) {
     $script:smoRunspace.Runspace.Dispose()
     $script:smoRunspace.Dispose()
     Remove-Variable -Name smoRunspace -Scope script
-}
-
-if ($script:dbatoolsConfigRunspace) {
-    $script:dbatoolsConfigRunspace.Runspace.Close()
-    $script:dbatoolsConfigRunspace.Runspace.Dispose()
-    $script:dbatoolsConfigRunspace.Dispose()
-    Remove-Variable -Name dbatoolsConfigRunspace -Scope script
 }
 Write-ImportTime -Text "Waiting for runspaces to finish"
 
@@ -1609,7 +1625,7 @@ if ($PSCommandPath -like "*.psm1") {
 if (Get-Module -Name sqlserver, sqlps) {
     if (Get-DbatoolsConfigValue -FullName Import.SqlpsCheck) {
         Write-Warning -Message 'SQLPS or SqlServer was previously imported during this session. If you encounter weird issues with dbatools, please restart PowerShell, then import dbatools without loading SQLPS or SqlServer first.'
-        Write-Warning -Message 'To disable this message, type: Set-DbatoolsConfig -Name Import.SqlpsCheck -Value $false'
+        Write-Warning -Message 'To disable this message, type: Set-DbatoolsConfig -Name Import.SqlpsCheck -Value $false -PassThru | Register-DbatoolsConfig'
     }
 }
 
