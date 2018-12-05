@@ -60,7 +60,9 @@ function Invoke-Program {
         [string]$WorkingDirectory,
         [ValidateNotNullOrEmpty()]
         [uint32[]]$SuccessReturnCode = @(0, 3010),
-        [bool]$UsePSSessionConfiguration = (Get-DbatoolsConfigValue -Name 'psremoting.Sessions.UsePSSessionConfiguration' -Fallback $false)
+        [switch]$Raw,
+        [bool]$UsePSSessionConfiguration = (Get-DbatoolsConfigValue -Name 'psremoting.Sessions.UsePSSessionConfiguration' -Fallback $false),
+        [bool]$EnableException = $EnableException
     )
     process {
         $startProcess = {
@@ -71,6 +73,16 @@ function Invoke-Program {
                 $WorkingDirectory,
                 $SuccessReturnCode
             )
+            $output = [pscustomobject]@{
+                ComputerName     = $env:COMPUTERNAME
+                Path             = $Path
+                ArgumentList     = $ArgumentList
+                WorkingDirectory = $WorkingDirectory
+                Successful       = $false
+                stdout           = $null
+                stderr           = $null
+                ExitCode         = $null
+            }
             $processStartInfo = New-Object System.Diagnostics.ProcessStartInfo
             $processStartInfo.FileName = $Path
             if ($ArgumentList) {
@@ -96,12 +108,15 @@ function Invoke-Program {
                 $stdOut = $ps.StandardOutput.ReadToEnd()
                 $stdErr = $ps.StandardError.ReadToEnd()
                 $ps.WaitForExit()
+                # assign output object values
+                $output.stdout = $stdOut
+                $output.stderr = $stdErr
+                $output.ExitCode = $ps.ExitCode
                 # Check the exit code of the process to see if it succeeded.
-                if ($ps.ExitCode -notin $SuccessReturnCode) {
-                    throw "Error running program: exited with errorcode $($ps.ExitCode)`:`n$stdErr`n$stdOut"
-                } else {
-                    $stdOut
+                if ($ps.ExitCode -in $SuccessReturnCode) {
+                    $output.Successful = $true
                 }
+                $output
             }
         }
 
@@ -124,7 +139,8 @@ function Invoke-Program {
 
         if (!$ComputerName.IsLocalHost) {
             if (!$Credential) {
-                Stop-Function -Message "Explicit credentials are required when running agains remote hosts. Make sure to define the -Credential parameter" -EnableException $true
+                Stop-Function -Message "Explicit credentials are required when running agains remote hosts. Make sure to define the -Credential parameter"
+                return
             }
             # Try to use CredSSP first, otherwise fall back to PSSession configurations with custom user/password
             if (!$UsePSSessionConfiguration) {
@@ -133,12 +149,13 @@ function Invoke-Program {
                 $sspSuccessful = $true
                 Write-Message -Level Verbose -Message "Starting process [$Path] with arguments [$ArgumentList] on $ComputerName through CredSSP"
                 try {
-                    Invoke-Command2 @params -Authentication CredSSP -Raw -ErrorAction Stop
+                    $output = Invoke-Command2 @params -Authentication CredSSP -Raw -ErrorAction Stop
                 } catch [System.Management.Automation.Remoting.PSRemotingTransportException] {
                     Write-Message -Level Warning -Message "CredSSP to $ComputerName unsuccessful, falling back to PSSession configurations | $($_.Exception.Message)"
                     $sspSuccessful = $false
                 } catch {
-                    Stop-Function -Message "Remote execution failed" -ErrorRecord $_ -EnableException $true
+                    Stop-Function -Message "Remote CredSSP execution failed" -ErrorRecord $_
+                    return
                 }
             }
             if ($UsePSSessionConfiguration -or !$sspSuccessful) {
@@ -147,9 +164,10 @@ function Invoke-Program {
                     Write-Message -Level Debug -Message "RemoteSessionConfiguration ($($configuration.Name)) was successful, using it."
                     Write-Message -Level Verbose -Message "Starting process [$Path] with arguments [$ArgumentList] on $ComputerName using PS session configuration"
                     try {
-                        Invoke-Command2 @params -ConfigurationName $configuration.Name -Raw -ErrorAction Stop
+                        $output = Invoke-Command2 @params -ConfigurationName $configuration.Name -Raw -ErrorAction Stop
                     } catch {
-                        throw $_
+                        Stop-Function -Message "Remote SessionConfiguration execution failed" -ErrorRecord $_
+                        return
                     } finally {
                         # Unregister PSRemote configurations once completed. It's slow, but necessary - otherwise we're gonna leave unnesessary junk on a remote
                         Write-Message -Level Verbose -Message "Unregistering any leftover PSSession Configurations on $ComputerName"
@@ -159,12 +177,25 @@ function Invoke-Program {
                         }
                     }
                 } else {
-                    Stop-Function -Message "RemoteSession configuration unsuccessful, no valid connection options found | $($configuration.Status)" -EnableException $true
+                    Stop-Function -Message "RemoteSession configuration unsuccessful, no valid connection options found | $($configuration.Status)"
+                    return
                 }
             }
         } else {
             Write-Message -Level Verbose -Message "Starting process [$Path] with arguments [$ArgumentList] locally"
-            Invoke-Command2 @params -Raw -ErrorAction Stop
+            $output = Invoke-Command2 @params -Raw -ErrorAction Stop
+        }
+        Write-Message -Level Debug -Message "Process [$Path] returned exit code $($output.ExitCode)"
+        if ($Raw) {
+            if ($output.Successful) {
+                return $output.stdout
+            } else {
+                $message = "Error running [$Path]: exited with errorcode $($output.ExitCode)`:`n$($output.StdErr)`n$($output.StdOut)"
+                Stop-Function -Message "Program execution failed | $message"
+            }
+        } else {
+            # Select * to ensure that the object is a generic object and not a de-serialized one from a remote session
+            return $output | Select-Object -Property * -ExcludeProperty PSComputerName, RunspaceId | Select-DefaultView -Property ComputerName, Path, Successful, ExitCode, stdout
         }
     }
 }
