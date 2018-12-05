@@ -20,7 +20,9 @@ function Test-PendingReboot {
 
         [Parameter()]
         [ValidateNotNullOrEmpty()]
-        [pscredential]$Credential
+        [pscredential]$Credential,
+
+        [bool]$EnableException = $EnableException
     )
     process {
         try {
