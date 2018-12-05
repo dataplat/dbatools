@@ -4,6 +4,6 @@
     "powershell.codeFormatting.preset": "OTBS",
     "editor.tabSize": 4,
     "editor.detectIndentation": false,
-    "editor.insertSpaces": true
+    "editor.insertSpaces": true,
     "editor.formatOnSave": true
 }
