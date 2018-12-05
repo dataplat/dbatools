@@ -1044,7 +1044,6 @@ $script:xplat = @(
     'Copy-DbaServerRole',
     'Copy-DbaResourceGovernor',
     'Copy-DbaXESession',
-    'Copy-DbaBackupDevice',
     'Copy-DbaServerTrigger',
     'Copy-DbaCmsRegServer',
     'Copy-DbaSysDbUserObject',
@@ -1425,6 +1424,7 @@ $script:noncoresmo = @(
 )
 $script:windowsonly = @(
     # solvable filesystem issues or other workarounds
+    'Copy-DbaBackupDevice',
     'Install-DbaSqlWatch',
     'Uninstall-DbaSqlWatch',
     'Get-DbaRegistryRoot',
