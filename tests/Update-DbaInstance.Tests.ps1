@@ -22,7 +22,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
         $defaultParamCount = 13
         [object[]]$params = (Get-ChildItem function:\$CommandName).Parameters.Keys
-        $knownParameters = 'ComputerName', 'Credential', 'Version', 'Type', 'Path', 'Restart', 'EnableException', 'Kb', 'InstanceName', 'Continue'
+        $knownParameters = 'ComputerName', 'Credential', 'Version', 'Type', 'Path', 'Restart', 'EnableException', 'Kb', 'InstanceName', 'Continue', 'Throttle'
         $paramCount = $knownParameters.Count
         It "Should contain our specific parameters" {
             ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
@@ -204,7 +204,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         }
         It "Should mock-upgrade SQL2016 to SP1CU4 (KB3182545 + KB4024305) " {
             $result = Update-DbaInstance -Kb 3182545, 4024305 -Path $exeDir -Restart -EnableException -Confirm:$false
-            Assert-MockCalled -CommandName Get-SQLInstanceComponent -Exactly 2 -Scope It -ModuleName dbatools
+            Assert-MockCalled -CommandName Get-SQLInstanceComponent -Exactly 1 -Scope It -ModuleName dbatools
             Assert-MockCalled -CommandName Invoke-Program -Exactly 2 -Scope It -ModuleName dbatools
             Assert-MockCalled -CommandName Restart-Computer -Exactly 1 -Scope It -ModuleName dbatools
             #no remote execution in tests
@@ -223,7 +223,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         }
         It "Should mock-upgrade both versions to different KBs" {
             $results = Update-DbaInstance -Kb 3182545, 4040714, KB2546951, KB2738350 -Path $exeDir -Restart -EnableException -Confirm:$false
-            Assert-MockCalled -CommandName Get-SQLInstanceComponent -Exactly 4 -Scope It -ModuleName dbatools
+            Assert-MockCalled -CommandName Get-SQLInstanceComponent -Exactly 1 -Scope It -ModuleName dbatools
             Assert-MockCalled -CommandName Invoke-Program -Exactly 6 -Scope It -ModuleName dbatools
             Assert-MockCalled -CommandName Restart-Computer -Exactly 3 -Scope It -ModuleName dbatools
             #no remote execution in tests
@@ -282,7 +282,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
                         "BuildLevel"  = [version]'11.0.5058'
                         "MatchType"   = "Exact"
                     }
-                    Resume = $true
+                    Resume       = $true
                 }
             }
             #Mock Get-Item and Get-ChildItem with a dummy file
@@ -484,7 +484,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
                     }
                     It "$v to $cuLevel" {
                         $results = Update-DbaInstance -Version "$v$cuLevel" -Path 'mocked' -Restart -EnableException -Confirm:$false
-                        Assert-MockCalled -CommandName Get-SQLInstanceComponent -Exactly $steps -Scope It -ModuleName dbatools
+                        Assert-MockCalled -CommandName Get-SQLInstanceComponent -Exactly 1 -Scope It -ModuleName dbatools
                         Assert-MockCalled -CommandName Invoke-Program -Exactly ($steps * 2) -Scope It -ModuleName dbatools
                         Assert-MockCalled -CommandName Restart-Computer -Exactly $steps -Scope It -ModuleName dbatools
                         for ($i = 0; $i -lt $steps; $i++) {
