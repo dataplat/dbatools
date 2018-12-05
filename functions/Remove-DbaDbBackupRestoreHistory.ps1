@@ -78,10 +78,10 @@ function Remove-DbaDbBackupRestoreHistory {
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
         [switch]$EnableException
     )
-    
+
     begin {
         if (-not $KeepDays -and -not $Database) {
-            $KeepDays = 30    
+            $KeepDays = 30
         }
         $odt = (Get-Date).AddDays(-$KeepDays)
     }
