@@ -48,7 +48,7 @@ $TestsRunGroups = @{
         'Test-DbaServerName',
         'Test-DbaTempDbConfig',
         'Test-DbaDbVirtualLogFile',
-        'Test-DbaJobOwner',
+        'Test-DbaAgentJobOwner',
         'Resume-DbaAgDbDataMovement'
     )
     # do not run everywhere

@@ -95,6 +95,10 @@ function Copy-DbaDataCollector {
         [switch]$EnableException
     )
     begin {
+        if (-not $script:isWindows) {
+            Stop-Function -Message "Copy-DbaDataCollector does not support Linux - we're still waiting for the Core SMOs from Microsoft"
+            return
+        }
         try {
             $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -MinimumVersion 10
         } catch {

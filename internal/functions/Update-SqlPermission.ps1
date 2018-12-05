@@ -12,7 +12,7 @@ function Update-SqlPermission {
             Destination Login
         .PARAMETER EnableException
             Use this switch to disable any kind of verbose messages
-       #>
+    #>
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseSingularNouns", "")]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "")]
     [CmdletBinding(SupportsShouldProcess)]
@@ -192,7 +192,7 @@ function Update-SqlPermission {
                 Write-Message -Level Verbose -Message "Database [$($sourceDb.Name)] is not accessible on destination. Skipping."
                 continue
             }
-            if ((Get-DbaAgDatabase -SqlInstance $DestServer -Database $dbName)) {
+            if ((Get-DbaAgDatabase -SqlInstance $DestServer -Database $dbName -ErrorAction Ignore -WarningAction SilentlyContinue)) {
                 Write-Message -Level Verbose -Message "Database [$dbName] is part of an availability group. Skipping."
                 continue
             }
@@ -273,8 +273,8 @@ function Update-SqlPermission {
                 Write-Message -Level Verbose -Message "Database [$dbName] is not accessible. Skipping."
                 continue
             }
-            
-            if ((Get-DbaAgDatabase -SqlInstance $DestServer -Database $dbName)) {
+
+            if ((Get-DbaAgDatabase -SqlInstance $DestServer -Database $dbName -ErrorAction Ignore -WarningAction SilentlyContinue)) {
                 Write-Message -Level Verbose -Message "Database [$dbName] is part of an availability group. Skipping."
                 continue
             }
