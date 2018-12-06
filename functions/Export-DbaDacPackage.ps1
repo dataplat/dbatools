@@ -194,8 +194,12 @@ function Export-DbaDacPackage {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
             $cleaninstance = $instance.ToString().Replace('\', '-')
-
-            $dbs = Get-DbaDatabase -SqlInstance $server -OnlyAccessible -ExcludeSystem -Database $Database -ExcludeDatabase $ExcludeDatabase
+            if ($Database) {
+                $dbs = Get-DbaDatabase -SqlInstance $server -OnlyAccessible -Database $Database -ExcludeDatabase $ExcludeDatabase
+            } else {
+                # all user databases by default
+                $dbs = Get-DbaDatabase -SqlInstance $server -OnlyAccessible -ExcludeSystem -ExcludeDatabase $ExcludeDatabase
+            }
             if (-not $dbs) {
                 Stop-Function -Message "Databases not found on $instance" -Target $instance -Continue
             }
