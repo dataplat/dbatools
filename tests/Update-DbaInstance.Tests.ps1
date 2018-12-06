@@ -119,7 +119,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
             $result.Successful | Should -Be $true
             $result.Restarted | Should -Be $true
             $result.Installer | Should -Be (Join-Path $exeDir 'SQLServer2017-KB4464082-x64-ENU.exe')
-            $result.Message | Should -BeNullOrEmpty
+            $result.Notes | Should -BeNullOrEmpty
             $result.ExtractPath | Should -BeLike '*\dbatools_KB*Extract'
         }
         It "Should mock-upgrade SQL2008\LAB2 to latest SP" {
@@ -140,7 +140,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
             $result.Restarted | Should -Be $true
             $result.InstanceName | Should -Be LAB2
             $result.Installer | Should -Be (Join-Path $exeDir 'SQLServer2008SP4-KB2979596-x64-ENU.exe')
-            $result.Message | Should -BeNullOrEmpty
+            $result.Notes | Should -BeNullOrEmpty
             $result.ExtractPath | Should -BeLike '*\dbatools_KB*Extract'
         }
         It "Should mock-upgrade two versions to latest SPs" {
@@ -164,7 +164,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
             $result.Successful | Should -Be $true
             $result.Restarted | Should -Be $true
             $result.Installer | Should -Be (Join-Path $exeDir 'SQLServer2008SP4-KB2979596-x64-ENU.exe')
-            $result.Message | Should -BeNullOrEmpty
+            $result.Notes | Should -BeNullOrEmpty
             $result.ExtractPath | Should -BeLike '*\dbatools_KB*Extract'
 
             #2012SP4
@@ -176,7 +176,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
             $result.Successful | Should -Be $true
             $result.Restarted | Should -Be $true
             $result.Installer | Should -Be (Join-Path $exeDir 'SQLServer2012-KB4018073-x64-ENU.exe')
-            $result.Message | Should -BeNullOrEmpty
+            $result.Notes | Should -BeNullOrEmpty
             $result.ExtractPath | Should -BeLike '*\dbatools_KB*Extract'
         }
     }
@@ -246,7 +246,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
             $result.Successful | Should -Be $true
             $result.Restarted | Should -Be $true
             $result.Installer | Should -Be (Join-Path $exeDir 'SQLServer2008SP3-KB2546951-x64-ENU.exe')
-            $result.Message | Should -BeNullOrEmpty
+            $result.Notes | Should -BeNullOrEmpty
             $result.ExtractPath | Should -BeLike '*\dbatools_KB*Extract'
         }
         It "Should mock-upgrade SQL2016 to SP1CU4 (KB3182545 + KB4024305) " {
@@ -265,7 +265,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
             $result.Successful | Should -Be $true
             $result.Restarted | Should -Be $true
             $result.Installer | Should -Be (Join-Path $exeDir 'SQLServer2016-KB4024305-x64-ENU.exe')
-            $result.Message | Should -BeNullOrEmpty
+            $result.Notes | Should -BeNullOrEmpty
             $result.ExtractPath | Should -BeLike '*\dbatools_KB*Extract'
         }
         It "Should mock-upgrade both versions to different KBs" {
@@ -287,7 +287,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
             $result.Successful | Should -Be $true
             $result.Restarted | Should -Be $true
             $result.Installer | Should -Be (Join-Path $exeDir 'SQLServer2016-KB4040714-x64.exe')
-            $result.Message | Should -BeNullOrEmpty
+            $result.Notes | Should -BeNullOrEmpty
             $result.ExtractPath | Should -BeLike '*\dbatools_KB*Extract'
 
             #2008SP3
@@ -298,7 +298,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
             $result.Successful | Should -Be $true
             $result.Restarted | Should -Be $true
             $result.Installer | Should -Be (Join-Path $exeDir 'SQLServer2008SP3-KB2546951-x64-ENU.exe')
-            $result.Message | Should -BeNullOrEmpty
+            $result.Notes | Should -BeNullOrEmpty
             $result.ExtractPath | Should -BeLike '*\dbatools_KB*Extract'
 
             #2008SP3CU7
@@ -309,7 +309,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
             $result.Successful | Should -Be $true
             $result.Restarted | Should -Be $true
             $result.Installer | Should -Be (Join-Path $exeDir 'SQLServer2008-KB2738350-x64-ENU.exe')
-            $result.Message | Should -BeNullOrEmpty
+            $result.Notes | Should -BeNullOrEmpty
             $result.ExtractPath | Should -BeLike '*\dbatools_KB*Extract'
         }
     }
@@ -357,7 +357,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
             $result.Restarted | Should -Be $true
             $result.InstanceName | Should -Be LAB
             $result.Installer | Should -Be 'c:\mocked\filename.exe'
-            $result.Message | Should -BeNullOrEmpty
+            $result.Notes | Should -BeNullOrEmpty
             $result.ExtractPath | Should -BeLike '*\dbatools_KB*Extract'
         }
     }
@@ -544,7 +544,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
                             $result.Successful | Should -Be $true
                             $result.Restarted | Should -Be $true
                             $result.Installer | Should -Be 'c:\mocked\filename.exe'
-                            $result.Message | Should -BeNullOrEmpty
+                            $result.Notes | Should -BeNullOrEmpty
                             $result.ExtractPath | Should -BeLike '*\dbatools_KB*Extract'
                         }
                     }
@@ -614,6 +614,17 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
             #override default mock
             Mock -CommandName Invoke-Program -MockWith { [pscustomobject]@{ Successful = $false; ExitCode = 12345 } } -ModuleName dbatools
             { Update-DbaInstance -Version 2008SP3 -EnableException -Path 'mocked' -Confirm:$false } | Should throw 'failed with exit code 12345'
+            $result = Update-DbaInstance -Version 2008SP3 -Path 'mocked' -Confirm:$false -WarningVariable warVar 3>$null
+            $result | Should -Not -BeNullOrEmpty
+            $result.MajorVersion | Should -Be 2008
+            $result.TargetLevel | Should -Be SP3
+            $result.KB | Should -Be 2546951
+            $result.Successful | Should -Be $false
+            $result.Restarted | Should -Be $false
+            $result.Installer | Should -Be 'c:\mocked\filename.exe'
+            $result.Notes | Should -BeLike '*failed with exit code 12345'
+            $result.ExtractPath | Should -BeLike '*\dbatools_KB*Extract'
+            $warVar | Should -BeLike '*failed with exit code 12345'
             #revert default mock
             Mock -CommandName Invoke-Program -MockWith { [pscustomobject]@{ Successful = $true } } -ModuleName dbatools
         }
