@@ -17,22 +17,21 @@ function Test-PendingReboot {
         [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [DbaInstanceParameter]$ComputerName,
-
-        [Parameter()]
         [ValidateNotNullOrEmpty()]
-        [pscredential]$Credential
+        [pscredential]$Credential,
+        [bool]$EnableException = $EnableException
     )
     process {
         try {
             $icmParams = @{
-                ComputerName = $ComputerName
+                ComputerName = $ComputerName.ComputerName
                 Raw          = $true
             }
             if ($PSBoundParameters.ContainsKey('Credential')) {
                 $icmParams.Credential = $Credential
             }
 
-            $OperatingSystem = Get-DbaCmObject -ComputerName $ComputerName -ClassName Win32_OperatingSystem
+            $OperatingSystem = Get-DbaCmObject -ComputerName $ComputerName.ComputerName -ClassName Win32_OperatingSystem
 
             # If Vista/2008 & Above query the CBS Reg Key
             If ($OperatingSystem.BuildNumber -ge 6001) {
