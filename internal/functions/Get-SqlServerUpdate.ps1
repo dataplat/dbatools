@@ -1,9 +1,10 @@
-function Install-SqlServerUpdate {
+function Get-SqlServerUpdate {
     <#
     Originally based on https://github.com/adbertram/PSSqlUpdater
-    Internal function. Invokes installation of a single SQL Server KB based on provided parameters.
+    Internal function. Provides information on the update path for a specific set of SQL Server instances based on current and target SQL Server levels.
+    Component parameter is using the output object of Get-SqlInstanceComponent.
     #>
-    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High', DefaultParameterSetName = 'Latest')]
+    [CmdletBinding(DefaultParameterSetName = 'Latest')]
     param
     (
         [Parameter(Mandatory)]
@@ -13,7 +14,7 @@ function Install-SqlServerUpdate {
         [Parameter(Mandatory, ParameterSetName = 'Latest')]
         [ValidateSet('ServicePack', 'CumulativeUpdate')]
         [string]$Type,
-        [string[]]$MajorVersion,
+        [object[]]$Component,
         [Parameter(ParameterSetName = 'Number')]
         [int]$ServicePack,
         [Parameter(ParameterSetName = 'Number')]
@@ -28,34 +29,19 @@ function Install-SqlServerUpdate {
         [bool]$Continue
     )
     process {
+
         # check if any type of the update was specified
         if ($PSCmdlet.ParameterSetName -eq 'Number' -and -not ((Test-Bound ServicePack) -or (Test-Bound CumulativeUpdate))) {
             Stop-Function -Message "No update was specified, provide at least one value for either SP/CU"
             return
         }
         $computer = $ComputerName.ComputerName
-        $activity = "Updating SQL instance builds on $computer"
-
-        ## Find the current version on the computer
-        Write-ProgressHelper -ExcludePercent -Activity $activity -StepNumber 0 -Message "Gathering all SQL Server instance versions"
-        $components = Get-SQLInstanceComponent -ComputerName $computer -Credential $Credential
-        if (!$components) {
-            Stop-Function -Message "No SQL Server installations found on $computer"
-            return
-        }
-        Write-Message -Level Debug -Message "Found $(($components | Measure-Object).Count) existing SQL Server instance components: $(($components | Foreach-Object { "$($_.InstanceName)($($_.InstanceType))" }) -join ',')"
-        # Filter for specific instances
-        if ($InstanceName) {
-            $components = $components | Where-Object {$_.InstanceName -eq $InstanceName }
-        }
-        if ($MajorVersion) {
-            $components = $components | Where-Object { $_.Version.NameLevel -in $MajorVersion }
-        }
-        $verCount = ($components | Measure-Object).Count
-        $verDesc = ($components | Foreach-Object { "$($_.Version.NameLevel) ($($_.Version.Build))" }) -join ', '
+        $verCount = ($Component | Measure-Object).Count
+        $verDesc = ($Component | Foreach-Object { "$($_.Version.NameLevel) ($($_.Version.Build))" }) -join ', '
         Write-Message -Level Debug -Message "Selected $verCount existing SQL Server version(s): $verDesc"
+
         # Group by version
-        $currentVersionGroups = $components | Group-Object -Property { $_.Version.NameLevel }
+        $currentVersionGroups = $Component | Group-Object -Property { $_.Version.NameLevel }
         #Check if more than one version is found
         if (($currentVersionGroups | Measure-Object ).Count -gt 1 -and ($CumulativeUpdate -or $ServicePack) -and !$MajorVersion) {
             Stop-Function -Message "Updating multiple different versions of SQL Server to a specific SP/CU is not supported. Please specify a version of SQL Server on $computer that you want to update."
@@ -81,7 +67,24 @@ function Install-SqlServerUpdate {
             # Use the earliest version in case specifics are needed
             $currentVersion = $currentGroup.Group | Sort-Object -Property { $_.Version.BuildLevel } | Select-Object -ExpandProperty Version -First 1
 
-            Write-ProgressHelper -ExcludePercent -Activity $activity -Message "Parsing versions"
+            #create output object
+            $output = [pscustomobject]@{
+                ComputerName  = $ComputerName
+                MajorVersion  = $currentMajorNumber
+                Build         = $currentVersion.Build
+                TargetVersion = $null
+                TargetLevel   = $null
+                KB            = $null
+                Successful    = $false
+                Restarted     = $false
+                InstanceName  = $InstanceName
+                Installer     = $null
+                ExtractPath   = $null
+                Notes         = $null
+                ExitCode      = $null
+                Log           = $null
+            }
+
             # create a parameter set for Find-SqlServerUpdate
             $kbLookupParams = @{
                 Architecture = $arch
@@ -125,6 +128,10 @@ function Install-SqlServerUpdate {
                     } elseif ($Type -eq 'ServicePack') {
                         $targetKB = Get-DbaBuildReference -MajorVersion $targetKB.NameLevel -ServicePack $targetSP
                         $targetLevel = $targetKB.SPLevel | Where-Object { $_ -ne 'LATEST' }
+                        if ($currentVersion.SPLevel -contains 'LATEST') {
+                            Write-Message -Message "No need to update $currentMajorVersion to $targetLevel - it's already on the latest SP version" -Level Verbose
+                            continue
+                        }
                         Write-Message -Level Debug -Message "Found a latest Service Pack $targetLevel (KB$($targetKB.KBLevel))"
                     }
                 } else {
@@ -136,12 +143,15 @@ function Install-SqlServerUpdate {
                 if ($targetKB.MatchType -ne 'Exact') {
                     Stop-Function -Message "Couldn't find an exact build match with specified parameters while updating $currentMajorVersion" -Continue
                 }
+                $output.TargetVersion = $targetKB
                 $targetLevel = "$($targetKB.SPLevel | Where-Object { $_ -ne 'LATEST' })$($targetKB.CULevel)"
                 $targetKBLevel = $targetKB.KBLevel | Select-Object -First 1
                 Write-Message -Level Verbose -Message "Upgrading SQL$($targetKB.NameLevel) to $targetLevel (KB$($targetKBLevel))"
                 $kbLookupParams.KB = $targetKBLevel
             } else {
-                Stop-Function -Message "Could not find a KB$KB reference for $currentMajorVersion SP $ServicePack CU $CumulativeUpdate" -Continue
+                $output.Notes = "Could not find a KB$KB reference for $currentMajorVersion SP $ServicePack CU $CumulativeUpdate"
+                $output
+                Stop-Function -Message $output.Notes -Continue
             }
 
             # Compare versions - whether to proceed with the installation
@@ -161,100 +171,21 @@ function Install-SqlServerUpdate {
                 Write-Message -Message "Current $currentMajorVersion version $($currentVersion.BuildLevel) on computer [$($computer)] matches or already higher than target version $($targetKB.BuildLevel)" -Level Verbose
                 continue
             }
+
+            $output.TargetLevel = $targetLevel
+            $output.KB = $kbLookupParams.KB
             ## Find the installer to use
-            Write-ProgressHelper -ExcludePercent -Activity $activity -Message "Searching for update binaries"
+
             $installer = Find-SqlServerUpdate @kbLookupParams
             if (!$installer) {
-                Stop-Function -Message "Could not find installer for the $currentMajorVersion update KB$($kbLookupParams.KB)" -Continue
+                $output.Notes = "Could not find installer for the $currentMajorVersion update KB$($kbLookupParams.KB)"
+                $output
+                Stop-Function -Message $output.Notes -Continue
             }
-            ## Apply patch
-            Write-ProgressHelper -ExcludePercent -Activity $activity -Message "Installing $targetLevel KB$($targetKB.KBLevel) ($($installer.Name)) for $currentMajorVersion ($($currentVersion.BuildLevel))"
-            if ($PSCmdlet.ShouldProcess($computer, "Install $targetLevel KB$($targetKB.KBLevel) ($($installer.Name)) for $currentMajorVersion ($($currentVersion.BuildLevel))")) {
-                $invProgParams = @{
-                    ComputerName = $computer
-                    Credential   = $Credential
-                    ErrorAction  = 'Stop'
-                }
-                # Find a temporary folder to extract to - the drive that has most free space
-                $chosenDrive = (Get-DbaDiskSpace -ComputerName $computer -Credential $Credential | Sort-Object -Property Free -Descending | Select-Object -First 1).Name
-                if (!$chosenDrive) {
-                    # Fall back to the system drive
-                    $chosenDrive = Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock { $env:SystemDrive } -Raw -ErrorAction Stop
-                }
-                $spExtractPath = $chosenDrive.TrimEnd('\') + "\dbatools_KB$($targetKB.KBLevel)_Extract"
-                if ($spExtractPath) {
-                    try {
-                        # Extract file
-                        Write-ProgressHelper -ExcludePercent -Activity $activity -Message "Extracting $installer to $spExtractPath"
-                        Write-Message -Level Verbose -Message "Extracting $installer to $spExtractPath"
-                        $null = Invoke-Program @invProgParams -Path $installer.FullName -ArgumentList "/x`:`"$spExtractPath`" /quiet"
-                        # Install the patch
-                        if ($InstanceName) {
-                            $instanceClause = "/instancename=$InstanceName"
-                        } else {
-                            $instanceClause = '/allinstances'
-                        }
-                        Write-ProgressHelper -ExcludePercent -Activity $activity -Message "Now installing update from $spExtractPath"
-                        Write-Message -Level Verbose -Message "Starting installation from $spExtractPath"
-                        $log = Invoke-Program @invProgParams -Path "$spExtractPath\setup.exe" -ArgumentList @('/quiet', $instanceClause, '/IAcceptSQLServerLicenseTerms') -WorkingDirectory $spExtractPath
-                        $success = $true
-                    } catch {
-                        Stop-Function -Message "Upgrade failed" -ErrorRecord $_
-                        return
-                    } finally {
-                        ## Cleanup temp
-                        try {
-                            Write-ProgressHelper -ExcludePercent -Activity $activity -Message "Removing temporary files"
-                            $null = Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock {
-                                if ($args[0] -like '*\dbatools_KB*_Extract' -and (Test-Path $args[0])) {
-                                    Remove-Item -Recurse -Force -LiteralPath $args[0] -ErrorAction Stop
-                                }
-                            } -Raw -ArgumentList $spExtractPath -ErrorAction Stop
-                        } catch {
-                            Write-Message -Level Warning -Message "Failed to cleanup temp folder on computer $computer`: $($_.Exception.Message) "
-                        }
-                    }
-                }
-                if ($Restart) {
-                    Write-ProgressHelper -ExcludePercent -Activity $activity -Message "Restarting computer $computer and waiting for it to come back online"
-                    Write-Message -Level Verbose "Restarting computer $computer and waiting for it to come back online"
-                    try {
-                        $restartParams = @{
-                            ComputerName = $computer
-                        }
-                        if ($Credential) { $restartParams += @{ Credential = $Credential }
-                        }
-                        $null = Restart-Computer @restartParams -Wait -For WinRm -Force -ErrorAction Stop
-                        $restarted = $true
-                    } catch {
-                        Stop-Function -Message "Failed to restart computer" -ErrorRecord $_
-                        return
-                    }
-                } else {
-                    $message = "Restart is required for computer $computer to finish the installation of $currentMajorVersion$targetLevel"
-                }
-            } else {
-                $message = 'The installation was not performed - running in WhatIf mode'
-                $success = $true
-            }
-            # return resulting object. This function throws, so all results here are expected to be shown only in a positive light
-            [psobject]@{
-                ComputerName = $ComputerName
-                MajorVersion = $kbLookupParams.MajorVersion
-                TargetLevel  = $targetLevel
-                KB           = $kbLookupParams.KB
-                Successful   = [bool]$success
-                Restarted    = [bool]$restarted
-                InstanceName = $InstanceName
-                Installer    = $installer.FullName
-                ExtractPath  = $spExtractPath
-                Message      = $message
-                Log          = $log
-            }
-            if (-not $restarted) {
-                Write-Message -Level Verbose "No more installations for other versions on $computer - restart is pending"
-                return
-            }
+            $output.Installer = $installer.FullName
+            $output.Successful = $true
+            #Return the object for further processing
+            $output
         }
     }
 }
