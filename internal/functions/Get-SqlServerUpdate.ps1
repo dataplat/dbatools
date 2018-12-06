@@ -128,6 +128,10 @@ function Get-SqlServerUpdate {
                     } elseif ($Type -eq 'ServicePack') {
                         $targetKB = Get-DbaBuildReference -MajorVersion $targetKB.NameLevel -ServicePack $targetSP
                         $targetLevel = $targetKB.SPLevel | Where-Object { $_ -ne 'LATEST' }
+                        if ($currentVersion.SPLevel -contains 'LATEST') {
+                            Write-Message -Message "No need to update $currentMajorVersion to $targetLevel - it's already on the latest SP version" -Level Verbose
+                            continue
+                        }
                         Write-Message -Level Debug -Message "Found a latest Service Pack $targetLevel (KB$($targetKB.KBLevel))"
                     }
                 } else {

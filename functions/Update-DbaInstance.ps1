@@ -248,10 +248,6 @@ function Update-DbaInstance {
                 Write-Message -Level Warning -Message $_.$message
             }
         }
-        # debug message
-        foreach ($a in $actions) {
-            Write-Message -Level Debug -Message "Added installation action $($a | ConvertTo-Json -Depth 1 -Compress)"
-        }
     }
     process {
         if (Test-FunctionInterrupt) { return }
@@ -276,7 +272,7 @@ function Update-DbaInstance {
             if (!$components) {
                 Stop-Function -Message "No SQL Server installations found on $resolvedName" -Continue
             }
-            Write-Message -Level Debug -Message "Found $(($components | Measure-Object).Count) existing SQL Server instance components: $(($components | Foreach-Object { "$($_.InstanceName)($($_.InstanceType))" }) -join ',')"
+            Write-Message -Level Debug -Message "Found $(($components | Measure-Object).Count) existing SQL Server instance components: $(($components | Foreach-Object { "$($_.InstanceName)($($_.InstanceType) $($_.Version.NameLevel))" }) -join ',')"
             # Filter for specific instance name
             if ($InstanceName) {
                 $components = $components | Where-Object {$_.InstanceName -eq $InstanceName }
@@ -289,12 +285,15 @@ function Update-DbaInstance {
                 }
                 # Pass only relevant components
                 if ($currentAction.MajorVersion) {
-                    $components = $components | Where-Object { $_.Version.NameLevel -in $currentAction.MajorVersion }
+                    Write-Message -Level Debug -Message "Limiting components to version $($currentAction.MajorVersion)"
+                    $selectedComponents = $components | Where-Object { $_.Version.NameLevel -contains $currentAction.MajorVersion }
                     $currentAction.Remove('MajorVersion')
+                } else {
+                    $selectedComponents = $components
                 }
                 Write-ProgressHelper -ExcludePercent -Activity $activity -Message "Looking for a KB file for a chosen version"
-                Write-Message -Level Verbose -Message "Looking for appropriate KB file on $resolvedName with following params: $($currentAction | ConvertTo-Json -Depth 1 -Compress)"
-                $upgradeDetails = Get-SqlServerUpdate @currentAction -ComputerName $resolvedName -Credential $Credential -Restart $Restart -Path $Path -Component $components
+                Write-Message -Level Debug -Message "Looking for appropriate KB file on $resolvedName with following params: $($currentAction | ConvertTo-Json -Depth 1 -Compress)"
+                $upgradeDetails = Get-SqlServerUpdate @currentAction -ComputerName $resolvedName -Credential $Credential -Restart $Restart -Path $Path -Component $selectedComponents
                 if ($upgradeDetails.Successful -contains $false) {
                     #Exit the actions loop altogether - upgrade cannot be performed
                     $upgradeDetails
@@ -311,7 +310,7 @@ function Update-DbaInstance {
             }
             if ($upgrades) {
                 Write-ProgressHelper -ExcludePercent -Activity $activity -Message "Preparing installation"
-                $chosenVersions = ($upgrades | ForEach-Object { "$($_.MajorVersion) to $($_.TargetLevel) ($($_.KB))" }) -join ', '
+                $chosenVersions = ($upgrades | ForEach-Object { "$($_.MajorVersion) to $($_.TargetLevel) (KB$($_.KB))" }) -join ', '
                 if ($PSCmdlet.ShouldProcess($resolvedName, "Update $chosenVersions")) {
                     $installActions += [pscustomobject]@{
                         ComputerName = $resolvedName

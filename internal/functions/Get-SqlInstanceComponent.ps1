@@ -228,10 +228,6 @@ function Get-SQLInstanceComponent {
                         #region Generate return object
                         [pscustomobject]@{
                             ComputerName  = $computer.ToUpper();
-                            InstanceType  = {
-                                $componentNameMap | Where-Object { $_.ComponentName -eq $componentName } |
-                                    Select-Object -ExpandProperty DisplayName
-                            }.InvokeReturnAsIs();
                             InstanceName  = $sqlInstance;
                             InstanceID    = $instanceValue;
                             InstanceDir   = $instanceDir;
@@ -289,7 +285,8 @@ function Get-SQLInstanceComponent {
                         foreach ($regValueName in $regKey.GetValueNames()) {
                             if ($componentRegKeyName -eq 'RS' -and $regValueName -eq 'PBIRS') { continue } #filtering out Power BI - not supported
                             if ($componentRegKeyName -eq 'RS' -and $regValueName -eq 'SSRS') { continue }  #filtering out SSRS2017+ - not supported
-                            Get-SQLInstanceDetail -RegPath $regPath -Reg $reg -RegKey $regKey -Instance $regValueName;
+                            $result = Get-SQLInstanceDetail -RegPath $regPath -Reg $reg -RegKey $regKey -Instance $regValueName;
+                            $result | Add-Member -Type NoteProperty -Name InstanceType -Value ($componentNameMap | Where-Object { $_.ComponentName -eq $componentName }).DisplayName -PassThru
                         }
                     }
                 }
