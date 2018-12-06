@@ -6,7 +6,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
         $paramCount = 8
         $commonParamCount = 13
-        [object[]]$params = (Get-ChildItem function:\Repair-DbaOrphanUser).Parameters.Keys
+        [object[]]$params = (Get-ChildItem function:\Repair-DbaDbOrphanUser).Parameters.Keys
         $knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'Users', 'RemoveNotExisting', 'Force', 'EnableException'
         It "Should contain our specific parameters" {
             ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
@@ -52,7 +52,7 @@ CREATE LOGIN [dbatoolsci_orphan2] WITH PASSWORD = N'password2', CHECK_EXPIRATION
     It "shows time taken for preparation" {
         1 | Should -Be 1
     }
-    $results = Repair-DbaOrphanUser -SqlInstance $script:instance1 -Database dbatoolsci_orphan
+    $results = Repair-DbaDbOrphanUser -SqlInstance $script:instance1 -Database dbatoolsci_orphan
     It "Finds two orphans" {
         $results.Count | Should -Be 2
         foreach ($user in $Users) {
@@ -66,7 +66,7 @@ CREATE LOGIN [dbatoolsci_orphan2] WITH PASSWORD = N'password2', CHECK_EXPIRATION
         $ExpectedProps = 'ComputerName,InstanceName,SqlInstance,DatabaseName,User,Status'.Split(',')
         ($result.PsObject.Properties.Name | Sort-Object) | Should Be ($ExpectedProps | Sort-Object)
     }
-    $results = Repair-DbaOrphanUser -SqlInstance $script:instance1 -Database dbatoolsci_orphan
+    $results = Repair-DbaDbOrphanUser -SqlInstance $script:instance1 -Database dbatoolsci_orphan
     It "does not find any other orphan" {
         $results | Should -BeNullOrEmpty
     }
