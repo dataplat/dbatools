@@ -80,7 +80,7 @@ function Get-SqlServerUpdate {
                 InstanceName  = $InstanceName
                 Installer     = $null
                 ExtractPath   = $null
-                Message       = $null
+                Notes         = $null
                 ExitCode      = $null
                 Log           = $null
             }
@@ -149,9 +149,9 @@ function Get-SqlServerUpdate {
                 Write-Message -Level Verbose -Message "Upgrading SQL$($targetKB.NameLevel) to $targetLevel (KB$($targetKBLevel))"
                 $kbLookupParams.KB = $targetKBLevel
             } else {
-                $output.Message = "Could not find a KB$KB reference for $currentMajorVersion SP $ServicePack CU $CumulativeUpdate"
+                $output.Notes = "Could not find a KB$KB reference for $currentMajorVersion SP $ServicePack CU $CumulativeUpdate"
                 $output
-                Stop-Function -Message $output.Message -Continue
+                Stop-Function -Message $output.Notes -Continue
             }
 
             # Compare versions - whether to proceed with the installation
@@ -178,9 +178,9 @@ function Get-SqlServerUpdate {
 
             $installer = Find-SqlServerUpdate @kbLookupParams
             if (!$installer) {
-                $output.Message = "Could not find installer for the $currentMajorVersion update KB$($kbLookupParams.KB)"
+                $output.Notes = "Could not find installer for the $currentMajorVersion update KB$($kbLookupParams.KB)"
                 $output
-                Stop-Function -Message $output.Message -Continue
+                Stop-Function -Message $output.Notes -Continue
             }
             $output.Installer = $installer.FullName
             $output.Successful = $true

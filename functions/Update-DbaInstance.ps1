@@ -243,9 +243,9 @@ function Update-DbaInstance {
         }
         # defining how to process the final results
         $outputHandler = {
-            $_ | Select-DefaultView -Property ComputerName, MajorVersion, TargetLevel, KB, Successful, Restarted, InstanceName, Installer, Message
+            $_ | Select-DefaultView -Property ComputerName, MajorVersion, TargetLevel, KB, Successful, Restarted, InstanceName, Installer, Notes
             if ($_.Successful -eq $false) {
-                Write-Message -Level Warning -Message $_.$message
+                Write-Message -Level Warning -Message "Update failed: $($_.Notes -join ' | ')"
             }
         }
     }
@@ -256,6 +256,11 @@ function Update-DbaInstance {
         $resolvedComputers = @()
         foreach ($computer in $ComputerName) {
             $null = Test-ElevationRequirement -ComputerName $computer -Continue
+            if (!$computer.IsLocalHost) {
+                if (!$Credential) {
+                    Write-Message -Level Warning -Message "Explicit credentials are required when running agains remote hosts. Make sure to define the -Credential parameter"
+                }
+            }
             if ($resolvedComputer = Resolve-DbaNetworkName -ComputerName $computer.ComputerName) {
                 $resolvedComputers += $resolvedComputer.FullComputerName
             }
@@ -297,7 +302,7 @@ function Update-DbaInstance {
                 if ($upgradeDetails.Successful -contains $false) {
                     #Exit the actions loop altogether - upgrade cannot be performed
                     $upgradeDetails
-                    Stop-Function -Message "Update cannot be applied to $resolvedName | $($upgradeDetails.Message)" -Continue -ContinueLabel computers
+                    Stop-Function -Message "Update cannot be applied to $resolvedName | $($upgradeDetails.Notes)" -Continue -ContinueLabel computers
                 } else {
                     # update components to mirror the updated version - will be used for multi-step upgrades
                     foreach ($component in $components) {
@@ -354,8 +359,8 @@ function Update-DbaInstance {
                         Write-Message -Level Verbose -Message "Extracting $($currentAction.Installer) to $spExtractPath" -FunctionName Update-DbaInstance
                         $extractResult = Invoke-Program @execParams -Path $currentAction.Installer -ArgumentList "/x`:`"$spExtractPath`" /quiet" -EnableException $true
                         if (-not $extractResult.Successful) {
-                            $output.Message = "Extraction failed with exit code $($extractResult.ExitCode)"
-                            Stop-Function -Message $output.Message -FunctionName Update-DbaInstance
+                            $output.Notes = "Extraction failed with exit code $($extractResult.ExitCode)"
+                            Stop-Function -Message $output.Notes -FunctionName Update-DbaInstance
                             return $output
                         }
                         # Install the patch
@@ -370,14 +375,14 @@ function Update-DbaInstance {
                         if ($updateResult.Successful) {
                             $output.Successful = $true
                         } else {
-                            $output.Message = "Update failed with exit code $($updateResult.ExitCode)"
-                            Stop-Function -Message $output.Message -FunctionName Update-DbaInstance
+                            $output.Notes = "Update failed with exit code $($updateResult.ExitCode)"
+                            Stop-Function -Message $output.Notes -FunctionName Update-DbaInstance
                             return $output
                         }
                         $output.Log = $updateResult.stdout
                     } catch {
                         Stop-Function -Message "Upgrade failed" -ErrorRecord $_ -FunctionName Update-DbaInstance
-                        $output.Message = $_.Exception.Message
+                        $output.Notes = $_.Exception.Notes
                         return $output
                     } finally {
                         ## Cleanup temp
@@ -392,7 +397,7 @@ function Update-DbaInstance {
                         } catch {
                             $message = "Failed to cleanup temp folder on computer $($computer)`: $($_.Exception.Message)"
                             Write-Message -Level Verbose -Message $message -FunctionName Update-DbaInstance
-                            $output.Message += $message
+                            $output.Notes += $message
                         }
                     }
                 }
@@ -408,7 +413,7 @@ function Update-DbaInstance {
                         return $output
                     }
                 } else {
-                    $output.Message = "Restart is required for computer $($computer) to finish the installation of SQL$($currentAction.MajorVersion)$($currentAction.TargetLevel)"
+                    $output.Notes = "Restart is required for computer $($computer) to finish the installation of SQL$($currentAction.MajorVersion)$($currentAction.TargetLevel)"
                 }
                 $output
                 Write-Progress -Activity $activity -Completed
