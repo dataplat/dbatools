@@ -15,6 +15,10 @@ function Find-SqlServerUpdate {
     [CmdletBinding()]
     Param
     (
+        [DbaInstanceParameter]$ComputerName,
+        [pscredential]$Credential,
+        [ValidateSet('Default', 'Basic', 'Negotiate', 'NegotiateWithImplicitCredential', 'Credssp', 'Digest', 'Kerberos')]
+        [string]$Authentication = 'Default',
         [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [string]$MajorVersion,
@@ -36,13 +40,20 @@ function Find-SqlServerUpdate {
         }
         $filter = "SQLServer$MajorVersion*-KB$KB-*$Architecture*.exe"
         Write-Message -Level Verbose -Message "Using filter [$filter] to check for updates in $Path"
-        try {
+        $getFileScript = {
+            Param (
+                $Path,
+                $Filter
+            )
             foreach ($folder in (Get-Item -Path $Path -ErrorAction Stop)) {
                 $file = Get-ChildItem -Path $folder -Filter $filter -File -Recurse -ErrorAction Stop
                 if ($file) {
                     return $file | Select-Object -First 1
                 }
             }
+        }
+        try {
+            Invoke-Command2 -ComputerName $ComputerName -Authentication $Authentication -Credential $Credential -ScriptBlock $getFileScript -ArgumentList @($Path, $filter)
         } catch {
             Stop-Function -Message "Failed to enumerate files in $Path" -ErrorRecord $_
             return

@@ -28,10 +28,6 @@ function Register-RemoteSessionConfiguration {
                 $pwd
             )
             $output = [pscustomobject]@{ 'Name' = $Name; 'Status' = $null ; Successful = $false }
-            if ($PSVersionTable.PSVersion -le '2.0') {
-                $output.Status = "Current version of Powershell $($PSVersionTable.PSVersion) does not support SessionConfiguration with custom credentials. Minimum requirement is 3.0"
-                return $output
-            }
             $credential = New-Object System.Management.Automation.PSCredential @($user, (ConvertTo-SecureString -Force -AsPlainText $pwd))
             try {
                 $existing = Get-PSSessionConfiguration -Name $Name -ErrorAction Stop 2>$null
@@ -60,7 +56,7 @@ function Register-RemoteSessionConfiguration {
                 $Name,
                 $RunAsCredential.UserName,
                 $RunAsCredential.GetNetworkCredential().Password
-            ) -Raw
+            ) -Raw -RequiredPSVersion 3.0
         } catch {
             Stop-Function -Message "Failure during remote session configuration execution" -ErrorRecord $_ -EnableException $true
         }

@@ -35,6 +35,9 @@ function Invoke-Program {
     .PARAMETER WorkingDirectory
         Working directory for the process
 
+    .PARAMETER Authentication
+        Choose authentication mechanism to use
+
     .PARAMETER UsePSSessionConfiguration
         Skips the CredSSP attempts and proceeds directly to PSSessionConfiguration connections
 
@@ -55,6 +58,8 @@ function Invoke-Program {
         [pscredential]$Credential,
         [ValidateNotNullOrEmpty()]
         [string[]]$ArgumentList,
+        [ValidateSet('Default', 'Basic', 'Negotiate', 'NegotiateWithImplicitCredential', 'Credssp', 'Digest', 'Kerberos')]
+        [string]$Authentication = 'Default',
         [bool]$ExpandStrings = $false,
         [ValidateNotNullOrEmpty()]
         [string]$WorkingDirectory,
@@ -138,27 +143,26 @@ function Invoke-Program {
         Write-Message -Level Debug -Message "Acceptable success return codes are [$($SuccessReturnCode -join ',')]"
 
         if (!$ComputerName.IsLocalHost) {
-            if (!$Credential) {
-                Stop-Function -Message "Explicit credentials are required when running agains remote hosts. Make sure to define the -Credential parameter"
+            if ($Authentication -eq 'CredSSP' -and -not $Credential) {
+                Stop-Function -Message "Explicit credentials are required when using CredSSP agains remote hosts. Make sure to define the -Credential parameter"
                 return
             }
-            # Try to use CredSSP first, otherwise fall back to PSSession configurations with custom user/password
+            # Try to use chosen authentication first, otherwise fall back to PSSession configurations with custom user/password if Credentials are specified
             if (!$UsePSSessionConfiguration) {
-                Write-Message -Level Verbose -Message "Attempting to configure CredSSP for remote connections"
-                Initialize-CredSSP -ComputerName $ComputerName -Credential $Credential -EnableException $false
-                $sspSuccessful = $true
-                Write-Message -Level Verbose -Message "Starting process [$Path] with arguments [$ArgumentList] on $ComputerName through CredSSP"
+                $remotingSuccessful = $true
+                Write-Message -Level Verbose -Message "Starting process [$Path] with arguments [$ArgumentList] on $ComputerName through $Authentication protocol"
                 try {
-                    $output = Invoke-Command2 @params -Authentication CredSSP -Raw -ErrorAction Stop
+                    $output = Invoke-Command2 @params -Authentication $Authentication -Raw -ErrorAction Stop
                 } catch [System.Management.Automation.Remoting.PSRemotingTransportException] {
-                    Write-Message -Level Warning -Message "CredSSP to $ComputerName unsuccessful, falling back to PSSession configurations | $($_.Exception.Message)"
-                    $sspSuccessful = $false
+                    Write-Message -Level Warning -Message "Initial connection to $ComputerName through $Authentication protocol unsuccessful, falling back to PSSession configurations | $($_.Exception.Message)"
+                    $remotingSuccessful = $false
                 } catch {
-                    Stop-Function -Message "Remote CredSSP execution failed" -ErrorRecord $_
+                    Stop-Function -Message "Remote execution through $Authentication protocol failed" -ErrorRecord $_
                     return
                 }
             }
-            if ($UsePSSessionConfiguration -or !$sspSuccessful) {
+            # If Credential is defined and previous attempt failed, try using PSSessionConfiguration workaroung
+            if ($Credential -and ($UsePSSessionConfiguration -or !$remotingSuccessful)) {
                 $configuration = Register-RemoteSessionConfiguration -Computer $ComputerName -Credential $Credential -Name dbatoolsInvokeProgram
                 if ($configuration.Successful) {
                     Write-Message -Level Debug -Message "RemoteSessionConfiguration ($($configuration.Name)) was successful, using it."

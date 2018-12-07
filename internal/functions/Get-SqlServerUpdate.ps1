@@ -87,6 +87,7 @@ function Get-SqlServerUpdate {
 
             # create a parameter set for Find-SqlServerUpdate
             $kbLookupParams = @{
+                ComputerName = $ComputerName
                 Architecture = $arch
                 MajorVersion = $currentGroup.Name
                 Path         = $Path
@@ -175,6 +176,12 @@ function Get-SqlServerUpdate {
             $output.TargetLevel = $targetLevel
             $output.KB = $kbLookupParams.KB
             ## Find the installer to use
+            if ($Credential) {
+                $kbLookupParams += @{
+                    Credential     = $Credential
+                    Authentication = 'CredSSP'
+                }
+            }
 
             $installer = Find-SqlServerUpdate @kbLookupParams
             if (!$installer) {

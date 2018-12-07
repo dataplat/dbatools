@@ -288,6 +288,11 @@ function Update-DbaInstance {
                     #Exit the actions loop altogether - nothing can be installed here anyways
                     Stop-Function -Message "$resolvedName is pending a reboot. Reboot the computer before proceeding." -Continue -ContinueLabel computers
                 }
+                # Attempt to configure CredSSP for the remote host when credentials are defined
+                if ($Credential -and -not ([DbaInstanceParameter]$resolvedName).IsLocalHost) {
+                    Write-Message -Level Verbose -Message "Attempting to configure CredSSP for remote connections"
+                    Initialize-CredSSP -ComputerName $ComputerName -Credential $Credential -EnableException $false
+                }
                 # Pass only relevant components
                 if ($currentAction.MajorVersion) {
                     Write-Message -Level Debug -Message "Limiting components to version $($currentAction.MajorVersion)"
@@ -342,7 +347,12 @@ function Update-DbaInstance {
                     ComputerName = $computer
                     ErrorAction  = 'Stop'
                 }
-                if ($Credential) { $execParams += @{ Credential = $Credential }
+                if ($Credential) {
+                    # that's when we switch to CredSSP
+                    $execParams += @{
+                        Credential     = $Credential
+                        Authentication = 'CredSSP'
+                    }
                 }
                 # Find a temporary folder to extract to - the drive that has most free space
                 $chosenDrive = (Get-DbaDiskSpace -ComputerName $computer -Credential $Credential | Sort-Object -Property Free -Descending | Select-Object -First 1).Name
@@ -406,6 +416,8 @@ function Update-DbaInstance {
                     Write-ProgressHelper -ExcludePercent -Activity $activity -Message "Restarting computer $($computer) and waiting for it to come back online"
                     Write-Message -Level Verbose "Restarting computer $($computer) and waiting for it to come back online" -FunctionName Update-DbaInstance
                     try {
+                        #no special protocol needed for restarts
+                        $execParams.Remove('Authentication')
                         $null = Restart-Computer @execParams -Wait -For WinRm -Force
                         $output.Restarted = $true
                     } catch {

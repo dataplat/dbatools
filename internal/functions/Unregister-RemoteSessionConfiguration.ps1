@@ -37,7 +37,7 @@ function Unregister-RemoteSessionConfiguration {
         }
 
         try {
-            $unregisterIt = Invoke-Command2 -ComputerName $ComputerName -Credential $Credential -ScriptBlock $removeRunasSession -ArgumentList @($Name) -Raw
+            $unregisterIt = Invoke-Command2 -ComputerName $ComputerName -Credential $Credential -ScriptBlock $removeRunasSession -ArgumentList @($Name) -Raw -RequiredPSVersion 3.0
         } catch {
             Stop-Function -Message "Failure during remote session configuration execution" -ErrorRecord $_ -EnableException $true
         }
