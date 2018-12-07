@@ -4,10 +4,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
     and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.711] - 2018-12-7
+### Added
+* Multi-threading to Update-DbaInstance
+* System db export capabilities to Export-DbaDacPackage
+
+### Fixed
+* Ag replica now works when run outside of New-DbaAvailabilityGroup
+
 ## [0.9.710] - 2018-12-5
 ### Fixed
 * Start-DbaMigration xplat support
-
 
 ## [0.9.709] - 2018-12-4
 ### Fixed
@@ -46,7 +53,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [0.9.702] - 2018-12-2
 ### Fixed
-* Core support for Copy-DbaDbDatatable, Write-DbaDataTable, 
+* Core support for Copy-DbaDbDatatable, Write-DbaDataTable,
 * Parameter names for Copy-DbaDbQueryStoreOption
 
 ### Added

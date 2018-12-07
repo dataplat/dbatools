@@ -68,11 +68,16 @@ function Update-DbaInstance {
     .PARAMETER InstanceName
         Only updates a specific instance(s).
 
+    .PARAMETER Throttle
+        Maximum number of computers updated in parallel. Once reached, the update operations will queue up.
+        Default: 50
+
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
 
     .PARAMETER Confirm
         Prompts you for confirmation before executing any changing operations within the command.
+
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -94,29 +99,38 @@ function Update-DbaInstance {
 
         Updates all applicable SQL Server installations on SQL1 to SP3.
         Binary files for the update will be searched among all files and folders recursively in \\network\share.
+        Prompts for confirmation before the update.
 
     .EXAMPLE
-        PS C:\> Update-DbaInstance -ComputerName SQL1, SQL2 -Restart -Path \\network\share
+        PS C:\> Update-DbaInstance -ComputerName SQL1, SQL2 -Restart -Path \\network\share -Confirm:$false
 
         Updates all applicable SQL Server installations on SQL1 and SQL2 with the most recent patch.
         It will install latest ServicePack, restart the computers, install latest Cumulative Update, and finally restart the computer once again.
         Binary files for the update will be searched among all files and folders recursively in \\network\share.
+        Does not prompt for confirmation.
 
     .EXAMPLE
         PS C:\> Update-DbaInstance -ComputerName SQL1 -Version 2012 -Type ServicePack -Path \\network\share
 
         Updates SQL Server 2012 on SQL1 with the most recent ServicePack found in your patch repository.
         Binary files for the update will be searched among all files and folders recursively in \\network\share.
+        Prompts for confirmation before the update.
 
     .EXAMPLE
-        PS C:\> Update-DbaInstance -ComputerName SQL1 -KB 123456 -Restart -Path \\network\share
+        PS C:\> Update-DbaInstance -ComputerName SQL1 -KB 123456 -Restart -Path \\network\share -Confirm:$false
 
         Installs KB 123456 on SQL1 and restarts the computer.
         Binary files for the update will be searched among all files and folders recursively in \\network\share.
+        Does not prompt for confirmation.
+
+    .EXAMPLE
+        PS C:\> Update-DbaInstance -ComputerName Server1 -Version SQL2012SP3, SQL2016SP2CU3 -Path \\network\share -Restart -Confirm:$false
+
+        Updates SQL 2012 to SP3 and SQL 2016 to SP2CU3 on Server1. Each update will be followed by a restart.
+        Binary files for the update will be searched among all files and folders recursively in \\network\share.
+        Does not prompt for confirmation.
 
     #>
-    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSShouldProcess", "")]
-    # Shouldprocess is handled by internal function Install-SqlServerUpdate
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High', DefaultParameterSetName = 'Version')]
     Param (
         [parameter(ValueFromPipeline, Position = 1)]
@@ -137,6 +151,8 @@ function Update-DbaInstance {
         [string[]]$Path,
         [switch]$Restart,
         [switch]$Continue,
+        [ValidateNotNull()]
+        [int]$Throttle = 50,
         [switch]$EnableException
     )
     begin {
@@ -225,6 +241,13 @@ function Update-DbaInstance {
         foreach ($a in $actions) {
             Write-Message -Level Debug -Message "Added installation action $($a | ConvertTo-Json -Depth 1 -Compress)"
         }
+        # defining how to process the final results
+        $outputHandler = {
+            $_ | Select-DefaultView -Property ComputerName, MajorVersion, TargetLevel, KB, Successful, Restarted, InstanceName, Installer, Notes
+            if ($_.Successful -eq $false) {
+                Write-Message -Level Warning -Message "Update failed: $($_.Notes -join ' | ')"
+            }
+        }
     }
     process {
         if (Test-FunctionInterrupt) { return }
@@ -233,30 +256,176 @@ function Update-DbaInstance {
         $resolvedComputers = @()
         foreach ($computer in $ComputerName) {
             $null = Test-ElevationRequirement -ComputerName $computer -Continue
+            if (!$computer.IsLocalHost) {
+                if (!$Credential) {
+                    Write-Message -Level Warning -Message "Explicit credentials are required when running agains remote hosts. Make sure to define the -Credential parameter"
+                }
+            }
             if ($resolvedComputer = Resolve-DbaNetworkName -ComputerName $computer.ComputerName) {
                 $resolvedComputers += $resolvedComputer.FullComputerName
             }
         }
-        #Initialize installations for each computer
+        #Leave only unique computer names
+        $resolvedComputers = $resolvedComputers | Sort-Object -Unique
+        #Process planned actions and gather installation actions
+        $installActions = @()
         :computers foreach ($resolvedName in $resolvedComputers) {
-            :actions foreach ($actionParam in $actions) {
+            $activity = "Preparing to update SQL Server on $resolvedName"
+            ## Find the current version on the computer
+            Write-ProgressHelper -ExcludePercent -Activity $activity -StepNumber 0 -Message "Gathering all SQL Server instance versions"
+            $components = Get-SQLInstanceComponent -ComputerName $resolvedName -Credential $Credential
+            if (!$components) {
+                Stop-Function -Message "No SQL Server installations found on $resolvedName" -Continue
+            }
+            Write-Message -Level Debug -Message "Found $(($components | Measure-Object).Count) existing SQL Server instance components: $(($components | Foreach-Object { "$($_.InstanceName)($($_.InstanceType) $($_.Version.NameLevel))" }) -join ',')"
+            # Filter for specific instance name
+            if ($InstanceName) {
+                $components = $components | Where-Object {$_.InstanceName -eq $InstanceName }
+            }
+            $upgrades = @()
+            :actions foreach ($currentAction in $actions) {
                 if (Test-PendingReboot -ComputerName $resolvedName) {
                     #Exit the actions loop altogether - nothing can be installed here anyways
                     Stop-Function -Message "$resolvedName is pending a reboot. Reboot the computer before proceeding." -Continue -ContinueLabel computers
                 }
-                Write-Message -Level Verbose -Message "Launching installation on $resolvedName with following params: $($actionParam | ConvertTo-Json -Depth 1 -Compress)"
-                $install = Install-SqlServerUpdate @actionParam -ComputerName $resolvedName -Credential $Credential -Restart $Restart -Path $Path
-                if ($install) {
-                    $install
-                    if ($install.Successful -contains $false) {
-                        #Exit the actions loop altogether - upgrade failed
-                        Stop-Function -Message "Update failed to install on $resolvedName" -Continue -ContinueLabel computers
+                # Pass only relevant components
+                if ($currentAction.MajorVersion) {
+                    Write-Message -Level Debug -Message "Limiting components to version $($currentAction.MajorVersion)"
+                    $selectedComponents = $components | Where-Object { $_.Version.NameLevel -contains $currentAction.MajorVersion }
+                    $currentAction.Remove('MajorVersion')
+                } else {
+                    $selectedComponents = $components
+                }
+                Write-ProgressHelper -ExcludePercent -Activity $activity -Message "Looking for a KB file for a chosen version"
+                Write-Message -Level Debug -Message "Looking for appropriate KB file on $resolvedName with following params: $($currentAction | ConvertTo-Json -Depth 1 -Compress)"
+                $upgradeDetails = Get-SqlServerUpdate @currentAction -ComputerName $resolvedName -Credential $Credential -Restart $Restart -Path $Path -Component $selectedComponents
+                if ($upgradeDetails.Successful -contains $false) {
+                    #Exit the actions loop altogether - upgrade cannot be performed
+                    $upgradeDetails
+                    Stop-Function -Message "Update cannot be applied to $resolvedName | $($upgradeDetails.Notes)" -Continue -ContinueLabel computers
+                } else {
+                    # update components to mirror the updated version - will be used for multi-step upgrades
+                    foreach ($component in $components) {
+                        if ($component.Version.NameLevel -in $upgradeDetails.TargetVersion.NameLevel) {
+                            $component.Version = $upgradeDetails.TargetVersion | Where-Object NameLevel -eq $component.Version.NameLevel
+                        }
                     }
-                    if ($install.Restarted -contains $false) {
-                        Stop-Function -Message "Please restart $($install.ComputerName) to complete the installation of SQL$($install.MajorVersion)$($install.TargetLevel). No further updates will be installed on this computer." -EnableException $false -Continue -ContinueLabel computers
-                    }
+                    $upgrades += $upgradeDetails
                 }
             }
+            if ($upgrades) {
+                Write-ProgressHelper -ExcludePercent -Activity $activity -Message "Preparing installation"
+                $chosenVersions = ($upgrades | ForEach-Object { "$($_.MajorVersion) to $($_.TargetLevel) (KB$($_.KB))" }) -join ', '
+                if ($PSCmdlet.ShouldProcess($resolvedName, "Update $chosenVersions")) {
+                    $installActions += [pscustomobject]@{
+                        ComputerName = $resolvedName
+                        Actions      = $upgrades
+                    }
+                } else {
+                    $whatIfMode = $true
+                }
+            }
+            Write-Progress -Activity $activity -Completed
+        }
+        # Declare the installation script
+        $installScript = {
+            $computer = $_.ComputerName
+            Write-Message -Level Debug -Message "Processing $($computer) with $(($_.Actions | Measure-Object).Count) actions" -FunctionName Update-DbaInstance
+            $activity = "Updating SQL Server components on $computer"
+            #foreach action passed to the script for this particular computer
+            foreach ($currentAction in $_.Actions) {
+                $output = $currentAction
+                $output.Successful = $false
+                ## Start the installation sequence
+                Write-ProgressHelper -ExcludePercent -Activity $activity -Message "Launching installation of $($currentAction.TargetLevel) KB$($currentAction.KB) ($($currentAction.Installer)) for SQL$($currentAction.MajorVersion) ($($currentAction.Build))"
+                $execParams = @{
+                    ComputerName = $computer
+                    ErrorAction  = 'Stop'
+                }
+                if ($Credential) { $execParams += @{ Credential = $Credential }
+                }
+                # Find a temporary folder to extract to - the drive that has most free space
+                $chosenDrive = (Get-DbaDiskSpace -ComputerName $computer -Credential $Credential | Sort-Object -Property Free -Descending | Select-Object -First 1).Name
+                if (!$chosenDrive) {
+                    # Fall back to the system drive
+                    $chosenDrive = Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock { $env:SystemDrive } -Raw -ErrorAction Stop
+                }
+                $spExtractPath = $chosenDrive.TrimEnd('\') + "\dbatools_KB$($currentAction.KB)_Extract"
+                if ($spExtractPath) {
+                    $output.ExtractPath = $spExtractPath
+                    try {
+                        # Extract file
+                        Write-ProgressHelper -ExcludePercent -Activity $activity -Message "Extracting $($currentAction.Installer) to $spExtractPath"
+                        Write-Message -Level Verbose -Message "Extracting $($currentAction.Installer) to $spExtractPath" -FunctionName Update-DbaInstance
+                        $extractResult = Invoke-Program @execParams -Path $currentAction.Installer -ArgumentList "/x`:`"$spExtractPath`" /quiet" -EnableException $true
+                        if (-not $extractResult.Successful) {
+                            $output.Notes = "Extraction failed with exit code $($extractResult.ExitCode)"
+                            Stop-Function -Message $output.Notes -FunctionName Update-DbaInstance
+                            return $output
+                        }
+                        # Install the patch
+                        if ($currentAction.InstanceName) {
+                            $instanceClause = "/instancename=$($currentAction.InstanceName)"
+                        } else {
+                            $instanceClause = '/allinstances'
+                        }
+                        Write-ProgressHelper -ExcludePercent -Activity $activity -Message "Now installing update SQL$($currentAction.MajorVersion)$($currentAction.TargetLevel) from $spExtractPath"
+                        Write-Message -Level Verbose -Message "Starting installation from $spExtractPath" -FunctionName Update-DbaInstance
+                        $updateResult = Invoke-Program @execParams -Path "$spExtractPath\setup.exe" -ArgumentList @('/quiet', $instanceClause, '/IAcceptSQLServerLicenseTerms') -WorkingDirectory $spExtractPath -EnableException $true
+                        if ($updateResult.Successful) {
+                            $output.Successful = $true
+                        } else {
+                            $output.Notes = "Update failed with exit code $($updateResult.ExitCode)"
+                            Stop-Function -Message $output.Notes -FunctionName Update-DbaInstance
+                            return $output
+                        }
+                        $output.Log = $updateResult.stdout
+                    } catch {
+                        Stop-Function -Message "Upgrade failed" -ErrorRecord $_ -FunctionName Update-DbaInstance
+                        $output.Notes = $_.Exception.Notes
+                        return $output
+                    } finally {
+                        ## Cleanup temp
+                        Write-ProgressHelper -ExcludePercent -Activity $activity -Message "Cleaning up extracted files from $spExtractPath"
+                        try {
+                            Write-ProgressHelper -ExcludePercent -Activity $activity -Message "Removing temporary files"
+                            $null = Invoke-Command2 @execParams -ScriptBlock {
+                                if ($args[0] -like '*\dbatools_KB*_Extract' -and (Test-Path $args[0])) {
+                                    Remove-Item -Recurse -Force -LiteralPath $args[0] -ErrorAction Stop
+                                }
+                            } -Raw -ArgumentList $spExtractPath
+                        } catch {
+                            $message = "Failed to cleanup temp folder on computer $($computer)`: $($_.Exception.Message)"
+                            Write-Message -Level Verbose -Message $message -FunctionName Update-DbaInstance
+                            $output.Notes += $message
+                        }
+                    }
+                }
+                if ($Restart) {
+                    # Restart the computer
+                    Write-ProgressHelper -ExcludePercent -Activity $activity -Message "Restarting computer $($computer) and waiting for it to come back online"
+                    Write-Message -Level Verbose "Restarting computer $($computer) and waiting for it to come back online" -FunctionName Update-DbaInstance
+                    try {
+                        $null = Restart-Computer @execParams -Wait -For WinRm -Force
+                        $output.Restarted = $true
+                    } catch {
+                        Stop-Function -Message "Failed to restart computer" -ErrorRecord $_ -FunctionName Update-DbaInstance
+                        return $output
+                    }
+                } else {
+                    $output.Notes = "Restart is required for computer $($computer) to finish the installation of SQL$($currentAction.MajorVersion)$($currentAction.TargetLevel)"
+                }
+                $output
+                Write-Progress -Activity $activity -Completed
+            }
+        }
+        # check how many computers we are looking at and decide upon parallelism
+        if ($installActions.Count -eq 1) {
+            $installActions | ForEach-Object -Process $installScript | ForEach-Object -Process $outputHandler
+        } elseif ($installActions.Count -ge 2) {
+            $installActions | Invoke-Parallel -ImportModules -ImportVariables -ScriptBlock $installScript -Throttle $Throttle | ForEach-Object -Process $outputHandler
+        } elseif (-not $whatIfMode) {
+            Write-Message -Level Warning -Message "No applicable updates were found"
         }
     }
 }
