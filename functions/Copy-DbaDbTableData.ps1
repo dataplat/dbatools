@@ -200,7 +200,7 @@ function Copy-DbaDbTableData {
                 }
             }
         }'
-        
+
         Add-Type -ReferencedAssemblies System.Data.dll -TypeDefinition $sourcecode -ErrorAction Stop
         if (-not $script:core) {
             try {
@@ -209,7 +209,7 @@ function Copy-DbaDbTableData {
                 $null = 1
             }
         }
-        
+
         $bulkCopyOptions = 0
         $options = "TableLock", "CheckConstraints", "FireTriggers", "KeepIdentity", "KeepNulls", "Default"
 
@@ -312,7 +312,7 @@ function Copy-DbaDbTableData {
                         }
                         #replacing table schema
                         if ($newTableParts.Schema) {
-                            $rX = "(CREATE TABLE \[)$([regex]::Escape($sqltable.Schema))(\]\.\[$([regex]::Escape($newTableParts.Schema))\]\()"
+                            $rX = "(CREATE TABLE \[)$([regex]::Escape($sqltable.Schema))(\]\.\[$([regex]::Escape($newTableParts.Table))\]\()"
                             $tablescript = $tablescript -replace $rX, "`$1$($newTableParts.Schema)`$2"
                         }
 
@@ -404,9 +404,11 @@ function Copy-DbaDbTableData {
                         [pscustomobject]@{
                             SourceInstance      = $server.Name
                             SourceDatabase      = $Database
+                            SourceSchema        = $sqltable.Schema
                             SourceTable         = $sqltable.Name
                             DestinationInstance = $destServer.name
                             DestinationDatabase = $DestinationDatabase
+                            DestinationSchema   = $desttable.Schema
                             DestinationTable    = $desttable.Name
                             RowsCopied          = $rowstotal
                             Elapsed             = [prettytimespan]$elapsed.Elapsed
