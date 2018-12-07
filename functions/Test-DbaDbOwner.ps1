@@ -62,9 +62,9 @@ function Test-DbaDbOwner {
 
         Gets only accessible databases and checks where the owner does not match 'sa'.
     #>
-    [CmdletBinding(DefaultParameterSetName = "NoPipe")]
+    [CmdletBinding()]
     param (
-        [parameter(Position = 0, ParameterSetName = "NoPipe", Mandatory)]
+        [parameter(Position = 0)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
@@ -73,7 +73,7 @@ function Test-DbaDbOwner {
         [object[]]$ExcludeDatabase,
         [string]$TargetLogin,
         [Switch]$Detailed,
-        [parameter(ParameterSetName = "Pipe", Mandatory, ValueFromPipeline)]
+        [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
         [Switch]$EnableException
     )
@@ -82,6 +82,10 @@ function Test-DbaDbOwner {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -Parameter "Detailed"
     }
     process {
+		if (-not $InputObject -and -not $Sqlinstance) { 
+			Stop-Function -Message 'You must specify a $SqlInstance parameter'
+		}
+		
         if ($SqlInstance) {
             $InputObject += Get-DbaDatabase -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database -ExcludeDatabase $ExcludeDatabase
         }
