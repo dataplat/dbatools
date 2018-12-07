@@ -261,14 +261,6 @@
                            ""
                        ],
                        [
-                           "AvailabilityGroup",
-                           "The Availability Group to which a replica will be bestowed upon.",
-                           "",
-                           false,
-                           "false",
-                           ""
-                       ],
-                       [
                            "Name",
                            "The name of the replica. Defaults to the SQL Server instance name.",
                            "",
@@ -360,7 +352,7 @@
                            "InputObject",
                            "Enables piping from Get-DbaAvailabilityGroup.",
                            "",
-                           false,
+                           true,
                            "true (ByValue)",
                            ""
                        ],
@@ -395,7 +387,7 @@
         "Name":  "Add-DbaAgReplica",
         "Links":  "https://dbatools.io/Add-DbaAgReplica",
         "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaAvailabilityGroup -SqlInstance sql2017a -AvailabilityGroup SharePoint | Add-DbaAgReplica -SqlInstance sql2017b\nAdds sql2017b to the SharePoint availability group on sql2017a\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaAvailabilityGroup -SqlInstance sql2017a -AvailabilityGroup SharePoint | Add-DbaAgReplica -SqlInstance sql2017b -FailoverMode Manual\nAdds sql2017b to the SharePoint availability group on sql2017a with a manual failover mode.",
-        "Syntax":  "Add-DbaAgReplica [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-AvailabilityGroup] \u003cString\u003e] [[-Name] \u003cString\u003e] [[-AvailabilityMode] \u003cString\u003e] [[-FailoverMode] \u003cString\u003e] [[-BackupPriority] \u003cInt32\u003e] [[-ConnectionModeInPrimaryRole] \u003cString\u003e] [[-ConnectionModeInSecondaryRole] \u003cString\u003e] [[-SeedingMode] \u003cString\u003e] [[-Endpoint] \u003cString\u003e] [-Passthru] [[-ReadonlyRoutingConnectionUrl] \u003cString\u003e] [[-Certificate] \u003cString\u003e] [[-InputObject] \u003cAvailabilityGroup\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Add-DbaAgReplica [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Name] \u003cString\u003e] [[-AvailabilityMode] \u003cString\u003e] [[-FailoverMode] \u003cString\u003e] [[-BackupPriority] \u003cInt32\u003e] [[-ConnectionModeInPrimaryRole] \u003cString\u003e] [[-ConnectionModeInSecondaryRole] \u003cString\u003e] [[-SeedingMode] \u003cString\u003e] [[-Endpoint] \u003cString\u003e] [-Passthru] [[-ReadonlyRoutingConnectionUrl] \u003cString\u003e] [[-Certificate] \u003cString\u003e] [-InputObject] \u003cAvailabilityGroup\u003e [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "CommandName":  "Add-DbaCmsRegServer",
@@ -41466,6 +41458,14 @@
                            "False"
                        ],
                        [
+                           "Throttle",
+                           "Maximum number of computers updated in parallel. Once reached, the update operations will queue up.\r\nDefault: 50",
+                           "",
+                           false,
+                           "false",
+                           "50"
+                       ],
+                       [
                            "EnableException",
                            "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
                            "",
@@ -41495,8 +41495,8 @@
         "Synopsis":  "Invokes installation of SQL Server Service Packs and Cumulative Updates on local and remote servers.",
         "Name":  "Update-DbaInstance",
         "Links":  null,
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eUpdate-DbaInstance -ComputerName SQL1 -Version SP3 -Path \\\\network\\share\nUpdates all applicable SQL Server installations on SQL1 to SP3.\r\nBinary files for the update will be searched among all files and folders recursively in \\\\network\\share.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eUpdate-DbaInstance -ComputerName SQL1, SQL2 -Restart -Path \\\\network\\share\nUpdates all applicable SQL Server installations on SQL1 and SQL2 with the most recent patch.\r\nIt will install latest ServicePack, restart the computers, install latest Cumulative Update, and finally restart the computer once again.\r\nBinary files for the update will be searched among all files and folders recursively in \\\\network\\share.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eUpdate-DbaInstance -ComputerName SQL1 -Version 2012 -Type ServicePack -Path \\\\network\\share\nUpdates SQL Server 2012 on SQL1 with the most recent ServicePack found in your patch repository.\r\nBinary files for the update will be searched among all files and folders recursively in \\\\network\\share.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eUpdate-DbaInstance -ComputerName SQL1 -KB 123456 -Restart -Path \\\\network\\share\nInstalls KB 123456 on SQL1 and restarts the computer.\r\nBinary files for the update will be searched among all files and folders recursively in \\\\network\\share.",
-        "Syntax":  "Update-DbaInstance [[-ComputerName] \u003cDbaInstanceParameter[]\u003e] [-Credential \u003cPSCredential\u003e] [-Version \u003cString[]\u003e] [-Type \u003cString[]\u003e] [-InstanceName \u003cString\u003e] [-Path \u003cString[]\u003e] [-Restart] [-Continue] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nUpdate-DbaInstance [[-ComputerName] \u003cDbaInstanceParameter[]\u003e] [-Credential \u003cPSCredential\u003e] -KB \u003cString[]\u003e [-InstanceName \u003cString\u003e] [-Path \u003cString[]\u003e] [-Restart] [-Continue] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eUpdate-DbaInstance -ComputerName SQL1 -Version SP3 -Path \\\\network\\share\nUpdates all applicable SQL Server installations on SQL1 to SP3.\r\nBinary files for the update will be searched among all files and folders recursively in \\\\network\\share.\r\nPrompts for confirmation before the update.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eUpdate-DbaInstance -ComputerName SQL1, SQL2 -Restart -Path \\\\network\\share -Confirm:$false\nUpdates all applicable SQL Server installations on SQL1 and SQL2 with the most recent patch.\r\nIt will install latest ServicePack, restart the computers, install latest Cumulative Update, and finally restart the computer once again.\r\nBinary files for the update will be searched among all files and folders recursively in \\\\network\\share.\r\nDoes not prompt for confirmation.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eUpdate-DbaInstance -ComputerName SQL1 -Version 2012 -Type ServicePack -Path \\\\network\\share\nUpdates SQL Server 2012 on SQL1 with the most recent ServicePack found in your patch repository.\r\nBinary files for the update will be searched among all files and folders recursively in \\\\network\\share.\r\nPrompts for confirmation before the update.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eUpdate-DbaInstance -ComputerName SQL1 -KB 123456 -Restart -Path \\\\network\\share -Confirm:$false\nInstalls KB 123456 on SQL1 and restarts the computer.\r\nBinary files for the update will be searched among all files and folders recursively in \\\\network\\share.\r\nDoes not prompt for confirmation.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eUpdate-DbaInstance -ComputerName Server1 -Version SQL2012SP3, SQL2016SP2CU3 -Path \\\\network\\share -Restart -Confirm:$false\nUpdates SQL 2012 to SP3 and SQL 2016 to SP2CU3 on Server1. Each update will be followed by a restart.\r\nBinary files for the update will be searched among all files and folders recursively in \\\\network\\share.\r\nDoes not prompt for confirmation.",
+        "Syntax":  "Update-DbaInstance [[-ComputerName] \u003cDbaInstanceParameter[]\u003e] [-Credential \u003cPSCredential\u003e] [-Version \u003cString[]\u003e] [-Type \u003cString[]\u003e] [-InstanceName \u003cString\u003e] [-Path \u003cString[]\u003e] [-Restart] [-Continue] [-Throttle \u003cInt32\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nUpdate-DbaInstance [[-ComputerName] \u003cDbaInstanceParameter[]\u003e] [-Credential \u003cPSCredential\u003e] -KB \u003cString[]\u003e [-InstanceName \u003cString\u003e] [-Path \u003cString[]\u003e] [-Restart] [-Continue] [-Throttle \u003cInt32\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "CommandName":  "Update-DbaServiceAccount",
