@@ -59,6 +59,8 @@ function Get-DbaDbFile {
         [Alias("Databases")]
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
+        [parameter(ValueFromPipeline)]
+        [Microsoft.SqlServer.Management.Smo.Database[]]$SmoDatabase,
         [object[]]$InputObject,
         [Alias('Silent')]
         [switch]$EnableException
@@ -66,13 +68,22 @@ function Get-DbaDbFile {
 
     process {
 
-        foreach ($instance in $sqlInstance) {
+        if ($SmoDatabase) {
+
+            # Select-Object Unique is here so that when $SmoDatabae is used as a parameter (not piped) it doesn't loop thorugh the same instance
+            # more than once if you have more than one database for a given instance
+            $Database = $SmoDatabase.Name | Select-Object -Unique;
+            $SqlInstance = $SmoDatabase.SqlInstance | Select-Object -Unique;
+        }
+
+        foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
             } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
+            #region Sql Query Generation
             $sql = "select
             fg.name as FileGroupName,
             df.file_id as 'ID',
@@ -136,6 +147,7 @@ function Get-DbaDbFile {
             CAST(fg.status & 0x8 as BIT) as FileGroupReadOnly
             from sysfiles df
             left outer join  sysfilegroups fg on df.groupid=fg.groupid"
+            #endregion Sql Query Generation
 
             if ($Database) {
                 $InputObject = $server.Databases | Where-Object Name -in $database
