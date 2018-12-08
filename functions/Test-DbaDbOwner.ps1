@@ -82,10 +82,10 @@ function Test-DbaDbOwner {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -Parameter "Detailed"
     }
     process {
-		if (-not $InputObject -and -not $Sqlinstance) { 
-			Stop-Function -Message 'You must specify a $SqlInstance parameter'
-		}
-		
+        if (-not $InputObject -and -not $Sqlinstance) {
+            Stop-Function -Message 'You must specify a $SqlInstance parameter'
+        }
+
         if ($SqlInstance) {
             $InputObject += Get-DbaDatabase -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database -ExcludeDatabase $ExcludeDatabase
         }
