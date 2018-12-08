@@ -84,7 +84,7 @@ function Get-DbaDbFile {
     process {
 
         # The check only needs to be run once, but cannot be done in begin{} blcok since it doens't know if we'll receive pipeline input
-        if($initialParameterCheck) {
+        if ($initialParameterCheck) {
 
             if ($SqlInstance -and $SmoDatabase) {
 
