@@ -66,23 +66,44 @@ function Get-DbaDbFile {
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [Alias("Databases")]
-        [parameter(ParameterSetName = "Default")]
-        [parameter(ParameterSetName = "Pipe")]
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
-        [parameter(ParameterSetName = "SmoDatabase", Mandatory, ValueFromPipeline)]
+        [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Database[]]$SmoDatabase,
         [object[]]$InputObject,
         [Alias('Silent')]
         [switch]$EnableException
     )
 
+    begin {
+
+        # Used to ensure parameter validation checks only run once.
+        $initialParameterCheck = $true;
+    }
+
     process {
+
+        # The check only needs to be run once, but cannot be done in begin{} blcok since it doens't know if we'll receive pipeline input
+        if($initialParameterCheck) {
+
+            if ($SqlInstance -and $SmoDatabase) {
+
+                Stop-Function -Message "You cannot specify both SqlInstance and SmoDatabase." -Continue -EnableException $EnableException;
+            }
+
+            if ($SmoDatabase -and $Database) {
+
+                Write-Message -Level Verbose -Message "Parameter Database is not being used since SmoDatabase was provided as well, using that instead.";
+            }
+
+            # initial check completd, set variable to $false so we don't check each iteration
+            $initialParameterCheck = $false;
+        }
 
         if ($SmoDatabase) {
 
             # Select-Object Unique is here so that when $SmoDatabae is used as a parameter (not piped) it doesn't loop thorugh the same instance
-            # more than once if you have more than one database for a given instance
+            # more than once if you have more than one database for a given instance, or if you have more than one instance with the same database
             $Database = $SmoDatabase.Name | Select-Object -Unique;
             $SqlInstance = $SmoDatabase.SqlInstance | Select-Object -Unique;
         }
