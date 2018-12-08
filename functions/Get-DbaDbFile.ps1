@@ -57,9 +57,11 @@ function Get-DbaDbFile {
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [Alias("Databases")]
+        [parameter(ParameterSetName = "Default")]
+        [parameter(ParameterSetName = "Pipe")]
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
-        [parameter(ValueFromPipeline)]
+        [parameter(ParameterSetName = "SmoDatabase", Mandatory, ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Database[]]$SmoDatabase,
         [object[]]$InputObject,
         [Alias('Silent')]
