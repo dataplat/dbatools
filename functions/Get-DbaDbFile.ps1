@@ -19,6 +19,9 @@ function Get-DbaDbFile {
     .PARAMETER ExcludeDatabase
         The database(s) to exclude - this list is auto-populated from the server
 
+    .PARAMETER SmoDatabase
+        A SMO Database object that represents the database to reference
+
     .PARAMETER InputObject
         A piped collection of database objects
 
@@ -49,6 +52,12 @@ function Get-DbaDbFile {
         PS C:\> Get-DbaDbFile -SqlInstance sql2016 -Database Impromptu, Trading
 
         Will return an object containing all file groups and their contained files for the Impromptu and Trading databases on the sql2016 SQL Server instance
+
+    .EXAMPLE
+        PS C:\> $db = Get-DbaDatabase -SqlInstance sql2016 -Database Impromptu, Trading;
+                $db | Get-DbaDbFile;
+
+        Will accept piped input from Get-DbaDatabase and return an object containing all file groups and their contained files for the Impromptu and Trading databases on the sql2016 SQL Server instance
 
     #>
     [CmdletBinding(DefaultParameterSetName = "Default")]
