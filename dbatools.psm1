@@ -434,11 +434,11 @@ $script:renames = @(
     },
     @{
         "AliasName"  = "Remove-SqlOrphanUser"
-        "Definition" = "Remove-DbaOrphanUser"
+        "Definition" = "Remove-DbaDbOrphanUser"
     },
     @{
         "AliasName"  = "Repair-SqlOrphanUser"
-        "Definition" = "Repair-DbaOrphanUser"
+        "Definition" = "Repair-DbaDbOrphanUser"
     },
     @{
         "AliasName"  = "Reset-SqlAdmin"
@@ -1062,8 +1062,8 @@ $script:xplat = @(
     'Remove-DbaDatabaseSafely',
     'Set-DbaTempdbConfig',
     'Test-DbaTempdbConfig',
-    'Repair-DbaOrphanUser',
-    'Remove-DbaOrphanUser',
+    'Repair-DbaDbOrphanUser',
+    'Remove-DbaDbOrphanUser',
     'Find-DbaDbUnusedIndex',
     'Get-DbaDbSpace',
     'Test-DbaDbOwner',
@@ -1273,7 +1273,7 @@ $script:xplat = @(
     'New-DbaXESmartEmail',
     'New-DbaXESmartQueryExec',
     'Start-DbaXESmartTarget',
-    'Get-DbaOrphanUser',
+    'Get-DbaDbOrphanUser',
     'Get-DbaOpenTransaction',
     'Get-DbaDbLogShipError',
     'Test-DbaBuild',
