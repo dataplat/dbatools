@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
     and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.712] - 2018-12-9
+### Changed
+* Renamed DbaOrphanUwer series
+
+### Added
+* More integration tests!
+* Docs update
+* Schema output to Copy-DbaDbTableData
+
+### Fixed
+* Variable bug fix in Invoke-DbaLogShipping
+
 ## [0.9.711] - 2018-12-7
 ### Added
 * Multi-threading to Update-DbaInstance
