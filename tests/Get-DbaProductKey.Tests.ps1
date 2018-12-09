@@ -16,8 +16,24 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         }
     }
 }
-<#
-    Integration test should appear below and are custom to the command you are writing.
-    Read https://github.com/sqlcollaborative/dbatools/blob/development/contributing.md#tests
-    for more guidence.
-#>
+
+Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
+
+    Context "Gets ProductKey for Instances on $($env:ComputerName)" {
+        $results = Get-DbaProductKey -ComputerName $env:ComputerName
+        It "Gets results" {
+            $results | Should Not Be $null
+        }
+        Foreach ($row in $results) {
+            It "Should have Version $($row.Version)" {
+                $row.Version | Should not be $null
+            }
+            It "Should have Edition $($row.Edition)" {
+                $row.Edition | Should not be $null
+            }
+            It "Should have Key $($row.key)" {
+                $row.key | Should not be $null
+            }
+        }
+    }
+}
