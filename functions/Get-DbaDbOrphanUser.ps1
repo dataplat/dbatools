@@ -1,5 +1,5 @@
 #ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
-function Get-DbaOrphanUser {
+function Get-DbaDbOrphanUser {
     <#
     .SYNOPSIS
         Get orphaned users.
@@ -39,20 +39,20 @@ function Get-DbaOrphanUser {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaOrphanUser
+        https://dbatools.io/Get-DbaDbOrphanUser
 
     .EXAMPLE
-        PS C:\> Get-DbaOrphanUser -SqlInstance localhost\sql2016
+        PS C:\> Get-DbaDbOrphanUser -SqlInstance localhost\sql2016
 
         Finds all orphan users without matching Logins in all databases present on server 'localhost\sql2016'.
 
     .EXAMPLE
-        PS C:\> Get-DbaOrphanUser -SqlInstance localhost\sql2016 -SqlCredential $cred
+        PS C:\> Get-DbaDbOrphanUser -SqlInstance localhost\sql2016 -SqlCredential $cred
 
         Finds all orphan users without matching Logins in all databases present on server 'localhost\sql2016'. SQL Server authentication will be used in connecting to the server.
 
     .EXAMPLE
-        PS C:\> Get-DbaOrphanUser -SqlInstance localhost\sql2016 -Database db1
+        PS C:\> Get-DbaDbOrphanUser -SqlInstance localhost\sql2016 -Database db1
 
         Finds orphan users without matching Logins in the db1 database present on server 'localhost\sql2016'.
 
@@ -124,5 +124,7 @@ function Get-DbaOrphanUser {
             }
         }
     }
-
+    end {
+        Test-DbaDeprecation -DeprecatedOn 1.0.0 -Alias Get-DbaOrphanUser
+    }
 }
