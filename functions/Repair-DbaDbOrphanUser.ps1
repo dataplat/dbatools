@@ -225,6 +225,7 @@ function Repair-DbaDbOrphanUser {
         }
     }
     end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Repair-SqlOrphanUser
+        Test-DbaDeprecation -DeprecatedOn 1.0.0 -Alias Repair-DbaOrphanUser
+        Test-DbaDeprecation -DeprecatedOn 1.0.0 -Alias Repair-SqlOrphanUser
     }
 }

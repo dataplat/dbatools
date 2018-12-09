@@ -994,6 +994,18 @@ $script:renames = @(
     @{
         "AliasName"  = "Set-DbaJobOwner"
         "Definition" = "Set-DbaAgentJobOwner"
+    },
+    @{
+        "AliasName"  = "Get-DbaOrphanUser"
+        "Definition" = "Get-DbaDbOrphanUser"
+    },
+    @{
+        "AliasName"  = "Remove-DbaOrphanUser"
+        "Definition" = "Remove-DbaDbOrphanUser"
+    },
+    @{
+        "AliasName"  = "Repair-DbaOrphanUser"
+        "Definition" = "Repair-DbaDbOrphanUser"
     }
 )
 

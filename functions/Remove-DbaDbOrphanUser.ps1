@@ -103,9 +103,7 @@ function Remove-DbaDbOrphanUser {
         [Alias('Silent')]
         [switch]$EnableException
     )
-
     process {
-
         foreach ($Instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $Instance -SqlCredential $SqlCredential
@@ -310,6 +308,7 @@ function Remove-DbaDbOrphanUser {
         }
     }
     end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Remove-SqlOrphanUser
+        Test-DbaDeprecation -DeprecatedOn 1.0.0 -Alias Remove-SqlOrphanUser
+        Test-DbaDeprecation -DeprecatedOn 1.0.0 -Alias Remove-DbaOrphanUser
     }
 }
