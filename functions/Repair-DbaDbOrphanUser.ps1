@@ -1,5 +1,5 @@
 #ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
-function Repair-DbaOrphanUser {
+function Repair-DbaDbOrphanUser {
     <#
     .SYNOPSIS
         Finds orphan users with existing login and remaps them.
@@ -56,35 +56,35 @@ function Repair-DbaOrphanUser {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Repair-DbaOrphanUser
+        https://dbatools.io/Repair-DbaDbOrphanUser
 
     .EXAMPLE
-        PS C:\> Repair-DbaOrphanUser -SqlInstance sql2005
+        PS C:\> Repair-DbaDbOrphanUser -SqlInstance sql2005
 
         Finds and repairs all orphan users of all databases present on server 'sql2005'
 
     .EXAMPLE
-        PS C:\> Repair-DbaOrphanUser -SqlInstance sqlserver2014a -SqlCredential $cred
+        PS C:\> Repair-DbaDbOrphanUser -SqlInstance sqlserver2014a -SqlCredential $cred
 
         Finds and repair all orphan users in all databases present on server 'sqlserver2014a'. SQL credentials are used to authenticate to the server.
 
     .EXAMPLE
-        PS C:\> Repair-DbaOrphanUser -SqlInstance sqlserver2014a -Database db1, db2
+        PS C:\> Repair-DbaDbOrphanUser -SqlInstance sqlserver2014a -Database db1, db2
 
         Finds and repairs all orphan users in both db1 and db2 databases.
 
     .EXAMPLE
-        PS C:\> Repair-DbaOrphanUser -SqlInstance sqlserver2014a -Database db1 -Users OrphanUser
+        PS C:\> Repair-DbaDbOrphanUser -SqlInstance sqlserver2014a -Database db1 -Users OrphanUser
 
         Finds and repairs user 'OrphanUser' in 'db1' database.
 
     .EXAMPLE
-        PS C:\> Repair-DbaOrphanUser -SqlInstance sqlserver2014a -Users OrphanUser
+        PS C:\> Repair-DbaDbOrphanUser -SqlInstance sqlserver2014a -Users OrphanUser
 
         Finds and repairs user 'OrphanUser' on all databases
 
     .EXAMPLE
-        PS C:\> Repair-DbaOrphanUser -SqlInstance sqlserver2014a -RemoveNotExisting
+        PS C:\> Repair-DbaDbOrphanUser -SqlInstance sqlserver2014a -RemoveNotExisting
 
         Finds all orphan users of all databases present on server 'sqlserver2014a'. Removes all users that do not have  matching Logins.
 
@@ -199,14 +199,14 @@ function Repair-DbaOrphanUser {
                             #With the collection complete invoke remove.
                             if ($RemoveNotExisting) {
                                 if ($Force) {
-                                    if ($Pscmdlet.ShouldProcess($db.Name, "Remove-DbaOrphanUser")) {
-                                        Write-Message -Level Verbose -Message "Calling 'Remove-DbaOrphanUser' with -Force."
-                                        Remove-DbaOrphanUser -SqlInstance $server -Database $db.Name -User $UsersToRemove -Force
+                                    if ($Pscmdlet.ShouldProcess($db.Name, "Remove-DbaDbOrphanUser")) {
+                                        Write-Message -Level Verbose -Message "Calling 'Remove-DbaDbOrphanUser' with -Force."
+                                        Remove-DbaDbOrphanUser -SqlInstance $server -Database $db.Name -User $UsersToRemove -Force
                                     }
                                 } else {
-                                    if ($Pscmdlet.ShouldProcess($db.Name, "Remove-DbaOrphanUser")) {
-                                        Write-Message -Level Verbose -Message "Calling 'Remove-DbaOrphanUser'."
-                                        Remove-DbaOrphanUser -SqlInstance $server -Database $db.Name -User $UsersToRemove
+                                    if ($Pscmdlet.ShouldProcess($db.Name, "Remove-DbaDbOrphanUser")) {
+                                        Write-Message -Level Verbose -Message "Calling 'Remove-DbaDbOrphanUser'."
+                                        Remove-DbaDbOrphanUser -SqlInstance $server -Database $db.Name -User $UsersToRemove
                                     }
                                 }
                             }
@@ -225,6 +225,7 @@ function Repair-DbaOrphanUser {
         }
     }
     end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Repair-SqlOrphanUser
+        Test-DbaDeprecation -DeprecatedOn 1.0.0 -Alias Repair-DbaOrphanUser
+        Test-DbaDeprecation -DeprecatedOn 1.0.0 -Alias Repair-SqlOrphanUser
     }
 }
