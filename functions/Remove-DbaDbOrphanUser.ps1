@@ -1,5 +1,5 @@
 #ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
-function Remove-DbaOrphanUser {
+function Remove-DbaDbOrphanUser {
     <#
     .SYNOPSIS
         Drop orphan users with no existing login to map
@@ -11,7 +11,7 @@ function Remove-DbaOrphanUser {
 
         If user owns more than one schema, the owner of the schemas that does not have the same name as the user, will be changed to 'dbo'. If schemas have underlying objects, you must specify the -Force parameter so the user can be dropped.
 
-        If exists a login to map the drop will not be performed unless you specify the -Force parameter (only when calling from Repair-DbaOrphanUser.
+        If exists a login to map the drop will not be performed unless you specify the -Force parameter (only when calling from Repair-DbaDbOrphanUser.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
@@ -53,35 +53,35 @@ function Remove-DbaOrphanUser {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Remove-DbaOrphanUser
+        https://dbatools.io/Remove-DbaDbOrphanUser
 
     .EXAMPLE
-        PS C:\> Remove-DbaOrphanUser -SqlInstance sql2005
+        PS C:\> Remove-DbaDbOrphanUser -SqlInstance sql2005
 
         Finds and drops all orphan users without matching Logins in all databases present on server 'sql2005'.
 
     .EXAMPLE
-        PS C:\> Remove-DbaOrphanUser -SqlInstance sqlserver2014a -SqlCredential $cred
+        PS C:\> Remove-DbaDbOrphanUser -SqlInstance sqlserver2014a -SqlCredential $cred
 
         Finds and drops all orphan users without matching Logins in all databases present on server 'sqlserver2014a'. SQL Server authentication will be used in connecting to the server.
 
     .EXAMPLE
-        PS C:\> Remove-DbaOrphanUser -SqlInstance sqlserver2014a -Database db1, db2 -Force
+        PS C:\> Remove-DbaDbOrphanUser -SqlInstance sqlserver2014a -Database db1, db2 -Force
 
         Finds and drops orphan users even if they have a matching Login on both db1 and db2 databases.
 
     .EXAMPLE
-        PS C:\> Remove-DbaOrphanUser -SqlInstance sqlserver2014a -ExcludeDatabase db1, db2 -Force
+        PS C:\> Remove-DbaDbOrphanUser -SqlInstance sqlserver2014a -ExcludeDatabase db1, db2 -Force
 
         Finds and drops orphan users even if they have a matching Login from all databases except db1 and db2.
 
     .EXAMPLE
-        PS C:\> Remove-DbaOrphanUser -SqlInstance sqlserver2014a -User OrphanUser
+        PS C:\> Remove-DbaDbOrphanUser -SqlInstance sqlserver2014a -User OrphanUser
 
         Removes user OrphanUser from all databases only if there is no matching login.
 
     .EXAMPLE
-        PS C:\> Remove-DbaOrphanUser -SqlInstance sqlserver2014a -User OrphanUser -Force
+        PS C:\> Remove-DbaDbOrphanUser -SqlInstance sqlserver2014a -User OrphanUser -Force
 
         Removes user OrphanUser from all databases even if they have a matching Login. Any schema that the user owns will change ownership to dbo.
 
@@ -103,9 +103,7 @@ function Remove-DbaOrphanUser {
         [Alias('Silent')]
         [switch]$EnableException
     )
-
     process {
-
         foreach ($Instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $Instance -SqlCredential $SqlCredential
@@ -142,8 +140,8 @@ function Remove-DbaOrphanUser {
                             }
                         }
 
-                        if ($StackSource -eq "Repair-DbaOrphanUser") {
-                            Write-Message -Level Verbose -Message "Call origin: Repair-DbaOrphanUser."
+                        if ($StackSource -eq "Repair-DbaDbOrphanUser") {
+                            Write-Message -Level Verbose -Message "Call origin: Repair-DbaDbOrphanUser."
                             #Will use collection from parameter ($User)
                         } else {
                             Write-Message -Level Verbose -Message "Validating users on database $db."
@@ -164,8 +162,8 @@ function Remove-DbaOrphanUser {
 
                                 $ExistLogin = $null
 
-                                if ($StackSource -ne "Repair-DbaOrphanUser") {
-                                    #Need to validate Existing Login because the call does not came from Repair-DbaOrphanUser
+                                if ($StackSource -ne "Repair-DbaDbOrphanUser") {
+                                    #Need to validate Existing Login because the call does not came from Repair-DbaDbOrphanUser
                                     $ExistLogin = $server.logins | Where-Object {
                                         $_.Isdisabled -eq $False -and
                                         $_.IsSystemObject -eq $False -and
@@ -310,6 +308,7 @@ function Remove-DbaOrphanUser {
         }
     }
     end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Remove-SqlOrphanUser
+        Test-DbaDeprecation -DeprecatedOn 1.0.0 -Alias Remove-SqlOrphanUser
+        Test-DbaDeprecation -DeprecatedOn 1.0.0 -Alias Remove-DbaOrphanUser
     }
 }

@@ -12610,6 +12610,66 @@
         "Syntax":  "Get-DbaDbMirrorMonitor [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString[]\u003e] [[-InputObject] \u003cDatabase[]\u003e] [-Update] [[-LimitResults] \u003cString\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
+        "CommandName":  "Get-DbaDbOrphanUser",
+        "Description":  "An orphan user is defined by a user that does not have their matching login. (Login property = \"\").",
+        "Tags":  [
+                     "Orphan",
+                     "Database",
+                     "User",
+                     "Security",
+                     "Login"
+                 ],
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "The target SQL Server instance or instances.",
+                           "ServerInstance,SqlServer",
+                           true,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
+                           "SqlCredential",
+                           "Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Database",
+                           "Specifies the database(s) to process. Options for this list are auto-populated from the server. If unspecified, all databases will be processed.",
+                           "Databases",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "ExcludeDatabase",
+                           "Specifies the database(s) to exclude from processing. Options for this list are auto-populated from the server",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "Silent",
+                           false,
+                           "false",
+                           "False"
+                       ]
+                   ],
+        "Alias":  "Get-DbaOrphanUser",
+        "Author":  "Claudio Silva (@ClaudioESSilva) | Garry Bargsley (@gbargsley) | Simone Bizzotto (@niphlod)",
+        "Synopsis":  "Get orphaned users.",
+        "Name":  "Get-DbaDbOrphanUser",
+        "Links":  "https://dbatools.io/Get-DbaDbOrphanUser",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaDbOrphanUser -SqlInstance localhost\\sql2016\nFinds all orphan users without matching Logins in all databases present on server \u0027localhost\\sql2016\u0027.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaDbOrphanUser -SqlInstance localhost\\sql2016 -SqlCredential $cred\nFinds all orphan users without matching Logins in all databases present on server \u0027localhost\\sql2016\u0027. SQL Server authentication will be used in connecting to the server.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaDbOrphanUser -SqlInstance localhost\\sql2016 -Database db1\nFinds orphan users without matching Logins in the db1 database present on server \u0027localhost\\sql2016\u0027.",
+        "Syntax":  "Get-DbaDbOrphanUser [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cObject[]\u003e] [[-ExcludeDatabase] \u003cObject[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
+    },
+    {
         "CommandName":  "Get-DbaDbPageInfo",
         "Description":  "Get-DbaDbPageInfo is able to return information about the pages in a database.\nIt\u0027s possible to return the information for multiple databases and filter on specific databases, schemas and tables.",
         "Tags":  [
@@ -15732,66 +15792,6 @@
         "Links":  "https://dbatools.io/Get-DbaOperatingSystem",
         "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaOperatingSystem\nReturns information about the local computer\u0027s operating system\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaOperatingSystem -ComputerName sql2016\nReturns information about the sql2016\u0027s operating system\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003e$wincred = Get-Credential ad\\sqladmin\nPS C:\\\u003e \u0027sql2016\u0027, \u0027sql2017\u0027 | Get-DbaOperatingSystem -Credential $wincred\nReturns information about the sql2016 and sql2017 operating systems using alternative Windows credentials\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-Content .\\servers.txt | Get-DbaOperatingSystem\nReturns information about all the servers operating system that are stored in the file. Every line in the file can only contain one hostname for a server.",
         "Syntax":  "Get-DbaOperatingSystem [[-ComputerName] \u003cDbaInstanceParameter[]\u003e] [[-Credential] \u003cPSCredential\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
-    },
-    {
-        "CommandName":  "Get-DbaOrphanUser",
-        "Description":  "An orphan user is defined by a user that does not have their matching login. (Login property = \"\").",
-        "Tags":  [
-                     "Orphan",
-                     "Database",
-                     "User",
-                     "Security",
-                     "Login"
-                 ],
-        "Params":  [
-                       [
-                           "SqlInstance",
-                           "The target SQL Server instance or instances.",
-                           "ServerInstance,SqlServer",
-                           true,
-                           "true (ByValue)",
-                           ""
-                       ],
-                       [
-                           "SqlCredential",
-                           "Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)",
-                           "",
-                           false,
-                           "false",
-                           ""
-                       ],
-                       [
-                           "Database",
-                           "Specifies the database(s) to process. Options for this list are auto-populated from the server. If unspecified, all databases will be processed.",
-                           "Databases",
-                           false,
-                           "false",
-                           ""
-                       ],
-                       [
-                           "ExcludeDatabase",
-                           "Specifies the database(s) to exclude from processing. Options for this list are auto-populated from the server",
-                           "",
-                           false,
-                           "false",
-                           ""
-                       ],
-                       [
-                           "EnableException",
-                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
-                           "Silent",
-                           false,
-                           "false",
-                           "False"
-                       ]
-                   ],
-        "Alias":  "",
-        "Author":  "Claudio Silva (@ClaudioESSilva) | Garry Bargsley (@gbargsley) | Simone Bizzotto (@niphlod)",
-        "Synopsis":  "Get orphaned users.",
-        "Name":  "Get-DbaOrphanUser",
-        "Links":  "https://dbatools.io/Get-DbaOrphanUser",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaOrphanUser -SqlInstance localhost\\sql2016\nFinds all orphan users without matching Logins in all databases present on server \u0027localhost\\sql2016\u0027.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaOrphanUser -SqlInstance localhost\\sql2016 -SqlCredential $cred\nFinds all orphan users without matching Logins in all databases present on server \u0027localhost\\sql2016\u0027. SQL Server authentication will be used in connecting to the server.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaOrphanUser -SqlInstance localhost\\sql2016 -Database db1\nFinds orphan users without matching Logins in the db1 database present on server \u0027localhost\\sql2016\u0027.",
-        "Syntax":  "Get-DbaOrphanUser [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cObject[]\u003e] [[-ExcludeDatabase] \u003cObject[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
         "CommandName":  "Get-DbaPageFileSetting",
@@ -20720,7 +20720,7 @@
         "Synopsis":  "Imports a new XESession XML Template",
         "Name":  "Import-DbaXESessionTemplate",
         "Links":  "https://dbatools.io/Import-DbaXESessionTemplate",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eImport-DbaXESessionTemplate -SqlInstance sql2017 -Template db_query_wait_stats\nCreates a new XESession named db_query_wait_stats from the dbatools repository to the SQL Server sql2017.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eImport-DbaXESessionTemplate -SqlInstance sql2017 -Template db_query_wait_stats -Name \"Query Wait Stats\"\nCreates a new XESession named \"Query Wait Stats\" using the db_query_wait_stats template.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaXESession -SqlInstance sql2017 -Session db_ola_health | Remove-DbaXESession\nPS C:\\\u003e Import-DbaXESessionTemplate -SqlInstance sql2017 -Template db_ola_health | Start-DbaXESession\nImports a session if it exists, then recreates it using a template.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaXESessionTemplate | Out-GridView -PassThru | Import-DbaXESessionTemplate -SqlInstance sql2017\nAllows you to select a Session template then import to an instance named sql2017.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eImport-DbaXESessionTemplate -SqlInstance sql2017 -Template db_query_wait_stats\nCreates a new XESession named db_query_wait_stats from the dbatools repository to the SQL Server sql2017.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eImport-DbaXESessionTemplate -SqlInstance sql2017 -Template db_query_wait_stats -Name \"Query Wait Stats\"\nCreates a new XESession named \"Query Wait Stats\" using the db_query_wait_stats template.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaXESession -SqlInstance sql2017 -Session \u0027Database Health 2014\u0027 | Remove-DbaXESession\nPS C:\\\u003e Import-DbaXESessionTemplate -SqlInstance sql2017 -Template \u0027Database Health 2014\u0027 | Start-DbaXESession\nRemoves a session if it exists, then recreates it using a template.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaXESessionTemplate | Out-GridView -PassThru | Import-DbaXESessionTemplate -SqlInstance sql2017\nAllows you to select a Session template then import to an instance named sql2017.",
         "Syntax":  "Import-DbaXESessionTemplate [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Name] \u003cString\u003e] [[-Path] \u003cString[]\u003e] [[-Template] \u003cString[]\u003e] [[-TargetFilePath] \u003cString\u003e] [[-TargetFileMetadataPath] \u003cString\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
@@ -27704,7 +27704,7 @@
     },
     {
         "CommandName":  "New-DbaXESession",
-        "Description":  "Creates a new XESession object - for the dogged (very manual, Import-DbaXESession is recommended). See the following for more info:\n\nhttps://docs.microsoft.com/en-us/sql/relational-databases/extended-events/use-the-powershell-provider-for-extended-events",
+        "Description":  "Creates a new XESession object - for the dogged (very manual, Import-DbaXESessionTemplate is recommended). See the following for more info:\n\nhttps://docs.microsoft.com/en-us/sql/relational-databases/extended-events/use-the-powershell-provider-for-extended-events",
         "Tags":  [
                      "ExtendedEvent",
                      "XE",
@@ -30580,6 +30580,97 @@
         "Syntax":  "Remove-DbaDbMirrorMonitor [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
+        "CommandName":  "Remove-DbaDbOrphanUser",
+        "Description":  "An orphan user is defined by a user that does not have their matching login. (Login property = \"\").\n\nIf user is the owner of the schema with the same name and if if the schema does not have any underlying objects the schema will be dropped.\n\nIf user owns more than one schema, the owner of the schemas that does not have the same name as the user, will be changed to \u0027dbo\u0027. If schemas have underlying objects, you must specify the -Force parameter so the user can be dropped.\n\nIf exists a login to map the drop will not be performed unless you specify the -Force parameter (only when calling from Repair-DbaDbOrphanUser.",
+        "Tags":  [
+                     "Orphan",
+                     "Database",
+                     "Security",
+                     "Login"
+                 ],
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "The target SQL Server instance or instances.",
+                           "ServerInstance,SqlServer",
+                           true,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
+                           "SqlCredential",
+                           "Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)",
+                           "Credential",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Database",
+                           "Specifies the database(s) to process. Options for this list are auto-populated from the server. If unspecified, all databases will be processed.",
+                           "Databases",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "ExcludeDatabase",
+                           "Specifies the database(s) to exclude from processing. Options for this list are auto-populated from the server",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "User",
+                           "Specifies the list of users to remove.",
+                           "",
+                           false,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
+                           "Force",
+                           "If this switch is enabled:\r\nIf exists any schema which owner is the User, this will force the change of the owner to \u0027dbo\u0027.\r\nIf exists a login to map the drop will not be performed unless you specify this parameter.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "Silent",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "WhatIf",
+                           "If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.",
+                           "wi",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Confirm",
+                           "If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.",
+                           "cf",
+                           false,
+                           "false",
+                           ""
+                       ]
+                   ],
+        "Alias":  "Remove-DbaOrphanUser,Remove-SqlOrphanUser",
+        "Author":  "Claudio Silva (@ClaudioESSilva) | Simone Bizzotto (@niphlod)",
+        "Synopsis":  "Drop orphan users with no existing login to map",
+        "Name":  "Remove-DbaDbOrphanUser",
+        "Links":  "https://dbatools.io/Remove-DbaDbOrphanUser",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eRemove-DbaDbOrphanUser -SqlInstance sql2005\nFinds and drops all orphan users without matching Logins in all databases present on server \u0027sql2005\u0027.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eRemove-DbaDbOrphanUser -SqlInstance sqlserver2014a -SqlCredential $cred\nFinds and drops all orphan users without matching Logins in all databases present on server \u0027sqlserver2014a\u0027. SQL Server authentication will be used in connecting to the server.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eRemove-DbaDbOrphanUser -SqlInstance sqlserver2014a -Database db1, db2 -Force\nFinds and drops orphan users even if they have a matching Login on both db1 and db2 databases.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eRemove-DbaDbOrphanUser -SqlInstance sqlserver2014a -ExcludeDatabase db1, db2 -Force\nFinds and drops orphan users even if they have a matching Login from all databases except db1 and db2.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eRemove-DbaDbOrphanUser -SqlInstance sqlserver2014a -User OrphanUser\nRemoves user OrphanUser from all databases only if there is no matching login.\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eRemove-DbaDbOrphanUser -SqlInstance sqlserver2014a -User OrphanUser -Force\nRemoves user OrphanUser from all databases even if they have a matching Login. Any schema that the user owns will change ownership to dbo.",
+        "Syntax":  "Remove-DbaDbOrphanUser [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cObject[]\u003e] [[-ExcludeDatabase] \u003cObject[]\u003e] [[-User] \u003cObject[]\u003e] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+    },
+    {
         "CommandName":  "Remove-DbaDbSnapshot",
         "Description":  "Removes (drops) database snapshots from the server",
         "Tags":  [
@@ -30995,97 +31086,6 @@
         "Links":  "https://dbatools.io/Remove-DbaNetworkCertificate",
         "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eRemove-DbaNetworkCertificate\nRemoves the Network Certificate for the default instance (MSSQLSERVER) on localhost\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eRemove-DbaNetworkCertificate -SqlInstance sql1\\SQL2008R2SP2\nRemoves the Network Certificate for the SQL2008R2SP2 instance on sql1\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eRemove-DbaNetworkCertificate -SqlInstance localhost\\SQL2008R2SP2 -WhatIf\nShows what would happen if the command were run",
         "Syntax":  "Remove-DbaNetworkCertificate [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-Credential] \u003cPSCredential\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
-    },
-    {
-        "CommandName":  "Remove-DbaOrphanUser",
-        "Description":  "An orphan user is defined by a user that does not have their matching login. (Login property = \"\").\n\nIf user is the owner of the schema with the same name and if if the schema does not have any underlying objects the schema will be dropped.\n\nIf user owns more than one schema, the owner of the schemas that does not have the same name as the user, will be changed to \u0027dbo\u0027. If schemas have underlying objects, you must specify the -Force parameter so the user can be dropped.\n\nIf exists a login to map the drop will not be performed unless you specify the -Force parameter (only when calling from Repair-DbaOrphanUser.",
-        "Tags":  [
-                     "Orphan",
-                     "Database",
-                     "Security",
-                     "Login"
-                 ],
-        "Params":  [
-                       [
-                           "SqlInstance",
-                           "The target SQL Server instance or instances.",
-                           "ServerInstance,SqlServer",
-                           true,
-                           "true (ByValue)",
-                           ""
-                       ],
-                       [
-                           "SqlCredential",
-                           "Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)",
-                           "Credential",
-                           false,
-                           "false",
-                           ""
-                       ],
-                       [
-                           "Database",
-                           "Specifies the database(s) to process. Options for this list are auto-populated from the server. If unspecified, all databases will be processed.",
-                           "Databases",
-                           false,
-                           "false",
-                           ""
-                       ],
-                       [
-                           "ExcludeDatabase",
-                           "Specifies the database(s) to exclude from processing. Options for this list are auto-populated from the server",
-                           "",
-                           false,
-                           "false",
-                           ""
-                       ],
-                       [
-                           "User",
-                           "Specifies the list of users to remove.",
-                           "",
-                           false,
-                           "true (ByValue)",
-                           ""
-                       ],
-                       [
-                           "Force",
-                           "If this switch is enabled:\r\nIf exists any schema which owner is the User, this will force the change of the owner to \u0027dbo\u0027.\r\nIf exists a login to map the drop will not be performed unless you specify this parameter.",
-                           "",
-                           false,
-                           "false",
-                           "False"
-                       ],
-                       [
-                           "EnableException",
-                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
-                           "Silent",
-                           false,
-                           "false",
-                           "False"
-                       ],
-                       [
-                           "WhatIf",
-                           "If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.",
-                           "wi",
-                           false,
-                           "false",
-                           ""
-                       ],
-                       [
-                           "Confirm",
-                           "If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.",
-                           "cf",
-                           false,
-                           "false",
-                           ""
-                       ]
-                   ],
-        "Alias":  "Remove-SqlOrphanUser",
-        "Author":  "Claudio Silva (@ClaudioESSilva) | Simone Bizzotto (@niphlod)",
-        "Synopsis":  "Drop orphan users with no existing login to map",
-        "Name":  "Remove-DbaOrphanUser",
-        "Links":  "https://dbatools.io/Remove-DbaOrphanUser",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eRemove-DbaOrphanUser -SqlInstance sql2005\nFinds and drops all orphan users without matching Logins in all databases present on server \u0027sql2005\u0027.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eRemove-DbaOrphanUser -SqlInstance sqlserver2014a -SqlCredential $cred\nFinds and drops all orphan users without matching Logins in all databases present on server \u0027sqlserver2014a\u0027. SQL Server authentication will be used in connecting to the server.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eRemove-DbaOrphanUser -SqlInstance sqlserver2014a -Database db1, db2 -Force\nFinds and drops orphan users even if they have a matching Login on both db1 and db2 databases.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eRemove-DbaOrphanUser -SqlInstance sqlserver2014a -ExcludeDatabase db1, db2 -Force\nFinds and drops orphan users even if they have a matching Login from all databases except db1 and db2.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eRemove-DbaOrphanUser -SqlInstance sqlserver2014a -User OrphanUser\nRemoves user OrphanUser from all databases only if there is no matching login.\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eRemove-DbaOrphanUser -SqlInstance sqlserver2014a -User OrphanUser -Force\nRemoves user OrphanUser from all databases even if they have a matching Login. Any schema that the user owns will change ownership to dbo.",
-        "Syntax":  "Remove-DbaOrphanUser [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cObject[]\u003e] [[-ExcludeDatabase] \u003cObject[]\u003e] [[-User] \u003cObject[]\u003e] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "CommandName":  "Remove-DbaPfDataCollectorCounter",
@@ -31815,7 +31815,7 @@
         "Syntax":  "Repair-DbaDbMirror [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString[]\u003e] [[-InputObject] \u003cDatabase[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
-        "CommandName":  "Repair-DbaOrphanUser",
+        "CommandName":  "Repair-DbaDbOrphanUser",
         "Description":  "An orphan user is defined by a user that does not have a matching login (Login property = \"\").\n\nIf the matching login exists it must be:\nEnabled\nNot a system object\nNot locked\nHave the same name that user\n\nYou can drop users that does not have their matching login by specifying the parameter -RemoveNotExisting.",
         "Tags":  "Orphan",
         "Params":  [
@@ -31900,13 +31900,13 @@
                            ""
                        ]
                    ],
-        "Alias":  "Repair-SqlOrphanUser",
+        "Alias":  "Repair-DbaOrphanUser,Repair-SqlOrphanUser",
         "Author":  "Claudio Silva (@ClaudioESSilva) | Simone Bizzotto (@niphlod)",
         "Synopsis":  "Finds orphan users with existing login and remaps them.",
-        "Name":  "Repair-DbaOrphanUser",
-        "Links":  "https://dbatools.io/Repair-DbaOrphanUser",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eRepair-DbaOrphanUser -SqlInstance sql2005\nFinds and repairs all orphan users of all databases present on server \u0027sql2005\u0027\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eRepair-DbaOrphanUser -SqlInstance sqlserver2014a -SqlCredential $cred\nFinds and repair all orphan users in all databases present on server \u0027sqlserver2014a\u0027. SQL credentials are used to authenticate to the server.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eRepair-DbaOrphanUser -SqlInstance sqlserver2014a -Database db1, db2\nFinds and repairs all orphan users in both db1 and db2 databases.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eRepair-DbaOrphanUser -SqlInstance sqlserver2014a -Database db1 -Users OrphanUser\nFinds and repairs user \u0027OrphanUser\u0027 in \u0027db1\u0027 database.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eRepair-DbaOrphanUser -SqlInstance sqlserver2014a -Users OrphanUser\nFinds and repairs user \u0027OrphanUser\u0027 on all databases\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eRepair-DbaOrphanUser -SqlInstance sqlserver2014a -RemoveNotExisting\nFinds all orphan users of all databases present on server \u0027sqlserver2014a\u0027. Removes all users that do not have  matching Logins.",
-        "Syntax":  "Repair-DbaOrphanUser [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cObject[]\u003e] [[-ExcludeDatabase] \u003cObject[]\u003e] [[-Users] \u003cObject[]\u003e] [-RemoveNotExisting] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Name":  "Repair-DbaDbOrphanUser",
+        "Links":  "https://dbatools.io/Repair-DbaDbOrphanUser",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eRepair-DbaDbOrphanUser -SqlInstance sql2005\nFinds and repairs all orphan users of all databases present on server \u0027sql2005\u0027\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eRepair-DbaDbOrphanUser -SqlInstance sqlserver2014a -SqlCredential $cred\nFinds and repair all orphan users in all databases present on server \u0027sqlserver2014a\u0027. SQL credentials are used to authenticate to the server.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eRepair-DbaDbOrphanUser -SqlInstance sqlserver2014a -Database db1, db2\nFinds and repairs all orphan users in both db1 and db2 databases.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eRepair-DbaDbOrphanUser -SqlInstance sqlserver2014a -Database db1 -Users OrphanUser\nFinds and repairs user \u0027OrphanUser\u0027 in \u0027db1\u0027 database.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eRepair-DbaDbOrphanUser -SqlInstance sqlserver2014a -Users OrphanUser\nFinds and repairs user \u0027OrphanUser\u0027 on all databases\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eRepair-DbaDbOrphanUser -SqlInstance sqlserver2014a -RemoveNotExisting\nFinds all orphan users of all databases present on server \u0027sqlserver2014a\u0027. Removes all users that do not have  matching Logins.",
+        "Syntax":  "Repair-DbaDbOrphanUser [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cObject[]\u003e] [[-ExcludeDatabase] \u003cObject[]\u003e] [[-Users] \u003cObject[]\u003e] [-RemoveNotExisting] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "CommandName":  "Repair-DbaServerName",
@@ -39633,7 +39633,7 @@
                            "SqlInstance",
                            "The target SQL Server instance or instances.",
                            "ServerInstance,SqlServer",
-                           true,
+                           false,
                            "false",
                            ""
                        ],
@@ -39699,8 +39699,8 @@
         "Synopsis":  "Checks database owners against a login to validate which databases do not match that owner.",
         "Name":  "Test-DbaDbOwner",
         "Links":  "https://dbatools.io/Test-DbaDbOwner",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eTest-DbaDbOwner -SqlInstance localhost\nReturns all databases where the owner does not match \u0027sa\u0027.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eTest-DbaDbOwner -SqlInstance localhost -TargetLogin \u0027DOMAIN\\account\u0027\nReturns all databases where the owner does not match \u0027DOMAIN\\account\u0027.",
-        "Syntax":  "Test-DbaDbOwner [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cObject[]\u003e] [[-ExcludeDatabase] \u003cObject[]\u003e] [[-TargetLogin] \u003cString\u003e] [-Detailed] [[-InputObject] \u003cDatabase[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eTest-DbaDbOwner -SqlInstance localhost\nReturns all databases where the owner does not match \u0027sa\u0027.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eTest-DbaDbOwner -SqlInstance localhost -TargetLogin \u0027DOMAIN\\account\u0027\nReturns all databases where the owner does not match \u0027DOMAIN\\account\u0027.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaDatabase -SqlInstance localhost -OnlyAccessible | Test-DbaDbOwner\nGets only accessible databases and checks where the owner does not match \u0027sa\u0027.",
+        "Syntax":  "Test-DbaDbOwner [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [-SqlCredential \u003cPSCredential\u003e] [-Database \u003cObject[]\u003e] [-ExcludeDatabase \u003cObject[]\u003e] [-TargetLogin \u003cString\u003e] [-Detailed] [-InputObject \u003cDatabase[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
         "CommandName":  "Test-DbaDbRecoveryModel",

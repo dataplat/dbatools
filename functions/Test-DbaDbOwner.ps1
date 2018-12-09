@@ -57,10 +57,14 @@ function Test-DbaDbOwner {
 
         Returns all databases where the owner does not match 'DOMAIN\account'.
 
+    .EXAMPLE
+        PS C:\> Get-DbaDatabase -SqlInstance localhost -OnlyAccessible | Test-DbaDbOwner
+
+        Gets only accessible databases and checks where the owner does not match 'sa'.
     #>
     [CmdletBinding()]
     param (
-        [parameter(Mandatory)]
+        [parameter(Position = 0)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
@@ -78,8 +82,12 @@ function Test-DbaDbOwner {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -Parameter "Detailed"
     }
     process {
+        if (-not $InputObject -and -not $Sqlinstance) {
+            Stop-Function -Message 'You must specify a $SqlInstance parameter'
+        }
+
         if ($SqlInstance) {
-            $InputObject += Get-DbaDatabase -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database -ExcludeDatabase $ExcludeDatabase | Where-Object IsAccessible
+            $InputObject += Get-DbaDatabase -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database -ExcludeDatabase $ExcludeDatabase
         }
 
         #for each database, create custom object for return set.
@@ -96,10 +104,6 @@ function Test-DbaDbOwner {
             #Validate login
             if (($server.Logins.Name) -notmatch [Regex]::Escape($TargetLogin)) {
                 Write-Message -Level Verbose -Message "$TargetLogin is not a login on $instance" -Target $instance
-            }
-
-            if ($db.IsAccessible -eq $false) {
-                Stop-Function -Message "The database $db is not accessible. Skipping database." -Continue -Target $db
             }
 
             Write-Message -Level Verbose -Message "Checking $db"
