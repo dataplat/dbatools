@@ -229,6 +229,9 @@ function New-DbaLogShippingPrimaryDatabase {
             ,@threshold_alert = $ThresholdAlert
             ,@threshold_alert_enabled = $ThresholdAlertEnabled"
     }
+    else{
+        $Query += ",@ignoreremotemonitor = 1"
+    }
 
     if ($Force -or ($server.Version.Major -gt 9)) {
         $Query += ",@overwrite = 1;"
