@@ -229,6 +229,17 @@ If you use non-default ports and SQL Browser is disabled, you can access servers
 
 Note that PowerShell sees commas as arrays, so you must surround the host name with quotes.
 
+#### Using Start-Transcript
+
+Due to an [issue](https://github.com/sqlcollaborative/dbatools/issues/2722) in the way PowerShell 5.1 works you need to use `Import-Module dbatools` before you run `Start-Transcript`. If this isn't done then your transcript will stop when the module is imported:
+
+```powershell
+Import-Module dbatools
+Start-Transcript
+Get-DbaDatabase -SqlInstance sql2017
+Stop-Transcript
+```
+
 ## Support
 
 dbatools aims to support as many configurations as possible, including
