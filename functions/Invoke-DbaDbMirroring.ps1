@@ -88,7 +88,7 @@ function Invoke-DbaDbMirroring {
         >> SharedPath = '\\nas\sql\share'
         >> }
         >>
-        PS C:\> Invoke-DbaDbMirror @params
+        PS C:\> Invoke-DbaDbMirroring @params
 
         Performs a bunch of checks to ensure the pubs database on sql2017a
         can be mirrored from sql2017a to sql2017b. Logs in to sql2019 and sql2017a
@@ -109,7 +109,7 @@ function Invoke-DbaDbMirroring {
         >> Confirm = $false
         >> }
         >>
-        PS C:\> Invoke-DbaDbMirror @params
+        PS C:\> Invoke-DbaDbMirroring @params
 
         Performs a bunch of checks to ensure the pubs database on sql2017a
         can be mirrored from sql2017a to sql2017b. Logs in to sql2019 and sql2017a
