@@ -236,7 +236,7 @@ Due to an [issue](https://github.com/sqlcollaborative/dbatools/issues/2722) in t
 ```powershell
 Import-Module dbatools
 Start-Transcript
-Get-DbaDatabase -SqlInstance 'ABC'
+Get-DbaDatabase -SqlInstance sql2017
 Stop-Transcript
 ```
 
