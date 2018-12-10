@@ -64,6 +64,19 @@ function New-DbaLogShippingSecondaryDatabase {
         .PARAMETER ThresholdAlertEnabled
             Specifies whether an alert is raised when backup_threshold is exceeded.
 
+        .PARAMETER MonitorServer
+            Is the name of the monitor server.
+            The default is the name of the primary server.
+
+        .PARAMETER MonitorCredential
+            Allows you to login to enter a secure credential.
+            This is only needed in combination with MonitorServerSecurityMode having either a 0 or 'sqlserver' value.
+            To use: $scred = Get-Credential, then pass $scred object to the -MonitorCredential parameter.
+
+        .PARAMETER MonitorServerSecurityMode
+            The security mode used to connect to the monitor server. Allowed values are 0, "sqlserver", 1, "windows"
+            The default is 1 or Windows.
+
         .PARAMETER WhatIf
             Shows what would happen if the command were to run. No actions are actually performed.
 
@@ -120,6 +133,10 @@ function New-DbaLogShippingSecondaryDatabase {
         [object]$SecondaryDatabase,
         [int]$ThresholdAlert = 14420,
         [switch]$ThresholdAlertEnabled,
+        [string]$MonitorServer,
+        [ValidateSet(0, "sqlserver", 1, "windows")]
+        [object]$MonitorServerSecurityMode = 1,
+        [System.Management.Automation.PSCredential]$MonitorCredential,
         [Alias('Silent')]
         [switch]$EnableException,
         [switch]$Force
