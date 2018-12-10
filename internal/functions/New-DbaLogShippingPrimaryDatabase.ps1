@@ -207,31 +207,30 @@ function New-DbaLogShippingPrimaryDatabase {
             ,@backup_directory = N'$BackupDirectory'
             ,@backup_share = N'$BackupShare'
             ,@backup_job_name = N'$BackupJob'
-            ,@backup_retention_period = $BackupRetention"
+            ,@backup_retention_period = $BackupRetention
+            ,@backup_threshold = $BackupThreshold
+            ,@history_retention_period = $HistoryRetention
+            ,@backup_job_id = @LS_BackupJobId OUTPUT
+            ,@primary_id = @LS_PrimaryId OUTPUT "
 
     if ($SqlInstance.Version.Major -gt 9) {
         $Query += ",@backup_compression = $BackupCompression"
     }
 
-    if ($MonitorServer) {
+    if ($MonitorServer -and ($SqlInstance.Version.Major -ge 12)) {
+        # Check the MonitorServerSecurityMode if it's SQL Server authentication
+        if ($MonitorServer -and $MonitorServerSecurityMode -eq 0 ) {
+            $Query += ",@monitor_server_login = N'$MonitorLogin'
+                ,@monitor_server_password = N'$MonitorPassword' "
+        }
+
         $Query += ",@monitor_server = N'$MonitorServer'
             ,@monitor_server_security_mode = $MonitorServerSecurityMode
             ,@threshold_alert = $ThresholdAlert
             ,@threshold_alert_enabled = $ThresholdAlertEnabled"
     }
 
-    $Query += ",@backup_threshold = $BackupThreshold
-            ,@history_retention_period = $HistoryRetention
-            ,@backup_job_id = @LS_BackupJobId OUTPUT
-            ,@primary_id = @LS_PrimaryId OUTPUT "
-
-    # Check the MonitorServerSecurityMode if it's SQL Server authentication
-    if ($MonitorServer -and $MonitorServerSecurityMode -eq 0 ) {
-        $Query += ",@monitor_server_login = N'$MonitorLogin'
-            ,@monitor_server_password = N'$MonitorPassword' "
-    }
-
-    if ($server.Version.Major -gt 9) {
+    if ($Force -or ($server.Version.Major -gt 9)) {
         $Query += ",@overwrite = 1;"
     } else {
         $Query += ";"
@@ -243,6 +242,38 @@ function New-DbaLogShippingPrimaryDatabase {
             Write-Message -Message "Configuring logshipping for primary database $Database." -Level Verbose
             Write-Message -Message "Executing query:`n$Query" -Level Verbose
             $server.Query($Query)
+
+            # For versions prior to SQL Server 2014, adding a monitor works in a different way.
+            # The next section makes sure the settings are being synchronized with earlier versions
+            if ($MonitorServer -and ($SqlInstance.Version.Major -lt 12)) {
+                # Get the details of the primary database
+                $query = "SELECT * FROM msdb.dbo.log_shipping_monitor_primary WHERE primary_database = '$Database'"
+                $lsDetails = Invoke-DbaQuery -SqlInstance STADPC -Database $msdb -Query $query
+
+                # Setup the procedure script for adding the monitor for the primary
+                $query = "EXEC msdb.dbo.sp_processlogshippingmonitorprimary @mode = $mode
+                    ,@primary_id = '$($lsDetails.primary_id)'
+                    ,@primary_server = '$($lsDetails.primary_server)'
+                    ,@monitor_server = '$monitorserver' "
+
+                # Check the MonitorServerSecurityMode if it's SQL Server authentication
+                if ($MonitorServer -and $MonitorServerSecurityMode -eq 0 ) {
+                    $query += ",@monitor_server_login = N'$MonitorLogin'
+                        ,@monitor_server_password = N'$MonitorPassword' "
+                }
+
+                $query += ",@monitor_server_security_mode = 1
+                    ,@primary_database = '$($lsDetails.primary_database)'
+                    ,@backup_threshold = $($lsDetails.backup_threshold)
+                    ,@threshold_alert = $($lsDetails.threshold_alert)
+                    ,@threshold_alert_enabled = $([int]$lsDetails.threshold_alert_enabled)
+                    ,@history_retention_period = $($lsDetails.history_retention_period)
+                "
+
+                Write-Message -Message "Configuring monitor server for primary database $Database." -Level Verbose
+                Write-Message -Message "Executing query:`n$query" -Level Verbose
+                $server.Query($query)
+            }
         } catch {
             Write-Message -Message "$($_.Exception.InnerException.InnerException.InnerException.InnerException.Message)" -Level Warning
             Stop-Function -Message "Error executing the query.`n$($_.Exception.Message)`n$($Query)" -ErrorRecord $_ -Target $SqlInstance -Continue
