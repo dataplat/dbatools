@@ -248,13 +248,13 @@ function New-DbaLogShippingPrimaryDatabase {
             if ($MonitorServer -and ($SqlInstance.Version.Major -lt 12)) {
                 # Get the details of the primary database
                 $query = "SELECT * FROM msdb.dbo.log_shipping_monitor_primary WHERE primary_database = '$Database'"
-                $lsDetails = Invoke-DbaQuery -SqlInstance STADPC -Database $msdb -Query $query
+                $lsDetails = $server.Query($query)
 
                 # Setup the procedure script for adding the monitor for the primary
-                $query = "EXEC msdb.dbo.sp_processlogshippingmonitorprimary @mode = $mode
+                $query = "EXEC msdb.dbo.sp_processlogshippingmonitorprimary @mode = $MonitorServerSecurityMode
                     ,@primary_id = '$($lsDetails.primary_id)'
                     ,@primary_server = '$($lsDetails.primary_server)'
-                    ,@monitor_server = '$monitorserver' "
+                    ,@monitor_server = '$MonitorServer' "
 
                 # Check the MonitorServerSecurityMode if it's SQL Server authentication
                 if ($MonitorServer -and $MonitorServerSecurityMode -eq 0 ) {

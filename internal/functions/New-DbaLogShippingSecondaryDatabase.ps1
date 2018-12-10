@@ -222,6 +222,38 @@ function New-DbaLogShippingSecondaryDatabase {
             Write-Message -Message "Configuring logshipping for secondary database $SecondaryDatabase on $SqlInstance." -Level Verbose
             Write-Message -Message "Executing query:`n$Query" -Level Verbose
             $ServerSecondary.Query($Query)
+
+            # For versions prior to SQL Server 2014, adding a monitor works in a different way.
+            # The next section makes sure the settings are being synchronized with earlier versions
+            if ($MonitorServer -and ($SqlInstance.Version.Major -lt 12)) {
+                # Get the details of the primary database
+                $query = "SELECT * FROM msdb.dbo.log_shipping_monitor_secondary WHERE primary_database = '$PrimaryDatabase' AND primary_server = '$PrimaryServer'"
+                $lsDetails = $ServerSecondary.Query($query)
+
+                # Setup the procedure script for adding the monitor for the primary
+                $query = "EXEC msdb.dbo.sp_processlogshippingmonitorsecondary @mode = $mode
+                    ,@secondary_server = '$SqlInstance'
+                    ,@secondary_database = '$SecondaryDatabase'
+                    ,@secondary_id = '$($lsDetails.secondary_id)'
+                    ,@primary_server = '$($lsDetails.primary_server)
+                    ,@primary_database = '$($lsDetails.primary_database)'
+                    ,@restore_threshold = $($lsDetails.restore_threshold)
+                    ,@threshold_alert = '$($lsDetails.threshold_alert)'
+                    ,@threshold_alert_enabled = '$($lsDetails.threshold_alert_enabled)'
+                    ,@history_retention_period = '$($lsDetails.threshold_alert_enabled)'
+                    ,@monitor_server = '$MonitorServer'
+                    ,@monitor_server_security_mode = $MonitorServerSecurityMode "
+
+                # Check the MonitorServerSecurityMode if it's SQL Server authentication
+                if ($MonitorServer -and $MonitorServerSecurityMode -eq 0 ) {
+                    $query += ",@monitor_server_login = N'$MonitorLogin'
+                        ,@monitor_server_password = N'$MonitorPassword' "
+                }
+
+                Write-Message -Message "Configuring monitor server for secondary database $SecondaryDatabase." -Level Verbose
+                Write-Message -Message "Executing query:`n$query" -Level Verbose
+                $ServerSecondary.Query($query)
+            }
         } catch {
             Write-Message -Message "$($_.Exception.InnerException.InnerException.InnerException.InnerException.Message)" -Level Warning
             Stop-Function -Message "Error executing the query.`n$($_.Exception.Message)`n$Query"  -ErrorRecord $_ -Target $SqlInstance -Continue
