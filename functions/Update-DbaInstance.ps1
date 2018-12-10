@@ -28,7 +28,7 @@ function Update-DbaInstance {
         Always backup databases and configurations prior to upgrade.
 
     .PARAMETER ComputerName
-        Target computer with SQL instance or instsances.
+        Target computer with SQL instance or instances.
 
     .PARAMETER Credential
         Windows Credential with permission to log on to the remote server. Must be specified for any remote connection.
