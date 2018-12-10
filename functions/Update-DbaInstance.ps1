@@ -44,7 +44,7 @@ function Update-DbaInstance {
     .PARAMETER Version
         A target version of the installation you want to reach. If not specified, a latest available version would be used by default.
         Can be defined using the following general pattern: <MajorVersion><SPX><CUX>.
-        Any part of the pattern can be ommitted if needed:
+        Any part of the pattern can be omitted if needed:
         2008R2SP1 - will update SQL 2008R2 to SP1
         2016CU3 - will update SQL 2016 to CU3 of current Service Pack installed
         SP0CU3 - will update all existing SQL Server versions to RTM CU3 without installing any service packs
