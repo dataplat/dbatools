@@ -63,6 +63,21 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         }
     }
 
+    Context "ExcludeDatabase is honored" {
+        $results = Get-DbaBackupHistory -SqlInstance $script:instance1 -ExcludeDatabase 'master'
+        It "Should not report about excluded database master" {
+            ($results | Where-Object Database -match "master").Count | Should Be 0
+        }
+        $results = Get-DbaBackupHistory -SqlInstance $script:instance1 -ExcludeDatabase 'master' -Type Full
+        It "Should not report about excluded database master" {
+            ($results | Where-Object Database -match "master").Count | Should Be 0
+        }
+        $results = Get-DbaBackupHistory -SqlInstance $script:instance1 -ExcludeDatabase 'master' -LastFull
+        It "Should not report about excluded database master" {
+            ($results | Where-Object Database -match "master").Count | Should Be 0
+        }
+    }
+
     Context "LastFull should work with multiple databases" {
         $results = Get-DbaBackupHistory -SqlInstance $script:instance1 -Database $dbname, master -lastfull
         It "Should return 2 records" {
