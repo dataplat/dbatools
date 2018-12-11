@@ -214,7 +214,13 @@ function New-DbaLogShippingSecondaryDatabase {
         ,@threshold_alert_enabled = $ThresholdAlertEnabled
         ,@history_retention_period = $HistoryRetention "
 
-    # Addinf extra options to the query when needed
+
+    if ($ServerSecondary.Version.Major -le 12) {
+        $Query += "
+            ,@ignoreremotemonitor = 1"
+    }
+
+    # Add inf extra options to the query when needed
     if ($BlockSize -ne -1) {
         $Query += ",@block_size = $BlockSize"
     }
@@ -227,7 +233,7 @@ function New-DbaLogShippingSecondaryDatabase {
         $Query += ",@max_transfer_size = $MaxTransferSize"
     }
 
-    if ($ServerSecondary.Version.Major -gt 9) {
+    if ($Force -and ($ServerSecondary.Version.Major -gt 9)) {
         $Query += ",@overwrite = 1;"
     } else {
         $Query += ";"
@@ -242,8 +248,8 @@ function New-DbaLogShippingSecondaryDatabase {
 
             # For versions prior to SQL Server 2014, adding a monitor works in a different way.
             # The next section makes sure the settings are being synchronized with earlier versions
-            #if ($MonitorServer -and ($SqlInstance.Version.Major -lt 16)) {
-            if ($MonitorServer -and ($ServerSecondary.Version.Major -lt 12)) {
+            if ($MonitorServer -and ($SqlInstance.Version.Major -lt 16)) {
+                #if ($MonitorServer -and ($ServerSecondary.Version.Major -lt 12)) {
                 # Get the details of the primary database
                 $query = "SELECT * FROM msdb.dbo.log_shipping_monitor_secondary WHERE primary_database = '$PrimaryDatabase' AND primary_server = '$PrimaryServer'"
                 $lsDetails = $ServerSecondary.Query($query)
