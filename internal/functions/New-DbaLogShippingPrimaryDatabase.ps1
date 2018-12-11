@@ -218,6 +218,7 @@ function New-DbaLogShippingPrimaryDatabase {
     }
 
     if ($MonitorServer -and ($SqlInstance.Version.Major -ge 12)) {
+        #if ($MonitorServer -and ($SqlInstance.Version.Major -ge 16)) {
         # Check the MonitorServerSecurityMode if it's SQL Server authentication
         if ($MonitorServer -and $MonitorServerSecurityMode -eq 0 ) {
             $Query += ",@monitor_server_login = N'$MonitorLogin'
@@ -228,8 +229,7 @@ function New-DbaLogShippingPrimaryDatabase {
             ,@monitor_server_security_mode = $MonitorServerSecurityMode
             ,@threshold_alert = $ThresholdAlert
             ,@threshold_alert_enabled = $ThresholdAlertEnabled"
-    }
-    else{
+    } else {
         $Query += ",@ignoreremotemonitor = 1"
     }
 
@@ -249,6 +249,7 @@ function New-DbaLogShippingPrimaryDatabase {
             # For versions prior to SQL Server 2014, adding a monitor works in a different way.
             # The next section makes sure the settings are being synchronized with earlier versions
             if ($MonitorServer -and ($SqlInstance.Version.Major -lt 12)) {
+            #if ($MonitorServer -and ($SqlInstance.Version.Major -lt 16)) {
                 # Get the details of the primary database
                 $query = "SELECT * FROM msdb.dbo.log_shipping_monitor_primary WHERE primary_database = '$Database'"
                 $lsDetails = $server.Query($query)
@@ -261,11 +262,13 @@ function New-DbaLogShippingPrimaryDatabase {
 
                 # Check the MonitorServerSecurityMode if it's SQL Server authentication
                 if ($MonitorServer -and $MonitorServerSecurityMode -eq 0 ) {
-                    $query += ",@monitor_server_login = N'$MonitorLogin'
-                        ,@monitor_server_password = N'$MonitorPassword' "
+                    $query += "
+                    ,@monitor_server_login = N'$MonitorLogin'
+                    ,@monitor_server_password = N'$MonitorPassword' "
                 }
 
-                $query += ",@monitor_server_security_mode = 1
+                $query += "
+                    ,@monitor_server_security_mode = 1
                     ,@primary_database = '$($lsDetails.primary_database)'
                     ,@backup_threshold = $($lsDetails.backup_threshold)
                     ,@threshold_alert = $($lsDetails.threshold_alert)
@@ -274,6 +277,15 @@ function New-DbaLogShippingPrimaryDatabase {
                 "
 
                 Write-Message -Message "Configuring monitor server for primary database $Database." -Level Verbose
+                Write-Message -Message "Executing query:`n$query" -Level Verbose
+                $server.Query($query)
+
+                $query = "
+                    UPDATE msdb.dbo.log_shipping_primary_databases
+                    SET monitor_server = '$MonitorServer', user_specified_monitor = 1
+                    WHERE primary_id = '$($lsDetails.primary_id)'
+                "
+                Write-Message -Message "Updating monitor information for the primary database $Database." -Level Verbose
                 Write-Message -Message "Executing query:`n$query" -Level Verbose
                 $server.Query($query)
             }
