@@ -217,28 +217,35 @@ function New-DbaLogShippingPrimaryDatabase {
         $Query += ",@backup_compression = $BackupCompression"
     }
 
-    if ($MonitorServer -and ($SqlInstance.Version.Major -ge 12)) {
-        #if ($MonitorServer -and ($SqlInstance.Version.Major -ge 16)) {
-        # Check the MonitorServerSecurityMode if it's SQL Server authentication
-        if ($MonitorServer -and $MonitorServerSecurityMode -eq 0 ) {
-            $Query += ",@monitor_server_login = N'$MonitorLogin'
-                ,@monitor_server_password = N'$MonitorPassword' "
-        }
-
-        $Query += ",@monitor_server = N'$MonitorServer'
+    if ($MonitorServer) {
+        $Query += "
+            ,@monitor_server = N'$MonitorServer'
             ,@monitor_server_security_mode = $MonitorServerSecurityMode
             ,@threshold_alert = $ThresholdAlert
             ,@threshold_alert_enabled = $ThresholdAlertEnabled"
-    } else {
-        $Query += ",@ignoreremotemonitor = 1"
+
+        #if ($MonitorServer -and ($SqlInstance.Version.Major -ge 16)) {
+        if ($server.Version.Major -ge 12) {
+            # Check the MonitorServerSecurityMode if it's SQL Server authentication
+            if ($MonitorServer -and $MonitorServerSecurityMode -eq 0 ) {
+                $Query += "
+                    ,@monitor_server_login = N'$MonitorLogin'
+                    ,@monitor_server_password = N'$MonitorPassword' "
+            }
+        } else {
+            $Query += "
+            ,@ignoreremotemonitor = 1"
+        }
     }
 
     if ($Force -or ($server.Version.Major -gt 9)) {
-        $Query += ",@overwrite = 1;"
+        $Query += "
+            ,@overwrite = 1;"
     } else {
         $Query += ";"
     }
 
+    $Query
     # Execute the query to add the log shipping primary
     if ($PSCmdlet.ShouldProcess($SqlServer, ("Configuring logshipping for primary database $Database on $SqlInstance"))) {
         try {
@@ -248,8 +255,8 @@ function New-DbaLogShippingPrimaryDatabase {
 
             # For versions prior to SQL Server 2014, adding a monitor works in a different way.
             # The next section makes sure the settings are being synchronized with earlier versions
-            if ($MonitorServer -and ($SqlInstance.Version.Major -lt 12)) {
-            #if ($MonitorServer -and ($SqlInstance.Version.Major -lt 16)) {
+            if ($MonitorServer -and ($server.Version.Major -lt 12)) {
+                #if ($MonitorServer -and ($SqlInstance.Version.Major -lt 16)) {
                 # Get the details of the primary database
                 $query = "SELECT * FROM msdb.dbo.log_shipping_monitor_primary WHERE primary_database = '$Database'"
                 $lsDetails = $server.Query($query)
