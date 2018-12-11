@@ -234,7 +234,7 @@ function New-DbaLogShippingPrimaryDatabase {
             }
         } else {
             $Query += "
-            ,@ignoreremotemonitor = 1"
+                ,@ignoreremotemonitor = 1"
         }
     }
 
@@ -245,7 +245,6 @@ function New-DbaLogShippingPrimaryDatabase {
         $Query += ";"
     }
 
-    $Query
     # Execute the query to add the log shipping primary
     if ($PSCmdlet.ShouldProcess($SqlServer, ("Configuring logshipping for primary database $Database on $SqlInstance"))) {
         try {
