@@ -217,7 +217,7 @@ function New-DbaLogShippingSecondaryDatabase {
 
     if ($ServerSecondary.Version.Major -le 12) {
         $Query += "
-            ,@ignoreremotemonitor = 1"
+        ,@ignoreremotemonitor = 1"
     }
 
     # Add inf extra options to the query when needed
