@@ -1,0 +1,94 @@
+[
+    {
+        "TypeName": "Firstname",
+        "Synonim": [
+            "Firstname",
+            "Forename"
+        ]
+    },
+    {
+        "TypeName": "Lastname",
+        "Synonim": [
+            "Lastname",
+            "Surname"
+        ]
+    },
+    {
+        "TypeName": "Fullname",
+        "Synonim": [
+            "Fullname",
+            "TypeName"
+        ]
+    },
+    {
+        "TypeName": "Phone",
+        "Synonim": [
+            "Phonenumber",
+            "Phone",
+            "Telephone",
+            "TelephoneNumber"
+        ]
+    },
+    {
+        "TypeName": "Address",
+        "Synonim": [
+            "Address",
+            "Location",
+            "Headquarters",
+            "Street"
+        ]
+    },
+    {
+        "TypeName": "Zipcode",
+        "Synonim": [
+            "Zipcode",
+            "Zip",
+            "Postalcode"
+        ]
+    },
+    {
+        "TypeName": "City",
+        "Synonim": [
+            "City"
+        ]
+    },
+    {
+        "TypeName": "State",
+        "Synonim": [
+            "State"
+        ]
+    },
+    {
+        "TypeName": "Country",
+        "Synonim": [
+            "Country"
+        ]
+    },
+    {
+        "TypeName": "CountryCode",
+        "Synonim": [
+            "CountryCode"
+        ]
+    },
+    {
+        "TypeName": "Latitude",
+        "Synonim": [
+            "Latitude",
+            "Lat"
+        ]
+    },
+    {
+        "TypeName": "Longitude",
+        "Synonim": [
+            "Longitude",
+            "Lon"
+        ]
+    },
+    {
+        "TypeName": "Creditcard",
+        "Synonim": [
+            "Creditcard",
+            "CreditcardNumber"
+        ]
+    }
+]

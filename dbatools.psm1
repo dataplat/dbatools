@@ -6,7 +6,11 @@ if (($PSVersionTable.PSVersion.Major -lt 6) -or ($PSVersionTable.Keys -contains 
     $script:isWindows = $false
 }
 
-   
+if ($PSVersionTable.PSVersion.Major -lt 3) {
+    # requires doesnt work on modules
+    throw "This module only supports PowerShell v3 and above"
+}
+
 #region Import helper functions
 function Import-ModuleFile {
     <#
@@ -1400,7 +1404,9 @@ $script:xplat = @(
     'Unregister-DbatoolsConfig',
     'Join-DbaPath',
     'Resolve-DbaPath',
-    'Import-DbaCsv'
+    'Import-DbaCsv',
+    'Invoke-DbaDbDataMasking',
+    'New-DbaDbMaskingConfig'
 )
 
 $script:noncoresmo = @(

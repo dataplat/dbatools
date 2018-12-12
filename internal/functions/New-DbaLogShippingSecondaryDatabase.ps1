@@ -64,6 +64,19 @@ function New-DbaLogShippingSecondaryDatabase {
         .PARAMETER ThresholdAlertEnabled
             Specifies whether an alert is raised when backup_threshold is exceeded.
 
+        .PARAMETER MonitorServer
+            Is the name of the monitor server.
+            The default is the name of the primary server.
+
+        .PARAMETER MonitorCredential
+            Allows you to login to enter a secure credential.
+            This is only needed in combination with MonitorServerSecurityMode having either a 0 or 'sqlserver' value.
+            To use: $scred = Get-Credential, then pass $scred object to the -MonitorCredential parameter.
+
+        .PARAMETER MonitorServerSecurityMode
+            The security mode used to connect to the monitor server. Allowed values are 0, "sqlserver", 1, "windows"
+            The default is 1 or Windows.
+
         .PARAMETER WhatIf
             Shows what would happen if the command were to run. No actions are actually performed.
 
@@ -120,6 +133,10 @@ function New-DbaLogShippingSecondaryDatabase {
         [object]$SecondaryDatabase,
         [int]$ThresholdAlert = 14420,
         [switch]$ThresholdAlertEnabled,
+        [string]$MonitorServer,
+        [ValidateSet(0, "sqlserver", 1, "windows")]
+        [object]$MonitorServerSecurityMode = 1,
+        [System.Management.Automation.PSCredential]$MonitorCredential,
         [Alias('Silent')]
         [switch]$EnableException,
         [switch]$Force
@@ -197,7 +214,13 @@ function New-DbaLogShippingSecondaryDatabase {
         ,@threshold_alert_enabled = $ThresholdAlertEnabled
         ,@history_retention_period = $HistoryRetention "
 
-    # Addinf extra options to the query when needed
+
+    if ($ServerSecondary.Version.Major -le 12) {
+        $Query += "
+        ,@ignoreremotemonitor = 1"
+    }
+
+    # Add inf extra options to the query when needed
     if ($BlockSize -ne -1) {
         $Query += ",@block_size = $BlockSize"
     }
@@ -210,7 +233,7 @@ function New-DbaLogShippingSecondaryDatabase {
         $Query += ",@max_transfer_size = $MaxTransferSize"
     }
 
-    if ($ServerSecondary.Version.Major -gt 9) {
+    if ($Force -and ($ServerSecondary.Version.Major -gt 9)) {
         $Query += ",@overwrite = 1;"
     } else {
         $Query += ";"
@@ -222,6 +245,49 @@ function New-DbaLogShippingSecondaryDatabase {
             Write-Message -Message "Configuring logshipping for secondary database $SecondaryDatabase on $SqlInstance." -Level Verbose
             Write-Message -Message "Executing query:`n$Query" -Level Verbose
             $ServerSecondary.Query($Query)
+
+            # For versions prior to SQL Server 2014, adding a monitor works in a different way.
+            # The next section makes sure the settings are being synchronized with earlier versions
+            if ($MonitorServer -and ($SqlInstance.Version.Major -lt 12)) {
+                # Get the details of the primary database
+                $query = "SELECT * FROM msdb.dbo.log_shipping_monitor_secondary WHERE primary_database = '$PrimaryDatabase' AND primary_server = '$PrimaryServer'"
+                $lsDetails = $ServerSecondary.Query($query)
+
+                # Setup the procedure script for adding the monitor for the primary
+                $query = "EXEC msdb.dbo.sp_processlogshippingmonitorsecondary @mode = $MonitorServerSecurityMode
+                    ,@secondary_server = '$SqlInstance'
+                    ,@secondary_database = '$SecondaryDatabase'
+                    ,@secondary_id = '$($lsDetails.secondary_id)'
+                    ,@primary_server = '$($lsDetails.primary_server)'
+                    ,@primary_database = '$($lsDetails.primary_database)'
+                    ,@restore_threshold = $($lsDetails.restore_threshold)
+                    ,@threshold_alert = $([int]$lsDetails.threshold_alert)
+                    ,@threshold_alert_enabled = $([int]$lsDetails.threshold_alert_enabled)
+                    ,@history_retention_period = $([int]$lsDetails.history_retention_period)
+                    ,@monitor_server = '$MonitorServer'
+                    ,@monitor_server_security_mode = $MonitorServerSecurityMode "
+
+                # Check the MonitorServerSecurityMode if it's SQL Server authentication
+                if ($MonitorServer -and $MonitorServerSecurityMode -eq 0 ) {
+                    $query += ",@monitor_server_login = N'$MonitorLogin'
+                        ,@monitor_server_password = N'$MonitorPassword' "
+                }
+
+                Write-Message -Message "Configuring monitor server for secondary database $SecondaryDatabase." -Level Verbose
+                Write-Message -Message "Executing query:`n$query" -Level Verbose
+                Invoke-DbaQuery -SqlInstance $MonitorServer -SqlCredential $MonitorCredential -Database msdb -Query $query
+
+                $query = "
+                UPDATE msdb.dbo.log_shipping_secondary
+                SET monitor_server = '$MonitorServer', user_specified_monitor = 1
+                WHERE secondary_id = '$($lsDetails.secondary_id)'
+                "
+
+                Write-Message -Message "Updating monitor information for the secondary database $Database." -Level Verbose
+                Write-Message -Message "Executing query:`n$query" -Level Verbose
+                $ServerSecondary.Query($query)
+
+            }
         } catch {
             Write-Message -Message "$($_.Exception.InnerException.InnerException.InnerException.InnerException.Message)" -Level Warning
             Stop-Function -Message "Error executing the query.`n$($_.Exception.Message)`n$Query"  -ErrorRecord $_ -Target $SqlInstance -Continue
