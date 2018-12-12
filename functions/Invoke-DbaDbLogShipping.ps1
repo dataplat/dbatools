@@ -1709,7 +1709,10 @@ function Invoke-DbaDbLogShipping {
                                 -DisconnectUsers:$DisconnectUsers `
                                 -RestoreThreshold $RestoreThreshold `
                                 -ThresholdAlertEnabled:$SecondaryThresholdAlertEnabled `
-                                -HistoryRetention $HistoryRetention
+                                -HistoryRetention $HistoryRetention `
+                                -MonitorServer $PrimaryMonitorServer `
+                                -MonitorServerSecurityMode $PrimaryMonitorServerSecurityMode `
+                                -MonitorCredential $PrimaryMonitorCredential
 
                             # Check if the copy job needs to be enabled or disabled
                             if ($CopyScheduleDisabled) {
