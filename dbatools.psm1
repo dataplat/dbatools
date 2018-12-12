@@ -1404,7 +1404,9 @@ $script:xplat = @(
     'Unregister-DbatoolsConfig',
     'Join-DbaPath',
     'Resolve-DbaPath',
-    'Import-DbaCsv'
+    'Import-DbaCsv',
+    'Invoke-DbaDbDataMasking',
+    'New-DbaDbMaskingConfig'
 )
 
 $script:noncoresmo = @(
