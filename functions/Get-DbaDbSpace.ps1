@@ -23,7 +23,7 @@ function Get-DbaDbSpace {
 
     .PARAMETER InputObject
         A piped collection of database objects from Get-DbaDatabase
-    
+
     .PARAMETER IncludeSystemDBs
         If this switch is enabled, system databases will be processed. By default, only user databases are processed.
 
@@ -134,7 +134,7 @@ function Get-DbaDbSpace {
                 LEFT OUTER JOIN sys.filegroups AS fg WITH (NOLOCK)
                 ON f.data_space_id = fg.data_space_id"
     }
-    
+
     process {
         if ($IncludeSystemDBs) {
             Stop-Function -Message "IncludeSystemDBs will be removed. Please pipe in filtered results from Get-DbaDatabase instead."
@@ -143,13 +143,13 @@ function Get-DbaDbSpace {
         if ($SqlInstance) {
             $InputObject += Get-DbaDatabase -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database -ExcludeDatabase $ExcludeDatabase
         }
-        
+
         foreach ($db in $InputObject) {
             $server = $db.Parent
             if ($server.VersionMajor -lt 9) {
                 Stop-Function -Message "SQL Server 2000 not supported. $server skipped." -Continue
             }
-            
+
             try {
                 Write-Message -Level Verbose -Message "Querying $instance - $db."
                 If ($db.status -ne 'Normal' -or $db.IsAccessible -eq $false) {
@@ -183,25 +183,25 @@ function Get-DbaDbSpace {
                     } else {
                         $UnusableSpace = [Math]::Round($row.UnusableSpaceMB)
                     }
-                    
+
                     [pscustomobject]@{
-                        ComputerName = $server.ComputerName
-                        InstanceName = $server.ServiceName
-                        SqlInstance  = $server.DomainInstanceName
-                        Database     = $row.DBName
-                        FileName     = $row.FileName
-                        FileGroup    = $row.FileGroup
-                        PhysicalName = $row.PhysicalName
-                        FileType     = $row.FileType
-                        UsedSpace    = [dbasize]($UsedMB * 1024 * 1024)
-                        FreeSpace    = [dbasize]($FreeMB * 1024 * 1024)
-                        FileSize     = [dbasize]($row.FileSizeMB * 1024 * 1024)
-                        PercentUsed  = $PercentUsed
-                        AutoGrowth   = [dbasize]($row.GrowthMB * 1024 * 1024)
-                        AutoGrowType = $row.GrowthType
-                        SpaceUntilMaxSize = [dbasize]($SpaceUntilMax * 1024 * 1024)
+                        ComputerName       = $server.ComputerName
+                        InstanceName       = $server.ServiceName
+                        SqlInstance        = $server.DomainInstanceName
+                        Database           = $row.DBName
+                        FileName           = $row.FileName
+                        FileGroup          = $row.FileGroup
+                        PhysicalName       = $row.PhysicalName
+                        FileType           = $row.FileType
+                        UsedSpace          = [dbasize]($UsedMB * 1024 * 1024)
+                        FreeSpace          = [dbasize]($FreeMB * 1024 * 1024)
+                        FileSize           = [dbasize]($row.FileSizeMB * 1024 * 1024)
+                        PercentUsed        = $PercentUsed
+                        AutoGrowth         = [dbasize]($row.GrowthMB * 1024 * 1024)
+                        AutoGrowType       = $row.GrowthType
+                        SpaceUntilMaxSize  = [dbasize]($SpaceUntilMax * 1024 * 1024)
                         AutoGrowthPossible = [dbasize]($row.PossibleAutoGrowthMB * 1024 * 1024)
-                        UnusableSpace = [dbasize]($UnusableSpace * 1024 * 1024)
+                        UnusableSpace      = [dbasize]($UnusableSpace * 1024 * 1024)
                     }
                 }
             } catch {
