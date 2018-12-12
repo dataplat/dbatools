@@ -61,7 +61,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
            ,[last_mod_user])
         VALUES
            ($profile_id,'dbatoolssci@dbatools.io',NULL,NULL,'Test Job',NULL,NULL,'A Test Job failed to run','TEXT','Normal','Normal',NULL,'MIME',NULL,NULL,
-		   0,1,256,'',0,0,'2018-12-9 11:44:32.600','dbatools\dbatoolssci',1,1,'2018-12-9 11:44:33.000','2018-12-9 11:44:33.273','sa')"
+          0,1,256,'',0,0,'2018-12-9 11:44:32.600','dbatools\dbatoolssci',1,1,'2018-12-9 11:44:33.000','2018-12-9 11:44:33.273','sa')"
         )
     }
     AfterAll {
