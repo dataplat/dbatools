@@ -7,10 +7,10 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         <#
             Get commands, Default count = 11
             Commands with SupportShouldProcess = 13
-        #>
+               #>
         $defaultParamCount = 11
         [object[]]$params = (Get-ChildItem function:\Get-DbaAgListener).Parameters.Keys
-        $knownParameters = 'SqlInstance', 'SqlCredential', 'AvailabilityGroup', 'Listener','InputObject', 'EnableException'
+        $knownParameters = 'SqlInstance', 'SqlCredential', 'AvailabilityGroup', 'Listener', 'InputObject', 'EnableException'
         $paramCount = $knownParameters.Count
         It "Should contain our specific parameters" {
             ((Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count) | Should Be $paramCount
@@ -25,7 +25,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
         $agname = "dbatoolsci_ag_listener"
         $ag = New-DbaAvailabilityGroup -Primary $script:instance3 -Name $agname -ClusterType None -FailoverMode Manual -Confirm:$false -Certificate dbatoolsci_AGCert |
-        Add-DbaAgListener -IPAddress 127.0.20.1 -Confirm:$false
+            Add-DbaAgListener -IPAddress 127.0.20.1 -Confirm:$false
     }
     AfterAll {
         $null = Remove-DbaAvailabilityGroup -SqlInstance $server -AvailabilityGroup $agname -Confirm:$false

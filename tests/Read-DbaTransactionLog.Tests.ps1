@@ -4,10 +4,10 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        $paramCount = 5
+        $paramCount = 6
         $defaultParamCount = 11
         [object[]]$params = (Get-ChildItem function:\Read-DbaTransactionLog).Parameters.Keys
-        $knownParameters = 'SqlInstance','SqlCredential','Database','IgnoreLimit','EnableException'
+        $knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'IgnoreLimit', 'EnableException', 'RowLimit'
         It "Should contain our specific parameters" {
             ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
         }
@@ -21,4 +21,3 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Read https://github.com/sqlcollaborative/dbatools/blob/development/contributing.md#tests
     for more guidence.
 #>
-

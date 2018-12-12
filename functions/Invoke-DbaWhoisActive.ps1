@@ -194,7 +194,7 @@ function Invoke-DbaWhoIsActive {
 
         Similar to running sp_WhoIsActive @get_outer_command = 1, @find_block_leaders = 1
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
@@ -342,4 +342,3 @@ function Invoke-DbaWhoIsActive {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Show-SqlWhoIsActive -CustomMessage "Show-SqlWhoIsActive is no longer supported. Use Invoke-DbaWhoIsActive | Out-GridView for similar results."
     }
 }
-

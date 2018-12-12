@@ -89,7 +89,7 @@ function Invoke-DbaDbLogShipRecovery {
 
         Shows what would happen if the command were executed.
 
-#>
+    #>
     [CmdletBinding(SupportsShouldProcess)]
     param
     (
@@ -106,7 +106,6 @@ function Invoke-DbaDbLogShipRecovery {
         [int]$Delay = 5
     )
     begin {
-        $totalSteps = 4
         $stepCounter = 0
     }
     process {
@@ -120,6 +119,7 @@ function Invoke-DbaDbLogShipRecovery {
 
         # Loop through all the databases
         foreach ($db in $InputObject) {
+            $stepCounter = 0
             $server = $db.Parent
             $instance = $server.Name
             $activity = "Performing log shipping recovery for $($db.Name) on $($server.Name)"
@@ -149,7 +149,7 @@ function Invoke-DbaDbLogShipRecovery {
             # Retrieve the log shipping information from the secondary instance
             try {
                 Write-Message -Message "Retrieving log shipping information from the secondary instance" -Level Verbose
-                Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Retrieving log shipping information from the secondary instance"
+                Write-ProgressHelper -Activity $activity -StepNumber ($stepCounter++) -Message "Retrieving log shipping information from the secondary instance"
                 $logshipping_details = $server.Query($query)
             } catch {
                 Stop-Function -Message "Error retrieving the log shipping details: $($_.Exception.Message)" -ErrorRecord $_ -Target $server.name
@@ -178,7 +178,7 @@ function Invoke-DbaDbLogShipRecovery {
                         if ($PSCmdlet.ShouldProcess($server.name, ("Starting copy job $($ls.copyjob)"))) {
                             Write-Message -Message "Starting copy job $($ls.copyjob)" -Level Verbose
 
-                            Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Starting copy job"
+                            Write-ProgressHelper -Activity $activity -StepNumber ($stepCounter++) -Message "Starting copy job"
                             try {
                                 $null = Start-DbaAgentJob -SqlInstance $instance -SqlCredential $sqlcredential -Job $ls.copyjob
                             } catch {
@@ -218,7 +218,7 @@ function Invoke-DbaDbLogShipRecovery {
 
                         # Disable the log shipping copy job on the secondary instance
                         if ($recoverResult -ne 'Failed') {
-                            Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Disabling copy job"
+                            Write-ProgressHelper -Activity $activity -StepNumber ($stepCounter++) -Message "Disabling copy job"
 
                             if ($PSCmdlet.ShouldProcess($server.name, "Disabling copy job $($ls.copyjob)")) {
                                 try {
@@ -234,7 +234,7 @@ function Invoke-DbaDbLogShipRecovery {
 
                         if ($recoverResult -ne 'Failed') {
                             # Start the restore job
-                            Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Starting restore job"
+                            Write-ProgressHelper -Activity $activity -StepNumber ($stepCounter++) -Message "Starting restore job"
 
                             if ($PSCmdlet.ShouldProcess($server.name, ("Starting restore job " + $ls.restorejob))) {
                                 Write-Message -Message "Starting restore job $($ls.restorejob)" -Level Verbose
@@ -329,4 +329,3 @@ function Invoke-DbaDbLogShipRecovery {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Invoke-DbaLogShippingRecovery
     }
 }
-

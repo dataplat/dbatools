@@ -66,7 +66,7 @@ function Get-DbaDbVirtualLogFile {
 
         Returns the VLF counts for the db1 and db2 databases on sqlcluster.
 
-#>
+    #>
     [CmdletBinding()]
     [OutputType([System.Collections.ArrayList])]
     param ([parameter(ValueFromPipeline, Mandatory)]
@@ -129,4 +129,3 @@ function Get-DbaDbVirtualLogFile {
         }
     }
 }
-

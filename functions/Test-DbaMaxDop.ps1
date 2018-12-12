@@ -52,14 +52,14 @@ function Test-DbaMaxDop {
     .EXAMPLE
         PS C:\> Test-DbaMaxDop -SqlInstance sql2014 | Select-Object *
 
-        Shows Max DOP setting for server sql2014 with the recommended value. Piping the output to Select-Object * will also show the 'NUMANodes' and 'NumberOfCores' of each instance
+        Shows Max DOP setting for server sql2014 with the recommended value. Piping the output to Select-Object * will also show the 'NumaNodes' and 'NumberOfCores' of each instance
 
     .EXAMPLE
         PS C:\> Test-DbaMaxDop -SqlInstance sqlserver2016 | Select-Object *
 
-        Get Max DOP setting for servers sql2016 with the recommended value. Piping the output to Select-Object * will also show the 'NUMANodes' and 'NumberOfCores' of each instance. Because it is an 2016 instance will be shown 'InstanceVersion', 'Database' and 'DatabaseMaxDop' columns.
+        Get Max DOP setting for servers sql2016 with the recommended value. Piping the output to Select-Object * will also show the 'NumaNodes' and 'NumberOfCores' of each instance. Because it is an 2016 instance will be shown 'InstanceVersion', 'Database' and 'DatabaseMaxDop' columns.
 
-#>
+       #>
     [CmdletBinding()]
     [OutputType([System.Collections.ArrayList])]
     param (
@@ -99,7 +99,7 @@ function Test-DbaMaxDop {
             try {
                 #represents the Number of NUMA nodes
                 $sql = "SELECT COUNT(DISTINCT memory_node_id) AS NUMA_Nodes FROM sys.dm_os_memory_clerks WHERE memory_node_id!=64"
-                $numaNodes = $server.ConnectionContext.ExecuteScalar($sql)
+                $NumaNodes = $server.ConnectionContext.ExecuteScalar($sql)
             } catch {
                 Stop-Function -Message "Failed to get Numa node count." -ErrorRecord $_ -Target $server -Continue
             }
@@ -114,7 +114,7 @@ function Test-DbaMaxDop {
 
             #Calculate Recommended Max Dop to instance
             #Server with single NUMA node
-            if ($numaNodes -eq 1) {
+            if ($NumaNodes -eq 1) {
                 if ($numberOfCores -lt 8) {
                     #Less than 8 logical processors - Keep MAXDOP at or below # of logical processors
                     $recommendedMaxDop = $numberOfCores
@@ -124,9 +124,9 @@ function Test-DbaMaxDop {
                 }
             } else {
                 #Server with multiple NUMA nodes
-                if (($numberOfCores / $numaNodes) -lt 8) {
+                if (($numberOfCores / $NumaNodes) -lt 8) {
                     # Less than 8 logical processors per NUMA node - Keep MAXDOP at or below # of logical processors per NUMA node
-                    $recommendedMaxDop = [int]($numberOfCores / $numaNodes)
+                    $recommendedMaxDop = [int]($numberOfCores / $NumaNodes)
                 } else {
                     # Greater than 8 logical processors per NUMA node - Keep MAXDOP at 8
                     $recommendedMaxDop = 8
@@ -162,7 +162,7 @@ function Test-DbaMaxDop {
                 DatabaseMaxDop        = "N/A"
                 CurrentInstanceMaxDop = $maxDop
                 RecommendedMaxDop     = $recommendedMaxDop
-                NUMANodes             = $numaNodes
+                NumaNodes             = $NumaNodes
                 NumberOfCores         = $numberOfCores
                 Notes                 = $notes
             } | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, Database, DatabaseMaxDop, CurrentInstanceMaxDop, RecommendedMaxDop, Notes
@@ -193,7 +193,7 @@ function Test-DbaMaxDop {
                         DatabaseMaxDop        = $dbmaxdop
                         CurrentInstanceMaxDop = $maxDop
                         RecommendedMaxDop     = $recommendedMaxDop
-                        NUMANodes             = $numaNodes
+                        NumaNodes             = $NumaNodes
                         NumberOfCores         = $numberOfCores
                         Notes                 = if ($dbmaxdop -eq 0) { "Will use CurrentInstanceMaxDop value" } else { "$notes" }
                     }  | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, Database, DatabaseMaxDop, CurrentInstanceMaxDop, RecommendedMaxDop, Notes
@@ -202,4 +202,3 @@ function Test-DbaMaxDop {
         }
     }
 }
-

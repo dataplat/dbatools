@@ -7,7 +7,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         $paramCount = 7
         $defaultParamCount = 11
         [object[]]$params = (Get-ChildItem function:\Get-DbaWindowsLog).Parameters.Keys
-        $knownParameters = 'SqlInstance','Start','End','Credential','MaxThreads','MaxRemoteThreads','EnableException'
+        $knownParameters = 'SqlInstance', 'Start', 'End', 'Credential', 'MaxThreads', 'MaxRemoteThreads', 'EnableException'
         It "Should contain our specific parameters" {
             ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
         }
@@ -16,9 +16,13 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         }
     }
 }
-<#
-    Integration test should appear below and are custom to the command you are writing.
-    Read https://github.com/sqlcollaborative/dbatools/blob/development/contributing.md#tests
-    for more guidence.
-#>
 
+Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
+    Context "Command returns proper info" {
+        $results = Get-DbaWindowsLog -SqlInstance $script:instance2
+
+        It "returns results" {
+            $results.Count -gt 0 | Should Be $true
+        }
+    }
+}

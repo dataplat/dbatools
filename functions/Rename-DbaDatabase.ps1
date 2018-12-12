@@ -136,7 +136,7 @@ function Rename-DbaDatabase {
         https://dbatools.io/Rename-DbaDatabase
 
     .EXAMPLE
-        PS C:\> Rename-DbaDatabase -SqlInstance sqlserver2014a -Database HR -DatabaseName HR2 | select *
+        PS C:\> Rename-DbaDatabase -SqlInstance sqlserver2014a -Database HR -DatabaseName HR2 -Preview | select *
 
         Shows the detailed result set you'll get renaming the HR database to HR2 without doing anything
 
@@ -194,8 +194,8 @@ function Rename-DbaDatabase {
         Renames the HR database to "dbatools_HR" and then all filenames as "dbatools_HR_[Name of the FileGroup]_[original_filename]"
         The db is then set offline (watch out!). The function tries to do a simple rename and then sets the db online again to finish the rename process
 
-#>
-    [CmdletBinding(SupportsShouldProcess = $true)]
+    #>
+    [CmdletBinding(SupportsShouldProcess)]
     param (
         [parameter(Mandatory, ParameterSetName = "Server")]
         [Alias("ServerInstance", "SqlServer")]
@@ -848,4 +848,3 @@ function Rename-DbaDatabase {
         #endregion db loop
     }
 }
-

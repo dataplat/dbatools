@@ -7,7 +7,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         $paramCount = 19
         $defaultParamCount = 13
         [object[]]$params = (Get-ChildItem function:\Write-DbaDataTable).Parameters.Keys
-        $knownParameters = 'SqlInstance','SqlCredential','Database','InputObject','Table','Schema','BatchSize','NotifyAfter','AutoCreateTable','NoTableLock','CheckConstraints','FireTriggers','KeepIdentity','KeepNulls','Truncate','bulkCopyTimeOut','RegularUser','EnableException','UseDynamicStringLength'
+        $knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'InputObject', 'Table', 'Schema', 'BatchSize', 'NotifyAfter', 'AutoCreateTable', 'NoTableLock', 'CheckConstraints', 'FireTriggers', 'KeepIdentity', 'KeepNulls', 'Truncate', 'bulkCopyTimeOut', 'RegularUser', 'EnableException', 'UseDynamicStringLength'
         It "Should contain our specific parameters" {
             ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
         }

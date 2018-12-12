@@ -86,7 +86,7 @@ function Find-DbaDbGrowthEvent {
 
         Returns any database Auto Growth events on data files in the Default Trace for every database on the ServerA\SQL2016 instance.
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
@@ -138,7 +138,7 @@ function Find-DbaDbGrowthEvent {
 
         $eventClassFilter = $eventClass -join ","
 
-        $sql = "
+        $sqlTemplate = "
             BEGIN TRY
                 IF (SELECT CONVERT(INT,[value_in_use]) FROM sys.configurations WHERE [name] = 'default trace enabled' ) = 1
                     BEGIN
@@ -243,11 +243,11 @@ function Find-DbaDbGrowthEvent {
                 $dbs = $dbs | Where-Object Name -NotIn $ExcludeDatabase
             }
 
-            #Create dblist name in 'bd1', 'db2' format
+            #Create dblist name in 'db1', 'db2' format
             $dbsList = "'$($($dbs | ForEach-Object {$_.Name}) -join "','")'"
             Write-Message -Level Verbose -Message "Executing query against $dbsList on $instance"
 
-            $sql = $sql -replace '_DatabaseList_', $dbsList
+            $sql = $sqlTemplate -replace '_DatabaseList_', $dbsList
             Write-Message -Level Debug -Message "Executing SQL Statement:`n $sql"
 
             $defaults = 'ComputerName', 'InstanceName', 'SqlInstance', 'EventClass', 'DatabaseName', 'Filename', 'Duration', 'StartTime', 'EndTime', 'ChangeInSize', 'ApplicationName', 'HostName'
@@ -260,4 +260,3 @@ function Find-DbaDbGrowthEvent {
         }
     }
 }
-

@@ -79,15 +79,13 @@ function Find-DbaOrphanedFile {
 
         Finds the orphaned ending with ".fsf" and ".mld" in addition to the default filetypes ".mdf", ".ldf", ".ndf" for both the servers sql2014 and sql2016.
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
-        [parameter(Mandatory = $false)]
         [pscredential]$SqlCredential,
-        [parameter(Mandatory = $false)]
         [string[]]$Path,
         [string[]]$FileType,
         [switch]$LocalOnly,
@@ -272,5 +270,3 @@ function Find-DbaOrphanedFile {
         }
     }
 }
-
-

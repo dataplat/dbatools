@@ -17,10 +17,10 @@ function Set-DbaAgReplica {
 
     .PARAMETER Replica
         The replicas to modify.
-    
+
     .PARAMETER AvailabilityGroup
         The availability group of the replica.
-    
+
     .PARAMETER AvailabilityMode
         Sets the availability mode of the availability group replica. Options are: AsynchronousCommit and SynchronousCommit. SynchronousCommit is default.
 
@@ -82,7 +82,7 @@ function Set-DbaAgReplica {
         PS C:\> Get-DbaAgReplica -SqlInstance sql2016 | Out-GridView -Passthru | Set-DbaAgReplica -BackupPriority 5000
 
         Sets the backup priority to 5000 for the selected availability groups.
-    #>
+       #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Medium')]
     param (
         [DbaInstanceParameter[]]$SqlInstance,
@@ -113,11 +113,11 @@ function Set-DbaAgReplica {
                 return
             }
         }
-        
+
         if ($SqlInstance) {
             $InputObject += Get-DbaAgReplica -SqlInstance $SqlInstance -SqlCredential $SqlCredential -AvailabilityGroup $AvailabilityGroup -Replica $Replica
         }
-        
+
         foreach ($agreplica in $InputObject) {
             $server = $agreplica.Parent.Parent
             if ($Pscmdlet.ShouldProcess($server.Name, "Modifying replica for $($agreplica.Name) named $Name")) {
@@ -125,41 +125,40 @@ function Set-DbaAgReplica {
                     if ($EndpointUrl) {
                         $agreplica.EndpointUrl = $EndpointUrl
                     }
-                    
+
                     if ($FailoverMode) {
                         $agreplica.FailoverMode = [Microsoft.SqlServer.Management.Smo.AvailabilityReplicaFailoverMode]::$FailoverMode
                     }
-                    
+
                     if ($AvailabilityMode) {
                         $agreplica.AvailabilityMode = [Microsoft.SqlServer.Management.Smo.AvailabilityReplicaAvailabilityMode]::$AvailabilityMode
                     }
-                    
+
                     if ($ConnectionModeInPrimaryRole) {
                         $agreplica.ConnectionModeInPrimaryRole = [Microsoft.SqlServer.Management.Smo.AvailabilityReplicaConnectionModeInPrimaryRole]::$ConnectionModeInPrimaryRole
                     }
-                    
+
                     if ($ConnectionModeInSecondaryRole) {
                         $agreplica.ConnectionModeInSecondaryRole = [Microsoft.SqlServer.Management.Smo.AvailabilityReplicaConnectionModeInSecondaryRole]::$ConnectionModeInSecondaryRole
                     }
-                    
+
                     if ($BackupPriority) {
                         $agreplica.BackupPriority = $BackupPriority
                     }
-                    
+
                     if ($ReadonlyRoutingConnectionUrl) {
                         $agreplica.ReadonlyRoutingConnectionUrl = $ReadonlyRoutingConnectionUrl
                     }
-                    
+
                     if ($SeedingMode) {
                         $agreplica.SeedingMode = $SeedingMode
                     }
-                    
+
                     $agreplica.Alter()
                     $agreplica
-                    
+
                 } catch {
-                    $message = Get-ErrorMessage -Record $_
-                    Stop-Function -Message $message -ErrorRecord $_ -Continue
+                    Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
                 }
             }
         }

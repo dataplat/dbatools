@@ -65,8 +65,9 @@ function ConvertTo-DbaDataTable {
 
         Creates a DataTable with the running processes and converts any TimeSpan property to TotalSeconds.
 
-#>
+    #>
     [CmdletBinding()]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseOutputTypeCorrectly", "", Justification = "PSSA Rule Ignored by BOH")]
     [OutputType([System.Object[]])]
     param (
         [Parameter(Position = 0,
@@ -398,4 +399,3 @@ function ConvertTo-DbaDataTable {
         , $datatable
     }
 }
-

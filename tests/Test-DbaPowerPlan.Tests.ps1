@@ -4,10 +4,10 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        $paramCount = 5
+        $paramCount = 6
         $defaultParamCount = 11
         [object[]]$params = (Get-ChildItem function:\Test-DbaPowerPlan).Parameters.Keys
-        $knownParameters = 'ComputerName', 'Credential', 'CustomPowerPlan', 'Detailed', 'EnableException'
+        $knownParameters = 'ComputerName', 'Credential', 'CustomPowerPlan', 'Detailed', 'EnableException', 'InputObject'
         It "Should contain our specific parameters" {
             ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
         }

@@ -1,4 +1,4 @@
-function Get-DbaDBMailAccount {
+function Get-DbaDbMailAccount {
     <#
     .SYNOPSIS
         Gets database mail accounts from SQL Server
@@ -7,7 +7,7 @@ function Get-DbaDBMailAccount {
         Gets database mail accounts from SQL Server
 
     .PARAMETER SqlInstance
-        TThe target SQL Server instance or instances.
+        The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
@@ -19,7 +19,7 @@ function Get-DbaDBMailAccount {
         Specifies one or more account(s) to exclude.
 
     .PARAMETER InputObject
-        Accepts pipeline input from Get-DbaDBMail
+        Accepts pipeline input from Get-DbaDbMail
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -27,7 +27,7 @@ function Get-DbaDBMailAccount {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: DatabaseMail, DBMail, Mail
+        Tags: DatabaseMail, DbMail, Mail
         Author: Chrissy LeMaire (@cl), netnerds.net
 
         Website: https://dbatools.io
@@ -38,27 +38,27 @@ function Get-DbaDBMailAccount {
         https://dbatools.io/Get-DbaDbMailAccount
 
     .EXAMPLE
-        PS C:\> Get-DbaDBMailAccount -SqlInstance sql01\sharepoint
+        PS C:\> Get-DbaDbMailAccount -SqlInstance sql01\sharepoint
 
-        Returns DBMail accounts on sql01\sharepoint
-
-    .EXAMPLE
-        PS C:\> Get-DbaDBMailAccount -SqlInstance sql01\sharepoint -Account 'The DBA Team'
-
-        Returns The DBA Team DBMail account from sql01\sharepoint
+        Returns Database Mail accounts on sql01\sharepoint
 
     .EXAMPLE
-        PS C:\> Get-DbaDBMailAccount -SqlInstance sql01\sharepoint | Select *
+        PS C:\> Get-DbaDbMailAccount -SqlInstance sql01\sharepoint -Account 'The DBA Team'
 
-        Returns the DBMail accounts on sql01\sharepoint then return a bunch more columns
+        Returns The DBA Team Database Mail account from sql01\sharepoint
+
+    .EXAMPLE
+        PS C:\> Get-DbaDbMailAccount -SqlInstance sql01\sharepoint | Select *
+
+        Returns the Database Mail accounts on sql01\sharepoint then return a bunch more columns
 
     .EXAMPLE
         PS C:\> $servers = "sql2014","sql2016", "sqlcluster\sharepoint"
-        PS C:\> $servers | Get-DbaDBMail | Get-DbaDBMailAccount
+        PS C:\> $servers | Get-DbaDbMail | Get-DbaDbMailAccount
 
-        Returns the db DBMail accounts for "sql2014","sql2016" and "sqlcluster\sharepoint"
+        Returns the Database Mail accounts for "sql2014","sql2016" and "sqlcluster\sharepoint"
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [Alias("ServerInstance", "SqlServer")]
@@ -73,7 +73,7 @@ function Get-DbaDBMailAccount {
     )
     process {
         foreach ($instance in $SqlInstance) {
-            $InputObject += Get-DbaDBMail -SqlInstance $SqlInstance -SqlCredential $SqlCredential
+            $InputObject += Get-DbaDbMail -SqlInstance $SqlInstance -SqlCredential $SqlCredential
         }
 
         if (-not $InputObject) {
@@ -91,7 +91,6 @@ function Get-DbaDBMailAccount {
 
                 If ($ExcludeAccount) {
                     $accounts = $accounts | Where-Object Name -notin $ExcludeAccount
-
                 }
 
                 $accounts | Add-Member -Force -MemberType NoteProperty -Name ComputerName -value $mailserver.ComputerName
@@ -104,4 +103,3 @@ function Get-DbaDBMailAccount {
         }
     }
 }
-

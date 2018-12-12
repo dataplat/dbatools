@@ -6,7 +6,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
         $command = Get-Command $CommandName
         [object[]]$params = $command.Parameters.Keys
-        $knownParameters = 'SqlInstance', 'SqlCredential', 'Login', 'Password', 'Unlock', 'MustChange', 'NewName', 'Disable', 'Enable', 'DenyLogin', 'GrantLogin', 'AddRole', 'RemoveRole', 'EnableException', 'InputObject'
+        $knownParameters = 'SqlInstance', 'SqlCredential', 'Login', 'SecurePassword', 'Unlock', 'MustChange', 'NewName', 'Disable', 'Enable', 'DenyLogin', 'GrantLogin', 'AddRole', 'RemoveRole', 'EnableException', 'InputObject'
         $paramCount = $knownParameters.Count
         It "Contains our specific parameters" {
             ((Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count) | Should Be $paramCount
@@ -172,4 +172,3 @@ Describe "$CommandName Integration Tests" -Tag 'IntegrationTests' {
         }
     }
 }
-

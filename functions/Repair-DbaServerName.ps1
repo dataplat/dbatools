@@ -61,8 +61,8 @@ function Repair-DbaServerName {
 
         Checks to see if the server name is updatable and automatically performs the change, bypassing most prompts and confirmations. Replication or mirroring will be broken if necessary.
 
-#>
-    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "High")]
+    #>
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "High")]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
@@ -250,4 +250,3 @@ function Repair-DbaServerName {
         }
     }
 }
-

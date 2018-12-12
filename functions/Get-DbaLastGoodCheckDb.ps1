@@ -71,7 +71,7 @@ function Get-DbaLastGoodCheckDb {
 
         Returns a formatted table displaying Server, Database, DatabaseCreated, LastGoodCheckDb, DaysSinceDbCreated, DaysSinceLastGoodCheckDb, Status and DataPurityEnabled. All databases except for "TempDB" will be displayed in the output.
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
@@ -168,4 +168,3 @@ function Get-DbaLastGoodCheckDb {
         }
     }
 }
-

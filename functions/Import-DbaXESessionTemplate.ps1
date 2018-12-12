@@ -61,17 +61,17 @@ function Import-DbaXESessionTemplate {
         Creates a new XESession named "Query Wait Stats" using the db_query_wait_stats template.
 
     .EXAMPLE
-        PS C:\> Get-DbaXESession -SqlInstance sql2017 -Session db_ola_health | Remove-DbaXESession
-        PS C:\> Import-DbaXESessionTemplate -SqlInstance sql2017 -Template db_ola_health | Start-DbaXESession
+        PS C:\> Get-DbaXESession -SqlInstance sql2017 -Session 'Database Health 2014' | Remove-DbaXESession
+        PS C:\> Import-DbaXESessionTemplate -SqlInstance sql2017 -Template 'Database Health 2014' | Start-DbaXESession
 
-        Imports a session if it exists, then recreates it using a template.
+        Removes a session if it exists, then recreates it using a template.
 
     .EXAMPLE
         PS C:\> Get-DbaXESessionTemplate | Out-GridView -PassThru | Import-DbaXESessionTemplate -SqlInstance sql2017
 
         Allows you to select a Session template then import to an instance named sql2017.
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
@@ -205,4 +205,3 @@ function Import-DbaXESessionTemplate {
         }
     }
 }
-

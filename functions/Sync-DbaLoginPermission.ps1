@@ -61,20 +61,17 @@ function Sync-DbaLoginPermission {
 
         Copies permissions ONLY for logins netnerds and realcajun.
 
-#>
-    [CmdletBinding(SupportsShouldProcess = $true)]
+    #>
+    [CmdletBinding(SupportsShouldProcess)]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter]$Source,
-        [PSCredential]
-        $SourceSqlCredential,
+        [PSCredential]$SourceSqlCredential,
         [parameter(Mandatory)]
-        [DbaInstanceParameter]$Destination,
-        [PSCredential]
-        $DestinationSqlCredential,
-        [object[]]$Login,
-        [object[]]$ExcludeLogin,
-        [Alias('Silent')]
+        [DbaInstanceParameter[]]$Destination,
+        [PSCredential]$DestinationSqlCredential,
+        [string[]]$Login,
+        [string[]]$ExcludeLogin,
         [switch]$EnableException
     )
     begin {
@@ -90,7 +87,7 @@ function Sync-DbaLoginPermission {
             )
 
             try {
-                $sa = ($destServer.Logins | Where-Object { $_.id -eq 1 }).Name
+                $sa = Get-SqlSaLogin -SqlInstance $destServer -ErrorAction Stop
             } catch {
                 $sa = "sa"
             }
@@ -101,7 +98,7 @@ function Sync-DbaLoginPermission {
                 $currentLogin = $sourceServer.ConnectionContext.TrueLogin
 
                 if (!$Login -and $currentLogin -eq $username) {
-                    Write-Message -Level Warning -Message "Sync does not modify the permissions of the current user. Skipping."
+                    Write-Message -Level Verbose -Message "Sync does not modify the permissions of the current user. Skipping."
                     continue
                 }
 
@@ -115,9 +112,11 @@ function Sync-DbaLoginPermission {
 
                 $serverName = Resolve-NetBiosName $sourceServer
                 $userBase = ($username.Split("\")[0]).ToLower()
+
                 if ($serverName -eq $userBase -or $username.StartsWith("NT ")) {
                     continue
                 }
+
                 if ($null -eq ($destLogin = $destServer.Logins.Item($username))) {
                     continue
                 }
@@ -125,25 +124,30 @@ function Sync-DbaLoginPermission {
                 Update-SqlPermission -SourceServer $sourceServer -SourceLogin $sourceLogin -DestServer $destServer -DestLogin $destLogin
             }
         }
-    }
-    process {
 
-        if ($source -eq $destination) {
-            Stop-Function -Message "Source and Destination SQL Servers are the same. Quitting."
+        try {
+            $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $sqlcredential
+            if ((Test-Bound -ParameterName Login)) {
+                $Login = ($sourceServer.Logins | Where-Object Name -NotIn $ExcludeLogin).Name
+            }
+        } catch {
+            Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Source -Continue
             return
         }
+    }
+    process {
+        if (Test-FunctionInterrupt) { return }
 
-        $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -MinimumVersion 8
-        $destServer = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential -MinimumVersion 8
+        foreach ($dest in $Destination) {
+            try {
+                $destServer = Connect-SqlInstance -SqlInstance $dest -SqlCredential $DestinationSqlCredential -MinimumVersion 8
+            } catch {
+                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $dest -Continue
+            }
 
-        $source = $sourceServer.DomainInstanceName
-        $destination = $destServer.DomainInstanceName
-
-        if (!$Login) {
-            $login = $sourceServer.Logins.Name
-        }
-        if ($PSCmdlet.ShouldProcess("$Login", "Syncing Logins")) {
-            Sync-Only -SourceServer $sourceServer -DestServer $destServer -Logins $login -Exclude $ExcludeLogin
+            if ($PSCmdlet.ShouldProcess("Syncing Logins $Login")) {
+                Sync-Only -SourceServer $sourceServer -DestServer $destServer -Logins $Login -Exclude $ExcludeLogin
+            }
         }
     }
     end {
@@ -151,4 +155,3 @@ function Sync-DbaLoginPermission {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Sync-DbaSqlLoginPermission
     }
 }
-

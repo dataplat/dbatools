@@ -24,7 +24,7 @@ function Watch-DbaUpdate {
 
         Watches the gallery for updates to dbatools.
 
-#>
+    #>
     [cmdletbinding()]
     param()
     process {
@@ -78,4 +78,3 @@ function Watch-DbaUpdate {
         }
     }
 }
-

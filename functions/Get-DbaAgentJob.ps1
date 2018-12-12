@@ -19,9 +19,15 @@ function Get-DbaAgentJob {
     .PARAMETER ExcludeJob
         The job(s) to exclude - this list is auto-populated from the server.
 
-    .PARAMETER NoDisabledJobs
+    .PARAMETER ExcludeDisabledJobs
         Switch will exclude disabled jobs from the output.
 
+    .PARAMETER Database
+        Return jobs with T-SQL job steps associated with specific databases
+    
+    .PARAMETER Category
+        Return jobs associated with specific category
+    
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -59,7 +65,7 @@ function Get-DbaAgentJob {
         Returns all SQl Agent Jobs for the local SQL Server instances, except the BackupDiff Job.
 
     .EXAMPLE
-        PS C:\> Get-DbaAgentJob -SqlInstance localhost -NoDisabledJobs
+        PS C:\> Get-DbaAgentJob -SqlInstance localhost -ExcludeDisabledJobs
 
         Returns all SQl Agent Jobs for the local SQL Server instances, excluding the disabled jobs.
 
@@ -67,18 +73,22 @@ function Get-DbaAgentJob {
         PS C:\> $servers | Get-DbaAgentJob | Out-GridView -PassThru | Start-DbaAgentJob -WhatIf
 
         Find all of your Jobs from SQL Server instances in the $servers collection, select the jobs you want to start then see jobs would start if you ran Start-DbaAgentJob
-
-#>
+    .EXAMPLE
+       PS C:\> Get-DbaAgentJob -SqlInstance sqlserver2014a | Where-Object Category -eq "Report Server" | Export-DbaScript -Path "C:\temp\sqlserver2014a_SSRSJobs.sql"
+        
+        Exports all SSRS jobs from SQL instance sqlserver2014a to a file.
+    #>
     [CmdletBinding()]
     param (
         [parameter(Position = 0, Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [object[]]$Job,
-        [object[]]$ExcludeJob,
-        [switch]$NoDisabledJobs,
-        [Alias('Silent')]
+        [string[]]$Job,
+        [string[]]$ExcludeJob,
+        [string[]]$Database,
+        [string[]]$Category,
+        [switch]$ExcludeDisabledJobs,
         [switch]$EnableException
     )
 
@@ -99,10 +109,18 @@ function Get-DbaAgentJob {
             if ($ExcludeJob) {
                 $jobs = $jobs | Where-Object Name -NotIn $ExcludeJob
             }
-            if ($NoDisabledJobs) {
+            if ($ExcludeDisabledJobs) {
                 $jobs = $Jobs | Where-Object IsEnabled -eq $true
             }
-
+            if ($Database) {
+                $jobs = $jobs | Where-Object {
+                    $_.JobSteps.DatabaseName -in $Database
+                }
+            }
+            if ($Category) {
+                $jobs = $jobs | Where-Object Category -in $Category
+            }
+            
             foreach ($agentJob in $jobs) {
                 Add-Member -Force -InputObject $agentJob -MemberType NoteProperty -Name ComputerName -value $agentJob.Parent.Parent.ComputerName
                 Add-Member -Force -InputObject $agentJob -MemberType NoteProperty -Name InstanceName -value $agentJob.Parent.Parent.ServiceName
@@ -113,4 +131,3 @@ function Get-DbaAgentJob {
         }
     }
 }
-

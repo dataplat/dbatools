@@ -45,7 +45,7 @@ function Get-DbaLocaleSetting {
 
         Gets the Locale settings on computers sql1 and sql2 using SQL Authentication to authenticate to the servers, and shows them in a grid view.
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(ValueFromPipeline)]
@@ -65,6 +65,9 @@ function Get-DbaLocaleSetting {
         [UInt32]$CIMHiveCU = 2147483649
     }
     process {
+        # uses cim commands
+        
+        
         foreach ($computer in $ComputerName) {
             $props = @{ "ComputerName" = $computer }
             $Server = Resolve-DbaNetworkName -ComputerName $Computer -Credential $credential
@@ -98,4 +101,3 @@ function Get-DbaLocaleSetting {
         } #foreach computer
     } #PROCESS
 } #function
-

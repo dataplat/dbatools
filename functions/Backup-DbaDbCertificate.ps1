@@ -109,7 +109,7 @@ function Backup-DbaDbCertificate {
 
         Exports all certificates found on sql2016 to the default data directory.
 
-#>
+    #>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess, ConfirmImpact = 'Low')]
     param (
         [parameter(Mandatory, ParameterSetName = "instance")]
@@ -122,9 +122,7 @@ function Backup-DbaDbCertificate {
         [object[]]$Database,
         [parameter(ParameterSetName = "instance")]
         [object[]]$ExcludeDatabase,
-        [parameter(Mandatory = $false)]
         [Security.SecureString]$EncryptionPassword,
-        [parameter(Mandatory = $false)]
         [Security.SecureString]$DecryptionPassword,
         [System.IO.FileInfo]$Path,
         [string]$Suffix = "$(Get-Date -format 'yyyyMMddHHmmssms')",
@@ -249,4 +247,3 @@ function Backup-DbaDbCertificate {
         }
     }
 }
-

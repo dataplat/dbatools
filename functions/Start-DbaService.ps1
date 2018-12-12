@@ -71,8 +71,8 @@ function Start-DbaService {
 
         Starts the SQL Server related services of type "SSRS" (Reporting Services) on computers in the variable MyServers.
 
-#>
-    [CmdletBinding(DefaultParameterSetName = "Server", SupportsShouldProcess = $true)]
+    #>
+    [CmdletBinding(DefaultParameterSetName = "Server", SupportsShouldProcess)]
     param (
         [Parameter(ParameterSetName = "Server", Position = 1)]
         [Alias("cn", "host", "Server")]
@@ -84,7 +84,7 @@ function Start-DbaService {
         [parameter(ValueFromPipeline, Mandatory, ParameterSetName = "Service")]
         [Alias("ServiceCollection")]
         [object[]]$InputObject,
-        [int]$Timeout = 30,
+        [int]$Timeout = 60,
         [PSCredential]$Credential,
         [Alias('Silent')]
         [switch]$EnableException
@@ -96,7 +96,7 @@ function Start-DbaService {
             if ($InstanceName) { $serviceParams.InstanceName = $InstanceName }
             if ($Type) { $serviceParams.Type = $Type }
             if ($Credential) { $serviceParams.Credential = $Credential }
-            if ($EnableException) { $serviceParams.Silent = $EnableException }
+            if ($EnableException) { $serviceParams.EnableException = $EnableException }
             $InputObject = Get-DbaService @serviceParams
         }
     }
@@ -116,4 +116,3 @@ function Start-DbaService {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Start-DbaSqlService
     }
 }
-

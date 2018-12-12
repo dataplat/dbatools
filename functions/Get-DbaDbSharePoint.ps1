@@ -47,7 +47,7 @@ function Get-DbaDbSharePoint {
 
         Returns databases that are part of a SharePoint Farm, as found in SharePoint_Config_2016 on sqlcluster
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [DbaInstanceParameter[]]$SqlInstance,
@@ -74,4 +74,3 @@ function Get-DbaDbSharePoint {
         }
     }
 }
-

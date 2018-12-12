@@ -8,7 +8,7 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
         <#
             Get commands, Default count = 11
             Commands with SupportShouldProcess = 13
-        #>
+               #>
         $defaultParamCount = 13
         [object[]]$params = (Get-ChildItem function:\Suspend-DbaAgDbDataMovement).Parameters.Keys
         $knownParameters = 'SqlInstance', 'SqlCredential', 'AvailabilityGroup', 'Database', 'InputObject', 'EnableException'
@@ -30,7 +30,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
         $server.Query("create database $dbname")
         $null = Get-DbaDatabase -SqlInstance $script:instance3 -Database $dbname | Backup-DbaDatabase
         $null = Get-DbaDatabase -SqlInstance $script:instance3 -Database $dbname | Backup-DbaDatabase -Type Log
-        $ag = New-DbaAvailabilityGroup -Primary $script:instance3 -Name $agname -ClusterType None -FailoverMode Manual -Database $dbname -Confirm:$false -Certificate dbatoolsci_AGCert -UseLastBackups
+        $ag = New-DbaAvailabilityGroup -Primary $script:instance3 -Name $agname -ClusterType None -FailoverMode Manual -Database $dbname -Confirm:$false -Certificate dbatoolsci_AGCert -UseLastBackup
         $null = Get-DbaAgDatabase -SqlInstance $script:instance3 -AvailabilityGroup $agname | Resume-DbaAgDbDataMovement -Confirm:$false
     }
     AfterAll {

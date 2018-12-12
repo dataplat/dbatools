@@ -7,7 +7,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         $paramCount = 3
         $defaultParamCount = 11
         [object[]]$params = (Get-ChildItem function:\Get-DbaInstanceUserOption).Parameters.Keys
-        $knownParameters = 'SqlInstance','SqlCredential','EnableException'
+        $knownParameters = 'SqlInstance', 'SqlCredential', 'EnableException'
         It "Should contain our specific parameters" {
             ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
         }
@@ -16,9 +16,19 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         }
     }
 }
-<#
-    Integration test should appear below and are custom to the command you are writing.
-    Read https://github.com/sqlcollaborative/dbatools/blob/development/contributing.md#tests
-    for more guidence.
-#>
 
+Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
+
+    Context "Gets UserOptions for the Instance" {
+        $results = Get-DbaInstanceUserOption -SqlInstance $script:instance2 | Where-Object {$_.name -eq 'AnsiNullDefaultOff'}
+        It "Gets results" {
+            $results | Should Not Be $null
+        }
+        It "Should return AnsiNullDefaultOff UserOption" {
+            $results.Name | Should Be 'AnsiNullDefaultOff'
+        }
+        It "Should be set to false" {
+            $results.Value | Should Be $false
+        }
+    }
+}

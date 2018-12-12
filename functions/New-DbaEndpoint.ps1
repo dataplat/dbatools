@@ -84,7 +84,7 @@ function New-DbaEndpoint {
 
         Returns all Endpoint(s) for the local and sql2016 SQL Server instances
 
-#>
+    #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Low')]
     param (
         [parameter(Position = 0, Mandatory, ValueFromPipeline)]
@@ -118,11 +118,11 @@ function New-DbaEndpoint {
             } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-            
+
             if (-not (Test-Bound -ParameterName Owner)) {
                 $Owner = Get-SaLoginName -SqlInstance $server
             }
-            
+
             if ($Certificate) {
                 $cert = Get-DbaDbCertificate -SqlInstance $server -Certificate $Certificate
                 if (-not $cert) {

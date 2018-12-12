@@ -101,32 +101,34 @@ function Write-DbaDataTable {
         https://dbatools.io/Write-DbaDataTable
 
     .EXAMPLE
-        PS C:\> $DataTable = Import-Csv C:\temp\customers.csv | ConvertTo-DbaDataTable
+        PS C:\> $DataTable = Import-Csv C:\temp\customers.csv
         PS C:\> Write-DbaDataTable -SqlInstance sql2014 -InputObject $DataTable -Table mydb.dbo.customers
 
         Performs a bulk insert of all the data in customers.csv into database mydb, schema dbo, table customers. A progress bar will be shown as rows are inserted. If the destination table does not exist, the import will be halted.
 
     .EXAMPLE
-        PS C:\> $DataTable = Import-Csv C:\temp\customers.csv | ConvertTo-DbaDataTable
+        PS C:\> $DataTable = Import-Csv C:\temp\customers.csv
         PS C:\> $DataTable | Write-DbaDataTable -SqlInstance sql2014 -Table mydb.dbo.customers
 
         Performs a row by row insert of the data in customers.csv. This is significantly slower than a bulk insert and will not show a progress bar.
         This method is not recommended. Use -InputObject instead.
 
     .EXAMPLE
-        PS C:\> $DataTable = Import-Csv C:\temp\customers.csv | ConvertTo-DbaDataTable
-        PS C:\> Write-DbaDataTable -SqlInstance sql2014 -InputObject $DataTable -Table mydb.dbo.customers -AutoCreateTable
+        PS C:\> $DataTable = Import-Csv C:\temp\customers.csv
+        PS C:\> Write-DbaDataTable -SqlInstance sql2014 -InputObject $DataTable -Table mydb.dbo.customers -AutoCreateTable -Confirm
 
         Performs a bulk insert of all the data in customers.csv. If mydb.dbo.customers does not exist, it will be created with inefficient but forgiving DataTypes.
 
+        Prompts for confirmation before a variety of steps.
+
     .EXAMPLE
-        PS C:\> $DataTable = Import-Csv C:\temp\customers.csv | ConvertTo-DbaDataTable
+        PS C:\> $DataTable = Import-Csv C:\temp\customers.csv
         PS C:\> Write-DbaDataTable -SqlInstance sql2014 -InputObject $DataTable -Table mydb.dbo.customers -Truncate
 
         Performs a bulk insert of all the data in customers.csv. Prior to importing into mydb.dbo.customers, the user is informed that the table will be truncated and asks for confirmation. The user is prompted again to perform the import.
 
     .EXAMPLE
-        PS C:\> $DataTable = Import-Csv C:\temp\customers.csv | ConvertTo-DbaDataTable
+        PS C:\> $DataTable = Import-Csv C:\temp\customers.csv
         PS C:\> Write-DbaDataTable -SqlInstance sql2014 -InputObject $DataTable -Database mydb -Table customers -KeepNulls
 
         Performs a bulk insert of all the data in customers.csv into mydb.dbo.customers. Because Schema was not specified, dbo was used. NULL values in the destination table will be preserved.
@@ -134,13 +136,13 @@ function Write-DbaDataTable {
     .EXAMPLE
         PS C:\> $passwd = ConvertTo-SecureString "P@ssw0rd" -AsPlainText -Force
         PS C:\> $AzureCredential = New-Object System.Management.Automation.PSCredential("AzureAccount"),$passwd)
-        PS C:\> $DataTable = Import-Csv C:\temp\customers.csv | ConvertTo-DbaDataTable
+        PS C:\> $DataTable = Import-Csv C:\temp\customers.csv
         PS C:\> Write-DbaDataTable -SqlInstance AzureDB.database.windows.net -InputObject $DataTable -Database mydb -Table customers -KeepNulls -Credential $AzureCredential -BulkCopyTimeOut 300
 
         This performs the same operation as the previous example, but against a SQL Azure Database instance using the required credentials.
 
     .EXAMPLE
-        PS C:\> $process = Get-Process | ConvertTo-DbaDataTable
+        PS C:\> $process = Get-Process
         PS C:\> Write-DbaDataTable -InputObject $process -SqlInstance sql2014 -Table "[[DbName]]].[Schema.With.Dots].[`"[Process]]`"]" -AutoCreateTable
 
         Creates a table based on the Process object with over 60 columns, converted from PowerShell data types to SQL Server data types. After the table is created a bulk insert is performed to add process information into the table
@@ -151,8 +153,8 @@ function Write-DbaDataTable {
 
         This is an example of the type conversion in action. All process properties are converted, including special types like TimeSpan. Script properties are resolved before the type conversion starts thanks to ConvertTo-DbaDataTable.
 
-#>
-    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "High")]
+    #>
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
     param (
         [Parameter(Position = 0, Mandatory)]
         [Alias("ServerInstance", "SqlServer")]
@@ -348,7 +350,7 @@ function Write-DbaDataTable {
         # Getting the total rows copied is a challenge. Use SqlBulkCopyExtension.
         # http://stackoverflow.com/questions/1188384/sqlbulkcopy-row-count-when-complete
 
-        $source = 'namespace System.Data.SqlClient {
+        $sourcecode = 'namespace System.Data.SqlClient {
             using Reflection;
 
             public static class SqlBulkCopyExtension
@@ -363,8 +365,14 @@ function Write-DbaDataTable {
                 }
             }
         }'
-
-        Add-Type -ReferencedAssemblies 'System.Data.dll' -TypeDefinition $source -ErrorAction SilentlyContinue
+        # Load the basics
+        if (-not $script:core) {
+            try {
+                Add-Type -ReferencedAssemblies System.Data.dll -TypeDefinition $sourcecode -ErrorAction Stop
+            } catch {
+                $null = 1
+            }
+        }
         #endregion Prepare type for bulk copy
 
         #region Resolve Full Qualified Table Name
@@ -403,7 +411,7 @@ function Write-DbaDataTable {
 
         $tableName = $fqtnObj.Table
 
-        $quotedFQTN = [System.Text.StringBuilder]::new()
+        $quotedFQTN = New-Object System.Text.StringBuilder
 
         [void]$quotedFQTN.Append( '[' )
         if ($databaseName.Contains(']')) {
@@ -449,7 +457,8 @@ function Write-DbaDataTable {
             try {
                 $null = $server.Databases
             } catch {
-                #do nothing
+                # here to avoid an empty catch
+                $null = 1
             }
         }
         $databaseObject = $server.Databases[$databaseName]
@@ -665,4 +674,3 @@ function Write-DbaDataTable {
         Test-DbaDeprecation -DeprecatedOn 1.0.0 -Parameter RegularUser
     }
 }
-

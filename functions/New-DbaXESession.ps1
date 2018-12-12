@@ -5,7 +5,7 @@ function New-DbaXESession {
         Creates a new XESession object - for the dogged.
 
     .DESCRIPTION
-        Creates a new XESession object - for the dogged (very manual, Import-DbaXESession is recommended). See the following for more info:
+        Creates a new XESession object - for the dogged (very manual, Import-DbaXESessionTemplate is recommended). See the following for more info:
 
         https://docs.microsoft.com/en-us/sql/relational-databases/extended-events/use-the-powershell-provider-for-extended-events
 
@@ -48,7 +48,7 @@ function New-DbaXESession {
 
         Returns a new XE Session object from sql2017 then adds an event, an action then creates it.
 
-#>
+    #>
     [CmdletBinding(SupportsShouldProcess)]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
@@ -77,4 +77,3 @@ function New-DbaXESession {
         }
     }
 }
-

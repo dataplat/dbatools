@@ -82,8 +82,8 @@ function Invoke-DbaBalanceDataFiles {
         This command will consider the fact that there might be a SQL Server edition that does not support online rebuilds of indexes.
         By supplying this parameter you give permission to do the rebuilds offline if the edition does not support it.
 
-#>
-    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
+    #>
+    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess)]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseSingularNouns", "", Justification = "Singular Noun doesn't make sense")]
     param (
         [parameter(ParameterSetName = "Pipe", Mandatory)]

@@ -68,7 +68,7 @@ function Remove-DbaPfDataCollectorSet {
 
         Stops and removes the 'System Correlation' Collector.
 
-#>
+    #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "High")]
     param (
         [DbaInstance[]]$ComputerName = $env:COMPUTERNAME,
@@ -93,6 +93,8 @@ function Remove-DbaPfDataCollectorSet {
         }
     }
     process {
+        
+        
         if (-not $InputObject -or ($InputObject -and (Test-Bound -ParameterName ComputerName))) {
             foreach ($computer in $ComputerName) {
                 $InputObject += Get-DbaPfDataCollectorSet -ComputerName $computer -Credential $Credential -CollectorSet $CollectorSet
@@ -135,4 +137,3 @@ function Remove-DbaPfDataCollectorSet {
         }
     }
 }
-

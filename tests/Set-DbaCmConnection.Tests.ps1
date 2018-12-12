@@ -7,7 +7,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         $paramCount = 21
         $defaultParamCount = 13
         [object[]]$params = (Get-ChildItem function:\Set-DbaCmConnection).Parameters.Keys
-        $knownParameters = 'ComputerName','Credential','UseWindowsCredentials','OverrideExplicitCredential','OverrideConnectionPolicy','DisabledConnectionTypes','DisableBadCredentialCache','DisableCimPersistence','DisableCredentialAutoRegister','EnableCredentialFailover','WindowsCredentialsAreBad','CimWinRMOptions','CimDCOMOptions','AddBadCredential','RemoveBadCredential','ClearBadCredential','ClearCredential','ResetCredential','ResetConnectionStatus','ResetConfiguration','EnableException'
+        $knownParameters = 'ComputerName', 'Credential', 'UseWindowsCredentials', 'OverrideExplicitCredential', 'OverrideConnectionPolicy', 'DisabledConnectionTypes', 'DisableBadCredentialCache', 'DisableCimPersistence', 'DisableCredentialAutoRegister', 'EnableCredentialFailover', 'WindowsCredentialsAreBad', 'CimWinRMOptions', 'CimDCOMOptions', 'AddBadCredential', 'RemoveBadCredential', 'ClearBadCredential', 'ClearCredential', 'ResetCredential', 'ResetConnectionStatus', 'ResetConfiguration', 'EnableException'
         It "Should contain our specific parameters" {
             ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
         }
@@ -21,4 +21,3 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Read https://github.com/sqlcollaborative/dbatools/blob/development/contributing.md#tests
     for more guidence.
 #>
-

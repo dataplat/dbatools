@@ -50,7 +50,7 @@ function Get-DbaDbMailLog {
 
         Returns only the Error and Information DBMail log for "sql2014","sql2016" and "sqlcluster\sharepoint"
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [Parameter(ValueFromPipeline)]
@@ -123,4 +123,3 @@ function Get-DbaDbMailLog {
         }
     }
 }
-

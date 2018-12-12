@@ -13,9 +13,6 @@ function Export-DbaCmsRegServer {
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-    .PARAMETER Group
-        Exports a specific group.
-
     .PARAMETER CredentialPersistenceType
         Used to specify how the login and passwords are persisted. Valid values include None, PersistLoginName and PersistLoginNameAndPassword.
 
@@ -60,8 +57,9 @@ function Export-DbaCmsRegServer {
 
         Exports all registered servers on sql2008 and sql2012, organized by group.
 
-#>
+    #>
     [CmdletBinding()]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingPlainTextForPassword", "", Justification = "For Parameter CredentialPersistenceType")]
     param (
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
@@ -126,4 +124,3 @@ function Export-DbaCmsRegServer {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Export-DbaRegisteredServer
     }
 }
-

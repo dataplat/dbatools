@@ -19,7 +19,7 @@ function New-DbaDbMasterKey {
     .PARAMETER Database
         The database where the master key will be created. Defaults to master.
 
-    .PARAMETER Password
+    .PARAMETER SecurePassword
         Secure string used to create the key.
 
     .PARAMETER InputObject
@@ -60,24 +60,25 @@ function New-DbaDbMasterKey {
 
         Suppresses all prompts to install but prompts in th console to securely enter your password and creates a master key in the 'db1' database
 
-#>
+    #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "High")]
     param (
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [PSCredential]$Credential,
         [string[]]$Database = "master",
-        [Security.SecureString]$Password,
+        [Alias("Password")]
+        [Security.SecureString]$SecurePassword,
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
         [switch]$EnableException
     )
     begin {
         if ($Credential) {
-            $Password = $Credential.Password
+            $SecurePassword = $Credential.Password
         } else {
-            if (-not $Password) {
-                $Password = Read-Host "Password" -AsSecureString
+            if (-not $SecurePassword) {
+                $SecurePassword = Read-Host "Password" -AsSecureString
             }
         }
     }
@@ -94,7 +95,7 @@ function New-DbaDbMasterKey {
             if ($Pscmdlet.ShouldProcess($db.Parent.Name, "Creating master key for database '$($db.Name)'")) {
                 try {
                     $masterkey = New-Object Microsoft.SqlServer.Management.Smo.MasterKey $db
-                    $masterkey.Create(([System.Runtime.InteropServices.marshal]::PtrToStringAuto([System.Runtime.InteropServices.marshal]::SecureStringToBSTR($password))))
+                    $masterkey.Create(([System.Runtime.InteropServices.marshal]::PtrToStringAuto([System.Runtime.InteropServices.marshal]::SecureStringToBSTR($SecurePassword))))
 
                     Add-Member -Force -InputObject $masterkey -MemberType NoteProperty -Name ComputerName -value $db.Parent.ComputerName
                     Add-Member -Force -InputObject $masterkey -MemberType NoteProperty -Name InstanceName -value $db.Parent.ServiceName
@@ -112,4 +113,3 @@ function New-DbaDbMasterKey {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias New-DbaDatabaseMasterKey
     }
 }
-

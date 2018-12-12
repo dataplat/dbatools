@@ -67,7 +67,7 @@ function Publish-DbaDacPackage {
     .EXAMPLE
         PS C:\> $options = New-DbaDacOption -Type Dacpac -Action Publish
         PS C:\> $options.DeployOptions.DropObjectsNotInSource = $true
-        PS C:\> Publish-DbaDacPackage -SqlInstance sql2016 -Database DB1 -Options $options -Path c:\temp\db.dacpac
+        PS C:\> Publish-DbaDacPackage -SqlInstance sql2016 -Database DB1 -DacOption $options -Path c:\temp\db.dacpac
 
         Uses DacOption object to set Deployment Options and updates DB1 database on sql2016 from the db.dacpac dacpac file, dropping objects that are missing from source
 
@@ -96,7 +96,7 @@ function Publish-DbaDacPackage {
         PS C:\> Publish-DbaDacPackage -SqlInstance sql2017 -Database WideWorldImporters -Path C:\temp\sql2016-WideWorldImporters.dacpac -PublishXml C:\temp\sql2016-WideWorldImporters-publish.xml -GenerateDeploymentReport -ScriptOnly
 
         Does not deploy the changes, but will generate the deployment report that would be executed against WideWorldImporters.
-#>
+    #>
     [CmdletBinding(DefaultParameterSetName = 'Obj')]
     param (
         [Alias("ServerInstance", "SqlServer")]
@@ -120,6 +120,7 @@ function Publish-DbaDacPackage {
         [string]$OutputPath = "$home\Documents",
         [switch]$IncludeSqlCmdVars,
         [Parameter(ParameterSetName = 'Obj')]
+        [Alias("Option")]
         [object]$DacOption,
         [switch]$EnableException,
         [String]$DacFxPath
@@ -160,21 +161,23 @@ function Publish-DbaDacPackage {
 
             return $instance.ToString().Replace('\', '-').Replace('(', '').Replace(')', '')
         }
-        if (Test-Bound -Not -ParameterName 'DacfxPath') {
+        
+        if ((Test-Bound -Not -ParameterName 'DacfxPath') -and (-not $script:core)) {
             $dacfxPath = "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Dac.dll"
-        }
-
-        if ((Test-Path $dacfxPath) -eq $false) {
-            Stop-Function -Message 'No usable version of Dac Fx found.' -EnableException $EnableException
-            return
-        } else {
-            try {
-                Add-Type -Path $dacfxPath
-                Write-Message -Level Verbose -Message "Dac Fx loaded."
-            } catch {
-                Stop-Function -Message 'No usable version of Dac Fx found.' -EnableException $EnableException -ErrorRecord $_
+            
+            if ((Test-Path $dacfxPath) -eq $false) {
+                Stop-Function -Message 'No usable version of Dac Fx found.' -EnableException $EnableException
+                return
+            } else {
+                try {
+                    Add-Type -Path $dacfxPath
+                    Write-Message -Level Verbose -Message "Dac Fx loaded."
+                } catch {
+                    Stop-Function -Message 'No usable version of Dac Fx found.' -EnableException $EnableException -ErrorRecord $_
+                }
             }
         }
+        
         #Check Option object types - should have a specific type
         if ($Type -eq 'Dacpac') {
             if ($DacOption -and $DacOption -isnot [Microsoft.SqlServer.Dac.PublishOptions]) {
@@ -280,8 +283,7 @@ function Publish-DbaDacPackage {
                     Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $server -Continue
                 }
                 try {
-                    $global:output = @()
-                    Register-ObjectEvent -InputObject $dacServices -EventName "Message" -SourceIdentifier "msg" -Action { $global:output += $EventArgs.Message.Message } | Out-Null
+                    $null = $output = Register-ObjectEvent -InputObject $dacServices -EventName "Message" -SourceIdentifier "msg" -Action { $EventArgs.Message.Message }
                     #Perform proper action depending on the Type
                     if ($Type -eq 'Dacpac') {
                         if ($ScriptOnly) {
@@ -316,7 +318,7 @@ function Publish-DbaDacPackage {
                             Write-Message -Level Verbose -Message "Master database change script - $($result.MasterDbScript)."
                         }
                     }
-                    $resultoutput = ($global:output -join "`r`n" | Out-String).Trim()
+                    $resultoutput = ($output.output -join "`r`n" | Out-String).Trim()
                     if ($resultoutput -match "Failed" -and ($options.GenerateDeploymentReport -or $options.GenerateDeploymentScript)) {
                         Write-Message -Level Warning -Message "Seems like the attempt to publish/script may have failed. If scripts have not generated load dacpac into Visual Studio to check SQL is valid."
                     }
@@ -358,4 +360,3 @@ function Publish-DbaDacPackage {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Publish-DbaDacpac
     }
 }
-

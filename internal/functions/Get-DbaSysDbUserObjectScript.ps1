@@ -2,7 +2,7 @@ function Get-DbaSysDbUserObjectScript {
     <#
         .SYNOPSIS
             Gets all user objects found in source SQL Server's master, msdb and model databases to the destination.
-    #>
+       #>
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
@@ -33,14 +33,14 @@ function Get-DbaSysDbUserObjectScript {
             Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Source
             return
         }
-        
+
         if (!(Test-SqlSa -SqlInstance $server -SqlCredential $SqlCredential)) {
             Stop-Function -Message "Not a sysadmin on $source. Quitting."
             return
         }
-        
+
         $systemDbs = "master", "model", "msdb"
-        
+
         foreach ($systemDb in $systemDbs) {
             $smodb = $server.databases[$systemDb]
             $destdb = $server.databases[$systemDb]
@@ -56,7 +56,7 @@ function Get-DbaSysDbUserObjectScript {
             try { $transfer.ScriptTransfer() }
             catch { }
             Write-Output "GO"
-            
+
             foreach ($table in $tables) {
                 Write-Output "GO"
                 $transfer = New-Object Microsoft.SqlServer.Management.Smo.Transfer $smodb
@@ -66,8 +66,8 @@ function Get-DbaSysDbUserObjectScript {
                 $null = $transfer.ObjectList.Add($table)
                 try { $transfer.ScriptTransfer() } catch {}
             }
-            
-            $userobjects = Get-DbaModule -SqlInstance $server -Database $systemDb -NoSystemObjects | Sort-Object Type
+
+            $userobjects = Get-DbaModule -SqlInstance $server -Database $systemDb -ExcludeSystemObjects | Sort-Object Type
             Write-Message -Level Verbose -Message "Copying from $systemDb"
             foreach ($userobject in $userobjects) {
                 Write-Output "GO"
@@ -76,7 +76,7 @@ function Get-DbaSysDbUserObjectScript {
                 $type = get-sqltypename $userobject.Type
                 $userobject.Definition
                 $schema = $userobject.SchemaName
-                $result = Get-DbaModule -SqlInstance $server -NoSystemObjects -Database $db |
+                $result = Get-DbaModule -SqlInstance $server -ExcludeSystemObjects -Database $db |
                     Where-Object { $psitem.Name -eq $userobject.Name -and $psitem.Type -eq $userobject.Type }
                 $smobject = switch ($userobject.Type) {
                     "VIEW" { $smodb.Views.Item($userobject.Name, $userobject.SchemaName) }
@@ -87,7 +87,7 @@ function Get-DbaSysDbUserObjectScript {
                     "SQL_INLINE_TABLE_VALUED_FUNCTION" { $smodb.UserDefinedFunctions.Item($name) }
                     "SQL_SCALAR_FUNCTION" { $smodb.UserDefinedFunctions.Item($name) }
                 }
-                
+
                 $smobject = switch ($userobject.Type) {
                     "VIEW" { $smodb.Views.Item($userobject.Name, $userobject.SchemaName) }
                     "SQL_STORED_PROCEDURE" { $smodb.StoredProcedures.Item($userobject.Name, $userobject.SchemaName) }
@@ -106,4 +106,3 @@ function Get-DbaSysDbUserObjectScript {
         }
     }
 }
-

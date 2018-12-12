@@ -9,11 +9,11 @@ function Measure-DbaBackupThroughput {
         Output looks like this:
         SqlInstance     : sql2016
         Database        : SharePoint_Config
-        AvgThroughputMB : 1.07
-        AvgSizeMB       : 24.17
+        AvgThroughput   : 1.07 MB
+        AvgSize         : 24.17
         AvgDuration     : 00:00:01.1000000
-        MinThroughputMB : 0.02
-        MaxThroughputMB : 2.26
+        MinThroughput   : 0.02 MB
+        MaxThroughput   : 2.26 MB
         MinBackupDate   : 8/6/2015 10:22:01 PM
         MaxBackupDate   : 6/19/2016 12:57:45 PM
         BackupCount     : 10
@@ -79,16 +79,16 @@ function Measure-DbaBackupThroughput {
         Processes the last log backups every backup for all databases on sql2005.
 
     .EXAMPLE
-        PS C:\> Measure-DbaBackupThroughput -SqlInstance sql2016 -Since (Get-Date).AddDays(-7)
+        PS C:\> Measure-DbaBackupThroughput -SqlInstance sql2016 -Since (Get-Date).AddDays(-7) | Where-Object { $_.MinThroughput.Gigabyte -gt 1 }
 
-        Gets backup calculations for the last week.
+        Gets backup calculations for the last week and filters results that have a minimum of 1GB throughput
 
     .EXAMPLE
         PS C:\> Measure-DbaBackupThroughput -SqlInstance sql2016 -Since (Get-Date).AddDays(-365) -Database bigoldb
 
         Gets backup calculations, limited to the last year and only the bigoldb database
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Position = 0, Mandatory, ValueFromPipeline)]
@@ -161,22 +161,21 @@ function Measure-DbaBackupThroughput {
                     $avgduration = $db.Group | ForEach-Object { New-TimeSpan -Start $_.Start -End $_.End } | Measure-Object -Average TotalSeconds
 
                     [pscustomobject]@{
-                        ComputerName    = $db.Group.ComputerName | Select-Object -First 1
-                        InstanceName    = $db.Group.InstanceName | Select-Object -First 1
-                        SqlInstance     = $db.Group.SqlInstance | Select-Object -First 1
-                        Database        = $db.Name
-                        AvgThroughputMB = [System.Math]::Round($measuremb.Average, 2)
-                        AvgSizeMB       = [System.Math]::Round($measuresize.Average, 2)
-                        AvgDuration     = [dbatimespan](New-TimeSpan -Seconds $avgduration.Average)
-                        MinThroughputMB = [System.Math]::Round($measuremb.Minimum, 2)
-                        MaxThroughputMB = [System.Math]::Round($measuremb.Maximum, 2)
-                        MinBackupDate   = [dbadatetime]$measurestart.Minimum
-                        MaxBackupDate   = [dbadatetime]$measureend.Maximum
-                        BackupCount     = $db.Count
+                        ComputerName  = $db.Group.ComputerName | Select-Object -First 1
+                        InstanceName  = $db.Group.InstanceName | Select-Object -First 1
+                        SqlInstance   = $db.Group.SqlInstance | Select-Object -First 1
+                        Database      = $db.Name
+                        AvgThroughput = [dbasize]([System.Math]::Round($measuremb.Average, 2) * 1024 * 1024)
+                        AvgSize       = [dbasize]([System.Math]::Round($measuresize.Average, 2) * 1024 * 1024)
+                        AvgDuration   = [dbatimespan](New-TimeSpan -Seconds $avgduration.Average)
+                        MinThroughput = [dbasize]([System.Math]::Round($measuremb.Minimum, 2) * 1024 * 1024)
+                        MaxThroughput = [dbasize]([System.Math]::Round($measuremb.Maximum, 2) * 1024 * 1024)
+                        MinBackupDate = [dbadatetime]$measurestart.Minimum
+                        MaxBackupDate = [dbadatetime]$measureend.Maximum
+                        BackupCount   = $db.Count
                     } | Select-DefaultView -ExcludeProperty ComputerName, InstanceName
                 }
             }
         }
     }
 }
-

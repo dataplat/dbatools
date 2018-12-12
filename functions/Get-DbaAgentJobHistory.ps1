@@ -29,7 +29,7 @@ function Get-DbaAgentJobHistory {
     .PARAMETER EndDate
         The DateTime before which the history is wanted. If unspecified, all available records will be processed.
 
-    .PARAMETER NoJobSteps
+    .PARAMETER ExcludeJobSteps
         Use this switch to discard all job steps, and return only the job totals
 
     .PARAMETER WithOutputFile
@@ -87,7 +87,7 @@ function Get-DbaAgentJobHistory {
         with additional properties that show the output filename path
 
     .EXAMPLE
-        PS C:\> Get-DbaAgentJobHistory -SqlInstance sql2\Inst2K17 -NoJobSteps
+        PS C:\> Get-DbaAgentJobHistory -SqlInstance sql2\Inst2K17 -ExcludeJobSteps
 
         Returns the SQL Agent Job execution results for the whole jobs on sql2\Inst2K17, leaving out job step execution results.
 
@@ -101,7 +101,7 @@ function Get-DbaAgentJobHistory {
 
         Gets all jobs with the name that match the regex pattern "backup" and then gets the job history from those. You can also use -Like *backup* in this example.
 
-#>
+    #>
     [CmdletBinding(DefaultParameterSetName = "Default")]
     param (
         [parameter(Mandatory, ValueFromPipeline, ParameterSetName = "Server")]
@@ -113,7 +113,7 @@ function Get-DbaAgentJobHistory {
         [object[]]$ExcludeJob,
         [DateTime]$StartDate = "1900-01-01",
         [DateTime]$EndDate = $(Get-Date),
-        [switch]$NoJobSteps,
+        [switch]$ExcludeJobSteps,
         [switch]$WithOutputFile,
         [parameter(Mandatory, ValueFromPipeline, ParameterSetName = "Collection")]
         [Microsoft.SqlServer.Management.Smo.Agent.Job]$JobCollection,
@@ -127,8 +127,8 @@ function Get-DbaAgentJobHistory {
         $filter.EndRunDate = $EndDate
 
 
-        if ($NoJobSteps -and $WithOutputFile) {
-            Stop-Function -Message "You can't use -NoJobSteps and -WithOutputFile together"
+        if ($ExcludeJobSteps -and $WithOutputFile) {
+            Stop-Function -Message "You can't use -ExcludeJobSteps and -WithOutputFile together"
         }
 
         function Get-JobHistory {
@@ -214,7 +214,7 @@ function Get-DbaAgentJobHistory {
                 } else {
                     $executions = $server.JobServer.EnumJobHistory($filter)
                 }
-                if ($NoJobSteps) {
+                if ($ExcludeJobSteps) {
                     $executions = $executions | Where-Object { $_.StepID -eq 0 }
                 }
 
@@ -304,4 +304,3 @@ function Get-DbaAgentJobHistory {
         }
     }
 }
-

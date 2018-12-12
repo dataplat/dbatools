@@ -53,8 +53,8 @@ function Invoke-DbaCycleErrorLog {
 
         Cycles the current error log for both SQL Server instance and SQL Server Agent on SQL Server instance sql2016
 
-#>
-    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'Low')]
+    #>
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Low')]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
@@ -130,4 +130,3 @@ function Invoke-DbaCycleErrorLog {
         }
     }
 }
-

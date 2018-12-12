@@ -7,7 +7,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         $paramCount = 11
         $defaultParamCount = 13
         [object[]]$params = (Get-ChildItem function:\New-DbaDbSnapshot).Parameters.Keys
-        $knownParameters = 'SqlInstance','SqlCredential','Database','ExcludeDatabase','AllDatabases','Name','NameSuffix','Path','Force','InputObject','EnableException'
+        $knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'AllDatabases', 'Name', 'NameSuffix', 'Path', 'Force', 'InputObject', 'EnableException'
         It "Should contain our specific parameters" {
             ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
         }
@@ -90,7 +90,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
 
         It "has the correct default properties" {
             $result = Get-DbaDbSnapshot -SqlInstance $script:instance2 -Database $db2 | Select-Object -First 1
-            $ExpectedPropsDefault = 'ComputerName', 'CreateDate', 'InstanceName', 'Name', 'SnapshotOf', 'SqlInstance','DiskUsage'
+            $ExpectedPropsDefault = 'ComputerName', 'CreateDate', 'InstanceName', 'Name', 'SnapshotOf', 'SqlInstance', 'DiskUsage'
             ($result.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames | Sort-Object) | Should Be ($ExpectedPropsDefault | Sort-Object)
         }
     }

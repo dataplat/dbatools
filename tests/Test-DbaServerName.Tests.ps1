@@ -23,7 +23,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         It "should say rename is not required" {
             $results.RenameRequired | Should -Be $false
         }
-        
+
         It "returns the correct properties" {
             $ExpectedProps = 'ComputerName,ServerName,RenameRequired,Updatable,Warnings,Blockers,SqlInstance,InstanceName'.Split(',')
             ($results.PsObject.Properties.Name | Sort-Object) | Should -Be ($ExpectedProps | Sort-Object)

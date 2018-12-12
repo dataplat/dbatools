@@ -46,7 +46,7 @@ function Get-DbaStartupParameter {
 
         Logs in to WMI using the ad\sqladmin credential and gathers simplified information about the SQL Server Startup Parameters.
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(ValueFromPipeline, Mandatory)]
@@ -55,8 +55,7 @@ function Get-DbaStartupParameter {
         [Alias("SqlCredential")]
         [PSCredential]$Credential,
         [switch]$Simple,
-        [switch]
-        [Alias('Silent')]$EnableException
+        [switch]$EnableException
     )
 
     process {
@@ -188,4 +187,3 @@ function Get-DbaStartupParameter {
         }
     }
 }
-

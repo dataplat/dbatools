@@ -67,7 +67,7 @@ function Start-DbaXESession {
 
         Starts the sessions returned from the Get-DbaXESession function.
 
-#>
+    #>
     [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = 'Session')]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseSingularNouns", "", Justification = "Internal functions are ignored")]
     param (

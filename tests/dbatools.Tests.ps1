@@ -4,7 +4,7 @@ $ModulePath = (Get-Item $Path).Parent.FullName
 $ModuleName = (Split-Path -Leaf $MyInvocation.MyCommand.Path) -Replace ".Tests.ps1"
 #$ManifestPath = "$ModulePath\$ModuleName.psd1"
 
-Describe "$ModuleName Aliases" -Tag Aliases, Build  {
+Describe "$ModuleName Aliases" -Tag Aliases, Build {
     ## Get the Aliases that should -Be set from the psm1 file
 
     $psm1 = Get-Content $ModulePath\$ModuleName.psm1 -Verbose
@@ -42,10 +42,10 @@ Describe "$ModuleName style" -Tag 'Compliance' {
     Ensures common formatting standards are applied:
     - OTSB style, courtesy of PSSA's Invoke-Formatter, is what dbatools uses
     - UTF8 without BOM is what is going to be used in PS Core, so we adopt this standard for dbatools
-    #>
+       #>
     $AllFiles = Get-ChildItem -Path $ModulePath -File -Recurse -Filter '*.ps*1' | Where-Object Name -ne 'allcommands.ps1'
     $AllFunctionFiles = Get-ChildItem -Path "$ModulePath\functions", "$ModulePath\internal\functions"-Filter '*.ps*1'
-    Context "formatting"  {
+    Context "formatting" {
         $maxConcurrentJobs = $env:NUMBER_OF_PROCESSORS
         $whatever = Split-ArrayInParts -array $AllFunctionFiles -parts $maxConcurrentJobs
         $jobs = @()
@@ -64,7 +64,7 @@ Describe "$ModuleName style" -Tag 'Compliance' {
         $results = $jobs | Receive-Job
 
         foreach ($f in $results) {
-            It "$f is adopting OTSB formatting style, see Invoke-DbatoolsFormatter" {
+            It "$f is adopting OTSB formatting style. Please run Invoke-DbatoolsFormatter against the failing file and commit the changes." {
                 1 | Should -Be 0
             }
         }
@@ -107,7 +107,7 @@ Describe "$ModuleName style" -Tag 'Compliance' {
     #>
     $AllPublicFunctions = Get-ChildItem -Path "$ModulePath\functions" -Filter '*.ps*1'
 
-    Context "NoCompatibleTLS"  {
+    Context "NoCompatibleTLS" {
         # .NET defaults clash with recent TLS hardening (e.g. no TLS 1.2 by default)
         foreach ($f in $AllPublicFunctions) {
             $NotAllowed = Select-String -Path $f -Pattern 'Invoke-WebRequest | New-Object System.Net.WebClient|\.DownloadFile'
@@ -228,4 +228,3 @@ $Script:Manifest = Test-ModuleManifest -Path $ManifestPath -ErrorAction Silently
     }
 }
 #>
-

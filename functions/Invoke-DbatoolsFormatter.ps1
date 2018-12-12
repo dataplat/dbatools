@@ -30,7 +30,7 @@ function Invoke-DbatoolsFormatter {
 
         Reformats C:\dbatools\functions\Get-DbaDatabase.ps1 to dbatools' standards
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
@@ -42,6 +42,9 @@ function Invoke-DbatoolsFormatter {
         if (!($HasInvokeFormatter)) {
             Stop-Function -Message "You need a recent version of PSScriptAnalyzer installed"
         }
+        $CBHRex = [regex]'(?smi)\s+<#[^#]*#>'
+        $CBHStartRex = [regex]'(?<spaces>[ ]+)<#'
+        $CBHEndRex = [regex]'(?<spaces>[ ]*)#>'
     }
     process {
         if (Test-FunctionInterrupt) { return }
@@ -51,7 +54,7 @@ function Invoke-DbatoolsFormatter {
             } catch {
                 Stop-Function -Message "Cannot find or resolve $p" -Continue
             }
-            
+
             $content = Get-Content -Path $realPath -Raw -Encoding UTF8
             #strip ending empty lines
             $content = $content -replace "(?s)`r`n\s*$"
@@ -60,13 +63,27 @@ function Invoke-DbatoolsFormatter {
             } catch {
                 Write-Message -Level Warning "Unable to format $p"
             }
+            #match the ending indentation of CBH with the starting one, see #4373
+            $CBH = $CBHRex.Match($content).Value
+            if ($CBH) {
+                #get starting spaces
+                $startSpaces = $CBHStartRex.Match($CBH).Groups['spaces']
+                if ($startSpaces) {
+                    #get end
+                    $newCBH = $CBHEndRex.Replace($CBH, "$startSpaces#>")
+                    if ($newCBH) {
+                        #replace the CBH
+                        $content = $content.Replace($CBH, $newCBH)
+                    }
+                }
+            }
             $Utf8NoBomEncoding = New-Object System.Text.UTF8Encoding $False
             $realContent = @()
             #trim whitespace lines
-            foreach ($line in $content) {
+            foreach ($line in $content.Split("`n")) {
                 $realContent += $line.TrimEnd()
             }
-            [System.IO.File]::WriteAllLines($realPath, $realContent, $Utf8NoBomEncoding)
+            [System.IO.File]::WriteAllText($realPath, ($realContent -Join "`r`n"), $Utf8NoBomEncoding)
         }
     }
 }

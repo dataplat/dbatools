@@ -5,6 +5,7 @@ $global:FunctionHelpTestExceptions = @(
 $global:HelpTestEnumeratedArrays = @(
     "Sqlcollaborative.Dbatools.Connection.ManagementConnectionType[]"
     "Sqlcollaborative.Dbatools.Message.MessageLevel[]"
+    "Sqlcollaborative.Dbatools.Discovery.DbaInstanceScanType[]"
 )
 
 $global:HelpTestSkipParameterType = @{
@@ -12,4 +13,3 @@ $global:HelpTestSkipParameterType = @{
     "Test-DbaCmConnection" = @("Type")
     "Get-DbaService"       = @("DoNotUse")
 }
-

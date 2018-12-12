@@ -123,13 +123,12 @@ function Set-DbaAgentSchedule {
 
         Changes the schedule for Job1 with the name 'daily' to enabled on multiple servers using pipe line
 
-#>
-    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "Low")]
+    #>
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
-        [Parameter(Mandatory = $false)]
         [PSCredential]$SqlCredential,
         [Parameter(Mandatory, ValueFromPipeline)]
         [ValidateNotNullOrEmpty()]
@@ -137,38 +136,24 @@ function Set-DbaAgentSchedule {
         [Parameter(Mandatory, ValueFromPipeline)]
         [ValidateNotNullOrEmpty()]
         [string]$ScheduleName,
-        [Parameter(Mandatory = $false)]
         [string]$NewName,
-        [Parameter(Mandatory = $false)]
         [switch]$Enabled,
-        [Parameter(Mandatory = $false)]
         [switch]$Disabled,
         [ValidateSet(1, "Once", 4, "Daily", 8, "Weekly", 16, "Monthly", 32, "MonthlyRelative", 64, "AgentStart", 128, "IdleComputer")]
         [object]$FrequencyType,
-        [Parameter(Mandatory = $false)]
         [object[]]$FrequencyInterval,
-        [Parameter(Mandatory = $false)]
         [ValidateSet(1, "Time", 2, "Seconds", 4, "Minutes", 8, "Hours")]
         [object]$FrequencySubdayType,
-        [Parameter(Mandatory = $false)]
         [int]$FrequencySubdayInterval,
-        [Parameter(Mandatory = $false)]
         [ValidateSet('Unused', 'First', 'Second', 'Third', 'Fourth', 'Last')]
         [object]$FrequencyRelativeInterval,
-        [Parameter(Mandatory = $false)]
         [int]$FrequencyRecurrenceFactor,
-        [Parameter(Mandatory = $false)]
         [string]$StartDate,
-        [Parameter(Mandatory = $false)]
         [string]$EndDate,
-        [Parameter(Mandatory = $false)]
         [string]$StartTime,
-        [Parameter(Mandatory = $false)]
         [string]$EndTime,
-        [Parameter(Mandatory = $false)]
         [Alias('Silent')]
         [switch]$EnableException,
-        [Parameter(Mandatory = $false)]
         [switch]$Force
     )
 
@@ -315,6 +300,20 @@ function Set-DbaAgentSchedule {
             Stop-Function -Message "End time $EndTime needs to match between '000000' and '235959'" -Target $SqlInstance
             return
         }
+
+        #Format dates and times
+        if ($StartDate) {
+            $StartDate = $StartDate.Insert(6, '-').Insert(4, '-')
+        }
+        if ($EndDate) {
+            $EndDate = $EndDate.Insert(6, '-').Insert(4, '-')
+        }
+        if ($StartTime) {
+            $StartTime = $StartTime.Insert(4, ':').Insert(2, ':')
+        }
+        if ($EndTime) {
+            $EndTime = $EndTime.Insert(4, ':').Insert(2, ':')
+        }
     }
 
     process {
@@ -392,25 +391,21 @@ function Set-DbaAgentSchedule {
                         }
 
                         if ($StartDate) {
-                            $StartDate = $StartDate.Insert(6, '-').Insert(4, '-')
                             Write-Message -Message "Setting job schedule start date to $StartDate for schedule $ScheduleName" -Level Verbose
                             $JobSchedule.StartDate = $StartDate
                         }
 
                         if ($EndDate) {
-                            $EndDate = $EndDate.Insert(6, '-').Insert(4, '-')
                             Write-Message -Message "Setting job schedule end date to $EndDate for schedule $ScheduleName" -Level Verbose
                             $JobSchedule.EndDate = $EndDate
                         }
 
                         if ($StartTime) {
-                            $StartTime = $StartTime.Insert(4, ':').Insert(2, ':')
                             Write-Message -Message "Setting job schedule start time to $StartTime for schedule $ScheduleName" -Level Verbose
                             $JobSchedule.ActiveStartTimeOfDay = $StartTime
                         }
 
                         if ($EndTime) {
-                            $EndTime = $EndTime.Insert(4, ':').Insert(2, ':')
                             Write-Message -Message "Setting job schedule end time to $EndTime for schedule $ScheduleName" -Level Verbose
                             $JobSchedule.ActiveStartTimeOfDay = $EndTime
                         }
@@ -440,4 +435,3 @@ function Set-DbaAgentSchedule {
         Write-Message -Message "Finished changing the job schedule(s)" -Level Verbose
     }
 }
-

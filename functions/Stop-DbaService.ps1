@@ -82,8 +82,8 @@ function Stop-DbaService {
 
         Stops SQL Server database engine services on sql1 forcing dependent SQL Server Agent services to stop as well.
 
-#>
-    [CmdletBinding(DefaultParameterSetName = "Server", SupportsShouldProcess = $true)]
+    #>
+    [CmdletBinding(DefaultParameterSetName = "Server", SupportsShouldProcess)]
     param (
         [Parameter(ParameterSetName = "Server", Position = 1)]
         [Alias("cn", "host", "Server")]
@@ -95,7 +95,7 @@ function Stop-DbaService {
         [parameter(ValueFromPipeline, Mandatory, ParameterSetName = "Service")]
         [Alias("ServiceCollection")]
         [object[]]$InputObject,
-        [int]$Timeout = 30,
+        [int]$Timeout = 60,
         [PSCredential]$Credential,
         [switch]$Force,
         [Alias('Silent')]
@@ -127,11 +127,11 @@ function Stop-DbaService {
                     Type         = 'Agent'
                 }
                 if ($Credential) { $serviceParams.Credential = $Credential }
-                if ($EnableException) { $serviceParams.Silent = $EnableException }
+                if ($EnableException) { $serviceParams.EnableException = $EnableException }
                 $processArray += @(Get-DbaService @serviceParams)
             }
         }
-        if ($PSCmdlet.ShouldProcess("$ProcessArray", "Stoping Service")) {
+        if ($PSCmdlet.ShouldProcess("$ProcessArray", "Stopping Service")) {
             if ($processArray) {
                 Update-ServiceStatus -InputObject $processArray -Action 'stop' -Timeout $Timeout -EnableException $EnableException
             } else {
@@ -141,4 +141,3 @@ function Stop-DbaService {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Stop-DbaSqlService
     }
 }
-

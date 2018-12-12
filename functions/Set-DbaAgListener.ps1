@@ -6,7 +6,7 @@ function Set-DbaAgListener {
 
     .DESCRIPTION
         Sets a listener property for an availability group on a SQL Server instance.
-    
+
         Basically, only the port is settable at this time, so this command updates the listener port.
 
    .PARAMETER SqlInstance
@@ -57,7 +57,7 @@ function Set-DbaAgListener {
         PS C:\> Get-DbaAgListener -SqlInstance sql2017 | Out-GridView -Passthru | Set-DbaAgListener -Port 1433 -Confirm:$false
 
         Changes the port for selected AG listeners to 1433. Does not prompt for confirmation.
-#>
+    #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
     param (
         [DbaInstanceParameter[]]$SqlInstance,
@@ -75,11 +75,11 @@ function Set-DbaAgListener {
             Stop-Function -Message "You must specify one or more databases and one or more Availability Groups when using the SqlInstance parameter."
             return
         }
-        
+
         if ($SqlInstance) {
             $InputObject += Get-DbaAgListener -SqlInstance $SqlInstance -SqlCredential $SqlCredential -AvailabilityGroup $AvailabilityGroup -Listener $Listener
         }
-        
+
         foreach ($aglistener in $InputObject) {
             if ($Pscmdlet.ShouldProcess($ag.Parent.Name, "Setting port to $Port for $($ag.Name)")) {
                 try {

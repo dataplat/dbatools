@@ -82,7 +82,7 @@ function New-DbaLogShippingSecondaryPrimary {
         .EXAMPLE
             New-DbaLogShippingSecondaryPrimary -SqlInstance sql2 -BackupSourceDirectory "\\sql1\logshipping\DB1" -BackupDestinationDirectory D:\Data\logshippingdestination\DB1_DR -CopyJob LSCopy_sql2_DB1_DR -FileRetentionPeriod 4320 -MonitorServer sql2 -MonitorServerSecurityMode 'Windows' -PrimaryServer sql1 -PrimaryDatabase DB1 -RestoreJob LSRestore_sql2_DB1_DR
     #>
-    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "Low")]
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
     param (
         [parameter(Mandatory)]
         [Alias("ServerInstance", "SqlServer")]
@@ -91,7 +91,6 @@ function New-DbaLogShippingSecondaryPrimary {
         [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [string]$BackupSourceDirectory,
-        [Parameter(Mandatory = $false)]
         [string]$BackupDestinationDirectory,
         [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
@@ -221,4 +220,3 @@ function New-DbaLogShippingSecondaryPrimary {
 
     Write-Message -Message "Finished configuring of secondary database to primary database $PrimaryDatabase." -Level Verbose
 }
-

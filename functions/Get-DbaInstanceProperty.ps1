@@ -66,7 +66,7 @@ function Get-DbaInstanceProperty {
 
         Connects using sqladmin credential and returns SQL Server instance properties from sql2
 
-#>
+    #>
     [CmdletBinding(DefaultParameterSetName = "Default")]
     param (
         [parameter(Position = 0, Mandatory, ValueFromPipeline)]
@@ -152,4 +152,3 @@ function Get-DbaInstanceProperty {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-DbaSqlInstanceProperty
     }
 }
-

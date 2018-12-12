@@ -4,10 +4,10 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        $paramCount = 26
         $defaultParamCount = 11
         [object[]]$params = (Get-ChildItem function:\Connect-DbaInstance).Parameters.Keys
-        $knownParameters = 'SqlInstance','Credential','Database','AccessToken','ApplicationIntent','BatchSeparator','ClientName','ConnectTimeout','EncryptConnection','FailoverPartner','IsActiveDirectoryUniversalAuth','LockTimeout','MaxPoolSize','MinPoolSize','MultipleActiveResultSets','MultiSubnetFailover','NetworkProtocol','NonPooledConnection','PacketSize','PooledConnectionLifetime','SqlExecutionModes','StatementTimeout','TrustServerCertificate','WorkstationId','AppendConnectionString','SqlConnectionOnly'
+        $knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'AccessToken', 'ApplicationIntent', 'BatchSeparator', 'ClientName', 'ConnectTimeout', 'EncryptConnection', 'FailoverPartner', 'LockTimeout', 'MaxPoolSize', 'MinPoolSize', 'MultipleActiveResultSets', 'MultiSubnetFailover', 'NetworkProtocol', 'NonPooledConnection', 'PacketSize', 'PooledConnectionLifetime', 'SqlExecutionModes', 'StatementTimeout', 'TrustServerCertificate', 'WorkstationId', 'AppendConnectionString', 'SqlConnectionOnly', 'DisableException'
+        $paramCount = $knownParameters.Count
         It "Should contain our specific parameters" {
             ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
         }
@@ -41,18 +41,18 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 
         It "sets connectioncontext parameters that are provided" {
             $params = @{
-                'BatchSeparator' = 'GO'
-                'ConnectTimeout' = 1
-                'Database' = 'master'
-                'LockTimeout' = 1
-                'MaxPoolSize' = 20
-                'MinPoolSize' = 1
-                'NetworkProtocol' = 'TcpIp'
-                'PacketSize' = 4096
+                'BatchSeparator'           = 'GO'
+                'ConnectTimeout'           = 1
+                'Database'                 = 'master'
+                'LockTimeout'              = 1
+                'MaxPoolSize'              = 20
+                'MinPoolSize'              = 1
+                'NetworkProtocol'          = 'TcpIp'
+                'PacketSize'               = 4096
                 'PooledConnectionLifetime' = 600
-                'WorkstationId' = 'MadeUpServer'
-                'SqlExecutionModes' = 'ExecuteSql'
-                'StatementTimeout' = 0
+                'WorkstationId'            = 'MadeUpServer'
+                'SqlExecutionModes'        = 'ExecuteSql'
+                'StatementTimeout'         = 0
             }
 
             $server = Connect-DbaInstance -SqlInstance $script:instance1 @params

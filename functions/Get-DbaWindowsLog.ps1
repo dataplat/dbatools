@@ -53,7 +53,7 @@ function Get-DbaWindowsLog {
 
         Returns all lines in the errorlogs that have event number 18456 in them
 
-#>
+    #>
     #This exists to ignore the Script Analyzer rule for Start-Runspace
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "")]
     [CmdletBinding()]
@@ -176,7 +176,10 @@ function Get-DbaWindowsLog {
                     while (-not $reader.EndOfStream) {
                         Convert-ErrorRecord -Line $reader.ReadLine()
                     }
-                } catch { }
+                } catch {
+                    # here to avoid an empty catch
+                    $null = 1
+                }
             }
             #endregion Script that processes an individual file
 
@@ -253,7 +256,7 @@ function Get-DbaWindowsLog {
                 [DateTime]
                 $End,
 
-                [object]
+                [PSCredential]
                 $Credential,
 
                 [int]
@@ -277,6 +280,7 @@ function Get-DbaWindowsLog {
         #region Setup Runspace
         [Collections.Arraylist]$RunspaceCollection = @()
         $InitialSessionState = [System.Management.Automation.Runspaces.InitialSessionState]::CreateDefault()
+        $defaultrunspace = [System.Management.Automation.Runspaces.Runspace]::DefaultRunspace
         $RunspacePool = [RunspaceFactory]::CreateRunspacePool($InitialSessionState)
         $RunspacePool.SetMinRunspaces(1) | Out-Null
         if ($MaxThreads -gt 0) { $null = $RunspacePool.SetMaxRunspaces($MaxThreads) }
@@ -300,6 +304,6 @@ function Get-DbaWindowsLog {
         Receive-Runspace -Wait
         $RunspacePool.Close()
         $RunspacePool.Dispose()
+        [System.Management.Automation.Runspaces.Runspace]::DefaultRunspace = $defaultrunspace
     }
 }
-

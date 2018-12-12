@@ -66,7 +66,7 @@ function Set-DbaSpConfigure {
 
         Returns information on the action that would be performed. No actual change will be made.
 
-#>
+       #>
     [CmdletBinding(SupportsShouldProcess)]
     param (
         [Alias("ServerInstance", "SqlServer")]
@@ -89,13 +89,14 @@ function Set-DbaSpConfigure {
         foreach ($configobject in $InputObject) {
             $server = $InputObject.Parent
             $currentRunValue = $configobject.RunningValue
+            $currentConfigValue = $configobject.ConfiguredValue
             $minValue = $configobject.MinValue
             $maxValue = $configobject.MaxValue
             $isDynamic = $configobject.IsDynamic
             $configuration = $configobject.Name
 
             #Let us not waste energy setting the value to itself
-            if ($currentRunValue -eq $value) {
+            if ($currentConfigValue -eq $value) {
                 Stop-Function -Message "Value to set is the same as the existing value. No work being performed." -Continue -Target $server -Category InvalidData
             }
 
@@ -104,18 +105,18 @@ function Set-DbaSpConfigure {
                 Stop-Function -Message "Value out of range for $configuration ($minValue <-> $maxValue)" -Continue -Category InvalidArgument
             }
 
-            If ($Pscmdlet.ShouldProcess($SqlInstance, "Adjusting server configuration $configuration from $currentRunValue to $value.")) {
+            If ($Pscmdlet.ShouldProcess($SqlInstance, "Adjusting server configuration $configuration from $currentConfigValue to $value.")) {
                 try {
                     $server.Configuration.$configuration.ConfigValue = $value
                     $server.Configuration.Alter()
 
                     [pscustomobject]@{
-                        ComputerName = $server.ComputerName
-                        InstanceName = $server.ServiceName
-                        SqlInstance  = $server.DomainInstanceName
-                        ConfigName   = $configuration
-                        OldValue     = $currentRunValue
-                        NewValue     = $value
+                        ComputerName  = $server.ComputerName
+                        InstanceName  = $server.ServiceName
+                        SqlInstance   = $server.DomainInstanceName
+                        ConfigName    = $configuration
+                        PreviousValue = $currentConfigValue
+                        NewValue      = $value
                     }
 
                     #If it's a dynamic setting we're all clear, otherwise let the user know that SQL needs to be restarted for the change to take
@@ -129,4 +130,3 @@ function Set-DbaSpConfigure {
         }
     }
 }
-

@@ -3,7 +3,7 @@ function Get-SqlFileStructure {
     .SYNOPSIS
     Internal function. Returns custom object that contains file structures on destination paths (\\SqlInstance\m$\mssql\etc\etc\file.mdf) for
     source and destination servers.
-#>
+    #>
     [CmdletBinding()]
     param (
         [Parameter(Mandatory, Position = 0)]
@@ -12,7 +12,7 @@ function Get-SqlFileStructure {
         [Parameter(Mandatory, Position = 1)]
         [ValidateNotNullOrEmpty()]
         [object]$destination,
-        [Parameter(Mandatory = $false, Position = 2)]
+        [Parameter(Position = 2)]
         [bool]$ReuseSourceFolderStructure,
         [PSCredential]$SourceSqlCredential,
         [PSCredential]$DestinationSqlCredential
@@ -123,5 +123,3 @@ function Get-SqlFileStructure {
     $filestructure = [pscustomobject]@{ "databases" = $dbcollection }
     return $filestructure
 }
-
-

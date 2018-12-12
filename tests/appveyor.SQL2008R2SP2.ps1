@@ -1,9 +1,6 @@
 $indent = '...'
 Write-Host -Object "$indent Running $PSCommandpath" -ForegroundColor DarkGreen
-#$dbatools_serialimport = $true
-Start-Sleep 5
-Import-Module C:\github\dbatools\dbatools.psd1
-Start-Sleep 5
+Import-Module C:\github\dbatools\dbatools.psm1 -Force
 
 # This script spins up the 2008R2SP2 instance and the relative setup
 
@@ -45,6 +42,7 @@ while ($lastexitcode -ne 0 -and $t++ -lt 10)
 Write-Host -Object "$indent Executing startup scripts for SQL Server 2008" -ForegroundColor DarkGreen
 # Add some jobs to the sql2008r2sp2 instance (1433 = default)
 foreach ($file in (Get-ChildItem C:\github\appveyor-lab\sql2008-startup\*.sql -Recurse -ErrorAction SilentlyContinue)) {
-    Invoke-Sqlcmd2 -ServerInstance $sqlinstance -InputFile $file
+    Invoke-DbaQuery -SqlInstance $sqlinstance -InputFile $file
 }
 
+Import-Module C:\github\dbatools\dbatools.psm1 -Force

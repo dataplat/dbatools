@@ -36,7 +36,7 @@ function Disable-DbaTraceFlag {
 
         Disable the globally running trace flag 3226 on SQL Server instance sql2016
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Position = 0, Mandatory, ValueFromPipeline)]
@@ -93,4 +93,3 @@ function Disable-DbaTraceFlag {
         }
     }
 }
-

@@ -76,7 +76,7 @@ function New-DbaXESmartTableWriter {
 
         Writes Extended Events to the deadlocktracker table in dbadb on sql2017.
 
-#>
+    #>
     [CmdletBinding(SupportsShouldProcess)]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
@@ -136,4 +136,3 @@ function New-DbaXESmartTableWriter {
         }
     }
 }
-

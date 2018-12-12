@@ -21,7 +21,7 @@ function Test-DbaIdentityUsage {
     .PARAMETER Threshold
         Allows you to specify a minimum % of the seed range being utilized.  This can be used to ignore seeds that have only utilized a small fraction of the range.
 
-    .PARAMETER ExcludeSystemDb
+    .PARAMETER ExcludeSystem
         Allows you to suppress output on system databases
 
     .PARAMETER EnableException
@@ -55,7 +55,7 @@ function Test-DbaIdentityUsage {
 
         Check identity seeds on server sql2008 for only the TestDB database, limiting results to 20% utilization of seed range or higher
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Position = 0, Mandatory, ValueFromPipeline)]
@@ -65,17 +65,17 @@ function Test-DbaIdentityUsage {
         [Alias("Databases")]
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
-        [parameter(Position = 1, Mandatory = $false)]
+        [parameter(Position = 1)]
         [int]$Threshold = 0,
-        [parameter(Position = 2, Mandatory = $false)]
-        [Alias("NoSystemDb")]
-        [switch]$ExcludeSystemDb,
+        [parameter(Position = 2)]
+        [Alias("ExcludeSystemDb")]
+        [switch]$ExcludeSystem,
         [Alias('Silent')]
         [switch]$EnableException
     )
 
     begin {
-        Test-DbaDeprecation -DeprecatedOn 1.0.0 -Parameter NoSystemDb
+        Test-DbaDeprecation -DeprecatedOn 1.0.0 -Parameter ExcludeSystem
 
         $sql = ";WITH CT_DT AS
         (
@@ -131,7 +131,7 @@ function Test-DbaIdentityUsage {
         AS
         (
         SELECT SchemaName, TableName, ColumnName, CONVERT(BIGINT, SeedValue) AS SeedValue, CONVERT(BIGINT, IncrementValue) AS IncrementValue, LastValue, ABS(CONVERT(NUMERIC(20,0),MaxNumberRows)) AS MaxNumberRows, NumberOfUses,
-               CONVERT(Numeric(18,2), ((CONVERT(Float, NumberOfUses) / ABS(CONVERT(Numeric(20, 0),MaxNumberRows)) * 100))) AS [PercentUsed]
+               CONVERT(NUMERIC(18, 2), ((CONVERT(FLOAT, NumberOfUses) / ABS(CONVERT(NUMERIC(20, 0), NULLIF(MaxNumberRows,0))) * 100))) AS [PercentUsed]
           FROM CTE_1
         )
         SELECT DB_NAME() as DatabaseName, SchemaName, TableName, ColumnName, SeedValue, IncrementValue, LastValue, MaxNumberRows, NumberOfUses, [PercentUsed]
@@ -162,7 +162,7 @@ function Test-DbaIdentityUsage {
                 $dbs = $dbs | Where-Object Name -NotIn $ExcludeDatabase
             }
 
-            if ($ExcludeSystemDb) {
+            if ($ExcludeSystem) {
                 $dbs = $dbs | Where-Object IsSystemObject -EQ $false
             }
 
@@ -206,4 +206,3 @@ function Test-DbaIdentityUsage {
         }
     }
 }
-

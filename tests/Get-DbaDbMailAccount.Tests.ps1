@@ -7,7 +7,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         $paramCount = 6
         $defaultParamCount = 11
         [object[]]$params = (Get-ChildItem function:\Get-DbaDbMailAccount).Parameters.Keys
-        $knownParameters = 'SqlInstance','SqlCredential','Account','ExcludeAccount','InputObject','EnableException'
+        $knownParameters = 'SqlInstance', 'SqlCredential', 'Account', 'ExcludeAccount', 'InputObject', 'EnableException'
         It "Should contain our specific parameters" {
             ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
         }
@@ -16,9 +16,73 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         }
     }
 }
-<#
-    Integration test should appear below and are custom to the command you are writing.
-    Read https://github.com/sqlcollaborative/dbatools/blob/development/contributing.md#tests
-    for more guidence.
-#>
 
+Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
+    BeforeAll{
+        $accountname = "dbatoolsci_test_$(get-random)"
+        $server = Connect-DbaInstance -SqlInstance $script:instance2
+        $mailAccountSettings = "EXEC msdb.dbo.sysmail_add_account_sp
+            @account_name='$accountname',
+            @description='Mail account for email alerts',
+            @email_address='dbatoolssci@dbatools.io',
+            @display_name ='dbatoolsci mail alerts',
+            @mailserver_name='smtp.dbatools.io',
+            @replyto_address='no-reply@dbatools.io';"
+        $server.query($mailAccountSettings)
+    }
+    AfterAll{
+        $server = Connect-DbaInstance -SqlInstance $script:instance2
+        $mailAccountSettings = "EXEC msdb.dbo.sysmail_delete_account_sp
+            @account_name = '$accountname';"
+        $server.query($mailAccountSettings)
+    }
+
+    Context "Gets DbMail Account" {
+        $results = Get-DbaDbMailAccount -SqlInstance $script:instance2 | Where-Object {$_.Name -eq "$accountname"}
+        It "Gets results" {
+            $results | Should Not Be $null
+        }
+        It "Should have Name of $accounName" {
+            $results.name | Should Be $accountname
+        }
+        It "Should have Desctiption of 'Mail account for email alerts' " {
+            $results.description | Should Be 'Mail account for email alerts'
+        }
+        It "Should have EmailAddress of 'dbatoolssci@dbatools.io' " {
+            $results.EmailAddress | Should Be 'dbatoolssci@dbatools.io'
+        }
+        It "Should have ReplyToAddress of 'no-reply@dbatools.io' " {
+            $results.ReplyToAddress | Should Be 'no-reply@dbatools.io'
+        }
+        It "Should have MailServer of '[smtp.dbatools.io]' " {
+            $results.MailServers | Should Be '[smtp.dbatools.io]'
+        }
+    }
+    Context "Gets DbMail when using -Account" {
+        $results = Get-DbaDbMailAccount -SqlInstance $script:instance2 -Account $accountname
+        It "Gets results" {
+            $results | Should Not Be $null
+        }
+        It "Should have Name of $accounName" {
+            $results.name | Should Be $accountname
+        }
+        It "Should have Desctiption of 'Mail account for email alerts' " {
+            $results.description | Should Be 'Mail account for email alerts'
+        }
+        It "Should have EmailAddress of 'dbatoolssci@dbatools.io' " {
+            $results.EmailAddress | Should Be 'dbatoolssci@dbatools.io'
+        }
+        It "Should have ReplyToAddress of 'no-reply@dbatools.io' " {
+            $results.ReplyToAddress | Should Be 'no-reply@dbatools.io'
+        }
+        It "Should have MailServer of '[smtp.dbatools.io]' " {
+            $results.MailServers | Should Be '[smtp.dbatools.io]'
+        }
+    }
+    Context "Gets no DbMail when using -ExcludeAccount" {
+        $results = Get-DbaDbMailAccount -SqlInstance $script:instance2 -ExcludeAccount $accountname
+        It "Gets no results" {
+            $results | Should Be $null
+        }
+    }
+}

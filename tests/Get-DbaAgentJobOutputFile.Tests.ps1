@@ -22,9 +22,9 @@ Describe "$CommandName Unittests" -Tag 'UnitTests' {
         Context "Return values" {
             Mock Connect-SQLInstance -MockWith {
                 [object]@{
-                    Name      = 'SQLServerName'
-                    ComputerName   = 'SQLServerName'
-                    JobServer = @{
+                    Name         = 'SQLServerName'
+                    ComputerName = 'SQLServerName'
+                    JobServer    = @{
                         Jobs = @(
                             @{
                                 Name     = 'Job1'
@@ -104,5 +104,3 @@ Describe "$CommandName Unittests" -Tag 'UnitTests' {
         }
     }
 }
-
-

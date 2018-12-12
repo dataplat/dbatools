@@ -85,56 +85,40 @@ function Invoke-DbaQuery {
         PS C:\> Get-DbaDatabase -SqlInstance "server1", "server1\nordwind", "server2" | Invoke-DbaQuery -File "C:\scripts\sql\rebuild.sql"
 
         Runs the sql commands stored in rebuild.sql against all accessible databases of the instances "server1", "server1\nordwind" and "server2"
-
-#>
+        
+    .EXAMPLE
+        PS C:\> Invoke-DbaQuery -SqlInstance . -Query 'SELECT * FROM users WHERE Givenname = @name' -SqlParameters @{ Name = "Maria" }
+        
+        Executes a simple query against the users table using SQL Parameters.
+        This avoids accidental SQL Injection and is the safest way to execute queries with dynamic content.
+        Keep in mind the limitations inherent in parameters - it is quite impossible to use them for content references.
+        While it is possible to parameterize a where condition, it is impossible to use this to select which columns to select.
+        The inserted text will always be treated as string content, and not as a reference to any SQL entity (such as columns, tables or databases).
+    #>
     [CmdletBinding(DefaultParameterSetName = "Query")]
     param (
         [parameter(ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
-        [DbaInstance[]]
-        $SqlInstance,
-
+        [DbaInstance[]]$SqlInstance,
         [Alias("Credential")]
-        [PsCredential]
-        $SqlCredential,
-
-        [object]$Database,
-
+        [PsCredential]$SqlCredential,
+        [string]$Database,
         [Parameter(Mandatory, Position = 0, ParameterSetName = "Query")]
-        [string]
-        $Query,
-
-        [Int32]
-        $QueryTimeout = 600,
-
+        [string]$Query,
+        [Int32]$QueryTimeout = 600,
         [Parameter(Mandatory, ParameterSetName = "File")]
-        [object[]]
-        $File,
-
+        [Alias("InputFile")]
+        [object[]]$File,
         [Parameter(Mandatory, ParameterSetName = "SMO")]
-        [Microsoft.SqlServer.Management.Smo.SqlSmoObject[]]
-        $SqlObject,
-
+        [Microsoft.SqlServer.Management.Smo.SqlSmoObject[]]$SqlObject,
         [ValidateSet("DataSet", "DataTable", "DataRow", "PSObject", "SingleValue")]
-        [string]
-        $As = "DataRow",
-
-        [System.Collections.IDictionary]
-        $SqlParameters,
-
-        [switch]
-        $AppendServerInstance,
-
-        [switch]
-        $MessagesToOutput,
-
+        [string]$As = "DataRow",
+        [System.Collections.IDictionary]$SqlParameters,
+        [switch]$AppendServerInstance,
+        [switch]$MessagesToOutput,
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
-
-        [Alias('Silent')]
-        [switch]
-        $EnableException
-
+        [switch]$EnableException
     )
 
     begin {
@@ -344,4 +328,3 @@ function Invoke-DbaQuery {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Invoke-DbaSqlQuery
     }
 }
-

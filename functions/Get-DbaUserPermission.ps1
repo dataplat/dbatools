@@ -63,7 +63,7 @@ function Get-DbaUserPermission {
         Check server and database permissions on server sql2008 for only the TestDB database,
         including public and guest grants, and sys schema objects.
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Position = 0, Mandatory, ValueFromPipeline)]
@@ -73,7 +73,7 @@ function Get-DbaUserPermission {
         [Alias("Databases")]
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
-        [parameter(Position = 1, Mandatory = $false)]
+        [parameter(Position = 1)]
         [switch]$ExcludeSystemDatabase,
         [switch]$IncludePublicGuest,
         [switch]$IncludeSystemObjects,
@@ -219,13 +219,23 @@ function Get-DbaUserPermission {
 
                 #Create objects in active database
                 Write-Message -Level Verbose -Message "Creating objects"
-                try { $db.ExecuteNonQuery($sql) } catch {} # sometimes it complains about not being able to drop the stig schema if the person Ctrl-C'd before.
+                try {
+                    $db.ExecuteNonQuery($sql)
+                } catch {
+                    # here to avoid an empty catch
+                    $null = 1
+                } # sometimes it complains about not being able to drop the stig schema if the person Ctrl-C'd before.
 
                 #Grab permissions data
                 if (-not $serverDT) {
                     Write-Message -Level Verbose -Message "Building data table for server objects"
 
-                    try { $serverDT = $db.Query($serverSQL) } catch { }
+                    try {
+                        $serverDT = $db.Query($serverSQL)
+                    } catch {
+                        # here to avoid an empty catch
+                        $null = 1
+                    }
 
                     foreach ($row in $serverDT) {
                         [PSCustomObject]@{
@@ -250,7 +260,12 @@ function Get-DbaUserPermission {
                 }
 
                 Write-Message -Level Verbose -Message "Building data table for $db objects"
-                try { $dbDT = $db.Query($dbSQL) } catch { }
+                try {
+                    $dbDT = $db.Query($dbSQL)
+                } catch {
+                    # here to avoid an empty catch
+                    $null = 1
+                }
 
                 foreach ($row in $dbDT) {
                     [PSCustomObject]@{
@@ -275,7 +290,12 @@ function Get-DbaUserPermission {
 
                 #Delete objects
                 Write-Message -Level Verbose -Message "Deleting objects"
-                try { $db.ExecuteNonQuery($endSQL) } catch { }
+                try {
+                    $db.ExecuteNonQuery($endSQL)
+                } catch {
+                    # here to avoid an empty catch
+                    $null = 1
+                }
                 $sql = $sql.Replace($db.Name, "<TARGETDB>")
 
                 #Sashay Away
@@ -286,4 +306,3 @@ function Get-DbaUserPermission {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-DbaUserLevelPermission
     }
 }
-

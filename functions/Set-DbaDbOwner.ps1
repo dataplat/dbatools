@@ -60,8 +60,8 @@ function Set-DbaDbOwner {
 
         Sets database owner to 'sa' on the db1 and db2 databases if their current owner does not match 'sa'.
 
-#>
-    [CmdletBinding(SupportsShouldProcess = $true)]
+    #>
+    [CmdletBinding(SupportsShouldProcess)]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
@@ -157,4 +157,3 @@ function Set-DbaDbOwner {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Set-DbaDatabaseOwner
     }
 }
-

@@ -72,8 +72,8 @@ function Copy-DbaDbAssembly {
 
         Shows what would happen if the command were executed using force.
 
-#>
-    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
+    #>
+    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess)]
     param (
         [parameter(Mandatory)]
         [DbaInstanceParameter]$Source,
@@ -104,7 +104,10 @@ function Copy-DbaDbAssembly {
                 foreach ($assembly in $userAssemblies) {
                     $sourceAssemblies += $assembly
                 }
-            } catch { }
+            } catch {
+                #here to avoid an empty catch
+                $null = 1
+            }
         }
     }
     process {
@@ -125,7 +128,10 @@ function Copy-DbaDbAssembly {
                     foreach ($assembly in $userAssemblies) {
                         $destAssemblies += $assembly
                     }
-                } catch { }
+                } catch {
+                    #here to avoid an empty catch
+                    $null = 1
+                }
             }
             foreach ($currentAssembly in $sourceAssemblies) {
                 $assemblyName = $currentAssembly.Name
@@ -177,7 +183,7 @@ function Copy-DbaDbAssembly {
                 if ($destServer.Databases[$dbName].Assemblies.Name -contains $currentAssembly.name) {
                     if ($force -eq $false) {
                         $copyDbAssemblyStatus.Status = "Skipped"
-                        $copyDbAssemblyStatus.Notes = "Already exists"
+                        $copyDbAssemblyStatus.Notes = "Already exists on destination"
                         $copyDbAssemblyStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
                         Write-Message -Level Verbose -Message "Assembly $assemblyName exists at destination in the $dbName database. Use -Force to drop and migrate."
@@ -227,4 +233,3 @@ function Copy-DbaDbAssembly {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-DbaDatabaseAssembly
     }
 }
-

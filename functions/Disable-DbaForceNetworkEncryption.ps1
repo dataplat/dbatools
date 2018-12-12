@@ -50,7 +50,7 @@ function Disable-DbaForceNetworkEncryption {
 
         Shows what would happen if the command were executed.
 
-#>
+    #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
     param (
         [Parameter(ValueFromPipeline)]
@@ -85,7 +85,9 @@ function Disable-DbaForceNetworkEncryption {
             try {
                 $instancename = $sqlwmi.DisplayName.Replace('SQL Server (', '').Replace(')', '') # Don't clown, I don't know regex :(
             } catch {
-                # Probably because the instance name has been aliased or does not exist or samthin
+                # Probably because the instance name has been aliased or does not exist or something
+                # here to avoid an empty catch
+                $null = 1
             }
             $serviceaccount = $sqlwmi.ServiceAccount
 
@@ -136,4 +138,3 @@ function Disable-DbaForceNetworkEncryption {
         }
     }
 }
-

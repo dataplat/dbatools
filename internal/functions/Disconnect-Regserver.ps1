@@ -6,4 +6,3 @@ function Disconnect-Regserver ($Server) {
         $server.ServerConnection.Disconnect()
     }
 }
-

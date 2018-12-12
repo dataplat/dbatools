@@ -58,7 +58,7 @@ function Watch-DbaDbLogin {
 
         A list of servers is generated using database instance names within the SQL2014Clusters group on the Central Management Server SqlCms1. Using this list, the script enumerates all the processes and gathers login information and saves it to the table Dblogins in the DatabaseLogins database on sqlserver.
 
-#>
+    #>
     [CmdletBinding(DefaultParameterSetName = "Default")]
     param (
         [parameter(Mandatory)]
@@ -158,4 +158,3 @@ function Watch-DbaDbLogin {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Watch-SqlDbLogin
     }
 }
-

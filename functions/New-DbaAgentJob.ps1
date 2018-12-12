@@ -132,9 +132,9 @@ function New-DbaAgentJob {
 
         Creates a job with the name "Job One" on multiple servers using the pipe line
 
-#>
+    #>
 
-    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "Low")]
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
@@ -415,5 +415,3 @@ function New-DbaAgentJob {
     }
 
 }
-
-

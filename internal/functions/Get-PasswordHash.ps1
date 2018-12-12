@@ -32,7 +32,7 @@ function Get-PasswordHash {
 
     Generates password hash for SQL 2005 using custom salt from the $byte variable
 
-#>
+    #>
     param (
         [object]$Password,
         $SqlMajorVersion,
@@ -80,4 +80,3 @@ function Get-PasswordHash {
     }
     return $hashString
 }
-
