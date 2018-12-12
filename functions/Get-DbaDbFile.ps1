@@ -19,9 +19,6 @@ function Get-DbaDbFile {
     .PARAMETER ExcludeDatabase
         The database(s) to exclude - this list is auto-populated from the server
 
-    .PARAMETER SmoDatabase
-        A SMO Database object that represents the database to reference
-
     .PARAMETER InputObject
         A piped collection of database objects
 
@@ -54,69 +51,25 @@ function Get-DbaDbFile {
         Will return an object containing all file groups and their contained files for the Impromptu and Trading databases on the sql2016 SQL Server instance
 
     .EXAMPLE
-        PS C:\> $db = Get-DbaDatabase -SqlInstance sql2016 -Database Impromptu, Trading;
-                $db | Get-DbaDbFile;
+        PS C:\> Get-DbaDatabase -SqlInstance sql2016 -Database Impromptu, Trading | Get-DbaDbFile
 
         Will accept piped input from Get-DbaDatabase and return an object containing all file groups and their contained files for the Impromptu and Trading databases on the sql2016 SQL Server instance
-
     #>
-    [CmdletBinding(DefaultParameterSetName = "Default")]
+    [CmdletBinding()]
     param (
-        [parameter(ParameterSetName = "Pipe", Mandatory, ValueFromPipeline)]
+        [parameter(ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [Alias("Databases")]
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
         [parameter(ValueFromPipeline)]
-        [Microsoft.SqlServer.Management.Smo.Database[]]$SmoDatabase,
-        [object[]]$InputObject,
-        [Alias('Silent')]
+        [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
         [switch]$EnableException
     )
-
     begin {
-
-        # Used to ensure parameter validation checks only run once.
-        $initialParameterCheck = $true;
-    }
-
-    process {
-
-        # The check only needs to be run once, but cannot be done in begin{} blcok since it doens't know if we'll receive pipeline input
-        if ($initialParameterCheck) {
-
-            if ($SqlInstance -and $SmoDatabase) {
-
-                Stop-Function -Message "You cannot specify both SqlInstance and SmoDatabase." -Continue -EnableException $EnableException;
-            }
-
-            if ($SmoDatabase -and $Database) {
-
-                Write-Message -Level Verbose -Message "Parameter Database is not being used since SmoDatabase was provided as well, using that instead.";
-            }
-
-            # initial check completd, set variable to $false so we don't check each iteration
-            $initialParameterCheck = $false;
-        }
-
-        if ($SmoDatabase) {
-
-            # Select-Object Unique is here so that when $SmoDatabae is used as a parameter (not piped) it doesn't loop thorugh the same instance
-            # more than once if you have more than one database for a given instance, or if you have more than one instance with the same database
-            $Database = $SmoDatabase.Name | Select-Object -Unique;
-            $SqlInstance = $SmoDatabase.SqlInstance | Select-Object -Unique;
-        }
-
-        foreach ($instance in $SqlInstance) {
-            try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
-            } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
-            }
-
-            #region Sql Query Generation
-            $sql = "select
+        #region Sql Query Generation
+        $sql = "select
             fg.name as FileGroupName,
             df.file_id as 'ID',
             df.Type,
@@ -145,16 +98,16 @@ function Get-DbaDbFile {
             case fg.is_default When 1 then 'True' when 0 then 'False' end as FileGroupDefault,
             fg.is_read_only as FileGroupReadOnly"
 
-            $sqlfrom = "from sys.database_files df
+        $sqlfrom = "from sys.database_files df
             left outer join  sys.filegroups fg on df.data_space_id=fg.data_space_id
             inner join sys.dm_io_virtual_file_stats(db_id(),NULL) vfs on df.file_id=vfs.file_id
             inner join sys.master_files mf on df.file_id = mf.file_id
             and mf.database_id = db_id()"
 
-            $sql2008 = ",vs.available_bytes as 'VolumeFreeSpace'"
-            $sql2008from = "cross apply sys.dm_os_volume_stats(db_id(),df.file_id) vs"
+        $sql2008 = ",vs.available_bytes as 'VolumeFreeSpace'"
+        $sql2008from = "cross apply sys.dm_os_volume_stats(db_id(),df.file_id) vs"
 
-            $sql2000 = "select
+        $sql2000 = "select
             fg.groupname as FileGroupName,
             df.fileid as ID,
             CONVERT(INT,df.status & 0x40) / 64 as Type,
@@ -179,67 +132,64 @@ function Get-DbaDbFile {
             CAST(fg.status & 0x8 as BIT) as FileGroupReadOnly
             from sysfiles df
             left outer join  sysfilegroups fg on df.groupid=fg.groupid"
-            #endregion Sql Query Generation
+        #endregion Sql Query Generation
+    }
 
-            if ($Database) {
-                $InputObject = $server.Databases | Where-Object Name -in $database
+    process {
+        if ($SqlInstance) {
+            $InputObject += Get-DbaDatabase -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database -ExcludeDatabase $ExcludeDatabase
+        }
+
+        foreach ($db in $InputObject) {
+            $server = $db.Parent
+
+            Write-Message -Level Verbose -Message "Querying database $db"
+
+            try {
+                $version = $server.Query("SELECT compatibility_level FROM sys.databases WHERE name = '$($db.Name)'")
+                $version = [int]($version.compatibility_level / 10)
+            } catch {
+                $version = 8
+            }
+
+            if ($version -ge 11) {
+                $query = ($sql, $sql2008, $sqlfrom, $sql2008from) -Join "`n"
+            } elseif ($version -ge 9) {
+                $query = ($sql, $sqlfrom) -Join "`n"
             } else {
-                $InputObject = $server.Databases
+                $query = $sql2000
             }
 
-            if ($ExcludeDatabase) {
-                $InputObject = $InputObject | Where-Object Name -NotIn $ExcludeDatabase
+            Write-Message -Level Debug -Message "SQL Statement: $query"
+
+            try {
+                $results = $server.Query($query, $db.Name)
+            } catch {
+                Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
             }
 
-            foreach ($db in $InputObject) {
-
-                Write-Message -Level Verbose -Message "Querying database $db"
-
-                try {
-                    $version = $server.Query("SELECT compatibility_level FROM sys.databases WHERE name = '$($db.Name)'")
-                    $version = [int]($version.compatibility_level / 10)
-                } catch {
-                    $version = 8
+            foreach ($result in $results) {
+                $size = [dbasize]($result.Size * 8192)
+                $usedspace = [dbasize]($result.UsedSpace * 8192)
+                $maxsize = $result.MaxSize
+                # calculation is done here because for snapshots or sparse files size is not the "virtual" size
+                # (master_files.Size) but the currently allocated one (dm_io_virtual_file_stats.size_on_disk_bytes)
+                $AvailableSpace = $size - $usedspace
+                if ($result.size_on_disk_bytes) {
+                    $size = [dbasize]($result.size_on_disk_bytes)
                 }
-
-                if ($version -ge 11) {
-                    $query = ($sql, $sql2008, $sqlfrom, $sql2008from) -Join "`n"
-                } elseif ($version -ge 9) {
-                    $query = ($sql, $sqlfrom) -Join "`n"
+                if ($maxsize -gt -1) {
+                    $maxsize = [dbasize]($result.MaxSize * 8192)
                 } else {
-                    $query = $sql2000
+                    $maxsize = [dbasize]($result.MaxSize)
                 }
 
-                Write-Message -Level Debug -Message "SQL Statement: $query"
-
-                try {
-                    $results = $server.Query($query, $db.Name)
-                } catch {
-                    Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
-                }
-
-                foreach ($result in $results) {
-                    $size = [dbasize]($result.Size * 8192)
-                    $usedspace = [dbasize]($result.UsedSpace * 8192)
-                    $maxsize = $result.MaxSize
-                    # calculation is done here because for snapshots or sparse files size is not the "virtual" size
-                    # (master_files.Size) but the currently allocated one (dm_io_virtual_file_stats.size_on_disk_bytes)
-                    $AvailableSpace = $size - $usedspace
-                    if ($result.size_on_disk_bytes) {
-                        $size = [dbasize]($result.size_on_disk_bytes)
-                    }
-                    if ($maxsize -gt -1) {
-                        $maxsize = [dbasize]($result.MaxSize * 8192)
-                    } else {
-                        $maxsize = [dbasize]($result.MaxSize)
-                    }
-
-                    if ($result.VolumeFreeSpace) {
-                        $VolumeFreeSpace = [dbasize]$result.VolumeFreeSpace
-                    } else {
-                        # to get drive free space for each drive that a database has files on
-                        # when database compatibility lower than 110. Lets do this with query2
-                        $query2 = @'
+                if ($result.VolumeFreeSpace) {
+                    $VolumeFreeSpace = [dbasize]$result.VolumeFreeSpace
+                } else {
+                    # to get drive free space for each drive that a database has files on
+                    # when database compatibility lower than 110. Lets do this with query2
+                    $query2 = @'
 -- to get drive free space for each drive that a database has files on
 DECLARE @FixedDrives TABLE(Drive CHAR(1), MB_Free BIGINT);
 INSERT @FixedDrives EXEC sys.xp_fixeddrives;
@@ -249,59 +199,60 @@ FROM @FixedDrives AS fd
 INNER JOIN sys.database_files AS df
 ON fd.Drive = LEFT(df.physical_name, 1);
 '@
-                        # if the server has one drive xp_fixeddrives returns one row, but we still need $disks to be an array.
-                        if ($server.VersionMajor -gt 8) {
-                            $disks = @($server.Query($query2, $db.Name))
-                            $MbFreeColName = $disks[0].psobject.Properties.Name
-                            # get the free MB value for the drive in question
-                            $free = $disks | Where-Object {
-                                $_.drive -eq $result.PhysicalName.Substring(0, 1)
-                            } | Select-Object $MbFreeColName
+                    # if the server has one drive xp_fixeddrives returns one row, but we still need $disks to be an array.
+                    if ($server.VersionMajor -gt 8) {
+                        $disks = @($server.Query($query2, $db.Name))
+                        $MbFreeColName = $disks[0].psobject.Properties.Name
+                        # get the free MB value for the drive in question
+                        $free = $disks | Where-Object {
+                            $_.drive -eq $result.PhysicalName.Substring(0, 1)
+                        } | Select-Object $MbFreeColName
 
-                            $VolumeFreeSpace = [dbasize](($free.MB_Free) * 1024 * 1024)
-                        }
+                        $VolumeFreeSpace = [dbasize](($free.MB_Free) * 1024 * 1024)
                     }
-                    if ($result.GrowthType -eq "Percent") {
-                        $nextgrowtheventadd = [dbasize]($result.size * ($result.Growth * 0.01) * 1024)
-                    } else {
-                        $nextgrowtheventadd = [dbasize]($result.Growth * 8 * 1024)
-                    }
-                    if ( ($nextgrowtheventadd.Byte -gt ($MaxSize.Byte - $size.Byte)) -and $maxsize -gt 0 ) { [dbasize]$nextgrowtheventadd = 0 }
+                }
+                if ($result.GrowthType -eq "Percent") {
+                    $nextgrowtheventadd = [dbasize]($result.size * ($result.Growth * 0.01) * 1024)
+                } else {
+                    $nextgrowtheventadd = [dbasize]($result.Growth * 8 * 1024)
+                }
+                if (($nextgrowtheventadd.Byte -gt ($MaxSize.Byte - $size.Byte)) -and $maxsize -gt 0) {
+                    [dbasize]$nextgrowtheventadd = 0
+                }
 
-                    [PSCustomObject]@{
-                        ComputerName             = $server.ComputerName
-                        InstanceName             = $server.ServiceName
-                        SqlInstance              = $server.DomainInstanceName
-                        Database                 = $db.name
-                        FileGroupName            = $result.FileGroupName
-                        ID                       = $result.ID
-                        Type                     = $result.Type
-                        TypeDescription          = $result.TypeDescription
-                        LogicalName              = $result.LogicalName.Trim()
-                        PhysicalName             = $result.PhysicalName.Trim()
-                        State                    = $result.State
-                        MaxSize                  = $maxsize
-                        Growth                   = $result.Growth
-                        GrowthType               = $result.GrowthType
-                        NextGrowthEventSize      = $nextgrowtheventadd
-                        Size                     = $size
-                        UsedSpace                = $usedspace
-                        AvailableSpace           = $AvailableSpace
-                        IsOffline                = $result.IsOffline
-                        IsReadOnly               = $result.IsReadOnly
-                        IsReadOnlyMedia          = $result.IsReadOnlyMedia
-                        IsSparse                 = $result.IsSparse
-                        NumberOfDiskWrites       = $result.NumberOfDiskWrites
-                        NumberOfDiskReads        = $result.NumberOfDiskReads
-                        ReadFromDisk             = [dbasize]$result.BytesReadFromDisk
-                        WrittenToDisk            = [dbasize]$result.BytesWrittenToDisk
-                        VolumeFreeSpace          = $VolumeFreeSpace
-                        FileGroupDataSpaceId     = $result.FileGroupDataSpaceId
-                        FileGroupType            = $result.FileGroupType
-                        FileGroupTypeDescription = $result.FileGroupTypeDescription
-                        FileGroupDefault         = $result.FileGroupDefault
-                        FileGroupReadOnly        = $result.FileGroupReadOnly
-                    }
+                [PSCustomObject]@{
+                    ComputerName             = $server.ComputerName
+                    InstanceName             = $server.ServiceName
+                    SqlInstance              = $server.DomainInstanceName
+                    Database                 = $db.name
+                    FileGroupName            = $result.FileGroupName
+                    ID                       = $result.ID
+                    Type                     = $result.Type
+                    TypeDescription          = $result.TypeDescription
+                    LogicalName              = $result.LogicalName.Trim()
+                    PhysicalName             = $result.PhysicalName.Trim()
+                    State                    = $result.State
+                    MaxSize                  = $maxsize
+                    Growth                   = $result.Growth
+                    GrowthType               = $result.GrowthType
+                    NextGrowthEventSize      = $nextgrowtheventadd
+                    Size                     = $size
+                    UsedSpace                = $usedspace
+                    AvailableSpace           = $AvailableSpace
+                    IsOffline                = $result.IsOffline
+                    IsReadOnly               = $result.IsReadOnly
+                    IsReadOnlyMedia          = $result.IsReadOnlyMedia
+                    IsSparse                 = $result.IsSparse
+                    NumberOfDiskWrites       = $result.NumberOfDiskWrites
+                    NumberOfDiskReads        = $result.NumberOfDiskReads
+                    ReadFromDisk             = [dbasize]$result.BytesReadFromDisk
+                    WrittenToDisk            = [dbasize]$result.BytesWrittenToDisk
+                    VolumeFreeSpace          = $VolumeFreeSpace
+                    FileGroupDataSpaceId     = $result.FileGroupDataSpaceId
+                    FileGroupType            = $result.FileGroupType
+                    FileGroupTypeDescription = $result.FileGroupTypeDescription
+                    FileGroupDefault         = $result.FileGroupDefault
+                    FileGroupReadOnly        = $result.FileGroupReadOnly
                 }
             }
         }
