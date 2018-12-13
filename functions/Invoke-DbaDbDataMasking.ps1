@@ -103,7 +103,7 @@ function Invoke-DbaDbDataMasking {
             return
         }
 
-        if ($FilePath.StartsWith('http')) {
+        if ($FilePath.ToString().StartsWith('http')) {
             $tables = Invoke-RestMethod -Uri $FilePath
         } else {
             # Check if the destination is accessible
