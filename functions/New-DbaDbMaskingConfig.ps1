@@ -13,7 +13,7 @@ function New-DbaDbMaskingConfig {
         Hierarchyid
         Geography
         Xml
-    
+
         Read more here:
         https://sachabarbs.wordpress.com/2018/06/11/bogus-simple-fake-data-tool/
         https://github.com/bchavez/Bogus
@@ -192,7 +192,7 @@ function New-DbaDbMaskingConfig {
                         Write-Message -Level Verbose -Message "Skipping $columnobject because it is a xml column"
                         continue
                     }
-                    
+
                     $maskingType = $min = $null
                     $columnLength = $columnobject.Datatype.MaximumLength
                     $columnType = $columnobject.DataType.SqlDataType.ToString().ToLower()

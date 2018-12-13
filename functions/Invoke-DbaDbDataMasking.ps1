@@ -6,7 +6,7 @@ function Invoke-DbaDbDataMasking {
     .DESCRIPTION
         Invoke-DbaDbDataMasking is able to generate random data for tables.
         It will use a configuration file that can be made manually or generated using New-DbaDbMaskingConfig
-    
+
         Note that the following column and data types are not currently supported:
         Identity
         ForeignKey
@@ -97,18 +97,18 @@ function Invoke-DbaDbDataMasking {
         Add-Type -Path (Resolve-Path -Path "$script:PSModuleRoot\bin\datamasking\Bogus.dll")
         $faker = New-Object Bogus.Faker($Locale)
     }
-    
+
     process {
         if (Test-FunctionInterrupt) {
             return
         }
-        
+
         # Check if the destination is accessible
         if (-not (Test-Path -Path $FilePath -Credential $Credential)) {
             Stop-Function -Message "Could not find masking config file" -ErrorRecord $_ -Target $FilePath
             return
         }
-        
+
         # Get all the items that should be processed
         try {
             $tables = Get-Content -Path $FilePath -Credential $Credential -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
@@ -116,7 +116,7 @@ function Invoke-DbaDbDataMasking {
             Stop-Function -Message "Could not parse masking config file" -ErrorRecord $_ -Target $FilePath
             return
         }
-        
+
         foreach ($tabletest in $tables.Tables) {
             foreach ($columntest in $tabletest.Columns) {
                 if ($columntest.ColumnType -in 'hierarchyid', 'geography', 'xml') {
@@ -124,36 +124,36 @@ function Invoke-DbaDbDataMasking {
                 }
             }
         }
-        
+
         if (Test-FunctionInterrupt) {
             return
         }
-        
+
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-            
+
             foreach ($db in (Get-DbaDatabase -SqlInstance $server -Database $Database)) {
-                
+
                 foreach ($table in $tables.Tables) {
                     if ($table.Name -in $db.Tables.Name) {
                         try {
                             if (-not (Test-Bound -ParameterName Query)) {
                                 $query = "SELECT * FROM [$($table.Schema)].[$($table.Name)]"
                             }
-                            
+
                             $data = $db.Query($query) | ConvertTo-DbaDataTable
                         } catch {
                             Stop-Function -Message "Something went wrong retrieving the data from table $($table.Name)" -Target $Database
                         }
-                        
+
                         # Loop through each of the rows and change them
                         foreach ($row in $data.Rows) {
                             $updates = $wheres = @()
-                            
+
                             foreach ($column in $table.Columns) {
                                 # make sure max is good
                                 if ($MaxValue) {
@@ -163,17 +163,17 @@ function Invoke-DbaDbDataMasking {
                                         $max = $MaxValue
                                     }
                                 }
-                                
+
                                 if (-not $column.MaxValue -and -not (Test-Bound -ParameterName MaxValue)) {
                                     $max = 10
                                 }
-                                
+
                                 if ($column.CharacterString) {
                                     $charstring = $column.CharacterString
                                 } else {
                                     $charstring = $CharacterString
                                 }
-                                
+
                                 # make sure min is good
                                 if ($column.MinValue) {
                                     $min = $column.MinValue
@@ -184,7 +184,7 @@ function Invoke-DbaDbDataMasking {
                                         $min = 0
                                     }
                                 }
-                                
+
                                 if (($column.MinValue -or $column.MaxValue) -and ($column.ColumnType -match 'date')) {
                                     $nowmin = $column.MinValue
                                     $nowmax = $column.MaxValue
@@ -195,7 +195,7 @@ function Invoke-DbaDbDataMasking {
                                         $nowmax = (Get-Date -Date $nowmin).AddDays(365)
                                     }
                                 }
-                                
+
                                 try {
                                     $newValue = switch ($column.ColumnType) {
                                         { $psitem -in 'bit', 'bool', 'flag' } {
@@ -232,7 +232,7 @@ function Invoke-DbaDbDataMasking {
                                             $null
                                         }
                                     }
-                                    
+
                                     if (-not $newValue) {
                                         $newValue = switch ($column.Subtype.ToLower()) {
                                             'number' {
@@ -277,7 +277,7 @@ function Invoke-DbaDbDataMasking {
                                 } catch {
                                     Stop-Function -Message "Failure" -Target $faker -Continue -ErrorRecord $_
                                 }
-                                
+
                                 if ($column.ColumnType -eq 'xml') {
                                     # nothing, unsure how i'll handle this
                                 } elseif ($column.ColumnType -in 'uniqueidentifier') {
@@ -288,15 +288,15 @@ function Invoke-DbaDbDataMasking {
                                     $newValue = ($newValue).Tostring().Replace("'", "''")
                                     $updates += "[$($column.Name)] = '$newValue'"
                                 }
-                                
+
                                 if ($column.ColumnType -notin 'xml', 'geography') {
                                     $oldValue = ($row.$($column.Name)).Tostring().Replace("'", "''")
                                     $wheres += "[$($column.Name)] = '$oldValue'"
                                 }
                             }
-                            
+
                             $updatequery = "UPDATE [$($table.Schema)].[$($table.Name)] SET $($updates -join ', ') WHERE $($wheres -join ' AND ')"
-                            
+
                             try {
                                 Write-Message -Level Debug -Message $updatequery
                                 $db.Query($updatequery)
