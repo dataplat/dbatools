@@ -161,7 +161,7 @@ function New-DbaDbMaskingConfig {
                     if ((-not $columnobject.Identity) -and (-not $columnobject.IsForeignKey)) {
                         $maskingType = $null
 
-                        $columnLength = $columnobject.Properties['Length'].Value
+                        $columnLength = $columnobject.Datatype.MaximumLength
                         $columnType = $columnobject.DataType.Name.ToLower()
 
                         # Get the masking type with the synonims
@@ -176,7 +176,8 @@ function New-DbaDbMaskingConfig {
                                     $columns += [PSCustomObject]@{
                                         Name        = $columnobject.Name
                                         ColumnType  = $columnType
-                                        MaxLength   = $columnLength
+                                        MinValue    = $null
+                                        MaxValue    = $columnLength
                                         MaskingType = "Name"
                                         SubType     = "Firstname"
                                     }
@@ -185,7 +186,8 @@ function New-DbaDbMaskingConfig {
                                     $columns += [PSCustomObject]@{
                                         Name        = $columnobject.Name
                                         ColumnType  = $columnType
-                                        MaxLength   = $columnLength
+                                        MinValue    = $null
+                                        MaxValue    = $columnLength
                                         MaskingType = "Name"
                                         SubType     = "Lastname"
                                     }
@@ -194,7 +196,8 @@ function New-DbaDbMaskingConfig {
                                     $columns += [PSCustomObject]@{
                                         Name        = $columnobject.Name
                                         ColumnType  = $columnType
-                                        MaxLength   = $columnLength
+                                        MinValue    = $null
+                                        MaxValue    = $columnLength
                                         MaskingType = "Finance"
                                         SubType     = "CreditcardNumber"
                                     }
@@ -203,7 +206,8 @@ function New-DbaDbMaskingConfig {
                                     $columns += [PSCustomObject]@{
                                         Name        = $columnobject.Name
                                         ColumnType  = $columnType
-                                        MaxLength   = $columnLength
+                                        MinValue    = $null
+                                        MaxValue    = $columnLength
                                         MaskingType = "Address"
                                         SubType     = "StreetAddress"
                                     }
@@ -212,7 +216,8 @@ function New-DbaDbMaskingConfig {
                                     $columns += [PSCustomObject]@{
                                         Name        = $columnobject.Name
                                         ColumnType  = $columnType
-                                        MaxLength   = $columnLength
+                                        MinValue    = $null
+                                        MaxValue    = $columnLength
                                         MaskingType = "Address"
                                         SubType     = "City"
                                     }
@@ -221,7 +226,8 @@ function New-DbaDbMaskingConfig {
                                     $columns += [PSCustomObject]@{
                                         Name        = $columnobject.Name
                                         ColumnType  = $columnType
-                                        MaxLength   = $columnLength
+                                        MinValue    = $null
+                                        MaxValue    = $columnLength
                                         MaskingType = "Address"
                                         SubType     = "Zipcode"
                                     }
@@ -233,50 +239,51 @@ function New-DbaDbMaskingConfig {
                             switch ($columnType) {
                                 "bigint" {
                                     $subType = "Number"
-                                    $maxLength = 9223372036854775807
+                                    $MaxValue = 9223372036854775807
                                 }
                                 "int" {
                                     $subType = "Number"
-                                    $maxLength = 2147483647
+                                    $MaxValue = 2147483647
                                 }
                                 "date" {
                                     $subType = "Date"
-                                    $maxLength = $null
+                                    $MaxValue = $null
                                 }
                                 "datetime" {
                                     $subType = "Date"
-                                    $maxLength = $null
+                                    $MaxValue = $null
                                 }
                                 "datetime2" {
                                     $subType = "Date"
-                                    $maxLength = $null
+                                    $MaxValue = $null
                                 }
                                 "float" {
                                     $subType = "Float"
-                                    $maxLength = $null
+                                    $MaxValue = $null
                                 }
                                 "smallint" {
                                     $subType = "Number"
-                                    $maxLength = 32767
+                                    $MaxValue = 32767
                                 }
                                 "smalldatetime" {
                                     $subType = "Date"
-                                    $maxLength = $null
+                                    $MaxValue = $null
                                 }
                                 "tinyint" {
                                     $subType = "Number"
-                                    $maxLength = 255
+                                    $MaxValue = 255
                                 }
                                 default {
                                     $subType = "String"
-                                    $maxLength = $columnLength
+                                    $MaxValue = $columnLength
                                 }
                             }
 
                             $columns += [PSCustomObject]@{
                                 Name        = $columnobject.Name
                                 ColumnType  = $columnType
-                                MaxLength   = $maxLength
+                                MinValue    = $null
+                                MaxValue    = $MaxValue
                                 MaskingType = $type
                                 SubType     = $subType
                             }

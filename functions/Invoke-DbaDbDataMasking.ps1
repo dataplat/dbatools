@@ -36,6 +36,11 @@ function Invoke-DbaDbDataMasking {
     .PARAMETER Locale
         Set the local to enable certain settings in the masking
 
+    .PARAMETER MaxValue
+        Force a max length of strings instead of relying on datatype maxes. Note if a string datatype has a lower MaxValue, that will be used instead.
+
+        Useful for adhoc updates and testing, otherwise, the config file should be used.
+
     .PARAMETER Force
         Forcefully execute commands when needed
 
@@ -72,6 +77,7 @@ function Invoke-DbaDbDataMasking {
         [string]$Locale = 'en',
         [string]$Query,
         [switch]$Force,
+        [int]$MaxValue,
         [switch]$EnableException
     )
     begin {
@@ -102,6 +108,18 @@ function Invoke-DbaDbDataMasking {
             return
         }
 
+        foreach ($tabletest in $tables.Tables) {
+            foreach ($columntest in $tabletest.Columns) {
+                if ($columntest.ColumnType -in 'hierarchyid', 'geography') {
+                    Stop-Function -Message "$($columntest.ColumnType) is not supported, please remove the column $($columntest.Name) from the $($tabletest.Name) table" -Target $tables
+                }
+            }
+        }
+
+        if (Test-FunctionInterrupt) {
+            return
+        }
+
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
@@ -126,8 +144,21 @@ function Invoke-DbaDbDataMasking {
                         # Loop through each of the rows and change them
                         foreach ($row in $data.Rows) {
                             $updates = $wheres = @()
-                            # Loop thorough the columns
+
                             foreach ($column in $table.Columns) {
+                                # make sure max is good
+                                if ($MaxValue) {
+                                    if ($column.MaxValue -le $MaxValue) {
+                                        $max = $column.MaxValue
+                                    } else {
+                                        $max = $MaxValue
+                                    }
+                                }
+
+                                if (-not $column.MaxValue -and -not (Test-Bound -ParameterName MaxValue)) {
+                                    $max = 10
+                                }
+
                                 $newValue = switch ($column.MaskingType.ToLower()) {
                                     { $_ -in 'name', 'address', 'finance' } {
                                         $faker.$($column.MaskingType).$($column.SubType)()
@@ -135,35 +166,58 @@ function Invoke-DbaDbDataMasking {
                                     { $_ -in 'date', 'datetime', 'datetime2', 'smalldatetime' } {
                                         ($faker.Date.Past()).ToString("yyyyMMdd")
                                     }
-                                    "number" {
-                                        $faker.$($column.MaskingType).$($column.SubType)($column.MaxLength)
+                                    'number' {
+                                        $faker.$($column.MaskingType).$($column.SubType)($column.MaxValue)
                                     }
-                                    "shuffle" {
+                                    'shuffle' {
                                         ($row.($column.Name) -split '' | Sort-Object {
                                                 Get-Random
                                             }) -join ''
                                     }
-                                    "string" {
-                                        $faker.$($column.MaskingType).String2($column.MaxLength, $charString)
+                                    'string' {
+                                        $faker.$($column.MaskingType).String2($max, $charString)
                                     }
                                     default {
-                                        if (-not $column.MaxLength) {
-                                            $column.MaxLength = 10
-                                        }
-                                        if ($column.ColumnType -in 'date', 'datetime', 'datetime2', 'smalldatetime') {
-                                            ($faker.Date.Past()).ToString("yyyyMMdd")
-                                        } else {
-                                            $faker.Random.String2(1, $column.MaxLength, $charString)
-                                        }
-
+                                        $null
                                     }
                                 }
 
-                                $oldValue = ($row.$($column.Name)).Tostring().Replace("'", "''")
-                                $newValue = ($newValue).Tostring().Replace("'", "''")
+                                if (-not $newValue) {
+                                    $newValue = switch ($column.ColumnType) {
+                                        { $_ -in 'date', 'datetime', 'datetime2', 'smalldatetime' } {
+                                            ($faker.Date.Past()).ToString("yyyyMMdd")
+                                        }
+                                        'money' {
+                                            $faker.Finance.Amount(0, $max)
+                                        }
+                                        'smallint' {
+                                            $faker.System.Random.Int(-32768, 32767)
+                                        }
+                                        'bit' {
+                                            $faker.System.Random.Bool()
+                                        }
+                                        'uniqueidentifier' {
+                                            $faker.System.Random.Guid().Guid
+                                        }
+                                        default {
+                                            $faker.Random.String2(0, $max, $charString)
+                                        }
+                                    }
+                                }
 
-                                $updates += "[$($column.Name)] = '$newValue'"
-                                $wheres += "[$($column.Name)] = '$oldValue'"
+                                if ($column.ColumnType -in 'uniqueidentifier') {
+                                    $updates += "[$($column.Name)] = '$newValue'"
+                                } elseif ($column.ColumnType -match 'int' ) {
+                                    $updates += "[$($column.Name)] = $newValue"
+                                } else {
+                                    $newValue = ($newValue).Tostring().Replace("'", "''")
+                                    $updates += "[$($column.Name)] = '$newValue'"
+                                }
+
+                                if ($column.ColumnType -notin 'xml', 'geography') {
+                                    $oldValue = ($row.$($column.Name)).Tostring().Replace("'", "''")
+                                    $wheres += "[$($column.Name)] = '$oldValue'"
+                                }
                             }
 
                             $updatequery = "UPDATE [$($table.Schema)].[$($table.Name)] SET $($updates -join ', ') WHERE $($wheres -join ' AND ')"
@@ -178,9 +232,10 @@ function Invoke-DbaDbDataMasking {
                                     Table       = $table.Name
                                     Query       = $updatequery
                                     Status      = "Success"
-                                }
+                                } | Select-DefaultView -ExcludeProperty Query
                             } catch {
-                                Stop-Function -Message "Could not execute the query: $updatequery" -Target $updatequery -Continue
+                                Write-Message -Level Verbose -Message "$updatequery"
+                                Stop-Function -Message "Could not execute query when updating $($table.Schema).$($table.Name)" -Target $updatequery -Continue -ErrorRecord $_
                             }
                         }
                     } else {
