@@ -205,62 +205,68 @@ function New-DbaDbMaskingConfig {
                         switch ($maskingType.ToLower()) {
                             "firstname" {
                                 $columns += [PSCustomObject]@{
-                                    Name        = $columnobject.Name
-                                    ColumnType  = $columnType
-                                    MinValue    = $null
-                                    MaxValue    = $columnLength
-                                    MaskingType = "Name"
-                                    SubType     = "Firstname"
+                                    Name            = $columnobject.Name
+                                    ColumnType      = $columnType
+                                    CharacterString = $null
+                                    MinValue        = $null
+                                    MaxValue        = $columnLength
+                                    MaskingType     = "Name"
+                                    SubType         = "Firstname"
                                 }
                             }
                             "lastname" {
                                 $columns += [PSCustomObject]@{
-                                    Name        = $columnobject.Name
-                                    ColumnType  = $columnType
-                                    MinValue    = $null
-                                    MaxValue    = $columnLength
-                                    MaskingType = "Name"
-                                    SubType     = "Lastname"
+                                    Name            = $columnobject.Name
+                                    ColumnType      = $columnType
+                                    CharacterString = $null
+                                    MinValue        = $null
+                                    MaxValue        = $columnLength
+                                    MaskingType     = "Name"
+                                    SubType         = "Lastname"
                                 }
                             }
                             "creditcard" {
                                 $columns += [PSCustomObject]@{
-                                    Name        = $columnobject.Name
-                                    ColumnType  = $columnType
-                                    MinValue    = $null
-                                    MaxValue    = $columnLength
-                                    MaskingType = "Finance"
-                                    SubType     = "CreditcardNumber"
+                                    Name            = $columnobject.Name
+                                    ColumnType      = $columnType
+                                    CharacterString = $null
+                                    MinValue        = $null
+                                    MaxValue        = $columnLength
+                                    MaskingType     = "Finance"
+                                    SubType         = "CreditcardNumber"
                                 }
                             }
                             "address" {
                                 $columns += [PSCustomObject]@{
-                                    Name        = $columnobject.Name
-                                    ColumnType  = $columnType
-                                    MinValue    = $null
-                                    MaxValue    = $columnLength
-                                    MaskingType = "Address"
-                                    SubType     = "StreetAddress"
+                                    Name            = $columnobject.Name
+                                    ColumnType      = $columnType
+                                    CharacterString = $null
+                                    MinValue        = $null
+                                    MaxValue        = $columnLength
+                                    MaskingType     = "Address"
+                                    SubType         = "StreetAddress"
                                 }
                             }
                             "city" {
                                 $columns += [PSCustomObject]@{
-                                    Name        = $columnobject.Name
-                                    ColumnType  = $columnType
-                                    MinValue    = $null
-                                    MaxValue    = $columnLength
-                                    MaskingType = "Address"
-                                    SubType     = "City"
+                                    Name            = $columnobject.Name
+                                    ColumnType      = $columnType
+                                    CharacterString = $null
+                                    MinValue        = $null
+                                    MaxValue        = $columnLength
+                                    MaskingType     = "Address"
+                                    SubType         = "City"
                                 }
                             }
                             "zipcode" {
                                 $columns += [PSCustomObject]@{
-                                    Name        = $columnobject.Name
-                                    ColumnType  = $columnType
-                                    MinValue    = $null
-                                    MaxValue    = $columnLength
-                                    MaskingType = "Address"
-                                    SubType     = "Zipcode"
+                                    Name            = $columnobject.Name
+                                    ColumnType      = $columnType
+                                    CharacterString = $null
+                                    MinValue        = $null
+                                    MaxValue        = $columnLength
+                                    MaskingType     = "Address"
+                                    SubType         = "Zipcode"
                                 }
                             }
                         }
@@ -268,6 +274,10 @@ function New-DbaDbMaskingConfig {
                         $type = "Random"
 
                         switch ($columnType) {
+                            { $_ -in "bit", "bool", "flag" } {
+                                $subType = "Bool"
+                                $MaxValue = $null
+                            }
                             "bigint" {
                                 $subType = "Number"
                                 $MaxValue = 9223372036854775807
@@ -311,12 +321,13 @@ function New-DbaDbMaskingConfig {
                         }
 
                         $columns += [PSCustomObject]@{
-                            Name        = $columnobject.Name
-                            ColumnType  = $columnType
-                            MinValue    = $null
-                            MaxValue    = $MaxValue
-                            MaskingType = $type
-                            SubType     = $subType
+                            Name            = $columnobject.Name
+                            ColumnType      = $columnType
+                            CharacterString = $null
+                            MinValue        = $null
+                            MaxValue        = $MaxValue
+                            MaskingType     = $type
+                            SubType         = $subType
                         }
                     }
                 }

@@ -36,6 +36,9 @@ function Invoke-DbaDbDataMasking {
     .PARAMETER Locale
         Set the local to enable certain settings in the masking
 
+    .PARAMETER CharacterString
+        The characters to use in string data. 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789' by default
+
     .PARAMETER MaxValue
         Force a max length of strings instead of relying on datatype maxes. Note if a string datatype has a lower MaxValue, that will be used instead.
 
@@ -75,15 +78,13 @@ function Invoke-DbaDbDataMasking {
         [Alias('Path', 'FullName')]
         [object]$FilePath,
         [string]$Locale = 'en',
+        [string]$CharacterString = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789',
         [string]$Query,
         [switch]$Force,
         [int]$MaxValue,
         [switch]$EnableException
     )
     begin {
-        # Set defaults
-        $charString = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
-
         # Create the faker objects
         Add-Type -Path (Resolve-Path -Path "$script:PSModuleRoot\bin\datamasking\Bogus.dll")
         $faker = New-Object Bogus.Faker($Locale)
@@ -159,23 +160,35 @@ function Invoke-DbaDbDataMasking {
                                     $max = 10
                                 }
 
-                                $newValue = switch ($column.MaskingType.ToLower()) {
-                                    { $_ -in 'name', 'address', 'finance' } {
-                                        $faker.$($column.MaskingType).$($column.SubType)()
+                                if ($column.CharacterString) {
+                                    $charstring = $column.CharacterString
+                                } else {
+                                    $charstring = $CharacterString
+                                }
+
+                                $newValue = switch ($column.ColumnType) {
+                                    {
+                                        $_ -in 'bit', 'bool', 'flag'
+                                    } {
+                                        $faker.System.Random.Bool()
                                     }
-                                    { $_ -in 'date', 'datetime', 'datetime2', 'smalldatetime' } {
-                                        ($faker.Date.Past()).ToString("yyyyMMdd")
+                                    {
+                                        $_ -in 'date', 'datetime', 'datetime2', 'smalldatetime'
+                                    } {
+                                        if ($column.MinValue -or $column.MaxValue) {
+                                            ($faker.Date.Between($column.MinValue, $column.MaxValue)).ToString("yyyyMMdd")
+                                        } else {
+                                            ($faker.Date.Past()).ToString("yyyyMMdd")
+                                        }
                                     }
-                                    'number' {
-                                        $faker.$($column.MaskingType).$($column.SubType)($column.MaxValue)
+                                    'money' {
+                                        $faker.Finance.Amount(0, $max)
                                     }
-                                    'shuffle' {
-                                        ($row.($column.Name) -split '' | Sort-Object {
-                                                Get-Random
-                                            }) -join ''
+                                    'smallint' {
+                                        $faker.System.Random.Int(-32768, 32767)
                                     }
-                                    'string' {
-                                        $faker.$($column.MaskingType).String2($max, $charString)
+                                    'uniqueidentifier' {
+                                        $faker.System.Random.Guid().Guid
                                     }
                                     default {
                                         $null
@@ -183,31 +196,50 @@ function Invoke-DbaDbDataMasking {
                                 }
 
                                 if (-not $newValue) {
-                                    $newValue = switch ($column.ColumnType) {
-                                        { $_ -in 'date', 'datetime', 'datetime2', 'smalldatetime' } {
-                                            ($faker.Date.Past()).ToString("yyyyMMdd")
-                                        }
-                                        'money' {
-                                            $faker.Finance.Amount(0, $max)
-                                        }
-                                        'smallint' {
-                                            $faker.System.Random.Int(-32768, 32767)
-                                        }
-                                        'bit' {
+                                    $newValue = switch ($column.MaskingType.ToLower()) {
+                                        {  $_ -in 'bit', 'bool', 'flag' } {
                                             $faker.System.Random.Bool()
                                         }
-                                        'uniqueidentifier' {
-                                            $faker.System.Random.Guid().Guid
+                                        { $_ -in 'name', 'address', 'finance' } {
+                                            $faker.$($column.MaskingType).$($column.SubType)()
+                                        }
+                                        { $_ -in 'date', 'datetime', 'datetime2', 'smalldatetime' } {
+                                            if ($column.MinValue -or $column.MaxValue) {
+                                                ($faker.Date.Between($column.MinValue, $column.MaxValue)).ToString("yyyyMMdd")
+                                            } else {
+                                                ($faker.Date.Past()).ToString("yyyyMMdd")
+                                            }
+                                        }
+                                        'number' {
+                                            $faker.$($column.MaskingType).$($column.SubType)($column.MaxValue)
+                                        }
+                                        'shuffle' {
+                                            ($row.($column.Name) -split '' | Sort-Object {
+                                                    Get-Random
+                                                }) -join ''
+                                        }
+                                        'string' {
+                                            if ($column.CharacterString) {
+                                                $min = 1
+                                            } else {
+                                                $min = 0
+                                            }
+                                            $faker.$($column.MaskingType).String2($min, $max, $charstring)
                                         }
                                         default {
-                                            $faker.Random.String2(0, $max, $charString)
+                                            if ($column.CharacterString) {
+                                                $min = 1
+                                            } else {
+                                                $min = 0
+                                            }
+                                            $faker.Random.String2($min, $max, $charstring)
                                         }
                                     }
                                 }
 
                                 if ($column.ColumnType -in 'uniqueidentifier') {
                                     $updates += "[$($column.Name)] = '$newValue'"
-                                } elseif ($column.ColumnType -match 'int' ) {
+                                } elseif ($column.ColumnType -match 'int') {
                                     $updates += "[$($column.Name)] = $newValue"
                                 } else {
                                     $newValue = ($newValue).Tostring().Replace("'", "''")
@@ -234,8 +266,8 @@ function Invoke-DbaDbDataMasking {
                                     Status      = "Success"
                                 } | Select-DefaultView -ExcludeProperty Query
                             } catch {
-                                Write-Message -Level Verbose -Message "$updatequery"
-                                Stop-Function -Message "Could not execute query when updating $($table.Schema).$($table.Name)" -Target $updatequery -Continue -ErrorRecord $_
+                                Write-Message -Level VeryVerbose -Message "$updatequery"
+                                Stop-Function -Message "Error updating $($table.Schema).$($table.Name)" -Target $updatequery -Continue -ErrorRecord $_
                             }
                         }
                     } else {
