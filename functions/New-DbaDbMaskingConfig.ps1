@@ -6,6 +6,14 @@ function New-DbaDbMaskingConfig {
     .DESCRIPTION
         Generates a new data masking configuration file. This file is important to apply any data masking to the data in a database.
 
+        Note that the following column and data types are not currently supported:
+        Identity
+        ForeignKey
+        Computed
+        Hierarchyid
+        Geography
+        Xml
+    
         Read more here:
         https://sachabarbs.wordpress.com/2018/06/11/bogus-simple-fake-data-tool/
         https://github.com/bchavez/Bogus
@@ -172,10 +180,6 @@ function New-DbaDbMaskingConfig {
                         Write-Message -Level Verbose -Message "Skipping $columnobject because it is a computed column"
                         continue
                     }
-                    if ($columnobject.Identity) {
-                        Write-Message -Level Verbose -Message "Skipping $columnobject because it is an identity column"
-                        continue
-                    }
                     if ($columnobject.DataType.Name -eq 'hierarchyid') {
                         Write-Message -Level Verbose -Message "Skipping $columnobject because it is a hierarchyid column"
                         continue
@@ -184,13 +188,20 @@ function New-DbaDbMaskingConfig {
                         Write-Message -Level Verbose -Message "Skipping $columnobject because it is a geography column"
                         continue
                     }
-
-                    $maskingType = $null
+                    if ($columnobject.DataType.Name -eq 'xml') {
+                        Write-Message -Level Verbose -Message "Skipping $columnobject because it is a xml column"
+                        continue
+                    }
+                    
+                    $maskingType = $min = $null
                     $columnLength = $columnobject.Datatype.MaximumLength
-                    $columnType = $columnobject.DataType.Name.ToLower()
+                    $columnType = $columnobject.DataType.SqlDataType.ToString().ToLower()
 
+                    if ($columnobject.InPrimaryKey) {
+                        $min = 2
+                    }
                     if (-not $columnType) {
-                        $columnType = $columnobject.DataType.SqlDataType.ToString().ToLower()
+                        $columnType = $columnobject.DataType.Name.ToLower()
                     }
 
                     # Get the masking type with the synonims
@@ -208,7 +219,7 @@ function New-DbaDbMaskingConfig {
                                     Name            = $columnobject.Name
                                     ColumnType      = $columnType
                                     CharacterString = $null
-                                    MinValue        = $null
+                                    MinValue        = $min
                                     MaxValue        = $columnLength
                                     MaskingType     = "Name"
                                     SubType         = "Firstname"
@@ -219,7 +230,7 @@ function New-DbaDbMaskingConfig {
                                     Name            = $columnobject.Name
                                     ColumnType      = $columnType
                                     CharacterString = $null
-                                    MinValue        = $null
+                                    MinValue        = $min
                                     MaxValue        = $columnLength
                                     MaskingType     = "Name"
                                     SubType         = "Lastname"
@@ -230,7 +241,7 @@ function New-DbaDbMaskingConfig {
                                     Name            = $columnobject.Name
                                     ColumnType      = $columnType
                                     CharacterString = $null
-                                    MinValue        = $null
+                                    MinValue        = $min
                                     MaxValue        = $columnLength
                                     MaskingType     = "Finance"
                                     SubType         = "CreditcardNumber"
@@ -241,7 +252,7 @@ function New-DbaDbMaskingConfig {
                                     Name            = $columnobject.Name
                                     ColumnType      = $columnType
                                     CharacterString = $null
-                                    MinValue        = $null
+                                    MinValue        = $min
                                     MaxValue        = $columnLength
                                     MaskingType     = "Address"
                                     SubType         = "StreetAddress"
@@ -252,7 +263,7 @@ function New-DbaDbMaskingConfig {
                                     Name            = $columnobject.Name
                                     ColumnType      = $columnType
                                     CharacterString = $null
-                                    MinValue        = $null
+                                    MinValue        = $min
                                     MaxValue        = $columnLength
                                     MaskingType     = "Address"
                                     SubType         = "City"
@@ -263,7 +274,7 @@ function New-DbaDbMaskingConfig {
                                     Name            = $columnobject.Name
                                     ColumnType      = $columnType
                                     CharacterString = $null
-                                    MinValue        = $null
+                                    MinValue        = $min
                                     MaxValue        = $columnLength
                                     MaskingType     = "Address"
                                     SubType         = "Zipcode"
@@ -324,7 +335,7 @@ function New-DbaDbMaskingConfig {
                             Name            = $columnobject.Name
                             ColumnType      = $columnType
                             CharacterString = $null
-                            MinValue        = $null
+                            MinValue        = $min
                             MaxValue        = $MaxValue
                             MaskingType     = $type
                             SubType         = $subType
