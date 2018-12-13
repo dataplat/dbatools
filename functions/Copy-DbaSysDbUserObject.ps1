@@ -157,9 +157,9 @@ function Copy-DbaSysDbUserObject {
                             $null = $transfer.CopyAllObjects = $false
                             $null = $transfer.Options.WithDependencies = $true
                             $null = $transfer.ObjectList.Add($schema)
-                            $sql = $transfer.ScriptTransfer()
                             if ($PSCmdlet.ShouldProcess($destServer, "Attempting to add schema $($schema.Name) to $systemDb")) {
                                 try {
+                                    $sql = $transfer.ScriptTransfer()
                                     Write-Message -Level Debug -Message "$sql"
                                     $null = $destServer.Query($sql, $systemDb)
                                     $copyobject.Status = "Successful"
@@ -212,9 +212,9 @@ function Copy-DbaSysDbUserObject {
                             $null = $transfer.CopyAllObjects = $false
                             $null = $transfer.Options.WithDependencies = $true
                             $null = $transfer.ObjectList.Add($table)
-                            $sql = $transfer.ScriptTransfer()
                             if ($PSCmdlet.ShouldProcess($destServer, "Attempting to add table $table to $systemDb")) {
                                 try {
+                                    $sql = $transfer.ScriptTransfer()
                                     Write-Message -Level Debug -Message "$sql"
                                     $null = $destServer.Query($sql, $systemDb)
                                     $copyobject.Status = "Successful"

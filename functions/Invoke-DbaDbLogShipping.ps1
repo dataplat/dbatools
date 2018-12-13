@@ -1187,11 +1187,11 @@ function Invoke-DbaDbLogShipping {
                     Stop-Function -Message "Secondary database already exists on instance $destInstance." -ErrorRecord $_ -Target $destInstance -Continue
                 }
 
-                # Check if the secondary database needs tobe initialized
+                # Check if the secondary database needs to be initialized
                 if ($setupResult -ne 'Failed') {
                     if (-not $NoInitialization) {
                         # Check if the secondary database exists on the secondary instance
-                        if ($DestiationServer.Databases.Name -notcontains $SecondaryDatabase) {
+                        if ($DestinationServer.Databases.Name -notcontains $SecondaryDatabase) {
                             # Check if force is being used and no option to generate the full backup is set
                             if ($Force -and -not ($GenerateFullBackup -or $UseExistingFullBackup)) {
                                 # Set the option to generate a full backup
@@ -1709,7 +1709,10 @@ function Invoke-DbaDbLogShipping {
                                 -DisconnectUsers:$DisconnectUsers `
                                 -RestoreThreshold $RestoreThreshold `
                                 -ThresholdAlertEnabled:$SecondaryThresholdAlertEnabled `
-                                -HistoryRetention $HistoryRetention
+                                -HistoryRetention $HistoryRetention `
+                                -MonitorServer $PrimaryMonitorServer `
+                                -MonitorServerSecurityMode $PrimaryMonitorServerSecurityMode `
+                                -MonitorCredential $PrimaryMonitorCredential
 
                             # Check if the copy job needs to be enabled or disabled
                             if ($CopyScheduleDisabled) {

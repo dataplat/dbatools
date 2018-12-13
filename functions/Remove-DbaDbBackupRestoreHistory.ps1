@@ -72,7 +72,7 @@ function Remove-DbaDbBackupRestoreHistory {
     param (
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [int]$KeepDays = 30,
+        [int]$KeepDays,
         [string[]]$Database,
         [Parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
@@ -80,10 +80,17 @@ function Remove-DbaDbBackupRestoreHistory {
     )
 
     begin {
+        if (-not $KeepDays -and -not $Database) {
+            $KeepDays = 30
+        }
         $odt = (Get-Date).AddDays(-$KeepDays)
     }
 
     process {
+        if ($KeepDays -and $Database) {
+            Stop-Function -Message "KeepDays cannot be used with Database. When Database is specified, all backup/restore history for that database is deleted."
+            return
+        }
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential

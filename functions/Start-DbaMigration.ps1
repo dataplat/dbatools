@@ -160,7 +160,7 @@ function Start-DbaMigration {
         >> DestinationSqlCredential = $cred
         >> SharedPath = "\\fileserver\share\sqlbackups\Migration"
         >> BackupRestore = $true
-        >> ReuseSourceFolderStructure" = $true
+        >> ReuseSourceFolderStructure = $true
         >> Force = $true
         >> }
         >>

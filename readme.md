@@ -1,15 +1,16 @@
 # dbatools
 
-> PowerShell Core (aka PowerShell 6+) went GA (generally available) and supported in January of 2018. Please be aware at this time we do not support this version of PowerShell. It is on the roadmap but at this time there is no estimated time we will be supporting it.
-
-<img align="left" src=https://blog.netnerds.net/wp-content/uploads/2016/05/dbatools.png alt="dbatools logo">  dbatools is sort of like a command-line SQL Server Management Studio. The project initially started out as Start-SqlMigration.ps1, but has now grown into a collection of [over 400 commands](https://dbatools.io/commands) that help automate SQL Server tasks and encourage best practices.
+<img align="left" src=https://blog.netnerds.net/wp-content/uploads/2016/05/dbatools.png alt="dbatools logo">  dbatools is sort of like a command-line SQL Server Management Studio. The project initially started out as Start-SqlMigration.ps1, but has now grown into a collection of [over 500 commands](https://dbatools.io/commands) that help automate SQL Server tasks and encourage best practices.
 
 Got ideas for new commands? Please propose them as [issues](https://dbatools.io/issues) and let us know what you'd like to see. Bug reports should also be filed under this repository's [issues](https://github.com/sqlcollaborative/dbatools/issues) section.
 
 There's also over 1500 of us on the [SQL Server Community Slack](https://sqlcommunity.slack.com) in the #dbatools channel. Need an invite? Check out the [self-invite page](https://dbatools.io/slack/). Drop by if you'd like to chat about dbatools or even [join the team](https://dbatools.io/team)!
 
 ## Installer
-This module is now in the PowerShell Gallery. Run the following from an administrative prompt to install:
+
+dbatools now works on PowerShell Core (aka PowerShell 6+). This means that you can run a large majority of our commands on <strong>Linux</strong> and <strong>macoS </strong>🤩👍
+
+Run the following from an administrative prompt to install dbatools from the PowerShell Gallery:
 ```powershell
 Install-Module dbatools
 ```
@@ -228,11 +229,23 @@ If you use non-default ports and SQL Browser is disabled, you can access servers
 
 Note that PowerShell sees commas as arrays, so you must surround the host name with quotes.
 
+#### Using Start-Transcript
+
+Due to an [issue](https://github.com/sqlcollaborative/dbatools/issues/2722) in the way PowerShell 5.1 works you need to use `Import-Module dbatools` before you run `Start-Transcript`. If this isn't done then your transcript will stop when the module is imported:
+
+```powershell
+Import-Module dbatools
+Start-Transcript
+Get-DbaDatabase -SqlInstance sql2017
+Stop-Transcript
+```
+
 ## Support
 
 dbatools aims to support as many configurations as possible, including
 
 * PowerShell v3 and above
+* Windows, macOS and Linux
 * SQL Server 2000 - 2017
 * Express - Datacenter Edition
 * Clustered and stand-alone instances
