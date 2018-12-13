@@ -103,18 +103,22 @@ function Invoke-DbaDbDataMasking {
             return
         }
 
-        # Check if the destination is accessible
-        if (-not (Test-Path -Path $FilePath -Credential $Credential)) {
-            Stop-Function -Message "Could not find masking config file" -ErrorRecord $_ -Target $FilePath
-            return
-        }
+        if ($FilePath.StartsWith('http')) {
+            $tables = Invoke-RestMethod -Uri $FilePath
+        } else {
+            # Check if the destination is accessible
+            if (-not (Test-Path -Path $FilePath -Credential $Credential)) {
+                Stop-Function -Message "Could not find masking config file" -ErrorRecord $_ -Target $FilePath
+                return
+            }
 
-        # Get all the items that should be processed
-        try {
-            $tables = Get-Content -Path $FilePath -Credential $Credential -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
-        } catch {
-            Stop-Function -Message "Could not parse masking config file" -ErrorRecord $_ -Target $FilePath
-            return
+            # Get all the items that should be processed
+            try {
+                $tables = Get-Content -Path $FilePath -Credential $Credential -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
+            } catch {
+                Stop-Function -Message "Could not parse masking config file" -ErrorRecord $_ -Target $FilePath
+                return
+            }
         }
 
         foreach ($tabletest in $tables.Tables) {
