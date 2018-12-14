@@ -135,7 +135,7 @@ function Invoke-DbaDbDataMasking {
         } else {
             # Check if the destination is accessible
             if (-not (Test-Path -Path $FilePath)) {
-                Stop-Function -Message "Could not find masking config file" -ErrorRecord $_ -Target $FilePath
+                Stop-Function -Message "Could not find masking config file $FilePath" -Target $FilePath
                 return
             }
 
@@ -192,23 +192,30 @@ function Invoke-DbaDbDataMasking {
                         Stop-Function -Message "Something went wrong retrieving the data from table $($tableobject.Name)" -Target $Database
                     }
 
-                    if ($Pscmdlet.ShouldProcess($instance, "Masking $($data.Rows.Count) rows in $($db.Name).$($tableobject.Schema).$($tableobject.Name)")) {
+                    $tablecolumns = $tableobject.Columns
+
+                    if ($Column) {
+                        $tablecolumns = $tablecolumns | Where-Object Name -in $Column
+                    }
+
+                    if ($ExcludeColumn) {
+                        $tablecolumns = $tablecolumns | Where-Object Name -notin $ExcludeColumn
+                    }
+
+                    if (-not $tablecolumns) {
+                        Write-Message -Level Verbose "No columns to process in $($db.Name).$($tableobject.Schema).$($tableobject.Name), moving on"
+                        continue
+                    }
+
+                    if ($Pscmdlet.ShouldProcess($instance, "Masking $($tablecolumns.Name -join ', ') in $($data.Rows.Count) rows in $($db.Name).$($tableobject.Schema).$($tableobject.Name)")) {
 
                         Write-ProgressHelper -StepNumber ($stepcounter++) -TotalSteps $tables.Tables.Count -Activity "Masking data" -Message "Updating $($data.Rows.Count) rows in $($tableobject.Schema).$($tableobject.Name) in $($db.Name) on $instance"
 
                         # Loop through each of the rows and change them
                         foreach ($row in $data.Rows) {
                             $updates = $wheres = @()
-                            $tablecolumns = $tableobject.Columns
-
-                            if ($Column) {
-                                $tablecolumns = $tablecolumns | Where-Object Name -in $Column
-                            }
 
                             foreach ($columnobject in $tablecolumns) {
-                                if ($columnobject.Name -in $ExcludeColumn) {
-                                    Write-Message -Level Verbose -Message "Skipping $($columnobject.Name) because it is explicitly excluded" -Target $db -Continue
-                                }
                                 # make sure max is good
                                 if ($MaxValue) {
                                     if ($columnobject.MaxValue -le $MaxValue) {
