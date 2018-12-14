@@ -6,6 +6,14 @@ function New-DbaDbMaskingConfig {
     .DESCRIPTION
         Generates a new data masking configuration file. This file is important to apply any data masking to the data in a database.
 
+        Note that the following column and data types are not currently supported:
+        Identity
+        ForeignKey
+        Computed
+        Hierarchyid
+        Geography
+        Xml
+
         Read more here:
         https://sachabarbs.wordpress.com/2018/06/11/bogus-simple-fake-data-tool/
         https://github.com/bchavez/Bogus
@@ -84,7 +92,7 @@ function New-DbaDbMaskingConfig {
 
     #>
     [CmdLetBinding(SupportsShouldProcess)]
-    param(
+    param (
         [parameter(Mandatory)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
@@ -121,7 +129,9 @@ function New-DbaDbMaskingConfig {
     }
 
     process {
-        if (Test-FunctionInterrupt) { return }
+        if (Test-FunctionInterrupt) {
+            return
+        }
 
         if ($SqlInstance) {
             $InputObject += Get-DbaDatabase -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database
@@ -157,132 +167,182 @@ function New-DbaDbMaskingConfig {
                 }
 
                 foreach ($columnobject in $columncollection) {
-                    # Skip identity columns
-                    if ((-not $columnobject.Identity) -and (-not $columnobject.IsForeignKey)) {
-                        $maskingType = $null
+                    # Skip incompatible columns
+                    if ($columnobject.Identity) {
+                        Write-Message -Level Verbose -Message "Skipping $columnobject because it is an identity column"
+                        continue
+                    }
+                    if ($columnobject.IsForeignKey) {
+                        Write-Message -Level Verbose -Message "Skipping $columnobject because it is a foreign key"
+                        continue
+                    }
+                    if ($columnobject.Computed) {
+                        Write-Message -Level Verbose -Message "Skipping $columnobject because it is a computed column"
+                        continue
+                    }
+                    if ($columnobject.DataType.Name -eq 'hierarchyid') {
+                        Write-Message -Level Verbose -Message "Skipping $columnobject because it is a hierarchyid column"
+                        continue
+                    }
+                    if ($columnobject.DataType.Name -eq 'geography') {
+                        Write-Message -Level Verbose -Message "Skipping $columnobject because it is a geography column"
+                        continue
+                    }
+                    if ($columnobject.DataType.Name -eq 'xml') {
+                        Write-Message -Level Verbose -Message "Skipping $columnobject because it is a xml column"
+                        continue
+                    }
 
-                        $columnLength = $columnobject.Properties['Length'].Value
+                    $maskingType = $min = $null
+                    $columnLength = $columnobject.Datatype.MaximumLength
+                    $columnType = $columnobject.DataType.SqlDataType.ToString().ToLower()
+
+                    if ($columnobject.InPrimaryKey) {
+                        $min = 2
+                    }
+                    if (-not $columnType) {
                         $columnType = $columnobject.DataType.Name.ToLower()
+                    }
 
-                        # Get the masking type with the synonims
-                        $maskingType = $columnTypes | Where-Object {$columnobject.Name -in $_.Synonim}
+                    # Get the masking type with the synonims
+                    $maskingType = $columnTypes | Where-Object {
+                        $columnobject.Name -in $_.Synonim
+                    }
 
-                        if ($maskingType) {
-                            # Make it easier to get the type name
-                            $maskingType = $maskingType | Select-Object TypeName -ExpandProperty TypeName
+                    if ($maskingType) {
+                        # Make it easier to get the type name
+                        $maskingType = $maskingType | Select-Object TypeName -ExpandProperty TypeName
 
-                            switch ($maskingType.ToLower()) {
-                                "firstname" {
-                                    $columns += [PSCustomObject]@{
-                                        Name        = $columnobject.Name
-                                        ColumnType  = $columnType
-                                        MaxLength   = $columnLength
-                                        MaskingType = "Name"
-                                        SubType     = "Firstname"
-                                    }
-                                }
-                                "lastname" {
-                                    $columns += [PSCustomObject]@{
-                                        Name        = $columnobject.Name
-                                        ColumnType  = $columnType
-                                        MaxLength   = $columnLength
-                                        MaskingType = "Name"
-                                        SubType     = "Lastname"
-                                    }
-                                }
-                                "creditcard" {
-                                    $columns += [PSCustomObject]@{
-                                        Name        = $columnobject.Name
-                                        ColumnType  = $columnType
-                                        MaxLength   = $columnLength
-                                        MaskingType = "Finance"
-                                        SubType     = "CreditcardNumber"
-                                    }
-                                }
-                                "address" {
-                                    $columns += [PSCustomObject]@{
-                                        Name        = $columnobject.Name
-                                        ColumnType  = $columnType
-                                        MaxLength   = $columnLength
-                                        MaskingType = "Address"
-                                        SubType     = "StreetAddress"
-                                    }
-                                }
-                                "city" {
-                                    $columns += [PSCustomObject]@{
-                                        Name        = $columnobject.Name
-                                        ColumnType  = $columnType
-                                        MaxLength   = $columnLength
-                                        MaskingType = "Address"
-                                        SubType     = "City"
-                                    }
-                                }
-                                "zipcode" {
-                                    $columns += [PSCustomObject]@{
-                                        Name        = $columnobject.Name
-                                        ColumnType  = $columnType
-                                        MaxLength   = $columnLength
-                                        MaskingType = "Address"
-                                        SubType     = "Zipcode"
-                                    }
+                        switch ($maskingType.ToLower()) {
+                            "firstname" {
+                                $columns += [PSCustomObject]@{
+                                    Name            = $columnobject.Name
+                                    ColumnType      = $columnType
+                                    CharacterString = $null
+                                    MinValue        = $min
+                                    MaxValue        = $columnLength
+                                    MaskingType     = "Name"
+                                    SubType         = "Firstname"
                                 }
                             }
-                        } else {
-                            $type = "Random"
-
-                            switch ($columnType) {
-                                "bigint" {
-                                    $subType = "Number"
-                                    $maxLength = 9223372036854775807
-                                }
-                                "int" {
-                                    $subType = "Number"
-                                    $maxLength = 2147483647
-                                }
-                                "date" {
-                                    $subType = "Date"
-                                    $maxLength = $null
-                                }
-                                "datetime" {
-                                    $subType = "Date"
-                                    $maxLength = $null
-                                }
-                                "datetime2" {
-                                    $subType = "Date"
-                                    $maxLength = $null
-                                }
-                                "float" {
-                                    $subType = "Float"
-                                    $maxLength = $null
-                                }
-                                "smallint" {
-                                    $subType = "Number"
-                                    $maxLength = 32767
-                                }
-                                "smalldatetime" {
-                                    $subType = "Date"
-                                    $maxLength = $null
-                                }
-                                "tinyint" {
-                                    $subType = "Number"
-                                    $maxLength = 255
-                                }
-                                default {
-                                    $subType = "String"
-                                    $maxLength = $columnLength
+                            "lastname" {
+                                $columns += [PSCustomObject]@{
+                                    Name            = $columnobject.Name
+                                    ColumnType      = $columnType
+                                    CharacterString = $null
+                                    MinValue        = $min
+                                    MaxValue        = $columnLength
+                                    MaskingType     = "Name"
+                                    SubType         = "Lastname"
                                 }
                             }
-
-                            $columns += [PSCustomObject]@{
-                                Name        = $columnobject.Name
-                                ColumnType  = $columnType
-                                MaxLength   = $maxLength
-                                MaskingType = $type
-                                SubType     = $subType
+                            "creditcard" {
+                                $columns += [PSCustomObject]@{
+                                    Name            = $columnobject.Name
+                                    ColumnType      = $columnType
+                                    CharacterString = $null
+                                    MinValue        = $min
+                                    MaxValue        = $columnLength
+                                    MaskingType     = "Finance"
+                                    SubType         = "CreditcardNumber"
+                                }
                             }
+                            "address" {
+                                $columns += [PSCustomObject]@{
+                                    Name            = $columnobject.Name
+                                    ColumnType      = $columnType
+                                    CharacterString = $null
+                                    MinValue        = $min
+                                    MaxValue        = $columnLength
+                                    MaskingType     = "Address"
+                                    SubType         = "StreetAddress"
+                                }
+                            }
+                            "city" {
+                                $columns += [PSCustomObject]@{
+                                    Name            = $columnobject.Name
+                                    ColumnType      = $columnType
+                                    CharacterString = $null
+                                    MinValue        = $min
+                                    MaxValue        = $columnLength
+                                    MaskingType     = "Address"
+                                    SubType         = "City"
+                                }
+                            }
+                            "zipcode" {
+                                $columns += [PSCustomObject]@{
+                                    Name            = $columnobject.Name
+                                    ColumnType      = $columnType
+                                    CharacterString = $null
+                                    MinValue        = $min
+                                    MaxValue        = $columnLength
+                                    MaskingType     = "Address"
+                                    SubType         = "Zipcode"
+                                }
+                            }
+                        }
+                    } else {
+                        $type = "Random"
+
+                        switch ($columnType) {
+                            { $_ -in "bit", "bool", "flag" } {
+                                $subType = "Bool"
+                                $MaxValue = $null
+                            }
+                            "bigint" {
+                                $subType = "Number"
+                                $MaxValue = 9223372036854775807
+                            }
+                            "int" {
+                                $subType = "Number"
+                                $MaxValue = 2147483647
+                            }
+                            "date" {
+                                $subType = "Date"
+                                $MaxValue = $null
+                            }
+                            "datetime" {
+                                $subType = "Date"
+                                $MaxValue = $null
+                            }
+                            "datetime2" {
+                                $subType = "Date"
+                                $MaxValue = $null
+                            }
+                            "float" {
+                                $subType = "Float"
+                                $MaxValue = $null
+                            }
+                            "smallint" {
+                                $subType = "Number"
+                                $MaxValue = 32767
+                            }
+                            "smalldatetime" {
+                                $subType = "Date"
+                                $MaxValue = $null
+                            }
+                            "tinyint" {
+                                $subType = "Number"
+                                $MaxValue = 255
+                            }
+                            default {
+                                $subType = "String"
+                                $MaxValue = $columnLength
+                            }
+                        }
+
+                        $columns += [PSCustomObject]@{
+                            Name            = $columnobject.Name
+                            ColumnType      = $columnType
+                            CharacterString = $null
+                            MinValue        = $min
+                            MaxValue        = $MaxValue
+                            MaskingType     = $type
+                            SubType         = $subType
                         }
                     }
                 }
+
 
                 # Check if something needs to be generated
                 if ($columns) {
