@@ -5,7 +5,15 @@ function Invoke-DbaDbDataMasking {
 
     .DESCRIPTION
         Invoke-DbaDbDataMasking is able to generate random data for tables.
-        It will use a configuration file that can be made manually or generated using New-PSDCMaskingConfiguration
+        It will use a configuration file that can be made manually or generated using New-DbaDbMaskingConfig
+
+        Note that the following column and data types are not currently supported:
+        Identity
+        ForeignKey
+        Computed
+        Hierarchyid
+        Geography
+        Xml
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
@@ -35,6 +43,14 @@ function Invoke-DbaDbDataMasking {
 
     .PARAMETER Locale
         Set the local to enable certain settings in the masking
+
+    .PARAMETER CharacterString
+        The characters to use in string data. 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789' by default
+
+    .PARAMETER MaxValue
+        Force a max length of strings instead of relying on datatype maxes. Note if a string datatype has a lower MaxValue, that will be used instead.
+
+        Useful for adhoc updates and testing, otherwise, the config file should be used.
 
     .PARAMETER Force
         Forcefully execute commands when needed
@@ -70,14 +86,13 @@ function Invoke-DbaDbDataMasking {
         [Alias('Path', 'FullName')]
         [object]$FilePath,
         [string]$Locale = 'en',
+        [string]$CharacterString = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789',
         [string]$Query,
         [switch]$Force,
+        [int]$MaxValue,
         [switch]$EnableException
     )
     begin {
-        # Set defaults
-        $charString = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
-
         # Create the faker objects
         Add-Type -Path (Resolve-Path -Path "$script:PSModuleRoot\bin\datamasking\Bogus.dll")
         $faker = New-Object Bogus.Faker($Locale)
@@ -88,17 +103,33 @@ function Invoke-DbaDbDataMasking {
             return
         }
 
-        # Check if the destination is accessible
-        if (-not (Test-Path -Path $FilePath -Credential $Credential)) {
-            Stop-Function -Message "Could not find masking config file" -ErrorRecord $_ -Target $FilePath
-            return
+        if ($FilePath.ToString().StartsWith('http')) {
+            $tables = Invoke-RestMethod -Uri $FilePath
+        } else {
+            # Check if the destination is accessible
+            if (-not (Test-Path -Path $FilePath -Credential $Credential)) {
+                Stop-Function -Message "Could not find masking config file" -ErrorRecord $_ -Target $FilePath
+                return
+            }
+
+            # Get all the items that should be processed
+            try {
+                $tables = Get-Content -Path $FilePath -Credential $Credential -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
+            } catch {
+                Stop-Function -Message "Could not parse masking config file" -ErrorRecord $_ -Target $FilePath
+                return
+            }
         }
 
-        # Get all the items that should be processed
-        try {
-            $tables = Get-Content -Path $FilePath -Credential $Credential -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
-        } catch {
-            Stop-Function -Message "Could not parse masking config file" -ErrorRecord $_ -Target $FilePath
+        foreach ($tabletest in $tables.Tables) {
+            foreach ($columntest in $tabletest.Columns) {
+                if ($columntest.ColumnType -in 'hierarchyid', 'geography', 'xml') {
+                    Stop-Function -Message "$($columntest.ColumnType) is not supported, please remove the column $($columntest.Name) from the $($tabletest.Name) table" -Target $tables
+                }
+            }
+        }
+
+        if (Test-FunctionInterrupt) {
             return
         }
 
@@ -126,44 +157,146 @@ function Invoke-DbaDbDataMasking {
                         # Loop through each of the rows and change them
                         foreach ($row in $data.Rows) {
                             $updates = $wheres = @()
-                            # Loop thorough the columns
-                            foreach ($column in $table.Columns) {
-                                $newValue = switch ($column.MaskingType.ToLower()) {
-                                    { $_ -in 'name', 'address', 'finance' } {
-                                        $faker.$($column.MaskingType).$($column.SubType)()
-                                    }
-                                    { $_ -in 'date', 'datetime', 'datetime2', 'smalldatetime' } {
-                                        ($faker.Date.Past()).ToString("yyyyMMdd")
-                                    }
-                                    "number" {
-                                        $faker.$($column.MaskingType).$($column.SubType)($column.MaxLength)
-                                    }
-                                    "shuffle" {
-                                        ($row.($column.Name) -split '' | Sort-Object {
-                                                Get-Random
-                                            }) -join ''
-                                    }
-                                    "string" {
-                                        $faker.$($column.MaskingType).String2($column.MaxLength, $charString)
-                                    }
-                                    default {
-                                        if (-not $column.MaxLength) {
-                                            $column.MaxLength = 10
-                                        }
-                                        if ($column.ColumnType -in 'date', 'datetime', 'datetime2', 'smalldatetime') {
-                                            ($faker.Date.Past()).ToString("yyyyMMdd")
-                                        } else {
-                                            $faker.Random.String2(1, $column.MaxLength, $charString)
-                                        }
 
+                            foreach ($column in $table.Columns) {
+                                # make sure max is good
+                                if ($MaxValue) {
+                                    if ($column.MaxValue -le $MaxValue) {
+                                        $max = $column.MaxValue
+                                    } else {
+                                        $max = $MaxValue
                                     }
                                 }
 
-                                $oldValue = ($row.$($column.Name)).Tostring().Replace("'", "''")
-                                $newValue = ($newValue).Tostring().Replace("'", "''")
+                                if (-not $column.MaxValue -and -not (Test-Bound -ParameterName MaxValue)) {
+                                    $max = 10
+                                }
 
-                                $updates += "[$($column.Name)] = '$newValue'"
-                                $wheres += "[$($column.Name)] = '$oldValue'"
+                                if ($column.CharacterString) {
+                                    $charstring = $column.CharacterString
+                                } else {
+                                    $charstring = $CharacterString
+                                }
+
+                                # make sure min is good
+                                if ($column.MinValue) {
+                                    $min = $column.MinValue
+                                } else {
+                                    if ($column.CharacterString) {
+                                        $min = 1
+                                    } else {
+                                        $min = 0
+                                    }
+                                }
+
+                                if (($column.MinValue -or $column.MaxValue) -and ($column.ColumnType -match 'date')) {
+                                    $nowmin = $column.MinValue
+                                    $nowmax = $column.MaxValue
+                                    if (-not $nowmin) {
+                                        $nowmin = (Get-Date -Date $nowmax).AddDays(-365)
+                                    }
+                                    if (-not $nowmax) {
+                                        $nowmax = (Get-Date -Date $nowmin).AddDays(365)
+                                    }
+                                }
+
+                                try {
+                                    $newValue = switch ($column.ColumnType) {
+                                        { $psitem -in 'bit', 'bool', 'flag' } {
+                                            $faker.System.Random.Bool()
+                                        }
+                                        { $psitem -match 'date' } {
+                                            if ($column.MinValue -or $column.MaxValue) {
+                                                ($faker.Date.Between($nowmin, $nowmax)).ToString("yyyyMMdd")
+                                            } else {
+                                                ($faker.Date.Past()).ToString("yyyyMMdd")
+                                            }
+                                        }
+                                        { $psitem -match 'int' } {
+                                            if ($column.MinValue -or $column.MaxValue) {
+                                                $faker.System.Random.Int($column.MinValue, $column.MaxValue)
+                                            } else {
+                                                $faker.System.Random.Int(0, $max)
+                                            }
+                                        }
+                                        'money' {
+                                            if ($column.MinValue -or $column.MaxValue) {
+                                                $faker.Finance.Amount($column.MinValue, $column.MaxValue)
+                                            } else {
+                                                $faker.Finance.Amount(0, $max)
+                                            }
+                                        }
+                                        'time' {
+                                            ($faker.Date.Past()).ToString("h:mm tt zzz")
+                                        }
+                                        'uniqueidentifier' {
+                                            $faker.System.Random.Guid().Guid
+                                        }
+                                        default {
+                                            $null
+                                        }
+                                    }
+
+                                    if (-not $newValue) {
+                                        $newValue = switch ($column.Subtype.ToLower()) {
+                                            'number' {
+                                                $faker.$($column.MaskingType).$($column.SubType)($column.MaxValue)
+                                            }
+                                            { $psitem -in 'bit', 'bool', 'flag' } {
+                                                $faker.System.Random.Bool()
+                                            }
+                                            { $psitem -in 'name', 'address', 'finance' } {
+                                                $faker.$($column.MaskingType).$($column.SubType)()
+                                            }
+                                            { $psitem -in 'date', 'datetime', 'datetime2', 'smalldatetime' } {
+                                                if ($column.MinValue -or $column.MaxValue) {
+                                                    ($faker.Date.Between($nowmin, $nowmax)).ToString("yyyyMMdd")
+                                                } else {
+                                                    ($faker.Date.Past()).ToString("yyyyMMdd")
+                                                }
+                                            }
+                                            'shuffle' {
+                                                ($row.($column.Name) -split '' | Sort-Object {
+                                                        Get-Random
+                                                    }) -join ''
+                                            }
+                                            'string' {
+                                                if ($max -eq -1) {
+                                                    $max = 1024
+                                                }
+                                                if ($column.ColumnType -eq 'xml') {
+                                                    $null
+                                                } else {
+                                                    $faker.$($column.MaskingType).String2($max, $charstring)
+                                                }
+                                            }
+                                            default {
+                                                if ($max -eq -1) {
+                                                    $max = 1024
+                                                }
+                                                $faker.Random.String2($max, $charstring)
+                                            }
+                                        }
+                                    }
+                                } catch {
+                                    Stop-Function -Message "Failure" -Target $faker -Continue -ErrorRecord $_
+                                }
+
+                                if ($column.ColumnType -eq 'xml') {
+                                    # nothing, unsure how i'll handle this
+                                } elseif ($column.ColumnType -in 'uniqueidentifier') {
+                                    $updates += "[$($column.Name)] = '$newValue'"
+                                } elseif ($column.ColumnType -match 'int') {
+                                    $updates += "[$($column.Name)] = $newValue"
+                                } else {
+                                    $newValue = ($newValue).Tostring().Replace("'", "''")
+                                    $updates += "[$($column.Name)] = '$newValue'"
+                                }
+
+                                if ($column.ColumnType -notin 'xml', 'geography') {
+                                    $oldValue = ($row.$($column.Name)).Tostring().Replace("'", "''")
+                                    $wheres += "[$($column.Name)] = '$oldValue'"
+                                }
                             }
 
                             $updatequery = "UPDATE [$($table.Schema)].[$($table.Name)] SET $($updates -join ', ') WHERE $($wheres -join ' AND ')"
@@ -178,9 +311,10 @@ function Invoke-DbaDbDataMasking {
                                     Table       = $table.Name
                                     Query       = $updatequery
                                     Status      = "Success"
-                                }
+                                } | Select-DefaultView -ExcludeProperty Query
                             } catch {
-                                Stop-Function -Message "Could not execute the query: $updatequery" -Target $updatequery -Continue
+                                Write-Message -Level VeryVerbose -Message "$updatequery"
+                                Stop-Function -Message "Error updating $($table.Schema).$($table.Name)" -Target $updatequery -Continue -ErrorRecord $_
                             }
                         }
                     } else {
