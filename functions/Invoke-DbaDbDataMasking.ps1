@@ -47,7 +47,7 @@ function Invoke-DbaDbDataMasking {
 
     .PARAMETER ExcludeColumn
         Exclude specific columns even if it's listed in the config file.
-    
+
     .PARAMETER MaxValue
         Force a max length of strings instead of relying on datatype maxes. Note if a string datatype has a lower MaxValue, that will be used instead.
 
@@ -62,7 +62,7 @@ function Invoke-DbaDbDataMasking {
     .PARAMETER Confirm
         If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
-    
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -83,12 +83,12 @@ function Invoke-DbaDbDataMasking {
         Invoke-DbaDbDataMasking -SqlInstance SQLDB2 -Database DB1 -FilePath C:\Temp\sqldb1.db1.tables.json
 
         Apply the data masking configuration from the file "sqldb1.db1.tables.json" to the db1 database on sqldb2. Prompt for confirmation for each table.
-    
+
     .EXAMPLE
         Get-ChildItem -Path C:\Temp\sqldb1.db1.tables.json | Invoke-DbaDbDataMasking -SqlInstance SQLDB2 -Database DB1 -Confirm:$false
 
         Apply the data masking configuration from the file "sqldb1.db1.tables.json" to the db1 database on sqldb2. Do not prompt for confirmation.
-    
+
     .EXAMPLE
         New-DbaDbMaskingConfig -SqlInstance SQLDB1 -Database DB1 -Path C:\Temp\clone -OutVariable file
         $file | Invoke-DbaDbDataMasking -SqlInstance SQLDB2 -Database DB1 -Confirm:$false
@@ -99,7 +99,7 @@ function Invoke-DbaDbDataMasking {
         Get-ChildItem -Path C:\Temp\sqldb1.db1.tables.json | Invoke-DbaDbDataMasking -SqlInstance SQLDB2, sqldb3 -Database DB1 -Confirm:$false
 
         See what would happen if you the data masking configuration from the file "sqldb1.db1.tables.json" to the db1 database on sqldb2 and sqldb3. Do not prompt for confirmation.
-    
+
     #>
     [CmdLetBinding(SupportsShouldProcess, ConfirmImpact = "High")]
     param (
@@ -124,12 +124,12 @@ function Invoke-DbaDbDataMasking {
         Add-Type -Path (Resolve-Path -Path "$script:PSModuleRoot\bin\datamasking\Bogus.dll")
         $faker = New-Object Bogus.Faker($Locale)
     }
-    
+
     process {
         if (Test-FunctionInterrupt) {
             return
         }
-        
+
         if ($FilePath.ToString().StartsWith('http')) {
             $tables = Invoke-RestMethod -Uri $FilePath
         } else {
@@ -138,7 +138,7 @@ function Invoke-DbaDbDataMasking {
                 Stop-Function -Message "Could not find masking config file" -ErrorRecord $_ -Target $FilePath
                 return
             }
-            
+
             # Get all the items that should be processed
             try {
                 $tables = Get-Content -Path $FilePath -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
@@ -147,11 +147,11 @@ function Invoke-DbaDbDataMasking {
                 return
             }
         }
-        
+
         if ($Table) {
             $tables = $tables | Where-Object Name -in $Table
         }
-        
+
         foreach ($tabletest in $tables.Tables) {
             foreach ($columntest in $tabletest.Columns) {
                 if ($columntest.ColumnType -in 'hierarchyid', 'geography', 'xml' -and $columntest.Name -notin $Column) {
@@ -159,18 +159,18 @@ function Invoke-DbaDbDataMasking {
                 }
             }
         }
-        
+
         if (Test-FunctionInterrupt) {
             return
         }
-        
+
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
             } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-            
+
             foreach ($db in (Get-DbaDatabase -SqlInstance $server -Database $Database)) {
                 $stepcounter = 0
                 foreach ($tableobject in $tables.Tables) {
@@ -178,7 +178,7 @@ function Invoke-DbaDbDataMasking {
                         Write-Message -Level Verbose -Message "Skipping $($tableobject.Name) because it is explicitly excluded"
                         continue
                     }
-                    
+
                     if ($tableobject.Name -notin $db.Tables.Name) {
                         Stop-Function -Message "Table $($tableobject.Name) is not present in $db" -Target $db -Continue
                     }
@@ -186,25 +186,25 @@ function Invoke-DbaDbDataMasking {
                         if (-not (Test-Bound -ParameterName Query)) {
                             $query = "SELECT * FROM [$($tableobject.Schema)].[$($tableobject.Name)]"
                         }
-                        
+
                         $data = $db.Query($query) | ConvertTo-DbaDataTable
                     } catch {
                         Stop-Function -Message "Something went wrong retrieving the data from table $($tableobject.Name)" -Target $Database
                     }
-                    
+
                     if ($Pscmdlet.ShouldProcess($instance, "Masking $($data.Rows.Count) rows in $($db.Name).$($tableobject.Schema).$($tableobject.Name)")) {
-                        
+
                         Write-ProgressHelper -StepNumber ($stepcounter++) -TotalSteps $tables.Tables.Count -Activity "Masking data" -Message "Updating $($data.Rows.Count) rows in $($tableobject.Schema).$($tableobject.Name) in $($db.Name) on $instance"
-                        
+
                         # Loop through each of the rows and change them
                         foreach ($row in $data.Rows) {
                             $updates = $wheres = @()
                             $tablecolumns = $tableobject.Columns
-                            
+
                             if ($Column) {
                                 $tablecolumns = $tablecolumns | Where-Object Name -in $Column
                             }
-                            
+
                             foreach ($columnobject in $tablecolumns) {
                                 if ($columnobject.Name -in $ExcludeColumn) {
                                     Write-Message -Level Verbose -Message "Skipping $($columnobject.Name) because it is explicitly excluded" -Target $db -Continue
@@ -219,17 +219,17 @@ function Invoke-DbaDbDataMasking {
                                 } else {
                                     $max = $columnobject.MaxValue
                                 }
-                                
+
                                 if (-not $columnobject.MaxValue -and -not (Test-Bound -ParameterName MaxValue)) {
                                     $max = 10
                                 }
-                                
+
                                 if ($columnobject.CharacterString) {
                                     $charstring = $columnobject.CharacterString
                                 } else {
                                     $charstring = $CharacterString
                                 }
-                                
+
                                 # make sure min is good
                                 if ($columnobject.MinValue) {
                                     $min = $columnobject.MinValue
@@ -240,7 +240,7 @@ function Invoke-DbaDbDataMasking {
                                         $min = 0
                                     }
                                 }
-                                
+
                                 if (($columnobject.MinValue -or $columnobject.MaxValue) -and ($columnobject.ColumnType -match 'date')) {
                                     $nowmin = $columnobject.MinValue
                                     $nowmax = $columnobject.MaxValue
@@ -251,7 +251,7 @@ function Invoke-DbaDbDataMasking {
                                         $nowmax = (Get-Date -Date $nowmin).AddDays(365)
                                     }
                                 }
-                                
+
                                 try {
                                     $newValue = switch ($columnobject.ColumnType) {
                                         {
@@ -294,7 +294,7 @@ function Invoke-DbaDbDataMasking {
                                             $null
                                         }
                                     }
-                                    
+
                                     if (-not $newValue) {
                                         $newValue = switch ($columnobject.Subtype.ToLower()) {
                                             'number' {
@@ -345,7 +345,7 @@ function Invoke-DbaDbDataMasking {
                                 } catch {
                                     Stop-Function -Message "Failure" -Target $faker -Continue -ErrorRecord $_
                                 }
-                                
+
                                 if ($columnobject.ColumnType -eq 'xml') {
                                     # nothing, unsure how i'll handle this
                                 } elseif ($columnobject.ColumnType -in 'uniqueidentifier') {
@@ -356,15 +356,15 @@ function Invoke-DbaDbDataMasking {
                                     $newValue = ($newValue).Tostring().Replace("'", "''")
                                     $updates += "[$($columnobject.Name)] = '$newValue'"
                                 }
-                                
+
                                 if ($columnobject.ColumnType -notin 'xml', 'geography') {
                                     $oldValue = ($row.$($columnobject.Name)).Tostring().Replace("'", "''")
                                     $wheres += "[$($columnobject.Name)] = '$oldValue'"
                                 }
                             }
-                            
+
                             $updatequery = "UPDATE [$($tableobject.Schema)].[$($tableobject.Name)] SET $($updates -join ', ') WHERE $($wheres -join ' AND ')"
-                            
+
                             try {
                                 $db.Query($updatequery)
                             } catch {
