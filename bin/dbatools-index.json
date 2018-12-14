@@ -22060,7 +22060,7 @@
     },
     {
         "Name":  "Invoke-DbaDbDataMasking",
-        "Description":  "Invoke-DbaDbDataMasking is able to generate random data for tables.\nIt will use a configuration file that can be made manually or generated using New-PSDCMaskingConfiguration",
+        "Description":  "Invoke-DbaDbDataMasking is able to generate random data for tables.\nIt will use a configuration file that can be made manually or generated using New-DbaDbMaskingConfig\n\nNote that the following column and data types are not currently supported:\nIdentity\nForeignKey\nComputed\nHierarchyid\nGeography\nXml",
         "Tags":  [
                      "DataMasking",
                      "Database"
@@ -22122,6 +22122,14 @@
                            "en"
                        ],
                        [
+                           "CharacterString",
+                           "The characters to use in string data. \u0027abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789\u0027 by default",
+                           "",
+                           false,
+                           "false",
+                           "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+                       ],
+                       [
                            "Query",
                            "If you would like to mask only a subset of a table, use the Query parameter, otherwise all data will be masked.",
                            "",
@@ -22138,6 +22146,14 @@
                            "False"
                        ],
                        [
+                           "MaxValue",
+                           "Force a max length of strings instead of relying on datatype maxes. Note if a string datatype has a lower MaxValue, that will be used instead.\nUseful for adhoc updates and testing, otherwise, the config file should be used.",
+                           "",
+                           false,
+                           "false",
+                           "0"
+                       ],
+                       [
                            "EnableException",
                            "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
                            "",
@@ -22146,7 +22162,7 @@
                            "False"
                        ]
                    ],
-        "Syntax":  "Invoke-DbaDbDataMasking [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Credential] \u003cPSCredential\u003e] [[-Database] \u003cString[]\u003e] [-FilePath] \u003cObject\u003e [[-Locale] \u003cString\u003e] [[-Query] \u003cString\u003e] [-Force] [-EnableException] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Invoke-DbaDbDataMasking [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Credential] \u003cPSCredential\u003e] [[-Database] \u003cString[]\u003e] [-FilePath] \u003cObject\u003e [[-Locale] \u003cString\u003e] [[-CharacterString] \u003cString\u003e] [[-Query] \u003cString\u003e] [-Force] [[-MaxValue] \u003cInt32\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Invoke-DbaDbDecryptObject",
@@ -27212,7 +27228,7 @@
     },
     {
         "Name":  "New-DbaDbMaskingConfig",
-        "Description":  "Generates a new data masking configuration file. This file is important to apply any data masking to the data in a database.\n\nRead more here:\nhttps://sachabarbs.wordpress.com/2018/06/11/bogus-simple-fake-data-tool/\nhttps://github.com/bchavez/Bogus",
+        "Description":  "Generates a new data masking configuration file. This file is important to apply any data masking to the data in a database.\n\nNote that the following column and data types are not currently supported:\nIdentity\nForeignKey\nComputed\nHierarchyid\nGeography\nXml\n\nRead more here:\nhttps://sachabarbs.wordpress.com/2018/06/11/bogus-simple-fake-data-tool/\nhttps://github.com/bchavez/Bogus",
         "Tags":  [
                      "DataMasking",
                      "Database"
