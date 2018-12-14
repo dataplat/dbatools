@@ -4,9 +4,9 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        $defaultParamCount = 11
+        $defaultParamCount = 13
         [object[]]$params = (Get-ChildItem function:\Invoke-DbaDbDataMasking).Parameters.Keys
-        $knownParameters = 'SqlInstance', 'SqlCredential', 'MaxValue', 'Credential', 'Database', 'FilePath', 'Locale', 'Query', 'Force', 'EnableException'
+        $knownParameters = 'SqlInstance', 'SqlCredential', 'Credential', 'Database', 'Table', 'Column', 'Path', 'Locale', 'EnableException'
         It "Should contain our specific parameters" {
             ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $knownParameters.Count
         }
@@ -39,7 +39,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         }
         It "returns the proper output" {
             $file = New-DbaDbMaskingConfig -SqlInstance $script:instance1 -Database $db -Path C:\temp
-            $results = $file | Invoke-DbaDbDataMasking -SqlInstance $script:instance1 -Database $db
+            $results = $file | Invoke-DbaDbDataMasking -SqlInstance $script:instance1 -Database $db -Confirm:$false
             $results.Count | Should -BeGreaterThan 1
             $results.Database | Should -Contain $db
         }
