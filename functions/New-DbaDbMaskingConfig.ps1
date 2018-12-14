@@ -24,11 +24,6 @@ function New-DbaDbMaskingConfig {
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-    .PARAMETER Credential
-        Allows you to login to servers or folders
-        To use:
-        $scred = Get-Credential, then pass $scred object to the -Credential parameter.
-
     .PARAMETER Database
         Databases to process through
 
@@ -40,24 +35,13 @@ function New-DbaDbMaskingConfig {
 
     .PARAMETER Path
         Path where to save the generated JSON files.
-        Th naming conventio will be "databasename.tables.json"
+        Th naming convention will be "servername.databasename.tables.json"
 
     .PARAMETER Locale
         Set the local to enable certain settings in the masking
 
     .PARAMETER Force
         Forcefully execute commands when needed
-
-    .PARAMETER EnableException
-        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-
-    .PARAMETER WhatIf
-        If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
-
-    .PARAMETER Confirm
-        If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -91,12 +75,11 @@ function New-DbaDbMaskingConfig {
         Process only table Customer and only the column named "City"
 
     #>
-    [CmdLetBinding(SupportsShouldProcess)]
+    [CmdLetBinding()]
     param (
         [parameter(Mandatory)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [PSCredential]$Credential,
         [string[]]$Database,
         [string[]]$Table,
         [string[]]$Column,
@@ -117,7 +100,7 @@ function New-DbaDbMaskingConfig {
         # Check if the Path is accessible
         if (-not (Test-Path -Path $Path)) {
             try {
-                $null = New-Item -Path $Path -ItemType Directory -Credential $Credential -Force:$Force
+                $null = New-Item -Path $Path -ItemType Directory -Force:$Force
             } catch {
                 Stop-Function -Message "Could not create Path directory" -ErrorRecord $_ -Target $Path
             }
@@ -188,7 +171,7 @@ function New-DbaDbMaskingConfig {
                         Write-Message -Level Verbose -Message "Skipping $columnobject because it is a geography column"
                         continue
                     }
-                    if ($columnobject.DataType.Name -eq 'xml') {
+                    if ($columnobject.DataType.SqlDataType.ToString().ToLower() -eq 'xml') {
                         Write-Message -Level Verbose -Message "Skipping $columnobject because it is a xml column"
                         continue
                     }
@@ -197,16 +180,16 @@ function New-DbaDbMaskingConfig {
                     $columnLength = $columnobject.Datatype.MaximumLength
                     $columnType = $columnobject.DataType.SqlDataType.ToString().ToLower()
 
-                    if ($columnobject.InPrimaryKey) {
+                    if ($columnobject.InPrimaryKey -and $columnobject.DataType.SqlDataType.ToString().ToLower() -notmatch 'date') {
                         $min = 2
                     }
                     if (-not $columnType) {
                         $columnType = $columnobject.DataType.Name.ToLower()
                     }
 
-                    # Get the masking type with the synonims
+                    # Get the masking type with the synonym
                     $maskingType = $columnTypes | Where-Object {
-                        $columnobject.Name -in $_.Synonim
+                        $columnobject.Name -in $_.Synonym
                     }
 
                     if ($maskingType) {
@@ -285,7 +268,7 @@ function New-DbaDbMaskingConfig {
                         $type = "Random"
 
                         switch ($columnType) {
-                            { $_ -in "bit", "bool", "flag" } {
+                            { $_ -in "bit", "bool" } {
                                 $subType = "Bool"
                                 $MaxValue = $null
                             }
@@ -374,7 +357,7 @@ function New-DbaDbMaskingConfig {
                 if (-not $script:isWindows) {
                     $temppath = $temppath.Replace("\", "/")
                 }
-                Set-Content -Path $temppath -Credential $Credential -Value ($results | ConvertTo-Json -Depth 5)
+                Set-Content -Path $temppath -Value ($results | ConvertTo-Json -Depth 5)
                 Get-ChildItem -Path $temppath
             } catch {
                 Stop-Function -Message "Something went wrong writing the results to the Path" -Target $Path -Continue -ErrorRecord $_
