@@ -308,6 +308,10 @@ function New-DbaDbMaskingConfig {
                                 $subType = "Number"
                                 $MaxValue = 255
                             }
+                            "varbinary" {
+                                $subType = "Byte"
+                                $MaxValue = $columnLength
+                            }
                             default {
                                 $subType = "String"
                                 $MaxValue = $columnLength
