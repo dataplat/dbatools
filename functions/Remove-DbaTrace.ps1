@@ -86,7 +86,7 @@ function Remove-DbaTrace {
             $stopsql = "sp_trace_setstatus $traceid, 0"
             $removesql = "sp_trace_setstatus $traceid, 2"
 
-            if ($Pscmdlet.ShouldProcess($traceid, "Removing the trace flag")) {
+            if ($Pscmdlet.ShouldProcess($traceid, "Removing the trace")) {
                 try {
                     $server.Query($stopsql)
                     if (Get-DbaTrace -SqlInstance $server -Id $traceid) {
