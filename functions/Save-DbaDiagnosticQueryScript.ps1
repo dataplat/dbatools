@@ -95,7 +95,7 @@ function Save-DbaDiagnosticQueryScript {
         try {
             Write-Message -Level Output -Message "Downloading $($doc.URL)"
             $filename = "{0}\SQLServerDiagnosticQueries_{1}_{2}.sql" -f $Path, $doc.SQLVersion, "$($doc.FileYear)$($doc.FileMonth)"
-            Invoke-TlsWebRequest -Uri $doc.URL -OutFile $filename -ErrorAction Stop
+            Invoke-TlsWebRequest -Uri $doc.URL.ToString().Replace('dl\=0','dl\=1') -OutFile $filename -ErrorAction Stop
         } catch {
             Stop-Function -Message "Requesting and writing file failed: $_" -Target $filename -ErrorRecord $_
             return

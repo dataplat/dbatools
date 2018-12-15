@@ -13455,7 +13455,7 @@
                            "SqlInstance",
                            "The target SQL Server instance or instances.",
                            "ServerInstance,SqlServer",
-                           true,
+                           false,
                            "true (ByValue)",
                            ""
                        ],
@@ -13492,6 +13492,14 @@
                            "False"
                        ],
                        [
+                           "InputObject",
+                           "A piped collection of database objects from Get-DbaDatabase",
+                           "",
+                           false,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
                            "EnableException",
                            "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
                            "",
@@ -13500,7 +13508,7 @@
                            "False"
                        ]
                    ],
-        "Syntax":  "Get-DbaDbSpace [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString[]\u003e] [[-ExcludeDatabase] \u003cString[]\u003e] [-IncludeSystemDBs] [-EnableException] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Get-DbaDbSpace [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString[]\u003e] [[-ExcludeDatabase] \u003cString[]\u003e] [-IncludeSystemDBs] [[-InputObject] \u003cDatabase[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Get-DbaDbState",
@@ -22071,7 +22079,7 @@
         "CommandName":  "Invoke-DbaDbDataMasking",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Invoke-DbaDbDataMasking",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eInvoke-DbaDbDataMasking -SqlInstance SQLDB1 -Database DB1 -FilePath C:\\Temp\\DB1.tables.json\nApply the data masking configuration from the file \"DB1.tables.json\" to the database",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eInvoke-DbaDbDataMasking -SqlInstance SQLDB2 -Database DB1 -FilePath C:\\Temp\\sqldb1.db1.tables.json\nApply the data masking configuration from the file \"sqldb1.db1.tables.json\" to the db1 database on sqldb2. Prompt for confirmation for each table.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-ChildItem -Path C:\\Temp\\sqldb1.db1.tables.json | Invoke-DbaDbDataMasking -SqlInstance SQLDB2 -Database DB1 -Confirm:$false\nApply the data masking configuration from the file \"sqldb1.db1.tables.json\" to the db1 database on sqldb2. Do not prompt for confirmation.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eNew-DbaDbMaskingConfig -SqlInstance SQLDB1 -Database DB1 -Path C:\\Temp\\clone -OutVariable file\n$file | Invoke-DbaDbDataMasking -SqlInstance SQLDB2 -Database DB1 -Confirm:$false\nCreate the data masking configuration file \"sqldb1.db1.tables.json\", then use it to mask the db1 database on sqldb2. Do not prompt for confirmation.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-ChildItem -Path C:\\Temp\\sqldb1.db1.tables.json | Invoke-DbaDbDataMasking -SqlInstance SQLDB2, sqldb3 -Database DB1 -Confirm:$false\nSee what would happen if you the data masking configuration from the file \"sqldb1.db1.tables.json\" to the db1 database on sqldb2 and sqldb3. Do not prompt for confirmation.",
         "Params":  [
                        [
                            "SqlInstance",
@@ -22084,14 +22092,6 @@
                        [
                            "SqlCredential",
                            "Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)",
-                           "",
-                           false,
-                           "false",
-                           ""
-                       ],
-                       [
-                           "Credential",
-                           "Allows you to login to servers or folders\r\nTo use:\r\n$scred = Get-Credential, then pass $scred object to the -Credential parameter.",
                            "",
                            false,
                            "false",
@@ -22130,20 +22130,44 @@
                            "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
                        ],
                        [
-                           "Query",
-                           "If you would like to mask only a subset of a table, use the Query parameter, otherwise all data will be masked.",
+                           "Table",
+                           "Tables to process. By default all the tables will be processed",
                            "",
                            false,
                            "false",
                            ""
                        ],
                        [
-                           "Force",
-                           "Forcefully execute commands when needed",
+                           "Column",
+                           "Columns to process. By default all the columns will be processed",
                            "",
                            false,
                            "false",
-                           "False"
+                           ""
+                       ],
+                       [
+                           "ExcludeTable",
+                           "Exclude specific tables even if it\u0027s listed in the config file.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "ExcludeColumn",
+                           "Exclude specific columns even if it\u0027s listed in the config file.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Query",
+                           "If you would like to mask only a subset of a table, use the Query parameter, otherwise all data will be masked.",
+                           "",
+                           false,
+                           "false",
+                           ""
                        ],
                        [
                            "MaxValue",
@@ -22160,9 +22184,25 @@
                            false,
                            "false",
                            "False"
+                       ],
+                       [
+                           "WhatIf",
+                           "If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.",
+                           "wi",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Confirm",
+                           "If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.",
+                           "cf",
+                           false,
+                           "false",
+                           ""
                        ]
                    ],
-        "Syntax":  "Invoke-DbaDbDataMasking [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Credential] \u003cPSCredential\u003e] [[-Database] \u003cString[]\u003e] [-FilePath] \u003cObject\u003e [[-Locale] \u003cString\u003e] [[-CharacterString] \u003cString\u003e] [[-Query] \u003cString\u003e] [-Force] [[-MaxValue] \u003cInt32\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Invoke-DbaDbDataMasking [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString[]\u003e] [-FilePath] \u003cObject\u003e [[-Locale] \u003cString\u003e] [[-CharacterString] \u003cString\u003e] [[-Table] \u003cString[]\u003e] [[-Column] \u003cString[]\u003e] [[-ExcludeTable] \u003cString[]\u003e] [[-ExcludeColumn] \u003cString[]\u003e] [[-Query] \u003cString\u003e] [[-MaxValue] \u003cInt32\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Invoke-DbaDbDecryptObject",
@@ -27258,14 +27298,6 @@
                            ""
                        ],
                        [
-                           "Credential",
-                           "Allows you to login to servers or folders\r\nTo use:\r\n$scred = Get-Credential, then pass $scred object to the -Credential parameter.",
-                           "",
-                           false,
-                           "false",
-                           ""
-                       ],
-                       [
                            "Database",
                            "Databases to process through",
                            "",
@@ -27291,7 +27323,7 @@
                        ],
                        [
                            "Path",
-                           "Path where to save the generated JSON files.\r\nTh naming conventio will be \"databasename.tables.json\"",
+                           "Path where to save the generated JSON files.\r\nTh naming convention will be \"servername.databasename.tables.json\"",
                            "",
                            true,
                            "false",
@@ -27320,25 +27352,9 @@
                            false,
                            "false",
                            "False"
-                       ],
-                       [
-                           "WhatIf",
-                           "If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.",
-                           "wi",
-                           false,
-                           "false",
-                           ""
-                       ],
-                       [
-                           "Confirm",
-                           "If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.",
-                           "cf",
-                           false,
-                           "false",
-                           ""
                        ]
                    ],
-        "Syntax":  "New-DbaDbMaskingConfig [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Credential] \u003cPSCredential\u003e] [[-Database] \u003cString[]\u003e] [[-Table] \u003cString[]\u003e] [[-Column] \u003cString[]\u003e] [-Path] \u003cString\u003e [[-Locale] \u003cString\u003e] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "New-DbaDbMaskingConfig [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString[]\u003e] [[-Table] \u003cString[]\u003e] [[-Column] \u003cString[]\u003e] [-Path] \u003cString\u003e [[-Locale] \u003cString\u003e] [-Force] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "New-DbaDbMasterKey",
