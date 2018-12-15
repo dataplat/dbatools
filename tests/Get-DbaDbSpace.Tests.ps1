@@ -62,10 +62,4 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $results.database | Should Not Contain $dbname
         }
     }
-    Context "Gets DbSpace for system databases when using -IncludeSystemDBs" {
-        $results = Get-DbaDbSpace -SqlInstance $script:instance2 -IncludeSystemDBs
-        It "Gets results" {
-            $results.database | Should Contain 'Master'
-        }
-    }
 }
