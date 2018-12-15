@@ -189,7 +189,7 @@ function Invoke-DbaDbDataMasking {
 
                         $data = $db.Query($query) | ConvertTo-DbaDataTable
                     } catch {
-                        Stop-Function -Message "Something went wrong retrieving the data from table $($tableobject.Name)" -Target $Database
+                        Stop-Function -Message "Failure retrieving the data from table $($tableobject.Name)" -Target $Database -ErrorRecord $_ -Continue
                     }
 
                     $tablecolumns = $tableobject.Columns
