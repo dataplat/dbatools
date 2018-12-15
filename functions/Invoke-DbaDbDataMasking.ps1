@@ -53,6 +53,9 @@ function Invoke-DbaDbDataMasking {
 
         Useful for adhoc updates and testing, otherwise, the config file should be used.
 
+    .PARAMETER ExactLength
+        Mask string values to the same length. So 'Tate' will be replaced with 4 random characters.
+
     .PARAMETER Force
         Forcefully execute commands when needed
 
@@ -117,6 +120,7 @@ function Invoke-DbaDbDataMasking {
         [string[]]$ExcludeColumn,
         [string]$Query,
         [int]$MaxValue,
+        [switch]$ExactLength,
         [switch]$EnableException
     )
     begin {
@@ -335,6 +339,11 @@ function Invoke-DbaDbDataMasking {
                                                 if ($max -eq -1) {
                                                     $max = 1024
                                                 }
+
+                                                if ($columnobject.SubType -eq "String" -and (Test-Bound -ParameterName ExactLength)) {
+                                                    $max = ($row.$($columnobject.Name)).Length
+                                                }
+
                                                 if ($columnobject.ColumnType -eq 'xml') {
                                                     $null
                                                 } else {
@@ -344,6 +353,9 @@ function Invoke-DbaDbDataMasking {
                                             default {
                                                 if ($max -eq -1) {
                                                     $max = 1024
+                                                }
+                                                if ((Test-Bound -ParameterName ExactLength)) {
+                                                    $max = ($row.$($columnobject.Name)).ToString().Length
                                                 }
                                                 $faker.Random.String2($max, $charstring)
                                             }
@@ -387,6 +399,7 @@ function Invoke-DbaDbDataMasking {
                             Schema       = $tableobject.Schema
                             Table        = $tableobject.Name
                             Columns      = $tableobject.Columns.Name
+                            Rows         = $($data.Rows.Count)
                             Status       = "Masked"
                         }
                     }
