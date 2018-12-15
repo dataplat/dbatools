@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
     and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.719] - 2018-12-15
+### Added
+* Piping to Get-DbaDbSpace
+
+### Changed
+* Logic to make UseLastBackup in Start-DbaMigration to be easier
+
 ## [0.9.718] - 2018-12-14
 ### Added
 * Added a progress bar and made the output more reasonable

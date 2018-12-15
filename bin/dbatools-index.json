@@ -13455,7 +13455,7 @@
                            "SqlInstance",
                            "The target SQL Server instance or instances.",
                            "ServerInstance,SqlServer",
-                           true,
+                           false,
                            "true (ByValue)",
                            ""
                        ],
@@ -13492,6 +13492,14 @@
                            "False"
                        ],
                        [
+                           "InputObject",
+                           "A piped collection of database objects from Get-DbaDatabase",
+                           "",
+                           false,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
                            "EnableException",
                            "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
                            "",
@@ -13500,7 +13508,7 @@
                            "False"
                        ]
                    ],
-        "Syntax":  "Get-DbaDbSpace [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString[]\u003e] [[-ExcludeDatabase] \u003cString[]\u003e] [-IncludeSystemDBs] [-EnableException] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Get-DbaDbSpace [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString[]\u003e] [[-ExcludeDatabase] \u003cString[]\u003e] [-IncludeSystemDBs] [[-InputObject] \u003cDatabase[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Get-DbaDbState",
