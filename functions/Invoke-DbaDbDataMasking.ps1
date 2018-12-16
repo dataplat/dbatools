@@ -151,12 +151,11 @@ function Invoke-DbaDbDataMasking {
                 return
             }
         }
-
-        if ($Table) {
-            $tables = $tables | Where-Object Name -in $Table
-        }
-
+        
         foreach ($tabletest in $tables.Tables) {
+            if ($Table -and $tabletest.Name -notin $Table) {
+                continue
+            }
             foreach ($columntest in $tabletest.Columns) {
                 if ($columntest.ColumnType -in 'hierarchyid', 'geography', 'xml' -and $columntest.Name -notin $Column) {
                     Stop-Function -Message "$($columntest.ColumnType) is not supported, please remove the column $($columntest.Name) from the $($tabletest.Name) table" -Target $tables
@@ -178,7 +177,7 @@ function Invoke-DbaDbDataMasking {
             foreach ($db in (Get-DbaDatabase -SqlInstance $server -Database $Database)) {
                 $stepcounter = 0
                 foreach ($tableobject in $tables.Tables) {
-                    if ($tableobject.Name -in $ExcludeTable) {
+                    if ($tableobject.Name -in $ExcludeTable -or ($Table -and $tableobject.Name -notin $Table)) {
                         Write-Message -Level Verbose -Message "Skipping $($tableobject.Name) because it is explicitly excluded"
                         continue
                     }
@@ -301,6 +300,13 @@ function Invoke-DbaDbDataMasking {
                                         }
                                         'uniqueidentifier' {
                                             $faker.System.Random.Guid().Guid
+                                        }
+                                        'userdefineddatatype' {
+                                            if ($columnobject.MaxValue -eq 1) {
+                                                $faker.System.Random.Bool()
+                                            } else {
+                                                $null
+                                            }
                                         }
                                         default {
                                             $null
