@@ -308,6 +308,23 @@ function New-DbaDbMaskingConfig {
                                 $subType = "Number"
                                 $MaxValue = 255
                             }
+                            "varbinary" {
+                                $subType = "Byte"
+                                $MaxValue = $columnLength
+                            }
+                            "varbinary" {
+                                $subType = "Byte"
+                                $MaxValue = $columnLength
+                            }
+                            "userdefineddatatype" {
+                                if ($columnLength -eq 1) {
+                                    $subType = "Bool"
+                                    $MaxValue = $columnLength
+                                } else {
+                                    $subType = "String"
+                                    $MaxValue = $columnLength
+                                }
+                            }
                             default {
                                 $subType = "String"
                                 $MaxValue = $columnLength
