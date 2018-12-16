@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
     and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.720] - 2018-12-16
+### Fixed
+* Enhanced outputs of Invoke-DbaDbDataMasking
+* Save-DbaDiagnosticQuery to work with lightly malformed links
+
 ## [0.9.719] - 2018-12-15
 ### Added
 * Piping to Get-DbaDbSpace
