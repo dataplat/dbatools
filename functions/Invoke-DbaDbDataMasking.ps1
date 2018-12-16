@@ -53,6 +53,9 @@ function Invoke-DbaDbDataMasking {
 
         Useful for adhoc updates and testing, otherwise, the config file should be used.
 
+    .PARAMETER ExactLength
+        Mask string values to the same length. So 'Tate' will be replaced with 4 random characters.
+
     .PARAMETER Force
         Forcefully execute commands when needed
 
@@ -117,6 +120,7 @@ function Invoke-DbaDbDataMasking {
         [string[]]$ExcludeColumn,
         [string]$Query,
         [int]$MaxValue,
+        [switch]$ExactLength,
         [switch]$EnableException
     )
     begin {
@@ -147,12 +151,11 @@ function Invoke-DbaDbDataMasking {
                 return
             }
         }
-
-        if ($Table) {
-            $tables = $tables | Where-Object Name -in $Table
-        }
-
+        
         foreach ($tabletest in $tables.Tables) {
+            if ($Table -and $tabletest.Name -notin $Table) {
+                continue
+            }
             foreach ($columntest in $tabletest.Columns) {
                 if ($columntest.ColumnType -in 'hierarchyid', 'geography', 'xml' -and $columntest.Name -notin $Column) {
                     Stop-Function -Message "$($columntest.ColumnType) is not supported, please remove the column $($columntest.Name) from the $($tabletest.Name) table" -Target $tables
@@ -174,7 +177,7 @@ function Invoke-DbaDbDataMasking {
             foreach ($db in (Get-DbaDatabase -SqlInstance $server -Database $Database)) {
                 $stepcounter = 0
                 foreach ($tableobject in $tables.Tables) {
-                    if ($tableobject.Name -in $ExcludeTable) {
+                    if ($tableobject.Name -in $ExcludeTable -or ($Table -and $tableobject.Name -notin $Table)) {
                         Write-Message -Level Verbose -Message "Skipping $($tableobject.Name) because it is explicitly excluded"
                         continue
                     }
@@ -189,9 +192,10 @@ function Invoke-DbaDbDataMasking {
 
                         $data = $db.Query($query) | ConvertTo-DbaDataTable
                     } catch {
-                        Stop-Function -Message "Something went wrong retrieving the data from table $($tableobject.Name)" -Target $Database
+                        Stop-Function -Message "Failure retrieving the data from table $($tableobject.Name)" -Target $Database -ErrorRecord $_ -Continue
                     }
 
+                    $elapsed = [System.Diagnostics.Stopwatch]::StartNew()
                     $tablecolumns = $tableobject.Columns
 
                     if ($Column) {
@@ -297,6 +301,13 @@ function Invoke-DbaDbDataMasking {
                                         'uniqueidentifier' {
                                             $faker.System.Random.Guid().Guid
                                         }
+                                        'userdefineddatatype' {
+                                            if ($columnobject.MaxValue -eq 1) {
+                                                $faker.System.Random.Bool()
+                                            } else {
+                                                $null
+                                            }
+                                        }
                                         default {
                                             $null
                                         }
@@ -335,6 +346,11 @@ function Invoke-DbaDbDataMasking {
                                                 if ($max -eq -1) {
                                                     $max = 1024
                                                 }
+
+                                                if ($columnobject.SubType -eq "String" -and (Test-Bound -ParameterName ExactLength)) {
+                                                    $max = ($row.$($columnobject.Name)).Length
+                                                }
+
                                                 if ($columnobject.ColumnType -eq 'xml') {
                                                     $null
                                                 } else {
@@ -344,6 +360,9 @@ function Invoke-DbaDbDataMasking {
                                             default {
                                                 if ($max -eq -1) {
                                                     $max = 1024
+                                                }
+                                                if ((Test-Bound -ParameterName ExactLength)) {
+                                                    $max = ($row.$($columnobject.Name)).ToString().Length
                                                 }
                                                 $faker.Random.String2($max, $charstring)
                                             }
@@ -387,6 +406,8 @@ function Invoke-DbaDbDataMasking {
                             Schema       = $tableobject.Schema
                             Table        = $tableobject.Name
                             Columns      = $tableobject.Columns.Name
+                            Rows         = $($data.Rows.Count)
+                            Elapsed      = [prettytimespan]$elapsed.Elapsed
                             Status       = "Masked"
                         }
                     }
