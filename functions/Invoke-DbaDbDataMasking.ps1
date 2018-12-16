@@ -196,6 +196,7 @@ function Invoke-DbaDbDataMasking {
                         Stop-Function -Message "Failure retrieving the data from table $($tableobject.Name)" -Target $Database -ErrorRecord $_ -Continue
                     }
 
+                    $elapsed = [System.Diagnostics.Stopwatch]::StartNew()
                     $tablecolumns = $tableobject.Columns
 
                     if ($Column) {
@@ -400,6 +401,7 @@ function Invoke-DbaDbDataMasking {
                             Table        = $tableobject.Name
                             Columns      = $tableobject.Columns.Name
                             Rows         = $($data.Rows.Count)
+                            Elapsed      = [prettytimespan]$elapsed.Elapsed
                             Status       = "Masked"
                         }
                     }
