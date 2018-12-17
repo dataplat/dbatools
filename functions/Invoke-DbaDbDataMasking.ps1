@@ -13,6 +13,7 @@ function Invoke-DbaDbDataMasking {
         Computed
         Hierarchyid
         Geography
+        Geometry
         Xml
 
     .PARAMETER SqlInstance
@@ -157,7 +158,7 @@ function Invoke-DbaDbDataMasking {
                 continue
             }
             foreach ($columntest in $tabletest.Columns) {
-                if ($columntest.ColumnType -in 'hierarchyid', 'geography', 'xml' -and $columntest.Name -notin $Column) {
+                if ($columntest.ColumnType -in 'hierarchyid', 'geography', 'xml', 'geometry' -and $columntest.Name -notin $Column) {
                     Stop-Function -Message "$($columntest.ColumnType) is not supported, please remove the column $($columntest.Name) from the $($tabletest.Name) table" -Target $tables
                 }
             }
@@ -383,7 +384,7 @@ function Invoke-DbaDbDataMasking {
                                     $updates += "[$($columnobject.Name)] = '$newValue'"
                                 }
 
-                                if ($columnobject.ColumnType -notin 'xml', 'geography') {
+                                if ($columnobject.ColumnType -notin 'xml', 'geography', 'geometry') {
                                     $oldValue = ($row.$($columnobject.Name)).Tostring().Replace("'", "''")
                                     $wheres += "[$($columnobject.Name)] = '$oldValue'"
                                 }
