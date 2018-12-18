@@ -22068,7 +22068,7 @@
     },
     {
         "Name":  "Invoke-DbaDbDataMasking",
-        "Description":  "Invoke-DbaDbDataMasking is able to generate random data for tables.\nIt will use a configuration file that can be made manually or generated using New-DbaDbMaskingConfig\n\nNote that the following column and data types are not currently supported:\nIdentity\nForeignKey\nComputed\nHierarchyid\nGeography\nXml",
+        "Description":  "Invoke-DbaDbDataMasking is able to generate random data for tables.\nIt will use a configuration file that can be made manually or generated using New-DbaDbMaskingConfig\n\nNote that the following column and data types are not currently supported:\nIdentity\nForeignKey\nComputed\nHierarchyid\nGeography\nGeometry\nXml",
         "Tags":  [
                      "DataMasking",
                      "Database"
@@ -27276,7 +27276,7 @@
     },
     {
         "Name":  "New-DbaDbMaskingConfig",
-        "Description":  "Generates a new data masking configuration file. This file is important to apply any data masking to the data in a database.\n\nNote that the following column and data types are not currently supported:\nIdentity\nForeignKey\nComputed\nHierarchyid\nGeography\nXml\n\nRead more here:\nhttps://sachabarbs.wordpress.com/2018/06/11/bogus-simple-fake-data-tool/\nhttps://github.com/bchavez/Bogus",
+        "Description":  "Generates a new data masking configuration file. This file is important to apply any data masking to the data in a database.\n\nNote that the following column and data types are not currently supported:\nIdentity\nForeignKey\nComputed\nHierarchyid\nGeography\nGeometry\nXml\n\nRead more here:\nhttps://sachabarbs.wordpress.com/2018/06/11/bogus-simple-fake-data-tool/\nhttps://github.com/bchavez/Bogus",
         "Tags":  [
                      "DataMasking",
                      "Database"
