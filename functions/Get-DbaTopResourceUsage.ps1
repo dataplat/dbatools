@@ -66,7 +66,7 @@ function Get-DbaTopResourceUsage {
 
 
 	.EXAMPLE   
-		Get-DbaTopResourceUsage -SqlInstance sql2016| Select *
+		Get-DbaTopResourceUsage -SqlInstance sql2016| Select-Object*
 		Return all the columns plus the QueryPlan column
 	#>
 	[CmdletBinding()]

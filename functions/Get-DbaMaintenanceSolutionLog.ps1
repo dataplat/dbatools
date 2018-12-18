@@ -193,7 +193,7 @@ Gets the outcome of the IndexOptimize job on sqlserver2014a, the other options a
 					try {
 						$datefile = [DateTime]::ParseExact($base, 'yyyyMMdd_HHmmss', $null)
 					} catch {
-						$datefile = Get-ItemProperty -Path $l | select -ExpandProperty CreationTime
+						$datefile = Get-ItemProperty -Path $l | Select-Object -ExpandProperty CreationTime
 					}
 					if ($datefile -gt $since) {
 						$filteredlogs += $l

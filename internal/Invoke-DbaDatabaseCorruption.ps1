@@ -133,7 +133,7 @@ function Invoke-DbaDatabaseCorruption {
       $tb = $db.Tables | Where-Object Name -eq $Table
     }
     else {
-      $tb = $db.Tables | select -First 1
+      $tb = $db.Tables | Select-Object-First 1
     }
 
     if (-not $tb) {
@@ -148,7 +148,7 @@ function Invoke-DbaDatabaseCorruption {
     }
 
     if ($Pscmdlet.ShouldProcess("$db on $SqlInstance", "Corrupt $tb in $Database")) {
-      $pages = Dbcc-Index -SqlInstance $Server -Database $Database -TableName $tb.Name | select -First 1
+      $pages = Dbcc-Index -SqlInstance $Server -Database $Database -TableName $tb.Name | Select-Object-First 1
       #Dbcc-ReadPage -SqlInstance $Server -Database $Database -PageId $pages.PagePID -FileId $pages.PageFID
       Write-Message -Level Verbose -Message "Setting single-user mode."
       $null = Stop-DbaProcess -SqlInstance $Server -Database $Database

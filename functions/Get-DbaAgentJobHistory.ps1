@@ -72,7 +72,7 @@ function Get-DbaAgentJobHistory {
 			Returns all SQL Agent Job execution results for sql1 and sql2\Inst2K17.
 
 		.EXAMPLE
-			Get-DbaAgentJobHistory -SqlInstance sql2\Inst2K17 | select *
+			Get-DbaAgentJobHistory -SqlInstance sql2\Inst2K17 | Select-Object *
 
 			Returns all properties for all SQl Agent Job execution results on sql2\Inst2K17.
 
@@ -99,7 +99,7 @@ function Get-DbaAgentJobHistory {
 			Returns the SQL Agent Job execution results between 2017/05/22 00:00:00 and 2017/05/23 12:30:00 on sql2\Inst2K17.
 	
 		.EXAMPLE 
-	 		Get-DbaAgentJob -SqlInstance sql2016 | Where Name -match backup | Get-DbaAgentJobHistory
+	 		Get-DbaAgentJob -SqlInstance sql2016 | Where-Object Name -match backup | Get-DbaAgentJobHistory
 	
 			Gets all jobs with the name that match the regex pattern "backup" and then gets the job history from those. You can also use -Like *backup* in this example.
 	

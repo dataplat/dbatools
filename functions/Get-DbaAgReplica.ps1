@@ -45,7 +45,7 @@ function Get-DbaAgReplica {
 			Shows basic information on the replica(s) found on Availability Group AG-a on sqlserver2014a
 
 		.EXAMPLE
-			Get-DbaAgReplica -SqlInstance sqlserver2014a | Select *
+			Get-DbaAgReplica -SqlInstance sqlserver2014a | Select-Object *
 
 			Returns full object properties on all Availability Group(s) replica(s) on sqlserver2014a
 	#>

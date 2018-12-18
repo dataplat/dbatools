@@ -74,7 +74,7 @@ Remove-DbaDatabaseSnapshot -SqlInstance sqlserver2014a -Snapshot HR_snapshot, Ac
 Removes HR_snapshot and Accounting_snapshot
 
 .EXAMPLE
-Get-DbaDatabaseSnapshot -SqlInstance sql2016 | Where SnapshotOf -like '*dumpsterfire*' | Remove-DbaDatabaseSnapshot
+Get-DbaDatabaseSnapshot -SqlInstance sql2016 | Where-Object SnapshotOf -like '*dumpsterfire*' | Remove-DbaDatabaseSnapshot
 
 Removes all snapshots associated with databases that have dumpsterfire in the name
 

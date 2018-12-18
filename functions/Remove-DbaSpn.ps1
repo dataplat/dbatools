@@ -58,12 +58,12 @@ Remove-DbaSpn -SPN MSSQLSvc\SQLSERVERA.domain.something -ServiceAccount domain\a
 Connects to Active Directory and removes a provided SPN to the given account. Uses alternative account to connect to AD.
 
 .EXAMPLE
-Test-DbaSpn -ComputerName sql2005 | Where { $_.isSet -eq $true } | Remove-DbaSpn -WhatIf
+Test-DbaSpn -ComputerName sql2005 | Where-Object { $_.isSet -eq $true } | Remove-DbaSpn -WhatIf
 
 Shows what would happen trying to remove all set SPNs for sql2005 and the relative delegations
 
 .EXAMPLE
-Test-DbaSpn -ComputerName sql2005 | Where { $_.isSet -eq $true } | Remove-DbaSpn
+Test-DbaSpn -ComputerName sql2005 | Where-Object { $_.isSet -eq $true } | Remove-DbaSpn
 
 Removes all set SPNs for sql2005 and the relative delegations
 

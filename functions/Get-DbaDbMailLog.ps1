@@ -38,7 +38,7 @@ function Get-DbaDbMailLog {
 		Returns the entire dbmail log on sql01\sharepoint 
 
 	.EXAMPLE
-		Get-DbaDbMailLog -SqlInstance sql01\sharepoint | Select *
+		Get-DbaDbMailLog -SqlInstance sql01\sharepoint | Select-Object *
 		
 		Returns the entire dbmail log on sql01\sharepoint then return a bunch more columns
 

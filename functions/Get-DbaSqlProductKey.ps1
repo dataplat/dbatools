@@ -210,7 +210,7 @@ Gets SQL Server versions, editions and product keys for all instances listed wit
       }
       $reg.Close()
     }
-    $objectCollection | Select "SQL Instance", "SQL Version", "SQL Edition", "Product Key"
+    $objectCollection | Select-Object"SQL Instance", "SQL Version", "SQL Edition", "Product Key"
   }
 	
   END {

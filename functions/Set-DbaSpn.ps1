@@ -65,12 +65,12 @@ Set-DbaSpn -SPN MSSQLSvc\SQLSERVERA.domain.something -ServiceAccount domain\acco
 Connects to Active Directory and adds a provided SPN to the given account, without the delegation.
 
 .EXAMPLE
-Test-DbaSpn -ComputerName sql2016 | Where { $_.isSet -eq $false } | Set-DbaSpn
+Test-DbaSpn -ComputerName sql2016 | Where-Object { $_.isSet -eq $false } | Set-DbaSpn
 
 Sets all missing SPNs for sql2016
 
 .EXAMPLE
-Test-DbaSpn -ComputerName sql2016 | Where { $_.isSet -eq $false } | Set-DbaSpn -WhatIf
+Test-DbaSpn -ComputerName sql2016 | Where-Object { $_.isSet -eq $false } | Set-DbaSpn -WhatIf
 
 Displays what would happen trying to set all missing SPNs for sql2016
 

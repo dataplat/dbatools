@@ -43,7 +43,7 @@ function Watch-DbaXESession {
 	Shows events for the system_health session as it happens
 
 	.EXAMPLE
-	Get-DbaXESession  -SqlInstance sql2016 -Session system_health | Watch-DbaXESession | Select -ExpandProperty Fields
+	Get-DbaXESession  -SqlInstance sql2016 -Session system_health | Watch-DbaXESession | Select-Object-ExpandProperty Fields
 	
 	Also shows events for the system_health session as it happens and expands the Fields property. Looks a bit like this
 	

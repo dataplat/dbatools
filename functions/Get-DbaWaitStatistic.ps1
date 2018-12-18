@@ -64,7 +64,7 @@
 			Check wait statistics on server sql2008 for thresholds above 98% and include wait stats that are most often, but not always, ignorable
 
 		.EXAMPLE
-			Get-DbaWaitStatistic -SqlInstance sql2008 | Select *
+			Get-DbaWaitStatistic -SqlInstance sql2008 | Select-Object *
 
 			Shows detailed notes, if available, from Paul's post
 

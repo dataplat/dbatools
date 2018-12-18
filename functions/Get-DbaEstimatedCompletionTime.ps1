@@ -56,7 +56,7 @@ Get-DbaEstimatedCompletionTime -SqlInstance sql2016
 Gets estimated completion times for queries performed against the entire server
 	
 .EXAMPLE
-Get-DbaEstimatedCompletionTime -SqlInstance sql2016 | Select *
+Get-DbaEstimatedCompletionTime -SqlInstance sql2016 | Select-Object *
 	
 Gets estimated completion times for queries performed against the entire server PLUS the SQL query text of each command
 

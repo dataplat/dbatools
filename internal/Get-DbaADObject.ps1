@@ -178,7 +178,7 @@ Searches in the contoso domain for a ctrlb user, suppressing all error messages 
 						}
 					}
 					# we are very unlucky, let's search also in all trusted domains
-					$AllTrusted = ($ForestObject.GetAllTrustRelationships().TopLevelNames | where Status -eq 'Enabled').Name
+					$AllTrusted = ($ForestObject.GetAllTrustRelationships().TopLevelNames | Where-Object Status -eq 'Enabled').Name
 					foreach ($ForestDomain in $AllTrusted) {
 						Write-Message -Message "Searching for $obj under domain $ForestDomain in $IdentityType format" -Level 4 -EnableException $EnableException
 						$found = Get-DbaADObjectInternal -Domain $ForestDomain -IdentityType $IdentityType -obj $obj

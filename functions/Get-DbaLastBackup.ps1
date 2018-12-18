@@ -47,12 +47,12 @@ Get-DbaLastBackup -SqlInstance ServerA\sql987
 Returns a custom object with Server name, Database name, and the date the last time backups were performed
 
 .EXAMPLE
-Get-DbaLastBackup -SqlInstance ServerA\sql987 | Select *
+Get-DbaLastBackup -SqlInstance ServerA\sql987 | Select-Object *
 
 Returns a custom object with Server name, Database name, and the date the last time backups were performed, and also recoverymodel and calculations on how long ago backups were taken and what the status is.
 
 .EXAMPLE
-Get-DbaLastBackup -SqlInstance ServerA\sql987 | Select * | Out-Gridview
+Get-DbaLastBackup -SqlInstance ServerA\sql987 | Select-Object * | Out-Gridview
 
 Returns a gridview displaying Server, Database, RecoveryModel, LastFullBackup, LastDiffBackup, LastLogBackup, SinceFull, SinceDiff, SinceLog, Status, DatabaseCreated, DaysSinceDbCreated
 

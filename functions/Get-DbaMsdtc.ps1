@@ -56,7 +56,7 @@ Get DTC status for all the computers in a .txt file
 
 
 .EXAMPLE
-Get-DbaMsdtc -Computername $Computers | where { $_.dtcservicestate -ne 'running' }
+Get-DbaMsdtc -Computername $Computers | Where-Object { $_.dtcservicestate -ne 'running' }
 
 Get DTC status for all the computers where the MSDTC Service is not running
 
