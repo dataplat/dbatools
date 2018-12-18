@@ -22,7 +22,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
         $defaultParamCount = 13
         [object[]]$params = (Get-ChildItem function:\$CommandName).Parameters.Keys
-        $knownParameters = 'ComputerName', 'Credential', 'Version', 'Type', 'Path', 'Restart', 'EnableException', 'Kb', 'InstanceName', 'Continue', 'Throttle'
+        $knownParameters = 'ComputerName', 'Credential', 'Version', 'Type', 'Path', 'Restart', 'EnableException', 'Kb', 'InstanceName', 'Continue', 'Throttle', 'Authentication'
         $paramCount = $knownParameters.Count
         It "Should contain our specific parameters" {
             ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
@@ -639,17 +639,24 @@ Describe "$CommandName Integration Tests" -Tag 'IntegrationTests' {
         Mock -CommandName Test-ElevationRequirement -MockWith { $null } -ModuleName dbatools
         #no restarts
         Mock -CommandName Restart-Computer -MockWith { $null } -ModuleName dbatools
-        #Mock Get-Item and Get-ChildItem with a dummy file
-        Mock -CommandName Get-ChildItem -ModuleName dbatools -MockWith {
+        # mock whole Find-SqlServerUpdate because it's executed remotely
+        Mock -CommandName Find-SqlServerUpdate -ModuleName dbatools -MockWith {
             [pscustomobject]@{
                 FullName = 'c:\mocked\filename.exe'
             }
         }
-        Mock -CommandName Get-Item -ModuleName dbatools -MockWith { 'c:\mocked' }
     }
-    Context "WhatIf upgrade all local versions to latest SPCU" {
+    Context "WhatIf upgrade target instance to latest SPCU" {
         It "Should whatif-upgrade to latest SPCU" {
-            { Update-DbaInstance -ComputerName $script:instance1 -Path $exeDir -Restart -EnableException -WhatIf 3>$null } | Should Not Throw
+            $server = Connect-DbaInstance -SqlInstance $script:instance1
+            $instance = $server.ServiceName
+            $result = Update-DbaInstance -ComputerName $script:instance1 -Path $exeDir -Restart -EnableException -WhatIf -InstanceName $instance 3>$null
+            $testBuild = Test-DbaBuild -SqlInstance $server -MaxBehind 0CU
+            Assert-MockCalled -CommandName Test-PendingReboot -Scope It -ModuleName dbatools
+            Assert-MockCalled -CommandName Test-ElevationRequirement -Scope It -ModuleName dbatools
+            if ($testBuild.Compliant -eq $false) {
+                Assert-MockCalled -CommandName Find-SqlServerUpdate -Scope It -ModuleName dbatools
+            }
         }
     }
 }

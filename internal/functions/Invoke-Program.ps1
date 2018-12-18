@@ -39,12 +39,36 @@ function Invoke-Program {
         Choose authentication mechanism to use
 
     .PARAMETER UsePSSessionConfiguration
-        Skips the CredSSP attempts and proceeds directly to PSSessionConfiguration connections
+        Skips the regular connection attempt and proceeds directly to PSSessionConfiguration connections workaround.
+        Mostly used for debugging. See -Fallback for more information.
+
+    .PARAMETER Raw
+        Return plain stdout without any additional information
+
+    .PARAMETER Fallback
+        When credentials are specified, it is possible that the chosen protocol would fail to connect with them.
+        Fallback will use PSSessionConfiguration to create a session configuration on a remote machine that uses
+        provided set of credentials by default.
+        Not a default option since it transfers credentials over a potentially unsecure network.
+
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+
+    .NOTES
+        Tags: Invoke, Program, Process, Session, PSSession, Authentication
+        Author: Kirill Kravtsov (@nvarscar) https://nvarscar.wordpress.com/
 
     .EXAMPLE
         PS C:\> Invoke-Program -ComputerName ServerA -Credentials $cred -Path "C:\temp\setup.exe" -ArgumentList '/quiet' -WorkingDirectory 'C:'
 
         Starts "setup.exe /quiet" on ServerA under provided credentials. C:\ will be set as a working directory.
+
+    .EXAMPLE
+        PS C:\> Invoke-Program -ComputerName ServerA -Credentials $cred -Authentication Credssp -Path "C:\temp\setup.exe" -Fallback
+
+        Starts "setup.exe" on ServerA under provided credentials. Will use CredSSP as a fisrt attempted protocol and then fallback to the PSSessionConfiguration workaround.
 
     #>
     [CmdletBinding()]
@@ -66,6 +90,7 @@ function Invoke-Program {
         [ValidateNotNullOrEmpty()]
         [uint32[]]$SuccessReturnCode = @(0, 3010),
         [switch]$Raw,
+        [switch]$Fallback,
         [bool]$UsePSSessionConfiguration = (Get-DbatoolsConfigValue -Name 'psremoting.Sessions.UsePSSessionConfiguration' -Fallback $false),
         [bool]$EnableException = $EnableException
     )
@@ -154,15 +179,20 @@ function Invoke-Program {
                 try {
                     $output = Invoke-Command2 @params -Authentication $Authentication -Raw -ErrorAction Stop
                 } catch [System.Management.Automation.Remoting.PSRemotingTransportException] {
-                    Write-Message -Level Warning -Message "Initial connection to $ComputerName through $Authentication protocol unsuccessful, falling back to PSSession configurations | $($_.Exception.Message)"
-                    $remotingSuccessful = $false
+                    if ($Credential -and $Fallback) {
+                        Write-Message -Level Warning -Message "Initial connection to $ComputerName through $Authentication protocol unsuccessful, falling back to PSSession configurations | $($_.Exception.Message)"
+                        $remotingSuccessful = $false
+                    } else {
+                        Stop-Function -Message "Connection to $ComputerName through $Authentication protocol was unsuccessful and fallback is disabled" -ErrorRecord $_
+                        return
+                    }
                 } catch {
                     Stop-Function -Message "Remote execution through $Authentication protocol failed" -ErrorRecord $_
                     return
                 }
             }
-            # If Credential is defined and previous attempt failed, try using PSSessionConfiguration workaroung
-            if ($Credential -and ($UsePSSessionConfiguration -or !$remotingSuccessful)) {
+            # If Credential and Fallback are defined, and previous attempt failed, try using PSSessionConfiguration workaround
+            if ($Credential -and $Fallback -and ($UsePSSessionConfiguration -or !$remotingSuccessful)) {
                 $configuration = Register-RemoteSessionConfiguration -Computer $ComputerName -Credential $Credential -Name dbatoolsInvokeProgram
                 if ($configuration.Successful) {
                     Write-Message -Level Debug -Message "RemoteSessionConfiguration ($($configuration.Name)) was successful, using it."
@@ -173,9 +203,9 @@ function Invoke-Program {
                         Stop-Function -Message "Remote SessionConfiguration execution failed" -ErrorRecord $_
                         return
                     } finally {
-                        # Unregister PSRemote configurations once completed. It's slow, but necessary - otherwise we're gonna leave unnesessary junk on a remote
-                        Write-Message -Level Verbose -Message "Unregistering any leftover PSSession Configurations on $ComputerName"
-                        $unreg = Unregister-RemoteSessionConfiguration -ComputerName $ComputerName -Credential $Credential -Name dbatoolsInvokeProgram
+                        # Unregister PSRemote configurations once completed. It's slow, but necessary - otherwise we're gonna have leftover junk with credentials on a remote
+                        Write-Message -Level Verbose -Message "Unregistering leftover PSSession Configuration on $ComputerName"
+                        $unreg = Unregister-RemoteSessionConfiguration -ComputerName $ComputerName -Credential $Credential -Name $configuration.Name
                         if (!$unreg.Successful) {
                             Stop-Function -Message "Failed to unregister PSSession Configurations on $ComputerName | $($configuration.Status)" -EnableException $false
                         }

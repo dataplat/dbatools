@@ -31,7 +31,8 @@ function Update-DbaInstance {
         Target computer with SQL instance or instsances.
 
     .PARAMETER Credential
-        Windows Credential with permission to log on to the remote server. Must be specified for any remote connection.
+        Windows Credential with permission to log on to the remote server.
+        Must be specified for any remote connection if update Repository is located on a network folder.
 
     .PARAMETER Type
         Type of the update: All | ServicePack | CumulativeUpdate.
@@ -65,6 +66,15 @@ function Update-DbaInstance {
     .PARAMETER Continue
         Continues a failed installation attempt when specified. Will abort a previously failed installation otherwise.
 
+    .PARAMETER Authentication
+        Chooses an authentication protocol for remote connections.
+        If the protocol fails to establish a connection
+
+        Defaults:
+        * CredSSP when -Credential is specified - due to the fact that repository Path is usually a network share and credentials need to be passed to the remote host
+          to avoid the double-hop issue.
+        * Default when -Credential is not specified. Will likely fail if a network path is specified.
+
     .PARAMETER InstanceName
         Only updates a specific instance(s).
 
@@ -77,7 +87,6 @@ function Update-DbaInstance {
 
     .PARAMETER Confirm
         Prompts you for confirmation before executing any changing operations within the command.
-
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -153,6 +162,8 @@ function Update-DbaInstance {
         [switch]$Continue,
         [ValidateNotNull()]
         [int]$Throttle = 50,
+        [ValidateSet('Default', 'Basic', 'Negotiate', 'NegotiateWithImplicitCredential', 'Credssp', 'Digest', 'Kerberos')]
+        [string]$Authentication = 'Credssp',
         [switch]$EnableException
     )
     begin {
@@ -254,12 +265,13 @@ function Update-DbaInstance {
 
         #Resolve all the provided names
         $resolvedComputers = @()
+        $notifiedCredentials = $false
+        $pathIsNetwork = $Path | Foreach-Object -Begin { $o = @() } -Process { $o += $_ -like '\\*'} -End { $o -contains $true }
         foreach ($computer in $ComputerName) {
             $null = Test-ElevationRequirement -ComputerName $computer -Continue
-            if (!$computer.IsLocalHost) {
-                if (!$Credential) {
-                    Write-Message -Level Warning -Message "Explicit credentials are required when running agains remote hosts. Make sure to define the -Credential parameter"
-                }
+            if (!$computer.IsLocalHost -and -not $notifiedCredentials -and -not $Credential -and $pathIsNetwork) {
+                Write-Message -Level Warning -Message "Explicit -Credential might be required when running agains remote hosts and -Path is a network folder"
+                $notifiedCredentials = $true
             }
             if ($resolvedComputer = Resolve-DbaNetworkName -ComputerName $computer.ComputerName) {
                 $resolvedComputers += $resolvedComputer.FullComputerName
@@ -289,9 +301,9 @@ function Update-DbaInstance {
                     Stop-Function -Message "$resolvedName is pending a reboot. Reboot the computer before proceeding." -Continue -ContinueLabel computers
                 }
                 # Attempt to configure CredSSP for the remote host when credentials are defined
-                if ($Credential -and -not ([DbaInstanceParameter]$resolvedName).IsLocalHost) {
+                if ($Credential -and -not ([DbaInstanceParameter]$resolvedName).IsLocalHost -and $Authentication -eq 'Credssp') {
                     Write-Message -Level Verbose -Message "Attempting to configure CredSSP for remote connections"
-                    Initialize-CredSSP -ComputerName $ComputerName -Credential $Credential -EnableException $false
+                    Initialize-CredSSP -ComputerName $resolvedName -Credential $Credential -EnableException $false
                 }
                 # Pass only relevant components
                 if ($currentAction.MajorVersion) {
@@ -326,8 +338,6 @@ function Update-DbaInstance {
                         ComputerName = $resolvedName
                         Actions      = $upgrades
                     }
-                } else {
-                    $whatIfMode = $true
                 }
             }
             Write-Progress -Activity $activity -Completed
@@ -344,14 +354,16 @@ function Update-DbaInstance {
                 ## Start the installation sequence
                 Write-ProgressHelper -ExcludePercent -Activity $activity -Message "Launching installation of $($currentAction.TargetLevel) KB$($currentAction.KB) ($($currentAction.Installer)) for SQL$($currentAction.MajorVersion) ($($currentAction.Build))"
                 $execParams = @{
-                    ComputerName = $computer
-                    ErrorAction  = 'Stop'
+                    ComputerName   = $computer
+                    ErrorAction    = 'Stop'
+                    Authentication = $Authentication
                 }
                 if ($Credential) {
-                    # that's when we switch to CredSSP
-                    $execParams += @{
-                        Credential     = $Credential
-                        Authentication = 'CredSSP'
+                    $execParams.Credential = $Credential
+                } else {
+                    if (Test-Bound -Not Authentication) {
+                        # Use Default authentication instead of CredSSP when Authentication is not specified and Credential is null
+                        $execParams.Authentication = "Default"
                     }
                 }
                 # Find a temporary folder to extract to - the drive that has most free space
@@ -367,7 +379,7 @@ function Update-DbaInstance {
                         # Extract file
                         Write-ProgressHelper -ExcludePercent -Activity $activity -Message "Extracting $($currentAction.Installer) to $spExtractPath"
                         Write-Message -Level Verbose -Message "Extracting $($currentAction.Installer) to $spExtractPath" -FunctionName Update-DbaInstance
-                        $extractResult = Invoke-Program @execParams -Path $currentAction.Installer -ArgumentList "/x`:`"$spExtractPath`" /quiet" -EnableException $true
+                        $extractResult = Invoke-Program @execParams -Path $currentAction.Installer -ArgumentList "/x`:`"$spExtractPath`" /quiet" -Fallback
                         if (-not $extractResult.Successful) {
                             $output.Notes = "Extraction failed with exit code $($extractResult.ExitCode)"
                             Stop-Function -Message $output.Notes -FunctionName Update-DbaInstance
@@ -381,7 +393,7 @@ function Update-DbaInstance {
                         }
                         Write-ProgressHelper -ExcludePercent -Activity $activity -Message "Now installing update SQL$($currentAction.MajorVersion)$($currentAction.TargetLevel) from $spExtractPath"
                         Write-Message -Level Verbose -Message "Starting installation from $spExtractPath" -FunctionName Update-DbaInstance
-                        $updateResult = Invoke-Program @execParams -Path "$spExtractPath\setup.exe" -ArgumentList @('/quiet', $instanceClause, '/IAcceptSQLServerLicenseTerms') -WorkingDirectory $spExtractPath -EnableException $true
+                        $updateResult = Invoke-Program @execParams -Path "$spExtractPath\setup.exe" -ArgumentList @('/quiet', $instanceClause, '/IAcceptSQLServerLicenseTerms') -WorkingDirectory $spExtractPath -Fallback
                         if ($updateResult.Successful) {
                             $output.Successful = $true
                         } else {
@@ -436,8 +448,6 @@ function Update-DbaInstance {
             $installActions | ForEach-Object -Process $installScript | ForEach-Object -Process $outputHandler
         } elseif ($installActions.Count -ge 2) {
             $installActions | Invoke-Parallel -ImportModules -ImportVariables -ScriptBlock $installScript -Throttle $Throttle | ForEach-Object -Process $outputHandler
-        } elseif (-not $whatIfMode) {
-            Write-Message -Level Warning -Message "No applicable updates were found"
         }
     }
 }
