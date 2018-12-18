@@ -12,6 +12,7 @@ function New-DbaDbMaskingConfig {
         Computed
         Hierarchyid
         Geography
+        Geometry
         Xml
 
         Read more here:
@@ -169,6 +170,10 @@ function New-DbaDbMaskingConfig {
                     }
                     if ($columnobject.DataType.Name -eq 'geography') {
                         Write-Message -Level Verbose -Message "Skipping $columnobject because it is a geography column"
+                        continue
+                    }
+                    if ($columnobject.DataType.Name -eq 'geometry') {
+                        Write-Message -Level Verbose -Message "Skipping $columnobject because it is a geometry column"
                         continue
                     }
                     if ($columnobject.DataType.SqlDataType.ToString().ToLower() -eq 'xml') {

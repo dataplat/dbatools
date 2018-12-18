@@ -13,6 +13,7 @@ function Invoke-DbaDbDataMasking {
         Computed
         Hierarchyid
         Geography
+        Geometry
         Xml
 
     .PARAMETER SqlInstance
@@ -157,7 +158,7 @@ function Invoke-DbaDbDataMasking {
                 continue
             }
             foreach ($columntest in $tabletest.Columns) {
-                if ($columntest.ColumnType -in 'hierarchyid', 'geography', 'xml' -and $columntest.Name -notin $Column) {
+                if ($columntest.ColumnType -in 'hierarchyid', 'geography', 'xml', 'geometry' -and $columntest.Name -notin $Column) {
                     Stop-Function -Message "$($columntest.ColumnType) is not supported, please remove the column $($columntest.Name) from the $($tabletest.Name) table" -Target $tables
                 }
             }
@@ -173,8 +174,14 @@ function Invoke-DbaDbDataMasking {
             } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-
-            foreach ($db in (Get-DbaDatabase -SqlInstance $server -Database $Database)) {
+            
+            if ($Database) {
+                $dbs = Get-DbaDatabase -SqlInstance $server -Database $Database
+            } else {
+                $dbs = Get-DbaDatabase -SqlInstance $server -Database $tables.Name
+            }
+            
+            foreach ($db in $dbs) {
                 $stepcounter = 0
                 foreach ($tableobject in $tables.Tables) {
                     if ($tableobject.Name -in $ExcludeTable -or ($Table -and $tableobject.Name -notin $Table)) {
@@ -383,7 +390,7 @@ function Invoke-DbaDbDataMasking {
                                     $updates += "[$($columnobject.Name)] = '$newValue'"
                                 }
 
-                                if ($columnobject.ColumnType -notin 'xml', 'geography') {
+                                if ($columnobject.ColumnType -notin 'xml', 'geography', 'geometry') {
                                     $oldValue = ($row.$($columnobject.Name)).Tostring().Replace("'", "''")
                                     $wheres += "[$($columnobject.Name)] = '$oldValue'"
                                 }
