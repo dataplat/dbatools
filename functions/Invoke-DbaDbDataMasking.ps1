@@ -152,7 +152,7 @@ function Invoke-DbaDbDataMasking {
                 return
             }
         }
-        
+
         foreach ($tabletest in $tables.Tables) {
             if ($Table -and $tabletest.Name -notin $Table) {
                 continue
@@ -174,13 +174,13 @@ function Invoke-DbaDbDataMasking {
             } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-            
+
             if ($Database) {
                 $dbs = Get-DbaDatabase -SqlInstance $server -Database $Database
             } else {
                 $dbs = Get-DbaDatabase -SqlInstance $server -Database $tables.Name
             }
-            
+
             foreach ($db in $dbs) {
                 $stepcounter = 0
                 foreach ($tableobject in $tables.Tables) {
@@ -227,6 +227,7 @@ function Invoke-DbaDbDataMasking {
                             $updates = $wheres = @()
 
                             foreach ($columnobject in $tablecolumns) {
+
                                 # make sure max is good
                                 if ($MaxValue) {
                                     if ($columnobject.MaxValue -le $MaxValue) {
@@ -321,7 +322,7 @@ function Invoke-DbaDbDataMasking {
                                     }
 
                                     if (-not $newValue) {
-                                        $newValue = switch ($columnobject.Subtype.ToLower()) {
+                                        $newValue = switch ($columnobject.SubType.ToLower()) {
                                             'number' {
                                                 $faker.$($columnobject.MaskingType).$($columnobject.SubType)($columnobject.MaxValue)
                                             }
@@ -329,11 +330,6 @@ function Invoke-DbaDbDataMasking {
                                                 $psitem -in 'bit', 'bool'
                                             } {
                                                 $faker.System.Random.Bool()
-                                            }
-                                            {
-                                                $psitem -in 'name', 'address', 'finance'
-                                            } {
-                                                $faker.$($columnobject.MaskingType).$($columnobject.SubType)()
                                             }
                                             {
                                                 $psitem -in 'date', 'datetime', 'datetime2', 'smalldatetime'
@@ -363,6 +359,19 @@ function Invoke-DbaDbDataMasking {
                                                 } else {
                                                     $faker.$($columnobject.MaskingType).String2($max, $charstring)
                                                 }
+                                            }
+                                            default {
+                                                $null
+                                            }
+                                        }
+                                    }
+
+                                    if (-not $newValue) {
+                                        $newValue = switch ($columnobject.MaskingType.ToLower()) {
+                                            {
+                                                $psitem -in 'name', 'address', 'finance'
+                                            } {
+                                                $faker.$($columnobject.MaskingType).$($columnobject.SubType)()
                                             }
                                             default {
                                                 if ($max -eq -1) {
