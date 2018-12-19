@@ -278,7 +278,7 @@ function Invoke-DbaDbDataMasking {
                                 try {
                                     $newValue = $null
 
-                                    if($columnobject.Deterministic -and ($row.$($columnobject.Name) -in $dictionary.Keys)){
+                                    if ($columnobject.Deterministic -and ($row.$($columnobject.Name) -in $dictionary.Keys)) {
                                         $newValue = $dictionary.$($row.$($columnobject.Name))
                                     }
 
@@ -417,7 +417,7 @@ function Invoke-DbaDbDataMasking {
                                     $wheres += "[$($columnobject.Name)] = '$oldValue'"
                                 }
 
-                                if($columnobject.Deterministic -and ($row.$($columnobject.Name) -notin $dictionary.Keys)){
+                                if ($columnobject.Deterministic -and ($row.$($columnobject.Name) -notin $dictionary.Keys)) {
                                     $dictionary.Add($row.$($columnobject.Name), $newValue)
                                 }
                             }

@@ -6,7 +6,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
         $defaultParamCount = 13
         [object[]]$params = (Get-ChildItem function:\Invoke-DbaDbDataMasking).Parameters.Keys
-        $knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'FilePath', 'Locale', 'CharacterString', 'Table', 'Column', 'ExcludeTable', 'ExcludeColumn', 'Query', 'MaxValue', 'EnableException','ExactLength'
+        $knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'FilePath', 'Locale', 'CharacterString', 'Table', 'Column', 'ExcludeTable', 'ExcludeColumn', 'Query', 'MaxValue', 'EnableException', 'ExactLength'
         It "Should contain our specific parameters" {
             ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $knownParameters.Count
         }
