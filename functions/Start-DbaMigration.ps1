@@ -217,16 +217,16 @@ function Start-DbaMigration {
         Test-DbaDeprecation -DeprecatedOn 1.0.0 -Parameter NetworkShare -CustomMessage "Using the parameter NetworkShare is deprecated. This parameter will be removed in version 1.0.0 or before. Use SharedPath instead."
         
         if ($Exclude -notcontains "Databases") {
-            if (-not $BackupRestore -and -not $DetachAttach) {
+            if (-not $BackupRestore -and -not $DetachAttach -and -not $UseLastBackup) {
                 Stop-Function -Message "You must specify a database migration method (-BackupRestore or -DetachAttach) or -Exclude Databases"
                 return
             }
         }
-        
-        $elapsed = [System.Diagnostics.Stopwatch]::StartNew()
-        $started = Get-Date
-        $sourceserver = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
 
+        if ($DetachAttach -and ($BackupRestore -or $UseLastBackup)) {
+            Stop-Function -Message "-DetachAttach cannot be used with -BackupRestore or -UseLastBackup"
+            return
+        }
         if ($BackupRestore -and (-not $SharedPath -and -not $UseLastBackup)) {
             Stop-Function -Message "When using -BackupRestore, you must specify -SharedPath or -UseLastBackup"
             return
@@ -243,12 +243,30 @@ function Start-DbaMigration {
             Stop-Function -Message "-Continue cannot be used without -UseLastBackup"
             return
         }
+        if ($UseLastBackup -and -not $BackupRestore) {
+            $BackupRestore = $true
+        }
+        
+        $elapsed = [System.Diagnostics.Stopwatch]::StartNew()
+        $started = Get-Date
+        $sourceserver = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
     }
 
     process {
         if (Test-FunctionInterrupt) { return }
 
         # testing twice for whatif reasons
+        if ($Exclude -notcontains "Databases") {
+            if (-not $BackupRestore -and -not $DetachAttach -and -not $UseLastBackup) {
+                Stop-Function -Message "You must specify a database migration method (-BackupRestore or -DetachAttach) or -Exclude Databases"
+                return
+            }
+        }
+
+        if ($DetachAttach -and ($BackupRestore -or $UseLastBackup)) {
+            Stop-Function -Message "-DetachAttach cannot be used with -BackupRestore or -UseLastBackup"
+            return
+        }
         if ($BackupRestore -and (-not $SharedPath -and -not $UseLastBackup)) {
             Stop-Function -Message "When using -BackupRestore, you must specify -SharedPath or -UseLastBackup"
             return
@@ -260,6 +278,13 @@ function Start-DbaMigration {
         if ($DetachAttach -and -not $Reattach -and $Destination.Count -gt 1) {
             Stop-Function -Message "When using -DetachAttach with multiple servers, you must specify -Reattach to reattach database at source"
             return
+        }
+        if ($Continue -and -not $UseLastBackup) {
+            Stop-Function -Message "-Continue cannot be used without -UseLastBackup"
+            return
+        }
+        if ($UseLastBackup -and -not $BackupRestore) {
+            $BackupRestore = $true
         }
         if ($Exclude -notcontains 'SpConfigure') {
             Write-Message -Level Verbose -Message "Migrating SQL Server Configuration"
