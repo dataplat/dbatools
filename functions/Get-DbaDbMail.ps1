@@ -34,7 +34,7 @@ function Get-DbaDbMail {
         Returns the db mail server object on sql01\sharepoint
 
     .EXAMPLE
-        PS C:\> Get-DbaDbMail -SqlInstance sql01\sharepoint | Select *
+        PS C:\> Get-DbaDbMail -SqlInstance sql01\sharepoint | Select-Object *
 
         Returns the db mail server object on sql01\sharepoint then return a bunch more columns
 

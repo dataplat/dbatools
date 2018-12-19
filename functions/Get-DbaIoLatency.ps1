@@ -39,7 +39,7 @@ function Get-DbaIoLatency {
         Get IO subsystem latency statistics for servers sql2008 and sqlserver2012.
 
     .EXAMPLE
-        PS C:\> $output = Get-DbaIoLatency -SqlInstance sql2008 | Select * | ConvertTo-DbaDataTable
+        PS C:\> $output = Get-DbaIoLatency -SqlInstance sql2008 | Select-Object * | ConvertTo-DbaDataTable
 
         Collects all IO subsystem latency statistics on server sql2008 into a Data Table.
 
