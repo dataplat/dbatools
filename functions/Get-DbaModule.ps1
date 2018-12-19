@@ -53,7 +53,7 @@ function Get-DbaModule {
         Return all modules for servers sql2008 and sqlserver2012 sorted by Database, Modify_Date ASC.
 
     .EXAMPLE
-        PS C:\> Get-DbaModule -SqlInstance sql2008, sqlserver2012 | Select *
+        PS C:\> Get-DbaModule -SqlInstance sql2008, sqlserver2012 | Select-Object *
 
         Shows hidden definition column (informative wall of text).
 

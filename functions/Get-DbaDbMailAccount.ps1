@@ -48,7 +48,7 @@ function Get-DbaDbMailAccount {
         Returns The DBA Team Database Mail account from sql01\sharepoint
 
     .EXAMPLE
-        PS C:\> Get-DbaDbMailAccount -SqlInstance sql01\sharepoint | Select *
+        PS C:\> Get-DbaDbMailAccount -SqlInstance sql01\sharepoint | Select-Object *
 
         Returns the Database Mail accounts on sql01\sharepoint then return a bunch more columns
 
