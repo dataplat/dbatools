@@ -162,7 +162,7 @@ function New-DbaAvailabilityGroup {
     .EXAMPLE
         PS C:\> New-DbaAvailabilityGroup -Primary sql2016a -Name SharePoint -Secondary sql2016b
 
-        Creates a new availability group on sql2016b named SharePoint with a secondary replica, sql2016b
+        Creates a new availability group on sql2016a named SharePoint with a secondary replica, sql2016b
 
     .EXAMPLE
         PS C:\> New-DbaAvailabilityGroup -Primary sql2016std -Name BAG1 -Basic -Confirm:$false
