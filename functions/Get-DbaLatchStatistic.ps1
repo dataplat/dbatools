@@ -53,7 +53,7 @@ function Get-DbaLatchStatistic {
         Check latch statistics on server sql2008 for thresholds above 98%
 
     .EXAMPLE
-        PS C:\> $output = Get-DbaLatchStatistic -SqlInstance sql2008 -Threshold 100 | Select * | ConvertTo-DbaDataTable
+        PS C:\> $output = Get-DbaLatchStatistic -SqlInstance sql2008 -Threshold 100 | Select-Object * | ConvertTo-DbaDataTable
 
         Collects all latch statistics on server sql2008 into a Data Table.
 
