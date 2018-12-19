@@ -168,6 +168,8 @@ function Invoke-DbaDbDataMasking {
             return
         }
 
+        $dictionary = @{}
+
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
@@ -201,6 +203,8 @@ function Invoke-DbaDbDataMasking {
                     } catch {
                         Stop-Function -Message "Failure retrieving the data from table $($tableobject.Name)" -Target $Database -ErrorRecord $_ -Continue
                     }
+
+                    $deterministicColumns = $tables.Tables.Columns | Where-Object Deterministic -eq $true
 
                     $elapsed = [System.Diagnostics.Stopwatch]::StartNew()
                     $tablecolumns = $tableobject.Columns
@@ -272,52 +276,60 @@ function Invoke-DbaDbDataMasking {
                                 }
 
                                 try {
-                                    $newValue = switch ($columnobject.ColumnType) {
-                                        {
-                                            $psitem -in 'bit', 'bool'
-                                        } {
-                                            $faker.System.Random.Bool()
-                                        }
-                                        {
-                                            $psitem -match 'date'
-                                        } {
-                                            if ($columnobject.MinValue -or $columnobject.MaxValue) {
-                                                ($faker.Date.Between($nowmin, $nowmax)).ToString("yyyyMMdd")
-                                            } else {
-                                                ($faker.Date.Past()).ToString("yyyyMMdd")
-                                            }
-                                        }
-                                        {
-                                            $psitem -match 'int'
-                                        } {
-                                            if ($columnobject.MinValue -or $columnobject.MaxValue) {
-                                                $faker.System.Random.Int($columnobject.MinValue, $columnobject.MaxValue)
-                                            } else {
-                                                $faker.System.Random.Int(0, $max)
-                                            }
-                                        }
-                                        'money' {
-                                            if ($columnobject.MinValue -or $columnobject.MaxValue) {
-                                                $faker.Finance.Amount($columnobject.MinValue, $columnobject.MaxValue)
-                                            } else {
-                                                $faker.Finance.Amount(0, $max)
-                                            }
-                                        }
-                                        'time' {
-                                            ($faker.Date.Past()).ToString("h:mm tt zzz")
-                                        }
-                                        'uniqueidentifier' {
-                                            $faker.System.Random.Guid().Guid
-                                        }
-                                        'userdefineddatatype' {
-                                            if ($columnobject.MaxValue -eq 1) {
+                                    $newValue = $null
+
+                                    if($columnobject.Deterministic -and ($row.$($columnobject.Name) -in $dictionary.Keys)){
+                                        $newValue = $dictionary.$($row.$($columnobject.Name))
+                                    }
+
+                                    if (-not $newValue) {
+                                        $newValue = switch ($columnobject.ColumnType) {
+                                            {
+                                                $psitem -in 'bit', 'bool'
+                                            } {
                                                 $faker.System.Random.Bool()
-                                            } else {
+                                            }
+                                            {
+                                                $psitem -match 'date'
+                                            } {
+                                                if ($columnobject.MinValue -or $columnobject.MaxValue) {
+                                                    ($faker.Date.Between($nowmin, $nowmax)).ToString("yyyyMMdd")
+                                                } else {
+                                                    ($faker.Date.Past()).ToString("yyyyMMdd")
+                                                }
+                                            }
+                                            {
+                                                $psitem -match 'int'
+                                            } {
+                                                if ($columnobject.MinValue -or $columnobject.MaxValue) {
+                                                    $faker.System.Random.Int($columnobject.MinValue, $columnobject.MaxValue)
+                                                } else {
+                                                    $faker.System.Random.Int(0, $max)
+                                                }
+                                            }
+                                            'money' {
+                                                if ($columnobject.MinValue -or $columnobject.MaxValue) {
+                                                    $faker.Finance.Amount($columnobject.MinValue, $columnobject.MaxValue)
+                                                } else {
+                                                    $faker.Finance.Amount(0, $max)
+                                                }
+                                            }
+                                            'time' {
+                                                ($faker.Date.Past()).ToString("h:mm tt zzz")
+                                            }
+                                            'uniqueidentifier' {
+                                                $faker.System.Random.Guid().Guid
+                                            }
+                                            'userdefineddatatype' {
+                                                if ($columnobject.MaxValue -eq 1) {
+                                                    $faker.System.Random.Bool()
+                                                } else {
+                                                    $null
+                                                }
+                                            }
+                                            default {
                                                 $null
                                             }
-                                        }
-                                        default {
-                                            $null
                                         }
                                     }
 
@@ -384,6 +396,7 @@ function Invoke-DbaDbDataMasking {
                                             }
                                         }
                                     }
+
                                 } catch {
                                     Stop-Function -Message "Failure" -Target $faker -Continue -ErrorRecord $_
                                 }
@@ -402,6 +415,10 @@ function Invoke-DbaDbDataMasking {
                                 if ($columnobject.ColumnType -notin 'xml', 'geography', 'geometry') {
                                     $oldValue = ($row.$($columnobject.Name)).Tostring().Replace("'", "''")
                                     $wheres += "[$($columnobject.Name)] = '$oldValue'"
+                                }
+
+                                if($columnobject.Deterministic -and ($row.$($columnobject.Name) -notin $dictionary.Keys)){
+                                    $dictionary.Add($row.$($columnobject.Name), $newValue)
                                 }
                             }
 
