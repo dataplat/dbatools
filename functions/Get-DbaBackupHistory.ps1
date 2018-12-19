@@ -540,14 +540,14 @@ function Get-DbaBackupHistory {
                 $from = " FROM msdb..backupmediafamily mediafamily
                              INNER JOIN msdb..backupmediaset mediaset ON mediafamily.media_set_id = mediaset.media_set_id
                              INNER JOIN msdb..backupset backupset ON backupset.media_set_id = mediaset.media_set_id"
-                if ($Database -or $Since -or $Last -or $LastFull -or $LastLog -or $LastDiff -or $deviceTypeFilter -or $LastLsn -or $backupTypeFilter) {
+                if ($Database -or $ExcludeDatabase -or $Since -or $Last -or $LastFull -or $LastLog -or $LastDiff -or $deviceTypeFilter -or $LastLsn -or $backupTypeFilter) {
                     $where = " WHERE "
                 }
 
                 $whereArray = @()
 
-                if ($Database.length -gt 0) {
-                    $dbList = $Database -join "','"
+                if ($Database.length -gt 0 -or $ExcludeDatabase.length -gt 0) {
+                    $dbList = $databases.Name -join "','"
                     $whereArray += "database_name IN ('$dbList')"
                 }
 

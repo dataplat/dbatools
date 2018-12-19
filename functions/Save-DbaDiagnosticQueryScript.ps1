@@ -66,7 +66,7 @@ function Save-DbaDiagnosticQueryScript {
     $glenberryrss = "http://www.sqlskills.com/blogs/glenn/feed/"
     $glenberrysql = @()
 
-    Write-Message -Level Output -Message "Downloading RSS Feed"
+    Write-Message -Level Verbose -Message "Downloading RSS Feed"
     $rss = [xml](get-webdata -uri $glenberryrss)
     $Feed = $rss.rss.Channel
 
@@ -90,12 +90,15 @@ function Save-DbaDiagnosticQueryScript {
             break
         }
     }
-    Write-Message -Level Output -Message "Found $($glenberrysql.Count) documents to download"
+    Write-Message -Level Verbose -Message "Found $($glenberrysql.Count) documents to download"
     foreach ($doc in $glenberrysql) {
         try {
-            Write-Message -Level Output -Message "Downloading $($doc.URL)"
+            $link = $doc.URL.ToString().Replace('dl=0', 'dl=1')
+            Write-Message -Level Verbose -Message "Downloading $link)"
+            Write-ProgressHelper -Activity "Downloading Glenn Berry's most recent DMVs" -ExcludePercent -Message "Downloading $link" -StepNumber 1
             $filename = "{0}\SQLServerDiagnosticQueries_{1}_{2}.sql" -f $Path, $doc.SQLVersion, "$($doc.FileYear)$($doc.FileMonth)"
-            Invoke-TlsWebRequest -Uri $doc.URL -OutFile $filename -ErrorAction Stop
+            Invoke-TlsWebRequest -Uri $link -OutFile $filename -ErrorAction Stop
+            Get-ChildItem -Path $filename
         } catch {
             Stop-Function -Message "Requesting and writing file failed: $_" -Target $filename -ErrorRecord $_
             return
