@@ -49,10 +49,10 @@ function Get-XpDirTreeRestoreFile {
     }
 
     if (!(Test-DbaPath -SqlInstance $server -path $path)) {
-        Stop-Function -Message "SqlInstance $SqlInstance cannot access $path" -EnableException $true
+        Stop-Function -Message "SqlInstance $SqlInstance cannot access $path" -EnableException $false
     }
     if (!(Test-DbaPath -SqlInstance $server -path $Path)) {
-        Stop-Function -Message "SqlInstance $SqlInstance cannot access $Path" -EnableException $true
+        Stop-Function -Message "SqlInstance $SqlInstance cannot access $Path" -EnableException $false
     }
     if ($server.VersionMajor -ge 14) {
         # this is all kinds of cool, api could be expanded sooo much here
