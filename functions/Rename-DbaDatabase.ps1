@@ -136,7 +136,7 @@ function Rename-DbaDatabase {
         https://dbatools.io/Rename-DbaDatabase
 
     .EXAMPLE
-        PS C:\> Rename-DbaDatabase -SqlInstance sqlserver2014a -Database HR -DatabaseName HR2 -Preview | select *
+        PS C:\> Rename-DbaDatabase -SqlInstance sqlserver2014a -Database HR -DatabaseName HR2 -Preview | Select-Object *
 
         Shows the detailed result set you'll get renaming the HR database to HR2 without doing anything
 
