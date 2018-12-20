@@ -186,7 +186,10 @@ function Invoke-DbaDbDataMasking {
             } else {
                 $dbs = Get-DbaDatabase -SqlInstance $server -Database $tables.Name
             }
-
+            
+            $sqlconn = $server.ConnectionContext.SqlConnectionObject.PsObject.Copy()
+            $sqlconn.Open()
+            
             foreach ($db in $dbs) {
                 $stepcounter = $nullmod = 0
                 foreach ($tableobject in $tables.Tables) {
@@ -202,14 +205,15 @@ function Invoke-DbaDbDataMasking {
                         if (-not (Test-Bound -ParameterName Query)) {
                             $query = "SELECT * FROM [$($tableobject.Schema)].[$($tableobject.Name)]"
                         }
-
-                        $data = $db.Query($query) | ConvertTo-DbaDataTable
+                        $data = $server.Databases[$($db.Name)].Query($query) | ConvertTo-DbaDataTable
                     } catch {
                         Stop-Function -Message "Failure retrieving the data from table $($tableobject.Name)" -Target $Database -ErrorRecord $_ -Continue
                     }
-
+                    
+                    $sqlconn.ChangeDatabase($db.Name)
+                    $transaction = $sqlconn.BeginTransaction()
+                    
                     $deterministicColumns = $tables.Tables.Columns | Where-Object Deterministic -eq $true
-
                     $elapsed = [System.Diagnostics.Stopwatch]::StartNew()
                     $tablecolumns = $tableobject.Columns
 
@@ -227,9 +231,8 @@ function Invoke-DbaDbDataMasking {
                     }
 
                     if ($Pscmdlet.ShouldProcess($instance, "Masking $($tablecolumns.Name -join ', ') in $($data.Rows.Count) rows in $($db.Name).$($tableobject.Schema).$($tableobject.Name)")) {
-
                         Write-ProgressHelper -StepNumber ($stepcounter++) -TotalSteps $tables.Tables.Count -Activity "Masking data" -Message "Updating $($data.Rows.Count) rows in $($tableobject.Schema).$($tableobject.Name) in $($db.Name) on $instance"
-
+                        
                         # Loop through each of the rows and change them
                         foreach ($row in $data.Rows) {
                             $updates = $wheres = @()
@@ -459,28 +462,40 @@ function Invoke-DbaDbDataMasking {
                             }
 
                             $updatequery = "UPDATE [$($tableobject.Schema)].[$($tableobject.Name)] SET $($updates -join ', ') WHERE $($wheres -join ' AND ')"
-
+                            
                             try {
-                                $db.Query($updatequery)
+                                $sqlcmd = New-Object System.Data.SqlClient.SqlCommand($updatequery, $sqlconn, $transaction)
+                                $null = $sqlcmd.ExecuteNonQuery()
                             } catch {
                                 Write-Message -Level VeryVerbose -Message "$updatequery"
-                                Stop-Function -Message "Error updating $($tableobject.Schema).$($tableobject.Name)" -Target $updatequery -Continue -ErrorRecord $_
+                                $errormessage = $_.Exception.Message.ToString()
+                                Stop-Function -Message "Error updating $($tableobject.Schema).$($tableobject.Name): $errormessage" -Target $updatequery -Continue -ErrorRecord $_
                             }
                         }
-                        [pscustomobject]@{
-                            ComputerName = $db.Parent.ComputerName
-                            InstanceName = $db.Parent.ServiceName
-                            SqlInstance  = $db.Parent.DomainInstanceName
-                            Database     = $db.Name
-                            Schema       = $tableobject.Schema
-                            Table        = $tableobject.Name
-                            Columns      = $tableobject.Columns.Name
-                            Rows         = $($data.Rows.Count)
-                            Elapsed      = [prettytimespan]$elapsed.Elapsed
-                            Status       = "Masked"
+                        try {
+                            $null = $transaction.Commit()
+                            [pscustomobject]@{
+                                ComputerName = $db.Parent.ComputerName
+                                InstanceName = $db.Parent.ServiceName
+                                SqlInstance  = $db.Parent.DomainInstanceName
+                                Database     = $db.Name
+                                Schema       = $tableobject.Schema
+                                Table        = $tableobject.Name
+                                Columns      = $tableobject.Columns.Name
+                                Rows         = $($data.Rows.Count)
+                                Elapsed      = [prettytimespan]$elapsed.Elapsed
+                                Status       = "Masked"
+                            }
+                        } catch {
+                            Stop-Function -Message "Error updating $($tableobject.Schema).$($tableobject.Name)" -Target $updatequery -Continue -ErrorRecord $_
                         }
                     }
                 }
+            }
+            try {
+                $sqlconn.Close()
+            } catch {
+                Stop-Function -Message "Failure" -Continue -ErrorRecord $_
             }
         }
     }
