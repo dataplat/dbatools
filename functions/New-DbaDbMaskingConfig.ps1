@@ -274,12 +274,26 @@ function New-DbaDbMaskingConfig {
                                     Deterministic   = $false
                                 }
                             }
+                            "company" {
+                                $columns += [PSCustomObject]@{
+                                    Name            = $columnobject.Name
+                                    ColumnType      = $columnType
+                                    CharacterString = $null
+                                    MinValue        = $min
+                                    MaxValue        = $columnLength
+                                    MaskingType     = "Company"
+                                    SubType         = "CompanyName"
+                                    Deterministic   = $false
+                                }
+                            }
                         }
                     } else {
                         $type = "Random"
 
                         switch ($columnType) {
-                            { $_ -in "bit", "bool" } {
+                            {
+                                $_ -in "bit", "bool"
+                            } {
                                 $subType = "Bool"
                                 $MaxValue = $null
                             }

@@ -5,7 +5,7 @@ function Invoke-DbaDbDataMasking {
 
     .DESCRIPTION
         TMasks data by using randomized values determined by a configuration file and a randomizer framework
-    
+
         It will use a configuration file that can be made manually or generated using New-DbaDbMaskingConfig
 
         Note that the following column and data types are not currently supported:
@@ -381,6 +381,11 @@ function Invoke-DbaDbDataMasking {
 
                                     if (-not $newValue) {
                                         $newValue = switch ($columnobject.MaskingType.ToLower()) {
+                                            {
+                                                $psitem -in 'bit', 'bool'
+                                            } {
+                                                $faker.System.Random.Bool()
+                                            }
                                             {
                                                 $psitem -in 'name', 'address', 'finance'
                                             } {
