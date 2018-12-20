@@ -53,42 +53,16 @@ function Find-SqlServerUpdate {
             }
         }
         $params = @{
-            ComputerName = $ComputerName
-            Credential   = $Credential
-            ScriptBlock  = $getFileScript
-            ArgumentList = @($Path, $filter)
-            ErrorAction  = 'Stop'
-            Raw          = $true
+            ComputerName   = $ComputerName
+            Credential     = $Credential
+            Authentication = $Authentication
+            ScriptBlock    = $getFileScript
+            ArgumentList   = @($Path, $filter)
+            ErrorAction    = 'Stop'
+            Raw            = $true
         }
         try {
-            Invoke-Command2 @params -Authentication $Authentication
-        } catch [System.Management.Automation.Remoting.PSRemotingTransportException] {
-            if ($Credential) {
-                #try fallback
-                $configuration = Register-RemoteSessionConfiguration -Computer $ComputerName -Credential $Credential -Name dbatoolsFindUpdate
-                if ($configuration.Successful) {
-                    Write-Message -Level Debug -Message "RemoteSessionConfiguration ($($configuration.Name)) was successful, using it."
-                    try {
-                        Invoke-Command2 @params -ConfigurationName $configuration.Name
-                    } catch {
-                        Stop-Function -Message "Failed to enumerate files in $Path using PSSession config" -ErrorRecord $_
-                        return
-                    } finally {
-                        # Unregister PSRemote configurations once completed. It's slow, but necessary - otherwise we're gonna have leftover junk with credentials on a remote
-                        Write-Message -Level Verbose -Message "Unregistering leftover PSSession Configuration on $ComputerName"
-                        $unreg = Unregister-RemoteSessionConfiguration -ComputerName $ComputerName -Credential $Credential -Name $configuration.Name
-                        if (!$unreg.Successful) {
-                            Stop-Function -Message "Failed to unregister PSSession Configurations on $ComputerName | $($configuration.Status)" -EnableException $false
-                        }
-                    }
-                } else {
-                    Stop-Function -Message "RemoteSession configuration unsuccessful, no valid connection options found | $($configuration.Status)"
-                    return
-                }
-            } else {
-                Stop-Function -Message "Failed to enumerate files in $Path" -ErrorRecord $_
-                return
-            }
+            Invoke-CommandWithFallback @params
         } catch {
             Stop-Function -Message "Failed to enumerate files in $Path" -ErrorRecord $_
             return

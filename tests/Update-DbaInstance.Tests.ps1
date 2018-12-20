@@ -7,7 +7,7 @@ $exeDir = "C:\Temp\dbatools_$CommandName"
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     BeforeAll {
         # Prevent the functions from executing dangerous stuff and getting right responses where needed
-        Mock -CommandName Invoke-Program -MockWith { [pscustomobject]@{ Successful = $true } } -ModuleName dbatools
+        Mock -CommandName Invoke-Program -MockWith { [pscustomobject]@{ Successful = $true; ExitCode = [uint32[]]3010 } } -ModuleName dbatools
         Mock -CommandName Test-PendingReboot -MockWith { $false } -ModuleName dbatools
         Mock -CommandName Test-ElevationRequirement -MockWith { $null } -ModuleName dbatools
         Mock -CommandName Restart-Computer -MockWith { $null } -ModuleName dbatools
@@ -128,9 +128,6 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
             Assert-MockCalled -CommandName Get-SQLInstanceComponent -Exactly 1 -Scope It -ModuleName dbatools
             Assert-MockCalled -CommandName Invoke-Program -Exactly 2 -Scope It -ModuleName dbatools
             Assert-MockCalled -CommandName Restart-Computer -Exactly 1 -Scope It -ModuleName dbatools
-            #no remote execution in tests
-            #Assert-MockCalled -CommandName Register-RemoteSessionConfiguration -Exactly 0 -Scope It -ModuleName dbatools
-            #Assert-MockCalled -CommandName Unregister-RemoteSessionConfiguration -Exactly 1 -Scope It -ModuleName dbatools
 
             $result | Should -Not -BeNullOrEmpty
             $result.MajorVersion | Should -Be 2008
@@ -149,9 +146,6 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
             Assert-MockCalled -CommandName Get-SQLInstanceComponent -Exactly 1 -Scope It -ModuleName dbatools
             Assert-MockCalled -CommandName Invoke-Program -Exactly 4 -Scope It -ModuleName dbatools
             Assert-MockCalled -CommandName Restart-Computer -Exactly 2 -Scope It -ModuleName dbatools
-            #no remote execution in tests
-            #Assert-MockCalled -CommandName Register-RemoteSessionConfiguration -Exactly 0 -Scope It -ModuleName dbatools
-            #Assert-MockCalled -CommandName Unregister-RemoteSessionConfiguration -Exactly 1 -Scope It -ModuleName dbatools
 
             ($results | Measure-Object).Count | Should -Be 2
 
@@ -235,9 +229,6 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
             Assert-MockCalled -CommandName Get-SQLInstanceComponent -Exactly 1 -Scope It -ModuleName dbatools
             Assert-MockCalled -CommandName Invoke-Program -Exactly 2 -Scope It -ModuleName dbatools
             Assert-MockCalled -CommandName Restart-Computer -Exactly 1 -Scope It -ModuleName dbatools
-            #no remote execution in tests
-            #Assert-MockCalled -CommandName Register-RemoteSessionConfiguration -Exactly 0 -Scope It -ModuleName dbatools
-            #Assert-MockCalled -CommandName Unregister-RemoteSessionConfiguration -Exactly 1 -Scope It -ModuleName dbatools
 
             $result | Should -Not -BeNullOrEmpty
             $result.MajorVersion | Should -Be 2008
@@ -254,9 +245,6 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
             Assert-MockCalled -CommandName Get-SQLInstanceComponent -Exactly 1 -Scope It -ModuleName dbatools
             Assert-MockCalled -CommandName Invoke-Program -Exactly 2 -Scope It -ModuleName dbatools
             Assert-MockCalled -CommandName Restart-Computer -Exactly 1 -Scope It -ModuleName dbatools
-            #no remote execution in tests
-            #Assert-MockCalled -CommandName Register-RemoteSessionConfiguration -Exactly 0 -Scope It -ModuleName dbatools
-            #Assert-MockCalled -CommandName Unregister-RemoteSessionConfiguration -Exactly 1 -Scope It -ModuleName dbatools
 
             $result | Should -Not -BeNullOrEmpty
             $result.MajorVersion | Should -Be 2016
@@ -273,9 +261,6 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
             Assert-MockCalled -CommandName Get-SQLInstanceComponent -Exactly 1 -Scope It -ModuleName dbatools
             Assert-MockCalled -CommandName Invoke-Program -Exactly 6 -Scope It -ModuleName dbatools
             Assert-MockCalled -CommandName Restart-Computer -Exactly 3 -Scope It -ModuleName dbatools
-            #no remote execution in tests
-            #Assert-MockCalled -CommandName Register-RemoteSessionConfiguration -Exactly 0 -Scope It -ModuleName dbatools
-            #Assert-MockCalled -CommandName Unregister-RemoteSessionConfiguration -Exactly 1 -Scope It -ModuleName dbatools
 
             ($results | Measure-Object).Count | Should -Be 3
 
@@ -345,9 +330,6 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
             Assert-MockCalled -CommandName Get-SQLInstanceComponent -Exactly 1 -Scope It -ModuleName dbatools
             Assert-MockCalled -CommandName Invoke-Program -Exactly 2 -Scope It -ModuleName dbatools
             Assert-MockCalled -CommandName Restart-Computer -Exactly 1 -Scope It -ModuleName dbatools
-            #no remote execution in tests
-            #Assert-MockCalled -CommandName Register-RemoteSessionConfiguration -Exactly 0 -Scope It -ModuleName dbatools
-            #Assert-MockCalled -CommandName Unregister-RemoteSessionConfiguration -Exactly 1 -Scope It -ModuleName dbatools
 
             $result | Should -Not -BeNullOrEmpty
             $result.MajorVersion | Should -Be 2012
@@ -650,7 +632,7 @@ Describe "$CommandName Integration Tests" -Tag 'IntegrationTests' {
         It "Should whatif-upgrade to latest SPCU" {
             $server = Connect-DbaInstance -SqlInstance $script:instance1
             $instance = $server.ServiceName
-            $result = Update-DbaInstance -ComputerName $script:instance1 -Path $exeDir -Restart -EnableException -WhatIf -InstanceName $instance 3>$null
+            $null = Update-DbaInstance -ComputerName $script:instance1 -Path $exeDir -Restart -EnableException -WhatIf -InstanceName $instance 3>$null
             $testBuild = Test-DbaBuild -SqlInstance $server -MaxBehind 0CU
             Assert-MockCalled -CommandName Test-PendingReboot -Scope It -ModuleName dbatools
             Assert-MockCalled -CommandName Test-ElevationRequirement -Scope It -ModuleName dbatools

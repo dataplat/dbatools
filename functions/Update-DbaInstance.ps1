@@ -167,6 +167,8 @@ function Update-DbaInstance {
         [switch]$EnableException
     )
     begin {
+        $notifiedCredentials = $false
+        $notifiedUnsecure = $false
         #Validating parameters
         if ($PSCmdlet.ParameterSetName -eq 'Version') {
             foreach ($v in $Version) {
@@ -265,7 +267,6 @@ function Update-DbaInstance {
 
         #Resolve all the provided names
         $resolvedComputers = @()
-        $notifiedCredentials = $false
         $pathIsNetwork = $Path | Foreach-Object -Begin { $o = @() } -Process { $o += $_ -like '\\*'} -End { $o -contains $true }
         foreach ($computer in $ComputerName) {
             $null = Test-ElevationRequirement -ComputerName $computer -Continue
@@ -304,6 +305,20 @@ function Update-DbaInstance {
                 if ($Credential -and -not ([DbaInstanceParameter]$resolvedName).IsLocalHost -and $Authentication -eq 'Credssp') {
                     Write-Message -Level Verbose -Message "Attempting to configure CredSSP for remote connections"
                     Initialize-CredSSP -ComputerName $resolvedName -Credential $Credential -EnableException $false
+                    # Verify remote connection and confirm using unsecure credentials
+                    try {
+                        $secureProtocol = Invoke-Command2 -ComputerName $resolvedName -Credential $Credential -Authentication $Authentication -ScriptBlock { $true } -Raw
+                    } catch {
+                        $secureProtocol = $false
+                    }
+                    # only ask once about using unsecure protocol
+                    if (-not $secureProtocol -and -not $notifiedUnsecure) {
+                        if ($PSCmdlet.ShouldProcess($resolvedName, "Primary protocol ($Authentication) failed, sending credentials via potentially unsecure protocol")) {
+                            $notifiedUnsecure = $true
+                        } else {
+                            Stop-Function -Message "Failed to connect to $resolvedName through $Authentication protocol. No actions will be performed on that computer." -Continue -ContinueLabel computers
+                        }
+                    }
                 }
                 # Pass only relevant components
                 if ($currentAction.MajorVersion) {
@@ -315,19 +330,39 @@ function Update-DbaInstance {
                 }
                 Write-ProgressHelper -ExcludePercent -Activity $activity -Message "Looking for a KB file for a chosen version"
                 Write-Message -Level Debug -Message "Looking for appropriate KB file on $resolvedName with following params: $($currentAction | ConvertTo-Json -Depth 1 -Compress)"
-                $upgradeDetails = Get-SqlServerUpdate @currentAction -ComputerName $resolvedName -Credential $Credential -Restart $Restart -Path $Path -Component $selectedComponents
+                # get upgrade details for each component
+                $upgradeDetails = Get-SqlServerUpdate @currentAction -ComputerName $resolvedName -Credential $Credential -Component $selectedComponents
                 if ($upgradeDetails.Successful -contains $false) {
                     #Exit the actions loop altogether - upgrade cannot be performed
                     $upgradeDetails
-                    Stop-Function -Message "Update cannot be applied to $resolvedName | $($upgradeDetails.Notes)" -Continue -ContinueLabel computers
-                } else {
+                    Stop-Function -Message "Update cannot be applied to $resolvedName | $($upgradeDetails.Notes -join ' | ')" -Continue -ContinueLabel computers
+                }
+
+                foreach ($detail in $upgradeDetails) {
+                    # search for installer for each target upgrade
+                    $kbLookupParams = @{
+                        ComputerName   = $resolvedName
+                        Credential     = $Credential
+                        Authentication = $Authentication
+                        Architecture   = $detail.Architecture
+                        MajorVersion   = $detail.MajorVersion
+                        Path           = $Path
+                        KB             = $detail.KB
+                    }
+                    $installer = Find-SqlServerUpdate @kbLookupParams
+                    if ($installer) {
+                        $detail.Installer = $installer.FullName
+                    } else {
+                        Stop-Function -Message "Could not find installer for the SQL$($detail.MajorVersion) update KB$($detail.KB)" -Continue
+                    }
                     # update components to mirror the updated version - will be used for multi-step upgrades
                     foreach ($component in $components) {
-                        if ($component.Version.NameLevel -in $upgradeDetails.TargetVersion.NameLevel) {
-                            $component.Version = $upgradeDetails.TargetVersion | Where-Object NameLevel -eq $component.Version.NameLevel
+                        if ($component.Version.NameLevel -in $upgradeDetdetailails.TargetVersion.NameLevel) {
+                            $component.Version = $detail.TargetVersion | Where-Object NameLevel -eq $component.Version.NameLevel
                         }
                     }
-                    $upgrades += $upgradeDetails
+                    # finally, add the upgrade details to the upgrade list
+                    $upgrades += $detail
                 }
             }
             if ($upgrades) {
@@ -381,8 +416,9 @@ function Update-DbaInstance {
                         Write-Message -Level Verbose -Message "Extracting $($currentAction.Installer) to $spExtractPath" -FunctionName Update-DbaInstance
                         $extractResult = Invoke-Program @execParams -Path $currentAction.Installer -ArgumentList "/x`:`"$spExtractPath`" /quiet" -Fallback
                         if (-not $extractResult.Successful) {
-                            $output.Notes = "Extraction failed with exit code $($extractResult.ExitCode)"
-                            Stop-Function -Message $output.Notes -FunctionName Update-DbaInstance
+                            $msg = "Extraction failed with exit code $($extractResult.ExitCode)"
+                            $output.Notes += $msg
+                            Stop-Function -Message $msg -FunctionName Update-DbaInstance
                             return $output
                         }
                         # Install the patch
@@ -397,21 +433,22 @@ function Update-DbaInstance {
                         if ($updateResult.Successful) {
                             $output.Successful = $true
                         } else {
-                            $output.Notes = "Update failed with exit code $($updateResult.ExitCode)"
-                            Stop-Function -Message $output.Notes -FunctionName Update-DbaInstance
+                            $msg = "Update failed with exit code $($updateResult.ExitCode)"
+                            $output.Notes += $msg
+                            Stop-Function -Message $msg -FunctionName Update-DbaInstance
                             return $output
                         }
                         $output.Log = $updateResult.stdout
                     } catch {
                         Stop-Function -Message "Upgrade failed" -ErrorRecord $_ -FunctionName Update-DbaInstance
-                        $output.Notes = $_.Exception.Notes
+                        $output.Notes += $_.Exception.Message
                         return $output
                     } finally {
                         ## Cleanup temp
                         Write-ProgressHelper -ExcludePercent -Activity $activity -Message "Cleaning up extracted files from $spExtractPath"
                         try {
                             Write-ProgressHelper -ExcludePercent -Activity $activity -Message "Removing temporary files"
-                            $null = Invoke-Command2 @execParams -ScriptBlock {
+                            $null = Invoke-CommandWithFallBack @execParams -ScriptBlock {
                                 if ($args[0] -like '*\dbatools_KB*_Extract' -and (Test-Path $args[0])) {
                                     Remove-Item -Recurse -Force -LiteralPath $args[0] -ErrorAction Stop
                                 }
@@ -423,21 +460,24 @@ function Update-DbaInstance {
                         }
                     }
                 }
-                if ($Restart) {
-                    # Restart the computer
-                    Write-ProgressHelper -ExcludePercent -Activity $activity -Message "Restarting computer $($computer) and waiting for it to come back online"
-                    Write-Message -Level Verbose "Restarting computer $($computer) and waiting for it to come back online" -FunctionName Update-DbaInstance
-                    try {
-                        #no special protocol needed for restarts
-                        $execParams.Remove('Authentication')
-                        $null = Restart-Computer @execParams -Wait -For WinRm -Force
-                        $output.Restarted = $true
-                    } catch {
-                        Stop-Function -Message "Failed to restart computer" -ErrorRecord $_ -FunctionName Update-DbaInstance
-                        return $output
+                #double check if restart is needed
+                if ($updateResult.ExitCode -eq 3010 -or (Test-PendingReboot -ComputerName $resolvedName)) {
+                    if ($Restart) {
+                        # Restart the computer
+                        Write-ProgressHelper -ExcludePercent -Activity $activity -Message "Restarting computer $($computer) and waiting for it to come back online"
+                        Write-Message -Level Verbose "Restarting computer $($computer) and waiting for it to come back online" -FunctionName Update-DbaInstance
+                        try {
+                            #no special protocol needed for restarts
+                            $execParams.Remove('Authentication')
+                            $null = Restart-Computer @execParams -Wait -For WinRm -Force
+                            $output.Restarted = $true
+                        } catch {
+                            Stop-Function -Message "Failed to restart computer" -ErrorRecord $_ -FunctionName Update-DbaInstance
+                            return $output
+                        }
+                    } else {
+                        $output.Notes += "Restart is required for computer $($computer) to finish the installation of SQL$($currentAction.MajorVersion)$($currentAction.TargetLevel)"
                     }
-                } else {
-                    $output.Notes = "Restart is required for computer $($computer) to finish the installation of SQL$($currentAction.MajorVersion)$($currentAction.TargetLevel)"
                 }
                 $output
                 Write-Progress -Activity $activity -Completed
