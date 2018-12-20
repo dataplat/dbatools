@@ -55,6 +55,9 @@ function Invoke-DbaDbDataMasking {
 
         Useful for adhoc updates and testing, otherwise, the config file should be used.
 
+    .PARAMETER MaxNullModulus
+        For nullable columns, this is the max modulus of nulls.
+
     .PARAMETER ExactLength
         Mask string values to the same length. So 'Tate' will be replaced with 4 random characters.
 
@@ -66,7 +69,6 @@ function Invoke-DbaDbDataMasking {
 
     .PARAMETER Confirm
         If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
-
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -122,6 +124,7 @@ function Invoke-DbaDbDataMasking {
         [string[]]$ExcludeColumn,
         [string]$Query,
         [int]$MaxValue,
+        [int]$MaxNullModulus = 10,
         [switch]$ExactLength,
         [switch]$EnableException
     )
@@ -185,7 +188,7 @@ function Invoke-DbaDbDataMasking {
             }
 
             foreach ($db in $dbs) {
-                $stepcounter = 0
+                $stepcounter = $nullmod = 0
                 foreach ($tableobject in $tables.Tables) {
                     if ($tableobject.Name -in $ExcludeTable -or ($Table -and $tableobject.Name -notin $Table)) {
                         Write-Message -Level Verbose -Message "Skipping $($tableobject.Name) because it is explicitly excluded"
@@ -230,201 +233,217 @@ function Invoke-DbaDbDataMasking {
                         # Loop through each of the rows and change them
                         foreach ($row in $data.Rows) {
                             $updates = $wheres = @()
-
+                            
                             foreach ($columnobject in $tablecolumns) {
-
-                                # make sure max is good
-                                if ($MaxValue) {
-                                    if ($columnobject.MaxValue -le $MaxValue) {
-                                        $max = $columnobject.MaxValue
-                                    } else {
-                                        $max = $MaxValue
-                                    }
-                                } else {
-                                    $max = $columnobject.MaxValue
-                                }
-
-                                if (-not $columnobject.MaxValue -and -not (Test-Bound -ParameterName MaxValue)) {
-                                    $max = 10
-                                }
-
-                                if ($columnobject.CharacterString) {
-                                    $charstring = $columnobject.CharacterString
-                                } else {
-                                    $charstring = $CharacterString
-                                }
-
-                                # make sure min is good
-                                if ($columnobject.MinValue) {
-                                    $min = $columnobject.MinValue
-                                } else {
-                                    if ($columnobject.CharacterString) {
-                                        $min = 1
-                                    } else {
-                                        $min = 0
-                                    }
-                                }
-
-                                if (($columnobject.MinValue -or $columnobject.MaxValue) -and ($columnobject.ColumnType -match 'date')) {
-                                    $nowmin = $columnobject.MinValue
-                                    $nowmax = $columnobject.MaxValue
-                                    if (-not $nowmin) {
-                                        $nowmin = (Get-Date -Date $nowmax).AddDays(-365)
-                                    }
-                                    if (-not $nowmax) {
-                                        $nowmax = (Get-Date -Date $nowmin).AddDays(365)
-                                    }
-                                }
-
-                                try {
+                                if ($columnobject.Nullable -and (($nullmod++) % $MaxNullModulus -eq 0)) {
                                     $newValue = $null
-
-                                    if ($columnobject.Deterministic -and ($row.$($columnobject.Name) -in $dictionary.Keys)) {
-                                        $newValue = $dictionary.$($row.$($columnobject.Name))
+                                } else {
+                                    # make sure max is good
+                                    if ($MaxValue) {
+                                        if ($columnobject.MaxValue -le $MaxValue) {
+                                            $max = $columnobject.MaxValue
+                                        } else {
+                                            $max = $MaxValue
+                                        }
+                                    } else {
+                                        $max = $columnobject.MaxValue
                                     }
 
-                                    if (-not $newValue) {
-                                        $newValue = switch ($columnobject.ColumnType) {
-                                            {
-                                                $psitem -in 'bit', 'bool'
-                                            } {
-                                                $faker.System.Random.Bool()
-                                            }
-                                            {
-                                                $psitem -match 'date'
-                                            } {
-                                                if ($columnobject.MinValue -or $columnobject.MaxValue) {
-                                                    ($faker.Date.Between($nowmin, $nowmax)).ToString("yyyyMMdd")
-                                                } else {
-                                                    ($faker.Date.Past()).ToString("yyyyMMdd")
-                                                }
-                                            }
-                                            {
-                                                $psitem -match 'int'
-                                            } {
-                                                if ($columnobject.MinValue -or $columnobject.MaxValue) {
-                                                    $faker.System.Random.Int($columnobject.MinValue, $columnobject.MaxValue)
-                                                } else {
-                                                    $faker.System.Random.Int(0, $max)
-                                                }
-                                            }
-                                            'money' {
-                                                if ($columnobject.MinValue -or $columnobject.MaxValue) {
-                                                    $faker.Finance.Amount($columnobject.MinValue, $columnobject.MaxValue)
-                                                } else {
-                                                    $faker.Finance.Amount(0, $max)
-                                                }
-                                            }
-                                            'time' {
-                                                ($faker.Date.Past()).ToString("h:mm tt zzz")
-                                            }
-                                            'uniqueidentifier' {
-                                                $faker.System.Random.Guid().Guid
-                                            }
-                                            'userdefineddatatype' {
-                                                if ($columnobject.MaxValue -eq 1) {
-                                                    $faker.System.Random.Bool()
-                                                } else {
-                                                    $null
-                                                }
-                                            }
-                                            default {
-                                                $null
-                                            }
+                                    if (-not $columnobject.MaxValue -and -not (Test-Bound -ParameterName MaxValue)) {
+                                        $max = 10
+                                    }
+
+                                    if ($columnobject.CharacterString) {
+                                        $charstring = $columnobject.CharacterString
+                                    } else {
+                                        $charstring = $CharacterString
+                                    }
+
+                                    # make sure min is good
+                                    if ($columnobject.MinValue) {
+                                        $min = $columnobject.MinValue
+                                    } else {
+                                        if ($columnobject.CharacterString) {
+                                            $min = 1
+                                        } else {
+                                            $min = 0
                                         }
                                     }
 
-                                    if (-not $newValue) {
-                                        $newValue = switch ($columnobject.SubType.ToLower()) {
-                                            'number' {
-                                                $faker.$($columnobject.MaskingType).$($columnobject.SubType)($columnobject.MaxValue)
-                                            }
-                                            {
-                                                $psitem -in 'bit', 'bool'
-                                            } {
-                                                $faker.System.Random.Bool()
-                                            }
-                                            {
-                                                $psitem -in 'date', 'datetime', 'datetime2', 'smalldatetime'
-                                            } {
-                                                if ($columnobject.MinValue -or $columnobject.MaxValue) {
-                                                    ($faker.Date.Between($nowmin, $nowmax)).ToString("yyyyMMdd")
-                                                } else {
-                                                    ($faker.Date.Past()).ToString("yyyyMMdd")
-                                                }
-                                            }
-                                            'shuffle' {
-                                                ($row.($columnobject.Name) -split '' | Sort-Object {
-                                                        Get-Random
-                                                    }) -join ''
-                                            }
-                                            'string' {
-                                                if ($max -eq -1) {
-                                                    $max = 1024
-                                                }
-
-                                                if ($columnobject.SubType -eq "String" -and (Test-Bound -ParameterName ExactLength)) {
-                                                    $max = ($row.$($columnobject.Name)).Length
-                                                }
-
-                                                if ($columnobject.ColumnType -eq 'xml') {
-                                                    $null
-                                                } else {
-                                                    $faker.$($columnobject.MaskingType).String2($max, $charstring)
-                                                }
-                                            }
-                                            default {
-                                                $null
-                                            }
+                                    if (($columnobject.MinValue -or $columnobject.MaxValue) -and ($columnobject.ColumnType -match 'date')) {
+                                        $nowmin = $columnobject.MinValue
+                                        $nowmax = $columnobject.MaxValue
+                                        if (-not $nowmin) {
+                                            $nowmin = (Get-Date -Date $nowmax).AddDays(-365)
+                                        }
+                                        if (-not $nowmax) {
+                                            $nowmax = (Get-Date -Date $nowmin).AddDays(365)
                                         }
                                     }
 
-                                    if (-not $newValue) {
-                                        $newValue = switch ($columnobject.MaskingType.ToLower()) {
-                                            {
-                                                $psitem -in 'bit', 'bool'
-                                            } {
-                                                $faker.System.Random.Bool()
-                                            }
-                                            {
-                                                $psitem -in 'name', 'address', 'finance'
-                                            } {
-                                                $faker.$($columnobject.MaskingType).$($columnobject.SubType)()
-                                            }
-                                            default {
-                                                if ($max -eq -1) {
-                                                    $max = 1024
-                                                }
-                                                if ((Test-Bound -ParameterName ExactLength)) {
-                                                    $max = ($row.$($columnobject.Name)).ToString().Length
-                                                }
-                                                if ($max -eq 1) {
+                                    try {
+                                        $newValue = $null
+
+                                        if ($columnobject.Deterministic -and ($row.$($columnobject.Name) -in $dictionary.Keys)) {
+                                            $newValue = $dictionary.$($row.$($columnobject.Name))
+                                        }
+
+                                        if (-not $newValue) {
+                                            $newValue = switch ($columnobject.ColumnType) {
+                                                {
+                                                    $psitem -in 'bit', 'bool'
+                                                } {
                                                     $faker.System.Random.Bool()
-                                                } else {
-                                                    try {
-                                                        $faker.$($columnobject.MaskingType).$($columnobject.SubType)()
-                                                    } catch {
-                                                        $faker.Random.String2($max, $charstring)
+                                                }
+                                                {
+                                                    $psitem -match 'date'
+                                                } {
+                                                    if ($columnobject.MinValue -or $columnobject.MaxValue) {
+                                                        ($faker.Date.Between($nowmin, $nowmax)).ToString("yyyyMMdd")
+                                                    } else {
+                                                        ($faker.Date.Past()).ToString("yyyyMMdd")
+                                                    }
+                                                }
+                                                {
+                                                    $psitem -match 'int'
+                                                } {
+                                                    if ($columnobject.MinValue -or $columnobject.MaxValue) {
+                                                        $faker.System.Random.Int($columnobject.MinValue, $columnobject.MaxValue)
+                                                    } else {
+                                                        $faker.System.Random.Int(0, $max)
+                                                    }
+                                                }
+                                                'money' {
+                                                    if ($columnobject.MinValue -or $columnobject.MaxValue) {
+                                                        $faker.Finance.Amount($columnobject.MinValue, $columnobject.MaxValue)
+                                                    } else {
+                                                        $faker.Finance.Amount(0, $max)
+                                                    }
+                                                }
+                                                'time' {
+                                                    ($faker.Date.Past()).ToString("h:mm tt zzz")
+                                                }
+                                                'uniqueidentifier' {
+                                                    $faker.System.Random.Guid().Guid
+                                                }
+                                                'userdefineddatatype' {
+                                                    if ($columnobject.MaxValue -eq 1) {
+                                                        $faker.System.Random.Bool()
+                                                    } else {
+                                                        $null
+                                                    }
+                                                }
+                                                default {
+                                                    $null
+                                                }
+                                            }
+                                        }
+
+                                        if (-not $newValue) {
+                                            $newValue = switch ($columnobject.SubType.ToLower()) {
+                                                'number' {
+                                                    $faker.$($columnobject.MaskingType).$($columnobject.SubType)($columnobject.MaxValue)
+                                                }
+                                                {
+                                                    $psitem -in 'bit', 'bool'
+                                                } {
+                                                    $faker.System.Random.Bool()
+                                                }
+                                                {
+                                                    $psitem -in 'date', 'datetime', 'datetime2', 'smalldatetime'
+                                                } {
+                                                    if ($columnobject.MinValue -or $columnobject.MaxValue) {
+                                                        ($faker.Date.Between($nowmin, $nowmax)).ToString("yyyyMMdd")
+                                                    } else {
+                                                        ($faker.Date.Past()).ToString("yyyyMMdd")
+                                                    }
+                                                }
+                                                'shuffle' {
+                                                    ($row.($columnobject.Name) -split '' | Sort-Object {
+                                                            Get-Random
+                                                        }) -join ''
+                                                }
+                                                'string' {
+                                                    if ($max -eq -1) {
+                                                        $max = 1024
+                                                    }
+
+                                                    if ($columnobject.SubType -eq "String" -and (Test-Bound -ParameterName ExactLength)) {
+                                                        $max = ($row.$($columnobject.Name)).Length
+                                                    }
+
+                                                    if ($columnobject.ColumnType -eq 'xml') {
+                                                        $null
+                                                    } else {
+                                                        $faker.$($columnobject.MaskingType).String2($max, $charstring)
+                                                    }
+                                                }
+                                                default {
+                                                    $null
+                                                }
+                                            }
+                                        }
+
+                                        if (-not $newValue) {
+                                            $newValue = switch ($columnobject.MaskingType.ToLower()) {
+                                                {
+                                                    $psitem -in 'bit', 'bool'
+                                                } {
+                                                    $faker.System.Random.Bool()
+                                                }
+                                                {
+                                                    $psitem -in 'name', 'address', 'finance'
+                                                } {
+                                                    $faker.$($columnobject.MaskingType).$($columnobject.SubType)()
+                                                }
+                                                default {
+                                                    if ($max -eq -1) {
+                                                        $max = 1024
+                                                    }
+                                                    if ((Test-Bound -ParameterName ExactLength)) {
+                                                        $max = ($row.$($columnobject.Name)).ToString().Length
+                                                    }
+                                                    if ($max -eq 1) {
+                                                        $faker.System.Random.Bool()
+                                                    } else {
+                                                        try {
+                                                            $faker.$($columnobject.MaskingType).$($columnobject.SubType)()
+                                                        } catch {
+                                                            $faker.Random.String2($max, $charstring)
+                                                        }
                                                     }
                                                 }
                                             }
                                         }
+                                    } catch {
+                                        Stop-Function -Message "Failure" -Target $faker -Continue -ErrorRecord $_
                                     }
-                                } catch {
-                                    Stop-Function -Message "Failure" -Target $faker -Continue -ErrorRecord $_
                                 }
 
                                 if ($columnobject.ColumnType -eq 'xml') {
                                     # nothing, unsure how i'll handle this
                                 } elseif ($columnobject.ColumnType -in 'uniqueidentifier') {
-                                    $updates += "[$($columnobject.Name)] = '$newValue'"
+                                    if ($null -eq $newValue -and $columnobject.Nullable) {
+                                        $updates += "[$($columnobject.Name)] = NULL"
+                                    } else {
+                                        $updates += "[$($columnobject.Name)] = '$newValue'"
+                                    }
+
                                 } elseif ($columnobject.ColumnType -match 'int') {
-                                    $updates += "[$($columnobject.Name)] = $newValue"
+                                    if ($null -eq $newValue -and $columnobject.Nullable) {
+                                        $updates += "[$($columnobject.Name)] = NULL"
+                                    } else {
+                                        $updates += "[$($columnobject.Name)] = $newValue"
+                                    }
                                 } else {
-                                    $newValue = ($newValue).Tostring().Replace("'", "''")
-                                    $updates += "[$($columnobject.Name)] = '$newValue'"
+                                    if ($null -eq $newValue -and $columnobject.Nullable) {
+                                        $updates += "[$($columnobject.Name)] = NULL"
+                                    } else {
+                                        $newValue = ($newValue).Tostring().Replace("'", "''")
+                                        $updates += "[$($columnobject.Name)] = '$newValue'"
+                                    }
                                 }
-                                
+
                                 if ($columnobject.ColumnType -notin 'xml', 'geography', 'geometry') {
                                     if (($row.$($columnobject.Name)).GetType().Name -match 'DBNull') {
                                         $wheres += "[$($columnobject.Name)] IS NULL"
@@ -438,9 +457,9 @@ function Invoke-DbaDbDataMasking {
                                     $dictionary.Add($row.$($columnobject.Name), $newValue)
                                 }
                             }
-                            
+
                             $updatequery = "UPDATE [$($tableobject.Schema)].[$($tableobject.Name)] SET $($updates -join ', ') WHERE $($wheres -join ' AND ')"
-                            
+
                             try {
                                 $db.Query($updatequery)
                             } catch {

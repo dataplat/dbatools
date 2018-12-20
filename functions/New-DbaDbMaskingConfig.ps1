@@ -212,6 +212,7 @@ function New-DbaDbMaskingConfig {
                                     MaskingType     = "Name"
                                     SubType         = "Firstname"
                                     Deterministic   = $false
+                                    Nullable        = $columnobject.Nullable
                                 }
                             }
                             "lastname" {
@@ -224,6 +225,7 @@ function New-DbaDbMaskingConfig {
                                     MaskingType     = "Name"
                                     SubType         = "Lastname"
                                     Deterministic   = $false
+                                    Nullable        = $columnobject.Nullable
                                 }
                             }
                             "creditcard" {
@@ -236,6 +238,7 @@ function New-DbaDbMaskingConfig {
                                     MaskingType     = "Finance"
                                     SubType         = "CreditcardNumber"
                                     Deterministic   = $false
+                                    Nullable        = $columnobject.Nullable
                                 }
                             }
                             "address" {
@@ -248,6 +251,7 @@ function New-DbaDbMaskingConfig {
                                     MaskingType     = "Address"
                                     SubType         = "StreetAddress"
                                     Deterministic   = $false
+                                    Nullable        = $columnobject.Nullable
                                 }
                             }
                             "city" {
@@ -260,6 +264,7 @@ function New-DbaDbMaskingConfig {
                                     MaskingType     = "Address"
                                     SubType         = "City"
                                     Deterministic   = $false
+                                    Nullable        = $columnobject.Nullable
                                 }
                             }
                             "zipcode" {
@@ -272,6 +277,7 @@ function New-DbaDbMaskingConfig {
                                     MaskingType     = "Address"
                                     SubType         = "Zipcode"
                                     Deterministic   = $false
+                                    Nullable        = $columnobject.Nullable
                                 }
                             }
                             "company" {
@@ -284,6 +290,7 @@ function New-DbaDbMaskingConfig {
                                     MaskingType     = "Company"
                                     SubType         = "CompanyName"
                                     Deterministic   = $false
+                                    Nullable        = $columnobject.Nullable
                                 }
                             }
                             "username" {
@@ -296,6 +303,7 @@ function New-DbaDbMaskingConfig {
                                     MaskingType     = "Internet"
                                     SubType         = "UserName"
                                     Deterministic   = $false
+                                    Nullable        = $columnobject.Nullable
                                 }
                             }
                         }
@@ -373,6 +381,7 @@ function New-DbaDbMaskingConfig {
                             MaskingType     = $type
                             SubType         = $subType
                             Deterministic   = $false
+                            Nullable        = $columnobject.Nullable
                         }
                     }
                 }
