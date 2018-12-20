@@ -23,7 +23,16 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
                 ) ON [PRIMARY]
                 GO
                 INSERT INTO people (fname, lname, dob) VALUES ('Joe','Schmoe','2/2/2000')
-                INSERT INTO people (fname, lname, dob) VALUES ('Jane','Schmee','2/2/1950')"
+                INSERT INTO people (fname, lname, dob) VALUES ('Jane','Schmee','2/2/1950')
+                GO
+                CREATE TABLE [dbo].[people2](
+                                    [fname] [varchar](50) NULL,
+                                    [lname] [varchar](50) NULL,
+                                    [dob] [datetime] NULL
+                                ) ON [PRIMARY]
+                                GO
+                                INSERT INTO people2 (fname, lname, dob) VALUES ('Layla','Schmoe','2/2/2000')
+                                INSERT INTO people2 (fname, lname, dob) VALUES ('Eric','Schmee','2/2/1950')"
         New-DbaDatabase -SqlInstance $script:instance1 -Name $db
         Invoke-DbaQuery -SqlInstance $script:instance1 -Database $db -Query $sql
     }
@@ -40,8 +49,11 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         It "returns the proper output" {
             $file = New-DbaDbMaskingConfig -SqlInstance $script:instance1 -Database $db -Path C:\temp
             $results = $file | Invoke-DbaDbDataMasking -SqlInstance $script:instance1 -Database $db -Confirm:$false
-            $results.Count | Should -BeGreaterThan 1
-            $results.Database | Should -Contain $db
+            foreach ($result in $results) {
+                $result.Rows | Should -Be 2
+                $result.Database | Should -Contain $db
+            }
+            
         }
         It "masks the data and does not delete it" {
             Invoke-DbaQuery -SqlInstance $script:instance1 -Database $db -Query "select * from people" | Should -Not -Be $null
