@@ -211,6 +211,7 @@ function New-DbaDbMaskingConfig {
                                     MaxValue        = $columnLength
                                     MaskingType     = "Name"
                                     SubType         = "Firstname"
+                                    Deterministic   = $false
                                 }
                             }
                             "lastname" {
@@ -222,6 +223,7 @@ function New-DbaDbMaskingConfig {
                                     MaxValue        = $columnLength
                                     MaskingType     = "Name"
                                     SubType         = "Lastname"
+                                    Deterministic   = $false
                                 }
                             }
                             "creditcard" {
@@ -233,6 +235,7 @@ function New-DbaDbMaskingConfig {
                                     MaxValue        = $columnLength
                                     MaskingType     = "Finance"
                                     SubType         = "CreditcardNumber"
+                                    Deterministic   = $false
                                 }
                             }
                             "address" {
@@ -244,6 +247,7 @@ function New-DbaDbMaskingConfig {
                                     MaxValue        = $columnLength
                                     MaskingType     = "Address"
                                     SubType         = "StreetAddress"
+                                    Deterministic   = $false
                                 }
                             }
                             "city" {
@@ -255,6 +259,7 @@ function New-DbaDbMaskingConfig {
                                     MaxValue        = $columnLength
                                     MaskingType     = "Address"
                                     SubType         = "City"
+                                    Deterministic   = $false
                                 }
                             }
                             "zipcode" {
@@ -266,6 +271,7 @@ function New-DbaDbMaskingConfig {
                                     MaxValue        = $columnLength
                                     MaskingType     = "Address"
                                     SubType         = "Zipcode"
+                                    Deterministic   = $false
                                 }
                             }
                         }
@@ -344,6 +350,7 @@ function New-DbaDbMaskingConfig {
                             MaxValue        = $MaxValue
                             MaskingType     = $type
                             SubType         = $subType
+                            Deterministic   = $false
                         }
                     }
                 }
