@@ -1,7 +1,7 @@
 function New-DbaDbMaskingConfig {
     <#
     .SYNOPSIS
-        Generates a new data masking configuration file.
+        Generates a new data masking configuration file to be used with Invoke-DbaDbDataMasking
 
     .DESCRIPTION
         Generates a new data masking configuration file. This file is important to apply any data masking to the data in a database.

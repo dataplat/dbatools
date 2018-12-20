@@ -1,10 +1,11 @@
 function Invoke-DbaDbDataMasking {
     <#
     .SYNOPSIS
-        Invoke-DbaDbDataMasking generates random data for tables
+        Masks data by using randomized values determined by a configuration file and a randomizer framework
 
     .DESCRIPTION
-        Invoke-DbaDbDataMasking is able to generate random data for tables.
+        TMasks data by using randomized values determined by a configuration file and a randomizer framework
+    
         It will use a configuration file that can be made manually or generated using New-DbaDbMaskingConfig
 
         Note that the following column and data types are not currently supported:
