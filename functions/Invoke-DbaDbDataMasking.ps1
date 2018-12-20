@@ -398,11 +398,15 @@ function Invoke-DbaDbDataMasking {
                                                 if ((Test-Bound -ParameterName ExactLength)) {
                                                     $max = ($row.$($columnobject.Name)).ToString().Length
                                                 }
-                                                $faker.Random.String2($max, $charstring)
+                                                if ($max -eq 1) {
+                                                    $faker.System.Random.Bool()
+                                                } else {
+                                                    $faker.Random.String2($max, $charstring)
+                                                }
+
                                             }
                                         }
                                     }
-
                                 } catch {
                                     Stop-Function -Message "Failure" -Target $faker -Continue -ErrorRecord $_
                                 }
