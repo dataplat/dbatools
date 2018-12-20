@@ -55,8 +55,8 @@ function Invoke-DbaDbDataMasking {
 
         Useful for adhoc updates and testing, otherwise, the config file should be used.
 
-    .PARAMETER MaxNullModulus
-        For nullable columns, this is the max modulus of nulls.
+    .PARAMETER ModulusFactor
+        Calculating the next nullable by using the reminder from the modulus. Default is every 10.
 
     .PARAMETER ExactLength
         Mask string values to the same length. So 'Tate' will be replaced with 4 random characters.
@@ -124,7 +124,7 @@ function Invoke-DbaDbDataMasking {
         [string[]]$ExcludeColumn,
         [string]$Query,
         [int]$MaxValue,
-        [int]$MaxNullModulus = 10,
+        [int]$ModulusFactor = 10,
         [switch]$ExactLength,
         [switch]$EnableException
     )
@@ -186,10 +186,10 @@ function Invoke-DbaDbDataMasking {
             } else {
                 $dbs = Get-DbaDatabase -SqlInstance $server -Database $tables.Name
             }
-            
+
             $sqlconn = $server.ConnectionContext.SqlConnectionObject.PsObject.Copy()
             $sqlconn.Open()
-            
+
             foreach ($db in $dbs) {
                 $stepcounter = $nullmod = 0
                 foreach ($tableobject in $tables.Tables) {
@@ -209,10 +209,10 @@ function Invoke-DbaDbDataMasking {
                     } catch {
                         Stop-Function -Message "Failure retrieving the data from table $($tableobject.Name)" -Target $Database -ErrorRecord $_ -Continue
                     }
-                    
+
                     $sqlconn.ChangeDatabase($db.Name)
                     $transaction = $sqlconn.BeginTransaction()
-                    
+
                     $deterministicColumns = $tables.Tables.Columns | Where-Object Deterministic -eq $true
                     $elapsed = [System.Diagnostics.Stopwatch]::StartNew()
                     $tablecolumns = $tableobject.Columns
@@ -232,13 +232,13 @@ function Invoke-DbaDbDataMasking {
 
                     if ($Pscmdlet.ShouldProcess($instance, "Masking $($tablecolumns.Name -join ', ') in $($data.Rows.Count) rows in $($db.Name).$($tableobject.Schema).$($tableobject.Name)")) {
                         Write-ProgressHelper -StepNumber ($stepcounter++) -TotalSteps $tables.Tables.Count -Activity "Masking data" -Message "Updating $($data.Rows.Count) rows in $($tableobject.Schema).$($tableobject.Name) in $($db.Name) on $instance"
-                        
+
                         # Loop through each of the rows and change them
                         foreach ($row in $data.Rows) {
                             $updates = $wheres = @()
-                            
+
                             foreach ($columnobject in $tablecolumns) {
-                                if ($columnobject.Nullable -and (($nullmod++) % $MaxNullModulus -eq 0)) {
+                                if ($columnobject.Nullable -and (($nullmod++) % $ModulusFactor -eq 0)) {
                                     $newValue = $null
                                 } else {
                                     # make sure max is good
@@ -462,7 +462,7 @@ function Invoke-DbaDbDataMasking {
                             }
 
                             $updatequery = "UPDATE [$($tableobject.Schema)].[$($tableobject.Name)] SET $($updates -join ', ') WHERE $($wheres -join ' AND ')"
-                            
+
                             try {
                                 $sqlcmd = New-Object System.Data.SqlClient.SqlCommand($updatequery, $sqlconn, $transaction)
                                 $null = $sqlcmd.ExecuteNonQuery()
