@@ -38,10 +38,6 @@ function Invoke-Program {
     .PARAMETER Authentication
         Choose authentication mechanism to use
 
-    .PARAMETER UsePSSessionConfiguration
-        Skips the regular connection attempt and proceeds directly to PSSessionConfiguration connections workaround.
-        Mostly used for debugging. See -Fallback for more information.
-
     .PARAMETER Raw
         Return plain stdout without any additional information
 
