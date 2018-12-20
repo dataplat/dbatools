@@ -297,9 +297,11 @@ function Update-DbaInstance {
             }
             $upgrades = @()
             :actions foreach ($currentAction in $actions) {
-                if (Test-PendingReboot -ComputerName $resolvedName) {
-                    #Exit the actions loop altogether - nothing can be installed here anyways
-                    Stop-Function -Message "$resolvedName is pending a reboot. Reboot the computer before proceeding." -Continue -ContinueLabel computers
+                if ($restartNeeded = Test-PendingReboot -ComputerName $resolvedName) {
+                    if (-not $Restart) {
+                        #Exit the actions loop altogether - nothing can be installed here anyways
+                        Stop-Function -Message "$resolvedName is pending a reboot. Reboot the computer before proceeding." -Continue -ContinueLabel computers
+                    }
                 }
                 # Attempt to configure CredSSP for the remote host when credentials are defined
                 if ($Credential -and -not ([DbaInstanceParameter]$resolvedName).IsLocalHost -and $Authentication -eq 'Credssp') {
@@ -370,8 +372,9 @@ function Update-DbaInstance {
                 $chosenVersions = ($upgrades | ForEach-Object { "$($_.MajorVersion) to $($_.TargetLevel) (KB$($_.KB))" }) -join ', '
                 if ($PSCmdlet.ShouldProcess($resolvedName, "Update $chosenVersions")) {
                     $installActions += [pscustomobject]@{
-                        ComputerName = $resolvedName
-                        Actions      = $upgrades
+                        ComputerName  = $resolvedName
+                        Actions       = $upgrades
+                        RestartNeeded = $restartNeeded
                     }
                 }
             }
@@ -380,12 +383,35 @@ function Update-DbaInstance {
         # Declare the installation script
         $installScript = {
             $computer = $_.ComputerName
-            Write-Message -Level Debug -Message "Processing $($computer) with $(($_.Actions | Measure-Object).Count) actions" -FunctionName Update-DbaInstance
             $activity = "Updating SQL Server components on $computer"
+            $restarted = $false
+            $restartParams = @{
+                ComputerName = $computer
+                ErrorAction  = 'Stop'
+                For          = 'WinRM'
+                Wait         = $true
+                Force        = $true
+            }
+            if ($Credential) {
+                $restartParams.Credential = $Credential
+            }
+            if ($_.RestartNeeded -and $Restart) {
+                # Restart the computer prior to doing anything
+                Write-ProgressHelper -ExcludePercent -Activity $activity -Message "Restarting computer $($computer) due to pending restart"
+                Write-Message -Level Verbose "Restarting computer $($computer) due to pending restart" -FunctionName Update-DbaInstance
+                try {
+                    $null = Restart-Computer @restartParams
+                    $restarted = $true
+                } catch {
+                    Stop-Function -Message "Failed to restart computer" -ErrorRecord $_ -FunctionName Update-DbaInstance
+                }
+            }
+            Write-Message -Level Debug -Message "Processing $($computer) with $(($_.Actions | Measure-Object).Count) actions" -FunctionName Update-DbaInstance
             #foreach action passed to the script for this particular computer
             foreach ($currentAction in $_.Actions) {
                 $output = $currentAction
                 $output.Successful = $false
+                $output.Restarted = $restarted
                 ## Start the installation sequence
                 Write-ProgressHelper -ExcludePercent -Activity $activity -Message "Launching installation of $($currentAction.TargetLevel) KB$($currentAction.KB) ($($currentAction.Installer)) for SQL$($currentAction.MajorVersion) ($($currentAction.Build))"
                 $execParams = @{
@@ -467,9 +493,7 @@ function Update-DbaInstance {
                         Write-ProgressHelper -ExcludePercent -Activity $activity -Message "Restarting computer $($computer) and waiting for it to come back online"
                         Write-Message -Level Verbose "Restarting computer $($computer) and waiting for it to come back online" -FunctionName Update-DbaInstance
                         try {
-                            #no special protocol needed for restarts
-                            $execParams.Remove('Authentication')
-                            $null = Restart-Computer @execParams -Wait -For WinRm -Force
+                            $null = Restart-Computer @restartParams
                             $output.Restarted = $true
                         } catch {
                             Stop-Function -Message "Failed to restart computer" -ErrorRecord $_ -FunctionName Update-DbaInstance
