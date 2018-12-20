@@ -357,8 +357,8 @@ function Update-DbaInstance {
                     }
                     # update components to mirror the updated version - will be used for multi-step upgrades
                     foreach ($component in $components) {
-                        if ($component.Version.NameLevel -in $upgradeDetdetailails.TargetVersion.NameLevel) {
-                            $component.Version = $detail.TargetVersion | Where-Object NameLevel -eq $component.Version.NameLevel
+                        if ($component.Version.NameLevel -eq $detail.TargetVersion.NameLevel) {
+                            $component.Version = $detail.TargetVersion
                         }
                     }
                     # finally, add the upgrade details to the upgrade list
