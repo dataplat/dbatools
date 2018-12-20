@@ -56,7 +56,7 @@ function Invoke-DbaDbDataMasking {
         Useful for adhoc updates and testing, otherwise, the config file should be used.
 
     .PARAMETER ModulusFactor
-        Calculating the next nullable by using the reminder from the modulus. Default is every 10.
+        Calculating the next nullable by using the remainder from the modulus. Default is every 10.
 
     .PARAMETER ExactLength
         Mask string values to the same length. So 'Tate' will be replaced with 4 random characters.
