@@ -297,11 +297,10 @@ function Update-DbaInstance {
             }
             $upgrades = @()
             :actions foreach ($currentAction in $actions) {
-                if ($restartNeeded = Test-PendingReboot -ComputerName $resolvedName) {
-                    if (-not $Restart) {
-                        #Exit the actions loop altogether - nothing can be installed here anyways
-                        Stop-Function -Message "$resolvedName is pending a reboot. Reboot the computer before proceeding." -Continue -ContinueLabel computers
-                    }
+                $restartNeeded = Test-PendingReboot -ComputerName $resolvedName
+                if ($restartNeeded -and (-not $Restart -or ([DbaInstanceParameter]$resolvedName).IsLocalHost)) {
+                    #Exit the actions loop altogether - nothing can be installed here anyways
+                    Stop-Function -Message "$resolvedName is pending a reboot. Reboot the computer before proceeding." -Continue -ContinueLabel computers
                 }
                 # Attempt to configure CredSSP for the remote host when credentials are defined
                 if ($Credential -and -not ([DbaInstanceParameter]$resolvedName).IsLocalHost -and $Authentication -eq 'Credssp') {
