@@ -5,7 +5,7 @@ function Invoke-DbaDbDataMasking {
 
     .DESCRIPTION
         TMasks data by using randomized values determined by a configuration file and a randomizer framework
-    
+
         It will use a configuration file that can be made manually or generated using New-DbaDbMaskingConfig
 
         Note that the following column and data types are not currently supported:
@@ -393,11 +393,15 @@ function Invoke-DbaDbDataMasking {
                                                 if ((Test-Bound -ParameterName ExactLength)) {
                                                     $max = ($row.$($columnobject.Name)).ToString().Length
                                                 }
-                                                $faker.Random.String2($max, $charstring)
+                                                if ($max -eq 1) {
+                                                    $faker.System.Random.Bool()
+                                                } else {
+                                                    $faker.Random.String2($max, $charstring)
+                                                }
+
                                             }
                                         }
                                     }
-
                                 } catch {
                                     Stop-Function -Message "Failure" -Target $faker -Continue -ErrorRecord $_
                                 }
