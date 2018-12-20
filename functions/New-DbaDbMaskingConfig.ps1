@@ -286,6 +286,18 @@ function New-DbaDbMaskingConfig {
                                     Deterministic   = $false
                                 }
                             }
+                            "username" {
+                                $columns += [PSCustomObject]@{
+                                    Name            = $columnobject.Name
+                                    ColumnType      = $columnType
+                                    CharacterString = $null
+                                    MinValue        = $min
+                                    MaxValue        = $columnLength
+                                    MaskingType     = "Internet"
+                                    SubType         = "UserName"
+                                    Deterministic   = $false
+                                }
+                            }
                         }
                     } else {
                         $type = "Random"
@@ -332,10 +344,6 @@ function New-DbaDbMaskingConfig {
                             "tinyint" {
                                 $subType = "Number"
                                 $MaxValue = 255
-                            }
-                            "varbinary" {
-                                $subType = "Byte"
-                                $MaxValue = $columnLength
                             }
                             "varbinary" {
                                 $subType = "Byte"

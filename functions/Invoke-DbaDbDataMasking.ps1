@@ -401,9 +401,12 @@ function Invoke-DbaDbDataMasking {
                                                 if ($max -eq 1) {
                                                     $faker.System.Random.Bool()
                                                 } else {
-                                                    $faker.Random.String2($max, $charstring)
+                                                    try {
+                                                        $faker.$($columnobject.MaskingType).$($columnobject.SubType)()
+                                                    } catch {
+                                                        $faker.Random.String2($max, $charstring)
+                                                    }
                                                 }
-
                                             }
                                         }
                                     }
@@ -421,19 +424,23 @@ function Invoke-DbaDbDataMasking {
                                     $newValue = ($newValue).Tostring().Replace("'", "''")
                                     $updates += "[$($columnobject.Name)] = '$newValue'"
                                 }
-
+                                
                                 if ($columnobject.ColumnType -notin 'xml', 'geography', 'geometry') {
-                                    $oldValue = ($row.$($columnobject.Name)).Tostring().Replace("'", "''")
-                                    $wheres += "[$($columnobject.Name)] = '$oldValue'"
+                                    if (($row.$($columnobject.Name)).GetType().Name -match 'DBNull') {
+                                        $wheres += "[$($columnobject.Name)] IS NULL"
+                                    } else {
+                                        $oldValue = ($row.$($columnobject.Name)).Tostring().Replace("'", "''")
+                                        $wheres += "[$($columnobject.Name)] = '$oldValue'"
+                                    }
                                 }
 
                                 if ($columnobject.Deterministic -and ($row.$($columnobject.Name) -notin $dictionary.Keys)) {
                                     $dictionary.Add($row.$($columnobject.Name), $newValue)
                                 }
                             }
-
+                            
                             $updatequery = "UPDATE [$($tableobject.Schema)].[$($tableobject.Name)] SET $($updates -join ', ') WHERE $($wheres -join ' AND ')"
-
+                            
                             try {
                                 $db.Query($updatequery)
                             } catch {
