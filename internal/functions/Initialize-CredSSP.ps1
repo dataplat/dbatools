@@ -63,12 +63,11 @@ function Initialize-CredSSP {
     # Configure remote machine
     Write-Message -Level Verbose -Message "Configuring remote host to use CredSSP"
     try {
-        Invoke-Command2 -ComputerName $ComputerName -Credential $Credential -Raw -ScriptBlock {
+        Invoke-Command2 -ComputerName $ComputerName -Credential $Credential -Raw -RequiredPSVersion 3.0 -ScriptBlock {
             $sspList = Get-WSManCredSSP -ErrorAction Stop
             if ($sspList[1] -ne 'This computer is configured to receive credentials from a remote client computer.') {
                 $null = Enable-WSManCredSSP -Role Server -Force -ErrorAction Stop
             }
-            # netsh http add iplisten 127.0.0.1 - whaattt?
         }
     } catch {
         Stop-Function -Message "Failed to configure remote CredSSP on $ComputerName as a server" -ErrorRecord $_
