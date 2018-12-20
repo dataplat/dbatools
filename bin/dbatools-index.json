@@ -22068,12 +22068,12 @@
     },
     {
         "Name":  "Invoke-DbaDbDataMasking",
-        "Description":  "Invoke-DbaDbDataMasking is able to generate random data for tables.\nIt will use a configuration file that can be made manually or generated using New-DbaDbMaskingConfig\n\nNote that the following column and data types are not currently supported:\nIdentity\nForeignKey\nComputed\nHierarchyid\nGeography\nGeometry\nXml",
+        "Description":  "TMasks data by using randomized values determined by a configuration file and a randomizer framework\n\nIt will use a configuration file that can be made manually or generated using New-DbaDbMaskingConfig\n\nNote that the following column and data types are not currently supported:\nIdentity\nForeignKey\nComputed\nHierarchyid\nGeography\nGeometry\nXml",
         "Tags":  [
                      "DataMasking",
                      "Database"
                  ],
-        "Synopsis":  "Invoke-DbaDbDataMasking generates random data for tables",
+        "Synopsis":  "Masks data by using randomized values determined by a configuration file and a randomizer framework",
         "Alias":  "",
         "Author":  "Sander Stad (@sqlstad, sqlstad.nl) | Chrissy LeMaire (@cl, netnerds.net)",
         "CommandName":  "Invoke-DbaDbDataMasking",
@@ -27281,7 +27281,7 @@
                      "DataMasking",
                      "Database"
                  ],
-        "Synopsis":  "Generates a new data masking configuration file.",
+        "Synopsis":  "Generates a new data masking configuration file to be used with Invoke-DbaDbDataMasking",
         "Alias":  "",
         "Author":  "Sander Stad (@sqlstad, sqlstad.nl) | Chrissy LeMaire (@cl, netnerds.net)",
         "CommandName":  "New-DbaDbMaskingConfig",
