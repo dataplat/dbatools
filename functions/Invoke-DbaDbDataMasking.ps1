@@ -214,7 +214,6 @@ function Invoke-DbaDbDataMasking {
                     $transaction = $sqlconn.BeginTransaction()
 
                     $deterministicColumns = $tables.Tables.Columns | Where-Object Deterministic -eq $true
-                    $elapsed = [System.Diagnostics.Stopwatch]::StartNew()
                     $tablecolumns = $tableobject.Columns
 
                     if ($Column) {
@@ -231,6 +230,7 @@ function Invoke-DbaDbDataMasking {
                     }
 
                     if ($Pscmdlet.ShouldProcess($instance, "Masking $($tablecolumns.Name -join ', ') in $($data.Rows.Count) rows in $($db.Name).$($tableobject.Schema).$($tableobject.Name)")) {
+                        $elapsed = [System.Diagnostics.Stopwatch]::StartNew()
                         Write-ProgressHelper -StepNumber ($stepcounter++) -TotalSteps $tables.Tables.Count -Activity "Masking data" -Message "Updating $($data.Rows.Count) rows in $($tableobject.Schema).$($tableobject.Name) in $($db.Name) on $instance"
 
                         # Loop through each of the rows and change them
