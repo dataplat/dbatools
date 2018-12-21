@@ -28,6 +28,9 @@ function New-DbaDbDataGeneratorConfig {
     .PARAMETER TruncateTable
         Truncates the tabel befoe inserting the values
 
+    .PARAMETER Rows
+        Amount of rows that need to be generated. The default is 1000.
+
     .PARAMETER Path
         Path where to save the generated JSON files.
         The naming convention will be "servername.databasename.tables.json"
@@ -71,6 +74,7 @@ function New-DbaDbDataGeneratorConfig {
         [string[]]$Table,
         [switch]$ResetIdentity,
         [switch]$TruncateTable,
+        [int]$Rows = 1000,
         [parameter(Mandatory)]
         [string]$Path,
         [switch]$Force,
@@ -353,6 +357,7 @@ function New-DbaDbDataGeneratorConfig {
                         Columns       = $columns
                         ResetIdentity = [bool]$ResetIdentity
                         TruncateTable = [bool]$TruncateTable
+                        Rows          = $Rows
                     }
                 } else {
                     Write-Message -Message "No columns match for data generation in table $($tableobject.Name)" -Level Verbose
