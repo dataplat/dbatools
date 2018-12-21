@@ -18,6 +18,9 @@ function Invoke-DbaDbDataGenerator {
     .PARAMETER Table
         Tables to process. By default all the tables will be processed
 
+    .PARAMETER Column
+        Columns to process. By default all the columns will be processed
+
     .PARAMETER FilePath
         Configuration file that contains the which tables and columns need to be masked
 
@@ -166,8 +169,11 @@ function Invoke-DbaDbDataGenerator {
                 $dbs = Get-DbaDatabase -SqlInstance $server -Database $tables.Name
             }
 
+            $sqlconn = $server.ConnectionContext.SqlConnectionObject.PsObject.Copy()
+            $sqlconn.Open()
+
             foreach ($db in $dbs) {
-                $stepcounter = 0
+                $stepcounter = $nullmod = 0
                 foreach ($tableobject in $tables.Tables) {
                     if ($tableobject.Name -in $ExcludeTable -or ($Table -and $tableobject.Name -notin $Table)) {
                         Write-Message -Level Verbose -Message "Skipping $($tableobject.Name) because it is explicitly excluded"
@@ -181,13 +187,61 @@ function Invoke-DbaDbDataGenerator {
                         if (-not (Test-Bound -ParameterName Query)) {
                             $query = "SELECT * FROM [$($tableobject.Schema)].[$($tableobject.Name)]"
                         }
-
-                        $data = $db.Query($query) | ConvertTo-DbaDataTable
+                        $data = $server.Databases[$($db.Name)].Query($query) | ConvertTo-DbaDataTable
                     } catch {
                         Stop-Function -Message "Failure retrieving the data from table $($tableobject.Name)" -Target $Database -ErrorRecord $_ -Continue
                     }
 
-                    $elapsed = [System.Diagnostics.Stopwatch]::StartNew()
+                    $sqlconn.ChangeDatabase($db.Name)
+
                     $tablecolumns = $tableobject.Columns
 
+                    if ($Column) {
+                        $tablecolumns = $tablecolumns | Where-Object Name -in $Column
+                    }
+
+                    if ($ExcludeColumn) {
+                        $tablecolumns = $tablecolumns | Where-Object Name -notin $ExcludeColumn
+                    }
+
+                    if (-not $tablecolumns) {
+                        Write-Message -Level Verbose "No columns to process in $($db.Name).$($tableobject.Schema).$($tableobject.Name), moving on"
+                        continue
+                    }
+
+                    if ($Pscmdlet.ShouldProcess($instance, "Masking $($tablecolumns.Name -join ', ') in $($data.Rows.Count) rows in $($db.Name).$($tableobject.Schema).$($tableobject.Name)")) {
+                        $transaction = $sqlconn.BeginTransaction()
+                        $elapsed = [System.Diagnostics.Stopwatch]::StartNew()
+
+
+
+                        try {
+                            $null = $transaction.Commit()
+                            [pscustomobject]@{
+                                ComputerName = $db.Parent.ComputerName
+                                InstanceName = $db.Parent.ServiceName
+                                SqlInstance  = $db.Parent.DomainInstanceName
+                                Database     = $db.Name
+                                Schema       = $tableobject.Schema
+                                Table        = $tableobject.Name
+                                Columns      = $tableobject.Columns.Name
+                                Rows         = $($data.Rows.Count)
+                                Elapsed      = [prettytimespan]$elapsed.Elapsed
+                                Status       = "Masked"
+                            }
+                        } catch {
+                            Stop-Function -Message "Error updating $($tableobject.Schema).$($tableobject.Name)" -Target $updatequery -Continue -ErrorRecord $_
+                        }
+
+                    }
+                }
+            }
+
+            try {
+                $sqlconn.Close()
+            } catch {
+                Stop-Function -Message "Failure" -Continue -ErrorRecord $_
+            }
+        }
+    }
 }
