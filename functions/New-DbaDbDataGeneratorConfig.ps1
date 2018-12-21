@@ -32,9 +32,6 @@ function New-DbaDbDataGeneratorConfig {
         Path where to save the generated JSON files.
         The naming convention will be "servername.databasename.tables.json"
 
-    .PARAMETER Locale
-        Set the local to enable certain settings in the masking
-
     .PARAMETER Force
         Forcefully execute commands when needed
 
@@ -76,11 +73,18 @@ function New-DbaDbDataGeneratorConfig {
         [switch]$TruncateTable,
         [parameter(Mandatory)]
         [string]$Path,
-        [string]$Locale = 'en',
         [switch]$Force,
         [switch]$EnableException
     )
+
     begin {
+
+        # Get all the different column types
+        try {
+            $columnTypes = Get-Content -Path "$script:PSModuleRoot\bin\datamasking\columntypes.json" | ConvertFrom-Json
+        } catch {
+            Stop-Function -Message "Something went wrong importing the column types" -Continue
+        }
 
         # Check if the Path is accessible
         if (-not (Test-Path -Path $Path)) {
@@ -131,15 +135,6 @@ function New-DbaDbDataGeneratorConfig {
                 [array]$columncollection = $tableobject.Columns
 
                 foreach ($columnobject in $columncollection) {
-                    # Skip incompatible columns
-                    if ($columnobject.Identity) {
-                        Write-Message -Level Verbose -Message "Skipping $columnobject because it is an identity column"
-                        continue
-                    }
-                    if ($columnobject.IsForeignKey) {
-                        Write-Message -Level Verbose -Message "Skipping $columnobject because it is a foreign key"
-                        continue
-                    }
                     if ($columnobject.Computed) {
                         Write-Message -Level Verbose -Message "Skipping $columnobject because it is a computed column"
                         continue
@@ -193,6 +188,7 @@ function New-DbaDbDataGeneratorConfig {
                                     SubType         = "Firstname"
                                     Identity        = $columnobject.Identity
                                     ForeignKey      = $columnobject.IsForeignKey
+                                    Nullable        = $columnobject.Nullable
                                 }
                             }
                             "lastname" {
@@ -206,6 +202,7 @@ function New-DbaDbDataGeneratorConfig {
                                     SubType         = "Lastname"
                                     Identity        = $columnobject.Identity
                                     ForeignKey      = $columnobject.IsForeignKey
+                                    Nullable        = $columnobject.Nullable
                                 }
                             }
                             "creditcard" {
@@ -219,6 +216,7 @@ function New-DbaDbDataGeneratorConfig {
                                     SubType         = "CreditcardNumber"
                                     Identity        = $columnobject.Identity
                                     ForeignKey      = $columnobject.IsForeignKey
+                                    Nullable        = $columnobject.Nullable
                                 }
                             }
                             "address" {
@@ -232,6 +230,7 @@ function New-DbaDbDataGeneratorConfig {
                                     SubType         = "StreetAddress"
                                     Identity        = $columnobject.Identity
                                     ForeignKey      = $columnobject.IsForeignKey
+                                    Nullable        = $columnobject.Nullable
                                 }
                             }
                             "city" {
@@ -245,6 +244,7 @@ function New-DbaDbDataGeneratorConfig {
                                     SubType         = "City"
                                     Identity        = $columnobject.Identity
                                     ForeignKey      = $columnobject.IsForeignKey
+                                    Nullable        = $columnobject.Nullable
                                 }
                             }
                             "zipcode" {
@@ -258,6 +258,7 @@ function New-DbaDbDataGeneratorConfig {
                                     SubType         = "Zipcode"
                                     Identity        = $columnobject.Identity
                                     ForeignKey      = $columnobject.IsForeignKey
+                                    Nullable        = $columnobject.Nullable
                                 }
                             }
                         }
@@ -338,6 +339,7 @@ function New-DbaDbDataGeneratorConfig {
                             SubType         = $subType
                             Identity        = $columnobject.Identity
                             ForeignKey      = $columnobject.IsForeignKey
+                            Nullable        = $columnobject.Nullable
                         }
                     }
                 }
@@ -349,10 +351,11 @@ function New-DbaDbDataGeneratorConfig {
                         Name          = $tableobject.Name
                         Schema        = $tableobject.Schema
                         Columns       = $columns
-                        TruncateTable = $TruncateTable
+                        ResetIdentity = [bool]$ResetIdentity
+                        TruncateTable = [bool]$TruncateTable
                     }
                 } else {
-                    Write-Message -Message "No columns match for masking in table $($tableobject.Name)" -Level Verbose
+                    Write-Message -Message "No columns match for data generation in table $($tableobject.Name)" -Level Verbose
                 }
             }
 
@@ -363,7 +366,7 @@ function New-DbaDbDataGeneratorConfig {
                     Tables = $tables
                 }
             } else {
-                Write-Message -Message "No columns match for masking in table $($tableobject.Name)" -Level Verbose
+                Write-Message -Message "No columns match for data generation in table $($tableobject.Name)" -Level Verbose
             }
         }
 
