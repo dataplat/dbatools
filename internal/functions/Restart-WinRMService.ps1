@@ -31,7 +31,8 @@ function Restart-WinRMService {
             Write-Message -Level Debug "Removing existing local sessions to $ComputerName - they are no longer valid"
             $runspaceId = [System.Management.Automation.Runspaces.Runspace]::DefaultRunspace.InstanceId
             # Retrieve a session from the session cache, if available (it's unique per runspace)
-            $currentSessions = [Sqlcollaborative.Dbatools.Connection.ConnectionHost]::PSSessionGet($runspaceId, $ComputerName)
+            [array]$currentSessions = [Sqlcollaborative.Dbatools.Connection.ConnectionHost]::PSSessionGet($runspaceId, $ComputerName)
+            Write-Message -Level Debug -Message "Removing $($currentSessions.Count) sessions from $ComputerName in runspace $runspaceId"
             $currentSessions | Remove-PSSession
             Write-Message -Level Debug "Waiting for the WinRM service to restart on $ComputerName"
             $waitCounter = 0
@@ -46,5 +47,6 @@ function Restart-WinRMService {
                 $waitCounter++
             }
         }
+        Write-Message -Level Debug -Message "WinRM restart comlete on $ComputerName"
     }
 }

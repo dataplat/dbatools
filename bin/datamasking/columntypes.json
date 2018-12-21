@@ -90,5 +90,14 @@
             "Creditcard",
             "CreditcardNumber"
         ]
+    },
+    {
+        "TypeName": "Username",
+        "Synonym": [
+            "Login",
+			"LoginId",
+            "User",
+            "UserId"
+        ]
     }
 ]

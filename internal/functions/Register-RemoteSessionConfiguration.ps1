@@ -7,7 +7,7 @@ function Register-RemoteSessionConfiguration {
         Designed to overcome the double-hop issue and as an alternative to CredSSP protocol.
     #>
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingConvertToSecureStringWithPlainText", "")]
-    [CmdletBinding()]
+    [CmdletBinding(SupportsShouldProcess)]
     Param (
         [Parameter(Mandatory)]
         $ComputerName,
@@ -28,10 +28,6 @@ function Register-RemoteSessionConfiguration {
                 $pwd
             )
             $output = [pscustomobject]@{ 'Name' = $Name; 'Status' = $null ; Successful = $false }
-            if ($PSVersionTable.PSVersion -le '2.0') {
-                $output.Status = "Current version of Powershell $($PSVersionTable.PSVersion) does not support SessionConfiguration with custom credentials. Minimum requirement is 3.0"
-                return $output
-            }
             $credential = New-Object System.Management.Automation.PSCredential @($user, (ConvertTo-SecureString -Force -AsPlainText $pwd))
             try {
                 $existing = Get-PSSessionConfiguration -Name $Name -ErrorAction Stop 2>$null
@@ -40,12 +36,12 @@ function Register-RemoteSessionConfiguration {
             }
             try {
                 if ($null -eq $existing) {
-                    $null = Register-PSSessionConfiguration -Name $Name -RunAsCredential $credential -Force -ErrorAction Stop -NoServiceRestart 3>$null
+                    $null = Register-PSSessionConfiguration -Name $Name -RunAsCredential $credential -ErrorAction Stop -NoServiceRestart -Confirm:$false 3>$null
                     $output.Status = 'Created'
                     $output.Successful = $true
                     return $output
                 } else {
-                    Set-PSSessionConfiguration -Name $Name -RunAsCredential $credential -Force -ErrorAction Stop -NoServiceRestart 3>$null
+                    Set-PSSessionConfiguration -Name $Name -RunAsCredential $credential -ErrorAction Stop -NoServiceRestart -Confirm:$false 3>$null
                     $output.Status = 'Updated'
                     $output.Successful = $true
                     return $output
@@ -55,14 +51,17 @@ function Register-RemoteSessionConfiguration {
                 return $output
             }
         }
-        try {
-            $registerIt = Invoke-Command2 -ComputerName $ComputerName -Credential $Credential -ScriptBlock $createRunasSession -ArgumentList @(
-                $Name,
-                $RunAsCredential.UserName,
-                $RunAsCredential.GetNetworkCredential().Password
-            ) -Raw
-        } catch {
-            Stop-Function -Message "Failure during remote session configuration execution" -ErrorRecord $_ -EnableException $true
+        Write-Message -Level Debug -Message "Registering new session configuration $Name on $ComputerName"
+        if ($PSCmdlet.ShouldProcess($ComputerName, "Registering new session configuration $Name")) {
+            try {
+                $registerIt = Invoke-Command2 -ComputerName $ComputerName -Credential $Credential -ScriptBlock $createRunasSession -ArgumentList @(
+                    $Name,
+                    $RunAsCredential.UserName,
+                    $RunAsCredential.GetNetworkCredential().Password
+                ) -Raw -RequiredPSVersion 3.0 -ErrorAction Stop
+            } catch {
+                Stop-Function -Message "Failure during remote session configuration execution" -ErrorRecord $_ -EnableException $true
+            }
         }
         if ($registerIt) {
             Write-Message -Level Debug -Message "Configuration attempt returned the following status`: $($registerIt.Status)"
