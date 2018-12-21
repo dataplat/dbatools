@@ -211,8 +211,7 @@ function Invoke-DbaDbDataMasking {
                     }
 
                     $sqlconn.ChangeDatabase($db.Name)
-                    $transaction = $sqlconn.BeginTransaction()
-
+                    
                     $deterministicColumns = $tables.Tables.Columns | Where-Object Deterministic -eq $true
                     $tablecolumns = $tableobject.Columns
 
@@ -230,6 +229,7 @@ function Invoke-DbaDbDataMasking {
                     }
 
                     if ($Pscmdlet.ShouldProcess($instance, "Masking $($tablecolumns.Name -join ', ') in $($data.Rows.Count) rows in $($db.Name).$($tableobject.Schema).$($tableobject.Name)")) {
+                        $transaction = $sqlconn.BeginTransaction()
                         $elapsed = [System.Diagnostics.Stopwatch]::StartNew()
                         Write-ProgressHelper -StepNumber ($stepcounter++) -TotalSteps $tables.Tables.Count -Activity "Masking data" -Message "Updating $($data.Rows.Count) rows in $($tableobject.Schema).$($tableobject.Name) in $($db.Name) on $instance"
 
