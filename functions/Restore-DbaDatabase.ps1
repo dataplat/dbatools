@@ -670,8 +670,8 @@ function Restore-DbaDatabase {
                 } | Select-Object -Property Database -Unique).Database -join ','
             Write-Message -Message "$DbVerfied passed testing" -Level Verbose
             if ((@($FilteredBackupHistory | Where-Object {
-                        $_.IsVerified -eq $True
-                    })).count -lt $FilteredBackupHistory.count) {
+                            $_.IsVerified -eq $True
+                        })).count -lt $FilteredBackupHistory.count) {
                 $DbUnVerified = ($FilteredBackupHistory | Where-Object {
                         $_.IsVerified -eq $False
                     } | Select-Object -Property Database -Unique).Database -join ','
