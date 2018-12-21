@@ -94,188 +94,162 @@ function Resolve-DbaNetworkName {
         [Alias('Silent')]
         [switch]$EnableException
     )
-
+    begin {
+        Function Get-ComputerDomainName {
+            Param (
+                $FQDN,
+                $ComputerName
+            )
+            # deduce the domain name based on resolved name + original request
+            if ($fqdn -notmatch "\.") {
+                if ($ComputerName -match "\.") {
+                    return $ComputerName.Substring($ComputerName.IndexOf(".") + 1)
+                } else {
+                    return $env:USERDNSDOMAIN.ToLower()
+                }
+            } else {
+                return $fqdn.Substring($fqdn.IndexOf(".") + 1)
+            }
+        }
+    }
     process {
         if (-not (Test-Windows -NoWarn)) {
             Write-Message -Level Verbose -Message "Non-Windows client detected. Turbo (DNS resolution only) set to $true"
             $Turbo = $true
         }
 
-        foreach ($Computer in $ComputerName) {
-            $conn = $ipaddress = $null
-
-            $OGComputer = $Computer
-
-            if ($Computer.IsLocalhost) {
-                $Computer = $env:COMPUTERNAME
+        foreach ($computer in $ComputerName) {
+            if ($computer.IsLocalhost) {
+                $cName = $env:COMPUTERNAME
             } else {
-                $Computer = $Computer.ComputerName
+                $cName = $computer.ComputerName
             }
 
+            # resolve IP address
+            try {
+                Write-Message -Level VeryVerbose -Message "Resolving $cName using .NET.Dns GetHostEntry"
+                $resolved = [System.Net.Dns]::GetHostEntry($cName)
+                $ipaddresses = $resolved.AddressList | Sort-Object -Property AddressFamily # prioritize IPv4
+                $ipaddress = $ipaddresses[0].IPAddressToString
+            } catch {
+                Stop-Function -Message "DNS name $cName not found" -Continue -ErrorRecord $_
+            }
+
+            # try to resolve IP into a hostname
+            try {
+                Write-Message -Level VeryVerbose -Message "Resolving $ipaddress using .NET.Dns GetHostByAddress"
+                $fqdn = [System.Net.Dns]::GetHostByAddress($ipaddress).HostName
+            } catch {
+                Write-Message -Level Debug -Message "Failed to resolve $ipaddress using .NET.Dns GetHostByAddress"
+                $fqdn = $resolved.HostName
+            }
+
+            $dnsDomain = Get-ComputerDomainName -FQDN $fqdn -ComputerName $cName
+            # augment fqdn if needed
+            if ($fqdn -notmatch "\." -and $dnsDomain) {
+                $fqdn = "$fqdn.$dnsdomain"
+            }
+
+            $hostname = $fqdn.Split(".")[0]
             if ($Turbo) {
-                try {
-                    Write-Message -Level VeryVerbose -Message "Resolving $Computer using .NET.Dns GetHostEntry"
-                    $ipaddress = ([System.Net.Dns]::GetHostEntry($Computer)).AddressList[0].IPAddressToString
-                    Write-Message -Level VeryVerbose -Message "Resolving $ipaddress using .NET.Dns GetHostByAddress"
-                    $fqdn = [System.Net.Dns]::GetHostByAddress($ipaddress).HostName
-                } catch {
-                    try {
-                        Write-Message -Level VeryVerbose -Message "Resolving $Computer and IP using .NET.Dns GetHostEntry"
-                        $resolved = [System.Net.Dns]::GetHostEntry($Computer)
-                        $ipaddress = $resolved.AddressList[0].IPAddressToString
-                        $fqdn = $resolved.HostName
-                    } catch {
-                        Stop-Function -Message "DNS name not found" -Continue -ErrorRecord $_
-                    }
-                }
-
-                if ($fqdn -notmatch "\.") {
-                    if ($computer.ComputerName -match "\.") {
-                        $dnsdomain = $computer.ComputerName.Substring($computer.ComputerName.IndexOf(".") + 1)
-                        $fqdn = "$resolved.$dnsdomain"
-                    } else {
-                        $dnsdomain = "$env:USERDNSDOMAIN".ToLower()
-                        if ($dnsdomain -match "\.") {
-                            $fqdn = "$fqdn.$dnsdomain"
-                        }
-                    }
-                }
-
-                $hostname = $fqdn.Split(".")[0]
-
-                [PSCustomObject]@{
-                    InputName        = $OGComputer
+                # that's a finish line for a Turbo mode
+                return [PSCustomObject]@{
+                    InputName        = $computer
                     ComputerName     = $hostname.ToUpper()
                     IPAddress        = $ipaddress
                     DNSHostname      = $hostname
-                    DNSDomain        = $fqdn.Replace("$hostname.", "")
-                    Domain           = $fqdn.Replace("$hostname.", "")
+                    DNSDomain        = $dnsdomain
+                    Domain           = $dnsdomain
                     DNSHostEntry     = $fqdn
                     FQDN             = $fqdn
                     FullComputerName = $fqdn
                 }
+            }
 
+            # finding out which IP to use by pinging all of them. The first to respond is the one.
+            $ping = New-Object System.Net.NetworkInformation.Ping
+            $timeout = 1000 #milliseconds
+            foreach ($ip in $ipaddresses) {
+                $reply = $ping.Send($ip, $timeout)
+                if ($reply.Status -eq 'Success') {
+                    $ipaddress = $ip.IPAddressToString
+                    break
+                }
+            }
+
+            # re-try DNS reverse zone lookup if the IP to use is not the first one
+            if ($ipaddresses[0].IPAddressToString -ne $ipaddress) {
+                try {
+                    Write-Message -Level VeryVerbose -Message "Resolving $ipaddress using .NET.Dns GetHostByAddress"
+                    $fqdn = [System.Net.Dns]::GetHostByAddress($ipaddress).HostName
+                } catch {
+                    Write-Message -Level VeryVerbose -Message "Failed to obtain a new name from $ipaddress, re-using $fqdn"
+                }
+            }
+
+            # re-adjust DNS domain again
+            $dnsDomain = Get-ComputerDomainName -FQDN $fqdn -ComputerName $cName
+            # augment fqdn if needed
+            if ($fqdn -notmatch "\." -and $dnsDomain) {
+                $fqdn = "$fqdn.$dnsdomain"
+            }
+            $hostname = $fqdn.Split(".")[0]
+
+            Write-Message -Level Debug -Message "Getting domain name from the remote host $fqdn"
+            try {
+                $ScBlock = {
+                    return [System.Net.NetworkInformation.IPGlobalProperties]::GetIPGlobalProperties().DomainName
+                }
+                $cParams = @{
+                    ComputerName = $fqdn
+                }
+                if ($Credential) { $cParams.Credential = $Credential }
+
+                $conn = Get-DbaCmObject @cParams -ClassName win32_ComputerSystem -EnableException
+                if ($conn) {
+                    # update dns vars accordingly
+                    $hostname = $conn.DNSHostname
+                    $dnsDomain = $conn.Domain
+                    $fqdn = "$hostname.$dnsDomain".TrimEnd('.')
+                }
+                try {
+                    Write-Message -Level Debug -Message "Getting DNS domain from the remote host $fqdn"
+                    $dnsSuffix = Invoke-Command2 @cParams -ScriptBlock $ScBlock -ErrorAction Stop -Raw
+                } catch {
+                    Write-Message -Level Verbose -Message "Unable to get DNS domain information from $fqdn"
+                    $dnsSuffix = $dnsDomain
+                }
+            } catch {
+                Write-Message -Level Verbose -Message "Unable to get domain name from $fqdn"
+            }
+
+            # building a finalized name from all the pieces
+            if ($dnsSuffix) {
+                $fullComputerName = $hostname + "." + $dnsSuffix
             } else {
+                $fullComputerName = $fqdn
+            }
 
+            # getting a DNS host entry for the full name
+            try {
+                Write-Message -Level VeryVerbose -Message "Resolving $fullComputerName using .NET.Dns GetHostEntry"
+                $hostentry = ([System.Net.Dns]::GetHostEntry($fullComputerName)).HostName
+            } catch {
+                Stop-Function -Message ".NET.Dns GetHostEntry failed for $fullComputerName" -ErrorRecord $_
+                $hostentry = $null
+            }
 
-                try {
-                    $ipaddress = ((Test-Connection -ComputerName $Computer -Count 1 -ErrorAction Stop).Ipv4Address).IPAddressToString
-                } catch {
-                    try {
-                        if ($env:USERDNSDOMAIN) {
-                            $ipaddress = ((Test-Connection -ComputerName "$Computer.$env:USERDNSDOMAIN" -Count 1 -ErrorAction SilentlyContinue).Ipv4Address).IPAddressToString
-                            if ($ipaddress) {
-                                $Computer = "$Computer.$env:USERDNSDOMAIN"
-                                Write-Message -Level VeryVerbose -Message "IP Address from $Computer is $ipaddress"
-                            } else {
-                                Write-Message -Level VeryVerbose -Message "No IP Address returned from $Computer"
-                                Write-Message -Level VeryVerbose -Message "Using .NET.Dns to resolve IP Address"
-                                Resolve-DbaNetworkName -ComputerName $Computer -Turbo
-                                continue
-                            }
-                        }
-                    } catch {
-                        $Computer = $OGComputer
-                        $ipaddress = ([System.Net.Dns]::GetHostEntry($Computer)).AddressList[0].IPAddressToString
-                    }
-                }
-
-                if ($ipaddress) {
-                    Write-Message -Level VeryVerbose -Message "IP Address from $Computer is $ipaddress"
-                } else {
-                    Write-Message -Level VeryVerbose -Message "No IP Address returned from $Computer"
-                    Write-Message -Level VeryVerbose -Message "Using .NET.Dns to resolve IP Address"
-                    return (Resolve-DbaNetworkName -ComputerName $Computer -Turbo)
-                }
-
-                if ($PSVersionTable.PSVersion.Major -gt 2) {
-                    Write-Message -Level System -Message "Your PowerShell Version is $($PSVersionTable.PSVersion.Major)"
-                    try {
-                        try {
-                            # if an alias (CNAME) is passed we should try to connect to the A name via CIM or WinRM
-                            $ComputerNameIP = ([System.Net.Dns]::GetHostEntry($Computer)).AddressList[0].IPAddressToString
-                            $RemoteComputer = [System.Net.Dns]::GetHostByAddress($ComputerNameIP).HostName
-                        } catch {
-                            $RemoteComputer = $Computer
-                        }
-                        Write-Message -Level VeryVerbose -Message "Getting computer information from $RemoteComputer"
-                        $ScBlock = {
-                            $IPGProps = [System.Net.NetworkInformation.IPGlobalProperties]::GetIPGlobalProperties()
-                            return [pscustomobject]@{
-                                'DNSDomain' = $IPGProps.DomainName
-                            }
-                        }
-                        if (Test-Bound "Credential") {
-                            $conn = Get-DbaCmObject -ClassName win32_ComputerSystem -ComputerName $RemoteComputer -Credential $Credential -EnableException
-                            $DNSSuffix = Invoke-Command2 -ComputerName $RemoteComputer -ScriptBlock $ScBlock -Credential $Credential -ErrorAction Stop
-                        } else {
-                            $conn = Get-DbaCmObject -ClassName win32_ComputerSystem -ComputerName $RemoteComputer -EnableException
-                            $DNSSuffix = Invoke-Command2 -ComputerName $RemoteComputer -ScriptBlock $ScBlock -ErrorAction Stop
-                        }
-                    } catch {
-                        Write-Message -Level Verbose -Message "Unable to get computer information from $Computer"
-                    }
-
-                    if (!$conn) {
-                        Write-Message -Level Verbose -Message "No WMI/CIM from $Computer. Getting HostName via .NET.Dns"
-                        try {
-                            $fqdn = ([System.Net.Dns]::GetHostEntry($Computer)).HostName
-                            $hostname = $fqdn.Split(".")[0]
-                            $suffix = $fqdn.Replace("$hostname.", "")
-                            if ($hostname -eq $fqdn) {
-                                $suffix = ""
-                            }
-                            $conn = [PSCustomObject]@{
-                                Name        = $Computer
-                                DNSHostname = $hostname
-                                Domain      = $suffix
-                            }
-                            $DNSSuffix = [PSCustomObject]@{
-                                DNSDomain = $suffix
-                            }
-                        } catch {
-                            Stop-Function -Message "No .NET.Dns information from $Computer" -ErrorRecord $_ -Continue
-                        }
-                    }
-                }
-                if ($DNSSuffix.DNSDomain.Length -eq 0) {
-                    $FullComputerName = $conn.DNSHostname
-                } else {
-                    $FullComputerName = $conn.DNSHostname + "." + $DNSSuffix.DNSDomain
-                }
-                try {
-                    Write-Message -Level VeryVerbose -Message "Resolving $FullComputerName using .NET.Dns GetHostEntry"
-                    $hostentry = ([System.Net.Dns]::GetHostEntry($FullComputerName)).HostName
-                } catch {
-                    Stop-Function -Message ".NET.Dns GetHostEntry failed for $FullComputerName" -ErrorRecord $_
-                }
-
-                $fqdn = "$($conn.DNSHostname).$($conn.Domain)"
-                if ($fqdn -eq ".") {
-                    Write-Message -Level VeryVerbose -Message "No full FQDN found. Setting to null"
-                    $fqdn = $null
-                }
-                if ($FullComputerName -eq ".") {
-                    Write-Message -Level VeryVerbose -Message "No DNS FQDN found. Setting to null"
-                    $FullComputerName = $null
-                }
-
-                if ($FullComputerName -ne "." -and $FullComputerName -notmatch "\." -and $conn.Domain -match "\.") {
-                    $d = $conn.Domain
-                    $FullComputerName = "$FullComputerName.$d"
-                }
-
-                [PSCustomObject]@{
-                    InputName        = $OGComputer
-                    ComputerName     = $conn.Name
-                    IPAddress        = $ipaddress
-                    DNSHostName      = $conn.DNSHostname
-                    DNSDomain        = $DNSSuffix.DNSDomain
-                    Domain           = $conn.Domain
-                    DNSHostEntry     = $hostentry
-                    FQDN             = $fqdn.TrimEnd(".")
-                    FullComputerName = $FullComputerName
-                }
+            # returning the final result
+            return [PSCustomObject]@{
+                InputName        = $computer
+                ComputerName     = $fqdn
+                IPAddress        = $ipaddress
+                DNSHostName      = $hostname
+                DNSDomain        = $dnsSuffix
+                Domain           = $dnsDomain
+                DNSHostEntry     = $hostentry
+                FQDN             = $fqdn
+                FullComputerName = $fullComputerName
             }
         }
     }
