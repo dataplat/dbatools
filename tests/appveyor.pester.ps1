@@ -340,7 +340,7 @@ if (-not $Finalize) {
         Write-Host -ForegroundColor DarkGreen "Dumping message log into $msgFile"
         Get-DbatoolsLog | Select-Object FunctionName, Level, TimeStamp, Message | Export-Clixml -Path $msgFile -ErrorAction Stop
         Compress-Archive -Path $msgFile -DestinationPath "$msgFile.zip" -ErrorAction Stop
-        Remote-Item $msgFile
+        Remove-Item $msgFile
     } catch {
         Write-Host -ForegroundColor Red "Message collection failed: $($_.Exception.Message)"
     }
