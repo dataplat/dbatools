@@ -15,6 +15,38 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
             $params.Count - $defaultParamCount | Should Be $paramCount
         }
     }
+    Context "Testing basic name resolution" {
+        It "should test env:computername" {
+            $result = Resolve-DbaNetworkName $env:computername -EnableException
+            $result.InputName | Should -Be $env:computername
+            $result.ComputerName | Should -Be $env:computername
+            $result.IPAddress | Should -Not -BeNullOrEmpty
+            $result.DNSHostName | Should -Be $env:computername
+            if ($result.DNSDomain) {
+                $result.FullComputerName | Should -Be ($result.ComputerName + "." + $result.DNSDomain)
+            }
+        }
+        It "should test localhost" {
+            $result = Resolve-DbaNetworkName localhost -EnableException
+            $result.InputName | Should -Be localhost
+            $result.ComputerName | Should -Be $env:computername
+            $result.IPAddress | Should -Not -BeNullOrEmpty
+            $result.DNSHostName | Should -Be $env:computername
+            if ($result.DNSDomain) {
+                $result.FullComputerName | Should -Be ($result.ComputerName + "." + $result.DNSDomain)
+            }
+        }
+        It "should test 127.0.0.1" {
+            $result = Resolve-DbaNetworkName 127.0.0.1 -EnableException
+            $result.InputName | Should -Be 127.0.0.1
+            $result.ComputerName | Should -Be $env:computername
+            $result.IPAddress | Should -Not -BeNullOrEmpty
+            $result.DNSHostName | Should -Be $env:computername
+            if ($result.DNSDomain) {
+                $result.FullComputerName | Should -Be ($result.ComputerName + "." + $result.DNSDomain)
+            }
+        }
+    }
 }
 <#
     Integration test should appear below and are custom to the command you are writing.

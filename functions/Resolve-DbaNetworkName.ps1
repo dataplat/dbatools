@@ -105,9 +105,7 @@ function Resolve-DbaNetworkName {
                 if ($ComputerName -match "\.") {
                     return $ComputerName.Substring($ComputerName.IndexOf(".") + 1)
                 } else {
-                    if ($env:USERDNSDOMAIN) {
-                        return $env:USERDNSDOMAIN.ToLower()
-                    }
+                    return "$env:USERDNSDOMAIN".ToLower()
                 }
             } else {
                 return $fqdn.Substring($fqdn.IndexOf(".") + 1)
@@ -195,7 +193,7 @@ function Resolve-DbaNetworkName {
             if ($fqdn -notmatch "\." -and $dnsDomain) {
                 $fqdn = "$fqdn.$dnsdomain"
             }
-            $hostname = $fqdn.Split(".")[0]
+            $dnsHostname = $hostname = $fqdn.Split(".")[0]
 
             Write-Message -Level Debug -Message "Getting domain name from the remote host $fqdn"
             try {
@@ -210,26 +208,26 @@ function Resolve-DbaNetworkName {
                 $conn = Get-DbaCmObject @cParams -ClassName win32_ComputerSystem -EnableException
                 if ($conn) {
                     # update dns vars accordingly
-                    $hostname = $conn.DNSHostname
+                    $hostname = $conn.Name
+                    $dnsHostname = $conn.DNSHostname
                     $dnsDomain = $conn.Domain
-                    $fqdn = "$hostname.$dnsDomain".TrimEnd('.')
+                    $fqdn = "$dnsHostname.$dnsDomain".TrimEnd('.')
                 }
                 try {
-                    Write-Message -Level Debug -Message "Getting DNS domain from the remote host $fqdn"
+                    Write-Message -Level Debug -Message "Getting DNS domain from the remote host $($cParams.ComputerName)"
                     $dnsSuffix = Invoke-Command2 @cParams -ScriptBlock $ScBlock -ErrorAction Stop -Raw
                 } catch {
-                    Write-Message -Level Verbose -Message "Unable to get DNS domain information from $fqdn"
-                    $dnsSuffix = $dnsDomain
+                    Write-Message -Level Verbose -Message "Unable to get DNS domain information from $($cParams.ComputerName)"
                 }
             } catch {
-                Write-Message -Level Verbose -Message "Unable to get domain name from $fqdn"
+                Write-Message -Level Verbose -Message "Unable to get domain name from $($cParams.ComputerName)"
             }
 
             # building a finalized name from all the pieces
             if ($dnsSuffix) {
-                $fullComputerName = $hostname + "." + $dnsSuffix
+                $fullComputerName = $dnsHostname + "." + $dnsSuffix
             } else {
-                $fullComputerName = $fqdn
+                $fullComputerName = $dnsHostname
             }
 
             # getting a DNS host entry for the full name
@@ -237,16 +235,16 @@ function Resolve-DbaNetworkName {
                 Write-Message -Level VeryVerbose -Message "Resolving $fullComputerName using .NET.Dns GetHostEntry"
                 $hostentry = ([System.Net.Dns]::GetHostEntry($fullComputerName)).HostName
             } catch {
-                Stop-Function -Message ".NET.Dns GetHostEntry failed for $fullComputerName" -ErrorRecord $_
+                Write-Message -Level Verbose -Message ".NET.Dns GetHostEntry failed for $fullComputerName"
                 $hostentry = $null
             }
 
             # returning the final result
             return [PSCustomObject]@{
                 InputName        = $computer
-                ComputerName     = $fqdn
+                ComputerName     = $hostname
                 IPAddress        = $ipaddress
-                DNSHostName      = $hostname
+                DNSHostName      = $dnsHostname
                 DNSDomain        = $dnsSuffix
                 Domain           = $dnsDomain
                 DNSHostEntry     = $hostentry
