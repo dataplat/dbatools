@@ -331,10 +331,10 @@ if (-not $Finalize) {
         Add-AppveyorTest -Name $f.Name -Framework NUnit -FileName $f.FullName -Outcome Running
         $PesterRun = Invoke-Pester @PesterSplat
         $PesterRun | Export-Clixml -Path "$ModuleBase\PesterResults$PSVersion$Counter.xml"
-        # Gather support package as an artifact
-        New-DbatoolsSupportPackage -Path $ModuleBase
         Update-AppveyorTest -Name $f.Name -Framework NUnit -FileName $f.FullName -Outcome Passed -Duration $PesterRun.Time.TotalMilliseconds
     }
+    # Gather support package as an artifact
+    New-DbatoolsSupportPackage -Path $ModuleBase
 } else {
     # Unsure why we're uploading so I removed it for now
     <#
