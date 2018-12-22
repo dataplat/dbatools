@@ -271,9 +271,9 @@ function Get-DbaBackupInformation {
                 $Files = $Files | Where-Object {$_.FullName -notlike '*\LOG\*'}
             }
 
-            if ($Files.Count -gt 0){
+            if ($Files.Count -gt 0) {
                 Write-Message -Level Verbose -Message "Reading backup headers of $($Files.Count) files"
-                    $FileDetails = Read-DbaBackupHeader -SqlInstance $server -Path $Files -AzureCredential $AzureCredential
+                $FileDetails = Read-DbaBackupHeader -SqlInstance $server -Path $Files -AzureCredential $AzureCredential
             }
 
             $groupdetails = $FileDetails | Group-Object -Property BackupSetGUID
