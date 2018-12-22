@@ -44,6 +44,9 @@ function Invoke-DbaDbDataGenerator {
     .PARAMETER ExactLength
         Mask string values to the same length. So 'Tate' will be replaced with 4 random characters.
 
+    .PARAMETER ModulusFactor
+        Calculating the next nullable by using the remainder from the modulus. Default is every 10.
+
     .PARAMETER Force
         Forcefully execute commands when needed
 
@@ -109,6 +112,7 @@ function Invoke-DbaDbDataGenerator {
         [string]$Query,
         [int]$MaxValue,
         [switch]$ExactLength,
+        [int]$ModulusFactor = 10,
         [switch]$EnableException
     )
 
@@ -175,6 +179,7 @@ function Invoke-DbaDbDataGenerator {
             foreach ($db in $dbs) {
                 $stepcounter = $nullmod = 0
                 foreach ($tableobject in $tables.Tables) {
+
                     if ($tableobject.Name -in $ExcludeTable -or ($Table -and $tableobject.Name -notin $Table)) {
                         Write-Message -Level Verbose -Message "Skipping $($tableobject.Name) because it is explicitly excluded"
                         continue
@@ -209,30 +214,276 @@ function Invoke-DbaDbDataGenerator {
                         continue
                     }
 
-                    if ($Pscmdlet.ShouldProcess($instance, "Masking $($tablecolumns.Name -join ', ') in $($data.Rows.Count) rows in $($db.Name).$($tableobject.Schema).$($tableobject.Name)")) {
+                    if ($Pscmdlet.ShouldProcess($instance, "Generating data $($tablecolumns.Name -join ', ') in $($data.Rows.Count) rows in $($db.Name).$($tableobject.Schema).$($tableobject.Name)")) {
                         $transaction = $sqlconn.BeginTransaction()
                         $elapsed = [System.Diagnostics.Stopwatch]::StartNew()
 
-
-
-                        try {
-                            $null = $transaction.Commit()
-                            [pscustomobject]@{
-                                ComputerName = $db.Parent.ComputerName
-                                InstanceName = $db.Parent.ServiceName
-                                SqlInstance  = $db.Parent.DomainInstanceName
-                                Database     = $db.Name
-                                Schema       = $tableobject.Schema
-                                Table        = $tableobject.Name
-                                Columns      = $tableobject.Columns.Name
-                                Rows         = $($data.Rows.Count)
-                                Elapsed      = [prettytimespan]$elapsed.Elapsed
-                                Status       = "Masked"
-                            }
-                        } catch {
-                            Stop-Function -Message "Error updating $($tableobject.Schema).$($tableobject.Name)" -Target $updatequery -Continue -ErrorRecord $_
+                        if($tableobject.TruncateTable){
+                            $query = "TRUNCATE TABLE [$($tableobject.Schema)].[$($tableobject.Name)]"
                         }
 
+                        try {
+                            $sqlcmd = New-Object System.Data.SqlClient.SqlCommand($query, $sqlconn, $transaction)
+                            $null = $sqlcmd.ExecuteNonQuery()
+                        } catch {
+                            Write-Message -Level VeryVerbose -Message "$query"
+                            $errormessage = $_.Exception.Message.ToString()
+                            Stop-Function -Message "Error truncating $($tableobject.Schema).$($tableobject.Name): $errormessage" -Target $query -Continue -ErrorRecord $_
+                        }
+
+                        Write-ProgressHelper -StepNumber ($stepcounter++) -TotalSteps $tables.Tables.Count -Activity "Generating data" -Message "Inserting $($tableobject.Rows) rows in $($tableobject.Schema).$($tableobject.Name) in $($db.Name) on $instance"
+
+                        ###!!! Chck for identy and set identy insert ON - IDENTITY_INSERT
+
+                        $query = "INSERT INTO [$($tableobject.Schema)].[$($tableobject.Name)] ([$($tablecolumns.Name -join '],[')])`nVALUES`n"
+
+                        for ($i = 1; $i -le $tableobject.Rows; $i++) {
+                            $columnValues = @()
+
+                            foreach ($columnobject in $tablecolumns) {
+                                # make sure max is good
+                                if ($columnobject.Nullable -and (($nullmod++) % $ModulusFactor -eq 0)) {
+                                    $columnValues += "NULL"
+                                } else {
+                                    # make sure max is good
+                                    if ($MaxValue) {
+                                        if ($columnobject.MaxValue -le $MaxValue) {
+                                            $max = $columnobject.MaxValue
+                                        } else {
+                                            $max = $MaxValue
+                                        }
+                                    } else {
+                                        $max = $columnobject.MaxValue
+                                    }
+
+                                    if (-not $columnobject.MaxValue -and -not (Test-Bound -ParameterName MaxValue)) {
+                                        $max = 10
+                                    }
+
+                                    if ($columnobject.CharacterString) {
+                                        $charstring = $columnobject.CharacterString
+                                    } else {
+                                        $charstring = $CharacterString
+                                    }
+
+                                    # make sure min is good
+                                    if ($columnobject.MinValue) {
+                                        $min = $columnobject.MinValue
+                                    } else {
+                                        if ($columnobject.CharacterString) {
+                                            $min = 1
+                                        } else {
+                                            $min = 0
+                                        }
+                                    }
+
+                                    if (($columnobject.MinValue -or $columnobject.MaxValue) -and ($columnobject.ColumnType -match 'date')) {
+                                        $nowmin = $columnobject.MinValue
+                                        $nowmax = $columnobject.MaxValue
+                                        if (-not $nowmin) {
+                                            $nowmin = (Get-Date -Date $nowmax).AddDays(-365)
+                                        }
+                                        if (-not $nowmax) {
+                                            $nowmax = (Get-Date -Date $nowmin).AddDays(365)
+                                        }
+                                    }
+
+                                    try {
+                                        $columnValue = $null
+
+                                        if (-not $columnValue) {
+                                            $columnValue = switch ($columnobject.ColumnType) {
+                                                {
+                                                    $psitem -in 'bit', 'bool'
+                                                } {
+                                                    $columnValues += "$($faker.System.Random.Bool())"
+                                                    $faker.System.Random.Bool()
+                                                }
+                                                {
+                                                    $psitem -match 'date'
+                                                } {
+                                                    if ($columnobject.MinValue -or $columnobject.MaxValue) {
+                                                        ($faker.Date.Between($nowmin, $nowmax)).ToString("yyyyMMdd")
+                                                        $columnValues += "'$(($faker.Date.Between($nowmin, $nowmax)).ToString("yyyyMMdd"))'"
+                                                    } else {
+                                                        ($faker.Date.Past()).ToString("yyyyMMdd")
+                                                        $columnValues += "'$(($faker.Date.Past()).ToString("yyyyMMdd"))'"
+                                                    }
+                                                }
+                                                {
+                                                    $psitem -match 'int'
+                                                } {
+                                                    if ($columnobject.MinValue -or $columnobject.MaxValue) {
+                                                        $columnValues += "$($faker.System.Random.Int($columnobject.MinValue, $columnobject.MaxValue))"
+                                                        $faker.System.Random.Int($columnobject.MinValue, $columnobject.MaxValue)
+                                                    } else {
+                                                        $columnValues += "$($faker.System.Random.Int(0, $max))"
+                                                        $faker.System.Random.Int(0, $max)
+                                                    }
+                                                }
+                                                'money' {
+                                                    if ($columnobject.MinValue -or $columnobject.MaxValue) {
+                                                        $faker.Finance.Amount($columnobject.MinValue, $columnobject.MaxValue)
+                                                        $columnValues += "$($faker.Finance.Amount($columnobject.MinValue, $columnobject.MaxValue))"
+                                                    } else {
+                                                        $faker.Finance.Amount(0, $max)
+                                                        $columnValues += "$($faker.Finance.Amount(0, $max))"
+                                                    }
+                                                }
+                                                'time' {
+                                                    ($faker.Date.Past()).ToString("h:mm tt zzz")
+                                                    $columnValues += "'$(($faker.Date.Past()).ToString("h:mm tt zzz"))'"
+                                                }
+                                                'uniqueidentifier' {
+                                                    $faker.System.Random.Guid().Guid
+                                                    $columnValues = "'$($faker.System.Random.Guid().Guid)'"
+                                                }
+                                                'userdefineddatatype' {
+                                                    if ($columnobject.MaxValue -eq 1) {
+                                                        $faker.System.Random.Bool()
+                                                        $columnValues += "$($faker.System.Random.Bool())"
+                                                    } else {
+                                                        $null
+                                                        $columnValues += "NULL"
+                                                    }
+                                                }
+                                                default {
+                                                    $null
+                                                }
+                                            }
+                                        }
+
+                                        if (-not $columnValue) {
+                                            $columnValue = switch ($columnobject.SubType.ToLower()) {
+                                                'number' {
+                                                    $faker.$($columnobject.MaskingType).$($columnobject.SubType)($columnobject.MaxValue)
+                                                    $columnValues += "$($faker.$($columnobject.MaskingType).$($columnobject.SubType)($columnobject.MaxValue))"
+                                                }
+                                                {
+                                                    $psitem -in 'bit', 'bool'
+                                                } {
+                                                    $faker.System.Random.Bool()
+                                                    $columnValues += "$($faker.System.Random.Bool())"
+                                                }
+                                                {
+                                                    $psitem -in 'date', 'datetime', 'datetime2', 'smalldatetime'
+                                                } {
+                                                    if ($columnobject.MinValue -or $columnobject.MaxValue) {
+                                                        ($faker.Date.Between($nowmin, $nowmax)).ToString("yyyyMMdd")
+                                                        $columnValues += "'$(($faker.Date.Between($nowmin, $nowmax)).ToString("yyyyMMdd"))'"
+                                                    } else {
+                                                        ($faker.Date.Past()).ToString("yyyyMMdd")
+                                                        $columnValues += "'$(($faker.Date.Past()).ToString("yyyyMMdd"))'"
+                                                    }
+                                                }
+                                                'shuffle' {
+                                                    $v = ($row.($columnobject.Name) -split '' | Sort-Object {
+                                                            Get-Random
+                                                        }) -join ''
+
+                                                    $v
+
+                                                    $columnValues += "'$v'"
+
+                                                }
+                                                'string' {
+                                                    if ($max -eq -1) {
+                                                        $max = 1024
+                                                    }
+
+                                                    if ($columnobject.SubType -eq "String" -and (Test-Bound -ParameterName ExactLength)) {
+                                                        $max = ($row.$($columnobject.Name)).Length
+                                                    }
+
+                                                    if ($columnobject.ColumnType -eq 'xml') {
+                                                        $null
+                                                        $columnValues += "'<xml></xml>'"
+                                                    } else {
+                                                        $faker.$($columnobject.MaskingType).String2($max, $charstring)
+                                                        $columnValues += "'$($faker.$($columnobject.MaskingType).String2($max, $charstring))'"
+                                                    }
+                                                }
+                                                default {
+                                                    $null
+                                                }
+                                            }
+                                        }
+
+                                        if (-not $columnValue) {
+                                            $columnValue = switch ($columnobject.MaskingType.ToLower()) {
+                                                {
+                                                    $psitem -in 'bit', 'bool'
+                                                } {
+                                                    $faker.System.Random.Bool()
+                                                    $columnValues += "$($faker.System.Random.Bool())"
+                                                }
+                                                {
+                                                    $psitem -in 'name', 'address', 'finance'
+                                                } {
+                                                    $faker.$($columnobject.MaskingType).$($columnobject.SubType)()
+                                                    $columnValues += "'$($faker.$($columnobject.MaskingType).$($columnobject.SubType)())'"
+                                                }
+                                                default {
+                                                    if ($max -eq -1) {
+                                                        $max = 1024
+                                                    }
+                                                    if ((Test-Bound -ParameterName ExactLength)) {
+                                                        $max = ($row.$($columnobject.Name)).ToString().Length
+                                                    }
+                                                    if ($max -eq 1) {
+                                                        $faker.System.Random.Bool()
+                                                        $columnValues += "$faker.System.Random.Bool()"
+                                                    } else {
+                                                        try {
+                                                            $faker.$($columnobject.MaskingType).$($columnobject.SubType)()
+                                                        } catch {
+                                                            $faker.Random.String2($max, $charstring)
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    } catch {
+                                        Stop-Function -Message "Failure" -Target $faker -Continue -ErrorRecord $_
+                                    }
+                                }
+                            }
+
+                            if ($i -lt $tableobject.Rows) {
+                                $query += "( $($columnValues -join ',') ),`n"
+                            } else {
+                                $query += "( $($columnValues -join ',') )`n"
+                            }
+
+
+                        }
+
+                        try {
+                            $sqlcmd = New-Object System.Data.SqlClient.SqlCommand($query, $sqlconn, $transaction)
+                            $null = $sqlcmd.ExecuteNonQuery()
+                        } catch {
+                            Write-Message -Level VeryVerbose -Message "$query"
+                            $errormessage = $_.Exception.Message.ToString()
+                            Stop-Function -Message "Error inserting $($tableobject.Schema).$($tableobject.Name): $errormessage" -Target $query -Continue -ErrorRecord $_
+                        }
+                    }
+
+                    try {
+                        $null = $transaction.Commit()
+                        [pscustomobject]@{
+                            ComputerName = $db.Parent.ComputerName
+                            InstanceName = $db.Parent.ServiceName
+                            SqlInstance  = $db.Parent.DomainInstanceName
+                            Database     = $db.Name
+                            Schema       = $tableobject.Schema
+                            Table        = $tableobject.Name
+                            Columns      = $tableobject.Columns.Name
+                            Rows         = $tableobject.Rows
+                            Elapsed      = [prettytimespan]$elapsed.Elapsed
+                            Status       = "Masked"
+                        }
+                    } catch {
+                        Stop-Function -Message "Error updating $($tableobject.Schema).$($tableobject.Name)" -Target $updatequery -Continue -ErrorRecord $_
                     }
                 }
             }
