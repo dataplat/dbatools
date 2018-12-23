@@ -164,6 +164,13 @@ function Test-DbaBackupInformation {
                         }
                     }
                 }
+                #Test for LSN chain
+                if ($true -ne $Continue) {
+                    if (!($DbHistory | Test-DbaLsnChain)) {
+                        Write-Message -Message "LSN Check failed" -Level Verbose
+                        $VerificationErrors++
+                    }
+                }
             }
 
             #Test all backups readable
@@ -175,13 +182,7 @@ function Test-DbaBackupInformation {
                     $VerificationErrors++
                 }
             }
-            #Test for LSN chain
-            if ($true -ne $Continue) {
-                if (!($DbHistory | Test-DbaLsnChain)) {
-                    Write-Message -Message "LSN Check failed" -Level Verbose
-                    $VerificationErrors++
-                }
-            }
+
             if ($VerificationErrors -eq 0) {
                 Write-Message -Message "Marking $Database as verified" -Level Verbose
                 $InternalHistory | Where-Object {$_.Database -eq $Database} | Foreach-Object {$_.IsVerified = $True}
