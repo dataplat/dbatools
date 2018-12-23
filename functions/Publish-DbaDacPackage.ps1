@@ -45,6 +45,12 @@ function Publish-DbaDacPackage {
     .PARAMETER IncludeSqlCmdVars
         If this switch is enabled, SqlCmdVars in publish.xml will have their values overwritten.
 
+    .PARAMETER WhatIf
+        Shows what would happen if the command were to run. No actions are actually performed.
+
+    .PARAMETER Confirm
+        Prompts you for confirmation before executing any changing operations within the command.
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -97,7 +103,7 @@ function Publish-DbaDacPackage {
 
         Does not deploy the changes, but will generate the deployment report that would be executed against WideWorldImporters.
     #>
-    [CmdletBinding(DefaultParameterSetName = 'Obj')]
+    [CmdletBinding(DefaultParameterSetName = 'Obj', SupportsShouldProcess, ConfirmImpact = 'High')]
     param (
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstance[]]$SqlInstance,
@@ -161,10 +167,10 @@ function Publish-DbaDacPackage {
 
             return $instance.ToString().Replace('\', '-').Replace('(', '').Replace(')', '')
         }
-        
+
         if ((Test-Bound -Not -ParameterName 'DacfxPath') -and (-not $script:core)) {
             $dacfxPath = "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Dac.dll"
-            
+
             if ((Test-Path $dacfxPath) -eq $false) {
                 Stop-Function -Message 'No usable version of Dac Fx found.' -EnableException $EnableException
                 return
@@ -177,7 +183,7 @@ function Publish-DbaDacPackage {
                 }
             }
         }
-        
+
         #Check Option object types - should have a specific type
         if ($Type -eq 'Dacpac') {
             if ($DacOption -and $DacOption -isnot [Microsoft.SqlServer.Dac.PublishOptions]) {
@@ -193,7 +199,9 @@ function Publish-DbaDacPackage {
     }
 
     process {
-        if (Test-FunctionInterrupt) { return }
+        if (Test-FunctionInterrupt) {
+            return
+        }
 
         if (-not (Test-Path -Path $Path)) {
             Stop-Function -Message "$Path not found!"
@@ -282,8 +290,11 @@ function Publish-DbaDacPackage {
                 } catch {
                     Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $server -Continue
                 }
+
                 try {
-                    $null = $output = Register-ObjectEvent -InputObject $dacServices -EventName "Message" -SourceIdentifier "msg" -Action { $EventArgs.Message.Message }
+                    $null = $output = Register-ObjectEvent -InputObject $dacServices -EventName "Message" -SourceIdentifier "msg" -ErrorAction SilentlyContinue -Action {
+                        $EventArgs.Message.Message
+                    }
                     #Perform proper action depending on the Type
                     if ($Type -eq 'Dacpac') {
                         if ($ScriptOnly) {
@@ -293,65 +304,70 @@ function Publish-DbaDacPackage {
                             if (!$options.DatabaseScriptPath) {
                                 Stop-Function -Message "DatabaseScriptPath option should be specified when running with -ScriptOnly" -EnableException $true
                             }
-                            Write-Message -Level Verbose -Message "Generating script."
-                            $result = $dacServices.Script($dacPackage, $dbname, $options)
+                            if ($Pscmdlet.ShouldProcess($instance, "Generating script")) {
+                                $result = $dacServices.Script($dacPackage, $dbname, $options)
+                            }
                         } else {
-                            Write-Message -Level Verbose -Message "Executing Dacpac publish."
-                            $result = $dacServices.Publish($dacPackage, $dbname, $options)
+                            if ($Pscmdlet.ShouldProcess($instance, "Executing Dacpac publish")) {
+                                $result = $dacServices.Publish($dacPackage, $dbname, $options)
+                            }
                         }
                     } elseif ($Type -eq 'Bacpac') {
-                        Write-Message -Level Verbose -Message "Executing Bacpac import."
-                        $dacServices.ImportBacpac($bacPackage, $dbname, $options, $null)
+                        if ($Pscmdlet.ShouldProcess($instance, "Executing Bacpac import")) {
+                            $dacServices.ImportBacpac($bacPackage, $dbname, $options, $null)
+                        }
                     }
                 } catch [Microsoft.SqlServer.Dac.DacServicesException] {
                     Stop-Function -Message "Deployment failed" -ErrorRecord $_ -Continue
                 } finally {
                     Unregister-Event -SourceIdentifier "msg"
-                    if ($options.GenerateDeploymentReport) {
-                        $deploymentReport = Join-Path $OutputPath "$cleaninstance-$dbname`_Result.DeploymentReport_$timeStamp.xml"
-                        $result.DeploymentReport | Out-File $deploymentReport
-                        Write-Message -Level Verbose -Message "Deployment Report - $deploymentReport."
-                    }
-                    if ($options.GenerateDeploymentScript) {
-                        Write-Message -Level Verbose -Message "Database change script - $($options.DatabaseScriptPath)."
-                        if ((Test-Path $options.MasterDbScriptPath)) {
-                            Write-Message -Level Verbose -Message "Master database change script - $($result.MasterDbScript)."
+                    if ($Pscmdlet.ShouldProcess($instance, "Generating deployment report and output")) {
+                        if ($options.GenerateDeploymentReport) {
+                            $deploymentReport = Join-Path $OutputPath "$cleaninstance-$dbname`_Result.DeploymentReport_$timeStamp.xml"
+                            $result.DeploymentReport | Out-File $deploymentReport
+                            Write-Message -Level Verbose -Message "Deployment Report - $deploymentReport."
                         }
-                    }
-                    $resultoutput = ($output.output -join "`r`n" | Out-String).Trim()
-                    if ($resultoutput -match "Failed" -and ($options.GenerateDeploymentReport -or $options.GenerateDeploymentScript)) {
-                        Write-Message -Level Warning -Message "Seems like the attempt to publish/script may have failed. If scripts have not generated load dacpac into Visual Studio to check SQL is valid."
-                    }
-                    $server = [dbainstance]$instance
-                    if ($Type -eq 'Dacpac') {
-                        $output = [pscustomobject]@{
-                            ComputerName         = $server.ComputerName
-                            InstanceName         = $server.InstanceName
-                            SqlInstance          = $server.FullName
-                            Database             = $dbname
-                            Result               = $resultoutput
-                            Dacpac               = $Path
-                            PublishXml           = $PublishXml
-                            ConnectionString     = $connstring
-                            DatabaseScriptPath   = $options.DatabaseScriptPath
-                            MasterDbScriptPath   = $options.MasterDbScriptPath
-                            DeploymentReport     = $DeploymentReport
-                            DeployOptions        = $options.DeployOptions | Select-Object -Property * -ExcludeProperty "SqlCommandVariableValues"
-                            SqlCmdVariableValues = $options.DeployOptions.SqlCommandVariableValues.Keys
+                        if ($options.GenerateDeploymentScript) {
+                            Write-Message -Level Verbose -Message "Database change script - $($options.DatabaseScriptPath)."
+                            if ((Test-Path $options.MasterDbScriptPath)) {
+                                Write-Message -Level Verbose -Message "Master database change script - $($result.MasterDbScript)."
+                            }
                         }
-                    } elseif ($Type -eq 'Bacpac') {
-                        $output = [pscustomobject]@{
-                            ComputerName     = $server.ComputerName
-                            InstanceName     = $server.InstanceName
-                            SqlInstance      = $server.FullName
-                            Database         = $dbname
-                            Result           = $resultoutput
-                            Bacpac           = $Path
-                            ConnectionString = $connstring
-                            DeployOptions    = $options
+                        $resultoutput = ($output.output -join "`r`n" | Out-String).Trim()
+                        if ($resultoutput -match "Failed" -and ($options.GenerateDeploymentReport -or $options.GenerateDeploymentScript)) {
+                            Write-Message -Level Warning -Message "Seems like the attempt to publish/script may have failed. If scripts have not generated load dacpac into Visual Studio to check SQL is valid."
                         }
+                        $server = [dbainstance]$instance
+                        if ($Type -eq 'Dacpac') {
+                            $output = [pscustomobject]@{
+                                ComputerName         = $server.ComputerName
+                                InstanceName         = $server.InstanceName
+                                SqlInstance          = $server.FullName
+                                Database             = $dbname
+                                Result               = $resultoutput
+                                Dacpac               = $Path
+                                PublishXml           = $PublishXml
+                                ConnectionString     = $connstring
+                                DatabaseScriptPath   = $options.DatabaseScriptPath
+                                MasterDbScriptPath   = $options.MasterDbScriptPath
+                                DeploymentReport     = $DeploymentReport
+                                DeployOptions        = $options.DeployOptions | Select-Object -Property * -ExcludeProperty "SqlCommandVariableValues"
+                                SqlCmdVariableValues = $options.DeployOptions.SqlCommandVariableValues.Keys
+                            }
+                        } elseif ($Type -eq 'Bacpac') {
+                            $output = [pscustomobject]@{
+                                ComputerName     = $server.ComputerName
+                                InstanceName     = $server.InstanceName
+                                SqlInstance      = $server.FullName
+                                Database         = $dbname
+                                Result           = $resultoutput
+                                Bacpac           = $Path
+                                ConnectionString = $connstring
+                                DeployOptions    = $options
+                            }
+                        }
+                        $output | Select-DefaultView -Property $defaultcolumns
                     }
-                    $output | Select-DefaultView -Property $defaultcolumns
                 }
             }
         }
