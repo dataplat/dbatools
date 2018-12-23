@@ -112,63 +112,7 @@ function Get-DbaBuildReference {
     )
 
     begin {
-        #region verifying parameters
-        $ComplianceSpec = @()
-        $ComplianceSpecExclusiveParams = @('Build', 'Kb', @( 'MajorVersion', 'ServicePack', 'CumulativeUpdate'), 'SqlInstance')
-        foreach ($exclParamGroup in $ComplianceSpecExclusiveParams) {
-            foreach ($exclParam in $exclParamGroup) {
-                if (Test-Bound -Parameter $exclParam) {
-                    $ComplianceSpec += $exclParam
-                    break
-                }
-            }
-        }
-        if ($ComplianceSpec.Length -gt 1) {
-            Stop-Function -Category InvalidArgument -Message "$($ComplianceSpec -join ', ') are mutually exclusive. Please choose one or the other. Quitting."
-            return
-        }
-        if ($ComplianceSpec.Length -eq 0) {
-            Stop-Function -Category InvalidArgument -Message "You need to choose at least one parameter."
-            return
-        }
-        if (((Test-Bound -Parameter ServicePack) -or (Test-Bound -Parameter CumulativeUpdate)) -and (Test-Bound -Not -Parameter MajorVersion)) {
-            Stop-Function -Category InvalidArgument -Message "-MajorVersion is required when specifying SP or CU."
-            return
-        }
-        if ($MajorVersion) {
-            if ($MajorVersion -match '^(SQL)?(\d{4}(R2)?)$') {
-                $MajorVersion = $Matches[2]
-            } else {
-                Stop-Function -Message "Incorrect SQL Server version format: use SQL2XXX or just 2XXXX - SQL2012, SQL2008R2"
-                return
-            }
-            if (!$ServicePack) {
-                $ServicePack = 'RTM'
-            }
-            if ($ServicePack -match '^(SP)?\s*(\d+)$') {
-                if ($Matches[2] -eq '0') {
-                    $ServicePack = 'RTM'
-                } else {
-                    $ServicePack = 'SP' + $Matches[2]
-                }
-            } elseif ($ServicePack -notmatch '^RTM$') {
-                Stop-Function -Message "Incorrect SQL Server service pack format: use SPX, X or RTM, where X is a service pack number"
-                return
-            }
-            if ($CumulativeUpdate) {
-                if ($CumulativeUpdate -match '^(CU)?\s*(\d+)$') {
-                    if ($Matches[2] -eq '0') {
-                        $CumulativeUpdate = ''
-                    } else {
-                        $CumulativeUpdate = 'CU' + $Matches[2]
-                    }
-                } else {
-                    Stop-Function -Message "Incorrect SQL Server cumulative update format: use CUX or X, where X is a cumulative update number"
-                    return
-                }
-            }
-        }
-        #endregion verifying parameters
+
         #region Helper functions
         function Get-DbaBuildReferenceIndex {
             [CmdletBinding()]
@@ -376,6 +320,65 @@ function Get-DbaBuildReference {
     }
     process {
         if (Test-FunctionInterrupt) { return }
+
+        #region verifying parameters
+        $ComplianceSpec = @()
+        $ComplianceSpecExclusiveParams = @('Build', 'Kb', @( 'MajorVersion', 'ServicePack', 'CumulativeUpdate'), 'SqlInstance')
+        foreach ($exclParamGroup in $ComplianceSpecExclusiveParams) {
+            foreach ($exclParam in $exclParamGroup) {
+                if (Test-Bound -Parameter $exclParam) {
+                    $ComplianceSpec += $exclParam
+                    break
+                }
+            }
+        }
+        if ($ComplianceSpec.Length -gt 1) {
+            Stop-Function -Category InvalidArgument -Message "$($ComplianceSpec -join ', ') are mutually exclusive. Please choose one or the other. Quitting."
+            return
+        }
+        if ($ComplianceSpec.Length -eq 0) {
+            Stop-Function -Category InvalidArgument -Message "You need to choose at least one parameter."
+            return
+        }
+        if (((Test-Bound -Parameter ServicePack) -or (Test-Bound -Parameter CumulativeUpdate)) -and (Test-Bound -Not -Parameter MajorVersion)) {
+            Stop-Function -Category InvalidArgument -Message "-MajorVersion is required when specifying SP or CU."
+            return
+        }
+        if ($MajorVersion) {
+            if ($MajorVersion -match '^(SQL)?(\d{4}(R2)?)$') {
+                $MajorVersion = $Matches[2]
+            } else {
+                Stop-Function -Message "Incorrect SQL Server version format: use SQL2XXX or just 2XXXX - SQL2012, SQL2008R2"
+                return
+            }
+            if (!$ServicePack) {
+                $ServicePack = 'RTM'
+            }
+            if ($ServicePack -match '^(SP)?\s*(\d+)$') {
+                if ($Matches[2] -eq '0') {
+                    $ServicePack = 'RTM'
+                } else {
+                    $ServicePack = 'SP' + $Matches[2]
+                }
+            } elseif ($ServicePack -notmatch '^RTM$') {
+                Stop-Function -Message "Incorrect SQL Server service pack format: use SPX, X or RTM, where X is a service pack number"
+                return
+            }
+            if ($CumulativeUpdate) {
+                if ($CumulativeUpdate -match '^(CU)?\s*(\d+)$') {
+                    if ($Matches[2] -eq '0') {
+                        $CumulativeUpdate = ''
+                    } else {
+                        $CumulativeUpdate = 'CU' + $Matches[2]
+                    }
+                } else {
+                    Stop-Function -Message "Incorrect SQL Server cumulative update format: use CUX or X, where X is a cumulative update number"
+                    return
+                }
+            }
+        }
+        #endregion verifying parameters
+
 
         foreach ($instance in $SqlInstance) {
             #region Ensure the connection is established
