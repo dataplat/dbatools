@@ -1,7 +1,7 @@
 
 -- SQL Server 2016 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: December 7, 2018
+-- Last Modified: December 20, 2018
 -- https://www.sqlskills.com/blogs/glenn/
 -- http://sqlserverperformance.wordpress.com/
 -- Twitter: GlennAlanBerry
@@ -1379,17 +1379,17 @@ FROM sys.database_scoped_configurations WITH (NOLOCK) OPTION (RECOMPILE);
 
 -- I/O Statistics by file for the current database  (Query 56) (IO Stats By File)
 SELECT DB_NAME(DB_ID()) AS [Database Name], df.name AS [Logical Name], vfs.[file_id], df.type_desc,
-df.physical_name AS [Physical Name], CAST(vfs.size_on_disk_bytes/1048576.0 AS DECIMAL(10, 2)) AS [Size on Disk (MB)],
+df.physical_name AS [Physical Name], CAST(vfs.size_on_disk_bytes/1048576.0 AS DECIMAL(16, 2)) AS [Size on Disk (MB)],
 vfs.num_of_reads, vfs.num_of_writes, vfs.io_stall_read_ms, vfs.io_stall_write_ms,
-CAST(100. * vfs.io_stall_read_ms/(vfs.io_stall_read_ms + vfs.io_stall_write_ms) AS DECIMAL(10,1)) AS [IO Stall Reads Pct],
-CAST(100. * vfs.io_stall_write_ms/(vfs.io_stall_write_ms + vfs.io_stall_read_ms) AS DECIMAL(10,1)) AS [IO Stall Writes Pct],
+CAST(100. * vfs.io_stall_read_ms/(vfs.io_stall_read_ms + vfs.io_stall_write_ms) AS DECIMAL(16,1)) AS [IO Stall Reads Pct],
+CAST(100. * vfs.io_stall_write_ms/(vfs.io_stall_write_ms + vfs.io_stall_read_ms) AS DECIMAL(16,1)) AS [IO Stall Writes Pct],
 (vfs.num_of_reads + vfs.num_of_writes) AS [Writes + Reads], 
-CAST(vfs.num_of_bytes_read/1048576.0 AS DECIMAL(10, 2)) AS [MB Read], 
-CAST(vfs.num_of_bytes_written/1048576.0 AS DECIMAL(10, 2)) AS [MB Written],
-CAST(100. * vfs.num_of_reads/(vfs.num_of_reads + vfs.num_of_writes) AS DECIMAL(10,1)) AS [# Reads Pct],
-CAST(100. * vfs.num_of_writes/(vfs.num_of_reads + vfs.num_of_writes) AS DECIMAL(10,1)) AS [# Write Pct],
-CAST(100. * vfs.num_of_bytes_read/(vfs.num_of_bytes_read + vfs.num_of_bytes_written) AS DECIMAL(10,1)) AS [Read Bytes Pct],
-CAST(100. * vfs.num_of_bytes_written/(vfs.num_of_bytes_read + vfs.num_of_bytes_written) AS DECIMAL(10,1)) AS [Written Bytes Pct]
+CAST(vfs.num_of_bytes_read/1048576.0 AS DECIMAL(16, 2)) AS [MB Read], 
+CAST(vfs.num_of_bytes_written/1048576.0 AS DECIMAL(16, 2)) AS [MB Written],
+CAST(100. * vfs.num_of_reads/(vfs.num_of_reads + vfs.num_of_writes) AS DECIMAL(16,1)) AS [# Reads Pct],
+CAST(100. * vfs.num_of_writes/(vfs.num_of_reads + vfs.num_of_writes) AS DECIMAL(16,1)) AS [# Write Pct],
+CAST(100. * vfs.num_of_bytes_read/(vfs.num_of_bytes_read + vfs.num_of_bytes_written) AS DECIMAL(16,1)) AS [Read Bytes Pct],
+CAST(100. * vfs.num_of_bytes_written/(vfs.num_of_bytes_read + vfs.num_of_bytes_written) AS DECIMAL(16,1)) AS [Written Bytes Pct]
 FROM sys.dm_io_virtual_file_stats(DB_ID(), NULL) AS vfs
 INNER JOIN sys.database_files AS df WITH (NOLOCK)
 ON vfs.[file_id]= df.[file_id] OPTION (RECOMPILE);
@@ -1665,21 +1665,24 @@ ORDER BY [BufferCount] DESC OPTION (RECOMPILE);
 
 
 -- Get Table names, row counts, and compression status for clustered index or heap  (Query 69) (Table Sizes)
-SELECT OBJECT_NAME(object_id) AS [ObjectName], 
-SUM(Rows) AS [RowCount], data_compression_desc AS [CompressionType]
-FROM sys.partitions WITH (NOLOCK)
+SELECT SCHEMA_NAME(o.Schema_ID) AS [Schema Name], OBJECT_NAME(p.object_id) AS [ObjectName], 
+SUM(p.Rows) AS [RowCount], data_compression_desc AS [CompressionType]
+FROM sys.partitions AS p WITH (NOLOCK)
+INNER JOIN sys.objects AS o WITH (NOLOCK)
+ON p.object_id = o.object_id
 WHERE index_id < 2 --ignore the partitions from the non-clustered index if any
-AND OBJECT_NAME(object_id) NOT LIKE N'sys%'
-AND OBJECT_NAME(object_id) NOT LIKE N'queue_%' 
-AND OBJECT_NAME(object_id) NOT LIKE N'filestream_tombstone%' 
-AND OBJECT_NAME(object_id) NOT LIKE N'fulltext%'
-AND OBJECT_NAME(object_id) NOT LIKE N'ifts_comp_fragment%'
-AND OBJECT_NAME(object_id) NOT LIKE N'filetable_updates%'
-AND OBJECT_NAME(object_id) NOT LIKE N'xml_index_nodes%'
-AND OBJECT_NAME(object_id) NOT LIKE N'sqlagent_job%'  
-AND OBJECT_NAME(object_id) NOT LIKE N'plan_persist%'  
-GROUP BY object_id, data_compression_desc
-ORDER BY SUM(Rows) DESC OPTION (RECOMPILE);
+AND OBJECT_NAME(p.object_id) NOT LIKE N'sys%'
+AND OBJECT_NAME(p.object_id) NOT LIKE N'spt_%'
+AND OBJECT_NAME(p.object_id) NOT LIKE N'queue_%' 
+AND OBJECT_NAME(p.object_id) NOT LIKE N'filestream_tombstone%' 
+AND OBJECT_NAME(p.object_id) NOT LIKE N'fulltext%'
+AND OBJECT_NAME(p.object_id) NOT LIKE N'ifts_comp_fragment%'
+AND OBJECT_NAME(p.object_id) NOT LIKE N'filetable_updates%'
+AND OBJECT_NAME(p.object_id) NOT LIKE N'xml_index_nodes%'
+AND OBJECT_NAME(p.object_id) NOT LIKE N'sqlagent_job%'
+AND OBJECT_NAME(p.object_id) NOT LIKE N'plan_persist%'
+GROUP BY  SCHEMA_NAME(o.Schema_ID), p.object_id, data_compression_desc
+ORDER BY SUM(p.Rows) DESC OPTION (RECOMPILE);
 ------
 
 -- Gives you an idea of table sizes, and possible data compression opportunities
