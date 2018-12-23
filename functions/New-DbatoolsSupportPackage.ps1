@@ -23,6 +23,9 @@ function New-DbatoolsSupportPackage {
         Name of additional variables to attach.
         This allows you to add the content of variables to the support package, if you believe them to be relevant to the case.
 
+    .PARAMETER PassThru
+        Returns file object that was created during execution.
+
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
@@ -58,6 +61,9 @@ function New-DbatoolsSupportPackage {
 
         [string[]]
         $Variables,
+
+        [switch]
+        $PassThru,
 
         [switch]
         [Alias('Silent')]$EnableException
@@ -161,8 +167,11 @@ This will make it easier for us to troubleshoot and you won't be sending us the 
             $hash["History"] = Get-History
             Write-Message -Level Output -Message "Collecting list of loaded modules (Get-Module)"
             $hash["Modules"] = Get-Module
-            Write-Message -Level Output -Message "Collecting list of loaded snapins (Get-PSSnapin)"
-            $hash["SnapIns"] = Get-PSSnapin
+            # Snapins not supported in Core: https://github.com/PowerShell/PowerShell/issues/6135
+            if ($PSVersionTable.PSEdition -ne 'Core') {
+                Write-Message -Level Output -Message "Collecting list of loaded snapins (Get-PSSnapin)"
+                $hash["SnapIns"] = Get-PSSnapin
+            }
             Write-Message -Level Output -Message "Collecting list of loaded assemblies (Name, Version, and Location)"
             $hash["Assemblies"] = [appdomain]::CurrentDomain.GetAssemblies() | Select-Object CodeBase, FullName, Location, ImageRuntimeVersion, GlobalAssemblyCache, IsDynamic
 
@@ -186,6 +195,9 @@ This will make it easier for us to troubleshoot and you won't be sending us the 
             }
 
             Remove-Item -Path $filePathXml -ErrorAction Ignore
+            if ($PassThru) {
+                Get-Item $filePathZip
+            }
         }
     }
     end {
