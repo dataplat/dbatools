@@ -67,7 +67,8 @@ function Get-DbaDependency {
         $IncludeSelf,
 
         [switch]
-        [Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        $EnableException
     )
 
     begin {
@@ -105,7 +106,7 @@ function Get-DbaDependency {
             Write-Message -EnableException $EnableException -Level 5 -Message "Adding $Object which is a $($Object.urn.Type)" -FunctionName $FunctionName
             $urnCollection.Add([Microsoft.SqlServer.Management.Sdk.Sfc.Urn]$Object.urn)
 
-            #now we set up an event listnenr go get progress reports
+            #now we set up an event listener go get progress reports
             $progressReportEventHandler = [Microsoft.SqlServer.Management.Smo.ProgressReportEventHandler] {
                 $name = $_.Current.GetAttribute('Name');
                 Write-Message -EnableException $EnableException -Level 5 -Message "Analysed $name" -FunctionName $FunctionName
@@ -219,9 +220,9 @@ function Get-DbaDependency {
     }
     process {
         foreach ($Item in $InputObject) {
-            Write-Message -EnableException $EnableException -Level Verbose -Message "Processing: $Item"
+            Write-Message -EnableException $EnableException.ToBool() -Level Verbose -Message "Processing: $Item"
             if ($null -eq $Item.urn) {
-                Stop-Function -Message "$Item is not a valid SMO object" -EnableException $EnableException -Category InvalidData -Continue -Target $Item
+                Stop-Function -Message "$Item is not a valid SMO object" -EnableException $EnableException.ToBool() -Category InvalidData -Continue -Target $Item
             }
 
             # Find the server object to pass on to the function
@@ -231,12 +232,12 @@ function Get-DbaDependency {
             until (($parent.urn.type -eq "Server") -or (-not $parent))
 
             if (-not $parent) {
-                Stop-Function -Message "Failed to find valid server object in input: $Item" -EnableException $EnableException -Category InvalidData -Continue -Target $Item
+                Stop-Function -Message "Failed to find valid server object in input: $Item" -EnableException $EnableException.ToBool() -Category InvalidData -Continue -Target $Item
             }
 
             $server = $parent
 
-            $tree = Get-DependencyTree -Object $Item -AllowSystemObjects $false -Server $server -FunctionName (Get-PSCallStack)[0].COmmand -EnableException $EnableException -EnumParents $Parents
+            $tree = Get-DependencyTree -Object $Item -AllowSystemObjects $false -Server $server -FunctionName (Get-PSCallStack)[0].COmmand -EnableException $EnableException.ToBool() -EnumParents $Parents
             $limitCount = 2
             if ($IncludeSelf) { $limitCount = 1 }
             if ($tree.Count -lt $limitCount) {

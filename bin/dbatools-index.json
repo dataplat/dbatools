@@ -28279,6 +28279,14 @@
                            ""
                        ],
                        [
+                           "PassThru",
+                           "Returns file object that was created during execution.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
                            "EnableException",
                            "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
                            "Silent",
@@ -28303,7 +28311,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "New-DbatoolsSupportPackage [[-Path] \u003cString\u003e] [[-Variables] \u003cString[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "New-DbatoolsSupportPackage [[-Path] \u003cString\u003e] [[-Variables] \u003cString[]\u003e] [-PassThru] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "New-DbaXESession",
