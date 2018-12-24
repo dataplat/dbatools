@@ -223,7 +223,15 @@ function Invoke-DbaDbDataGenerator {
                         Write-ProgressHelper -StepNumber ($stepcounter++) -TotalSteps $tables.Tables.Count -Activity "Generating data" -Message "Inserting $($tableobject.Rows) rows in $($tableobject.Schema).$($tableobject.Name) in $($db.Name) on $instance"
 
                         if ($tableobject.TruncateTable) {
-                            $insertQuery += "TRUNCATE TABLE [$($tableobject.Schema)].[$($tableobject.Name)];`n"
+                            $query += "TRUNCATE TABLE [$($tableobject.Schema)].[$($tableobject.Name)];`n"
+
+                            try {
+                                Invoke-DbaQuery -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $db.Name -Query $query
+                            } catch {
+                                Write-Message -Level VeryVerbose -Message "$query"
+                                $errormessage = $_.Exception.Message.ToString()
+                                Stop-Function -Message "Error truncating $($tableobject.Schema).$($tableobject.Name): $errormessage" -Target $query -Continue -ErrorRecord $_
+                            }
                         }
 
                         if ($tableobject.Columns.Identity -contains $true) {
@@ -255,7 +263,7 @@ function Invoke-DbaDbDataGenerator {
                                 if ($columnobject.Nullable -and (($nullmod++) % $ModulusFactor -eq 0)) {
                                     $columnValues += "NULL"
                                 } elseif ($columnobject.Identity) {
-                                    if ($nextIdentity) {
+                                    if ($nextIdentity -or (-not $nextIdentity -and $tableobject.TruncateTable)) {
                                         $nextIdentity += $identityValues.IdentityIncrement
                                     } else {
                                         $nextIdentity = $identityValues.CurrentIdentity + $identityValues.IdentityIncrement
@@ -485,7 +493,7 @@ function Invoke-DbaDbDataGenerator {
                         } catch {
                             Write-Message -Level VeryVerbose -Message "$insertQuery"
                             $errormessage = $_.Exception.Message.ToString()
-                            Stop-Function -Message "Error inserting $($tableobject.Schema).$($tableobject.Name): $errormessage" -Target $query -Continue -ErrorRecord $_
+                            Stop-Function -Message "Error inserting $($tableobject.Schema).$($tableobject.Name): $errormessage" -Target $insertQuery -Continue -ErrorRecord $_
                         }
 
 
@@ -506,7 +514,7 @@ function Invoke-DbaDbDataGenerator {
                             Status       = "Done"
                         }
                     } catch {
-                        Stop-Function -Message "Error updating $($tableobject.Schema).$($tableobject.Name)" -Target $updatequery -Continue -ErrorRecord $_
+                        Stop-Function -Message "Error inserting into $($tableobject.Schema).$($tableobject.Name)" -Target $insertQuery -Continue -ErrorRecord $_
                     }
                 }
             }
