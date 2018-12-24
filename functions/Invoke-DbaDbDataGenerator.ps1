@@ -226,7 +226,7 @@ function Invoke-DbaDbDataGenerator {
                             $query += "TRUNCATE TABLE [$($tableobject.Schema)].[$($tableobject.Name)];`n"
 
                             try {
-                                Invoke-DbaQuery -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $db.Name -Query $query
+                                $null = Invoke-DbaQuery -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $db.Name -Query $query
                             } catch {
                                 Write-Message -Level VeryVerbose -Message "$query"
                                 $errormessage = $_.Exception.Message.ToString()
@@ -249,7 +249,6 @@ function Invoke-DbaDbDataGenerator {
 
                             $insertQuery += "SET IDENTITY_INSERT [$($tableobject.Schema)].[$($tableobject.Name)] ON;`n"
                         }
-
 
                         $insertQuery += "INSERT INTO [$($tableobject.Schema)].[$($tableobject.Name)] ([$($tablecolumns.Name -join '],[')])`nVALUES`n"
 
