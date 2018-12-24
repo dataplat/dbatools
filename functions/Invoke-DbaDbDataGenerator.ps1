@@ -214,28 +214,38 @@ function Invoke-DbaDbDataGenerator {
                         continue
                     }
 
+                    $insertQuery = ""
+
                     if ($Pscmdlet.ShouldProcess($instance, "Generating data $($tablecolumns.Name -join ', ') in $($data.Rows.Count) rows in $($db.Name).$($tableobject.Schema).$($tableobject.Name)")) {
                         $transaction = $sqlconn.BeginTransaction()
                         $elapsed = [System.Diagnostics.Stopwatch]::StartNew()
 
-                        if($tableobject.TruncateTable){
-                            $query = "TRUNCATE TABLE [$($tableobject.Schema)].[$($tableobject.Name)]"
-                        }
-
-                        try {
-                            $sqlcmd = New-Object System.Data.SqlClient.SqlCommand($query, $sqlconn, $transaction)
-                            $null = $sqlcmd.ExecuteNonQuery()
-                        } catch {
-                            Write-Message -Level VeryVerbose -Message "$query"
-                            $errormessage = $_.Exception.Message.ToString()
-                            Stop-Function -Message "Error truncating $($tableobject.Schema).$($tableobject.Name): $errormessage" -Target $query -Continue -ErrorRecord $_
-                        }
-
                         Write-ProgressHelper -StepNumber ($stepcounter++) -TotalSteps $tables.Tables.Count -Activity "Generating data" -Message "Inserting $($tableobject.Rows) rows in $($tableobject.Schema).$($tableobject.Name) in $($db.Name) on $instance"
 
-                        ###!!! Chck for identy and set identy insert ON - IDENTITY_INSERT
+                        if ($tableobject.TruncateTable) {
+                            $insertQuery += "TRUNCATE TABLE [$($tableobject.Schema)].[$($tableobject.Name)];`n"
+                        }
 
-                        $query = "INSERT INTO [$($tableobject.Schema)].[$($tableobject.Name)] ([$($tablecolumns.Name -join '],[')])`nVALUES`n"
+                        if ($tableobject.Columns.Identity -contains $true) {
+                            $query = "SELECT IDENT_CURRENT('[$($tableobject.Schema)].[$($tableobject.Name)]') AS CurrentIdentity,
+                            IDENT_INCR('[$($tableobject.Schema)].[$($tableobject.Name)]') AS IdentityIncrement,
+                            IDENT_SEED('[$($tableobject.Schema)].[$($tableobject.Name)]') AS IdentitySeed;"
+
+                            try {
+                                $identityValues = Invoke-DbaQuery -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $db.Name -Query $query
+                            } catch {
+                                Write-Message -Level VeryVerbose -Message "$query"
+                                $errormessage = $_.Exception.Message.ToString()
+                                Stop-Function -Message "Error setting identity values from $($tableobject.Schema).$($tableobject.Name): $errormessage" -Target $query -Continue -ErrorRecord $_
+                            }
+
+                            $insertQuery += "SET IDENTITY_INSERT [$($tableobject.Schema)].[$($tableobject.Name)] ON;`n"
+                        }
+
+
+                        $insertQuery += "INSERT INTO [$($tableobject.Schema)].[$($tableobject.Name)] ([$($tablecolumns.Name -join '],[')])`nVALUES`n"
+
+                        [int]$nextIdentity = $null
 
                         for ($i = 1; $i -le $tableobject.Rows; $i++) {
                             $columnValues = @()
@@ -244,6 +254,13 @@ function Invoke-DbaDbDataGenerator {
                                 # make sure max is good
                                 if ($columnobject.Nullable -and (($nullmod++) % $ModulusFactor -eq 0)) {
                                     $columnValues += "NULL"
+                                } elseif ($columnobject.Identity) {
+                                    if ($nextIdentity) {
+                                        $nextIdentity += $identityValues.IdentityIncrement
+                                    } else {
+                                        $nextIdentity = $identityValues.CurrentIdentity + $identityValues.IdentityIncrement
+                                    }
+                                    $columnValues += $nextIdentity
                                 } else {
                                     # make sure max is good
                                     if ($MaxValue) {
@@ -421,7 +438,7 @@ function Invoke-DbaDbDataGenerator {
                                                     $psitem -in 'name', 'address', 'finance'
                                                 } {
                                                     $faker.$($columnobject.MaskingType).$($columnobject.SubType)()
-                                                    $columnValues += "'$($faker.$($columnobject.MaskingType).$($columnobject.SubType)())'"
+                                                    $columnValues += "'$(($faker.$($columnobject.MaskingType).$($columnobject.SubType)()) -replace "'", "''")'"
                                                 }
                                                 default {
                                                     if ($max -eq -1) {
@@ -436,8 +453,10 @@ function Invoke-DbaDbDataGenerator {
                                                     } else {
                                                         try {
                                                             $faker.$($columnobject.MaskingType).$($columnobject.SubType)()
+                                                            $columnValues += "'$($faker.$($columnobject.MaskingType).$($columnobject.SubType)())'"
                                                         } catch {
                                                             $faker.Random.String2($max, $charstring)
+                                                            $columnValues += "'$($faker.Random.String2($max, $charstring))'"
                                                         }
                                                     }
                                                 }
@@ -450,22 +469,26 @@ function Invoke-DbaDbDataGenerator {
                             }
 
                             if ($i -lt $tableobject.Rows) {
-                                $query += "( $($columnValues -join ',') ),`n"
+                                $insertQuery += "( $($columnValues -join ',') ),`n"
                             } else {
-                                $query += "( $($columnValues -join ',') )`n"
+                                $insertQuery += "( $($columnValues -join ',') );`n"
                             }
+                        }
 
-
+                        if ($tableobject.Columns.Identity -contains $true) {
+                            $insertQuery += "SET IDENTITY_INSERT [$($tableobject.Schema)].[$($tableobject.Name)] OFF;"
                         }
 
                         try {
-                            $sqlcmd = New-Object System.Data.SqlClient.SqlCommand($query, $sqlconn, $transaction)
+                            $sqlcmd = New-Object System.Data.SqlClient.SqlCommand($insertQuery, $sqlconn, $transaction)
                             $null = $sqlcmd.ExecuteNonQuery()
                         } catch {
-                            Write-Message -Level VeryVerbose -Message "$query"
+                            Write-Message -Level VeryVerbose -Message "$insertQuery"
                             $errormessage = $_.Exception.Message.ToString()
                             Stop-Function -Message "Error inserting $($tableobject.Schema).$($tableobject.Name): $errormessage" -Target $query -Continue -ErrorRecord $_
                         }
+
+
                     }
 
                     try {
@@ -480,7 +503,7 @@ function Invoke-DbaDbDataGenerator {
                             Columns      = $tableobject.Columns.Name
                             Rows         = $tableobject.Rows
                             Elapsed      = [prettytimespan]$elapsed.Elapsed
-                            Status       = "Masked"
+                            Status       = "Done"
                         }
                     } catch {
                         Stop-Function -Message "Error updating $($tableobject.Schema).$($tableobject.Name)" -Target $updatequery -Continue -ErrorRecord $_
