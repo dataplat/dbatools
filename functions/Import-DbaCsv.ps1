@@ -387,7 +387,11 @@ function Import-DbaCsv {
                     }
                     Write-Message -Level Verbose -Message "Table does not exist"
                     if ($PSCmdlet.ShouldProcess($instance, "Creating table $table")) {
-                        New-SqlTable -Path $file -Delimiter $Delimiter -FirstRowHeader $FirstRowHeader -SqlConn $sqlconn -Transaction $transaction
+                        try {
+                            New-SqlTable -Path $file -Delimiter $Delimiter -FirstRowHeader $FirstRowHeader -SqlConn $sqlconn -Transaction $transaction
+                        } catch {
+                            Stop-Function -Continue -Message "Failure" -ErrorRecord $_
+                        }
                     }
                 } else {
                     Write-Message -Level Verbose -Message "Table exists"
