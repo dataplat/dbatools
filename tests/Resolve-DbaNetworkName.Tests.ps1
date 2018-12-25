@@ -46,6 +46,20 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
                 $result.FullComputerName | Should -Be ($result.ComputerName + "." + $result.DNSDomain)
             }
         }
+        foreach ($turbo in $true, $false) {
+            It "should test 8.8.8.8 with Turbo = $turbo" {
+                $result = Resolve-DbaNetworkName 8.8.8.8 -EnableException -Turbo:$turbo
+                $result.InputName | Should -Be 8.8.8.8
+                $result.ComputerName | Should -Be google-public-dns-a
+                $result.IPAddress | Should -Be 8.8.8.8
+                $result.DNSHostName | Should -Be google-public-dns-a
+                $result.DNSDomain | Should -Be google.com
+                $result.Domain | Should -Be google.com
+                $result.DNSHostEntry | Should -Be google-public-dns-a.google.com
+                $result.FQDN | Should -Be google-public-dns-a.google.com
+                $result.FullComputerName | Should -Be google-public-dns-a.google.com
+            }
+        }
     }
 }
 <#
