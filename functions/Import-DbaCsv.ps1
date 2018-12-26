@@ -387,7 +387,11 @@ function Import-DbaCsv {
                     }
                     Write-Message -Level Verbose -Message "Table does not exist"
                     if ($PSCmdlet.ShouldProcess($instance, "Creating table $table")) {
-                        New-SqlTable -Path $file -Delimiter $Delimiter -FirstRowHeader $FirstRowHeader -SqlConn $sqlconn -Transaction $transaction
+                        try {
+                            New-SqlTable -Path $file -Delimiter $Delimiter -FirstRowHeader $FirstRowHeader -SqlConn $sqlconn -Transaction $transaction
+                        } catch {
+                            Stop-Function -Continue -Message "Failure" -ErrorRecord $_
+                        }
                     }
                 } else {
                     Write-Message -Level Verbose -Message "Table exists"
@@ -500,15 +504,16 @@ function Import-DbaCsv {
                         Write-Message -Level Verbose -Message "$rowscopied total rows copied"
 
                         [pscustomobject]@{
-                            ComputerName = $server.ComputerName
-                            InstanceName = $server.ServiceName
-                            SqlInstance  = $server.DomainInstanceName
-                            Database     = $Database
-                            Table        = $table
-                            Schema       = $schema
-                            RowsCopied   = $rowscopied
-                            Elapsed      = [prettytimespan]$elapsed.Elapsed
-                            Path         = $file
+                            ComputerName  = $server.ComputerName
+                            InstanceName  = $server.ServiceName
+                            SqlInstance   = $server.DomainInstanceName
+                            Database      = $Database
+                            Table         = $table
+                            Schema        = $schema
+                            RowsCopied    = $rowscopied
+                            Elapsed       = [prettytimespan]$elapsed.Elapsed
+                            RowsPerSecond = [int]($rowscopied / $elapsed.Elapsed.TotalSeconds)
+                            Path          = $file
                         }
                     } else {
                         Stop-Function -Message "Transaction rolled back. Was the proper delimiter specified? Is the first row the column name?" -ErrorRecord $_
