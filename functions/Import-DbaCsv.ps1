@@ -10,6 +10,8 @@ function Import-DbaCsv {
 
         If the table or view specified does not exist and -AutoCreateTable, it will be automatically created using slow and efficient but accomodating data types.
 
+        This importer supports fields spanning multiple lines. The only restriction is that they must be quoted, otherwise it would not be possible to distinguish between malformed data and multi-line values.
+
     .PARAMETER Path
         Specifies path to the CSV file(s) to be imported. Multiple files may be imported at once.
 
@@ -100,6 +102,49 @@ function Import-DbaCsv {
     .PARAMETER NoProgress
         The progress bar is pretty but can slow down imports. Use this parameter to quietly import.
 
+    .PARAMETER Quote
+        Defines the default quote character wrapping every field.
+
+    .PARAMETER Escape
+        Defines the default escape character letting insert quotation characters inside a quoted field.
+
+        The escape character can be the same as the quote character.
+
+    .PARAMETER Comment
+        Defines the default comment character indicating that a line is commented out. Default is #.
+
+    .PARAMETER TrimmingOption
+        Determines which values should be trimmed. Default is "None". Options are All, None, UnquotedOnly and QuotedOnly.
+
+    .PARAMETER BufferSize
+        Defines the default buffer size. The default BufferSize is 4096.
+
+    .PARAMETER ParseErrorAction
+        By default, the parse error action throws an exception and ends the import.
+
+        You can also choose AdvanceToNextLine which basically ignores parse errors.
+
+    .PARAMETER Encoding
+        The encoding of the file.
+
+    .PARAMETER NullValue
+        The value which denotes a DbNull-value.
+
+    .PARAMETER Threshold
+        Defines the default value for Threshold indicating when the CsvReader should replace/remove consecutive null bytes.
+
+    .PARAMETER MaxQuotedFieldLength
+        The axmimum length (in bytes) for any quoted field.
+
+    .PARAMETER SkipEmptyLine
+        Skip empty lines.
+
+    .PARAMETER SupportsMultiline
+        Indicates if the importer should support multiline fields.
+
+    .PARAMETER UseColumnDefault
+        Use the column default values if the field is not in the record.
+
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
 
@@ -183,7 +228,7 @@ function Import-DbaCsv {
         [string]$Table,
         [string]$Schema = "dbo",
         [switch]$Truncate,
-        [string]$Delimiter = ",",
+        [char]$Delimiter = ",",
         [switch]$SingleColumn,
         [int]$BatchSize = 50000,
         [int]$NotifyAfter = 50000,
@@ -197,6 +242,21 @@ function Import-DbaCsv {
         [switch]$AutoCreateTable,
         [switch]$NoProgress,
         [switch]$NoHeaderRow,
+        [char]$Quote = '"',
+        [char]$Escape = '"',
+        [char]$Comment = '#',
+        [ValidateSet('All', 'None', 'UnquotedOnly', 'QuotedOnly')]
+        [string]$TrimmingOption = "None",
+        [int]$BufferSize = 4096,
+        [ValidateSet('AdvanceToNextLine', 'ThrowException')]
+        [string]$ParseErrorAction = 'ThrowException',
+        [System.Text.Encoding]$Encoding,
+        [string]$NullValue,
+        [int]$Threshold = 60,
+        [int]$MaxQuotedFieldLength,
+        [switch]$SkipEmptyLine,
+        [switch]$SupportsMultiline,
+        [switch]$UseColumnDefault,
         [switch]$EnableException
     )
     begin {
@@ -235,7 +295,17 @@ function Import-DbaCsv {
                 [System.Data.SqlClient.SqlConnection]$sqlconn,
                 [System.Data.SqlClient.SqlTransaction]$transaction
             )
-            $reader = New-Object LumenWorks.Framework.IO.Csv.CsvReader((New-Object System.IO.StreamReader($Path)), $FirstRowHeader, $Delimiter, 1)
+            $reader = New-Object LumenWorks.Framework.IO.Csv.CsvReader(
+                (New-Object System.IO.StreamReader($Path)),
+                $FirstRowHeader,
+                $Delimiter,
+                $Quote,
+                $Escape,
+                $Comment,
+                [LumenWorks.Framework.IO.Csv.ValueTrimmingOptions]::$TrimmingOption,
+                $BufferSize,
+                $NullValue
+            )
             $columns = $reader.GetFieldHeaders()
             $reader.Close()
             $reader.Dispose()
@@ -387,7 +457,11 @@ function Import-DbaCsv {
                     }
                     Write-Message -Level Verbose -Message "Table does not exist"
                     if ($PSCmdlet.ShouldProcess($instance, "Creating table $table")) {
-                        New-SqlTable -Path $file -Delimiter $Delimiter -FirstRowHeader $FirstRowHeader -SqlConn $sqlconn -Transaction $transaction
+                        try {
+                            New-SqlTable -Path $file -Delimiter $Delimiter -FirstRowHeader $FirstRowHeader -SqlConn $sqlconn -Transaction $transaction
+                        } catch {
+                            Stop-Function -Continue -Message "Failure" -ErrorRecord $_
+                        }
                     }
                 } else {
                     Write-Message -Level Verbose -Message "Table exists"
@@ -455,10 +529,39 @@ function Import-DbaCsv {
 
                     # Write to server :D
                     try {
-                        # Open the text file from disk
-                        # // or using (CsvReader csv = new CsvReader(File.OpenRead(path), false, Encoding.UTF8, addMark))
-                        # When addMark is true, consecutive null bytes will be replaced by [removed x null bytes] to indicate the removal
-                        $reader = New-Object LumenWorks.Framework.IO.Csv.CsvReader((New-Object System.IO.StreamReader($file)), $FirstRowHeader, $Delimiter, 1)
+                        $reader = New-Object LumenWorks.Framework.IO.Csv.CsvReader(
+                            (New-Object System.IO.StreamReader($file)),
+                            $FirstRowHeader,
+                            $Delimiter,
+                            $Quote,
+                            $Escape,
+                            $Comment,
+                            [LumenWorks.Framework.IO.Csv.ValueTrimmingOptions]::$TrimmingOption,
+                            $BufferSize,
+                            $NullValue
+                        )
+
+                        if (Test-Bound -ParameterName Encoding) {
+                            $reader.Encoding = $Encoding
+                        }
+                        if (Test-Bound -ParameterName Threshold) {
+                            $reader.Threshold = $Threshold
+                        }
+                        if (Test-Bound -ParameterName MaxQuotedFieldLength) {
+                            $reader.MaxQuotedFieldLength = $MaxQuotedFieldLength
+                        }
+                        if (Test-Bound -ParameterName SkipEmptyLine) {
+                            $reader.SkipEmptyLines = $SkipEmptyLine
+                        }
+                        if (Test-Bound -ParameterName SupportsMultiline) {
+                            $reader.SupportsMultiline = $SupportsMultiline
+                        }
+                        if (Test-Bound -ParameterName UseColumnDefault) {
+                            $reader.UseColumnDefaults = $UseColumnDefault
+                        }
+                        if (Test-Bound -ParameterName ParseErrorAction) {
+                            $reader.DefaultParseErrorAction = $ParseErrorAction
+                        }
 
                         # Add rowcount output
                         $bulkCopy.Add_SqlRowsCopied( {
@@ -500,15 +603,16 @@ function Import-DbaCsv {
                         Write-Message -Level Verbose -Message "$rowscopied total rows copied"
 
                         [pscustomobject]@{
-                            ComputerName = $server.ComputerName
-                            InstanceName = $server.ServiceName
-                            SqlInstance  = $server.DomainInstanceName
-                            Database     = $Database
-                            Table        = $table
-                            Schema       = $schema
-                            RowsCopied   = $rowscopied
-                            Elapsed      = [prettytimespan]$elapsed.Elapsed
-                            Path         = $file
+                            ComputerName  = $server.ComputerName
+                            InstanceName  = $server.ServiceName
+                            SqlInstance   = $server.DomainInstanceName
+                            Database      = $Database
+                            Table         = $table
+                            Schema        = $schema
+                            RowsCopied    = $rowscopied
+                            Elapsed       = [prettytimespan]$elapsed.Elapsed
+                            RowsPerSecond = [int]($rowscopied / $elapsed.Elapsed.TotalSeconds)
+                            Path          = $file
                         }
                     } else {
                         Stop-Function -Message "Transaction rolled back. Was the proper delimiter specified? Is the first row the column name?" -ErrorRecord $_
