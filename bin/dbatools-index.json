@@ -14128,7 +14128,7 @@
                        [
                            "EnableException",
                            "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
-                           "Silent",
+                           "",
                            false,
                            "false",
                            "False"
@@ -20353,7 +20353,7 @@
     },
     {
         "Name":  "Import-DbaCsv",
-        "Description":  "Import-DbaCsv takes advantage of .NET\u0027s super fast SqlBulkCopy class to import CSV files into SQL Server.\n\nThe entire import is performed within a transaction, so if a failure occurs or the script is aborted, no changes will persist.\n\nIf the table or view specified does not exist and -AutoCreateTable, it will be automatically created using slow and efficient but accomodating data types.",
+        "Description":  "Import-DbaCsv takes advantage of .NET\u0027s super fast SqlBulkCopy class to import CSV files into SQL Server.\n\nThe entire import is performed within a transaction, so if a failure occurs or the script is aborted, no changes will persist.\n\nIf the table or view specified does not exist and -AutoCreateTable, it will be automatically created using slow and efficient but accomodating data types.\n\nThis importer supports fields spanning multiple lines. The only restriction is that they must be quoted, otherwise it would not be possible to distinguish between malformed data and multi-line values.",
         "Tags":  [
                      "Migration",
                      "Import"
@@ -20535,6 +20535,110 @@
                            "False"
                        ],
                        [
+                           "Quote",
+                           "Defines the default quote character wrapping every field.",
+                           "",
+                           false,
+                           "false",
+                           "\""
+                       ],
+                       [
+                           "Escape",
+                           "Defines the default escape character letting insert quotation characters inside a quoted field.\nThe escape character can be the same as the quote character.",
+                           "",
+                           false,
+                           "false",
+                           "\""
+                       ],
+                       [
+                           "Comment",
+                           "Defines the default comment character indicating that a line is commented out. Default is #.",
+                           "",
+                           false,
+                           "false",
+                           "#"
+                       ],
+                       [
+                           "TrimmingOption",
+                           "Determines which values should be trimmed. Default is \"None\". Options are All, None, UnquotedOnly and QuotedOnly.",
+                           "",
+                           false,
+                           "false",
+                           "None"
+                       ],
+                       [
+                           "BufferSize",
+                           "Defines the default buffer size. The default BufferSize is 4096.",
+                           "",
+                           false,
+                           "false",
+                           "4096"
+                       ],
+                       [
+                           "ParseErrorAction",
+                           "By default, the parse error action throws an exception and ends the import.\nYou can also choose AdvanceToNextLine which basically ignores parse errors.",
+                           "",
+                           false,
+                           "false",
+                           "ThrowException"
+                       ],
+                       [
+                           "Encoding",
+                           "The encoding of the file.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "NullValue",
+                           "The value which denotes a DbNull-value.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Threshold",
+                           "Defines the default value for Threshold indicating when the CsvReader should replace/remove consecutive null bytes.",
+                           "",
+                           false,
+                           "false",
+                           "60"
+                       ],
+                       [
+                           "MaxQuotedFieldLength",
+                           "The axmimum length (in bytes) for any quoted field.",
+                           "",
+                           false,
+                           "false",
+                           "0"
+                       ],
+                       [
+                           "SkipEmptyLine",
+                           "Skip empty lines.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "SupportsMultiline",
+                           "Indicates if the importer should support multiline fields.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "UseColumnDefault",
+                           "Use the column default values if the field is not in the record.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
                            "EnableException",
                            "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
                            "",
@@ -20559,7 +20663,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Import-DbaCsv [[-Path] \u003cObject[]\u003e] [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [-Database] \u003cString\u003e [[-Table] \u003cString\u003e] [[-Schema] \u003cString\u003e] [-Truncate] [[-Delimiter] \u003cString\u003e] [-SingleColumn] [[-BatchSize] \u003cInt32\u003e] [[-NotifyAfter] \u003cInt32\u003e] [-TableLock] [-CheckConstraints] [-FireTriggers] [-KeepIdentity] [-KeepNulls] [[-Column] \u003cString[]\u003e] [[-ColumnMap] \u003cHashtable[]\u003e] [-AutoCreateTable] [-NoProgress] [-NoHeaderRow] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Import-DbaCsv [[-Path] \u003cObject[]\u003e] [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [-Database] \u003cString\u003e [[-Table] \u003cString\u003e] [[-Schema] \u003cString\u003e] [-Truncate] [[-Delimiter] \u003cChar\u003e] [-SingleColumn] [[-BatchSize] \u003cInt32\u003e] [[-NotifyAfter] \u003cInt32\u003e] [-TableLock] [-CheckConstraints] [-FireTriggers] [-KeepIdentity] [-KeepNulls] [[-Column] \u003cString[]\u003e] [[-ColumnMap] \u003cHashtable[]\u003e] [-AutoCreateTable] [-NoProgress] [-NoHeaderRow] [[-Quote] \u003cChar\u003e] [[-Escape] \u003cChar\u003e] [[-Comment] \u003cChar\u003e] [[-TrimmingOption] \u003cString\u003e] [[-BufferSize] \u003cInt32\u003e] [[-ParseErrorAction] \u003cString\u003e] \r\n[[-Encoding] \u003cEncoding\u003e] [[-NullValue] \u003cString\u003e] [[-Threshold] \u003cInt32\u003e] [[-MaxQuotedFieldLength] \u003cInt32\u003e] [-SkipEmptyLine] [-SupportsMultiline] [-UseColumnDefault] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Import-DbaPfDataCollectorSetTemplate",
@@ -28937,7 +29041,7 @@
         "CommandName":  "Publish-DbaDacPackage",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Publish-DbaDacPackage",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003e$options = New-DbaDacOption -Type Dacpac -Action Publish\nPS C:\\\u003e $options.DeployOptions.DropObjectsNotInSource = $true\r\nPS C:\\\u003e Publish-DbaDacPackage -SqlInstance sql2016 -Database DB1 -DacOption $options -Path c:\\temp\\db.dacpac\nUses DacOption object to set Deployment Options and updates DB1 database on sql2016 from the db.dacpac dacpac file, dropping objects that are missing from source\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003ePublish-DbaDacPackage -SqlInstance sql2017 -Database WideWorldImporters -Path C:\\temp\\sql2016-WideWorldImporters.dacpac -PublishXml C:\\temp\\sql2016-WideWorldImporters-publish.xml\nUpdates WideWorldImporters on sql2017 from the sql2016-WideWorldImporters.dacpac using the sql2016-WideWorldImporters-publish.xml publish profile\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eNew-DbaDacProfile -SqlInstance sql2016 -Database db2 -Path C:\\temp\nPS C:\\\u003e Export-DbaDacPackage -SqlInstance sql2016 -Database db2 | Publish-DbaDacPackage -PublishXml C:\\temp\\sql2016-db2-publish.xml -Database db1, db2 -SqlInstance sql2017\nCreates a publish profile at C:\\temp\\sql2016-db2-publish.xml, exports the .dacpac to $home\\Documents\\sql2016-db2.dacpac\r\nthen publishes it to the sql2017 server database db2\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003e$loc = \"C:\\Users\\bob\\source\\repos\\Microsoft.Data.Tools.Msbuild\\lib\\net46\\Microsoft.SqlServer.Dac.dll\"\nPS C:\\\u003e Publish-DbaDacPackage -SqlInstance \"local\" -Database WideWorldImporters -Path C:\\temp\\WideWorldImporters.dacpac -PublishXml C:\\temp\\WideWorldImporters.publish.xml -DacFxPath $loc\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003ePublish-DbaDacPackage -SqlInstance sql2017 -Database WideWorldImporters -Path C:\\temp\\sql2016-WideWorldImporters.dacpac -PublishXml C:\\temp\\sql2016-WideWorldImporters-publish.xml \r\n-GenerateDeploymentScript -ScriptOnly\nDoes not deploy the changes, but will generate the deployment script that would be executed against WideWorldImporters.\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003ePublish-DbaDacPackage -SqlInstance sql2017 -Database WideWorldImporters -Path C:\\temp\\sql2016-WideWorldImporters.dacpac -PublishXml C:\\temp\\sql2016-WideWorldImporters-publish.xml \r\n-GenerateDeploymentReport -ScriptOnly\nDoes not deploy the changes, but will generate the deployment report that would be executed against WideWorldImporters.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003e$options = New-DbaDacOption -Type Dacpac -Action Publish\nPS C:\\\u003e $options.DeployOptions.DropObjectsNotInSource = $true\r\nPS C:\\\u003e Publish-DbaDacPackage -SqlInstance sql2016 -Database DB1 -DacOption $options -Path c:\\temp\\db.dacpac\nUses DacOption object to set Deployment Options and updates DB1 database on sql2016 from the db.dacpac dacpac file, dropping objects that are missing from source.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003ePublish-DbaDacPackage -SqlInstance sql2017 -Database WideWorldImporters -Path C:\\temp\\sql2016-WideWorldImporters.dacpac -PublishXml C:\\temp\\sql2016-WideWorldImporters-publish.xml -Confirm\nUpdates WideWorldImporters on sql2017 from the sql2016-WideWorldImporters.dacpac using the sql2016-WideWorldImporters-publish.xml publish profile. Prompts for confirmation.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eNew-DbaDacProfile -SqlInstance sql2016 -Database db2 -Path C:\\temp\nPS C:\\\u003e Export-DbaDacPackage -SqlInstance sql2016 -Database db2 | Publish-DbaDacPackage -PublishXml C:\\temp\\sql2016-db2-publish.xml -Database db1, db2 -SqlInstance sql2017\nCreates a publish profile at C:\\temp\\sql2016-db2-publish.xml, exports the .dacpac to $home\\Documents\\sql2016-db2.dacpac. Does not prompt for confirmation.\r\nthen publishes it to the sql2017 server database db2\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003e$loc = \"C:\\Users\\bob\\source\\repos\\Microsoft.Data.Tools.Msbuild\\lib\\net46\\Microsoft.SqlServer.Dac.dll\"\nPS C:\\\u003e Publish-DbaDacPackage -SqlInstance \"local\" -Database WideWorldImporters -Path C:\\temp\\WideWorldImporters.dacpac -PublishXml C:\\temp\\WideWorldImporters.publish.xml -DacFxPath $loc -Confirm\nPublishes the dacpac using a specific dacfx library. Prompts for confirmation.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003ePublish-DbaDacPackage -SqlInstance sql2017 -Database WideWorldImporters -Path C:\\temp\\sql2016-WideWorldImporters.dacpac -PublishXml C:\\temp\\sql2016-WideWorldImporters-publish.xml \r\n-GenerateDeploymentScript -ScriptOnly\nDoes not deploy the changes, but will generate the deployment script that would be executed against WideWorldImporters.\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003ePublish-DbaDacPackage -SqlInstance sql2017 -Database WideWorldImporters -Path C:\\temp\\sql2016-WideWorldImporters.dacpac -PublishXml C:\\temp\\sql2016-WideWorldImporters-publish.xml \r\n-GenerateDeploymentReport -ScriptOnly\nDoes not deploy the changes, but will generate the deployment report that would be executed against WideWorldImporters.",
         "Params":  [
                        [
                            "SqlInstance",
@@ -29058,9 +29162,25 @@
                            false,
                            "false",
                            ""
+                       ],
+                       [
+                           "WhatIf",
+                           "Shows what would happen if the command were to run. No actions are actually performed.",
+                           "wi",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Confirm",
+                           "Prompts you for confirmation before executing any changing operations within the command.",
+                           "cf",
+                           false,
+                           "false",
+                           ""
                        ]
                    ],
-        "Syntax":  "Publish-DbaDacPackage [-SqlInstance \u003cDbaInstanceParameter[]\u003e] [-SqlCredential \u003cPSCredential\u003e] -Path \u003cString\u003e -Database \u003cString[]\u003e [-ConnectionString \u003cString[]\u003e] [-ScriptOnly] [-Type \u003cString\u003e] [-OutputPath \u003cString\u003e] [-IncludeSqlCmdVars] [-DacOption \u003cObject\u003e] [-EnableException] [-DacFxPath \u003cString\u003e] [\u003cCommonParameters\u003e]\nPublish-DbaDacPackage [-SqlInstance \u003cDbaInstanceParameter[]\u003e] [-SqlCredential \u003cPSCredential\u003e] -Path \u003cString\u003e -PublishXml \u003cString\u003e -Database \u003cString[]\u003e [-ConnectionString \u003cString[]\u003e] [-GenerateDeploymentScript] [-GenerateDeploymentReport] [-ScriptOnly] [-Type \u003cString\u003e] [-OutputPath \u003cString\u003e] [-IncludeSqlCmdVars] [-EnableException] [-DacFxPath \u003cString\u003e] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Publish-DbaDacPackage [-SqlInstance \u003cDbaInstanceParameter[]\u003e] [-SqlCredential \u003cPSCredential\u003e] -Path \u003cString\u003e -Database \u003cString[]\u003e [-ConnectionString \u003cString[]\u003e] [-ScriptOnly] [-Type \u003cString\u003e] [-OutputPath \u003cString\u003e] [-IncludeSqlCmdVars] [-DacOption \u003cObject\u003e] [-EnableException] [-DacFxPath \u003cString\u003e] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nPublish-DbaDacPackage [-SqlInstance \u003cDbaInstanceParameter[]\u003e] [-SqlCredential \u003cPSCredential\u003e] -Path \u003cString\u003e -PublishXml \u003cString\u003e -Database \u003cString[]\u003e [-ConnectionString \u003cString[]\u003e] [-GenerateDeploymentScript] [-GenerateDeploymentReport] [-ScriptOnly] [-Type \u003cString\u003e] [-OutputPath \u003cString\u003e] [-IncludeSqlCmdVars] [-EnableException] [-DacFxPath \u003cString\u003e] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Read-DbaAuditFile",
