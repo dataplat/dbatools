@@ -831,7 +831,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         }
     }
 
-    if ($env:azurepasswd) {
+    if ($env:azurepasswd -and -not $env:appveyor) {
         Context "Restores Striped backup From Azure using SAS" {
             BeforeAll {
                 $server = Connect-DbaInstance -SqlInstance $script:instance2
