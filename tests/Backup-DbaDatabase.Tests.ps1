@@ -179,17 +179,17 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     Context "Test backup  verification" {
         $null = Invoke-DbaQuery -SqlInstance $script:instance1 -Database master -Query "CREATE DATABASE [backuptest]"
         $null = Invoke-DbaQuery -SqlInstance $script:instance1 -Database master -Query "ALTER DATABASE [backuptest] SET RECOVERY FULL WITH NO_WAIT"
-        It "Should perform a full backup and verify it" {
+        It -Skip "Should perform a full backup and verify it" {
             $b = Backup-DbaDatabase -SqlInstance $script:instance1 -Database backuptest -Type full -Verify
             $b.BackupComplete | Should -Be $True
             $b.Verified | Should -Be $True
         }
-        It "Should perform a diff backup and verify it" {
+        It -Skip "Should perform a diff backup and verify it" {
             $b = Backup-DbaDatabase -SqlInstance $script:instance1 -Database backuptest -Type diff -Verify
             $b.BackupComplete | Should -Be $True
             $b.Verified | Should -Be $True
         }
-        It "Should perform a log backup and verify it" {
+        It -Skip "Should perform a log backup and verify it" {
             $b = Backup-DbaDatabase -SqlInstance $script:instance1 -Database backuptest -Type log -Verify
             $b.BackupComplete | Should -Be $True
             $b.Verified | Should -Be $True
