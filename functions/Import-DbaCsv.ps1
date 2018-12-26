@@ -11,7 +11,7 @@ function Import-DbaCsv {
         If the table or view specified does not exist and -AutoCreateTable, it will be automatically created using slow and efficient but accomodating data types.
 
         This importer supports fields spanning multiple lines. The only restriction is that they must be quoted, otherwise it would not be possible to distinguish between malformed data and multi-line values.
-    
+
     .PARAMETER Path
         Specifies path to the CSV file(s) to be imported. Multiple files may be imported at once.
 
@@ -104,47 +104,47 @@ function Import-DbaCsv {
 
     .PARAMETER Quote
         Defines the default quote character wrapping every field.
-    
+
     .PARAMETER Escape
         Defines the default escape character letting insert quotation characters inside a quoted field.
-    
+
         The escape character can be the same as the quote character.
-    
+
     .PARAMETER Comment
         Defines the default comment character indicating that a line is commented out. Default is #.
-    
+
     .PARAMETER TrimmingOption
-        Determines which values should be trimmed. Default is "None". Options are All, None, UnquotedOnly and QuotedOnly.    
-    
+        Determines which values should be trimmed. Default is "None". Options are All, None, UnquotedOnly and QuotedOnly.
+
     .PARAMETER BufferSize
         Defines the default buffer size. The default BufferSize is 4096.
-    
+
     .PARAMETER ParseErrorAction
         By default, the parse error action throws an exception and ends the import.
-    
+
         You can also choose AdvanceToNextLine which basically ignores parse errors.
 
     .PARAMETER Encoding
         The encoding of the file.
-    
+
     .PARAMETER NullValue
         The value which denotes a DbNull-value.
 
     .PARAMETER Threshold
         Defines the default value for Threshold indicating when the CsvReader should replace/remove consecutive null bytes.
-    
+
     .PARAMETER MaxQuotedFieldLength
         The axmimum length (in bytes) for any quoted field.
-    
+
     .PARAMETER SkipEmptyLine
         Skip empty lines.
-    
+
     .PARAMETER SupportsMultiline
         Indicates if the importer should support multiline fields.
-    
+
     .PARAMETER UseColumnDefault
         Use the column default values if the field is not in the record.
-    
+
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
 
@@ -296,15 +296,15 @@ function Import-DbaCsv {
                 [System.Data.SqlClient.SqlTransaction]$transaction
             )
             $reader = New-Object LumenWorks.Framework.IO.Csv.CsvReader(
-                    (New-Object System.IO.StreamReader($Path)),
-                    $FirstRowHeader,
-                    $Delimiter,
-                    $Quote,
-                    $Escape,
-                    $Comment,
-                    [LumenWorks.Framework.IO.Csv.ValueTrimmingOptions]::$TrimmingOption,
-                    $BufferSize,
-                    $NullValue
+                (New-Object System.IO.StreamReader($Path)),
+                $FirstRowHeader,
+                $Delimiter,
+                $Quote,
+                $Escape,
+                $Comment,
+                [LumenWorks.Framework.IO.Csv.ValueTrimmingOptions]::$TrimmingOption,
+                $BufferSize,
+                $NullValue
             )
             $columns = $reader.GetFieldHeaders()
             $reader.Close()
@@ -540,7 +540,7 @@ function Import-DbaCsv {
                             $BufferSize,
                             $NullValue
                         )
-                        
+
                         if (Test-Bound -ParameterName Encoding) {
                             $reader.Encoding = $Encoding
                         }
@@ -559,7 +559,7 @@ function Import-DbaCsv {
                         if (Test-Bound -ParameterName UseColumnDefault) {
                             $reader.UseColumnDefaults = $UseColumnDefault
                         }
-                        
+
                         # Add rowcount output
                         $bulkCopy.Add_SqlRowsCopied( {
                                 $script:totalrows = $args[1].RowsCopied
