@@ -559,6 +559,9 @@ function Import-DbaCsv {
                         if (Test-Bound -ParameterName UseColumnDefault) {
                             $reader.UseColumnDefaults = $UseColumnDefault
                         }
+                        if (Test-Bound -ParameterName ParseErrorAction) {
+                            $reader.DefaultParseErrorAction = $ParseErrorAction
+                        }
 
                         # Add rowcount output
                         $bulkCopy.Add_SqlRowsCopied( {
