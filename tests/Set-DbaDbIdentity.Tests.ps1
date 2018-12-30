@@ -54,12 +54,11 @@ Describe "$commandname Integration Test" -Tag "IntegrationTests" {
     }
 
     Context "Reseed option returns correct results " {
-        $null = Set-DbaDbIdentity -SqlInstance $script:instance1 -Database $dbname -Table $tableName2 -ReSeedValue 400 -Confirm:$false
-        $result = Get-DbaDbIdentity -SqlInstance $script:instance1 -Database $dbname -Table $tableName2 -Confirm:$false
+        $result = Set-DbaDbIdentity -SqlInstance $script:instance1 -Database $dbname -Table $tableName2 -ReSeedValue 400 -Confirm:$false
 
         It "returns correct results" {
-            $result.IdentityValue -eq 400 | Should Be $true
-            $result.ColumnValue -eq 5 | Should Be $true
+            $result.Output[1].Indexof('DBCC execution completed') -ge 0 | Should Be $true
+            $result.IdentityValue -eq '400.' | Should Be $true
         }
     }
 }
