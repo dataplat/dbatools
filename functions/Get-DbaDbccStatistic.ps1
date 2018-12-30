@@ -100,13 +100,14 @@ function Get-DbaDbccStatistic {
             $null = $stringBuilder.Append(", STATS_STREAM")
         }
 
-        $statList = "Select
-        Schema_Name(o.SCHEMA_ID) + '.' + o.name as Object,
-        st.name as Target
-        FROM sys.stats st
-        INNER JOIN sys.objects o
-            on o.object_id = st.object_id
-        WHERE o.type in ('U', 'V')"
+        $statList = "Select Object, Target, name FROM
+        (
+            Select Schema_Name(o.SCHEMA_ID) + '.' + o.name as Object, st.name as Target, o.name
+            FROM sys.stats st
+            INNER JOIN sys.objects o
+                on o.object_id = st.object_id
+            WHERE o.type in ('U', 'V')
+        ) a "
     }
     process {
         foreach ($instance in $SqlInstance) {
@@ -148,7 +149,8 @@ function Get-DbaDbccStatistic {
                     }
                 }
                 elseif (Test-Bound -ParameterName Object) {
-                    $statListFiltered = $statList + " AND  ((Schema_Name(o.SCHEMA_ID) + '.' + o.name = '$object') or  (o.name = '$object'))"
+                    $statListFiltered = $statList + " WHERE (Object = '$object' or name = '$object')"
+                    Write-Message -Level Verbose -Message "Query to execute: $statListFiltered"
                     $statListData = $db.Query($statListFiltered)
                     foreach ($statisticObj in  $statListData) {
                         $query = $StringBuilder.ToString()
