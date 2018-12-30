@@ -31,7 +31,7 @@ Describe "$commandname Integration Test" -Tag "IntegrationTests" {
 
     Context "Validate standard output" {
         $props = 'ComputerName', 'InstanceName', 'SqlInstance', 'Database', 'Cmd', 'Output', 'Table', 'Constraint', 'Where'
-        $result = Invoke-DbaDbDbccCheckConstraint -SqlInstance $script:instance1 -Database $dbname -Object $tableName -Confirm:$false
+        $result = Invoke-DbaDbDbccCheckConstraint -SqlInstance $script:instance2 -Database $dbname -Object $tableName -Confirm:$false
 
         foreach ($prop in $props) {
             $p = $result[0].PSObject.Properties[$prop]
