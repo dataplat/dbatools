@@ -102,7 +102,8 @@ function Set-DbaDbIdentity {
             Write-Message -Message "Attempting Connection to $instance" -Level Verbose
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-            } catch {
+            }
+            catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -124,7 +125,8 @@ function Set-DbaDbIdentity {
                         $query = $StringBuilder.ToString()
                         if (Test-Bound -Not -ParameterName ReSeedValue) {
                             $query = $query.Replace('#options#', "'$($tbl)'")
-                        } else {
+                        }
+                        else {
                             $query = $query.Replace('#options#', "'$($tbl)', RESEED, $($ReSeedValue)")
                         }
 
@@ -136,16 +138,19 @@ function Set-DbaDbIdentity {
                                 $identityValue = $words[6].Replace("'", "").Replace(",", "")
                                 if (Test-Bound -Not -ParameterName ReSeedValue) {
                                     $columnValue = $words[10].Replace("'", "").Replace(".", "")
-                                } else {
+                                }
+                                else {
                                     $columnValue = ''
                                 }
 
-                            } else {
+                            }
+                            else {
                                 $identityValue = $null
                                 $columnValue = $null
                             }
                         }
-                    } catch {
+                    }
+                    catch {
                         Stop-Function -Message "Error running  $query against $db" -Target $instance -ErrorRecord $_ -Exception $_.Exception -Continue
                     }
                     if ($Pscmdlet.ShouldProcess("console", "Outputting object")) {

@@ -57,8 +57,8 @@ Describe "$commandname Integration Test" -Tag "IntegrationTests" {
         $result = Set-DbaDbIdentity -SqlInstance $script:instance1 -Database $dbname -Table $tableName2 -ReSeedValue 400 -Confirm:$false
 
         It "returns correct results" {
-            $result.Output[1].Indexof('DBCC execution completed') -ge 0 | Should Be $true
-            $result.IdentityValue -eq '400.' | Should Be $true
+            $result.cmd -eq "DBCC CHECKIDENT('$tableName2', RESEED, 400)" | Should Be $true
+            $result.IdentityValue -eq '5.' | Should Be $true
         }
     }
 }
