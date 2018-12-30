@@ -16,24 +16,26 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 }
 Describe "$commandname Integration Test" -Tag "IntegrationTests" {
     BeforeAll {
-        $db = Get-DbaDatabase -SqlInstance $script:instance1 -Database tempdb
-        $null = $db.Query("CREATE TABLE dbo.dbatoolsci_example (Id int NOT NULL IDENTITY (125, 1), Value varchar(5));
-        INSERT INTO dbo.dbatoolsci_example(Value) Select 1;
-        CREATE TABLE dbo.dbatoolsci_example2 (Id int NOT NULL IDENTITY (5, 1), Value varchar(5));
-        INSERT INTO dbo.dbatoolsci_example2(Value) Select 1;")
+        $server = Connect-SqlInstance -SqlInstance $script:instance1
+        $random = Get-Random
+        $tableName1 = "dbatools_getdbtbl1"
+        $tableName2 = "dbatools_getdbtbl2"
+
+        $dbname = "dbatoolsci_getdbUsage$random"
+        $null = $server.Query("CREATE DATABASE $dbname")
+        $null = $server.Query("CREATE TABLE $tableName1 (Id int NOT NULL IDENTITY (125, 1), Value varchar(5))", $dbname)
+        $null = $server.Query("CREATE TABLE $tableName2 (Id int NOT NULL IDENTITY (  5, 1), Value varchar(5))", $dbname)
+
+        $null = $server.Query("INSERT $tableName1(Value) SELECT 1", $dbname)
+        $null = $server.Query("INSERT $tableName2(Value) SELECT 2", $dbname)
     }
     AfterAll {
-        try {
-            $null = $db.Query("DROP TABLE dbo.dbatoolsci_example;
-            DROP TABLE dbo.dbatoolsci_example2")
-        } catch {
-            $null = 1
-        }
+        $null = Get-DbaDatabase -SqlInstance $script:instance1 -Database $dbname | Remove-DbaDatabase -Confirm:$false
     }
 
     Context "Validate standard output " {
         $props = 'ComputerName', 'InstanceName', 'SqlInstance', 'Database', 'Table', 'Cmd', 'IdentityValue', 'ColumnValue', 'Output'
-        $result = Get-DbaDbIdentity -SqlInstance $script:instance1 -Database tempdb -Table 'dbo.dbatoolsci_example', 'dbo.dbatoolsci_example2' -Confirm:$false
+        $result = Set-DbaDbIdentity -SqlInstance $script:instance1 -Database $dbname -Table $tableName1, $tableName2 -Confirm:$false
 
         foreach ($prop in $props) {
             $p = $result[0].PSObject.Properties[$prop]
@@ -52,8 +54,8 @@ Describe "$commandname Integration Test" -Tag "IntegrationTests" {
     }
 
     Context "Reseed option returns correct results " {
-        $null = Set-DbaDbIdentity -SqlInstance $script:instance1 -Database tempdb -Table 'dbo.dbatoolsci_example2' -ReSeedValue 400 -Confirm:$false
-        $result = Get-DbaDbIdentity -SqlInstance $script:instance1 -Database tempdb -Table 'dbo.dbatoolsci_example2' -Confirm:$false
+        $null = Set-DbaDbIdentity -SqlInstance $script:instance1 -Database $dbname -Table $tableName2 -ReSeedValue 400 -Confirm:$false
+        $result = Get-DbaDbIdentity -SqlInstance $script:instance1 -Database $dbname -Table $tableName2 -Confirm:$false
 
         It "returns correct results" {
             $result.IdentityValue -eq 400 | Should Be $true
