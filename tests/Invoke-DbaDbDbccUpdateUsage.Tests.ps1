@@ -47,13 +47,13 @@ Describe "$commandname Integration Test" -Tag "IntegrationTests" {
         $result = Invoke-DbaDbDbccUpdateUsage -SqlInstance $script:instance1 -Database 'tempdb' -Table 'dbatoolsci_example' -Confirm:$false
 
         It "returns results for table" {
-            $result.ComputerName -eq $script:instance1 | Should Be $true
+            $result.SqlInstance -eq $script:instance1 | Should Be $true
         }
 
         $result = Invoke-DbaDbDbccUpdateUsage -SqlInstance $script:instance1 -Database 2 -Table 'dbo.dbatoolsci_example' -Index 1 -Confirm:$false
 
         It "returns results for index by id" {
-            $result.ComputerName -eq $script:instance1 | Should Be $true
+            $result.SqlInstance -eq $script:instance1 | Should Be $true
         }
     }
 
