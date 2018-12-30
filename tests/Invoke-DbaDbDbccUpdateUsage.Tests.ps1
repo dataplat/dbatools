@@ -14,17 +14,18 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 }
 Describe "$commandname Integration Test" -Tag "IntegrationTests" {
     BeforeAll {
-        $db = Get-DbaDatabase -SqlInstance $script:instance1 -Database tempdb
-        $null = $db.Query("CREATE TABLE dbo.dbatoolsci_example (id int);
-            CREATE CLUSTERED INDEX [PK_Id] ON [dbo].[dbatoolsci_example] ([id] ASC);
-            INSERT dbo.dbatoolsci_example SELECT top 100 object_id FROM sys.objects")
+        $server = Connect-SqlInstance -SqlInstance $script:instance1
+        $random = Get-Random
+        $tableName = "dbatools_getdbtbl1"
+
+        $dbname = "dbatoolsci_getdbUsage$random"
+        $null = $server.Query("CREATE DATABASE $dbname")
+        $null = $server.Query("CREATE TABLE $tableName (id int)", $dbname)
+        $null = $server.Query("CREATE CLUSTERED INDEX [PK_Id] ON $tableName ([id] ASC)", $dbname)
+        $null = $server.Query("INSERT $tableName(id) SELECT object_id FROM sys.objects", $dbname)
     }
     AfterAll {
-        try {
-            $null = $db.Query("DROP TABLE dbo.dbatoolsci_example")
-        } catch {
-            $null = 1
-        }
+        $null = Get-DbaDatabase -SqlInstance $script:instance1 -Database $dbname | Remove-DbaDatabase -Confirm:$false
     }
 
     Context "Validate standard output" {
@@ -44,16 +45,16 @@ Describe "$commandname Integration Test" -Tag "IntegrationTests" {
     }
 
     Context "Validate returns results " {
-        $result = Invoke-DbaDbDbccUpdateUsage -SqlInstance $script:instance1 -Database 'tempdb' -Table 'dbatoolsci_example' -Confirm:$false
+        $result = Invoke-DbaDbDbccUpdateUsage -SqlInstance $script:instance1 -Database $dbname -Table $tableName -Confirm:$false
 
         It "returns results for table" {
-            $result.SqlInstance -eq $script:instance1 | Should Be $true
+            $result.Output -match 'DBCC execution completed. If DBCC printed error messages, contact your system administrator.' | Should Be $true
         }
 
-        $result = Invoke-DbaDbDbccUpdateUsage -SqlInstance $script:instance1 -Database 2 -Table 'dbo.dbatoolsci_example' -Index 1 -Confirm:$false
+        $result = Invoke-DbaDbDbccUpdateUsage -SqlInstance $script:instance1 -Database $dbname -Table $tableName -Index 1 -Confirm:$false
 
         It "returns results for index by id" {
-            $result.SqlInstance -eq $script:instance1 | Should Be $true
+            $result.Output -match 'DBCC execution completed. If DBCC printed error messages, contact your system administrator.' | Should Be $true
         }
     }
 
