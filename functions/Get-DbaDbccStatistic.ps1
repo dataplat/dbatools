@@ -89,14 +89,11 @@ function Get-DbaDbccStatistic {
         $null = $stringBuilder.Append("DBCC SHOW_STATISTICS(#options#) WITH NO_INFOMSGS" )
         if ($Option -eq 'StatHeader') {
             $null = $stringBuilder.Append(", STAT_HEADER")
-        }
-        elseif ($Option -eq 'DensityVector') {
+        } elseif ($Option -eq 'DensityVector') {
             $null = $stringBuilder.Append(", DENSITY_VECTOR")
-        }
-        elseif ($Option -eq 'Histogram') {
+        } elseif ($Option -eq 'Histogram') {
             $null = $stringBuilder.Append(", HISTOGRAM")
-        }
-        elseif ($Option -eq 'StatsStream') {
+        } elseif ($Option -eq 'StatsStream') {
             $null = $stringBuilder.Append(", STATS_STREAM")
         }
 
@@ -116,8 +113,7 @@ function Get-DbaDbccStatistic {
             Write-Message -Message "Attempting Connection to $instance" -Level Verbose
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -149,8 +145,7 @@ function Get-DbaDbccStatistic {
                         Target                                                     = $Target;
                         Query                                                      = $query
                     }
-                }
-                elseif (Test-Bound -ParameterName Object) {
+                } elseif (Test-Bound -ParameterName Object) {
                     $whereFilter = " WHERE (Object = '$object' or name = '$object')"
                     $statListFiltered = $statList + $whereFilter
                     Write-Message -Level Verbose -Message "Query to execute: $statListFiltered"
@@ -163,8 +158,7 @@ function Get-DbaDbccStatistic {
                             Query                                                      = $query
                         }
                     }
-                }
-                else {
+                } else {
                     $statListData = $db.Query($statList)
                     foreach ($statisticObj in  $statListData) {
                         $query = $StringBuilder.ToString()
@@ -256,8 +250,7 @@ function Get-DbaDbccStatistic {
                             }
                         }
                     }
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Error capturing data on $db" -Target $instance -ErrorRecord $_ -Exception $_.Exception -Continue
                 }
             }
