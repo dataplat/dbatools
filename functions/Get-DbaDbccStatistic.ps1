@@ -145,11 +145,10 @@ function Get-DbaDbccStatistic {
                     $query = $StringBuilder.ToString()
                     $query = $query.Replace('#options#', "'$Object', '$Target'")
 
-                    $queryList += New-Object –TypeName PSObject -Property @{Object = $Object;
+                    $queryList += New-Object �TypeName PSObject -Property @{Object = $Object;
                         Target                                                     = $Target;
                         Query                                                      = $query
-                    }`
-                
+                    }
                 }
                 elseif (Test-Bound -ParameterName Object) {
                     $whereFilter = " WHERE (Object = '$object' or name = '$object')"
@@ -159,7 +158,7 @@ function Get-DbaDbccStatistic {
                     foreach ($statisticObj in  $statListData) {
                         $query = $StringBuilder.ToString()
                         $query = $query.Replace('#options#', "'$($statisticObj.Object)', '$($statisticObj.Target)'")
-                        $queryList += New-Object –TypeName PSObject -Property @{Object = $statisticObj.Object;
+                        $queryList += New-Object �TypeName PSObject -Property @{Object = $statisticObj.Object;
                             Target                                                     = $statisticObj.Target;
                             Query                                                      = $query
                         }
@@ -170,7 +169,7 @@ function Get-DbaDbccStatistic {
                     foreach ($statisticObj in  $statListData) {
                         $query = $StringBuilder.ToString()
                         $query = $query.Replace('#options#', "'$($statisticObj.Object)', '$($statisticObj.Target)'")
-                        $queryList += New-Object –TypeName PSObject -Property @{Object = $statisticObj.Object;
+                        $queryList += New-Object �TypeName PSObject -Property @{Object = $statisticObj.Object;
                             Target                                                     = $statisticObj.Target;
                             Query                                                      = $query
                         }
