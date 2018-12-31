@@ -5,7 +5,7 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
         [object[]]$params = (Get-Command -Name $CommandName).Parameters.Keys
-        $knownParameters = 'SqlInstance', 'SqlCredential', 'Option', 'EnableException'
+        $knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'EnableException'
 
         It "Should contain our specific parameters" {
             ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $knownParameters.Count
@@ -13,31 +13,29 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     }
 }
 Describe "$commandname  Integration Test" -Tag "IntegrationTests" {
-    $props = 'ComputerName', 'InstanceName', 'SqlInstance', 'Option', 'Value'
-    $result = Get-DbaDbccUserOption -SqlInstance $script:instance2
+    Context "Gets results for Open Transactions" {
+        $props = 'ComputerName', 'InstanceName', 'SqlInstance', 'Database', 'Cmd', 'Output', 'Field', 'Data'
+        $result = Get-DbaDbDbccOpenTran -SqlInstance $script:instance1
 
-    Context "Validate standard output" {
+        It "returns results for DBCC OPENTRAN" {
+            $result | Should Not Be $null
+        }
+
+        It "returns multiple results" {
+            $result.Count -gt 0 | Should Be $true
+        }
+
         foreach ($prop in $props) {
             $p = $result[0].PSObject.Properties[$prop]
             It "Should return property: $prop" {
                 $p.Name | Should Be $prop
             }
         }
-    }
 
-    Context "Command returns proper info" {
-        It "returns results for DBCC USEROPTIONS" {
-            $result.Count -gt 0 | Should Be $true
-        }
-    }
+        $result = Get-DbaDbDbccOpenTran -SqlInstance $script:instance1 -Database tempDB
 
-    Context "Accepts an Option Value" {
-        $result = Get-DbaDbccUserOption -SqlInstance $script:instance2 -Option ansi_nulls
-        It "Gets results" {
+        It "returns results for a database" {
             $result | Should Not Be $null
-        }
-        It "Returns only one result" {
-            $result.Option -eq 'ansi_nulls' | Should Be $true
         }
     }
 }

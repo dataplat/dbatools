@@ -1,7 +1,7 @@
 
 -- SQL Server 2019 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: December 22, 2018
+-- Last Modified: December 26, 2018
 -- https://www.sqlskills.com/blogs/glenn/
 -- http://sqlserverperformance.wordpress.com/
 -- Twitter: GlennAlanBerry
@@ -875,6 +875,7 @@ ORDER BY [CPU Rank] OPTION (RECOMPILE);
 ------
 
 -- Helps determine which database is using the most CPU resources on the instance
+-- Note: This only reflects CPU usage from the currently cached query plans
 
 
 -- Get I/O utilization by database (Query 39) (IO Usage By Database)
@@ -969,6 +970,7 @@ AS (SELECT wait_type, wait_time_ms/ 1000.0 AS [WaitS],
 		N'PREEMPTIVE_XE_GETTARGETSTATE', N'PREEMPTIVE_XE_SESSIONCOMMIT',
 		N'PREEMPTIVE_XE_TARGETINIT', N'PREEMPTIVE_XE_TARGETFINALIZE',
         N'PWAIT_ALL_COMPONENTS_INITIALIZED', N'PWAIT_DIRECTLOGCONSUMER_GETNEXT',
+		N'PWAIT_EXTENSIBILITY_CLEANUP_TASK',
 		N'QDS_PERSIST_TASK_MAIN_LOOP_SLEEP', N'QDS_ASYNC_QUEUE',
         N'QDS_CLEANUP_STALE_QUERIES_TASK_MAIN_LOOP_SLEEP', N'REQUEST_FOR_DEADLOCK_SEARCH',
 		N'RESOURCE_QUEUE', N'SERVER_IDLE_CHECK', N'SLEEP_BPOOL_FLUSH', N'SLEEP_DBSTARTUP',
@@ -977,6 +979,7 @@ AS (SELECT wait_type, wait_time_ms/ 1000.0 AS [WaitS],
         N'SLEEP_TEMPDBSTARTUP', N'SNI_HTTP_ACCEPT', N'SOS_WORK_DISPATCHER',
 		N'SP_SERVER_DIAGNOSTICS_SLEEP',
 		N'SQLTRACE_BUFFER_FLUSH', N'SQLTRACE_INCREMENTAL_FLUSH_SLEEP', N'SQLTRACE_WAIT_ENTRIES',
+		N'STARTUP_DEPENDENCY_MANAGER',
 		N'WAIT_FOR_RESULTS', N'WAITFOR', N'WAITFOR_TASKSHUTDOWN', N'WAIT_XTP_HOST_WAIT',
 		N'WAIT_XTP_OFFLINE_CKPT_NEW_LOG', N'WAIT_XTP_CKPT_CLOSE', N'WAIT_XTP_RECOVERY',
 		N'XE_BUFFERMGR_ALLPROCESSED_EVENT', N'XE_DISPATCHER_JOIN',
