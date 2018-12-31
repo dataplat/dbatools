@@ -4,22 +4,11 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
+        [object[]]$params = (Get-Command -Name $CommandName).Parameters.Keys
         $knownParameters = 'SqlInstance', 'SqlCredential', 'EnableException'
-        $paramCount = $knownParameters.Count
-        $SupportShouldProcess = $false
-        if ($SupportShouldProcess) {
-            $defaultParamCount = 13
-        } else {
-            $defaultParamCount = 11
-        }
-        $command = Get-Command -Name $CommandName
-        [object[]]$params = $command.Parameters.Keys
 
-        it "Should contain our specific parameters" {
-            ((Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count) | Should Be $paramCount
-        }
-        it "Should only contain $paramCount parameters" {
-            $params.Count - $defaultParamCount | Should Be $paramCount
+        It "Should contain our specific parameters" {
+            ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $knownParameters.Count
         }
     }
 }

@@ -5395,7 +5395,10 @@
     {
         "Name":  "Disable-DbaTraceFlag",
         "Description":  "The function will disable a Trace Flag that is currently running globally on the SQL Server instance(s) listed",
-        "Tags":  "TraceFlag",
+        "Tags":  [
+                     "TraceFlag",
+                     "DBCC"
+                 ],
         "Synopsis":  "Disable a Global Trace Flag that is currently running",
         "Alias":  "",
         "Author":  "Garry Bargsley (@gbargsley), http://blog.garrybargsley.com",
@@ -5742,7 +5745,10 @@
     {
         "Name":  "Enable-DbaTraceFlag",
         "Description":  "The function will set one or multiple trace flags on the SQL Server instance(s) listed",
-        "Tags":  "TraceFlag",
+        "Tags":  [
+                     "TraceFlag",
+                     "DBCC"
+                 ],
         "Synopsis":  "Enable Global Trace Flag(s)",
         "Alias":  "",
         "Author":  "Garry Bargsley (@gbargsley), http://blog.garrybargsley.com",
@@ -11348,7 +11354,7 @@
         "CommandName":  "Get-DbaDbccProcCache",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Get-DbaDbccProcCache",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaDbccProcCache -SqlInstance Server1\nGet results of DBCC PROCCACHE for Instance Server1\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003e\u0027Sql1\u0027,\u0027Sql2/sqlexpress\u0027 | Get-DbaDbccProcCache\nGet results of DBCC PROCCACHE for Instances Sql1 and Sql2/sqlexpress\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003e$cred = Get-Credential sqladmin\nPS C:\\\u003e Get-DbaDbccProcCache -SqlInstance Server1 -SqlCredential $cred\nConnects using sqladmin credential and gets results of DBCC PROCCACHE for Instance Server1 using",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaDbccProcCache -SqlInstance Server1\nGet results of DBCC PROCCACHE for Instance Server1\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003e\u0027Sql1\u0027,\u0027Sql2/sqlexpress\u0027 | Get-DbaDbccProcCache\nGet results of DBCC PROCCACHE for Instances Sql1 and Sql2/sqlexpress\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003e$cred = Get-Credential sqladmin\nPS C:\\\u003e Get-DbaDbccProcCache -SqlInstance Server1 -SqlCredential $cred\nConnects using sqladmin credential and gets results of DBCC PROCCACHE for Instance Server1",
         "Params":  [
                        [
                            "SqlInstance",
@@ -19039,7 +19045,10 @@
     {
         "Name":  "Get-DbaTraceFlag",
         "Description":  "Returns Trace Flags that are enabled globally on each instance(s) of SQL Server as an object.",
-        "Tags":  "TraceFlag",
+        "Tags":  [
+                     "TraceFlag",
+                     "DBCC"
+                 ],
         "Synopsis":  "Get global Trace Flag(s) information for each instance(s) of SQL Server.",
         "Alias":  "",
         "Author":  "Kevin Bullen (@sqlpadawan)",
