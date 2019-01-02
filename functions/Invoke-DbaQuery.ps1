@@ -55,6 +55,9 @@ function Invoke-DbaQuery {
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
+    .PARAMETER ReadOnly
+        Execute the query with ReadOnly application intent.
+
     .NOTES
         Tags: Database, Query
         Author: Friedrich Weinmann (@FredWeinmann)
@@ -85,10 +88,10 @@ function Invoke-DbaQuery {
         PS C:\> Get-DbaDatabase -SqlInstance "server1", "server1\nordwind", "server2" | Invoke-DbaQuery -File "C:\scripts\sql\rebuild.sql"
 
         Runs the sql commands stored in rebuild.sql against all accessible databases of the instances "server1", "server1\nordwind" and "server2"
-        
+
     .EXAMPLE
         PS C:\> Invoke-DbaQuery -SqlInstance . -Query 'SELECT * FROM users WHERE Givenname = @name' -SqlParameters @{ Name = "Maria" }
-        
+
         Executes a simple query against the users table using SQL Parameters.
         This avoids accidental SQL Injection and is the safest way to execute queries with dynamic content.
         Keep in mind the limitations inherent in parameters - it is quite impossible to use them for content references.
@@ -118,7 +121,8 @@ function Invoke-DbaQuery {
         [switch]$MessagesToOutput,
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
-        [switch]$EnableException
+        [switch]$EnableException,
+        [switch]$ReadOnly
     )
 
     begin {
@@ -289,7 +293,7 @@ function Invoke-DbaQuery {
         }
         foreach ($instance in $SqlInstance) {
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -ReadOnly:$ReadOnly
             } catch {
                 Stop-Function -Message "Failure" -ErrorRecord $_ -Target $instance -Continue
             }
