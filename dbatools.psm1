@@ -1406,7 +1406,14 @@ $script:xplat = @(
     'Resolve-DbaPath',
     'Import-DbaCsv',
     'Invoke-DbaDbDataMasking',
-    'New-DbaDbMaskingConfig'
+    'New-DbaDbMaskingConfig',
+    'Get-DbaDbccSessionBuffer',
+    'Get-DbaDbccStatistic',
+    'Get-DbaDbDbccOpenTran',
+    'Invoke-DbaDbccDropCleanBuffer',
+    'Invoke-DbaDbDbccCheckConstraint',
+    'Invoke-DbaDbDbccCleanTable',
+    'Invoke-DbaDbDbccUpdateUsage'
 )
 
 $script:noncoresmo = @(

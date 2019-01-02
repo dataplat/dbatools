@@ -11,7 +11,7 @@
     RootModule             = 'dbatools.psm1'
 
     # Version number of this module.
-    ModuleVersion          = '0.9.733'
+    ModuleVersion          = '0.9.734'
 
     # ID used to uniquely identify this module
     GUID                   = '9d139310-ce45-41ce-8e8b-d76335aa1789'
@@ -433,6 +433,13 @@
         'Resolve-DbaPath',
         'Invoke-DbaDbDataMasking',
         'New-DbaDbMaskingConfig',
+        'Get-DbaDbccSessionBuffer',
+        'Get-DbaDbccStatistic',
+        'Get-DbaDbDbccOpenTran',
+        'Invoke-DbaDbccDropCleanBuffer',
+        'Invoke-DbaDbDbccCheckConstraint',
+        'Invoke-DbaDbDbccCleanTable',
+        'Invoke-DbaDbDbccUpdateUsage',
         # noncoresmo
         # SMO issues
         'Export-DbaUser',
