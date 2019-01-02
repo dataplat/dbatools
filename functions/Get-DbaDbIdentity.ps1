@@ -19,7 +19,7 @@ function Get-DbaDbIdentity {
         The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
 
     .PARAMETER Table
-        The table for which to check the current identity value.
+        The table(s) for which to check the current identity value.
 
     .PARAMETER WhatIf
         Shows what would happen if the cmdlet runs. The cmdlet is not run.
@@ -55,15 +55,11 @@ function Get-DbaDbIdentity {
         Connects to AdventureWorks2014 on instances Sql1 and Sql2/sqlexpress using sqladmin credential and runs the command DBCC CHECKIDENT('Production.ScrapReason', NORESEED) to return the current identity value.
 
     .EXAMPLE
-        PS C:\> $query = "Select Schema_Name(t.schema_id) +'.' + t.name as TableName from sys.columns c INNER JOIN sys.tables t on t.object_id = c.object_id WHERE is_identity = 1"
-        PS C:\> $IdentityTables = Invoke-DbaQuery -SqlInstance SQLServer2017 -Database AdventureWorks2014 -Query $query
-        PS C:\> foreach ($tbl in $IdentityTables) {
-        PS C:\>    Get-DbaDbIdentity -SqlInstance SQLServer2017 -Database AdventureWorks2014 -Table $tbl.TableName
-        PS C:\> }
+        PS C:\> $query = "Select Quotename(Schema_Name(t.schema_id)) +'.' + QuoteName(t.name) as TableName from sys.columns c INNER JOIN sys.tables t on t.object_id = c.object_id WHERE is_identity = 1 and is_memory_optimized = 0"
+        PS C:\> $IdentityTables = Invoke-DbaQuery -SqlInstance SQLServer2017 -Database AdventureWorks2014 -Query $query -As SingleValue
+        PS C:\> Get-DbaDbIdentity -SqlInstance SQLServer2017 -Database AdventureWorks2014 -Table $IdentityTables
 
-        Checks the current identity value for all tables with an Identity in the AdventureWorks2014 database on the SQLServer2017.
-
-
+        Checks the current identity value for all non memory optimized tables with an Identity in the AdventureWorks2014 database on the SQLServer2017 instance.
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Low')]
     param (
