@@ -11384,6 +11384,159 @@
         "Syntax":  "Get-DbaDbccProcCache [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
+        "Name":  "Get-DbaDbccSessionBuffer",
+        "Description":  "Returns the results of DBCC INPUTBUFFER or DBCC OUTPUTBUFFER for input sessions\n\nRead more:\n    - https://docs.microsoft.com/en-us/sql/t-sql/database-console-commands/dbcc-inputbuffer-transact-sql\n    - https://docs.microsoft.com/en-us/sql/t-sql/database-console-commands/dbcc-outputbuffer-transact-sql",
+        "Tags":  "DBCC",
+        "Synopsis":  "Gets result of Database Console Command DBCC INPUTBUFFER  or DBCC OUTPUTBUFFER",
+        "Alias":  "",
+        "Author":  "Patrick Flynn (@sqllensman)",
+        "CommandName":  "Get-DbaDbccSessionBuffer",
+        "Availability":  "Windows, Linux, macOS",
+        "Links":  "https://dbatools.io/Get-DbaDbccSessionBuffer",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaDbccSessionBuffer -SqlInstance Server1 -Operation InputBuffer -SessionId 51\nGet results of DBCC INPUTBUFFER(51) for Instance Server1\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaDbccSessionBuffer -SqlInstance Server1 -Operation OutputBuffer -SessionId 51, 52\nGet results of DBCC OUTPUTBUFFER for SessionId\u0027s 51 and 52 for Instance Server1\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaDbccSessionBuffer -SqlInstance Server1 -Operation InputBuffer -SessionId 51 -RequestId 0\nGet results of DBCC INPUTBUFFER(51,0) for Instance Server1\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaDbccSessionBuffer -SqlInstance Server1 -Operation OutputBuffer -SessionId 51 -RequestId 0\nGet results of DBCC OUTPUTBUFFER(51,0) for Instance Server1\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003e\u0027Sql1\u0027,\u0027Sql2/sqlexpress\u0027 | Get-DbaDbccSessionBuffer -Operation InputBuffer -All\nGet results of DBCC INPUTBUFFER for all user sessions for the instances Sql1 and Sql2/sqlexpress\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003e\u0027Sql1\u0027,\u0027Sql2/sqlexpress\u0027 | Get-DbaDbccSessionBuffer -Operation OutputBuffer -All\nGet results of DBCC OUTPUTBUFFER for all user sessions for the instances Sql1 and Sql2/sqlexpress\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003e$cred = Get-Credential sqladmin\nPS C:\\\u003e Get-DbaDbccSessionBuffer -SqlInstance Server1 -SqlCredential $cred -Operation InputBuffer -SessionId 51 -RequestId 0\nConnects using sqladmin credential and gets results of DBCC INPUTBUFFER(51,0) for Instance Server1\n-------------------------- EXAMPLE 8 --------------------------\nPS C:\\\u003e$cred = Get-Credential sqladmin\nPS C:\\\u003e Get-DbaDbccSessionBuffer -SqlInstance Server1 -SqlCredential $cred -Operation OutputBuffer -SessionId 51 -RequestId 0\nConnects using sqladmin credential and gets results of DBCC OUTPUTBUFFER(51,0) for Instance Server1",
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "The target SQL Server instance or instances.",
+                           "",
+                           true,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
+                           "SqlCredential",
+                           "Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Operation",
+                           "DBCC Operation to execute - either InputBuffer or OutputBuffer",
+                           "",
+                           false,
+                           "false",
+                           "InputBuffer"
+                       ],
+                       [
+                           "SessionId",
+                           "The Session ID(s) to use to get current input or output buffer.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "RequestId",
+                           "Is the exact request (batch) to search for within the current session\r\nThe following query returns request_id:\nSELECT request_id\r\nFROM sys.dm_exec_requests\r\nWHERE session_id = @@spid;",
+                           "",
+                           false,
+                           "false",
+                           "0"
+                       ],
+                       [
+                           "All",
+                           "If this switch is enabled, results for all User Sessions will be retreived\r\nThis overides any values for SessionId or RequestId",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ]
+                   ],
+        "Syntax":  "Get-DbaDbccSessionBuffer [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Operation] \u003cString\u003e] [[-SessionId] \u003cInt32[]\u003e] [[-RequestId] \u003cInt32\u003e] [-All] [-EnableException] [\u003cCommonParameters\u003e]"
+    },
+    {
+        "Name":  "Get-DbaDbccStatistic",
+        "Description":  "Executes the command DBCC SHOW_STATISTICS against defined objects and returns results\n\nReclaims space from dropped variable-length columns in tables or indexed views\n\nRead more:\n    - https://docs.microsoft.com/en-us/sql/t-sql/database-console-commands/dbcc-cleantable-transact-sql",
+        "Tags":  [
+                     "DBCC",
+                     "Statistics"
+                 ],
+        "Synopsis":  "Execution of Database Console Command DBCC SHOW_STATISTICS",
+        "Alias":  "",
+        "Author":  "Patrick Flynn (@sqllensman)",
+        "CommandName":  "Get-DbaDbccStatistic",
+        "Availability":  "Windows, Linux, macOS",
+        "Links":  "https://dbatools.io/Get-DbaDbccStatistic",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaDbccStatistic -SqlInstance SQLServer2017\nWill run the statement SHOW_STATISTICS WITH STAT_HEADER against all Statistics on all User Tables or views for every accessible database on instance SQLServer2017. Connects using Windows \r\nAuthentication.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaDbccStatistic -SqlInstance SQLServer2017 -Database MyDb -Option DensityVector\nWill run the statement SHOW_STATISTICS WITH DENSITY_VECTOR against all Statistics on all User Tables or views for database MyDb on instance SQLServer2017. Connects using Windows Authentication.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003e$cred = Get-Credential sqladmin\nPS C:\\\u003e Get-DbaDbccStatistic -SqlInstance SQLServer2017 -SqlCredential $cred -Database MyDb -Object UserTable -Option Histogram\nWill run the statement SHOW_STATISTICS WITH HISTOGRAM against all Statistics on table UserTable for database MyDb on instance SQLServer2017. Connects using sqladmin credential.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003e\u0027Sql1\u0027,\u0027Sql2/sqlexpress\u0027 | Get-DbaDbccStatistic -SqlInstance SQLServer2017 -Database MyDb -Object \u0027dbo.UserTable\u0027 -Target MyStatistic -Option StatsStream\nRuns the statement SHOW_STATISTICS(\u0027dbo.UserTable\u0027, \u0027MyStatistic\u0027) WITH STATS_STREAM against database MyDb on instances Sql1 and Sql2/sqlexpress. Connects using Windows Authentication.",
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "The target SQL Server instance or instances.",
+                           "",
+                           true,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
+                           "SqlCredential",
+                           "Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Database",
+                           "The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Object",
+                           "The table or indexed view for which to display statistics information.\r\nAny two part object name should be formatted as \u0027Schema.ObjectName\u0027",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Target",
+                           "Name of the index, statistics, or column for which to display statistics information.\r\nTarget can be enclosed in brackets, single quotes, double quotes, or no quotes",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Option",
+                           "Used to limit the result sets returned by the statement to the specified option.\r\nOptions are \u0027StatHeader\u0027, \u0027DensityVector\u0027, \u0027Histogram\u0027, \u0027StatsStream\u0027\r\nDefault of StatHeader",
+                           "",
+                           false,
+                           "false",
+                           "StatHeader"
+                       ],
+                       [
+                           "NoInformationalMessages",
+                           "Suppresses all informational messages.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ]
+                   ],
+        "Syntax":  "Get-DbaDbccStatistic [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString[]\u003e] [[-Object] \u003cString\u003e] [[-Target] \u003cString\u003e] [[-Option] \u003cString\u003e] [-NoInformationalMessages] [-EnableException] [\u003cCommonParameters\u003e]"
+    },
+    {
         "Name":  "Get-DbaDbccUserOption",
         "Description":  "Returns the results of DBCC USEROPTIONS\n\nRead more:\n    - https://docs.microsoft.com/en-us/sql/t-sql/database-console-commands/dbcc-useroptions-transact-sql",
         "Tags":  "DBCC",
@@ -11688,6 +11841,53 @@
                        ]
                    ],
         "Syntax":  "Get-DbaDbCompression [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cObject[]\u003e] [[-ExcludeDatabase] \u003cObject[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
+    },
+    {
+        "Name":  "Get-DbaDbDbccOpenTran",
+        "Description":  "Executes the command DBCC OPENTRAN against the requested databases\n\nDisplays information about the oldest active transaction and\nthe oldest distributed and nondistributed replicated transactions, if any,\nwithin the transaction log of the specified database\n\nRead more:\n    - https://docs.microsoft.com/en-us/sql/t-sql/database-console-commands/dbcc-opentran-transact-sql",
+        "Tags":  "DBCC",
+        "Synopsis":  "Execution of Database Console Command DBCC OPENTRAN",
+        "Alias":  "",
+        "Author":  "Patrick Flynn (@sqllensman)",
+        "CommandName":  "Get-DbaDbDbccOpenTran",
+        "Availability":  "Windows, Linux, macOS",
+        "Links":  "https://dbatools.io/Get-DbaDbDbccOpenTran",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaDbDbccOpenTran -SqlInstance SQLServer2017\nConnects to instance SqlServer2017 using Windows Authentication and runs the command DBCC OPENTRAN WITH TABLERESULTS, NO_INFOMSGS against each database.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaDbDbccOpenTran -SqlInstance SQLServer2017 -Database CurrentDB\nConnects to instance SqlServer2017 using Windows Authentication and runs the command DBCC OPENTRAN(CurrentDB) WITH TABLERESULTS, NO_INFOMSGS against the CurrentDB database.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003e$cred = Get-Credential sqladmin\nPS C:\\\u003e \u0027Sql1\u0027,\u0027Sql2/sqlexpress\u0027 | Get-DbaDbDbccOpenTran -SqlCredential $cred\nConnects to instances Sql1 and Sql2/sqlexpress using sqladmin credential and runs the command DBCC OPENTRAN WITH TABLERESULTS, NO_INFOMSGS against each database.",
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "The target SQL Server instance or instances.",
+                           "",
+                           true,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
+                           "SqlCredential",
+                           "Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Database",
+                           "The database(s) to process. If unspecified, all databases will be processed.\r\nThe Name or Id of a database can be specified\r\nDatabase names must comply with the rules for identifiers.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ]
+                   ],
+        "Syntax":  "Get-DbaDbDbccOpenTran [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Get-DbaDbEncryption",
@@ -21986,6 +22186,69 @@
         "Syntax":  "Invoke-DbaCycleErrorLog [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Type] \u003cString\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
+        "Name":  "Invoke-DbaDbccDropCleanBuffer",
+        "Description":  "Allows execution of Database Console Command DBCC DROPCLEANBUFFERS\n\nRemoves all clean buffers from the buffer pool, and columnstore objects from the columnstore object pool.\n\nRead more:\n    - https://docs.microsoft.com/en-us/sql/t-sql/database-console-commands/dbcc-dropcleanbuffers-transact-sql",
+        "Tags":  "DBCC",
+        "Synopsis":  "Execution of Database Console Command DBCC DROPCLEANBUFFERS",
+        "Alias":  "",
+        "Author":  "Patrick Flynn (@sqllensman)",
+        "CommandName":  "Invoke-DbaDbccDropCleanBuffer",
+        "Availability":  "Windows, Linux, macOS",
+        "Links":  "https://dbatools.io/Invoke-DbaDbccDropCleanBuffer",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eInvoke-DbaDbccDropCleanBuffer -SqlInstance SqlServer2017\nRuns the command DBCC DROPCLEANBUFFERS against the instance SqlServer2017 using Windows Authentication\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eInvoke-DbaDbccDropCleanBuffer -SqlInstance SqlServer2017 -NoInformationalMessages\nRuns the command DBCC DROPCLEANBUFFERS WITH NO_INFOMSGS against the instance SqlServer2017 using Windows Authentication\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003e\u0027Sql1\u0027,\u0027Sql2/sqlexpress\u0027 | Invoke-DbaDbccDropCleanBuffer -WhatIf\nDisplays what will happen if command DBCC DROPCLEANBUFFERS is called against Sql1 and Sql2/sqlexpress\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003e$cred = Get-Credential sqladmin\nPS C:\\\u003e Invoke-DbaDbccDropCleanBuffer -SqlInstance Server1 -SqlCredential $cred\nConnects using sqladmin credential and executes command DBCC DROPCLEANBUFFERS for instance Server1",
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "The target SQL Server instance or instances.",
+                           "",
+                           true,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
+                           "SqlCredential",
+                           "Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "NoInformationalMessages",
+                           "Suppresses all informational messages.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "WhatIf",
+                           "Shows what would happen if the cmdlet runs. The cmdlet is not run.",
+                           "wi",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Confirm",
+                           "Prompts you for confirmation before running the cmdlet.",
+                           "cf",
+                           false,
+                           "false",
+                           ""
+                       ]
+                   ],
+        "Syntax":  "Invoke-DbaDbccDropCleanBuffer [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [-NoInformationalMessages] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+    },
+    {
         "Name":  "Invoke-DbaDbccFreeCache",
         "Description":  "Allows execution of Database Console Commands that act at Server Level to clear Memory caches\n\nAllows execution of the following commands\n    DBCC FREEPROCCACHE\n    DBCC FREESESSIONCACHE\n    DBCC FREESYSTEMCACHE\n\nRead more:\n    - https://docs.microsoft.com/en-us/sql/t-sql/database-console-commands/dbcc-freeproccache-transact-sql\n    - https://docs.microsoft.com/en-us/sql/t-sql/database-console-commands/dbcc-freesessioncache-transact-sql\n    - https://docs.microsoft.com/en-us/sql/t-sql/database-console-commands/dbcc-freesystemcache-transact-sql",
         "Tags":  "DBCC",
@@ -22332,6 +22595,283 @@
                        ]
                    ],
         "Syntax":  "Invoke-DbaDbDataMasking [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString[]\u003e] [-FilePath] \u003cObject\u003e [[-Locale] \u003cString\u003e] [[-CharacterString] \u003cString\u003e] [[-Table] \u003cString[]\u003e] [[-Column] \u003cString[]\u003e] [[-ExcludeTable] \u003cString[]\u003e] [[-ExcludeColumn] \u003cString[]\u003e] [[-Query] \u003cString\u003e] [[-MaxValue] \u003cInt32\u003e] [[-ModulusFactor] \u003cInt32\u003e] [-ExactLength] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+    },
+    {
+        "Name":  "Invoke-DbaDbDbccCheckConstraint",
+        "Description":  "Executes the command DBCC CHECKCONSTRAINTS and returns results\n\nReports and corrects pages and row count inaccuracies in the catalog views.\nThese inaccuracies may cause incorrect space usage reports returned by the sp_spaceused system stored procedure.\n\nRead more:\n    - https://docs.microsoft.com/en-us/sql/t-sql/database-console-commands/dbcc-checkconstraints-transact-sql",
+        "Tags":  "DBCC",
+        "Synopsis":  "Execution of Database Console Command DBCC CHECKCONSTRAINTS",
+        "Alias":  "",
+        "Author":  "Patrick Flynn (@sqllensman)",
+        "CommandName":  "Invoke-DbaDbDbccCheckConstraint",
+        "Availability":  "Windows, Linux, macOS",
+        "Links":  "https://dbatools.io/Invoke-DbaDbDbccCheckConstraint",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eInvoke-DbaDbDbccCheckConstraint -SqlInstance SqlServer2017\nRuns the command DBCC CHECKCONSTRAINTS to check all enabled constraints on all tables for all databases for the instance SqlServer2017. Connect using Windows Authentication\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eInvoke-DbaDbDbccCheckConstraint -SqlInstance SqlServer2017 -Database CurrentDB\nConnect to instance SqlServer2017 using Windows Authentication and run the command DBCC CHECKCONSTRAINTS to check all enabled constraints on all tables in the CurrentDB database.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eInvoke-DbaDbDbccCheckConstraint -SqlInstance SqlServer2017 -Database CurrentDB -Object Sometable\nConnects to CurrentDB on instance SqlServer2017 using Windows Authentication and runs the command DBCC CHECKCONSTRAINTS(SometableId) to check all enabled constraints in the table.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eInvoke-DbaDbDbccCheckConstraint -SqlInstance SqlServer2017 -Database CurrentDB -Object ConstraintId\nConnects to CurrentDB on instance SqlServer2017 using Windows Authentication and runs the command DBCC CHECKCONSTRAINTS(ConstraintId) to check the constraint with constraint_id = ConstraintId.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003e$cred = Get-Credential sqladmin\nPS C:\\\u003e Invoke-DbaDbDbccCheckConstraint -SqlInstance SqlServer2017 -SqlCredential $cred -Database CurrentDB -Object TableId -AllConstraints -AllErrorMessages -NoInformationalMessages\nConnects to CurrentDB on instance SqlServer2017 using sqladmin credential and runs the command DBCC CHECKCONSTRAINTS(TableId) WITH ALL_CONSTRAINTS, ALL_ERRORMSGS, NO_INFOMSGS to check all enabled and \r\ndisabled constraints on the table with able_id = TableId. Returns all rows that violate constraints.\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003e\u0027Sql1\u0027,\u0027Sql2/sqlexpress\u0027 | Invoke-DbaDbDbccCheckConstraint -WhatIf\nDisplays what will happen if command DBCC CHECKCONSTRAINTS is called against all databses on Sql1 and Sql2/sqlexpress",
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "The target SQL Server instance or instances.",
+                           "",
+                           true,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
+                           "SqlCredential",
+                           "Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Database",
+                           "The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Object",
+                           "The table or constraint to be checked.\r\nWhen table_name or table_id is specified, all enabled constraints on that table are checked.\r\nWhen constraint_name or constraint_id is specified, only that constraint is checked.\r\nIf neither a table identifier nor a constraint identifier is specified, all enabled constraints on all tables in the current database are checked.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "AllConstraints",
+                           "Checks all enabled and disabled constraints on the table if the table name is specified or if all tables are checked;\r\nOtherwise, checks only the enabled constraint.\r\nHas no effect when a constraint is specified",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "AllErrorMessages",
+                           "Returns all rows that violate constraints in the table that is checked.\r\nThe default is the first 200 rows.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "NoInformationalMessages",
+                           "Suppresses all informational messages.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "WhatIf",
+                           "Shows what would happen if the cmdlet runs. The cmdlet is not run.",
+                           "wi",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Confirm",
+                           "Prompts you for confirmation before running the cmdlet.",
+                           "cf",
+                           false,
+                           "false",
+                           ""
+                       ]
+                   ],
+        "Syntax":  "Invoke-DbaDbDbccCheckConstraint [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString[]\u003e] [[-Object] \u003cString\u003e] [-AllConstraints] [-AllErrorMessages] [-NoInformationalMessages] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+    },
+    {
+        "Name":  "Invoke-DbaDbDbccCleanTable",
+        "Description":  "Executes the command DBCC CLEANTABLE against defined objects and returns results\n\nReclaims space from dropped variable-length columns in tables or indexed views\n\nRead more:\n    - https://docs.microsoft.com/en-us/sql/t-sql/database-console-commands/dbcc-cleantable-transact-sql",
+        "Tags":  "DBCC",
+        "Synopsis":  "Execution of Database Console Command DBCC CLEANTABLE",
+        "Alias":  "",
+        "Author":  "Patrick Flynn (@sqllensman)",
+        "CommandName":  "Invoke-DbaDbDbccCleanTable",
+        "Availability":  "Windows, Linux, macOS",
+        "Links":  "https://dbatools.io/Invoke-DbaDbDbccCleanTable",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eInvoke-DbaDbDbccCleanTable -SqlInstance SqlServer2017 -Database CurrentDB -Object \u0027dbo.SomeTable\u0027\nConnects to CurrentDB on instance SqlServer2017 using Windows Authentication and runs the command DBCC CLEANTABLE(\u0027CurrentDB\u0027, \u0027dbo.SomeTable\u0027) to reclaim space after variable-length columns have \r\nbeen dropped.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eInvoke-DbaDbDbccCleanTable -SqlInstance SqlServer2017 -Database CurrentDB -Object 34636372 -BatchSize 5000\nConnects to CurrentDB on instance SqlServer2017 using Windows Authentication and runs the command DBCC CLEANTABLE(\u0027CurrentDB\u0027, 34636372, 5000) to reclaim space from table with Table_Id = 34636372 \r\nafter variable-length columns have been dropped.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003e$cred = Get-Credential sqladmin\nPS C:\\\u003e Invoke-DbaDbDbccCleanTable -SqlInstance SqlServer2017 -SqlCredential $cred -Database CurrentDB -Object \u0027dbo.SomeTable\u0027  -NoInformationalMessages\nConnects to CurrentDB on instance SqlServer2017 using sqladmin credential and runs the command DBCC CLEANTABLE(\u0027CurrentDB\u0027, \u0027dbo.SomeTable\u0027) WITH NO_INFOMSGS to reclaim space after variable-length \r\ncolumns have been dropped.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003e\u0027Sql1\u0027,\u0027Sql2/sqlexpress\u0027 | Invoke-DbaDbDbccCleanTable -Object \u0027dbo.SomeTable\u0027 -BatchSize 5000\nRuns the command DBCC CLEANTABLE(\u0027DatabaseName\u0027, \u0027dbo.SomeTable\u0027, 5000) against all databses on Sql1 and Sql2/sqlexpress",
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "The target SQL Server instance or instances.",
+                           "",
+                           true,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
+                           "SqlCredential",
+                           "Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Database",
+                           "The database(s) to process. If unspecified, all databases will be processed.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Object",
+                           "The table(s) or indexed view(s) to be cleaned.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "BatchSize",
+                           "Is the number of rows processed per transaction.\r\nIf not specified, or if 0 is specified, the statement processes the whole table in one transaction.",
+                           "",
+                           false,
+                           "false",
+                           "0"
+                       ],
+                       [
+                           "NoInformationalMessages",
+                           "Suppresses all informational messages.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "WhatIf",
+                           "Shows what would happen if the cmdlet runs. The cmdlet is not run.",
+                           "wi",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Confirm",
+                           "Prompts you for confirmation before running the cmdlet.",
+                           "cf",
+                           false,
+                           "false",
+                           ""
+                       ]
+                   ],
+        "Syntax":  "Invoke-DbaDbDbccCleanTable [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString[]\u003e] [[-Object] \u003cString[]\u003e] [[-BatchSize] \u003cInt32\u003e] [-NoInformationalMessages] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+    },
+    {
+        "Name":  "Invoke-DbaDbDbccUpdateUsage",
+        "Description":  "Executes the command DBCC UPDATEUSAGE and returns results\n\nReports and corrects pages and row count inaccuracies in the catalog views.\nThese inaccuracies may cause incorrect space usage reports returned by the sp_spaceused system stored procedure.\n\nRead more:\n    - https://docs.microsoft.com/en-us/sql/t-sql/database-console-commands/dbcc-updateusage-transact-sql",
+        "Tags":  "DBCC",
+        "Synopsis":  "Execution of Database Console Command DBCC UPDATEUSAGE",
+        "Alias":  "",
+        "Author":  "Patrick Flynn (@sqllensman)",
+        "CommandName":  "Invoke-DbaDbDbccUpdateUsage",
+        "Availability":  "Windows, Linux, macOS",
+        "Links":  "https://dbatools.io/Invoke-DbaDbDbccUpdateUsage",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eInvoke-DbaDbDbccUpdateUsage -SqlInstance SqlServer2017\nRuns the command DBCC UPDATEUSAGE to update the page or row counts or both for all objects in all databases for the instance SqlServer2017. Connect using Windows Authentication\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eInvoke-DbaDbDbccUpdateUsage -SqlInstance SqlServer2017 -Database CurrentDB\nRuns the command DBCC UPDATEUSAGE to update the page or row counts or both for all objects in the CurrentDB database for the instance SqlServer2017. Connect using Windows Authentication\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eInvoke-DbaDbDbccUpdateUsage -SqlInstance SqlServer2017 -Database CurrentDB -Table Sometable\nConnects to CurrentDB on instance SqlServer2017 using Windows Authentication and runs the command DBCC UPDATEUSAGE(SometableId) to update the page or row counts for all indexes in the table.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003e$cred = Get-Credential sqladmin\nPS C:\\\u003e Invoke-DbaDbDbccUpdateUsage -SqlInstance SqlServer2017 -SqlCredential $cred -Database CurrentDB -Table \u0027SometableId -Index IndexName -NoInformationalMessages -CountRows\nConnects to CurrentDB on instance SqlServer2017 using sqladmin credential and runs the command DBCC UPDATEUSAGE(SometableId, IndexName) WITH NO_INFOMSGS, COUNT_ROWS to update the page or row counts.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003e\u0027Sql1\u0027,\u0027Sql2/sqlexpress\u0027 | Invoke-DbaDbDbccUpdateUsage -WhatIf\nDisplays what will happen if command DBCC UPDATEUSAGE is called against all databses on Sql1 and Sql2/sqlexpress",
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "The target SQL Server instance or instances.",
+                           "",
+                           true,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
+                           "SqlCredential",
+                           "Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Database",
+                           "The database(s) to process. If unspecified, all databases will be processed.\r\nThe Name or Id of a database can be specified\r\nDatabase names must comply with the rules for identifiers.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Table",
+                           "The table or indexed view to process.\r\nTable and view names must comply with the rules for identifiers\r\nThe Id of Table or View can be specified\r\nIf not specified, all tables or indexed views will be processed",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Index",
+                           "The Index to process.\r\nThe Id of Index can be specified\r\nIf not specified, all indexes for the specified table or view will be processed.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "NoInformationalMessages",
+                           "Suppresses all informational messages.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "CountRows",
+                           "Specifies that the row count column is updated with the current count of the number of rows in the table or view.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "WhatIf",
+                           "Shows what would happen if the cmdlet runs. The cmdlet is not run.",
+                           "wi",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Confirm",
+                           "Prompts you for confirmation before running the cmdlet.",
+                           "cf",
+                           false,
+                           "false",
+                           ""
+                       ]
+                   ],
+        "Syntax":  "Invoke-DbaDbDbccUpdateUsage [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString[]\u003e] [[-Table] \u003cString\u003e] [[-Index] \u003cString\u003e] [-NoInformationalMessages] [-CountRows] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Invoke-DbaDbDecryptObject",
