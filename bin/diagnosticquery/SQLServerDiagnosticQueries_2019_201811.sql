@@ -1,7 +1,7 @@
 
 -- SQL Server 2019 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: December 26, 2018
+-- Last Modified: December 31, 2018
 -- https://www.sqlskills.com/blogs/glenn/
 -- http://sqlserverperformance.wordpress.com/
 -- Twitter: GlennAlanBerry
@@ -23,7 +23,7 @@
 
 
 --******************************************************************************
---*   Copyright (C) 2018 Glenn Berry, SQLskills.com
+--*   Copyright (C) 2019 Glenn Berry, SQLskills.com
 --*   All rights reserved. 
 --*
 --*   For more scripts and sample code, check out 
@@ -485,6 +485,7 @@ EXEC sys.xp_instance_regread N'HKEY_LOCAL_MACHINE', N'SYSTEM\CurrentControlSet\s
 -- This is valid for VMware VMs
 -- Recommended value for intensive I/O patterns from VMware is: RequestRingPages=32,MaxQueueDepth=254
 -- https://kb.vmware.com/s/article/2053145
+-- Does not work on Linux
 
 
 -- Get BIOS date from Windows Registry (Query 21) (BIOS Date)
@@ -493,6 +494,7 @@ EXEC sys.xp_instance_regread N'HKEY_LOCAL_MACHINE', N'HARDWARE\DESCRIPTION\Syste
 
 -- Helps you understand whether the main system BIOS is up to date, and the possible age of the hardware
 -- Not as useful for virtualization
+-- Does not work on Linux
 
 
 -- Get processor description from Windows Registry  (Query 22) (Processor Description)
@@ -502,6 +504,7 @@ EXEC sys.xp_instance_regread N'HKEY_LOCAL_MACHINE', N'HARDWARE\DESCRIPTION\Syste
 -- Gives you the model number and rated clock speed of your processor(s)
 -- Your processors may be running at less than the rated clock speed due
 -- to the Windows Power Plan or hardware power management
+-- Does not work on Linux
 
 -- You can use CPU-Z to get your actual CPU core speed and a lot of other useful information
 -- https://bit.ly/QhR6xF
