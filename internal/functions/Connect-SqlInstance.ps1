@@ -53,10 +53,18 @@ function Connect-SqlInstance {
     .PARAMETER StatementTimeout
         Sets the number of seconds a statement is given to run before failing with a timeout error.
 
+    .PARAMETER ReadOnly
+        Connects with the ReadOnly application intent.
+
     .EXAMPLE
         Connect-SqlInstance -SqlInstance sql2014
 
         Connect to the Server sql2014 with native credentials.
+
+    .EXAMPLE
+        Connect-SqlInstance -SqlInstance sql2017 -ReadOnly
+
+        Connect to the sql2017 SQL Instance with read only application intent.
     #>
     [CmdletBinding()]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidDefaultValueSwitchParameter", "")]
@@ -70,7 +78,8 @@ function Connect-SqlInstance {
         [int]$StatementTimeout,
         [int]$MinimumVersion,
         [switch]$AzureUnsupported,
-        [switch]$NonPooled
+        [switch]$NonPooled,
+        [switch]$ReadOnly
     )
 
     #region Utility functions
@@ -201,9 +210,14 @@ function Connect-SqlInstance {
         }
         $server.ConnectionContext.ConnectTimeout = [Sqlcollaborative.Dbatools.Connection.ConnectionHost]::SqlConnectionTimeout
 
+        if ($ReadOnly -eq $true) {
+            $server.ConnectionContext.ApplicationIntent = "ReadOnly"
+            $server.ConnectionContext.ApplicationName += " (read only)"
+        }
+
         if ($null -ne $SqlCredential.UserName) {
             $username = ($SqlCredential.UserName).TrimStart("\")
-
+            Microsoft.Smo
             # support both ad\username and username@ad
             if ($username -like "*\*" -or $username -like "*@*") {
                 if ($username -like "*\*") {
