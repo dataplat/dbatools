@@ -7,7 +7,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         [object[]]$params = (Get-ChildItem function:\Invoke-DbaQuery).Parameters.Keys
         $knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'Query', 'QueryTimeout', 'File', 'SqlObject', 'As', 'SqlParameters', 'AppendServerInstance', 'MessagesToOutput', 'InputObject', 'EnableException', 'ReadOnly'
         It "Should contain our specific parameters" {
-            ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
+            ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $knownParameters.Count
         }
     }
 }
