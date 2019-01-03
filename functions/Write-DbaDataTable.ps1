@@ -112,7 +112,7 @@ function Write-DbaDataTable {
         PS C:\> $dataset = Invoke-DbaQuery -SqlInstance 'localhost,1417' -SqlCredential $containerCred -Database master -Query $query
         PS C:\> $dataset | Select-Object name, create_date, @{L="owner_sid";E={$_."owner_sid"}} | Write-DbaDataTable -SqlInstance 'localhost,1417' -SqlCredential $containerCred -Database tempdb -Table myTestData -Schema dbo -AutoCreateTable
 
-        Pulls data from a SQL Server instance and then performs a bulk insert of the dataset to the table tempdb.dbo.MyTestData.
+        Pulls data from a SQL Server instance and then performs a bulk insert of the dataset to a new, auto-generated table tempdb.dbo.MyTestData.
 
     .EXAMPLE
         PS C:\> $DataTable = Import-Csv C:\temp\customers.csv
