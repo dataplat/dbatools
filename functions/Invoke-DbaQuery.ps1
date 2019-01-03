@@ -97,6 +97,10 @@ function Invoke-DbaQuery {
         Keep in mind the limitations inherent in parameters - it is quite impossible to use them for content references.
         While it is possible to parameterize a where condition, it is impossible to use this to select which columns to select.
         The inserted text will always be treated as string content, and not as a reference to any SQL entity (such as columns, tables or databases).
+    .EXAMPLE
+        PS C:\> Invoke-DbaQuery -SqlInstance aglistener1 -ReadOnly -Query "select something from readonlydb.dbo.atable"
+
+        Executes a query with ReadOnly application intent on aglistener1.
     #>
     [CmdletBinding(DefaultParameterSetName = "Query")]
     param (
