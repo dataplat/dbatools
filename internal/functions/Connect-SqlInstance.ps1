@@ -203,7 +203,7 @@ function Connect-SqlInstance {
 
         if ($null -ne $SqlCredential.UserName) {
             $username = ($SqlCredential.UserName).TrimStart("\")
-            Microsoft.Smo
+
             # support both ad\username and username@ad
             if ($username -like "*\*" -or $username -like "*@*") {
                 if ($username -like "*\*") {
