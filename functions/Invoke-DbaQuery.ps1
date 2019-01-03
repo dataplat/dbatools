@@ -293,7 +293,8 @@ function Invoke-DbaQuery {
         }
         foreach ($instance in $SqlInstance) {
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -ReadOnly:$ReadOnly
+                $intent = if ($ReadOnly) { "ReadOnly" } else { "ReadWrite" }
+                $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential -ApplicationIntent $intent
             } catch {
                 Stop-Function -Message "Failure" -ErrorRecord $_ -Target $instance -Continue
             }
