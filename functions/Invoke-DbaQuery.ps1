@@ -121,8 +121,8 @@ function Invoke-DbaQuery {
         [switch]$MessagesToOutput,
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
-        [switch]$EnableException,
-        [switch]$ReadOnly
+        [switch]$ReadOnly,
+        [switch]$EnableException
     )
 
     begin {
