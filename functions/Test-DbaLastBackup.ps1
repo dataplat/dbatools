@@ -184,7 +184,6 @@ function Test-DbaLastBackup {
             $instance = [DbaInstanceParameter]$source
             $copysuccess = $true
             $dbname = $db.Name
-            $restoreresult = $null
 
             if (-not (Test-Bound -ParameterName Destination)) {
                 $destination = $sourceserver.Name
