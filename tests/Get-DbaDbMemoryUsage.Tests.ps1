@@ -4,18 +4,11 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tags "UnitTests" {
     Context "Validate parameters" {
-        $defaultParamCount = 11
         $command = Get-Command -Name $CommandName
         [object[]]$params = $command.Parameters.Keys
         $knownParameters = 'SqlInstance', 'SqlCredential', 'EnableException', 'IncludeSystemDb', 'Database', 'ExcludeDatabase'
-        $paramCount = $knownParameters.Count
-
         It "Should contain our specific parameters" {
-            ((Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count) | Should Be $paramCount
-        }
-
-        It "Should only contain $paramCount parameters" {
-            $params.Count - $defaultParamCount | Should Be $paramCount
+            ((Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count) | Should Be $knownParameters.Count
         }
     }
 }
