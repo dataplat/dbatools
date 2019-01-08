@@ -95,7 +95,7 @@ function Import-DbaXESessionTemplate {
             Stop-Function -Message "You must specify Path or Template."
         }
 
-        if (($Path.Count -gt 1 -or $Template.Count -gt 1) -and (Test-Bound -ParameterName Template)) {
+        if (($Path.Count -gt 1 -or $Template.Count -gt 1) -and (Test-Bound -ParameterName Name)) {
             Stop-Function -Message "Name cannot be specified with multiple files or templates because the Session will already exist."
         }
 
@@ -191,7 +191,7 @@ function Import-DbaXESessionTemplate {
                 }
 
                 try {
-                    Write-Message -Level Verbose -Message "Importing $file as $name "
+                    Write-Message -Level Verbose -Message "Importing $file as $Name "
                     $session = $store.CreateSessionFromTemplate($Name, $file)
                     $session.Create()
                     if ($file -eq $tempfile) {
