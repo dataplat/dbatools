@@ -341,6 +341,11 @@ function New-DbaDbMaskingConfig {
                                 $subType = "Float"
                                 $MaxValue = $null
                             }
+                            "money" {
+                                $type = "Commerce"
+                                $subType = "Price"
+                                $MaxValue = $null
+                            }
                             "smallint" {
                                 $subType = "Number"
                                 $MaxValue = 32767
