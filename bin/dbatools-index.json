@@ -41780,7 +41780,7 @@
                        ],
                        [
                            "IncludeCopyOnly",
-                           "If this switch is enabled, copy only backups will not be counted as a last backup.",
+                           "If this switch is enabled, copy only backups will be counted as a last backup.",
                            "",
                            false,
                            "false",
