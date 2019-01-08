@@ -5,7 +5,7 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
         [object[]]$params = (Get-ChildItem function:\Get-DbaInstanceProperty).Parameters.Keys
-        $knownParameters = 'Computer', 'SqlInstance', 'SqlCredential', 'InstanceProperty', 'ExcludeInstanceProperty', 'Credential', 'EnableException'
+        $knownParameters = 'SqlInstance', 'SqlCredential', 'InstanceProperty', 'ExcludeInstanceProperty', 'EnableException'
         It "Should contain our specific parameters" {
             ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $knownParameters.Count
         }

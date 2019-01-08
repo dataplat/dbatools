@@ -61,7 +61,7 @@ function Test-DbaLastBackup {
         The name of the SQL Server credential on the destination instance that holds the key to the azure storage account.
 
     .PARAMETER IncludeCopyOnly
-        If this switch is enabled, copy only backups will not be counted as a last backup.
+        If this switch is enabled, copy only backups will be counted as a last backup.
 
     .PARAMETER IgnoreLogBackup
         If this switch is enabled, transaction log backups will be ignored. The restore will stop at the latest full or differential backup point.
