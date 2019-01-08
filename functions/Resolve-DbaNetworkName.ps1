@@ -161,7 +161,7 @@ function Resolve-DbaNetworkName {
                 Domain           = $dnsdomain
                 DNSHostEntry     = $fqdn
                 FQDN             = $fqdn
-                FullComputerName = $fqdn
+                FullComputerName = $cName
             }
             if ($Turbo) {
                 # that's a finish line for a Turbo mode
@@ -200,7 +200,6 @@ function Resolve-DbaNetworkName {
                     $result.Domain = $dnsdomain
                     $result.DNSHostEntry = $fqdn
                     $result.FQDN = $fqdn
-                    $result.FullComputerName = $fqdn
                 } catch {
                     Write-Message -Level VeryVerbose -Message "Failed to obtain a new name from $ipaddress, re-using $fqdn"
                 }
@@ -213,7 +212,7 @@ function Resolve-DbaNetworkName {
                     return [System.Net.NetworkInformation.IPGlobalProperties]::GetIPGlobalProperties().DomainName
                 }
                 $cParams = @{
-                    ComputerName = $fqdn
+                    ComputerName = $cName
                 }
                 if ($Credential) { $cParams.Credential = $Credential }
 

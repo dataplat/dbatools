@@ -24,6 +24,8 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
             $result.DNSHostName | Should -Be $env:computername
             if ($result.DNSDomain) {
                 $result.FullComputerName | Should -Be ($result.ComputerName + "." + $result.DNSDomain)
+            } else {
+                $result.FullComputerName | Should -Be $env:computername
             }
         }
         It "should test localhost" {
@@ -34,6 +36,8 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
             $result.DNSHostName | Should -Be $env:computername
             if ($result.DNSDomain) {
                 $result.FullComputerName | Should -Be ($result.ComputerName + "." + $result.DNSDomain)
+            } else {
+                $result.FullComputerName | Should -Be $env:computername
             }
         }
         It "should test 127.0.0.1" {
@@ -44,6 +48,8 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
             $result.DNSHostName | Should -Be $env:computername
             if ($result.DNSDomain) {
                 $result.FullComputerName | Should -Be ($result.ComputerName + "." + $result.DNSDomain)
+            } else {
+                $result.FullComputerName | Should -Be $env:computername
             }
         }
         foreach ($turbo in $true, $false) {
@@ -57,7 +63,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
                 $result.Domain | Should -Be google.com
                 $result.DNSHostEntry | Should -Be google-public-dns-a.google.com
                 $result.FQDN | Should -Be google-public-dns-a.google.com
-                $result.FullComputerName | Should -Be google-public-dns-a.google.com
+                $result.FullComputerName | Should -Be 8.8.8.8
             }
         }
     }
