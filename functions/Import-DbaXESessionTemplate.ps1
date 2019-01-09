@@ -97,6 +97,7 @@ function Import-DbaXESessionTemplate {
 
         if (($Path.Count -gt 1 -or $Template.Count -gt 1) -and (Test-Bound -ParameterName Name)) {
             Stop-Function -Message "Name cannot be specified with multiple files or templates because the Session will already exist."
+            return
         }
 
         foreach ($instance in $SqlInstance) {
