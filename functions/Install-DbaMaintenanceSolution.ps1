@@ -288,8 +288,9 @@ function Install-DbaMaintenanceSolution {
 
             $db = $server.Databases[$Database]
 
-            # Required
-            $required = @('CommandExecute.sql')
+            if (-not $Solution -match 'All') {
+                $required = @('CommandExecute.sql')
+            }
 
             if ($LogToTable) {
                 $required += 'CommandLog.sql'
@@ -314,7 +315,6 @@ function Install-DbaMaintenanceSolution {
             $temp = ([System.IO.Path]::GetTempPath()).TrimEnd("\")
             $zipfile = "$temp\ola.zip"
 
-
             $listOfFiles = Get-ChildItem -Filter "*.sql" -Path $LocalCachedCopy -Recurse | Select-Object -ExpandProperty FullName
 
             $fileContents = Get-DbaOlaWithParameters -listOfFiles $listOfFiles
@@ -334,15 +334,21 @@ function Install-DbaMaintenanceSolution {
                                 DROP PROCEDURE [dbo].[IndexOptimize];
                             ")
 
-                Write-Message -Level Output -Message "Dropping objects created by Ola's Maintenance Solution"
-                $null = $db.Query($CleanupQuery)
+                if ($Pscmdlet.ShouldProcess($instance, "Dropping all objects created by Ola's Maintenance Solution")) {
+                    Write-Message -Level Output -Message "Dropping objects created by Ola's Maintenance Solution"
+                    $null = $db.Query($CleanupQuery)
+                }
 
                 # Remove Ola's Jobs
                 if ($InstallJobs -and $ReplaceExisting) {
                     Write-Message -Level Output -Message "Removing existing SQL Agent Jobs created by Ola's Maintenance Solution."
                     $jobs = Get-DbaAgentJob -SqlInstance $server | Where-Object Description -match "hallengren"
                     if ($jobs) {
-                        $jobs | ForEach-Object { Remove-DbaAgentJob -SqlInstance $instance -Job $_.name }
+                        $jobs | ForEach-Object {
+                            if ($Pscmdlet.ShouldProcess($instance, "Dropping job $_.name")) {
+                                Remove-DbaAgentJob -SqlInstance $instance -Job $_.name
+                            }
+                        }
                     }
                 }
             }
@@ -353,14 +359,16 @@ function Install-DbaMaintenanceSolution {
                 foreach ($file in $fileContents.Keys) {
                     $shortFileName = Split-Path $file -Leaf
                     if ($required.Contains($shortFileName)) {
-                        Write-Message -Level Output -Message "Installing $shortFileName."
-                        $sql = $fileContents[$file]
-                        try {
-                            foreach ($query in ($sql -Split "\nGO\b")) {
-                                $null = $db.Query($query)
+                        if ($Pscmdlet.ShouldProcess($instance, "Installing $shortFileName")) {
+                            Write-Message -Level Output -Message "Installing $shortFileName."
+                            $sql = $fileContents[$file]
+                            try {
+                                foreach ($query in ($sql -Split "\nGO\b")) {
+                                    $null = $db.Query($query)
+                                }
+                            } catch {
+                                Stop-Function -Message "Could not execute $shortFileName in $Database on $instance." -ErrorRecord $_ -Target $db -Continue
                             }
-                        } catch {
-                            Stop-Function -Message "Could not execute $shortFileName in $Database on $instance." -ErrorRecord $_ -Target $db -Continue
                         }
                     }
                 }
