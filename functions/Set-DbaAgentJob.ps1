@@ -379,12 +379,12 @@ function Set-DbaAgentJob {
                 }
             }
 
-            if ($EventLogLevel) {
+            if ($null -ne $EventLogLevel) {
                 Write-Message -Message "Setting job event log level to $EventlogLevel" -Level Verbose
                 $currentjob.EventLogLevel = $EventLogLevel
             }
 
-            if ($EmailLevel) {
+            if ($null -ne $EmailLevel) {
                 # Check if the notifiction needs to be removed
                 if ($EmailLevel -eq 0) {
                     # Remove the operator
@@ -403,7 +403,7 @@ function Set-DbaAgentJob {
                 }
             }
 
-            if ($NetsendLevel) {
+            if ($null -ne $NetsendLevel) {
                 # Check if the notifiction needs to be removed
                 if ($NetsendLevel -eq 0) {
                     # Remove the operator
@@ -422,7 +422,7 @@ function Set-DbaAgentJob {
                 }
             }
 
-            if ($PageLevel) {
+            if ($null -ne $PageLevel) {
                 # Check if the notifiction needs to be removed
                 if ($PageLevel -eq 0) {
                     # Remove the operator
@@ -472,7 +472,7 @@ function Set-DbaAgentJob {
                 }
             }
 
-            if ($DeleteLevel) {
+            if ($null -ne $DeleteLevel) {
                 Write-Message -Message "Setting job delete level to $DeleteLevel" -Level Verbose
                 $currentjob.DeleteLevel = $DeleteLevel
             }
