@@ -142,7 +142,7 @@ function New-DbaLogin {
         [string]$MapToAsymmetricKey,
         [string]$MapToCredential,
         [object]$Sid,
-        [Alias("DefaulDB")]
+        [Alias("DefaultDB")]
         [parameter(ParameterSetName = "Password")]
         [parameter(ParameterSetName = "PasswordHash")]
         [string]$DefaultDatabase,
