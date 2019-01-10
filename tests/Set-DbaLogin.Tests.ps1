@@ -5,11 +5,10 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
         $command = Get-Command $CommandName
-        [object[]]$params = $command.Parameters.Keys
-        $knownParameters = 'SqlInstance', 'SqlCredential', 'Login', 'SecurePassword', 'Unlock', 'MustChange', 'NewName', 'Disable', 'Enable', 'DenyLogin', 'GrantLogin', 'AddRole', 'RemoveRole', 'EnableException', 'InputObject'
-        $paramCount = $knownParameters.Count
-        It "Contains our specific parameters" {
-            ((Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count) | Should Be $paramCount
+        [object[]]$params = (Get-ChildItem function:\Set-DbaLogin).Parameters.Keys
+        $knownParameters = 'SqlInstance', 'SqlCredential', 'Login', 'SecurePassword', 'DefaultDatabase', 'Unlock', 'MustChange', 'NewName', 'Disable', 'Enable', 'DenyLogin', 'GrantLogin', 'PasswordPolicyEnforced', 'AddRole', 'RemoveRole', 'InputObject', 'EnableException'
+        It "Should contain our specific parameters" {
+            ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $knownParameters.Count
         }
 
         $systemRoles = @(
