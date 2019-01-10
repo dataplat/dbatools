@@ -160,7 +160,7 @@ function Set-DbaLogin {
         [string[]]$Login,
         [Alias("Password")]
         [object]$SecurePassword, #object so that it can accept credential or securestring
-        [Alias("DefaulDB")]
+        [Alias("DefaultDB")]
         [string]$DefaultDatabase,
         [switch]$Unlock,
         [switch]$MustChange,
@@ -345,8 +345,7 @@ function Set-DbaLogin {
                 if (Test-Bound -ParameterName 'DefaultDatabase') {
                     if ($l.DefaultDatabase -eq $DefaultDatabase) {
                         Write-Message -Message "Login $l default database is already set to $($l.DefaultDatabase)" -Level Verbose
-                    }
-                    else {
+                    } else {
                         $l.DefaultDatabase = $DefaultDatabase
                     }
                 }
