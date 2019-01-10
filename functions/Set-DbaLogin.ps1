@@ -18,6 +18,9 @@ function Set-DbaLogin {
     .PARAMETER SecurePassword
         The new password for the login This can be either a credential or a secure string.
 
+    .PARAMETER DefaultDatabase
+        Default database for the login
+
     .PARAMETER Unlock
         Switch to unlock an account. This will only be used in conjunction with the -SecurePassword parameter.
         The default is false.
@@ -141,6 +144,11 @@ function Set-DbaLogin {
 
         Disable the login from the pipeline
 
+    .EXAMPLE
+        PS C:\> Set-DbaLogin -SqlInstance sql1 -Login login1 -DefaultDatabase master
+
+        Set the default database to master on a login
+
     #>
 
     [CmdletBinding(SupportsShouldProcess)]
@@ -152,6 +160,8 @@ function Set-DbaLogin {
         [string[]]$Login,
         [Alias("Password")]
         [object]$SecurePassword, #object so that it can accept credential or securestring
+        [Alias("DefaultDB")]
+        [string]$DefaultDatabase,
         [switch]$Unlock,
         [switch]$MustChange,
         [string]$NewName,
@@ -328,6 +338,15 @@ function Set-DbaLogin {
                             $notes += "Couldn't remove role $role"
                             Stop-Function -Message "Something went wrong removing role $role to $l" -Target $l -ErrorRecord $_ -Continue
                         }
+                    }
+                }
+                
+                # Set the default database
+                if (Test-Bound -ParameterName 'DefaultDatabase') {
+                    if ($l.DefaultDatabase -eq $DefaultDatabase) {
+                        Write-Message -Message "Login $l default database is already set to $($l.DefaultDatabase)" -Level Verbose
+                    } else {
+                        $l.DefaultDatabase = $DefaultDatabase
                     }
                 }
 
