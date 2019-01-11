@@ -355,7 +355,7 @@ function New-DbaDbMaskingConfig {
                                 $subType = "Date"
                                 $MaxValue = $null
                             }
-                            "text"{
+                            "text" {
                                 $subType = "String"
                                 $maxValue = 2147483647
                             }
