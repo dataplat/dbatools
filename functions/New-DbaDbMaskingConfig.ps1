@@ -341,6 +341,12 @@ function New-DbaDbMaskingConfig {
                                 $subType = "Float"
                                 $MaxValue = $null
                             }
+                            "money" {
+                                $type = "Commerce"
+                                $subType = "Price"
+                                $min = -922337203685477.5808
+                                $MaxValue = 922337203685477.5807
+                            }
                             "smallint" {
                                 $subType = "Number"
                                 $MaxValue = 32767
@@ -348,6 +354,10 @@ function New-DbaDbMaskingConfig {
                             "smalldatetime" {
                                 $subType = "Date"
                                 $MaxValue = $null
+                            }
+                            "text" {
+                                $subType = "String"
+                                $maxValue = 2147483647
                             }
                             "tinyint" {
                                 $subType = "Number"
