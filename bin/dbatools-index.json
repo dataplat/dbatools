@@ -28657,7 +28657,7 @@
                        [
                            "DefaultDatabase",
                            "Default database for the login",
-                           "DefaulDB",
+                           "DefaultDB",
                            false,
                            "false",
                            ""
@@ -34609,7 +34609,7 @@
                      "Agent",
                      "Alert"
                  ],
-        "Synopsis":  "Set-DbaAgentAlert updates a the status of a SQL Agent Alert.",
+        "Synopsis":  "Set-DbaAgentAlert updates the status of a SQL Agent Alert.",
         "Alias":  "",
         "Author":  "Garry Bargsley (@gbargsley), garrybargsley.com",
         "CommandName":  "Set-DbaAgentAlert",
@@ -37345,7 +37345,7 @@
         "CommandName":  "Set-DbaLogin",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Set-DbaLogin",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003e$SecurePassword = ConvertTo-SecureString \"PlainTextPassword\" -AsPlainText -Force\nPS C:\\\u003e $cred = New-Object System.Management.Automation.PSCredential (\"username\", $SecurePassword)\r\nPS C:\\\u003e Set-DbaLogin -SqlInstance sql1 -Login login1 -SecurePassword $cred -Unlock -MustChange\nSet the new password for login1 using a credential, unlock the account and set the option\r\nthat the user must change password at next logon.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eSet-DbaLogin -SqlInstance sql1 -Login login1 -Enable\nEnable the login\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eSet-DbaLogin -SqlInstance sql1 -Login login1, login2, login3, login4 -Enable\nEnable multiple logins\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eSet-DbaLogin -SqlInstance sql1, sql2, sql3 -Login login1, login2, login3, login4 -Enable\nEnable multiple logins on multiple instances\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eSet-DbaLogin -SqlInstance sql1 -Login login1 -Disable\nDisable the login\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eSet-DbaLogin -SqlInstance sql1 -Login login1 -DenyLogin\nDeny the login to connect to the instance\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003eSet-DbaLogin -SqlInstance sql1 -Login login1 -GrantLogin\nGrant the login to connect to the instance\n-------------------------- EXAMPLE 8 --------------------------\nPS C:\\\u003eSet-DbaLogin -SqlInstance sql1 -Login login1 -PasswordPolicyEnforced\nEnforces the password policy on a login\n-------------------------- EXAMPLE 9 --------------------------\nPS C:\\\u003eSet-DbaLogin -SqlInstance sql1 -Login login1 -PasswordPolicyEnforced:$false\nDisables enforcement of the password policy on a login\n-------------------------- EXAMPLE 10 --------------------------\nPS C:\\\u003eSet-DbaLogin -SqlInstance sql1 -Login test -AddRole serveradmin\nAdd the server role \"serveradmin\" to the login\n-------------------------- EXAMPLE 11 --------------------------\nPS C:\\\u003eSet-DbaLogin -SqlInstance sql1 -Login test -RemoveRole bulkadmin\nRemove the server role \"bulkadmin\" to the login\n-------------------------- EXAMPLE 12 --------------------------\nPS C:\\\u003e$login = Get-DbaLogin -SqlInstance sql1 -Login test\nPS C:\\\u003e $login | Set-DbaLogin -Disable\nDisable the login from the pipeline",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003e$SecurePassword = ConvertTo-SecureString \"PlainTextPassword\" -AsPlainText -Force\nPS C:\\\u003e $cred = New-Object System.Management.Automation.PSCredential (\"username\", $SecurePassword)\r\nPS C:\\\u003e Set-DbaLogin -SqlInstance sql1 -Login login1 -SecurePassword $cred -Unlock -MustChange\nSet the new password for login1 using a credential, unlock the account and set the option\r\nthat the user must change password at next logon.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eSet-DbaLogin -SqlInstance sql1 -Login login1 -Enable\nEnable the login\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eSet-DbaLogin -SqlInstance sql1 -Login login1, login2, login3, login4 -Enable\nEnable multiple logins\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eSet-DbaLogin -SqlInstance sql1, sql2, sql3 -Login login1, login2, login3, login4 -Enable\nEnable multiple logins on multiple instances\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eSet-DbaLogin -SqlInstance sql1 -Login login1 -Disable\nDisable the login\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eSet-DbaLogin -SqlInstance sql1 -Login login1 -DenyLogin\nDeny the login to connect to the instance\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003eSet-DbaLogin -SqlInstance sql1 -Login login1 -GrantLogin\nGrant the login to connect to the instance\n-------------------------- EXAMPLE 8 --------------------------\nPS C:\\\u003eSet-DbaLogin -SqlInstance sql1 -Login login1 -PasswordPolicyEnforced\nEnforces the password policy on a login\n-------------------------- EXAMPLE 9 --------------------------\nPS C:\\\u003eSet-DbaLogin -SqlInstance sql1 -Login login1 -PasswordPolicyEnforced:$false\nDisables enforcement of the password policy on a login\n-------------------------- EXAMPLE 10 --------------------------\nPS C:\\\u003eSet-DbaLogin -SqlInstance sql1 -Login test -AddRole serveradmin\nAdd the server role \"serveradmin\" to the login\n-------------------------- EXAMPLE 11 --------------------------\nPS C:\\\u003eSet-DbaLogin -SqlInstance sql1 -Login test -RemoveRole bulkadmin\nRemove the server role \"bulkadmin\" to the login\n-------------------------- EXAMPLE 12 --------------------------\nPS C:\\\u003e$login = Get-DbaLogin -SqlInstance sql1 -Login test\nPS C:\\\u003e $login | Set-DbaLogin -Disable\nDisable the login from the pipeline\n-------------------------- EXAMPLE 13 --------------------------\nPS C:\\\u003eSet-DbaLogin -SqlInstance sql1 -Login login1 -DefaultDatabase master\nSet the default database to master on a login",
         "Params":  [
                        [
                            "SqlInstance",
@@ -37375,6 +37375,14 @@
                            "SecurePassword",
                            "The new password for the login This can be either a credential or a secure string.",
                            "Password",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "DefaultDatabase",
+                           "Default database for the login",
+                           "DefaultDB",
                            false,
                            "false",
                            ""
@@ -37492,7 +37500,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Set-DbaLogin [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Login] \u003cString[]\u003e] [[-SecurePassword] \u003cObject\u003e] [-Unlock] [-MustChange] [[-NewName] \u003cString\u003e] [-Disable] [-Enable] [-DenyLogin] [-GrantLogin] [-PasswordPolicyEnforced] [[-AddRole] \u003cString[]\u003e] [[-RemoveRole] \u003cString[]\u003e] [[-InputObject] \u003cLogin[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Set-DbaLogin [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Login] \u003cString[]\u003e] [[-SecurePassword] \u003cObject\u003e] [[-DefaultDatabase] \u003cString\u003e] [-Unlock] [-MustChange] [[-NewName] \u003cString\u003e] [-Disable] [-Enable] [-DenyLogin] [-GrantLogin] [-PasswordPolicyEnforced] [[-AddRole] \u003cString[]\u003e] [[-RemoveRole] \u003cString[]\u003e] [[-InputObject] \u003cLogin[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Set-DbaMaxDop",
