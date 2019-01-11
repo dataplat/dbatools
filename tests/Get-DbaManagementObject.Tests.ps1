@@ -37,9 +37,4 @@ Describe "Get-DbaManagementObject Integration Test" -Tag "IntegrationTests" {
     It "Returns the version specified" {
         $results | Should Not Be $null
     }
-
-    It "Should return nothing if unable to connect to server" {
-        $result = Get-DbaManagementObject -ComputerName 'Melton5312' -WarningAction SilentlyContinue
-        $result | Should Be $null
-    }
 }

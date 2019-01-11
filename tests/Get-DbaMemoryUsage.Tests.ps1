@@ -4,10 +4,10 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        $paramCount = 4
         $defaultParamCount = 11
         [object[]]$params = (Get-ChildItem function:\Get-DbaMemoryUsage).Parameters.Keys
-        $knownParameters = 'ComputerName', 'Credential', 'Simple', 'EnableException'
+        $knownParameters = 'ComputerName', 'Credential', 'EnableException'
+        $paramCount = $knownParameters.Count
         It "Should contain our specific parameters" {
             ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
         }
@@ -30,22 +30,13 @@ Describe "Get-DbaMemoryUsage Integration Test" -Tag "IntegrationTests" {
         }
         It "has the correct properties" {
             $result = $results[0]
-            $ExpectedProps = 'ComputerName,SqlInstance,CounterInstance,Counter,Pages,MemKB,MemMB'.Split(',')
+            $ExpectedProps = 'ComputerName,SqlInstance,CounterInstance,Counter,Pages,Memory'.Split(',')
             ($result.PsObject.Properties.Name | Sort-Object) | Should Be ($ExpectedProps | Sort-Object)
         }
 
-        $resultsSimple = Get-DbaMemoryUsage -ComputerName $script:instance1 -Simple
+        $resultsSimple = Get-DbaMemoryUsage -ComputerName $script:instance1
         It "returns results" {
             $resultsSimple.Count -gt 0 | Should Be $true
-        }
-
-        It "returns fewer results" {
-            $results.Count - $resultsSimple.Count -gt 0 | Should Be $true
-        }
-
-        It "Should return nothing if unable to connect to server" {
-            $result = Get-DbaMemoryUsage -ComputerName 'Melton5312' -WarningAction SilentlyContinue
-            $result | Should Be $null
         }
     }
 }

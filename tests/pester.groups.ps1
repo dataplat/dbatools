@@ -23,24 +23,35 @@ $TestsRunGroups = @{
         # takes too long
         'Install-DbaSqlWatch',
         'Uninstall-DbaSqlWatch',
+        # weird too often
+        'Add-DbaComputerCertificate',
+        'Get-DbaComputerCertificate',
+        'Get-DbaMsdtc',
         # a bug in SMO prevents availability group scripting :(
         'Export-DbaAvailabilityGroup',
+        # Non-useful info from newly started sql servers
         'Get-DbaCpuRingBuffer',
         'Get-DbaLatchStatistic',
         # these work but fail too often on appveyor
         # will revisit once they get their new data center
         'Remove-DbaAvailabilityGroup',
+        'Test-DbaLastBackup',
+        'Reset-DbaAdmin',
         'Remove-DbaAgDatabase',
         'New-DbaAvailabilityGroup',
         'Export-DbaDacPackage',
         'Set-DbaAgReplica',
         'Test-DbaOptimizeForAdHoc',
-        'Test-DbaRecoveryModel',
+        'Test-DbaDbRecoveryModel',
         'Set-DbaDbState',
-        'Reset-DbaAdmin',
         'Test-DbaDeprecatedFeature',
         'Test-DbaServerName',
-        'Test-DbaTempDbConfig'
+        'Test-DbaTempDbConfig',
+        'Test-DbaDbVirtualLogFile',
+        'Test-DbaAgentJobOwner',
+        'Resume-DbaAgDbDataMovement',
+        'Get-DbaDbMasterKey',
+        'Test-DbaJobOwner'
     )
     # do not run everywhere
     "disabled"          = @()

@@ -75,7 +75,7 @@ Which ships with PowerShell Version 5 but will run under v3.
 
                 This command creates an archive from an entire folder, C:\Reference. Note that though the file name extension .zip was not added to the value of the DestinationPath parameter, Windows PowerShell appends this to the specified archive file name automatically.
         #>
-        [CmdletBinding(DefaultParameterSetName = "Path", SupportsShouldProcess = $true, HelpUri = "http://go.microsoft.com/fwlink/?LinkID=393252")]
+        [CmdletBinding(DefaultParameterSetName = "Path", SupportsShouldProcess, HelpUri = "http://go.microsoft.com/fwlink/?LinkID=393252")]
         param
         (
             [parameter (Mandatory, Position = 0, ParameterSetName = "Path", ValueFromPipeline, ValueFromPipelineByPropertyName = $true)]

@@ -12,10 +12,10 @@ function Update-SqlPermission {
             Destination Login
         .PARAMETER EnableException
             Use this switch to disable any kind of verbose messages
-       #>
+    #>
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseSingularNouns", "")]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "")]
-    [CmdletBinding(SupportsShouldProcess = $true)]
+    [CmdletBinding(SupportsShouldProcess)]
     param (
         [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
@@ -184,8 +184,16 @@ function Update-SqlPermission {
         $dbLogin = $db.LoginName
 
         if ($null -ne $sourceDb) {
-            if (!$sourceDb.IsAccessible) {
+            if (-not $sourceDb.IsAccessible) {
                 Write-Message -Level Verbose -Message "Database [$($sourceDb.Name)] is not accessible on $source. Skipping."
+                continue
+            }
+            if (-not $destDb.IsAccessible) {
+                Write-Message -Level Verbose -Message "Database [$($sourceDb.Name)] is not accessible on destination. Skipping."
+                continue
+            }
+            if ((Get-DbaAgDatabase -SqlInstance $DestServer -Database $dbName -ErrorAction Ignore -WarningAction SilentlyContinue)) {
+                Write-Message -Level Verbose -Message "Database [$dbName] is part of an availability group. Skipping."
                 continue
             }
             if ($null -eq $sourceDb.Users[$dbUsername] -and $null -eq $destDb.Users[$dbUsername]) {
@@ -261,8 +269,13 @@ function Update-SqlPermission {
         $dbLogin = $db.LoginName
 
         if ($null -ne $destDb) {
-            if (!$destDb.IsAccessible) {
+            if (-not $destDb.IsAccessible) {
                 Write-Message -Level Verbose -Message "Database [$dbName] is not accessible. Skipping."
+                continue
+            }
+
+            if ((Get-DbaAgDatabase -SqlInstance $DestServer -Database $dbName -ErrorAction Ignore -WarningAction SilentlyContinue)) {
+                Write-Message -Level Verbose -Message "Database [$dbName] is part of an availability group. Skipping."
                 continue
             }
             if ($null -eq $destDb.Users[$dbUsername]) {

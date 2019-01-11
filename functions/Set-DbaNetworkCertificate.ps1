@@ -1,5 +1,4 @@
 #ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
-
 function Set-DbaNetworkCertificate {
     <#
     .SYNOPSIS
@@ -64,34 +63,26 @@ function Set-DbaNetworkCertificate {
     param (
         [Parameter(ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer", "ComputerName")]
-        [DbaInstanceParameter[]]
-        $SqlInstance = $env:COMPUTERNAME,
-
-        [PSCredential]
-
-        $Credential,
-
+        [DbaInstanceParameter[]]$SqlInstance = $env:COMPUTERNAME,
+        [PSCredential]$Credential,
         [parameter(Mandatory, ParameterSetName = "Certificate", ValueFromPipeline)]
-        [System.Security.Cryptography.X509Certificates.X509Certificate2]
-        $Certificate,
-
+        [System.Security.Cryptography.X509Certificates.X509Certificate2]$Certificate,
         [parameter(Mandatory, ParameterSetName = "Thumbprint")]
-        [string]
-        $Thumbprint,
-
-        [switch]
-        [Alias('Silent')]$EnableException
+        [string]$Thumbprint,
+        [switch]$EnableException
     )
-
+    
     process {
+        # Registry access
+        
         if (Test-FunctionInterrupt) { return }
-        $Certificate
-        if (!$Certificate -and !$Thumbprint) {
+
+        if (-not $Certificate -and -not $Thumbprint) {
             Stop-Function -Message "You must specify a certificate or thumbprint"
             return
         }
 
-        if (!$Thumbprint) {
+        if (-not $Thumbprint) {
             Write-Message -Level SomewhatVerbose -Message "Getting thumbprint"
             $Thumbprint = $Certificate.Thumbprint
         }

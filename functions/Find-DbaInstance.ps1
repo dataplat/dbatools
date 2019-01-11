@@ -68,41 +68,51 @@ function Find-DbaInstance {
         See the '-ScanType' parameter documentation on affected scans.
 
     .PARAMETER ScanType
+    
         The scans are the individual methods used to retrieve information about the scanned computer and any potentially installed instances.
         This parameter is optional, by default all scans except for establishing an actual SQL connection are performed.
         Scans can be specified in any arbitrary combination, however at least one instance detecting scan needs to be specified in order for data to be returned.
 
         Scans:
-        DNSResolve
-        - Tries resolving the computername in DNS
-        Ping
-        - Tries pinging the computer. Failure will NOT terminate scans.
+         Browser
+        - Tries discovering all instances via the browser service
+        - This scan detects instances.
+    
         SQLService
         - Tries listing all SQL Services using CIM/WMI
         - This scan uses credentials specified in the '-Credential' parameter if any.
         - This scan detects instances.
         - Success in this scan guarantees high confidence (See parameter '-MinimumConfidence' for details).
-        Browser
-        - Tries discovering all instances via the browser service
-        - This scan detects instances.
+    
+        SPN
+        - Tries looking up the Service Principal Names for each instance
+        - Will use the nearest Domain Controller by default
+        - Target a specific domain controller using the '-DomainController' parameter
+        - If using the '-DomainController' parameter, use the '-Credential' parameter to specify the credentials used to connect
+    
         TCPPort
         - Tries connecting to the TCP Ports.
         - By default, port 1433 is connected to.
         - The parameter '-TCPPort' can be used to provide a list of port numbers to scan.
         - This scan detects possible instances. Since other services might bind to a given port, this is not the most reliable test.
         - This scan is also used to validate found SPNs if both scans are used in combination
+   
+        DNSResolve
+        - Tries resolving the computername in DNS
+    
+        Ping
+        - Tries pinging the computer. Failure will NOT terminate scans.
+    
         SqlConnect
         - Tries to establish a SQL connection to the server
         - Uses windows credentials by default
         - Specify custom credentials using the '-SqlCredential' parameter
         - This scan is not used by default
         - Success in this scan guarantees high confidence (See parameter '-MinimumConfidence' for details).
-        SPN
-        - Tries looking up the Service Principal Names for each instance
-        - Will use the nearest Domain Controller by default
-        - Target a specific domain controller using the '-DomainController' parameter
-        - If using the '-DomainController' parameter, use the '-Credential' parameter to specify the credentials used to connect
-
+    
+        All
+        - All of the above
+    
     .PARAMETER IpAddress
         This parameter can be used to override the defaults for the IPRange discovery.
         This parameter accepts a list of strings supporting any combination of:
@@ -150,7 +160,7 @@ function Find-DbaInstance {
         https://dbatools.io/Find-DbaInstance
 
     .EXAMPLE
-        PS C:\> Find-DbaInstance -DiscoveryType Domain,DataSourceEnumeration
+        PS C:\> Find-DbaInstance -DiscoveryType Domain, DataSourceEnumeration
 
         Performs a network search for SQL Instances by:
         - Looking up the Service Principal Names of computers in active directory
@@ -180,11 +190,12 @@ function Find-DbaInstance {
         - Tries looking up the Service Principal Names for each instance
 
     .EXAMPLE
-        PS C:\> Get-Content .\servers.txt | Find-DbaInstance -SqlCredential $cred -ScanType Browser,SqlConnect
+        PS C:\> Get-Content .\servers.txt | Find-DbaInstance -SqlCredential $cred -ScanType Browser, SqlConnect
 
         Reads all servers from the servers.txt file (one server per line),
         then scans each of them for instances using the browser service
         and finally attempts to connect to each instance found using the specified credentials.
+        then scans each of them for instances using the browser service and SqlService
 
     .EXAMPLE
         PS C:\> Find-DbaInstance -ComputerName localhost | Get-DbaDatabase | Format-Table -Wrap
@@ -196,6 +207,7 @@ function Find-DbaInstance {
 
         Scans localhost for instances using the browser service, traverses all instances for all databases and displays a subset of the important information in a formatted table.
 
+        Using this method reguarly is not recommended. Use Get-DbaService or Get-DbaCmsRegServer instead.
     #>
     [CmdletBinding()]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseApprovedVerbs", "", Justification = "Internal functions are ignored")]
@@ -207,22 +219,17 @@ function Find-DbaInstance {
         [Sqlcollaborative.Dbatools.Discovery.DbaInstanceDiscoveryType]$DiscoveryType,
         [System.Management.Automation.PSCredential]$Credential,
         [System.Management.Automation.PSCredential]$SqlCredential,
-        [Sqlcollaborative.Dbatools.Discovery.DbaInstanceScanType]$ScanType = "Default",
+        [ValidateSet('Default', 'SQLService', 'Browser', 'TCPPort', 'All', 'SPN', 'Ping', 'SqlConnect', 'DNSResolve')]
+        [Sqlcollaborative.Dbatools.Discovery.DbaInstanceScanType[]]$ScanType = "Default",
         [Parameter(ParameterSetName = 'Discover')]
         [string[]]$IpAddress,
         [string]$DomainController,
         [int[]]$TCPPort = 1433,
         [Sqlcollaborative.Dbatools.Discovery.DbaInstanceConfidenceLevel]$MinimumConfidence = 'Low',
-        [Alias('Silent')]
         [switch]$EnableException
     )
 
     begin {
-        # TCPPort = 1 | SqlService = 4 | SPN = 16 | Browser = 32
-        if (-not ($ScanType -band 53)) {
-            Stop-Function -Message "Invalid Scan Types specified: $ScanType | Specify at least one of the following types: Browser, SqlService, SPN, TCPPort, Default or All. Otherwise no detection will be possible." -EnableException $EnableException -Category InvalidArgument
-            return
-        }
 
         #region Utility Functions
         function Test-SqlInstance {
@@ -307,10 +314,9 @@ function Find-DbaInstance {
                         }
                     }
 
-                    if ($ScanType -band [Sqlcollaborative.Dbatools.Discovery.DbaInstanceScanType]::TCPPort) {
-                        $ports = $TCPPort | Test-TcpPort -ComputerName $computer
-                    }
-
+                    # $ports required for all scans
+                    $ports = $TCPPort | Test-TcpPort -ComputerName $computer
+                    
                     if ($ScanType -band [Sqlcollaborative.Dbatools.Discovery.DbaInstanceScanType]::Browser) {
                         try {
                             $browseResult = Get-SQLInstanceBrowserUDP -ComputerName $computer -EnableException
@@ -467,7 +473,7 @@ function Find-DbaInstance {
                         $masterList += $object
                     }
                     #endregion Case: Port number found
-
+                    
                     if ($ScanType -band [Sqlcollaborative.Dbatools.Discovery.DbaInstanceScanType]::SqlConnect) {
                         $instanceHash = @{ }
                         $toDelete = @()

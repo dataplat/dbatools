@@ -54,7 +54,7 @@ function Copy-DbaSysDbUserObject {
         Copies user objects from source to destination
 
     #>
-    [CmdletBinding(SupportsShouldProcess = $true)]
+    [CmdletBinding(SupportsShouldProcess)]
     param (
         [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
@@ -136,7 +136,7 @@ function Copy-DbaSysDbUserObject {
                         if ($destschema) {
                             if (-not $force) {
                                 $copyobject.Status = "Skipped"
-                                $copyobject.Notes = "$schema exists on destination"
+                                $copyobject.Notes = "Already exists on destination"
                                 $schmadoit = $false
                             } else {
                                 if ($PSCmdlet.ShouldProcess($destServer, "Dropping schema $schema in $systemDb")) {
@@ -157,9 +157,9 @@ function Copy-DbaSysDbUserObject {
                             $null = $transfer.CopyAllObjects = $false
                             $null = $transfer.Options.WithDependencies = $true
                             $null = $transfer.ObjectList.Add($schema)
-                            $sql = $transfer.ScriptTransfer()
                             if ($PSCmdlet.ShouldProcess($destServer, "Attempting to add schema $($schema.Name) to $systemDb")) {
                                 try {
+                                    $sql = $transfer.ScriptTransfer()
                                     Write-Message -Level Debug -Message "$sql"
                                     $null = $destServer.Query($sql, $systemDb)
                                     $copyobject.Status = "Successful"
@@ -191,7 +191,7 @@ function Copy-DbaSysDbUserObject {
                         if ($desttable) {
                             if (-not $force) {
                                 $copyobject.Status = "Skipped"
-                                $copyobject.Notes = "$table exists on destination"
+                                $copyobject.Notes = "Already exists on destination"
                                 $doit = $false
                             } else {
                                 if ($PSCmdlet.ShouldProcess($destServer, "Dropping table $table in $systemDb")) {
@@ -212,9 +212,9 @@ function Copy-DbaSysDbUserObject {
                             $null = $transfer.CopyAllObjects = $false
                             $null = $transfer.Options.WithDependencies = $true
                             $null = $transfer.ObjectList.Add($table)
-                            $sql = $transfer.ScriptTransfer()
                             if ($PSCmdlet.ShouldProcess($destServer, "Attempting to add table $table to $systemDb")) {
                                 try {
+                                    $sql = $transfer.ScriptTransfer()
                                     Write-Message -Level Debug -Message "$sql"
                                     $null = $destServer.Query($sql, $systemDb)
                                     $copyobject.Status = "Successful"
@@ -228,7 +228,7 @@ function Copy-DbaSysDbUserObject {
                         $copyobject | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                     }
 
-                    $userobjects = Get-DbaModule -SqlInstance $sourceserver -Database $systemDb -NoSystemObjects | Sort-Object Type
+                    $userobjects = Get-DbaModule -SqlInstance $sourceserver -Database $systemDb -ExcludeSystemObjects | Sort-Object Type
                     Write-Message -Level Verbose -Message "Copying from $systemDb"
                     foreach ($userobject in $userobjects) {
 
@@ -250,13 +250,13 @@ function Copy-DbaSysDbUserObject {
                         Write-Message -Level Debug -Message $sql
                         try {
                             Write-Message -Level Verbose -Message "Searching for $name in $db on $destinstance"
-                            $result = Get-DbaModule -SqlInstance $destServer -NoSystemObjects -Database $db |
+                            $result = Get-DbaModule -SqlInstance $destServer -ExcludeSystemObjects -Database $db |
                                 Where-Object { $psitem.Name -eq $userobject.Name -and $psitem.Type -eq $userobject.Type }
                             if ($result) {
                                 Write-Message -Level Verbose -Message "Found $name in $db on $destinstance"
                                 if (-not $Force) {
                                     $copyobject.Status = "Skipped"
-                                    $copyobject.Notes = "$name exists on destination"
+                                    $copyobject.Notes = "Already exists on destination"
                                 } else {
                                     $smobject = switch ($userobject.Type) {
                                         "VIEW" { $smodb.Views.Item($userobject.Name, $userobject.SchemaName) }

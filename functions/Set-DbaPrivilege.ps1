@@ -76,7 +76,7 @@ function Convert-UserNameToSID ([string] `$Acc ) {
     }
     process {
         foreach ($computer in $ComputerName) {
-            if ($Pscmdlet.ShouldProcess($computer, "Setting Previlage for SQL Service Account")) {
+            if ($Pscmdlet.ShouldProcess($computer, "Setting Privilege for SQL Service Account")) {
                 try {
                     $null = Test-ElevationRequirement -ComputerName $Computer -Continue
                     if (Test-PSRemoting -ComputerName $Computer) {
@@ -154,7 +154,7 @@ function Convert-UserNameToSID ([string] `$Acc ) {
                         Write-Message -Level Warning -Message "Failed to connect to $Computer"
                     }
                 } catch {
-                    Stop-Function -Continue -Message "Failure" -ErrorRecord $_ -Target $computer -Continue
+                    Stop-Function -Message "Failure" -ErrorRecord $_ -Target $computer -Continue
                 }
             }
         }

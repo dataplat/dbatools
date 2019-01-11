@@ -18,7 +18,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     }
 
     It -Skip "returns success" {
-        $results = Invoke-DbaDbMirroring -Primary $script:instance2 -Mirror $script:instance3 -Database $db1 -Confirm:$false -Force -NetworkShare C:\temp
+        $results = Invoke-DbaDbMirroring -Primary $script:instance2 -Mirror $script:instance3 -Database $db1 -Confirm:$false -Force -SharedPath C:\temp
         $results.Status | Should -Be 'Success'
     }
 }

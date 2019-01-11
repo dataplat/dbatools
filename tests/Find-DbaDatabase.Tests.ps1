@@ -33,7 +33,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Command actually works" {
         $results = Find-DbaDatabase -SqlInstance $script:instance2 -Pattern Master
         It "Should return correct properties" {
-            $ExpectedProps = 'ComputerName,InstanceName,SqlInstance,Name,SizeMB,Owner,CreateDate,ServiceBrokerGuid,Tables,StoredProcedures,Views,ExtendedProperties,Database'.Split(',')
+            $ExpectedProps = 'ComputerName,InstanceName,SqlInstance,Name,Size,Owner,CreateDate,ServiceBrokerGuid,Tables,StoredProcedures,Views,ExtendedProperties'.Split(',')
             ($results[0].PsObject.Properties.Name | Sort-Object) | Should Be ($ExpectedProps | Sort-Object)
         }
 

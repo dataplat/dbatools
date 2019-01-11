@@ -31,7 +31,7 @@ function Copy-DbaDbTableData {
         The database to copy the table to. If not specified, it is assumed to be the same of Database
 
     .PARAMETER Table
-        Define a specific table you would like to use as source. You can specify a two-part name like sch.tbl.
+        Define a specific table you would like to use as source. You can specify a three-part name like db.sch.tbl.
         If the object has special characters please wrap them in square brackets [ ].
         This dbo.First.Table will try to find table named 'Table' on schema 'First' and database 'dbo'.
         The correct way to find table named 'First.Table' on schema 'dbo' is passing dbo.[First.Table]
@@ -154,7 +154,7 @@ function Copy-DbaDbTableData {
         Keeps identity columns and Nulls, truncates the destination and processes in BatchSize of 10000.
 
        #>
-    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
+    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess)]
     param (
         [Alias("ServerInstance", "SqlServer", "Source")]
         [DbaInstanceParameter]$SqlInstance,
@@ -201,7 +201,15 @@ function Copy-DbaDbTableData {
             }
         }'
 
-        Add-Type -ReferencedAssemblies System.Data.dll -TypeDefinition $sourcecode -ErrorAction SilentlyContinue
+        Add-Type -ReferencedAssemblies System.Data.dll -TypeDefinition $sourcecode -ErrorAction Stop
+        if (-not $script:core) {
+            try {
+                Add-Type -ReferencedAssemblies System.Data.dll -TypeDefinition $sourcecode -ErrorAction Stop
+            } catch {
+                $null = 1
+            }
+        }
+
         $bulkCopyOptions = 0
         $options = "TableLock", "CheckConstraints", "FireTriggers", "KeepIdentity", "KeepNulls", "Default"
 
@@ -264,12 +272,16 @@ function Copy-DbaDbTableData {
             $Database = $sqltable.Parent.Name
             $server = $sqltable.Parent.Parent
 
-            if ((Test-Bound -Not -ParameterName DestinationDatabase)) {
-                $DestinationDatabase = $Database
-            }
-
             if ((Test-Bound -Not -ParameterName DestinationTable)) {
                 $DestinationTable = '[' + $sqltable.Schema + '].[' + $sqltable.Name + ']'
+            }
+
+            $newTableParts = Get-TableNameParts $DestinationTable
+            #using FQTN to determine database name
+            if ($newTableParts.Database) {
+                $DestinationDatabase = $newTableParts.Database
+            } elseif ((Test-Bound -Not -ParameterName DestinationDatabase)) {
+                $DestinationDatabase = $Database
             }
 
             if (-not $Destination) {
@@ -290,28 +302,50 @@ function Copy-DbaDbTableData {
                 }
 
                 $desttable = Get-DbaDbTable -SqlInstance $destServer -Table $DestinationTable -Database $DestinationDatabase -Verbose:$false | Select-Object -First 1
-                if (-not $desttable) {
-                    if ($AutoCreateTable) {
-                        try {
-                            $tablescript = $sqltable | Export-DbaScript -Passthru | Out-String
-                            $tablescript = $tablescript.Replace($sqltable.Name, $DestinationTable)
-                            $tablescript
-                            return
-                            Invoke-DbaQuery -SqlInstance $destServer -Database $DestinationDatabase -Query "$tablescript" -EnableException # add some string assurance there
-                            $desttable = Get-DbaDbTable -SqlInstance $destinationserver -SqlCredential $DestinationSqlCredential -Table $DestinationTable -Database $DestinationDatabase -Verbose:$false | Select-Object -First 1
-                        } catch {
-                            Stop-Function -Message "Unable to determine destination table: $DestinationTable" -ErrorRecord $_
-                            return
+                if (-not $desttable -and $AutoCreateTable) {
+                    try {
+                        $tablescript = $sqltable | Export-DbaScript -Passthru | Out-String
+                        #replacing table name
+                        if ($newTableParts.Table) {
+                            $rX = "(CREATE TABLE \[$([regex]::Escape($sqltable.Schema))\]\.\[)$([regex]::Escape($sqltable.Name))(\]\()"
+                            $tablescript = $tablescript -replace $rX, "`$1$($newTableParts.Table)`$2"
                         }
-                    } else {
-                        Stop-Function -Message "Table $tbl cannot be found in $database. Use -AutoCreateTable to automatically create the table on the destination." -Continue
+                        #replacing table schema
+                        if ($newTableParts.Schema) {
+                            $rX = "(CREATE TABLE \[)$([regex]::Escape($sqltable.Schema))(\]\.\[$([regex]::Escape($newTableParts.Table))\]\()"
+                            $tablescript = $tablescript -replace $rX, "`$1$($newTableParts.Schema)`$2"
+                        }
+
+                        if ($PSCmdlet.ShouldProcess($destServer, "Creating new table: $DestinationTable")) {
+                            Write-Message -Message "New table script: $tablescript" -Level VeryVerbose
+                            Invoke-DbaQuery -SqlInstance $destServer -Database $DestinationDatabase -Query "$tablescript" -EnableException # add some string assurance there
+                            #table list was updated, let's grab a fresh one
+                            $destServer.Databases[$DestinationDatabase].Tables.Refresh()
+                            $desttable = Get-DbaDbTable -SqlInstance $destServer -Table $DestinationTable -Database $DestinationDatabase -Verbose:$false
+                            Write-Message -Message "New table created: $desttable" -Level Verbose
+                        }
+                    } catch {
+                        Stop-Function -Message "Unable to determine destination table: $DestinationTable" -ErrorRecord $_
+                        return
                     }
+                }
+                if (-not $desttable) {
+                    Stop-Function -Message "Table $DestinationTable cannot be found in $DestinationDatabase. Use -AutoCreateTable to automatically create the table on the destination." -Continue
                 }
 
                 $connstring = $destServer.ConnectionContext.ConnectionString
 
-                $fqtnfrom = "$($server.Databases[$Database]).$sqltable"
-                $fqtndest = "$($destServer.Databases[$DestinationDatabase]).$desttable"
+                if ($server.DatabaseEngineType -eq "SqlAzureDatabase") {
+                    $fqtnfrom = "$sqltable"
+                } else {
+                    $fqtnfrom = "$($server.Databases[$Database]).$sqltable"
+                }
+
+                if ($destServer.DatabaseEngineType -eq "SqlAzureDatabase") {
+                    $fqtndest = "$desttable"
+                } else {
+                    $fqtndest = "$($destServer.Databases[$DestinationDatabase]).$desttable"
+                }
 
                 if ($fqtndest -eq $fqtnfrom -and $server.Name -eq $destServer.Name) {
                     Stop-Function -Message "Cannot copy $fqtnfrom on $($server.Name) into $fqtndest on ($destServer.Name). Source and Destination must be different " -Target $Table
@@ -352,7 +386,11 @@ function Copy-DbaDbTableData {
                     if ($Pscmdlet.ShouldProcess($destServer, "Writing rows to $fqtndest")) {
                         $reader = $cmd.ExecuteReader()
                         $bulkCopy.WriteToServer($reader)
-                        $RowsTotal = [System.Data.SqlClient.SqlBulkCopyExtension]::RowsCopiedCount($bulkCopy)
+                        if ($script:core) {
+                            $RowsTotal = "Unsupported in Core"
+                        } else {
+                            $RowsTotal = [System.Data.SqlClient.SqlBulkCopyExtension]::RowsCopiedCount($bulkCopy)
+                        }
                         $TotalTime = [math]::Round($elapsed.Elapsed.TotalSeconds, 1)
                         Write-Message -Level Verbose -Message "$RowsTotal rows inserted in $TotalTime sec"
                         if ($rowCount -is [int]) {
@@ -366,9 +404,11 @@ function Copy-DbaDbTableData {
                         [pscustomobject]@{
                             SourceInstance      = $server.Name
                             SourceDatabase      = $Database
+                            SourceSchema        = $sqltable.Schema
                             SourceTable         = $sqltable.Name
                             DestinationInstance = $destServer.name
                             DestinationDatabase = $DestinationDatabase
+                            DestinationSchema   = $desttable.Schema
                             DestinationTable    = $desttable.Name
                             RowsCopied          = $rowstotal
                             Elapsed             = [prettytimespan]$elapsed.Elapsed

@@ -165,7 +165,7 @@ function Get-DbaHelpIndex {
         if ($IncludeStats) {
             $IncludeStatsPredicate = "";
         } else {
-            $IncludeStatsPredicate = "WHERE IndexType != 'STATISTICS'";
+            $IncludeStatsPredicate = "WHERE StatisticsName IS NULL";
         }
 
         #Data types being returns with the results?
@@ -465,8 +465,9 @@ function Get-DbaHelpIndex {
                     ),
                 AllResults
                 AS ( SELECT   c.FullObjectName ,
-                                ISNULL(IndexType, 'STATISTICS') AS IndexType ,
+                                IndexType ,
                                 ISNULL(IndexName, si.stats_name) AS IndexName ,
+                                NULL as StatisticsName ,
                                 ISNULL(KeyColumns, si.StatsColumns) AS KeyColumns ,
                                 ISNULL(IncludeColumns, '') AS IncludeColumns ,
                                 FilterDefinition ,
@@ -489,7 +490,8 @@ function Get-DbaHelpIndex {
                                                             AND si.stats_id = c.Index_Id
                     UNION
                     SELECT   QUOTENAME(sch.name) + '.' + QUOTENAME(tbl.name) AS FullObjectName ,
-                                'STATISTICS' ,
+                                '' ,
+                                '' ,
                                 stats_name ,
                                 StatsColumns ,
                                 '' ,
@@ -518,8 +520,9 @@ function Get-DbaHelpIndex {
                                                                     AND si.stats_id = c.Index_Id )
                     )
             SELECT  FullObjectName ,
-                    ISNULL(IndexType, 'STATISTICS') AS IndexType ,
+                    IndexType ,
                     IndexName ,
+                    StatisticsName ,
                     KeyColumns ,
                     ISNULL(IncludeColumns, '') AS IncludeColumns ,
                     FilterDefinition ,
@@ -1000,7 +1003,7 @@ function Get-DbaHelpIndex {
         foreach ($instance in $SqlInstance) {
 
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 10
             } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
@@ -1042,13 +1045,14 @@ function Get-DbaHelpIndex {
                             Object             = $detail.FullObjectName
                             Index              = $detail.IndexName
                             IndexType          = $detail.IndexType
+                            Statistics         = $detail.StatisticsName
                             KeyColumns         = $detail.KeyColumns
                             IncludeColumns     = $detail.IncludeColumns
                             FilterDefinition   = $detail.FilterDefinition
                             DataCompression    = $detail.DataCompression
                             IndexReads         = "{0:N0}" -f $detail.IndexReads
                             IndexUpdates       = "{0:N0}" -f $detail.IndexUpdates
-                            SizeKB             = "{0:N0}" -f $detail.SizeKB
+                            Size               = "{0:N0}" -f $detail.SizeKB
                             IndexRows          = "{0:N0}" -f $detail.IndexRows
                             IndexLookups       = "{0:N0}" -f $detail.IndexLookups
                             MostRecentlyUsed   = $recentlyused
@@ -1057,7 +1061,7 @@ function Get-DbaHelpIndex {
                             HistogramSteps     = $detail.HistogramSteps
                             StatsLastUpdated   = $detail.StatsLastUpdated
                             IndexFragInPercent = "{0:F2}" -f $detail.IndexFragInPercent
-                        } | Select-DefaultView -Property $OutputProperties
+                        }
                     }
                 }
 
@@ -1077,13 +1081,14 @@ function Get-DbaHelpIndex {
                             Object             = $detail.FullObjectName
                             Index              = $detail.IndexName
                             IndexType          = $detail.IndexType
+                            Statistics         = $detail.StatisticsName
                             KeyColumns         = $detail.KeyColumns
                             IncludeColumns     = $detail.IncludeColumns
                             FilterDefinition   = $detail.FilterDefinition
                             DataCompression    = $detail.DataCompression
                             IndexReads         = $detail.IndexReads
                             IndexUpdates       = $detail.IndexUpdates
-                            SizeKB             = $detail.SizeKB
+                            Size               = [dbasize]($detail.SizeKB * 1024)
                             IndexRows          = $detail.IndexRows
                             IndexLookups       = $detail.IndexLookups
                             MostRecentlyUsed   = $recentlyused
@@ -1092,7 +1097,7 @@ function Get-DbaHelpIndex {
                             HistogramSteps     = $detail.HistogramSteps
                             StatsLastUpdated   = $detail.StatsLastUpdated
                             IndexFragInPercent = $detail.IndexFragInPercent
-                        } | Select-DefaultView -Property $OutputProperties
+                        }
                     }
                 }
             } catch {

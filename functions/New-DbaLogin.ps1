@@ -15,7 +15,7 @@ function New-DbaLogin {
     .PARAMETER Login
         The Login name(s)
 
-    .PARAMETER Password
+    .PARAMETER SecurePassword
         Secure string used to authenticate the Login
 
     .PARAMETER HashedPassword
@@ -131,7 +131,8 @@ function New-DbaLogin {
         [Alias("Rename")]
         [hashtable]$LoginRenameHashtable,
         [parameter(ParameterSetName = "Password", Position = 3)]
-        [Security.SecureString]$Password,
+        [Alias("Password")]
+        [Security.SecureString]$SecurePassword,
         [Alias("Hash", "PasswordHash")]
         [parameter(ParameterSetName = "PasswordHash")]
         [string]$HashedPassword,
@@ -141,7 +142,7 @@ function New-DbaLogin {
         [string]$MapToAsymmetricKey,
         [string]$MapToCredential,
         [object]$Sid,
-        [Alias("DefaulDB")]
+        [Alias("DefaultDB")]
         [parameter(ParameterSetName = "Password")]
         [parameter(ParameterSetName = "PasswordHash")]
         [string]$DefaultDatabase,
@@ -222,7 +223,7 @@ function New-DbaLogin {
                     $currentDisabled = $loginItem.IsDisabled
 
                     #Get previous password
-                    if ($loginType -eq 'SqlLogin' -and !($Password -or $HashedPassword)) {
+                    if ($loginType -eq 'SqlLogin' -and !($SecurePassword -or $HashedPassword)) {
                         $sourceServer = $loginItem.Parent
                         switch ($sourceServer.versionMajor) {
                             0 { $sql = "SELECT CONVERT(VARBINARY(256),password) as hashedpass FROM master.dbo.syslogins WHERE loginname='$loginName'" }
@@ -310,8 +311,8 @@ function New-DbaLogin {
                 }
 
                 #Requesting password if required
-                if ($loginItem.GetType().Name -ne 'Login' -and $loginType -eq 'SqlLogin' -and !($Password -or $HashedPassword)) {
-                    $Password = Read-Host -AsSecureString -Prompt "Enter a new password for the SQL Server login(s)"
+                if ($loginItem.GetType().Name -ne 'Login' -and $loginType -eq 'SqlLogin' -and !($SecurePassword -or $HashedPassword)) {
+                    $SecurePassword = Read-Host -AsSecureString -Prompt "Enter a new password for the SQL Server login(s)"
                 }
 
                 #verify if login exists on the server
@@ -375,8 +376,8 @@ function New-DbaLogin {
                             }
 
                             #Generate hashed password if necessary
-                            if ($Password) {
-                                $currentHashedPassword = Get-PasswordHash $Password $server.versionMajor
+                            if ($SecurePassword) {
+                                $currentHashedPassword = Get-PasswordHash $SecurePassword $server.versionMajor
                             } elseif ($HashedPassword) {
                                 $currentHashedPassword = $HashedPassword
                             }

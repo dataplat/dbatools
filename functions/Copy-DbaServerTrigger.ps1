@@ -69,7 +69,7 @@ function Copy-DbaServerTrigger {
         Shows what would happen if the command were executed using force.
 
     #>
-    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
+    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess)]
     param (
         [parameter(Mandatory)]
         [DbaInstanceParameter]$Source,
@@ -131,7 +131,7 @@ function Copy-DbaServerTrigger {
                         Write-Message -Level Verbose -Message "Server trigger $triggerName exists at destination. Use -Force to drop and migrate."
 
                         $copyTriggerStatus.Status = "Skipped"
-                        $copyTriggerStatus.Status = "Already exists"
+                        $copyTriggerStatus.Notes = "Already exists on destination"
                         $copyTriggerStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                         continue
                     } else {

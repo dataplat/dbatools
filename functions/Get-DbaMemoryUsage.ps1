@@ -18,9 +18,6 @@ function Get-DbaMemoryUsage {
     .PARAMETER Credential
         Credential object used to connect to the SQL Server as a different user
 
-    .PARAMETER Simple
-        Shows a simplified set of counters. Excludes only totals for Plancounters and BufManpagecounters
-
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -40,20 +37,19 @@ function Get-DbaMemoryUsage {
         https://dbatools.io/Get-DbaMemoryUsage
 
     .EXAMPLE
-        PS C:\> Get-DbaMemoryUsage -ComputerName ServerA
+        PS C:\> Get-DbaMemoryUsage -ComputerName sql2017
 
-        Returns a custom object displaying Server, counter instance, counter, number of pages, memory in KB, memory in MB
-
-    .EXAMPLE
-        PS C:\> Get-DbaMemoryUsage -ComputerName ServerA\sql987 -Simple
-
-        Returns a custom object with Server, counter instance, counter, number of pages, memory in KB, memory in MB
+        Returns a custom object displaying Server, counter instance, counter, number of pages, memory
 
     .EXAMPLE
-        PS C:\> Get-DbaMemoryUsage -ComputerName ServerA\sql987 | Out-Gridview
+        PS C:\> Get-DbaMemoryUsage -ComputerName sql2017\sqlexpress -SqlCredential sqladmin | Where-Object { $_.Memory.Megabyte -gt 100 }
 
-        Returns a gridview displaying Server, counter instance, counter, number of pages, memory in KB, memory in MB
+        Logs into the sql2017\sqlexpress as sqladmin using SQL Authentication then returns results only where memory exceeds 100 MB
 
+    .EXAMPLE
+        PS C:\> $servers | Get-DbaMemoryUsage | Out-Gridview
+
+       Gets results from an array of $servers then diplays them in a gridview.
     #>
     [CmdletBinding()]
     param (
@@ -61,8 +57,6 @@ function Get-DbaMemoryUsage {
         [Alias("Host", "cn", "Server")]
         [DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,
         [PSCredential]$Credential,
-        [switch]$Simple,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 
@@ -102,8 +96,7 @@ function Get-DbaMemoryUsage {
                         CounterInstance = (($_.Path.split("\")[-2]).replace("mssql`$", "")).split(':')[1]
                         Counter         = $_.Path.split("\")[-1]
                         Pages           = $null
-                        MemKB           = $_.cookedvalue
-                        MemMB           = $_.cookedvalue / 1024
+                        Memory          = $_.cookedvalue / 1024
                     }
                 }
             } catch {
@@ -125,8 +118,7 @@ function Get-DbaMemoryUsage {
                         CounterInstance = (($_.Path.split("\")[-2]).replace("mssql`$", "")).split(':')[1]
                         Counter         = $_.Path.split("\")[-1]
                         Pages           = $_.cookedvalue
-                        MemKB           = $_.cookedvalue * 8192 / 1024
-                        MemMB           = $_.cookedvalue * 8192 / 1048576
+                        Memory          = $_.cookedvalue * 8192 / 1048576
                     }
                 }
             } catch {
@@ -148,8 +140,7 @@ function Get-DbaMemoryUsage {
                         CounterInstance = (($_.Path.split("\")[-2]).replace("mssql`$", "")).split(':')[1]
                         Counter         = $_.Path.split("\")[-1]
                         Pages           = $_.cookedvalue
-                        MemKB           = $_.cookedvalue * 8192 / 1024.0
-                        MemMB           = $_.cookedvalue * 8192 / 1048576.0
+                        Memory          = $_.cookedvalue * 8192 / 1048576.0
                     }
                 }
             } catch {
@@ -171,8 +162,7 @@ function Get-DbaMemoryUsage {
                         CounterInstance = (($_.Path.split("\")[-2]).replace("mssql`$", "")).split(':')[1]
                         Counter         = $_.Path.split("\")[-1]
                         Pages           = $null
-                        MemKB           = $_.cookedvalue
-                        MemMB           = $_.cookedvalue / 1024
+                        Memory          = $_.cookedvalue / 1024
                     }
                 }
             } catch {
@@ -194,8 +184,7 @@ function Get-DbaMemoryUsage {
                         CounterInstance = (($_.Path.split("\")[-2]).replace("mssql`$", "")).split(':')[1]
                         Counter         = $_.Path.split("\")[-1]
                         Pages           = $null
-                        MemKB           = $_.cookedvalue / 1024
-                        MemMB           = $_.cookedvalue / 1024 / 1024
+                        Memory          = $_.cookedvalue / 1024 / 1024
                     }
                 }
             } catch {
@@ -211,9 +200,18 @@ function Get-DbaMemoryUsage {
             if ($reply.FullComputerName) {
                 $Computer = $reply.FullComputerName
                 try {
-                    Invoke-Command2 -ComputerName $Computer -Credential $Credential -ScriptBlock $scriptblock -argumentlist $Memcounters, $Plancounters, $BufManpagecounters, $SSAScounters, $SSIScounters
+                    foreach ($result in (Invoke-Command2 -ComputerName $Computer -Credential $Credential -ScriptBlock $scriptblock -argumentlist $Memcounters, $Plancounters, $BufManpagecounters, $SSAScounters, $SSIScounters)) {
+                        [PSCustomObject]@{
+                            ComputerName    = $result.ComputerName
+                            SqlInstance     = $result.SqlInstance
+                            CounterInstance = $result.CounterInstance
+                            Counter         = $result.Counter
+                            Pages           = $result.Pages
+                            Memory          = [dbasize]($result.Memory * 1024 * 1024)
+                        }
+                    }
                 } catch {
-                    Stop-Function -Continue -Message "Failure" -ErrorRecord $_ -Target $computer -Continue
+                    Stop-Function -Message "Failure" -ErrorRecord $_ -Target $computer -Continue
                 }
             } else {
                 Write-Message -Level Warning -Message "Can't resolve $Computer."

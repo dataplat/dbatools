@@ -80,7 +80,7 @@ function Invoke-DbaAdvancedRestore {
 
     .NOTES
         Tags: Restore, Backup
-        Author: Chrissy LeMaire (@cl), netnerds.net
+        Author: Stuart Moore (@napalmgram - http://stuart-moore.com)
 
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
@@ -101,8 +101,8 @@ function Invoke-DbaAdvancedRestore {
         First generates just the T-SQL restore scripts so they can be sanity checked, and then if they are good perform the full restore.
         By reusing the BackupHistory object there is no need to rescan all the backup files again
 
-       #>
-    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "Low")]
+    #>
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingPlainTextForPassword", "AzureCredential", Justification = "For Parameter AzureCredential")]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseOutputTypeCorrectly", "", Justification = "PSSA Rule Ignored by BOH")]
     param (
@@ -311,9 +311,13 @@ function Invoke-DbaAdvancedRestore {
                             $pathSep = Get-DbaPathSep -Server $server
                             $RestoreDirectory = ((Split-Path $backup.FileList.PhysicalName -Parent) | Sort-Object -Unique).Replace('\', $pathSep) -Join ','
                             [PSCustomObject]@{
-                                SqlInstance            = $SqlInstance
+                                ComputerName           = $server.ComputerName
+                                InstanceName           = $server.ServiceName
+                                SqlInstance            = $server.DomainInstanceName
+                                Database               = $backup.Database
                                 DatabaseName           = $backup.Database
                                 DatabaseOwner          = $server.ConnectionContext.TrueLogin
+                                Owner                  = $server.ConnectionContext.TrueLogin
                                 NoRecovery             = $Restore.NoRecovery
                                 WithReplace            = $WithReplace
                                 RestoreComplete        = $RestoreComplete
@@ -325,14 +329,14 @@ function Invoke-DbaAdvancedRestore {
                                 RestoredFile           = $((Split-Path $backup.FileList.PhysicalName -Leaf) | Sort-Object -Unique) -Join ','
                                 RestoredFileFull       = ($backup.Filelist.PhysicalName -Join ',')
                                 RestoreDirectory       = $RestoreDirectory
-                                BackupSize             = if ([bool]($backup.psobject.Properties.Name -contains 'TotalSize')) { ($backup | Measure-Object -Property TotalSize -Sum).Sum } else { $null }
-                                CompressedBackupSize   = if ([bool]($backup.psobject.Properties.Name -contains 'CompressedBackupSize')) { ($backup | Measure-Object -Property CompressedBackupSize -Sum).Sum } else { $null }
+                                BackupSize             = if ([bool]($backup.psobject.Properties.Name -contains 'TotalSize')) { [dbasize](($backup | Measure-Object -Property TotalSize -Sum).Sum) } else { $null }
+                                CompressedBackupSize   = if ([bool]($backup.psobject.Properties.Name -contains 'CompressedBackupSize')) { [dbasize](($backup | Measure-Object -Property CompressedBackupSize -Sum).Sum) } else { $null }
                                 Script                 = $script
                                 BackupFileRaw          = ($backups.Fullname)
                                 FileRestoreTime        = New-TimeSpan -Seconds ((Get-Date) - $FileRestoreStartTime).TotalSeconds
                                 DatabaseRestoreTime    = New-TimeSpan -Seconds ((Get-Date) - $DatabaseRestoreStartTime).TotalSeconds
                                 ExitError              = $ExitError
-                            } | Select-DefaultView -ExcludeProperty BackupSize, CompressedBackupSize, ExitError, BackupFileRaw, RestoredFileFull
+                            } | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, BackupFile, BackupFilesCount, BackupSize, CompressedBackupSize, Database, Owner, DatabaseRestoreTime, FileRestoreTime, NoRecovery, RestoreComplete, RestoredFile, RestoredFilesCount, Script, RestoreDirectory, WithReplace
                         } else {
                             $script
                         }

@@ -4,20 +4,44 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        $paramCount = 5
-        $defaultParamCount = 11
         [object[]]$params = (Get-ChildItem function:\Get-DbaEstimatedCompletionTime).Parameters.Keys
         $knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'EnableException'
         It "Should contain our specific parameters" {
-            ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
-        }
-        It "Should only contain $paramCount parameters" {
-            $params.Count - $defaultParamCount | Should Be $paramCount
+            ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $knownParameters.Count
         }
     }
 }
-<#
-    Integration test should appear below and are custom to the command you are writing.
-    Read https://github.com/sqlcollaborative/dbatools/blob/development/contributing.md#tests
-    for more guidence.
-#>
+
+Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
+
+    Context "Gets Query Estimated Completion" {
+        $results = Get-DbaEstimatedCompletionTime -SqlInstance $script:instance2 | Where-Object {$_.database -eq 'Master'}
+        It "Gets results" {
+            $results | Should Not Be $null
+        }
+        It "Should be SELECT" {
+            $results.Command | Should Be 'SELECT'
+        }
+        It "Should be login dbo" {
+            $results.login | Should Be 'dbo'
+        }
+    }
+    Context "Gets Query Estimated Completion when using -Database" {
+        $results = Get-DbaEstimatedCompletionTime -SqlInstance $script:instance2 -Database Master
+        It "Gets results" {
+            $results | Should Not Be $null
+        }
+        It "Should be SELECT" {
+            $results.Command | Should Be 'SELECT'
+        }
+        It "Should be login dbo" {
+            $results.login | Should Be 'dbo'
+        }
+    }
+    Context "Gets no Query Estimated Completion when using -ExcludeDatabase" {
+        $results = Get-DbaEstimatedCompletionTime -SqlInstance $script:instance2 -ExcludeDatabase Master
+        It "Gets no results" {
+            $results | Should Be $null
+        }
+    }
+}

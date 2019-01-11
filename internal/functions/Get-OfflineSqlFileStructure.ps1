@@ -13,7 +13,7 @@ Internal function. Returns dictionary object that contains file structures for S
         [string]$dbname,
         [Parameter(Mandatory, Position = 2)]
         [object]$filelist,
-        [Parameter(Mandatory = $false, Position = 3)]
+        [Parameter(Position = 3)]
         [bool]$ReuseSourceFolderStructure,
         [PSCredential]$SqlCredential
     )

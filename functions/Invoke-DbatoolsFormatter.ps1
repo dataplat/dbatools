@@ -44,7 +44,7 @@ function Invoke-DbatoolsFormatter {
         }
         $CBHRex = [regex]'(?smi)\s+<#[^#]*#>'
         $CBHStartRex = [regex]'(?<spaces>[ ]+)<#'
-        $CBHEndRex = [regex]'(?<spaces>[ ]?)#>'
+        $CBHEndRex = [regex]'(?<spaces>[ ]*)#>'
     }
     process {
         if (Test-FunctionInterrupt) { return }

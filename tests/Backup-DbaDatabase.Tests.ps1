@@ -157,9 +157,11 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
     }
 
-    It "Should have 1 period in file extension" {
-        foreach ($path in $results.BackupFile) {
-            [IO.Path]::GetExtension($path) | Should -Not -BeLike '*..*'
+    Context "Should build filenames properly" {
+        It "Should have 1 period in file extension" {
+            foreach ($path in $results.BackupFile) {
+                [IO.Path]::GetExtension($path) | Should -Not -BeLike '*..*'
+            }
         }
     }
 
@@ -172,6 +174,27 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         It "Should have backed up to the path with the corrrect name" {
             Test-Path "$DefaultPath\PesterTest.bak" | Should -Be $true
         }
+    }
+
+    Context "Test backup  verification" {
+        $null = Invoke-DbaQuery -SqlInstance $script:instance1 -Database master -Query "CREATE DATABASE [backuptest]"
+        $null = Invoke-DbaQuery -SqlInstance $script:instance1 -Database master -Query "ALTER DATABASE [backuptest] SET RECOVERY FULL WITH NO_WAIT"
+        It -Skip "Should perform a full backup and verify it" {
+            $b = Backup-DbaDatabase -SqlInstance $script:instance1 -Database backuptest -Type full -Verify
+            $b.BackupComplete | Should -Be $True
+            $b.Verified | Should -Be $True
+        }
+        It -Skip "Should perform a diff backup and verify it" {
+            $b = Backup-DbaDatabase -SqlInstance $script:instance1 -Database backuptest -Type diff -Verify
+            $b.BackupComplete | Should -Be $True
+            $b.Verified | Should -Be $True
+        }
+        It -Skip "Should perform a log backup and verify it" {
+            $b = Backup-DbaDatabase -SqlInstance $script:instance1 -Database backuptest -Type log -Verify
+            $b.BackupComplete | Should -Be $True
+            $b.Verified | Should -Be $True
+        }
+        $null = Invoke-DbaQuery -SqlInstance $script:instance1 -Database master -Query "DROP DATABASE [backuptest]"
     }
 
     Context "Backup can pipe to restore" {

@@ -4,7 +4,9 @@ function Write-ProgressHelper {
     param (
         [int]$StepNumber,
         [string]$Activity,
-        [string]$Message
+        [string]$Message,
+        [int]$TotalSteps,
+        [switch]$ExcludePercent
     )
 
     $caller = (Get-PSCallStack)[1].Command
@@ -32,12 +34,26 @@ function Write-ProgressHelper {
             "Sync-DbaAvailabilityGroup" {
                 "Syncing availability group"
             }
+            "Sync-DbaAvailabilityGroup" {
+                "Syncing availability group"
+            }
             default {
-                "Processing $caller"
+                "Executing $caller"
             }
         }
     }
 
-    $TotalSteps = ([regex]::Matches((Get-Command -Module dbatools -Name $caller).Definition, "Write-ProgressHelper")).Count
-    Write-Progress -Activity $Activity -Status $Message -PercentComplete (($StepNumber / $TotalSteps) * 100)
+    if ($ExcludePercent) {
+        Write-Progress -Activity $Activity -Status $Message
+    } else {
+        if (-not $TotalSteps -and $caller -ne '<ScriptBlock>') {
+            $TotalSteps = ([regex]::Matches((Get-Command -Module dbatools -Name $caller).Definition, "Write-ProgressHelper")).Count
+        }
+        if (-not $TotalSteps) {
+            $percentComplete = 0
+        } else {
+            $percentComplete = ($StepNumber / $TotalSteps) * 100
+        }
+        Write-Progress -Activity $Activity -Status $Message -PercentComplete $percentComplete
+    }
 }

@@ -67,7 +67,7 @@ function Find-DbaDisabledIndex {
         Generates the SQL statements to drop selected indexes on all user databases.
 
     #>
-    [CmdletBinding(SupportsShouldProcess = $true)]
+    [CmdletBinding(SupportsShouldProcess)]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]

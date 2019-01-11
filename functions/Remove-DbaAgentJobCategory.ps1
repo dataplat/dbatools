@@ -57,13 +57,12 @@ function Remove-DbaAgentJobCategory {
         Remove multiple job categories from the multiple instances.
 
     #>
-    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "Low")]
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [Parameter(Mandatory = $false)]
         [ValidateNotNullOrEmpty()]
         [string[]]$Category,
         [switch]$Force,

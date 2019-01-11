@@ -1,9 +1,14 @@
 # Handle dotsourcing on import
 Set-DbatoolsConfig -Name 'Import.DoDotSource' -Value $false -Initialize -Validation bool -Handler {
     try {
-        if (-not (Test-Path "HKCU:\SOFTWARE\Microsoft\WindowsPowerShell\dbatools\System")) { $null = New-Item "HKCU:\SOFTWARE\Microsoft\WindowsPowerShell\dbatools\System" -ItemType Container -Force -ErrorAction Stop }
-        if ($args[0]) { $null = New-ItemProperty "HKCU:\SOFTWARE\Microsoft\WindowsPowerShell\dbatools\System" -Name DoDotSource -PropertyType DWORD -Value 1 -Force -ErrorAction Stop }
-        else { $null = New-ItemProperty "HKCU:\SOFTWARE\Microsoft\WindowsPowerShell\dbatools\System" -Name DoDotSource -PropertyType DWORD -Value 0 -Force -ErrorAction Stop }
+        if (-not (Test-Path "HKCU:\SOFTWARE\Microsoft\WindowsPowerShell\dbatools\System")) {
+            $null = New-Item "HKCU:\SOFTWARE\Microsoft\WindowsPowerShell\dbatools\System" -ItemType Container -Force -ErrorAction Stop
+        }
+        if ($args[0]) {
+            $null = New-ItemProperty "HKCU:\SOFTWARE\Microsoft\WindowsPowerShell\dbatools\System" -Name DoDotSource -PropertyType DWORD -Value 1 -Force -ErrorAction Stop
+        } else {
+            $null = New-ItemProperty "HKCU:\SOFTWARE\Microsoft\WindowsPowerShell\dbatools\System" -Name DoDotSource -PropertyType DWORD -Value 0 -Force -ErrorAction Stop
+        }
         # Scope Boundary exception: $cfg is defined in Set-DbatoolsConfig
         Register-DbatoolsConfig -Config $cfg
     } catch {
@@ -14,9 +19,14 @@ Set-DbatoolsConfig -Name 'Import.DoDotSource' -Value $false -Initialize -Validat
 # Handle dotsourcing on import
 Set-DbatoolsConfig -Name 'Import.StrictSecurityMode' -Value $false -Initialize -Validation bool -Handler {
     try {
-        if (-not (Test-Path "HKCU:\SOFTWARE\Microsoft\WindowsPowerShell\dbatools\System")) { $null = New-Item "HKCU:\SOFTWARE\Microsoft\WindowsPowerShell\dbatools\System" -ItemType Container -Force -ErrorAction Stop }
-        if ($args[0]) { $null = New-ItemProperty "HKCU:\SOFTWARE\Microsoft\WindowsPowerShell\dbatools\System" -Name StrictSecurityMode -PropertyType DWORD -Value 1 -Force -ErrorAction Stop }
-        else { $null = New-ItemProperty "HKCU:\SOFTWARE\Microsoft\WindowsPowerShell\dbatools\System" -Name StrictSecurityMode -PropertyType DWORD -Value 0 -Force -ErrorAction Stop }
+        if (-not (Test-Path "HKCU:\SOFTWARE\Microsoft\WindowsPowerShell\dbatools\System")) {
+            $null = New-Item "HKCU:\SOFTWARE\Microsoft\WindowsPowerShell\dbatools\System" -ItemType Container -Force -ErrorAction Stop
+        }
+        if ($args[0]) {
+            $null = New-ItemProperty "HKCU:\SOFTWARE\Microsoft\WindowsPowerShell\dbatools\System" -Name StrictSecurityMode -PropertyType DWORD -Value 1 -Force -ErrorAction Stop
+        } else {
+            $null = New-ItemProperty "HKCU:\SOFTWARE\Microsoft\WindowsPowerShell\dbatools\System" -Name StrictSecurityMode -PropertyType DWORD -Value 0 -Force -ErrorAction Stop
+        }
         # Scope Boundary exception: $cfg is defined in Set-DbatoolsConfig
         Register-DbatoolsConfig -Config $cfg
     } catch {
@@ -27,9 +37,14 @@ Set-DbatoolsConfig -Name 'Import.StrictSecurityMode' -Value $false -Initialize -
 # Handle dotsourcing on import
 Set-DbatoolsConfig -Name 'Import.AlwaysBuildLibrary' -Value $false -Initialize -Validation bool -Handler {
     try {
-        if (-not (Test-Path "HKCU:\SOFTWARE\Microsoft\WindowsPowerShell\dbatools\System")) { $null = New-Item "HKCU:\SOFTWARE\Microsoft\WindowsPowerShell\dbatools\System" -ItemType Container -Force -ErrorAction Stop }
-        if ($args[0]) { $null = New-ItemProperty "HKCU:\SOFTWARE\Microsoft\WindowsPowerShell\dbatools\System" -Name AlwaysBuildLibrary -PropertyType DWORD -Value 1 -Force -ErrorAction Stop }
-        else { $null = New-ItemProperty "HKCU:\SOFTWARE\Microsoft\WindowsPowerShell\dbatools\System" -Name AlwaysBuildLibrary -PropertyType DWORD -Value 0 -Force -ErrorAction Stop }
+        if (-not (Test-Path "HKCU:\SOFTWARE\Microsoft\WindowsPowerShell\dbatools\System")) {
+            $null = New-Item "HKCU:\SOFTWARE\Microsoft\WindowsPowerShell\dbatools\System" -ItemType Container -Force -ErrorAction Stop
+        }
+        if ($args[0]) {
+            $null = New-ItemProperty "HKCU:\SOFTWARE\Microsoft\WindowsPowerShell\dbatools\System" -Name AlwaysBuildLibrary -PropertyType DWORD -Value 1 -Force -ErrorAction Stop
+        } else {
+            $null = New-ItemProperty "HKCU:\SOFTWARE\Microsoft\WindowsPowerShell\dbatools\System" -Name AlwaysBuildLibrary -PropertyType DWORD -Value 0 -Force -ErrorAction Stop
+        }
         # Scope Boundary exception: $cfg is defined in Set-DbatoolsConfig
         Register-DbatoolsConfig -Config $cfg
     } catch {
@@ -40,12 +55,20 @@ Set-DbatoolsConfig -Name 'Import.AlwaysBuildLibrary' -Value $false -Initialize -
 # Handle dotsourcing on import
 Set-DbatoolsConfig -Name 'Import.SerialImport' -Value $false -Initialize -Validation bool -Handler {
     try {
-        if (-not (Test-Path "HKCU:\SOFTWARE\Microsoft\WindowsPowerShell\dbatools\System")) { $null = New-Item "HKCU:\SOFTWARE\Microsoft\WindowsPowerShell\dbatools\System" -ItemType Container -Force -ErrorAction Stop }
-        if ($args[0]) { $null = New-ItemProperty "HKCU:\SOFTWARE\Microsoft\WindowsPowerShell\dbatools\System" -Name SerialImport -PropertyType DWORD -Value 1 -Force -ErrorAction Stop }
-        else { $null = New-ItemProperty "HKCU:\SOFTWARE\Microsoft\WindowsPowerShell\dbatools\System" -Name SerialImport -PropertyType DWORD -Value 0 -Force -ErrorAction Stop }
+        if (-not (Test-Path "HKCU:\SOFTWARE\Microsoft\WindowsPowerShell\dbatools\System")) {
+            $null = New-Item "HKCU:\SOFTWARE\Microsoft\WindowsPowerShell\dbatools\System" -ItemType Container -Force -ErrorAction Stop
+        }
+        if ($args[0]) {
+            $null = New-ItemProperty "HKCU:\SOFTWARE\Microsoft\WindowsPowerShell\dbatools\System" -Name SerialImport -PropertyType DWORD -Value 1 -Force -ErrorAction Stop
+        } else {
+            $null = New-ItemProperty "HKCU:\SOFTWARE\Microsoft\WindowsPowerShell\dbatools\System" -Name SerialImport -PropertyType DWORD -Value 0 -Force -ErrorAction Stop
+        }
         # Scope Boundary exception: $cfg is defined in Set-DbatoolsConfig
         Register-DbatoolsConfig -Config $cfg
     } catch {
         Write-Message -Level Warning -Message "Failed to apply configuration 'Import.SerialImport'" -ErrorRecord $_ -Target 'Import.SerialImport'
     }
-} -Description "Enabling this will cause the module to perform import in a serial manner, not parallelizing anything. This will impose a significant delay on import, but reduces the CPU impact during import. Setting this for an unattended script may be useful to avoid resource alerts. Can be set on script level by placing the following code in the first line: '`$dbatools_serialimport = `$true'. This configuration setting persists across all PowerShell consoles for this user!"
+} -Description "Enabling this will cause the module to perform import in a serial manner, not parallelizing anything. This will impose a significant delay on import, but reduces the CPU impact during import. Setting this for an unattended script may be useful to avoid resource alerts. Can be set on script level by placing the following code in the first line: '`$dbatools_serialimport = `$true'. This configuration setting persists across all PowerShell consoles for this user."
+
+# Check for SqlPs
+Set-DbatoolsConfig -Name 'Import.SqlpsCheck' -Value $true -Initialize -Validation bool -Description "Does not warn about sqlps being imported at the time of the dbatools import"

@@ -77,7 +77,7 @@ function Copy-DbaDataCollector {
         Copies two Collection Sets, Server Activity and Table Usage Analysis, from sqlserver2014a to sqlcluster.
 
     #>
-    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
+    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess)]
     param (
         [parameter(Mandatory)]
         [DbaInstanceParameter]$Source,
@@ -95,6 +95,10 @@ function Copy-DbaDataCollector {
         [switch]$EnableException
     )
     begin {
+        if (-not $script:isWindows) {
+            Stop-Function -Message "Copy-DbaDataCollector does not support Linux - we're still waiting for the Core SMOs from Microsoft"
+            return
+        }
         try {
             $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -MinimumVersion 10
         } catch {
@@ -185,7 +189,7 @@ function Copy-DbaDataCollector {
                             Write-Message -Level Verbose -Message "Collection Set '$collectionName' was skipped because it already exists on $destinstance. Use -Force to drop and recreate"
 
                             $copyCollectionSetStatus.Status = "Skipped"
-                            $copyCollectionSetStatus.Notes = "Already exists"
+                            $copyCollectionSetStatus.Notes = "Already exists on destination"
                             $copyCollectionSetStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                         }
                         continue

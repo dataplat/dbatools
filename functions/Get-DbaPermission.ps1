@@ -29,7 +29,7 @@ function Get-DbaPermission {
     .PARAMETER IncludeServerLevel
         If this switch is enabled, information about Server Level Permissions will be output.
 
-    .PARAMETER NoSystemObjects
+    .PARAMETER ExcludeSystemObjects
         If this switch is enabled, permissions on system securables will be excluded.
 
     .PARAMETER EnableException
@@ -57,7 +57,7 @@ function Get-DbaPermission {
         Returns a formatted table displaying Server, Database, permission state, permission type, grantee, granteetype, securable and securabletype.
 
     .EXAMPLE
-        PS C:\> Get-DbaPermission -SqlInstance ServerA\sql987 -NoSystemObjects -IncludeServerLevel
+        PS C:\> Get-DbaPermission -SqlInstance ServerA\sql987 -ExcludeSystemObjects -IncludeServerLevel
 
         Returns a custom object with Server name, Database name, permission state, permission type, grantee and securable
         in all databases and on the server level, but not on system securables.
@@ -79,12 +79,12 @@ function Get-DbaPermission {
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
         [switch]$IncludeServerLevel,
-        [switch]$NoSystemObjects,
+        [switch]$ExcludeSystemObjects,
         [Alias('Silent')]
         [switch]$EnableException
     )
     begin {
-        if ($NoSystemObjects) {
+        if ($ExcludeSystemObjects) {
             $ExcludeSystemObjectssql = "WHERE major_id > 0 "
         }
 

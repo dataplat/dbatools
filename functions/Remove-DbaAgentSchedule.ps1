@@ -74,7 +74,7 @@ function Remove-DbaAgentSchedule {
         Remove the schedules using a pipeline
 
     #>
-    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "Low")]
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
     param (
         [parameter(Mandatory, ValueFromPipeline, ParameterSetName = "instance")]
         [Alias("ServerInstance", "SqlServer")]

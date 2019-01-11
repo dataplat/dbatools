@@ -15,15 +15,18 @@ function Set-DbaLogin {
     .PARAMETER Login
         The login that needs to be changed
 
-    .PARAMETER Password
+    .PARAMETER SecurePassword
         The new password for the login This can be either a credential or a secure string.
 
+    .PARAMETER DefaultDatabase
+        Default database for the login
+
     .PARAMETER Unlock
-        Switch to unlock an account. This will only be used in conjunction with the -Password parameter.
+        Switch to unlock an account. This will only be used in conjunction with the -SecurePassword parameter.
         The default is false.
 
     .PARAMETER MustChange
-        Does the user need to change his/her password. This will only be used in conjunction with the -Password parameter.
+        Does the user need to change his/her password. This will only be used in conjunction with the -SecurePassword parameter.
         The default is false.
 
     .PARAMETER NewName
@@ -78,9 +81,9 @@ function Set-DbaLogin {
         https://dbatools.io/Set-DbaLogin
 
     .EXAMPLE
-        PS C:\> $password = ConvertTo-SecureString "PlainTextPassword" -AsPlainText -Force
-        PS C:\> $cred = New-Object System.Management.Automation.PSCredential ("username", $password)
-        PS C:\> Set-DbaLogin -SqlInstance sql1 -Login login1 -Password $cred -Unlock -MustChange
+        PS C:\> $SecurePassword = ConvertTo-SecureString "PlainTextPassword" -AsPlainText -Force
+        PS C:\> $cred = New-Object System.Management.Automation.PSCredential ("username", $SecurePassword)
+        PS C:\> Set-DbaLogin -SqlInstance sql1 -Login login1 -SecurePassword $cred -Unlock -MustChange
 
         Set the new password for login1 using a credential, unlock the account and set the option
         that the user must change password at next logon.
@@ -141,6 +144,11 @@ function Set-DbaLogin {
 
         Disable the login from the pipeline
 
+    .EXAMPLE
+        PS C:\> Set-DbaLogin -SqlInstance sql1 -Login login1 -DefaultDatabase master
+
+        Set the default database to master on a login
+
     #>
 
     [CmdletBinding(SupportsShouldProcess)]
@@ -150,7 +158,10 @@ function Set-DbaLogin {
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string[]]$Login,
-        [object]$Password,
+        [Alias("Password")]
+        [object]$SecurePassword, #object so that it can accept credential or securestring
+        [Alias("DefaultDB")]
+        [string]$DefaultDatabase,
         [switch]$Unlock,
         [switch]$MustChange,
         [string]$NewName,
@@ -187,10 +198,10 @@ function Set-DbaLogin {
             Stop-Function -Message 'You cannot use both -GrantLogin and -DenyLogin together' -Target $Login -Continue
         }
 
-        if (Test-bound -ParameterName 'Password') {
-            switch ($Password.GetType().Name) {
-                'PSCredential' { $newPassword = $Password.Password }
-                'SecureString' { $newPassword = $Password }
+        if (Test-bound -ParameterName 'SecurePassword') {
+            switch ($SecurePassword.GetType().Name) {
+                'PSCredential' { $NewSecurePassword = $SecurePassword.Password }
+                'SecureString' { $NewSecurePassword = $SecurePassword }
                 default {
                     Stop-Function -Message 'Password must be a PSCredential or SecureString' -Target $Login
                 }
@@ -238,9 +249,9 @@ function Set-DbaLogin {
                 }
 
                 # Change the password
-                if (Test-Bound -ParameterName 'Password') {
+                if (Test-bound -ParameterName 'SecurePassword') {
                     try {
-                        $l.ChangePassword($newPassword, $Unlock, $MustChange)
+                        $l.ChangePassword($NewSecurePassword, $Unlock, $MustChange)
                         $passwordChanged = $true
                     } catch {
                         $notes += "Couldn't change password"
@@ -327,6 +338,15 @@ function Set-DbaLogin {
                             $notes += "Couldn't remove role $role"
                             Stop-Function -Message "Something went wrong removing role $role to $l" -Target $l -ErrorRecord $_ -Continue
                         }
+                    }
+                }
+                
+                # Set the default database
+                if (Test-Bound -ParameterName 'DefaultDatabase') {
+                    if ($l.DefaultDatabase -eq $DefaultDatabase) {
+                        Write-Message -Message "Login $l default database is already set to $($l.DefaultDatabase)" -Level Verbose
+                    } else {
+                        $l.DefaultDatabase = $DefaultDatabase
                     }
                 }
 

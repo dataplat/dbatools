@@ -7,7 +7,7 @@ function Test-DbaLastBackup {
         Restores all or some of the latest backups and performs a DBCC CHECKDB.
 
         1. Gathers information about the last full backups
-        2. Restores the backups to the Destination with a new name. If no Destination is specified, the originating SqlServer wil be used.
+        2. Restores the backups to the Destination with a new name. If no Destination is specified, the originating SQL Server instance wil be used.
         3. The database is restored as "dbatools-testrestore-$databaseName" by default, but you can change dbatools-testrestore to whatever you would like using -Prefix
         4. The internal file names are also renamed to prevent conflicts with original database
         5. A DBCC CHECKDB is then performed
@@ -61,7 +61,7 @@ function Test-DbaLastBackup {
         The name of the SQL Server credential on the destination instance that holds the key to the azure storage account.
 
     .PARAMETER IncludeCopyOnly
-        If this switch is enabled, copy only backups will not be counted as a last backup.
+        If this switch is enabled, copy only backups will be counted as a last backup.
 
     .PARAMETER IgnoreLogBackup
         If this switch is enabled, transaction log backups will be ignored. The restore will stop at the latest full or differential backup point.
@@ -105,12 +105,12 @@ function Test-DbaLastBackup {
         Determines the last full backup for SharePoint_Config, attempts to restore it, then performs a DBCC CHECKDB.
 
     .EXAMPLE
-        PS C:\> Get-DbaDatabase -SqlInstance sql2016, sql2017 |Test-DbaLastBackup
+        PS C:\> Get-DbaDatabase -SqlInstance sql2016, sql2017 | Test-DbaLastBackup
 
         Tests every database backup on sql2016 and sql2017
 
     .EXAMPLE
-        PS C:\> Get-DbaDatabase -SqlInstance sql2016, sql2017 -Database SharePoint_Config |Test-DbaLastBackup
+        PS C:\> Get-DbaDatabase -SqlInstance sql2016, sql2017 -Database SharePoint_Config | Test-DbaLastBackup
 
         Tests the database backup for the SharePoint_Config database on sql2016 and sql2017
 
@@ -139,9 +139,9 @@ function Test-DbaLastBackup {
 
         Copies the backup files for sql2014 databases to sql2016 default backup locations and then attempts restore from there.
 
-       #>
+    #>
     [CmdletBinding(SupportsShouldProcess)]
-    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingPlainTextForPassword", "", Justification = "For Paramters DestinationCredential and AzureCredential")]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingPlainTextForPassword", "", Justification = "For Parameters DestinationCredential and AzureCredential")]
     param (
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
@@ -184,6 +184,7 @@ function Test-DbaLastBackup {
             $instance = [DbaInstanceParameter]$source
             $copysuccess = $true
             $dbname = $db.Name
+            $restoreresult = $null
 
             if (-not (Test-Bound -ParameterName Destination)) {
                 $destination = $sourceserver.Name
@@ -347,7 +348,7 @@ function Test-DbaLastBackup {
                 $ogdbname = $dbname
                 $restorelist = Read-DbaBackupHeader -SqlInstance $destserver -Path $lastbackup[0].Path -AzureCredential $AzureCredential
 
-                if ($MaxSize -and $MaxSize -lt $restorelist.BackupSizeMB) {
+                if ($MaxSize -and $MaxSize -lt $restorelist.BackupSize.Megabyte) {
                     $success = "The backup size for $dbname ($mb MB) exceeds the specified maximum size ($MaxSize MB)."
                     $dbccresult = "Skipped"
                 } else {
@@ -461,7 +462,7 @@ function Test-DbaLastBackup {
                     DbccStart      = [dbadatetime]$startDbcc
                     DbccEnd        = [dbadatetime]$endDbcc
                     DbccElapsed    = $dbccElapsed
-                    BackupDate     = $lastbackup.Start
+                    BackupDates    = [String[]]($lastbackup.Start)
                     BackupFiles    = $lastbackup.FullName
                 }
             }

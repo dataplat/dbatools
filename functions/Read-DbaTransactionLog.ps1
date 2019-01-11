@@ -77,14 +77,15 @@ function Read-DbaTransactionLog {
         return
     }
 
-    if ($server.databases[$Database].Status -ne 'Normal') {
+    if ('Normal' -notin ($server.databases[$Database].Status -split ',')) {
         Stop-Function -Message "$Database is not in a normal State, command will not run."
         return
     }
 
     if ($RowLimit -gt 0) {
-        Write-Message -Message "Limiting reults to $RowLimit rows" -Level Verbose
+        Write-Message -Message "Limiting results to $RowLimit rows" -Level Verbose
         $RowLimitSql = " TOP $RowLimit "
+        $IgnoreLimit = $true
     } else {
         $RowLimitSql = ""
     }

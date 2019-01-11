@@ -60,8 +60,8 @@ function Rename-DbaLogin {
 
         WhatIf Example
 
-    #>
-    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
+          #>
+    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess)]
     param (
         [parameter(Mandatory)]
         [DbaInstanceParameter[]]$SqlInstance,
@@ -89,24 +89,24 @@ function Rename-DbaLogin {
                     $dbenums = $currentLogin.EnumDatabaseMappings()
                     $currentLogin.rename($NewLogin)
                     [pscustomobject]@{
-                        ComputerName = $server.ComputerName
-                        InstanceName = $server.ServiceName
-                        SqlInstance  = $server.DomainInstanceName
-                        Database     = $null
-                        OldLogin     = $Login
-                        NewLogin     = $NewLogin
-                        Status       = "Successful"
+                        ComputerName  = $server.ComputerName
+                        InstanceName  = $server.ServiceName
+                        SqlInstance   = $server.DomainInstanceName
+                        Database      = $null
+                        PreviousLogin = $Login
+                        NewLogin      = $NewLogin
+                        Status        = "Successful"
                     }
                 } catch {
                     $dbenums = $null
                     [pscustomobject]@{
-                        ComputerName = $server.ComputerName
-                        InstanceName = $server.ServiceName
-                        SqlInstance  = $server.DomainInstanceName
-                        Database     = $null
-                        OldLogin     = $Login
-                        NewLogin     = $NewLogin
-                        Status       = "Failure"
+                        ComputerName  = $server.ComputerName
+                        InstanceName  = $server.ServiceName
+                        SqlInstance   = $server.DomainInstanceName
+                        Database      = $null
+                        PreviousLogin = $Login
+                        NewLogin      = $NewLogin
+                        Status        = "Failure"
                     }
                     Stop-Function -Message "Failure" -ErrorRecord $_ -Target $login
                 }
@@ -126,7 +126,7 @@ function Rename-DbaLogin {
                             InstanceName = $server.ServiceName
                             SqlInstance  = $server.DomainInstanceName
                             Database     = $db.name
-                            OldUser      = $oldname
+                            PreviousUser = $oldname
                             NewUser      = $NewLogin
                             Status       = "Successful"
                         }
@@ -140,7 +140,7 @@ function Rename-DbaLogin {
                             InstanceName = $server.ServiceName
                             SqlInstance  = $server.DomainInstanceName
                             Database     = $db.name
-                            OldUser      = $NewLogin
+                            PreviousUser = $NewLogin
                             NewUser      = $oldname
                             Status       = "Failure to rename. Rolled back change."
                         }

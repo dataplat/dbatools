@@ -260,7 +260,7 @@ function Get-DbaBackupHistory {
                     if ($RecoveryFork) {
                         $recoveryForkSqlFilter = "AND backupset.last_recovery_fork_guid ='$RecoveryFork'"
                     }
-                    if ($null -eq (Get-PsCallStack)[1].Command) {
+                    if ($null -eq (Get-PsCallStack)[1].Command -or '{ScriptBlock}' -eq (Get-PsCallStack)[1].Command) {
                         $forkCheckSql = "
                                 SELECT
                                     database_name,
@@ -275,6 +275,7 @@ function Get-DbaBackupHistory {
                                 $sinceSqlFilter
                                 $recoveryForkSqlFilter
                                 GROUP by database_name, last_recovery_fork_guid
+                                ORDER by MaxDate Asc
                                 "
 
                         $results = $server.ConnectionContext.ExecuteWithResults($forkCheckSql).Tables.Rows
@@ -283,7 +284,10 @@ function Get-DbaBackupHistory {
                             foreach ($result in $results) {
                                 Write-Message -Message "Between $($result.MinDate)/$($result.FirstLsn) and $($result.MaxDate)/$($result.FinalLsn) $($result.name) was on Recovery Fork GUID $($result.RecFork) ($($result.backupcount) backups)"   -Level Warning
                             }
-
+                            if ($null -eq $RecoveryFork) {
+                                $RecoveryFork = $results[-1].RecFork
+                                Write-Message -Message "Defaulting to last Recovery Fork, ID - $RecoveryFork"
+                            }
                         }
                     }
                     #Get the full and build upwards
@@ -540,14 +544,14 @@ function Get-DbaBackupHistory {
                 $from = " FROM msdb..backupmediafamily mediafamily
                              INNER JOIN msdb..backupmediaset mediaset ON mediafamily.media_set_id = mediaset.media_set_id
                              INNER JOIN msdb..backupset backupset ON backupset.media_set_id = mediaset.media_set_id"
-                if ($Database -or $Since -or $Last -or $LastFull -or $LastLog -or $LastDiff -or $deviceTypeFilter -or $LastLsn -or $backupTypeFilter) {
+                if ($Database -or $ExcludeDatabase -or $Since -or $Last -or $LastFull -or $LastLog -or $LastDiff -or $deviceTypeFilter -or $LastLsn -or $backupTypeFilter) {
                     $where = " WHERE "
                 }
 
                 $whereArray = @()
 
-                if ($Database.length -gt 0) {
-                    $dbList = $Database -join "','"
+                if ($Database.length -gt 0 -or $ExcludeDatabase.length -gt 0) {
+                    $dbList = $databases.Name -join "','"
                     $whereArray += "database_name IN ('$dbList')"
                 }
 

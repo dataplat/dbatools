@@ -4,15 +4,10 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        $paramCount = 10
-        $defaultParamCount = 11
         [object[]]$params = (Get-ChildItem function:\Get-DbaAgentJobHistory).Parameters.Keys
-        $knownParameters = 'SqlInstance', 'SqlCredential', 'Job', 'ExcludeJob', 'StartDate', 'EndDate', 'NoJobSteps', 'WithOutputFile', 'JobCollection', 'EnableException'
+        $knownParameters = 'SqlInstance', 'SqlCredential', 'Job', 'ExcludeJob', 'StartDate', 'EndDate', 'ExcludeJobSteps', 'WithOutputFile', 'JobCollection', 'EnableException'
         It "Contains our specific parameters" {
-            ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
-        }
-        It "Contains $paramCount parameters" {
-            $params.Count - $defaultParamCount | Should Be $paramCount
+            ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $knownParameters.Count
         }
     }
 }
@@ -118,29 +113,29 @@ Describe "$CommandName Unittests" -Tag 'UnitTests' {
                     }
                 )
             }
-            It "Throws when NoJobSteps and WithOutputFile" {
-                { Get-DbaAgentJobHistory -SqlInstance 'SQLServerName' -NoJobSteps -WithOutputFile -EnableException } | Should Throw
+            It "Throws when ExcludeJobSteps and WithOutputFile" {
+                { Get-DbaAgentJobHistory -SqlInstance 'SQLServerName' -ExcludeJobSteps -WithOutputFile -EnableException } | Should Throw
             }
             It "Returns full history by default" {
                 $Results = @()
                 $Results += Get-DbaAgentJobHistory -SqlInstance 'SQLServerName'
                 $Results.Length | Should Be 6
             }
-            It "Returns only runs with no steps with NoJobSteps" {
+            It "Returns only runs with no steps with ExcludeJobSteps" {
                 $Results = @()
-                $Results += Get-DbaAgentJobHistory -SqlInstance 'SQLServerName' -NoJobSteps
+                $Results += Get-DbaAgentJobHistory -SqlInstance 'SQLServerName' -ExcludeJobSteps
                 $Results.Length | Should Be 2
             }
             It 'Returns our own "augmented" properties, too' {
                 $Results = @()
-                $Results += Get-DbaAgentJobHistory -SqlInstance 'SQLServerName' -NoJobSteps
+                $Results += Get-DbaAgentJobHistory -SqlInstance 'SQLServerName' -ExcludeJobSteps
                 $Results[0].psobject.properties.Name | Should -Contain 'StartDate'
                 $Results[0].psobject.properties.Name | Should -Contain 'EndDate'
                 $Results[0].psobject.properties.Name | Should -Contain 'Duration'
             }
             It 'Returns "augmented" properties that are correct' {
                 $Results = @()
-                $Results += Get-DbaAgentJobHistory -SqlInstance 'SQLServerName' -NoJobSteps
+                $Results += Get-DbaAgentJobHistory -SqlInstance 'SQLServerName' -ExcludeJobSteps
                 $Results[0].StartDate | Should -Be $Results[0].RunDate
                 $Results[0].RunDuration | Should -Be 112
                 $Results[0].Duration.TotalSeconds | Should -Be 72

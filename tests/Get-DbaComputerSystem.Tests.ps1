@@ -36,9 +36,5 @@ Describe "Get-DbaComputerSystem Integration Test" -Tag "IntegrationTests" {
                 $p.Name | Should Be $prop
             }
         }
-        it "Should return nothing if unable to connect to server" {
-            $result = Get-DbaComputerSystem -ComputerName 'Melton5312' -WarningAction SilentlyContinue
-            $result | Should Be $null
-        }
     }
 }

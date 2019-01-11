@@ -50,11 +50,14 @@ function Connect-SqlInstance {
     .PARAMETER MinimumVersion
        The minimum version that the calling command will support
 
+    .PARAMETER StatementTimeout
+        Sets the number of seconds a statement is given to run before failing with a timeout error.
+
     .EXAMPLE
         Connect-SqlInstance -SqlInstance sql2014
 
         Connect to the Server sql2014 with native credentials.
-       #>
+    #>
     [CmdletBinding()]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidDefaultValueSwitchParameter", "")]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingEmptyCatchBlock", "")]
@@ -64,6 +67,7 @@ function Connect-SqlInstance {
         [object]$SqlCredential,
         [switch]$ParameterConnection,
         [switch]$RegularUser = $true,
+        [int]$StatementTimeout,
         [int]$MinimumVersion,
         [switch]$AzureUnsupported,
         [switch]$NonPooled
@@ -174,9 +178,10 @@ function Connect-SqlInstance {
 
         # Make ComputerName easily available in the server object
         if (-not $server.ComputerName) {
-            $parsedcomputername = $server.NetName
-            if (-not $parsedcomputername) {
-                $parsedcomputername = ([dbainstance]$SqlInstance).ComputerName
+            if (-not $server.NetName -or $SqlInstance -match '\.') {
+                $parsedcomputername = $ConvertedSqlInstance.ComputerName
+            } else {
+                $parsedcomputername = $server.NetName
             }
             Add-Member -InputObject $server -NotePropertyName ComputerName -NotePropertyValue $parsedcomputername -Force
         }
@@ -191,19 +196,28 @@ function Connect-SqlInstance {
     if ($ConvertedSqlInstance.IsConnectionString) { $server.ConnectionContext.ConnectionString = $ConvertedSqlInstance.InputObject }
 
     try {
+        if (Test-Bound -ParameterName 'StatementTimeout') {
+            $server.ConnectionContext.StatementTimeout = $StatementTimeout
+        }
         $server.ConnectionContext.ConnectTimeout = [Sqlcollaborative.Dbatools.Connection.ConnectionHost]::SqlConnectionTimeout
 
         if ($null -ne $SqlCredential.UserName) {
             $username = ($SqlCredential.UserName).TrimStart("\")
 
-            if ($username -like "*\*") {
-                $domain, $login = $username.Split("\")
-                $authtype = "Windows Authentication with Credential"
-                if ($domain) {
-                    $formatteduser = "$login@$domain"
+            # support both ad\username and username@ad
+            if ($username -like "*\*" -or $username -like "*@*") {
+                if ($username -like "*\*") {
+                    $domain, $login = $username.Split("\")
+                    $authtype = "Windows Authentication with Credential"
+                    if ($domain) {
+                        $formatteduser = "$login@$domain"
+                    } else {
+                        $formatteduser = $username.Split("\")[1]
+                    }
                 } else {
-                    $formatteduser = $username.Split("\")[1]
+                    $formatteduser = $SqlCredential.UserName
                 }
+
                 $server.ConnectionContext.LoginSecure = $true
                 $server.ConnectionContext.ConnectAsUser = $true
                 $server.ConnectionContext.ConnectAsUserName = $formatteduser
@@ -339,9 +353,10 @@ function Connect-SqlInstance {
     }
 
     if (-not $server.ComputerName) {
-        $parsedcomputername = $server.NetName
-        if (-not $parsedcomputername) {
-            $parsedcomputername = ([dbainstance]$SqlInstance).ComputerName
+        if (-not $server.NetName -or $SqlInstance -match '\.') {
+            $parsedcomputername = $ConvertedSqlInstance.ComputerName
+        } else {
+            $parsedcomputername = $server.NetName
         }
         Add-Member -InputObject $server -NotePropertyName ComputerName -NotePropertyValue $parsedcomputername -Force
     }

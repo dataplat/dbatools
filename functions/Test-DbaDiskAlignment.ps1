@@ -17,10 +17,7 @@ function Test-DbaDiskAlignment {
         * System drives in versions previous to Windows Server 2008 cannot be aligned, but it is generally not recommended to place SQL Server databases on system drives.
 
     .PARAMETER ComputerName
-        The server(s) to check disk configuration on.
-
-    .PARAMETER Detailed
-        Output all properties, will be deprecated in 1.0.0 release.
+        The target computer or computers.
 
     .PARAMETER Credential
         Specifies an alternate Windows account to use when enumerating drives on the server. May require Administrator privileges. To use:
@@ -78,12 +75,10 @@ function Test-DbaDiskAlignment {
     param (
         [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer", "SqlInstance")]
-        [object[]]$ComputerName,
-        [switch]$Detailed,
+        [DbaInstanceParameter[]]$ComputerName,
         [System.Management.Automation.PSCredential]$Credential,
         [System.Management.Automation.PSCredential]$SqlCredential,
         [switch]$NoSqlCheck,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     begin {
@@ -205,8 +200,6 @@ function Test-DbaDiskAlignment {
 
             #region Processing results
             Write-Message -Level Verbose -Message "Checking $($offsets.count) partitions." -FunctionName $FunctionName
-
-            $allpartitions = @()
             foreach ($partition in $offsets) {
                 # Unfortunately "Windows does not have a reliable way to determine stripe unit Sizes. These values are obtained from vendor disk management software or from your SAN administrator."
                 # And this is the #1 most impactful issue with disk alignment :D
@@ -243,44 +236,45 @@ function Test-DbaDiskAlignment {
                         $isBestPractice = $false
                     }
 
-                    $output = [PSCustomObject]@{
-                        Server                    = $ComputerName
-                        Name                      = "$($partition.Name)"
-                        PartitonSizeInMB          = $($partition.Size / 1MB)
-                        PartitionType             = $partition.Type
-                        TestingStripeSizeKB       = $size
-                        OffsetModuluCalculationKB = $OffsetModuloKB
-                        StartingOffsetKB          = $offset
-                        IsOffsetBestPractice      = $IsOffsetBestPractice
-                        IsBestPractice            = $isBestPractice
-                        NumberOfBlocks            = $partition.NumberOfBlocks
-                        BootPartition             = $partition.BootPartition
-                        PartitionBlockSize        = $partition.BlockSize
-                        IsDynamicDisk             = $IsDynamicDisk
+                    [PSCustomObject]@{
+                        ComputerName            = $ogcomputer
+                        Name                    = "$($partition.Name)"
+                        PartitonSize            = [dbasize]($($partition.Size / 1MB) * 1024 * 1024)
+                        PartitionType           = $partition.Type
+                        TestingStripeSize       = [dbasize]($size * 1024)
+                        OffsetModuluCalculation = [dbasize]($OffsetModuloKB * 1024)
+                        StartingOffset          = [dbasize]($offset * 1024)
+                        IsOffsetBestPractice    = $IsOffsetBestPractice
+                        IsBestPractice          = $isBestPractice
+                        NumberOfBlocks          = $partition.NumberOfBlocks
+                        BootPartition           = $partition.BootPartition
+                        PartitionBlockSize      = $partition.BlockSize
+                        IsDynamicDisk           = $IsDynamicDisk
                     }
-                    $allpartitions += $output
                 }
             }
-            #endregion Processing results
-            return $allpartitions
         }
     }
 
     process {
+        # uses cim commands
+        
+        
         foreach ($computer in $ComputerName) {
+            $computer = $ogcomputer = $computer.ComputerName
             Write-Message -Level VeryVerbose -Message "Processing: $computer."
 
             $computer = Resolve-DbaNetworkName -ComputerName $computer -Credential $Credential
             $Computer = $computer.FullComputerName
 
-            if (!$Computer) {
+            if (-not $Computer) {
                 Stop-Function -Message "Couldn't resolve hostname. Skipping." -Continue
             }
 
             #region Connecting to server via Cim
             Write-Message -Level Verbose -Message "Creating CimSession on $computer over WSMan"
 
-            if (!$Credential) {
+            if (-not $Credential) {
                 $cimsession = New-CimSession -ComputerName $Computer -ErrorAction Ignore
             } else {
                 $cimsession = New-CimSession -ComputerName $Computer -ErrorAction Ignore -Credential $Credential
@@ -305,19 +299,9 @@ function Test-DbaDiskAlignment {
 
 
             try {
-                $data = Get-DiskAlignment -CimSession $cimsession -NoSqlCheck $NoSqlCheck -ComputerName $Computer -ErrorAction Stop
+                Get-DiskAlignment -CimSession $cimsession -NoSqlCheck $NoSqlCheck -ComputerName $Computer -ErrorAction Stop
             } catch {
                 Stop-Function -Message "Failed to process $($Computer): $($_.Exception.Message)" -Continue -InnerErrorRecord $_ -Target $Computer
-            }
-
-            if ($null -eq $data.Server) {
-                Stop-Function -Message "CIM query to $Computer failed." -Continue -Target $computer
-            }
-
-            if ($data.Count -gt 1) {
-                $data.GetEnumerator()
-            } else {
-                $data
             }
         }
     }

@@ -69,6 +69,7 @@ Register-DbaTeppArgumentCompleter -Command $names -Parameter PowerPlan -Name Pow
 #endregion Automatic TEPP by parameter name
 
 #region Explicit TEPP
+Register-DbaTeppArgumentCompleter -Command "Import-DbaCsv" -Parameter Delimiter -Name delimiter
 Register-DbaTeppArgumentCompleter -Command "Find-DbaCommand" -Parameter Tag -Name tag
 Register-DbaTeppArgumentCompleter -Command "Get-DbatoolsConfig", "Get-DbatoolsConfigValue", "Register-DbatoolsConfig", "Set-DbatoolsConfig" -Parameter FullName -Name config
 Register-DbaTeppArgumentCompleter -Command "Get-DbatoolsConfig", "Register-DbatoolsConfig", "Set-DbatoolsConfig" -Parameter Module -Name configmodule

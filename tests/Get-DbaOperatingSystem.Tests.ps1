@@ -54,10 +54,5 @@ Describe "Get-DbaOperatingSystem Integration Test" -Tag "IntegrationTests" {
                 $p.Name | Should Be $prop
             }
         }
-
-        It "Should return nothing if unable to connect to server" {
-            $result = Get-DbaOperatingSystem -ComputerName 'Melton5312' -WarningAction SilentlyContinue
-            $result | Should Be $null
-        }
     }
 }

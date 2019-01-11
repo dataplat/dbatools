@@ -45,12 +45,8 @@ When you are working with "objects" in SQL Server, say with databases, what vari
 [This page](https://github.com/sqlcollaborative/dbatools/wiki/Standard-Documentation) sums up what we currently use. We aim at standardizing and reducing to a set of self-documenting and reusable parameters. If you have any questions around the above do not hesitate to ask in Slack.
 
 ## Standardize formatting and indentation
-If you use VSCode, you can enable 
-```
-"files.trimTrailingWhitespace": true,
-"powershell.codeFormatting.preset": "OTBS"
-```
-to have a style that is consistent with dbatools. We favour consistency throughout the project and accept PRs coming from anybody. Just know that you can reformat your new function leveraging Invoke-DbaFormatter which does the groundwork for you.
+
+We favour consistency throughout the project and accept PRs coming from anybody. Just know that you can reformat your new function leveraging Invoke-DbaFormatter which does the groundwork for you.
 
 ## Tests
 Remember that tests are needed to make sure dbatools code behaves properly. The ultimate goal is for any user to be able to run dbatools' tests within their environment and, depending on the result, be sure everything works as expected. Dbatools works on a matrix of environments that will hardly be fully covered by a Continuous Integration system. That being said, we have AppVeyor (see later) set up to run at each and every commit.

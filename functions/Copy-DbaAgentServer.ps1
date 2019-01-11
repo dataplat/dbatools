@@ -69,7 +69,7 @@ function Copy-DbaAgentServer {
         Shows what would happen if the command were executed.
 
     #>
-    [cmdletbinding(SupportsShouldProcess = $true)]
+    [cmdletbinding(SupportsShouldProcess)]
     param (
         [parameter(Mandatory)]
         [DbaInstanceParameter]$Source,
@@ -104,7 +104,7 @@ function Copy-DbaAgentServer {
             }
             Invoke-SmoCheck -SqlInstance $destServer
             # All of these support whatif inside of them
-            Copy-DbaAgentCategory -Source $sourceServer -Destination $destServer -Force:$force
+            Copy-DbaAgentJobCategory -Source $sourceServer -Destination $destServer -Force:$force
 
             $destServer.JobServer.JobCategories.Refresh()
             $destServer.JobServer.OperatorCategories.Refresh()
@@ -116,10 +116,10 @@ function Copy-DbaAgentServer {
             Copy-DbaAgentAlert -Source $sourceServer -Destination $destServer -Force:$force -IncludeDefaults
             $destServer.JobServer.Alerts.Refresh()
 
-            Copy-DbaAgentProxyAccount -Source $sourceServer -Destination $destServer -Force:$force
+            Copy-DbaAgentProxy -Source $sourceServer -Destination $destServer -Force:$force
             $destServer.JobServer.ProxyAccounts.Refresh()
 
-            Copy-DbaAgentSharedSchedule -Source $sourceServer -Destination $destServer -Force:$force
+            Copy-DbaAgentSchedule -Source $sourceServer -Destination $destServer -Force:$force
             $destServer.JobServer.SharedSchedules.Refresh()
 
             $destServer.JobServer.Refresh()

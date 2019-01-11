@@ -65,6 +65,9 @@ function Get-DbaLocaleSetting {
         [UInt32]$CIMHiveCU = 2147483649
     }
     process {
+        # uses cim commands
+        
+        
         foreach ($computer in $ComputerName) {
             $props = @{ "ComputerName" = $computer }
             $Server = Resolve-DbaNetworkName -ComputerName $Computer -Credential $credential

@@ -6,7 +6,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
         $paramCount = 7
         $defaultParamCount = 11
-        [object[]]$params = (Get-ChildItem function:\Test-DbaJobOwner).Parameters.Keys
+        [object[]]$params = (Get-ChildItem function:\Test-DbaAgentJobOwner).Parameters.Keys
         $knownParameters = 'SqlInstance', 'SqlCredential', 'Job', 'ExcludeJob', 'Login', 'EnableException', 'Detailed'
         It "Should contain our specific parameters" {
             ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
@@ -29,14 +29,14 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     }
 
     Context "Command actually works" {
-        $results = Test-DbaJobOwner -SqlInstance $script:instance2
+        $results = Test-DbaAgentJobOwner -SqlInstance $script:instance2
         It "Should return $notSaJob" {
             $results | Where-Object {$_.Job -eq $notsajob} | Should Not Be Null
         }
     }
 
     Context "Command works for specific jobs" {
-        $results = Test-DbaJobOwner -SqlInstance $script:instance2 -Job $saJob, $notSaJob
+        $results = Test-DbaAgentJobOwner -SqlInstance $script:instance2 -Job $saJob, $notSaJob
         It "Should find $sajob owner matches default sa" {
             $($results | Where-Object {$_.Job -eq $sajob}).OwnerMatch | Should Be $True
         }
@@ -46,7 +46,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     }
 
     Context "Exclusions work" {
-        $results = Test-DbaJobOwner -SqlInstance $script:instance2 -ExcludeJob $notSaJob
+        $results = Test-DbaAgentJobOwner -SqlInstance $script:instance2 -ExcludeJob $notSaJob
         It "Should exclude $notsajob job" {
             $results.job | Should Not Match $notSaJob
         }

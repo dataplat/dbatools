@@ -90,7 +90,7 @@ function Get-DbaAgentJobOutputFile {
         [ValidateNotNullOrEmpty()]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
-        [Parameter(Mandatory = $false, HelpMessage = 'SQL Credential',
+        [Parameter(HelpMessage = 'SQL Credential',
             ValueFromPipelineByPropertyName = $true,
             ValueFromRemainingArguments = $false,
             Position = 1)]

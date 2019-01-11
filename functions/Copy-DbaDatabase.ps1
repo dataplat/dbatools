@@ -34,11 +34,11 @@ function Copy-DbaDatabase {
         If this switch is enabled, all user databases will be migrated. System and support databases will not be migrated. Requires -BackupRestore or -DetachAttach.
 
     .PARAMETER BackupRestore
-        If this switch is enabled, the copy-only backup and restore method will be used to migrate the database(s). This method requires that you specify -NetworkShare in a valid UNC format (\\server\share).
+        If this switch is enabled, the copy-only backup and restore method will be used to migrate the database(s). This method requires that you specify -SharedPath in a valid UNC format (\\server\share).
 
         Backups will be immediately deleted after use unless -NoBackupCleanup is specified.
 
-    .PARAMETER NetworkShare
+    .PARAMETER SharedPath
         Specifies the network location for the backup files. The SQL Server service accounts must have read/write permission on this path.
 
     .PARAMETER WithReplace
@@ -77,13 +77,13 @@ function Copy-DbaDatabase {
         Use of this switch requires -BackupRestore or -DetachAttach as well.
 
     .PARAMETER InputObject
-        A collection of dbobjects from the pipeline.
+        Enables piped input from Get-DbaDatabase
 
-    .PARAMETER UseLastBackups
+    .PARAMETER UseLastBackup
         Use the last full, diff and logs instead of performing backups. Note that the backups must exist in a location accessible by all destination servers, such a network share.
 
     .PARAMETER Continue
-        If specified, will to attempt to restore transaction log backups on top of existing database(s) in Recovering or Standby states. Only usable with -UseLastBackups
+        If specified, will to attempt to restore transaction log backups on top of existing database(s) in Recovering or Standby states. Only usable with -UseLastBackup
 
     .PARAMETER NoCopyOnly
         If this switch is enabled, backups will be taken without COPY_ONLY. This will break the LSN backup chain, which will interfere with the restore chain of the database.
@@ -139,7 +139,7 @@ function Copy-DbaDatabase {
         https://dbatools.io/Copy-DbaDatabase
 
     .EXAMPLE
-        PS C:\> Copy-DbaDatabase -Source sql2014a -Destination sql2014b -Database TestDB -BackupRestore -NetworkShare \\fileshare\sql\migration
+        PS C:\> Copy-DbaDatabase -Source sql2014a -Destination sql2014b -Database TestDB -BackupRestore -SharedPath \\fileshare\sql\migration
 
         Migrates a single user database TestDB using Backup and restore from instance sql2014a to sql2014b. Backup files are stored in \\fileshare\sql\migration.
 
@@ -149,24 +149,23 @@ function Copy-DbaDatabase {
         Databases will be migrated from sql2012 to both sql2014 and sql2016 using the detach/copy files/attach method.The following will be performed: kick all users out of the database, detach all data/log files, move files across the network over an admin share (\\SqlSERVER\M$\MSSql...), attach file on destination server, reattach at source. If the database files (*.mdf, *.ndf, *.ldf) on *destination* exist and aren't in use, they will be overwritten.
 
     .EXAMPLE
-        PS C:\> Copy-DbaDatabase -Source sql2014a -Destination sqlcluster, sql2016 -BackupRestore -UseLastBackups -Force
+        PS C:\> Copy-DbaDatabase -Source sql2014a -Destination sqlcluster, sql2016 -BackupRestore -UseLastBackup -Force
 
         Migrates all user databases to sqlcluster and sql2016 using the last Full, Diff and Log backups from sql204a. If the databases exists on the destinations, they will be dropped prior to attach.
 
         Note that the backups must exist in a location accessible by all destination servers, such a network share.
 
     .EXAMPLE
-        PS C:\> Copy-DbaDatabase -Source sql2014a -Destination sqlcluster -ExcludeDatabase Northwind, pubs -IncludeSupportDbs -Force -BackupRestore -NetworkShare \\fileshare\sql\migration
+        PS C:\> Copy-DbaDatabase -Source sql2014a -Destination sqlcluster -ExcludeDatabase Northwind, pubs -IncludeSupportDbs -Force -BackupRestore -SharedPath \\fileshare\sql\migration
 
         Migrates all user databases except for Northwind and pubs by using backup/restore (copy-only). Backup files are stored in \\fileshare\sql\migration. If the database exists on the destination, it will be dropped prior to attach.
 
         It also includes the support databases (ReportServer, ReportServerTempDb, distribution).
 
     #>
-    [CmdletBinding(DefaultParameterSetName = "DbBackup", SupportsShouldProcess = $true)]
+    [CmdletBinding(DefaultParameterSetName = "DbBackup", SupportsShouldProcess)]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseOutputTypeCorrectly", "", Justification = "PSSA Rule Ignored by BOH")]
     param (
-        [parameter(Mandatory = $false)]
         [DbaInstanceParameter]$Source,
         [PSCredential]$SourceSqlCredential,
         [parameter(Mandatory)]
@@ -181,9 +180,10 @@ function Copy-DbaDatabase {
         [switch]$AllDatabases,
         [parameter(Mandatory, ParameterSetName = "DbBackup")]
         [switch]$BackupRestore,
+        [Alias("NetworkShare")]
         [parameter(ParameterSetName = "DbBackup",
             HelpMessage = "Specify a valid network share in the format \\server\share that can be accessed by your account and the SQL Server service accounts for both Source and Destination.")]
-        [string]$NetworkShare,
+        [string]$SharedPath,
         [parameter(ParameterSetName = "DbBackup")]
         [switch]$WithReplace,
         [parameter(ParameterSetName = "DbBackup")]
@@ -208,7 +208,7 @@ function Copy-DbaDatabase {
         [parameter(ParameterSetName = "DbAttachDetach")]
         [switch]$IncludeSupportDbs,
         [parameter(ParameterSetName = "DbBackup")]
-        [switch]$UseLastBackups,
+        [switch]$UseLastBackup,
         [parameter(ParameterSetName = "DbBackup")]
         [switch]$Continue,
         [parameter(ValueFromPipeline)]
@@ -218,35 +218,29 @@ function Copy-DbaDatabase {
         [string]$NewName,
         [string]$Prefix,
         [switch]$Force,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     begin {
+        Test-DbaDeprecation -DeprecatedOn 1.0.0 -Parameter NetworkShare -CustomMessage "Using the parameter NetworkShare is deprecated. This parameter will be removed in version 1.0.0 or before. Use SharedPath instead."
+
         $CopyOnly = -not $NoCopyOnly
 
-        if ($BackupRestore -and (-not $NetworkShare -and -not $UseLastBackups)) {
-            Stop-Function -Message "When using -BackupRestore, you must specify -NetworkShare or -UseLastBackups"
+        if ($BackupRestore -and (-not $SharedPath -and -not $UseLastBackup)) {
+            Stop-Function -Message "When using -BackupRestore, you must specify -SharedPath or -UseLastBackup"
             return
         }
-        if ($NetworkShare -and $UseLastBackups) {
-            Stop-Function -Message "-NetworkShare cannot be used with -UseLastBackups because the backup path is determined by the paths in the last backups"
+        if ($SharedPath -and $UseLastBackup) {
+            Stop-Function -Message "-SharedPath cannot be used with -UseLastBackup because the backup path is determined by the paths in the last backups"
             return
         }
         if ($DetachAttach -and -not $Reattach -and $Destination.Count -gt 1) {
             Stop-Function -Message "When using -DetachAttach with multiple servers, you must specify -Reattach to reattach database at source"
             return
         }
-        if ($Continue -and -not $UseLastBackups) {
-            Stop-Function -Message "-Continue cannot be used without -UseLastBackups"
+        if ($Continue -and -not $UseLastBackup) {
+            Stop-Function -Message "-Continue cannot be used without -UseLastBackup"
             return
         }
-        <#
-        #Variable marked as unused by PSScriptAnalyzer
-        if ($null -ne $NewName -or $null -ne $Prefix) {
-            $ReplaceDbNameInFile = $true
-        } else {
-            $ReplaceDbNameInFile = $false
-        }#>
 
         function Join-Path {
             <#
@@ -284,20 +278,29 @@ function Copy-DbaDatabase {
 
             )
 
-            if ($script:sameserver) { return $filepath }
-            if (-not $filepath) { return }
-            if ($filepath.StartsWith("\\")) { return $filepath }
+            if ($script:sameserver -or (-not $script:isWindows)) {
+                return $filepath
+            }
+            if (-not $filepath) {
+                return
+            }
+            if ($filepath.StartsWith("\\")) {
+                return $filepath
+            }
 
             $servername = $servername.Split("\")[0]
 
-            if ($filepath.length -gt 0 -and $filepath -ne [System.DbNull]::Value) {
+            if ($filepath -and $filepath -ne [System.DbNull]::Value) {
                 $newpath = Join-Path "\\$servername\" $filepath.replace(':', '$')
                 return $newpath
-            } else { return }
+            } else {
+                return
+            }
         }
 
         function Get-SqlFileStructure {
-            $dbcollection = @{ };
+            $dbcollection = @{
+            };
             $databaseProgressbar = 0
 
             foreach ($db in $databaseList) {
@@ -307,8 +310,12 @@ function Copy-DbaDatabase {
 
                 $databaseProgressbar++
                 $dbStatus = $db.status.toString()
-                if ($dbStatus.StartsWith("Normal") -eq $false) { continue }
-                $destinstancefiles = @{ }; $sourcefiles = @{ }
+                if ($dbStatus.StartsWith("Normal") -eq $false) {
+                    continue
+                }
+                $destinstancefiles = @{
+                }; $sourcefiles = @{
+                }
 
                 $where = "Filetype <> 'LOG' and Filetype <> 'FULLTEXT'"
 
@@ -317,7 +324,8 @@ function Copy-DbaDatabase {
                 # Data Files
                 foreach ($file in $datarows) {
                     # Destination File Structure
-                    $d = @{ }
+                    $d = @{
+                    }
                     if ($ReuseSourceFolderStructure) {
                         $d.physical = $file.filename
                     } elseif ($WithReplace) {
@@ -341,7 +349,8 @@ function Copy-DbaDatabase {
                     $destinstancefiles.add($file.Name, $d)
 
                     # Source File Structure
-                    $s = @{ }
+                    $s = @{
+                    }
                     $s.logical = $file.Name
                     $s.physical = $file.filename
                     $s.remotefilename = Join-AdminUNC $sourceNetBios $s.physical
@@ -361,7 +370,8 @@ function Copy-DbaDatabase {
 
                     foreach ($ftc in $allrows) {
                         # Destination File Structure
-                        $d = @{ }
+                        $d = @{
+                        }
                         $pre = "sysft_"
                         $name = $ftc.Name
                         $physical = $ftc.Path # RootPath
@@ -370,7 +380,9 @@ function Copy-DbaDatabase {
                             $d.physical = $physical
                         } else {
                             $directory = Get-SqlDefaultPaths $destServer data
-                            if ($destServer.VersionMajor -lt 10) { $directory = "$directory\FTDATA" }
+                            if ($destServer.VersionMajor -lt 10) {
+                                $directory = "$directory\FTDATA"
+                            }
                             $fileName = Split-Path($physical) -leaf
                             $d.physical = "$directory\$fileName"
                         }
@@ -379,7 +391,8 @@ function Copy-DbaDatabase {
                         $destinstancefiles.add($logical, $d)
 
                         # Source File Structure
-                        $s = @{ }
+                        $s = @{
+                        }
                         $pre = "sysft_"
                         $name = $ftc.Name
                         $physical = $ftc.Path # RootPath
@@ -397,7 +410,8 @@ function Copy-DbaDatabase {
 
                 # Log Files
                 foreach ($file in $datarows) {
-                    $d = @{ }
+                    $d = @{
+                    }
                     if ($ReuseSourceFolderStructure) {
                         $d.physical = $file.filename
                     } elseif ($WithReplace) {
@@ -419,20 +433,24 @@ function Copy-DbaDatabase {
                     $d.remotefilename = Join-AdminUNC $destNetBios $d.physical
                     $destinstancefiles.add($file.Name, $d)
 
-                    $s = @{ }
+                    $s = @{
+                    }
                     $s.logical = $file.Name
                     $s.physical = $file.filename
                     $s.remotefilename = Join-AdminUNC $sourceNetBios $s.physical
                     $sourcefiles.add($file.Name, $s)
                 }
 
-                $location = @{ }
+                $location = @{
+                }
                 $location.add("Destination", $destinstancefiles)
                 $location.add("Source", $sourcefiles)
                 $dbcollection.Add($($db.Name), $location)
             }
 
-            $fileStructure = [pscustomobject]@{ "databases" = $dbcollection }
+            $fileStructure = [pscustomobject]@{
+                "databases" = $dbcollection
+            }
             Write-Progress -id 1 -Activity "Processing database file structure" -Status "Completed" -Completed
             return $fileStructure
         }
@@ -458,7 +476,7 @@ function Copy-DbaDatabase {
                 }
             }
 
-            if ($currentdb.AvailabilityGroupName.Length -gt 0) {
+            if ($currentdb.AvailabilityGroupName) {
                 $agName = $currentdb.AvailabilityGroupName
                 Write-Message -Level Verbose -Message "Attempting remove from Availability Group $agName."
                 try {
@@ -508,7 +526,9 @@ function Copy-DbaDatabase {
 
             if ($null -eq $server.Logins.Item($dbOwner)) {
                 try {
-                    $dbOwner = ($destServer.logins | Where-Object { $_.id -eq 1 }).Name
+                    $dbOwner = ($destServer.logins | Where-Object {
+                            $_.id -eq 1
+                        }).Name
                 } catch {
                     $dbOwner = "sa"
                 }
@@ -550,7 +570,9 @@ function Copy-DbaDatabase {
                             $null = New-Item -ItemType Directory -Path $remotefilename -Force
                             Start-BitsTransfer -Source "$from\*.*" -Destination $remotefilename
 
-                            $directories = (Get-ChildItem -recurse $from | Where-Object { $_.PsIsContainer }).FullName
+                            $directories = (Get-ChildItem -recurse $from | Where-Object {
+                                    $_.PsIsContainer
+                                }).FullName
                             foreach ($directory in $directories) {
                                 $newdirectory = $directory.replace($from, $remotefilename)
                                 $null = New-Item -ItemType Directory -Path $newdirectory -Force
@@ -605,14 +627,20 @@ function Copy-DbaDatabase {
 
                 if ($null -eq $dbOwner) {
                     try {
-                        $dbOwner = ($destServer.logins | Where-Object { $_.id -eq 1 }).Name
+                        $dbOwner = ($destServer.logins | Where-Object {
+                                $_.id -eq 1
+                            }).Name
                     } catch {
                         $dbOwner = "sa"
                     }
                 }
 
-                foreach ($file in $fileStructure.databases[$dbName].destination.values) { $null = $destfilestructure.add($file.physical) }
-                foreach ($file in $fileStructure.databases[$dbName].source.values) { $null = $sourceFileStructure.add($file.physical) }
+                foreach ($file in $fileStructure.databases[$dbName].destination.values) {
+                    $null = $destfilestructure.add($file.physical)
+                }
+                foreach ($file in $fileStructure.databases[$dbName].source.values) {
+                    $null = $sourceFileStructure.add($file.physical)
+                }
 
                 $detachresult = Dismount-SqlDatabase $sourceServer $dbName
 
@@ -644,15 +672,17 @@ function Copy-DbaDatabase {
         $backupCollection = @()
     }
     process {
-        if (Test-FunctionInterrupt) { return }
-
-        # testing twice for whatif reasons
-        if ($BackupRestore -and (-not $NetworkShare -and -not $UseLastBackups)) {
-            Stop-Function -Message "When using -BackupRestore, you must specify -NetworkShare or -UseLastBackups"
+        if (Test-FunctionInterrupt) {
             return
         }
-        if ($NetworkShare -and $UseLastBackups) {
-            Stop-Function -Message "-NetworkShare cannot be used with -UseLastBackups because the backup path is determined by the paths in the last backups"
+
+        # testing twice for whatif reasons
+        if ($BackupRestore -and (-not $SharedPath -and -not $UseLastBackup)) {
+            Stop-Function -Message "When using -BackupRestore, you must specify -SharedPath or -UseLastBackup"
+            return
+        }
+        if ($SharedPath -and $UseLastBackup) {
+            Stop-Function -Message "-SharedPath cannot be used with -UseLastBackup because the backup path is determined by the paths in the last backups"
             return
         }
         if ($DetachAttach -and -not $Reattach -and $Destination.Count -gt 1) {
@@ -715,7 +745,9 @@ function Copy-DbaDatabase {
             }
 
             if ($script:sameserver -and $DetachAttach) {
-                if (-not (Test-ElevationRequirement -ComputerName $sourceServer)) { return }
+                if (-not (Test-ElevationRequirement -ComputerName $sourceServer)) {
+                    return
+                }
             }
 
             $destVersionLower = $destServer.VersionMajor -lt $sourceServer.VersionMajor
@@ -734,18 +766,18 @@ function Copy-DbaDatabase {
                 }
             }
 
-            if ($NetworkShare) {
-                if ($(Test-DbaPath -SqlInstance $sourceServer -Path $NetworkShare) -eq $false) {
-                    Write-Message -Level Verbose -Message "$Source may not be able to access $NetworkShare. Trying anyway."
+            if ($SharedPath) {
+                if ($(Test-DbaPath -SqlInstance $sourceServer -Path $SharedPath) -eq $false) {
+                    Write-Message -Level Verbose -Message "$Source may not be able to access $SharedPath. Trying anyway."
                 }
 
-                if ($(Test-DbaPath -SqlInstance $destServer -Path $NetworkShare) -eq $false) {
-                    Write-Message -Level Verbose -Message "$destinstance may not be able to access $NetworkShare. Trying anyway."
+                if ($(Test-DbaPath -SqlInstance $destServer -Path $SharedPath) -eq $false) {
+                    Write-Message -Level Verbose -Message "$destinstance may not be able to access $SharedPath. Trying anyway."
                 }
 
-                if ($NetworkShare.StartsWith('\\')) {
+                if ($SharedPath.StartsWith('\\')) {
                     try {
-                        $shareServer = ($NetworkShare -split "\\")[2]
+                        $shareServer = ($SharedPath -split "\\")[2]
                         $hostEntry = ([Net.Dns]::GetHostEntry($shareServer)).HostName -split "\."
 
                         if ($shareServer -ne $hostEntry[0]) {
@@ -766,23 +798,6 @@ function Copy-DbaDatabase {
             Write-Message -Level Verbose -Message "Checking to ensure the source isn't the same as the destination."
             if ($source -eq $destinstance) {
                 Stop-Function -Message "Source and Destination SQL Servers instances are the same. Quitting." -Continue
-            }
-
-            if ($NetworkShare.Length -gt 0) {
-                Write-Message -Level Verbose -Message "Checking to ensure network path is valid."
-                if (!($NetworkShare.StartsWith("\\")) -and !$script:sameserver) {
-                    Stop-Function -Message "Network share must be a valid UNC path (\\server\share)." -Continue
-                }
-
-                if (-not $script:sameserver) {
-                    try {
-                        if ((Test-Path $NetworkShare -ErrorAction Stop)) {
-                            Write-Message -Level Verbose -Message "$NetworkShare share can be accessed."
-                        }
-                    } catch {
-                        Write-Message -Level Verbose -Message "$NetworkShare share cannot be accessed. Still trying anyway, in case the SQL Server service accounts have access."
-                    }
-                }
             }
 
             Write-Message -Level Verbose -Message "Checking to ensure server is not SQL Server 7 or below."
@@ -866,11 +881,19 @@ function Copy-DbaDatabase {
                 $dbName = $currentdb.Name
                 $dbOwner = $currentdb.Owner
 
-                if ($currentdb.Id -le 4) { continue }
-                if ($Database -and $Database -notcontains $dbName) { continue }
-                if ($IncludeSupportDBs -eq $false -and $SupportDBs -contains $dbName) { continue }
+                if ($currentdb.Id -le 4) {
+                    continue
+                }
+                if ($Database -and $Database -notcontains $dbName) {
+                    continue
+                }
+                if ($IncludeSupportDBs -eq $false -and $SupportDBs -contains $dbName) {
+                    continue
+                }
                 if ($IncludeSupportDBs -eq $true -and $SupportDBs -notcontains $dbName) {
-                    if ($AllDatabases -eq $false -and $Database.length -eq 0) { continue }
+                    if ($AllDatabases -eq $false -and $Database.length -eq 0) {
+                        continue
+                    }
                 }
                 $null = $databaseList.Add($currentdb)
             }
@@ -908,7 +931,7 @@ function Copy-DbaDatabase {
             $started = Get-Date
             $script:TimeNow = (Get-Date -UFormat "%m%d%Y%H%M%S")
 
-            if ($AllDatabases -or $ExcludeDatabase.length -gt 0 -or $IncludeSupportDbs -or $Database.length -gt 0) {
+            if ($AllDatabases -or $ExcludeDatabase -or $IncludeSupportDbs -or $Database) {
                 foreach ($currentdb in $databaseList) {
                     $dbName = $currentdb.Name
                     $dbOwner = $currentdb.Owner
@@ -1002,7 +1025,7 @@ function Copy-DbaDatabase {
                     }
 
                     Write-Message -Level Verbose -Message "Checking Availability Group status."
-                    if ($currentdb.AvailabilityGroupName.Length -gt 0 -and !$force -and $DetachAttach) {
+                    if ($currentdb.AvailabilityGroupName -and !$force -and $DetachAttach) {
                         $agName = $currentdb.AvailabilityGroupName
                         Write-Message -Level Verbose -Message "Database is part of an Availability Group ($agName). Use -Force to drop from $agName and migrate. Alternatively, you can use the safer backup/restore method."
                         continue
@@ -1049,7 +1072,7 @@ function Copy-DbaDatabase {
                             Write-Message -Level Verbose -Message "$DestinationdbName exists at destination. Use -Force to drop and migrate. Aborting routine for this database."
 
                             $copyDatabaseStatus.Status = "Skipped"
-                            $copyDatabaseStatus.Notes = "Already exists"
+                            $copyDatabaseStatus.Notes = "Already exists on destination"
                             $copyDatabaseStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                         }
                         continue
@@ -1087,23 +1110,22 @@ function Copy-DbaDatabase {
                     if ($SetSourceReadOnly) {
                         If ($Pscmdlet.ShouldProcess($source, "Set $dbName to read-only")) {
                             Write-Message -Level Verbose -Message "Setting database to read-only."
-                            $result = Update-SqldbReadOnly -SqlInstance $sourceServer -dbname $dbName -readonly:$true
-
-                            if ($result -eq $false) {
-                                Write-Message -Level Verbose -Message "Couldn't set database to read-only. Aborting routine for this database."
-                                continue
+                            try {
+                                $result = Set-DbaDbState -SqlInstance $sourceServer -Database $dbName -ReadOnly -EnableException
+                            } catch {
+                                Stop-Function -Continue -Message "Couldn't set database to read-only. Aborting routine for this database" -ErrorRecord $_
                             }
                         }
                     }
 
                     if ($BackupRestore) {
-                        if ($UseLastBackups) {
+                        if ($UseLastBackup) {
                             $whatifmsg = "Gathering last backup information for $dbName from $Source and restoring"
                         } else {
                             $whatifmsg = "Backup $dbName from $source and restoring"
                         }
                         If ($Pscmdlet.ShouldProcess($destinstance, $whatifmsg)) {
-                            if ($UseLastBackups) {
+                            if ($UseLastBackup) {
                                 $backupTmpResult = Get-DbaBackupHistory -SqlInstance $sourceServer -Database $dbName -IncludeCopyOnly -Last
                                 if (-not $backupTmpResult) {
                                     $copyDatabaseStatus.Type = "Database (BackupRestore)"
@@ -1115,7 +1137,7 @@ function Copy-DbaDatabase {
                             } else {
                                 $backupTmpResult = $backupCollection | Where-Object Database -eq $dbName
                                 if (-not $backupTmpResult) {
-                                    $backupTmpResult = Backup-DbaDatabase -SqlInstance $sourceServer -Database $dbName -BackupDirectory $NetworkShare -FileCount $numberfiles -CopyOnly:$CopyOnly
+                                    $backupTmpResult = Backup-DbaDatabase -SqlInstance $sourceServer -Database $dbName -BackupDirectory $SharedPath -FileCount $numberfiles -CopyOnly:$CopyOnly
                                 }
                                 if ($backupTmpResult) {
                                     $backupCollection += $backupTmpResult
@@ -1123,10 +1145,10 @@ function Copy-DbaDatabase {
                                 $backupResult = $BackupTmpResult.BackupComplete
                                 if (-not $backupResult) {
                                     $serviceAccount = $sourceServer.ServiceAccount
-                                    Write-Message -Level Verbose -Message "Backup Failed. Does SQL Server account $serviceAccount have access to $($NetworkShare)? Aborting routine for this database."
+                                    Write-Message -Level Verbose -Message "Backup Failed. Does SQL Server account $serviceAccount have access to $($SharedPath)? Aborting routine for this database."
 
                                     $copyDatabaseStatus.Status = "Failed"
-                                    $copyDatabaseStatus.Notes = "Backup failed. Verify service account access to $NetworkShare."
+                                    $copyDatabaseStatus.Notes = "Backup failed. Verify service account access to $SharedPath."
                                     $copyDatabaseStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                                     continue
                                 }
@@ -1237,12 +1259,13 @@ function Copy-DbaDatabase {
                                     $sourceServer.Databases[$dbName].BrokerEnabled = $sourceDbBrokerEnabled
                                     $sourceServer.Databases[$dbName].Alter()
 
-                                    if ($SetSourceReadOnly) {
-                                        $null = Update-SqldbReadOnly -SqlInstance $sourceServer -dbname $dbName -readonly $true
-                                    } else {
-                                        $null = Update-SqldbReadOnly -SqlInstance $sourceServer -dbname $dbName -readonly $sourceDbReadOnly
+                                    if ($SetSourceReadOnly -or $sourceDbReadOnly) {
+                                        try {
+                                            $result = Set-DbaDbState -SqlInstance $sourceServer -Database $dbName -ReadOnly -EnableException
+                                        } catch {
+                                            Stop-Function -Message "Couldn't set database to read-only" -ErrorRecord $_
+                                        }
                                     }
-
                                     Write-Message -Level Verbose -Message "Successfully reattached $dbName to $source."
                                 } else {
                                     Write-Message -Level Verbose -Message "Could not reattach $dbName to $source."
@@ -1314,12 +1337,15 @@ function Copy-DbaDatabase {
                         }
                     }
 
-                    if ($sourceDbReadOnly -ne $NewDatabase.ReadOnly -and $NoRecovery -eq $false) {
+                    if ($sourceDbReadOnly -ne $NewDatabase.ReadOnly -and -not $NoRecovery) {
                         if ($Pscmdlet.ShouldProcess($destinstance, "Updating ReadOnly status on $DestinationdbName")) {
-                            $update = Update-SqldbReadOnly -SqlInstance $destServer -dbname $DestinationdbName -readonly $sourceDbReadOnly
-                            if ($update -eq $true) {
-                                Write-Message -Level Verbose -Message "Successfully updated readonly status on $DestinationdbName."
-                            } else {
+                            try {
+                                if ($sourceDbReadOnly) {
+                                    $result = Set-DbaDbState -SqlInstance $destserver -Database $DestinationdbName -ReadOnly -EnableException
+                                } else {
+                                    $result = Set-DbaDbState -SqlInstance $destserver -Database $DestinationdbName -ReadWrite -EnableException
+                                }
+                            } catch {
                                 $copyDatabaseStatus.Status = "Successful - failed to apply ReadOnly."
                                 $copyDatabaseStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                                 Stop-Function -Message "Failed to update ReadOnly status on $DestinationdbName." -Target $destinstance -ErrorRecord $_ -Continue
@@ -1345,7 +1371,9 @@ function Copy-DbaDatabase {
         }
     }
     end {
-        if (Test-FunctionInterrupt) { return }
+        if (Test-FunctionInterrupt) {
+            return
+        }
         if (-not $NoBackupCleanUp -and $Destination.Count -gt 1) {
             foreach ($backupFile in ($backupCollection.BackupPath)) {
                 try {
@@ -1365,7 +1393,9 @@ function Copy-DbaDatabase {
                 }
             }
         }
-        if (Test-FunctionInterrupt) { return }
+        if (Test-FunctionInterrupt) {
+            return
+        }
         if ($null -ne $elapsed) {
             $totalTime = ($elapsed.Elapsed.toString().Split(".")[0])
 
@@ -1374,8 +1404,8 @@ function Copy-DbaDatabase {
             Write-Message -Level Verbose -Message "Migration completed: $(Get-Date)"
             Write-Message -Level Verbose -Message "Total Elapsed time: $totalTime"
 
-            if ($NetworkShare.length -gt 0 -and $NoBackupCleanup) {
-                Write-Message -Level Verbose -Message "Backups still exist at $NetworkShare."
+            if ($SharedPath -and $NoBackupCleanup) {
+                Write-Message -Level Verbose -Message "Backups still exist at $SharedPath."
             }
         } else {
             Write-Message -Level Verbose -Message "No work was done, as we stopped during setup phase"

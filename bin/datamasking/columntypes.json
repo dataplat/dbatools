@@ -1,0 +1,103 @@
+[
+    {
+        "TypeName": "Firstname",
+        "Synonym": [
+            "Firstname",
+            "Forename"
+        ]
+    },
+    {
+        "TypeName": "Lastname",
+        "Synonym": [
+            "Lastname",
+            "Surname"
+        ]
+    },
+    {
+        "TypeName": "Fullname",
+        "Synonym": [
+            "Fullname",
+            "TypeName"
+        ]
+    },
+    {
+        "TypeName": "Phone",
+        "Synonym": [
+            "Phonenumber",
+            "Phone",
+            "Telephone",
+            "TelephoneNumber"
+        ]
+    },
+    {
+        "TypeName": "Address",
+        "Synonym": [
+            "Address",
+            "Location",
+            "Headquarters",
+            "Street"
+        ]
+    },
+    {
+        "TypeName": "Zipcode",
+        "Synonym": [
+            "Zipcode",
+            "Zip",
+            "Postalcode"
+        ]
+    },
+    {
+        "TypeName": "City",
+        "Synonym": [
+            "City"
+        ]
+    },
+    {
+        "TypeName": "State",
+        "Synonym": [
+            "State"
+        ]
+    },
+    {
+        "TypeName": "Country",
+        "Synonym": [
+            "Country"
+        ]
+    },
+    {
+        "TypeName": "CountryCode",
+        "Synonym": [
+            "CountryCode"
+        ]
+    },
+    {
+        "TypeName": "Latitude",
+        "Synonym": [
+            "Latitude",
+            "Lat"
+        ]
+    },
+    {
+        "TypeName": "Longitude",
+        "Synonym": [
+            "Longitude",
+            "Lon"
+        ]
+    },
+    {
+        "TypeName": "Creditcard",
+        "Synonym": [
+            "Creditcard",
+            "CreditcardNumber"
+        ]
+    },
+    {
+        "TypeName": "Username",
+        "Synonym": [
+            "Login",
+			"LoginId",
+            "User",
+            "UserId"
+        ]
+    }
+]

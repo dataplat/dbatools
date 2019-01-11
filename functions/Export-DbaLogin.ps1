@@ -30,10 +30,10 @@ function Export-DbaLogin {
     .PARAMETER Append
         If this switch is enabled, content will be appended to a file already existing at the path specified by Path. If the file does not exist, it will be created.
 
-    .PARAMETER NoJobs
+    .PARAMETER ExcludeJobs
         If this switch is enabled, Agent job ownership will not be exported.
 
-    .PARAMETER NoDatabases
+    .PARAMETER ExcludeDatabases
         If this switch is enabled, mappings for databases will not be exported.
 
     .PARAMETER EnableException
@@ -95,7 +95,7 @@ function Export-DbaLogin {
         Exports login realcajun from sqlserver2008 to the file C:\temp\users.sql with syntax to run on SQL Server 2016
 
     #>
-    [CmdletBinding(SupportsShouldProcess = $true)]
+    [CmdletBinding(SupportsShouldProcess)]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
@@ -112,8 +112,8 @@ function Export-DbaLogin {
         [Alias("NoOverwrite")]
         [switch]$NoClobber,
         [switch]$Append,
-        [switch]$NoDatabases,
-        [switch]$NoJobs,
+        [switch]$ExcludeDatabases,
+        [switch]$ExcludeJobs,
         [Alias('Silent')]
         [switch]$EnableException,
         [switch]$ExcludeGoBatchSeparator,
@@ -145,7 +145,7 @@ function Export-DbaLogin {
 
         $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $sqlcredential
 
-        if ($NoDatabases -eq $false -or $Database) {
+        if ($ExcludeDatabases -eq $false -or $Database) {
             # if we got a database or a list of databases passed
             # and we need to enumerate mappings, login.enumdatabasemappings() takes forever
             # the cool thing though is that database.enumloginmappings() is fast. A lot.
@@ -292,7 +292,7 @@ function Export-DbaLogin {
                 }
             }
 
-            if ($NoJobs -eq $false) {
+            if ($ExcludeJobs -eq $false) {
                 $ownedJobs = $server.JobServer.Jobs | Where-Object { $_.OwnerLoginName -eq $userName }
 
                 foreach ($ownedJob in $ownedJobs) {
@@ -330,7 +330,7 @@ function Export-DbaLogin {
                 }
             }
 
-            if ($NoDatabases -eq $false) {
+            if ($ExcludeDatabases -eq $false) {
                 $dbs = $sourceLogin.EnumDatabaseMappings()
 
                 if ($Database) {

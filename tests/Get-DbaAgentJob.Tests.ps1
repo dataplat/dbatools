@@ -4,15 +4,10 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        $paramCount = 6
-        $defaultParamCount = 11
         [object[]]$params = (Get-ChildItem function:\Get-DbaAgentJob).Parameters.Keys
-        $knownParameters = 'SqlInstance', 'SqlCredential', 'Job', 'ExcludeJob', 'NoDisabledJobs', 'EnableException'
+        $knownParameters = 'SqlInstance', 'SqlCredential', 'Job', 'ExcludeJob', 'ExcludeDisabledJobs', 'EnableException', 'Database', 'Category'
         It "Should contain our specific parameters" {
-            ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
-        }
-        It "Should only contain $paramCount parameters" {
-            $params.Count - $defaultParamCount | Should Be $paramCount
+            ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $knownParameters.Count
         }
     }
 }
@@ -44,7 +39,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         AfterAll {
             $null = Remove-DbaAgentJob -SqlInstance $script:instance2 -Job dbatoolsci_testjob, dbatoolsci_testjob_disabled
         }
-        $results = Get-DbaAgentJob -SqlInstance $script:instance2 -NoDisabledJobs | Where-Object {$_.Name -match "dbatoolsci"}
+        $results = Get-DbaAgentJob -SqlInstance $script:instance2 -ExcludeDisabledJobs | Where-Object {$_.Name -match "dbatoolsci"}
         It "Should return only enabled jobs" {
             $results.enabled -contains $False | Should Be $False
         }
