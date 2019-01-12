@@ -193,6 +193,7 @@ function Invoke-DbaDbDataMasking {
             foreach ($db in $dbs) {
                 $stepcounter = $nullmod = 0
                 foreach ($tableobject in $tables.Tables) {
+
                     if ($tableobject.Name -in $ExcludeTable -or ($Table -and $tableobject.Name -notin $Table)) {
                         Write-Message -Level Verbose -Message "Skipping $($tableobject.Name) because it is explicitly excluded"
                         continue
@@ -201,6 +202,7 @@ function Invoke-DbaDbDataMasking {
                     if ($tableobject.Name -notin $db.Tables.Name) {
                         Stop-Function -Message "Table $($tableobject.Name) is not present in $db" -Target $db -Continue
                     }
+
                     try {
                         if (-not (Test-Bound -ParameterName Query)) {
                             $query = "SELECT * FROM [$($tableobject.Schema)].[$($tableobject.Name)]"
@@ -211,7 +213,31 @@ function Invoke-DbaDbDataMasking {
                     }
 
                     $sqlconn.ChangeDatabase($db.Name)
-                    
+
+                    $uniqueIndex = @()
+                    if($tableobject.HasUniqueIndexes){
+
+                        foreach($index in ($table.Indexes | Where-Object IsUnique -eq $true )){
+
+                            $columnOrder = @()
+
+                            for($i = 0; $i -lt $index.IndexedColumns.Count; $i++){
+                                $columnOrder += [PSCustomObject]@{
+                                    ColumnName = $index.IndexedColumns[$i].Name
+                                    ColumnOrder = $i
+                                }
+                            }
+
+                            $uniqueIndex += [PSCustomObject]@{
+                                TableName = $table.Name
+                                IndexName = $index.Name
+                                Columns = $index.IndexedColumns.Name
+                                ColumnOrder = ($columnOrder | Sort-Object ColumnOrder)
+                            }
+
+                        }
+                    }
+
                     $deterministicColumns = $tables.Tables.Columns | Where-Object Deterministic -eq $true
                     $tablecolumns = $tableobject.Columns
 
@@ -220,6 +246,10 @@ function Invoke-DbaDbDataMasking {
                     }
 
                     if ($ExcludeColumn) {
+                        if([string]$uniqueIndex.Columns -match ($ExcludeColumn -join "|")){
+                            Stop-Function -Message "Column present in -ExcludeColumn cannot be excluded because it's part of an unique index" -Target $ExcludeColumn -Continue
+                        }
+
                         $tablecolumns = $tablecolumns | Where-Object Name -notin $ExcludeColumn
                     }
 
@@ -227,6 +257,7 @@ function Invoke-DbaDbDataMasking {
                         Write-Message -Level Verbose "No columns to process in $($db.Name).$($tableobject.Schema).$($tableobject.Name), moving on"
                         continue
                     }
+
 
                     if ($Pscmdlet.ShouldProcess($instance, "Masking $($tablecolumns.Name -join ', ') in $($data.Rows.Count) rows in $($db.Name).$($tableobject.Schema).$($tableobject.Name)")) {
                         $transaction = $sqlconn.BeginTransaction()
