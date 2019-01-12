@@ -141,6 +141,12 @@ function New-DbaDbMaskingConfig {
             foreach ($tableobject in $tablecollection) {
                 Write-Message -Message "Processing table $($tableobject.Name)" -Level Verbose
 
+                $hasUniqueIndex = $false
+
+                if ($tableobject.Indexes.IsUnique) {
+                    $hasUniqueIndex = $true
+                }
+
                 $columns = @()
 
                 # Get the columns
@@ -400,9 +406,10 @@ function New-DbaDbMaskingConfig {
                 # Check if something needs to be generated
                 if ($columns) {
                     $tables += [PSCustomObject]@{
-                        Name    = $tableobject.Name
-                        Schema  = $tableobject.Schema
-                        Columns = $columns
+                        Name           = $tableobject.Name
+                        Schema         = $tableobject.Schema
+                        Columns        = $columns
+                        HasUniqueIndex = $hasUniqueIndex
                     }
                 } else {
                     Write-Message -Message "No columns match for masking in table $($tableobject.Name)" -Level Verbose
