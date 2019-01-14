@@ -17,7 +17,6 @@ function Test-PendingReboot {
         [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [DbaInstanceParameter]$ComputerName,
-        [ValidateNotNullOrEmpty()]
         [pscredential]$Credential,
         [bool]$EnableException = $EnableException
     )
@@ -27,7 +26,7 @@ function Test-PendingReboot {
                 ComputerName = $ComputerName.ComputerName
                 Raw          = $true
             }
-            if ($PSBoundParameters.ContainsKey('Credential')) {
+            if (Test-Bound -ParameterName Credential) {
                 $icmParams.Credential = $Credential
             }
 

@@ -157,7 +157,7 @@ function Update-DbaInstance {
         [string[]]$KB,
         [Alias("Instance")]
         [string]$InstanceName,
-        [string[]]$Path,
+        [string[]]$Path = (Get-DbatoolsConfigValue -Name 'Path.SQLServerUpdates'),
         [switch]$Restart,
         [switch]$Continue,
         [ValidateNotNull()]
@@ -297,7 +297,7 @@ function Update-DbaInstance {
             }
             $upgrades = @()
             :actions foreach ($currentAction in $actions) {
-                $restartNeeded = Test-PendingReboot -ComputerName $resolvedName
+                $restartNeeded = Test-PendingReboot -ComputerName $resolvedName -Credential $Credential
                 if ($restartNeeded -and (-not $Restart -or ([DbaInstanceParameter]$resolvedName).IsLocalHost)) {
                     #Exit the actions loop altogether - nothing can be installed here anyways
                     Stop-Function -Message "$resolvedName is pending a reboot. Reboot the computer before proceeding." -Continue -ContinueLabel computers
@@ -455,6 +455,7 @@ function Update-DbaInstance {
                         Write-ProgressHelper -ExcludePercent -Activity $activity -Message "Now installing update SQL$($currentAction.MajorVersion)$($currentAction.TargetLevel) from $spExtractPath"
                         Write-Message -Level Verbose -Message "Starting installation from $spExtractPath" -FunctionName Update-DbaInstance
                         $updateResult = Invoke-Program @execParams -Path "$spExtractPath\setup.exe" -ArgumentList @('/quiet', $instanceClause, '/IAcceptSQLServerLicenseTerms') -WorkingDirectory $spExtractPath -Fallback
+                        $output.ExitCode = $updateResult.ExitCode
                         if ($updateResult.Successful) {
                             $output.Successful = $true
                         } else {
@@ -486,7 +487,7 @@ function Update-DbaInstance {
                     }
                 }
                 #double check if restart is needed
-                if ($updateResult.ExitCode -eq 3010 -or (Test-PendingReboot -ComputerName $resolvedName)) {
+                if ($updateResult.ExitCode -eq 3010 -or (Test-PendingReboot -ComputerName $resolvedName -Credential $Credential)) {
                     if ($Restart) {
                         # Restart the computer
                         Write-ProgressHelper -ExcludePercent -Activity $activity -Message "Restarting computer $($computer) and waiting for it to come back online"
