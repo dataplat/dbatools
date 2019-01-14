@@ -62,11 +62,14 @@ function Install-DbaInstance {
         BinaryPath will hold the driveletter and subsequent folders (if any) of your installation media. The input must point to the location where the
         setup.exe is located.
 
-    .PARAMETER PerformPathMaintenance
-        PerformPathMaintenance will set the policy for grant or deny this right to the SQL Server service account.
+    .PARAMETER PerformVolumeMaintenanceTasks
+        PerformVolumeMaintenanceTasks will set the policy for grant or deny this right to the SQL Server service account.
 
     .PARAMETER SaveConfiguration
         SaveConfiguration will prompt you for a file location to save the new config file. Otherwise it will only be saved in the PowerShell bin directory.
+
+    .PARAMETER DotNetPath
+        Path to the .Net 3.5 installation folder (Windows installation media) for offline installations. Might be required for SQL2012/2014
 
     .PARAMETER AuthenticationMode
         AuthenticationMode will prompt you if you want mixed mode authentication or just Windows AD authentication. With Mixed Mode, you will be prompted for the SA password.
@@ -78,7 +81,7 @@ function Install-DbaInstance {
 
     .NOTES
         Tags: Install
-        Author: Reitse Eskens (@2meterDBA)
+        Author: Reitse Eskens (@2meterDBA), Kirill Kravtsov (@nvarscar)
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
@@ -104,15 +107,20 @@ function Install-DbaInstance {
         This will run the installation with default setting apart from the application volume, this will be redirected to the G drive.
 
     .Example
-        C:\PS> Install-DbaInstance -Version 2016 -ProgramPath D -DataPath E -LogPath L -PerformPathMaintenance -AdminAccount MyDomain\SvcSqlServer
+        C:\PS> Install-DbaInstance -Version 2016 -ProgramPath D -DataPath E -LogPath L -PerformVolumeMaintenanceTasks -AdminAccount MyDomain\SvcSqlServer
 
         This will install SQL Server 2016 on the D drive, the data on E, the logs on L and the other files on the autodetected drives. The perform volume maintenance
         right is granted and the domain account SvcSqlServer will be used as the service account for SqlServer.
 
        #>
-    [CmdletBinding()]
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
     param (
+        [Alias('SqlInstance')]
         [DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,
+        [parameter(Mandatory)]
+        [ValidateNotNullOrEmpty()]
+        [ValidateSet("2008", "2008R2", "2012", "2014", "2016", "2017")]
+        [string]$Version,
         [string]$InstanceName,
         [PSCredential]$SaCredential,
         [PSCredential]$Credential,
@@ -122,11 +130,7 @@ function Install-DbaInstance {
         [Alias("FilePath")]
         [object]$ConfigurationFile,
         [hashtable]$Configuration,
-        [string]$BinaryPath,
-        [ValidateSet("2008", "2008R2", "2012", "2014", "2016", "2017", "2019")]
-        [string]$Version,
-        [ValidateSet("Express", "Standard", "Enterprise", "Developer")]
-        [string]$Edition = "Express",
+        [string]$Path = (Get-DbatoolsConfigValue -Name 'Path.SQLServerSetup'),
         [ValidateSet("Default", "All", "Engine", "Tools", "Replication", "FullText", "DataQuality", "PolyBase", "MachineLearning", "AnalysisServices",
             "ReportingServices", "ReportingForSharepoint", "SharepointAddin", "IntegrationServices", "MasterDataServices", "PythonPackages", "RPackages",
             "ReplayController", "ReplayClient", "SDK", "BIDS", "SSMS")]
@@ -139,6 +143,10 @@ function Install-DbaInstance {
         [string]$TempPath,
         [string]$BackupPath,
         [string[]]$AdminAccount,
+        [int]$Port,
+        [int]$Throttle,
+        [Alias('PID')]
+        [string]$ProductID,
         [pscredential]$EngineCredential,
         [pscredential]$AgentCredential,
         [pscredential]$ASCredential,
@@ -146,9 +154,10 @@ function Install-DbaInstance {
         [pscredential]$RSCredential,
         [pscredential]$FTCredential,
         [pscredential]$PBEngineCredential,
-
-        [switch]$PerformPathMaintenance,
-        [switch]$SaveConfiguration,
+        [string]$SaveConfiguration,
+        [string]$DotNetPath,
+        [switch]$PerformVolumeMaintenanceTasks,
+        [switch]$Restart,
         [switch]$EnableException
     )
     begin {
@@ -157,10 +166,9 @@ function Install-DbaInstance {
                 $Path
             )
             #Collect config entries from the ini file
+            Write-Message -Level Verbose -Message "Reading Ini file from $Path"
             $config = @{}
             switch -regex -file $Path {
-                #Comment
-                "^#" {}
                 #Section
                 "^\[(.+)\]\s*$" {
                     $section = $matches[1]
@@ -179,11 +187,12 @@ function Install-DbaInstance {
                 [hashtable]$Content,
                 $Path
             )
+            Write-Message -Level Verbose -Message "Writing Ini file to $Path"
             $output = @()
             foreach ($key in $Content.Keys) {
                 $output += "[$key]"
                 if ($Content.$key -is [hashtable]) {
-                    foreach ($sectionKey in $Content.$key) {
+                    foreach ($sectionKey in $Content.$key.Keys) {
                         $output += "$sectionKey=`"$($Content.$key.$sectionKey -join ',')`""
                     }
                 }
@@ -194,48 +203,81 @@ function Install-DbaInstance {
             # updates a service account entry and returns the password as a command line argument
             Param (
                 $Node,
-                [Parameter(Mandatory)]
                 [pscredential]$Credential,
-                [Parameter(Mandatory)]
                 [string]$AccountName,
                 [string]$PasswordName = $AccountName.Replace('SVCACCOUNT', 'SVCPASSWORD')
             )
             if ($Credential) {
-                $Node.$AccountName = $Credential.UserName
+                if ($AccountName) {
+                    $Node.$AccountName = $Credential.UserName
+                }
                 if ($Credential.Password.Length -gt 0) {
                     return "/$PasswordName=`"" + $Credential.GetNetworkCredential().Password + '"'
                 }
             }
         }
-        # getting a numeric version for further comparison
-        [version]$majorVersion = switch ($Version) {
-            2008 { '10.0' }
-            2008R2 { '10.50' }
-            2012 { '11.0' }
-            2014 { '12.0' }
-            2016 { '13.0' }
-            2017 { '14.0' }
-            2019 { '15.0' }
+        Function Get-SqlInstallSummary {
+            Param (
+                [DbaInstanceParameter]$ComputerName,
+                [pscredential]$Credential,
+                [parameter(Mandatory)]
+                [version]$Version
+            )
+            $getSummary = {
+                Param (
+                    [parameter(Mandatory)]
+                    [version]$Version
+                )
+                $versionNumber = "$($Version.Major)$($Version.Minor)".Substring(0, 3)
+                $path = "$env:ProgramFiles\Microsoft SQL Server\$versionNumber\Setup Bootstrap\Log\Summary.txt"
+                if (Test-Path $path) {
+                    return Get-Content -Path $path
+                }
+            }
+            $params = @{
+                ComputerName = $ComputerName
+                Credential   = $Credential
+                ScriptBlock  = $getSummary
+                ArgumentList = @($Version.ToString())
+                ErrorAction  = 'Stop'
+                Raw          = $true
+            }
+            try {
+                return Invoke-Command2 @params
+            } catch {
+                Write-Message -Level Verbose -Message "Could not get the contents of the summary file | $($_.Exception.Message)"
+            }
         }
-        # read components name
-        $components = Get-Content -Path $PSScriptRoot\..\bin\dbatools-sqlinstallationcomponents.json -Raw | ConvertFrom-Json
+        $notifiedCredentials = $false
+        $notifiedUnsecure = $false
+        $pathIsNetwork = $Path | Foreach-Object -Begin { $o = @() } -Process { $o += $_ -like '\\*'} -End { $o -contains $true }
+
+        # read component names
+        $components = Get-Content -Path $Script:PSModuleRoot\bin\dbatools-sqlinstallationcomponents.json -Raw | ConvertFrom-Json
     }
     process {
+        # getting a numeric version for further comparison
+        $canonicVersion = (Get-DbaBuildReference -MajorVersion $Version).BuildLevel
+        if (-not $canonicVersion) {
+            Stop-Function -Message "Version $Version was not found in the build reference database"
+            return
+        }
+
         # build feature list
         $featureList = @()
         foreach ($f in $Feature) {
             $featureDef = $components | Where-Object Name -contains $f
             foreach ($fd in $featureDef) {
-                if (($fd.MinimumVersion -and $majorVersion -lt [version]$fd.MinimumVersion) -or ($fd.MaximumVersion -and $majorVersion -gt [version]$fd.MaximumVersion)) {
-                    Stop-Function -Message "Feature $f($($fd.Feature)) is not supported on SQL$Version"
-                    return
+                if (($fd.MinimumVersion -and $canonicVersion -lt [version]$fd.MinimumVersion) -or ($fd.MaximumVersion -and $canonicVersion -gt [version]$fd.MaximumVersion)) {
+                    # exclude Default and All
+                    if ($f -notin 'Default', 'All') {
+                        Stop-Function -Message "Feature $f($($fd.Feature)) is not supported on SQL$Version"
+                        return
+                    }
+                } else {
+                    $featureList += $fd.Feature
                 }
-                $featureList += $fd.Feature
             }
-        }
-        if (Test-Bound -Not -And -ParameterName ConfigurationFile, Version) {
-            Stop-Function -Message "You must specify either ConfigurationFile or Version"
-            return
         }
 
         # auto generate a random password if mixed is chosen and a credential is not provided
@@ -256,41 +298,103 @@ function Install-DbaInstance {
         $actionPlan = @()
 
         foreach ($computer in $ComputerName) {
-            # Get the installation folder of SQL Server. if the user didn't choose a specific folder, the autosearch will commence. It will take some time!
-            # To limit the number of results, the search exludes the Windows, program files, program data and users directories.
-            # If the user added the folder where the installation disc or files are located, the input is somewhat sanitized to allow multiple sorts of entry.
-            # The user is expected to add the complete folder structure!
-
+            # Test elevated console
+            $null = Test-ElevationRequirement -ComputerName $computer -Continue
+            # notify about credentials once
+            if (-not $computer.IsLocalHost -and -not $notifiedCredentials -and -not $Credential -and $pathIsNetwork) {
+                Write-Message -Level Warning -Message "Explicit -Credential might be required when running agains remote hosts and -Path is a network folder"
+                $notifiedCredentials = $true
+            }
+            # resolve names
+            $resolvedName = Resolve-DbaNetworkName -ComputerName $computer -Credential $Credential
+            $fullComputerName = $resolvedName.FullComputerName
+            # test if the restart is needed
+            $restartNeeded = Test-PendingReboot -ComputerName $fullComputerName -Credential $Credential
+            if ($restartNeeded -and (-not $Restart -or $computer.IsLocalHost)) {
+                #Exit the actions loop altogether - nothing can be installed here anyways
+                Stop-Function -Message "$computer is pending a reboot. Reboot the computer before proceeding." -Continue
+            }
+            # Attempt to configure CredSSP for the remote host when credentials are defined
+            if ($Credential -and -not ([DbaInstanceParameter]$computer).IsLocalHost -and $Authentication -eq 'Credssp') {
+                Write-Message -Level Verbose -Message "Attempting to configure CredSSP for remote connections"
+                Initialize-CredSSP -ComputerName $fullComputerName -Credential $Credential -EnableException $false
+                # Verify remote connection and confirm using unsecure credentials
+                try {
+                    $secureProtocol = Invoke-Command2 -ComputerName $fullComputerName -Credential $Credential -Authentication $Authentication -ScriptBlock { $true } -Raw
+                } catch {
+                    $secureProtocol = $false
+                }
+                # only ask once about using unsecure protocol
+                if (-not $secureProtocol -and -not $notifiedUnsecure) {
+                    if ($PSCmdlet.ShouldProcess($fullComputerName, "Primary protocol ($Authentication) failed, sending credentials via potentially unsecure protocol")) {
+                        $notifiedUnsecure = $true
+                    } else {
+                        Stop-Function -Message "Failed to connect to $fullComputerName through $Authentication protocol. No actions will be performed on that computer." -Continue
+                    }
+                }
+            }
+            # find installation file
+            Write-Message -Level Verbose -Message "Looking for installation files in $($Path) on remote machine into $fullComputerName"
+            $findSetupParams = @{
+                ComputerName   = $fullComputerName
+                Credential     = $Credential
+                Authentication = $Authentication
+                Version        = $canonicVersion
+                Path           = $Path
+            }
+            $setupFile = Find-SqlServerSetup @findSetupParams
+            if (-not $setupFile) {
+                Stop-Function -Message "Failed to find setup file for SQL$Version in $Path on $fullComputerName" -Continue
+            }
             $instance = if ($InstanceName) { $InstanceName } else { $computer.InstanceName }
-            $mainKey = if ($majorVersion -gt '11.0') { "OPTIONS" } else { "SQLSERVER2008" }
+            $mainKey = if ($canonicVersion -gt '11.0') { "OPTIONS" } else { "SQLSERVER2008" }
             if (Test-Bound -ParameterName ConfigurationFile) {
                 $config = Read-IniFile -Path $ConfigurationFile
             } else {
+                # determine a default user to assign sqladmin permissions
+                if ($Credential) {
+                    $defaultAdminAccount = $Credential.UserName
+                } else {
+                    if ($env:USERDOMAIN) {
+                        $defaultAdminAccount = "$env:USERDOMAIN\$env:USERNAME"
+                    } else {
+                        if ($computer.IsLocalHost) {
+                            $defaultAdminAccount = "$($resolvedName.ComputerName)\$env:USERNAME"
+                        } else {
+                            $defaultAdminAccount = $env:USERNAME
+                        }
+                    }
+                }
+                # determine browser startup
+                if ($instance -eq 'MSSQLSERVER') { $browserStartup = 'Manual' }
+                else { $browserStartup = 'Automatic' }
                 # build generic config based on parameters
                 $config = @{
                     $mainKey = @{
-                        ACTION                   = "Install"
-                        ADDCURRENTUSERASSQLADMIN = "True"
-                        ASCOLLATION              = "Latin1_General_CI_AS"
-                        ENABLERANU               = "False"
-                        ERRORREPORTING           = "False"
-                        FEATURES                 = $featureList
-                        FILESTREAMLEVEL          = "0"
-                        HELP                     = "False"
-                        INDICATEPROGRESS         = "False"
-                        INSTANCEID               = $instance
-                        INSTANCENAME             = $instance
-                        ISSVCSTARTUPTYPE         = "Automatic"
-                        QUIET                    = "True"
-                        QUIETSIMPLE              = "False"
-                        RSINSTALLMODE            = "DefaultNativeMode"
-                        RSSVCSTARTUPTYPE         = "Automatic"
-                        SECURITYMODE             = $AuthenticationMode
-                        SQLCOLLATION             = "SQL_Latin1_General_CP1_CI_AS"
-                        SQLSVCSTARTUPTYPE        = "Automatic"
-                        SQMREPORTING             = "False"
-                        TCPENABLED               = "1"
-                        X86                      = "False"
+                        ACTION                = "Install"
+                        AGTSVCSTARTUPTYPE     = "Automatic"
+                        ASCOLLATION           = "Latin1_General_CI_AS"
+                        BROWSERSVCSTARTUPTYPE = $browserStartup
+                        ENABLERANU            = "False"
+                        ERRORREPORTING        = "False"
+                        FEATURES              = $featureList
+                        FILESTREAMLEVEL       = "0"
+                        HELP                  = "False"
+                        INDICATEPROGRESS      = "False"
+                        INSTANCEID            = $instance
+                        INSTANCENAME          = $instance
+                        ISSVCSTARTUPTYPE      = "Automatic"
+                        QUIET                 = "True"
+                        QUIETSIMPLE           = "False"
+                        RSINSTALLMODE         = "DefaultNativeMode"
+                        RSSVCSTARTUPTYPE      = "Automatic"
+                        SQLCOLLATION          = "SQL_Latin1_General_CP1_CI_AS"
+                        SQLSVCSTARTUPTYPE     = "Automatic"
+                        SQLSYSADMINACCOUNTS   = $defaultAdminAccount
+                        SQMREPORTING          = "False"
+                        TCPENABLED            = "1"
+                        UPDATEENABLED         = "False"
+                        X86                   = "False"
                     }
                 }
             }
@@ -301,11 +405,29 @@ function Install-DbaInstance {
             }
             $execParams = @()
             # version-specific stuff
-            if ($majorVersion -ge '10.0') {
+            if ($canonicVersion -ge '10.0') {
                 $execParams += '/IACCEPTSQLSERVERLICENSETERMS'
             }
-            if ($majorVersion -ge '13.0') {
-                $cores = Get-DbaCmObject -ComputerName $computer.ComputerName -Credential $Credential -ClassName Win32_processor | Measure-Object NumberOfCores -Sum | Select-Object -ExpandProperty sum
+            # activate .Net 3.5 if missing - only needed on 2012 and 2014
+            if ($canonicVersion -ge '11.0' -and $canonicVersion -le '12.0' ) {
+                if (-Not (Get-WindowsFeature NET-Framework-Core| Where-Object $_.InstallState -eq 'Installed')) {
+                    Write-Message -Level Verbose -Message "Installing .Net Framework 3.5 (NET-Framework-Core)"
+                    $dotNetParams = @{ Name = 'NET-Framework-Core' }
+                    if ($DotNetPath) { $dotNetParams += @{ Source = $DotNetPath }
+                    }
+                    try {
+                        $dotNetResults = Install-WindowsFeature @DotNetPath -ErrorAction Stop
+                    } catch {
+                        Stop-Function -Message ".Net3.5 installation returned failure" -ErrorRecord $_
+                    }
+                    if (-Not $dotNetResults.Success) {
+                        Write-Message -Level Warning -Message ".Net3.5 installation was unsuccessful"
+                    }
+                }
+            }
+            if ($canonicVersion -ge '13.0') {
+                # configure the number of cores
+                $cores = Get-DbaCmObject -ComputerName $fullComputerName -Credential $Credential -ClassName Win32_processor | Measure-Object NumberOfCores -Sum | Select-Object -ExpandProperty sum
                 if ($cores -gt 8) {
                     $cores = 8
                 }
@@ -315,17 +437,22 @@ function Install-DbaInstance {
             if ($Configuration) {
                 foreach ($key in $Configuration.Keys) {
                     $configNode.$key = [string]$Configuration.$key
+                    if ($key -eq 'UpdateSource' -and $Configuration.Keys -notcontains 'UPDATEENABLED') {
+                        #enable updates since now we have a source
+                        $configNode.UPDATEENABLED = "True"
+                    }
                 }
             }
 
             # Now apply credentials
-            $execParams += Update-ServiceCredential $configNode $EngineCredential SQLSVCACCOUNT
-            $execParams += Update-ServiceCredential $configNode $AgentCredential AGTSVCACCOUNT
-            $execParams += Update-ServiceCredential $configNode $ASCredential ASSVCACCOUNT
-            $execParams += Update-ServiceCredential $configNode $ISCredential ISSVCACCOUNT
-            $execParams += Update-ServiceCredential $configNode $RSCredential RSSVCACCOUNT
-            $execParams += Update-ServiceCredential $configNode $FTCredential FTSVCACCOUNT
-            $execParams += Update-ServiceCredential $configNode $PBEngineCredential PBENGSVCACCOUNT PBDMSSVCPASSWORD
+            $execParams += Update-ServiceCredential -Node $configNode -Credential $EngineCredential -AccountName SQLSVCACCOUNT
+            $execParams += Update-ServiceCredential -Node $configNode -Credential $AgentCredential -AccountName AGTSVCACCOUNT
+            $execParams += Update-ServiceCredential -Node $configNode -Credential $ASCredential -AccountName ASSVCACCOUNT
+            $execParams += Update-ServiceCredential -Node $configNode -Credential $ISCredential -AccountName ISSVCACCOUNT
+            $execParams += Update-ServiceCredential -Node $configNode -Credential $RSCredential -AccountName RSSVCACCOUNT
+            $execParams += Update-ServiceCredential -Node $configNode -Credential $FTCredential -AccountName FTSVCACCOUNT
+            $execParams += Update-ServiceCredential -Node $configNode -Credential $PBEngineCredential -AccountName PBENGSVCACCOUNT -PasswordName PBDMSSVCPASSWORD
+            $execParams += Update-ServiceCredential -Credential $SaCredential -PasswordName SAPWD
             # And root folders and other variables
             if (Test-Bound -ParameterName DataPath) {
                 $configNode.SQLUSERDBDIR = $DataPath
@@ -342,24 +469,45 @@ function Install-DbaInstance {
             if (Test-Bound -ParameterName AdminAccount) {
                 $configNode.SQLSYSADMINACCOUNTS = $AdminAccount
             }
+            # PID
+            if (Test-Bound -ParameterName ProductID) {
+                $configNode.PID = $ProductID
+            }
+            # Authentication
+            if ($AuthenticationMode -eq 'Mixed') {
+                $configNode.SECURITYMODE = "SQL"
+            }
 
-
-            # save config file and copy it over
+            # save config file
             $tempdir = Get-DbatoolsConfigValue -FullName path.dbatoolstemp
-            $configFile = "$tempdir\Configuration_$($computer.ComputerName)_$instance_$version.ini"
+            $configFile = "$tempdir\Configuration_$($fullComputerName)_$instance_$version.ini"
             Write-IniFile -Content $config -Path $configFile
-
-            $actionPlan += [pscustomobject]@{
-                ComputerName      = $computer.ComputerName
-                ConfigurationPath = $configFile
-                ArgumentList      = $execParams
+            $execParams += "/CONFIGURATIONFILE=`"$configFile`""
+            if ($PSCmdlet.ShouldProcess($fullComputerName, "Install $Version from $setupFile")) {
+                $actionPlan += [pscustomobject]@{
+                    ComputerName      = $fullComputerName
+                    InstanceName      = $instance
+                    InstallationPath  = $setupFile
+                    ConfigurationPath = $configFile
+                    ArgumentList      = $execParams
+                }
             }
         }
 
         $installAction = {
-            $errors = @()
-            $warnings = @()
-            $logs = @()
+            $output = [pscustomobject]@{
+                ComputerName = $fullComputerName
+                Version      = $Version
+                Build        = $currentVersion.Build
+                SACredential = $null
+                Successful   = $false
+                Restarted    = $false
+                InstanceName = $_.InstanceName
+                Installer    = $_.InstallationPath
+                Notes        = @()
+                ExitCode     = $null
+                Log          = $null
+            }
             $sessionParams = @{
                 ComputerName = $_.ComputerName
                 ErrorAction  = "Stop"
@@ -370,7 +518,9 @@ function Install-DbaInstance {
                 try {
                     $null = Copy-Item $_.ConfigurationPath -Destination $SaveConfiguration -ErrorAction Stop
                 } catch {
-                    $warnings += "Could not save configuration file to $SaveConfiguration"
+                    $msg = "Could not save configuration file to $SaveConfiguration"
+                    Write-Message -Level Warning -Message $msg
+                    $output.Notes += $msg
                 }
             }
             try {
@@ -378,18 +528,15 @@ function Install-DbaInstance {
                 $session = New-PSSession @sessionParams
                 $chosenPath = Invoke-Command -Session $session -ScriptBlock { (Get-Item ([System.IO.Path]::GetTempPath())).FullName } -ErrorAction Stop
                 $remoteConfig = Join-DbaPath $chosenPath (Split-Path $_.ConfigurationPath -Leaf)
-                $logs += "Copying $($_.ConfigurationFile) to remote machine into $chosenPath"
+                Write-Message -Level Verbose -Message "Copying $($_.ConfigurationPath) to remote machine into $chosenPath"
                 Copy-Item -Path $_.ConfigurationPath -Destination $remoteConfig -ToSession $session -Force -ErrorAction Stop
                 $session | Remove-PSSession
             } catch {
-                "Failed to copy file $($_.ConfigurationPath) to the remote session with $($_.ComputerName)"
+                $msg = "Failed to copy file $($_.ConfigurationPath) to the remote session with $($_.ComputerName)"
+                Write-Message -Level Warning -Message $msg
+                $output.Notes += $msg
             }
-            $setupFile = Find-SqlServerSetup -Path $Path -Version $majorVersion
-            if (-not $setupFile) {
-                $errors += "Failed to find setup file for SQL$Version in $Path"
-                return
-            }
-            $logs += "Setup starting from $($setupFile)"
+            Write-Message -Level Verbose -Message "Setup starting from $($_.InstallationPath)"
             $execParams = @{
                 ComputerName   = $_.ComputerName
                 ErrorAction    = 'Stop'
@@ -404,22 +551,26 @@ function Install-DbaInstance {
                 }
             }
             try {
-                $installResult = Invoke-Program @execParams -Path $setupFile -ArgumentList $_.ArgumentList -Fallback
+                $installResult = Invoke-Program @execParams -Path $_.InstallationPath -ArgumentList $_.ArgumentList -Fallback
+                $output.ExitCode = $updateResult.ExitCode
+                $output.SACredential = $SaCredential
+                # Get setup log summary contents
+                $output.Log = Get-SqlInstallSummary -ComputerName $_.ComputerName -Credential $Credential -Version $canonicVersion
                 if ($installResult.Successful) {
                     $output.Successful = $true
                 } else {
-                    $msg = "Update failed with exit code $($updateResult.ExitCode)"
+                    $msg = "Installation failed with exit code $($installResult.ExitCode)"
                     $output.Notes += $msg
                     Stop-Function -Message $msg -FunctionName Update-DbaInstance
                     return $output
                 }
             } catch {
-                Stop-Function -Message "Upgrade failed" -ErrorRecord $_ -FunctionName Update-DbaInstance
+                Stop-Function -Message "Installation failed" -ErrorRecord $_ -FunctionName Update-DbaInstance
                 $output.Notes += $_.Exception.Message
                 return $output
             } finally {
                 ## Cleanup temp
-                $null = Invoke-Command @sessionParams -ScriptBlock {
+                $null = Invoke-Command2 @sessionParams -ScriptBlock {
                     if ($args[0] -like '*\Configuration_*.ini' -and (Test-Path $args[0])) {
                         Remove-Item -LiteralPath $args[0] -ErrorAction Stop
                     }
@@ -427,6 +578,33 @@ function Install-DbaInstance {
                 # cleanup config file
                 Remove-Item $_.ConfigurationPath
             }
+
+            # perform volume maintenance tasks if requested
+            if ($PerformVolumeMaintenanceTasks) {
+                Set-DbaPrivilege -ComputerName $_.ComputerName -Credential $Credential -Type IFI -EnableException:$EnableException
+            }
+            # change port after the installation
+            if ($Port) {
+                Set-DbaTcpPort -SqlInstance "$($_.ComputerName)\$($_.InstanceName)" -Credential $Credential -Port $Port
+            }
+            # restart if necessary
+            if ($installResult.ExitCode -eq 3010 -or (Test-PendingReboot -ComputerName $_.ComputerName -Credential $Credential)) {
+                if ($Restart) {
+                    # Restart the computer
+                    #Write-ProgressHelper -ExcludePercent -Activity $activity -Message "Restarting computer $($computer) and waiting for it to come back online"
+                    Write-Message -Level Verbose -Message "Restarting computer $($_.ComputerName) and waiting for it to come back online" -FunctionName Install-DbaInstance
+                    try {
+                        $null = Restart-Computer @restartParams
+                        $output.Restarted = $true
+                    } catch {
+                        Stop-Function -Message "Failed to restart computer $($_.ComputerName)" -ErrorRecord $_ -FunctionName Install-DbaInstance
+                        return $output
+                    }
+                } else {
+                    $output.Notes += "Restart is required for computer $($_.ComputerName) to finish the installation of SQL$Version"
+                }
+            }
+            return $output
         }
         $outputHandler = {
             $_ | Select-DefaultView -Property ComputerName, Version, Successful, InstanceName, Installer, Notes
@@ -436,9 +614,9 @@ function Install-DbaInstance {
         }
         # check how many computers we are looking at and decide upon parallelism
         if ($actionPlan.Count -eq 1) {
-            $actionPlan | ForEach-Object -Process $installScript | ForEach-Object -Process $outputHandler
+            $actionPlan | ForEach-Object -Process $installAction | ForEach-Object -Process $outputHandler
         } elseif ($actionPlan.Count -ge 2) {
-            $actionPlan | Invoke-Parallel -ImportModules -ImportVariables -ScriptBlock $installScript -Throttle $Throttle | ForEach-Object -Process $outputHandler
+            $actionPlan | Invoke-Parallel -ImportModules -ImportVariables -ScriptBlock $installAction -Throttle $Throttle | ForEach-Object -Process $outputHandler
         }
     }
 }

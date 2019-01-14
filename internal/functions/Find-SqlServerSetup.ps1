@@ -9,14 +9,14 @@ function Find-SqlServerSetup {
                 * Native SQL Install Bootstrapper
             - Product:
                 Microsoft SQL Server
-            - ProductVersion: As requested
+                Microsoft SQL Server Setup
+            - ProductVersion: Major and Minor versions should be the same
 
         .EXAMPLE
-            PS> Find-SqlServerSetup -Version 2016 -Path \\my\updates
+            PS> Find-SqlServerSetup -Version 11.0 -Path \\my\updates
 
             Looks for setup.exe in \\my\updates and all the subfolders
     #>
-    [OutputType('System.IO.FileInfo')]
     [CmdletBinding()]
     Param
     (
@@ -27,11 +27,6 @@ function Find-SqlServerSetup {
         [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [version]$Version,
-        [Parameter(Mandatory)]
-        [ValidateNotNullOrEmpty()]
-        [string]$KB,
-        [ValidateSet('x86', 'x64')]
-        [string]$Architecture = 'x64',
         [string[]]$Path = (Get-DbatoolsConfigValue -Name 'Path.SQLServerSetup'),
         [bool]$EnableException = $EnableException
 
@@ -45,7 +40,11 @@ function Find-SqlServerSetup {
         }
         $getFileScript = {
             Param (
-                $Path
+                [string[]]$Path,
+                [version]$Version
+            )
+            $excludePath = @(
+                'sql2008support\pfiles\sqlservr\100\setup\release' #SQL2008 support in more recent installations
             )
             foreach ($folder in (Get-Item -Path $Path -ErrorAction Stop)) {
                 $file = Get-ChildItem -Path $folder -Filter 'setup.exe' -File -Recurse -ErrorAction Stop
@@ -56,12 +55,14 @@ function Find-SqlServerSetup {
                         $currentVersion = $null
                     }
                     if (
-                        $f.VersionInfo.Product -eq 'Microsoft SQL Server' -and
+                        $f.VersionInfo.ProductName -in 'Microsoft SQL Server', 'Microsoft SQL Server Setup' -and
                         $f.VersionInfo.FileDescription -in 'Sql Server Setup Bootstrapper', 'Native SQL Install Bootstrapper' -and
                         $currentVersion.Major -eq $Version.Major -and
                         $currentVersion.Minor -eq $Version.Minor
                     ) {
-                        return $f.FullName
+                        foreach ($exPath in $excludePath) {
+                            if ($f.FullName -notlike "*$exPath*") { return $f.FullName }
+                        }
                     }
                 }
             }
@@ -71,7 +72,7 @@ function Find-SqlServerSetup {
             Credential     = $Credential
             Authentication = $Authentication
             ScriptBlock    = $getFileScript
-            ArgumentList   = @($Path)
+            ArgumentList   = @($Path, $Version.ToString())
             ErrorAction    = 'Stop'
             Raw            = $true
         }
