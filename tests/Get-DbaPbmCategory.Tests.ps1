@@ -16,8 +16,24 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         }
     }
 }
-<#
-    Integration test should appear below and are custom to the command you are writing.
-    Read https://github.com/sqlcollaborative/dbatools/blob/development/contributing.md#tests
-    for more guidence.
-#>
+
+Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
+    Context "Command actually works" {
+        $results = Get-DbaPbmCategory -SqlInstance $script:Instance2
+        it "Gets Results" {
+            $results | Should Not Be $null
+        }
+    }
+    Context "Command actually works using -Category" {
+        $results = Get-DbaPbmCategory -SqlInstance $script:Instance2 -Category 'Availability database errors'
+        it "Gets Results" {
+            $results | Should Not Be $null
+        }
+    }
+    Context "Command actually works using -ExcludeSystemObject" {
+        $results = Get-DbaPbmCategory -SqlInstance $script:Instance2 -ExcludeSystemObject
+        it "Gets Results" {
+            $results | Should Not Be $null
+        }
+    }
+}

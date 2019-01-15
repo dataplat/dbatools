@@ -2,7 +2,7 @@
 function Set-DbaAgentAlert {
     <#
     .SYNOPSIS
-        Set-DbaAgentAlert updates a the status of a SQL Agent Alert.
+        Set-DbaAgentAlert updates the status of a SQL Agent Alert.
 
     .DESCRIPTION
         Set-DbaAgentAlert updates an alert in the SQL Server Agent with parameters supplied.

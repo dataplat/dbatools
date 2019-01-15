@@ -424,6 +424,11 @@ function Restore-DbaDatabase {
                 Stop-Function -Category InvalidArgument -Message "The parameter DestinationFileStreamDirectory can only be specified together with DestinationDataDirectory"
                 return
             }
+            if ((Test-Bound "ReuseSourceFolderStructure") -and (Test-Bound "UseDestinationDefaultDirectories")) {
+                Stop-Function -Category InvalidArgument -Message "The parameters UseDestinationDefaultDirectories and ReuseSourceFolderStructure cannot both be applied "
+                return
+            }
+
             if (($null -ne $FileMapping) -or $ReuseSourceFolderStructure -or ($DestinationDataDirectory -ne '')) {
                 $UseDestinationDefaultDirectories = $false
             }
@@ -640,9 +645,11 @@ function Restore-DbaDatabase {
             if ($StopAfterFormatBackupInformation) {
                 return
             }
-
-            $FilteredBackupHistory = $BackupHistory | Select-DbaBackupInformation -RestoreTime $RestoreTime -IgnoreLogs:$IgnoreLogBackups -ContinuePoints $ContinuePoints -LastRestoreType $LastRestoreType -DatabaseName $DatabaseName
-
+            if ($VerifyOnly) {
+                $FilteredBackupHistory = $BackupHistory
+            } else {
+                $FilteredBackupHistory = $BackupHistory | Select-DbaBackupInformation -RestoreTime $RestoreTime -IgnoreLogs:$IgnoreLogBackups -ContinuePoints $ContinuePoints -LastRestoreType $LastRestoreType -DatabaseName $DatabaseName
+            }
             if (Test-Bound -ParameterName SelectBackupInformation) {
                 Write-Message -Message "Setting $SelectBackupInformation to FilteredBackupHistory" -Level Verbose
                 Set-Variable -Name $SelectBackupInformation -Value $FilteredBackupHistory -Scope Global
@@ -667,9 +674,9 @@ function Restore-DbaDatabase {
                     $_.IsVerified -eq $True
                 } | Select-Object -Property Database -Unique).Database -join ','
             Write-Message -Message "$DbVerfied passed testing" -Level Verbose
-            if (($FilteredBackupHistory | Where-Object {
-                        $_.IsVerified -eq $True
-                    }).count -lt $FilteredBackupHistory.count) {
+            if ((@($FilteredBackupHistory | Where-Object {
+                            $_.IsVerified -eq $True
+                        })).count -lt $FilteredBackupHistory.count) {
                 $DbUnVerified = ($FilteredBackupHistory | Where-Object {
                         $_.IsVerified -eq $False
                     } | Select-Object -Property Database -Unique).Database -join ','

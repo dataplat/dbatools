@@ -4,11 +4,42 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
     and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.720] - 2018-12-16
+### Fixed
+* Enhanced outputs of Invoke-DbaDbDataMasking
+* Save-DbaDiagnosticQuery to work with lightly malformed links
+
+## [0.9.719] - 2018-12-15
+### Added
+* Piping to Get-DbaDbSpace
+
+### Changed
+* Logic to make UseLastBackup in Start-DbaMigration to be easier
+
+## [0.9.718] - 2018-12-14
+### Added
+* Added a progress bar and made the output more reasonable
+
+## [0.9.717] - 2018-12-14
+### Fixed
+* Added more flexibility to masking commands
+* Updated SQL Build info
+
+## [0.9.715] - 2018-12-12
+### Fixed
+* LogShipping in v2012
+
+### Added
+* Added check for ps v2 for those that bypass psd1
+* Pipeline support for Get-DbaDbSpace
+* xplat support notification to find-dbacommand / docs.dbatools.io
+* More integration tests
+* New commands: Invoke-DbaDbDataMasking and New-DbaDbMaskingConfig
+
 ## [0.9.714] - 2018-12-10
 ### Fixed
 * Get-DbaBackupHistory - fully honors need to exclude system dbs
 * Fixed docs/typos in various commands
-
 
 ## [0.9.712] - 2018-12-9
 ### Changed

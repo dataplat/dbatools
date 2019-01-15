@@ -4,26 +4,21 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        $paramCount = 3
-        $defaultParamCount = 11
         [object[]]$params = (Get-ChildItem function:\Get-DbaBackupDevice).Parameters.Keys
         $knownParameters = 'SqlInstance', 'SqlCredential', 'EnableException'
         It "Should contain our specific parameters" {
-            ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
-        }
-        It "Should only contain $paramCount parameters" {
-            $params.Count - $defaultParamCount | Should Be $paramCount
+            ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $knownParameters.Count
         }
     }
 }
 
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
-    BeforeAll{
+    BeforeAll {
         $server = Connect-DbaInstance -SqlInstance $script:instance2
         $sql = "EXEC sp_addumpdevice 'tape', 'dbatoolsci_tape', '\\.\tape0';"
         $server.Query($sql)
     }
-    Afterall{
+    Afterall {
         $server = Connect-DbaInstance -SqlInstance $script:instance2
         $sql = "EXEC sp_dropdevice 'dbatoolsci_tape';"
         $server.Query($sql)

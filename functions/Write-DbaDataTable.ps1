@@ -107,11 +107,12 @@ function Write-DbaDataTable {
         Performs a bulk insert of all the data in customers.csv into database mydb, schema dbo, table customers. A progress bar will be shown as rows are inserted. If the destination table does not exist, the import will be halted.
 
     .EXAMPLE
-        PS C:\> $DataTable = Import-Csv C:\temp\customers.csv
-        PS C:\> $DataTable | Write-DbaDataTable -SqlInstance sql2014 -Table mydb.dbo.customers
+        PS C:\> $tableName = "MyTestData"
+        PS C:\> $query = "SELECT name, create_date, owner_sid FROM sys.databases"
+        PS C:\> $dataset = Invoke-DbaQuery -SqlInstance 'localhost,1417' -SqlCredential $containerCred -Database master -Query $query
+        PS C:\> $dataset | Select-Object name, create_date, @{L="owner_sid";E={$_."owner_sid"}} | Write-DbaDataTable -SqlInstance 'localhost,1417' -SqlCredential $containerCred -Database tempdb -Table myTestData -Schema dbo -AutoCreateTable
 
-        Performs a row by row insert of the data in customers.csv. This is significantly slower than a bulk insert and will not show a progress bar.
-        This method is not recommended. Use -InputObject instead.
+        Pulls data from a SQL Server instance and then performs a bulk insert of the dataset to a new, auto-generated table tempdb.dbo.MyTestData.
 
     .EXAMPLE
         PS C:\> $DataTable = Import-Csv C:\temp\customers.csv
