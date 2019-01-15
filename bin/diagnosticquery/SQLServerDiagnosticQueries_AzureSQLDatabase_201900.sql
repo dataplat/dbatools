@@ -1,7 +1,7 @@
 
 -- Azure SQL Database Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: January 7, 2019
+-- Last Modified: January 11, 2019
 -- https://www.sqlskills.com/blogs/glenn/
 -- http://sqlserverperformance.wordpress.com/
 -- Twitter: GlennAlanBerry
@@ -1216,6 +1216,22 @@ SELECT DATABASEPROPERTYEX (DB_NAME(DB_ID()), 'Edition') AS [Database Edition],
 -- https://bit.ly/2ItexPg
 
 
+-- These five Pluralsight Courses go into more detail about how to run these queries and interpret the results
+
+-- SQL Server 2017: Diagnosing Performance Issues with DMVs
+-- https://bit.ly/2FqCeti
+
+-- SQL Server 2017: Diagnosing Configuration Issues with DMVs
+-- https://bit.ly/2MSUDUL
+
+-- SQL Server 2014 DMV Diagnostic Queries – Part 1 
+-- https://bit.ly/2plxCer
+
+-- SQL Server 2014 DMV Diagnostic Queries – Part 2
+-- https://bit.ly/2IuJpzI
+
+-- SQL Server 2014 DMV Diagnostic Queries – Part 3
+-- https://bit.ly/2FIlCPb
 
 
 
