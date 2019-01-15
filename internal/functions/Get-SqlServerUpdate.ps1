@@ -1,7 +1,7 @@
 function Get-SqlServerUpdate {
     <#
     Originally based on https://github.com/adbertram/PSSqlUpdater
-    Internal function. Provides information on the update path for a specific set of SQL Server instances based on current and target SQL Server levels.
+    Internal function. Provides information on the target update version for a specific set of SQL Server instances based on current and target SQL Server levels.
     Component parameter is using the output object of Get-SqlInstanceComponent.
     #>
     [CmdletBinding(DefaultParameterSetName = 'Latest')]
@@ -22,9 +22,7 @@ function Get-SqlServerUpdate {
         [Parameter(Mandatory, ParameterSetName = 'KB')]
         [ValidateNotNullOrEmpty()]
         [string]$KB,
-        [bool]$Restart,
         [string]$InstanceName,
-        [string[]]$Path,
         [bool]$EnableException = $EnableException,
         [bool]$Continue
     )
@@ -72,6 +70,7 @@ function Get-SqlServerUpdate {
                 ComputerName  = $ComputerName
                 MajorVersion  = $currentMajorNumber
                 Build         = $currentVersion.Build
+                Architecture  = $arch
                 TargetVersion = $null
                 TargetLevel   = $null
                 KB            = $null
@@ -80,17 +79,11 @@ function Get-SqlServerUpdate {
                 InstanceName  = $InstanceName
                 Installer     = $null
                 ExtractPath   = $null
-                Notes         = $null
+                Notes         = @()
                 ExitCode      = $null
                 Log           = $null
             }
 
-            # create a parameter set for Find-SqlServerUpdate
-            $kbLookupParams = @{
-                Architecture = $arch
-                MajorVersion = $currentGroup.Name
-                Path         = $Path
-            }
             # Find target KB number based on provided SP/CU levels or KB numbers
             if ($CumulativeUpdate -gt 0) {
                 #Cumulative update is present - installing CU
@@ -146,12 +139,13 @@ function Get-SqlServerUpdate {
                 $output.TargetVersion = $targetKB
                 $targetLevel = "$($targetKB.SPLevel | Where-Object { $_ -ne 'LATEST' })$($targetKB.CULevel)"
                 $targetKBLevel = $targetKB.KBLevel | Select-Object -First 1
-                Write-Message -Level Verbose -Message "Upgrading SQL$($targetKB.NameLevel) to $targetLevel (KB$($targetKBLevel))"
-                $kbLookupParams.KB = $targetKBLevel
+                Write-Message -Level Verbose -Message "Found applicable upgrade for SQL$($targetKB.NameLevel) to $targetLevel (KB$($targetKBLevel))"
+                $output.KB = $targetKBLevel
             } else {
-                $output.Notes = "Could not find a KB$KB reference for $currentMajorVersion SP $ServicePack CU $CumulativeUpdate"
+                $msg = "Could not find a KB$KB reference for $currentMajorVersion SP $ServicePack CU $CumulativeUpdate"
+                $output.Notes += $msg
                 $output
-                Stop-Function -Message $output.Notes -Continue
+                Stop-Function -Message $msg -Continue
             }
 
             # Compare versions - whether to proceed with the installation
@@ -173,16 +167,6 @@ function Get-SqlServerUpdate {
             }
 
             $output.TargetLevel = $targetLevel
-            $output.KB = $kbLookupParams.KB
-            ## Find the installer to use
-
-            $installer = Find-SqlServerUpdate @kbLookupParams
-            if (!$installer) {
-                $output.Notes = "Could not find installer for the $currentMajorVersion update KB$($kbLookupParams.KB)"
-                $output
-                Stop-Function -Message $output.Notes -Continue
-            }
-            $output.Installer = $installer.FullName
             $output.Successful = $true
             #Return the object for further processing
             $output

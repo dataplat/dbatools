@@ -37,6 +37,9 @@ function Invoke-Command2 {
         .PARAMETER Raw
             Passes through the raw return data, rather than prettifying stuff.
 
+        .PARAMETER RequiredPSVersion
+            Verifies that remote Powershell version is meeting specified requirements.
+
         .EXAMPLE
             PS C:\> Invoke-Command2 -ComputerName sql2014 -Credential $Credential -ScriptBlock { dir }
 
@@ -56,13 +59,12 @@ function Invoke-Command2 {
         [ValidateSet('Default', 'Basic', 'Negotiate', 'NegotiateWithImplicitCredential', 'Credssp', 'Digest', 'Kerberos')]
         [string]$Authentication = 'Default',
         [string]$ConfigurationName,
-        [switch]$Raw
+        [switch]$Raw,
+        [version]$RequiredPSVersion
     )
     <# Note: Credential stays as an object type for legacy reasons. #>
 
-    $InvokeCommandSplat = @{
-        ScriptBlock = $ScriptBlock
-    }
+    $InvokeCommandSplat = @{}
     if ($ArgumentList) {
         $InvokeCommandSplat["ArgumentList"] = $ArgumentList
     }
@@ -111,7 +113,14 @@ function Invoke-Command2 {
             [Sqlcollaborative.Dbatools.Connection.ConnectionHost]::PSSessionSet($runspaceId, $ComputerName.ComputerName, $currentSession)
         }
     }
+    if ($RequiredPSVersion) {
+        $remoteVersion = Invoke-Command @InvokeCommandSplat -ScriptBlock { $PSVersionTable }
+        if ($remoteVersion.PSVersion -and $remoteVersion.PSVersion -lt $RequiredPSVersion) {
+            throw "Remote PS version $($remoteVersion.PSVersion) is less than defined requirement ($RequiredPSVersion)"
+        }
+    }
 
+    $InvokeCommandSplat.ScriptBlock = $ScriptBlock
     if ($Raw) {
         Invoke-Command @InvokeCommandSplat
     } else {

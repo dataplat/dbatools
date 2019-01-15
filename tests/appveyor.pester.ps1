@@ -333,6 +333,17 @@ if (-not $Finalize) {
         $PesterRun | Export-Clixml -Path "$ModuleBase\PesterResults$PSVersion$Counter.xml"
         Update-AppveyorTest -Name $f.Name -Framework NUnit -FileName $f.FullName -Outcome Passed -Duration $PesterRun.Time.TotalMilliseconds
     }
+    # Gather support package as an artifact
+    # New-DbatoolsSupportPackage -Path $ModuleBase - turns out to be too heavy
+    try {
+        $msgFile = "$ModuleBase\dbatools_messages.xml"
+        Write-Host -ForegroundColor DarkGreen "Dumping message log into $msgFile"
+        Get-DbatoolsLog | Select-Object FunctionName, Level, TimeStamp, Message | Export-Clixml -Path $msgFile -ErrorAction Stop
+        Compress-Archive -Path $msgFile -DestinationPath "$msgFile.zip" -ErrorAction Stop
+        Remove-Item $msgFile
+    } catch {
+        Write-Host -ForegroundColor Red "Message collection failed: $($_.Exception.Message)"
+    }
 } else {
     # Unsure why we're uploading so I removed it for now
     <#
@@ -351,6 +362,8 @@ if (-not $Finalize) {
     #>
     #What failed? How many tests did we run ?
     $results = @(Get-ChildItem -Path "$ModuleBase\PesterResults*.xml" | Import-Clixml)
+    #Publish the support package regardless of the outcome
+    Get-ChildItem $ModuleBase\dbatools_messages.xml.zip | ForEach-Object { Push-AppveyorArtifact $_.FullName -FileName $_.Name }
     #$totalcount = $results | Select-Object -ExpandProperty TotalCount | Measure-Object -Sum | Select-Object -ExpandProperty Sum
     $failedcount = $results | Select-Object -ExpandProperty FailedCount | Measure-Object -Sum | Select-Object -ExpandProperty Sum
     if ($failedcount -gt 0) {

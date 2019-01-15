@@ -4,15 +4,10 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        $paramCount = 6
-        $defaultParamCount = 11
         [object[]]$params = (Get-ChildItem function:\Get-DbaDbSpace).Parameters.Keys
-        $knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'IncludeSystemDBs', 'EnableException'
+        $knownParameters = 'SqlInstance', 'SqlCredential', 'InputObject', 'Database', 'ExcludeDatabase', 'IncludeSystemDBs', 'EnableException'
         It "Should contain our specific parameters" {
-            ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
-        }
-        It "Should only contain $paramCount parameters" {
-            $params.Count - $defaultParamCount | Should Be $paramCount
+            ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $knownParameters.Count
         }
     }
 }
@@ -60,12 +55,6 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         $results = Get-DbaDbSpace -SqlInstance $script:instance2 -ExcludeDatabase $dbname
         It "Gets no results" {
             $results.database | Should Not Contain $dbname
-        }
-    }
-    Context "Gets DbSpace for system databases when using -IncludeSystemDBs" {
-        $results = Get-DbaDbSpace -SqlInstance $script:instance2 -IncludeSystemDBs
-        It "Gets results" {
-            $results.database | Should Contain 'Master'
         }
     }
 }
