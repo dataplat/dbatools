@@ -1,5 +1,6 @@
 function Get-RandomPassword {
     # generates a random secure password of a specified length
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingConvertToSecureStringWithPlainText", "")]
     Param (
         $Length = 15,
         [switch]$AsPlainText

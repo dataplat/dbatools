@@ -6,78 +6,147 @@ function Install-DbaInstance {
 
     .DESCRIPTION
 
-        This function will help you to quickly install a SQL Server instance.
+        This function will help you to quickly install a SQL Server instance on one or many computers.
+        Some of the things this function will do for you:
+        * Add your login as an admin to the new instance
+        * Search for SQL Server installations in the specified file repository
+        * Generate SA password if needed
+        * Install specific features using 'Default' and 'All' templates or cherry-pick the ones you need
+        * Set number of tempdb files based on number of cores (SQL2016+)
+        * Activate .Net 3.5 feature for SQL2012/2014
+        * Restart the machine if needed after the installation is done
 
-        The number of TempDB files will be set to the number of cores with a maximum of eight.
+        Fully customizable installation parameters allow you to:
+        * Use existing Configuration.ini files for the installation
+        * Define service account credentials using native Powershell syntax
+        * Override any configurations by using -Configuration switch
+        * Change the TCP port after the installation is done
+        * Enable 'Perform volume maintenance tasks' for the SQL Server account
 
-        The perform volume maintenance right can be granted to the SQL Server account. if you happen to activate this in an environment where you are not allowed to do this,
-        please revert that operation by removing the right from the local security policy (secpol.msc).
-
-        You will see a screen with the users available on your machine. There you can choose the user that will act as Service Account for your SQL Server Install. This
-        implies that the user has been created beforehand.
-
-        Note that the dowloaded installation file must be unzipped or an ISO has to be mounted. This will not be executed from this script. This function offers the possibility
-        to execute an autosearch for the installation files. But you can just browse to the correct file if you like.
+        Note that the dowloaded installation media must be extracted and available to the server where the installation runs.
 
     .PARAMETER SqlInstance
-        The target SQL Server name
+        The target computer and, optionally, a new instance name and a port number.
+        Use one of the following generic formats:
+        Server1
+        Server2\Instance1
+        Server1\Alpha:1533, Server2\Omega:1566
+        "ServerName\NewInstanceName,1534"
 
+        You can also define instance name and port using -InstanceName and -Port parameters.
     .PARAMETER SaCredential
-        This parameter allows you to securely provide the password for the sa account when using mixed mode authentication.
+        Securely provide the password for the sa account when using mixed mode authentication.
 
     .PARAMETER Credential
         Used when executing installs against remote servers
 
     .PARAMETER ConfigurationFile
-        The path to the configuration.ini. If one is not supplied, one will be generated.
+        The path to the custom Configuration.ini file.
+
+    .PARAMETER Configuration
+        A hashtable with custom configuration items that you want to use during the installation.
+        Overrides all other parameters.
+        For example, to define a custom server collation you can use the following parameter:
+        PS> Install-DbaInstance -Version 2017 -Configuration @{ SQLCOLLATION = 'Latin1_General_BIN' }
+
+        Full list of parameters can be found here: https://docs.microsoft.com/en-us/sql/database-engine/install-windows/install-sql-server-from-the-command-prompt#Install
+
+    .PARAMETER Authentication
+        Chooses an authentication protocol for remote connections.
+        If the protocol fails to establish a connection
+
+        Defaults:
+        * CredSSP when -Credential is specified - due to the fact that repository Path is usually a network share and credentials need to be passed to the remote host
+          to avoid the double-hop issue.
+        * Default when -Credential is not specified. Will likely fail if a network path is specified.
 
     .PARAMETER Version
-        Version will hold the SQL Server version you wish to install. The variable will support autocomplete
+        SQL Server version you wish to install.
 
-    .PARAMETER Edition
-        Edition will hold the different basic editions of SQL Server: Express, Standard, Enterprise and Developer. The variable will support autocomplete
+    .PARAMETER InstanceName
+        Name of the SQL Server instance to install. Overrides the instance name specified in -SqlInstance.
 
     .PARAMETER Feature
-        Feature Will hold the option to install all features with defaults. Version is still mandatory. if no Edition is selected, it will default to Express!
+        Features to install. Templates like "Default" and "All" can be used to setup a predefined set of components.
 
-    .PARAMETER Optional
-        StatsandML will hold the R and Python choices. The variable will support autocomplete. There will be a check on version; this parameter will revert to NULL if the version is below 2016
-
-    .PARAMETER Appvolume
-        ProgramPath will hold the volume letter of the application disc. if left empty, it will default to C, unless there is a drive named like App
+    .PARAMETER InstancePath
+        Specifies a nondefault installation directory for instance-specific components.
 
     .PARAMETER DataPath
-        DataPath will hold the volume letter of the Data disc. if left empty, it will default to C, unless there is a drive named like Data
+        Path to the Data folder.
 
     .PARAMETER LogPath
-        LogPath will hold the volume letter of the Log disc. if left empty, it will default to C, unless there is a drive named like Log
+        Path to the Log folder.
 
     .PARAMETER TempPath
-        TempPath will hold the volume letter of the Temp disc. if left empty, it will default to C, unless there is a drive named like Temp
+        Path to the TempDB folder.
 
     .PARAMETER BackupPath
-        BackupPath will hold the volume letter of the Backup disc. if left empty, it will default to C, unless there is a drive named like Backup
+        Path to the Backup folder.
 
-    .PARAMETER BinaryPath
-        BinaryPath will hold the driveletter and subsequent folders (if any) of your installation media. The input must point to the location where the
-        setup.exe is located.
+    .PARAMETER AdminAccount
+        One or more members of the sysadmin group. Uses UserName from the -Credential parameter if specified, or current Windows user by default.
+
+    .PARAMETER Port
+        After successful installation, changes SQL Server TCP port to this value. Overrides the port specified in -SqlInstance.
+
+    .PARAMETER ProductID
+        Product ID, or simply, serial number of your SQL Server installation, which will determine which version to install.
+        If the PID is already built into the installation media, can be ignored.
+
+    .PARAMETER EngineCredential
+        Service account of the SQL Server Database Engine
+
+    .PARAMETER AgentCredential
+        Service account of the SQL Server Agent
+
+    .PARAMETER ISCredential
+        Service account of the Integration Services
+
+    .PARAMETER RSCredential
+        Service account of the Reporting Services
+
+    .PARAMETER FTCredential
+        Service account of the Full-Text catalog service
+
+    .PARAMETER PBEngineCredential
+        Service account of the PolyBase service
+
+    .PARAMETER Path
+        Path to the folder(s) with SQL Server installation media downloaded. It will be scanned recursively for a corresponding setup.exe.
+        Path should be available from the remote server.
+        If a setup.exe file is missing in the repository, the installation will fail.
+        Consider setting the following configuration if you want to omit this parameter: `Set-DbatoolsConfig -Name Path.SQLServerSetup -Value '\\path\to\installations'`
 
     .PARAMETER PerformVolumeMaintenanceTasks
-        PerformVolumeMaintenanceTasks will set the policy for grant or deny this right to the SQL Server service account.
+        Allow SQL Server service account to perform Volume Maintenance tasks.
 
     .PARAMETER SaveConfiguration
-        SaveConfiguration will prompt you for a file location to save the new config file. Otherwise it will only be saved in the PowerShell bin directory.
+        Save installation configuration file in a custom location. Will not be preserved otherwise.
+
+    .PARAMETER Throttle
+        Maximum number of computers updated in parallel. Once reached, the update operations will queue up.
+        Default: 50
+
+    .PARAMETER Restart
+        Restart computer automatically if a restart is required before or after the installation.
 
     .PARAMETER DotNetPath
         Path to the .Net 3.5 installation folder (Windows installation media) for offline installations. Might be required for SQL2012/2014
 
     .PARAMETER AuthenticationMode
-        AuthenticationMode will prompt you if you want mixed mode authentication or just Windows AD authentication. With Mixed Mode, you will be prompted for the SA password.
+        Chooses between Mixed and Windows authentication.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+
+    .PARAMETER WhatIf
+        Shows what would happen if the command were to run. No actions are actually performed.
+
+    .PARAMETER Confirm
+        Prompts you for confirmation before executing any changing operations within the command.
 
     .NOTES
         Tags: Install
@@ -87,36 +156,36 @@ function Install-DbaInstance {
         License: MIT https://opensource.org/licenses/MIT
 
     .Example
-        C:\PS> Install-DbaInstance -Feature AllFeaturesWithDefaults
+        C:\PS> Install-DbaInstance -Feature All
 
-        This will install a default SQL Server instance and run the installation with the default settings. Automatically generates configuration.ini
+        Install a default SQL Server instance and run the installation enabling all features with the default settings. Automatically generates configuration.ini
 
     .Example
-        C:\PS> Install-DbaInstance -SqlInstance sql2017\sqlexpress, server01 -Version 2017 -Feature AllFeaturesWithDefaults
+        C:\PS> Install-DbaInstance -SqlInstance sql2017\sqlexpress, server01 -Version 2017 -Feature Default
 
-        This will install a named SQL Server instance named sqlexpress on the remote machine, sql2017, and a default instance on server01. Automatically generates configuration.ini
+        Install a named SQL Server instance named sqlexpress on the remote machine, sql2017, and a default instance on server01. Automatically generates configuration.ini
 
     .Example
         C:\PS> Install-DbaInstance -SqlInstance sql2017 -ConfigurationFile C:\temp\configuration.ini
 
-        This will install a default named SQL Server instance on the remote machine, sql2017 and use the local configuration.ini
+        Install a default named SQL Server instance on the remote machine, sql2017 and use the local configuration.ini
 
     .Example
-        C:\PS> Install-DbaInstance -ProgramPath  G
+        C:\PS> Install-DbaInstance -InstancePath G:\SQLServer
 
-        This will run the installation with default setting apart from the application volume, this will be redirected to the G drive.
+        Run the installation with default settings apart from the application volume, this will be redirected to G:\SQLServer.
 
     .Example
-        C:\PS> Install-DbaInstance -Version 2016 -ProgramPath D -DataPath E -LogPath L -PerformVolumeMaintenanceTasks -AdminAccount MyDomain\SvcSqlServer
+        C:\PS> Install-DbaInstance -Version 2016 -InstancePath D:\Root -DataPath E: -LogPath L: -PerformVolumeMaintenanceTasks -AdminAccount MyDomain\SvcSqlServer
 
-        This will install SQL Server 2016 on the D drive, the data on E, the logs on L and the other files on the autodetected drives. The perform volume maintenance
-        right is granted and the domain account SvcSqlServer will be used as the service account for SqlServer.
+        Install SQL Server 2016 on the D drive, the data on E, the logs on L and the other files on the autodetected drives. The perform volume maintenance
+        permissions are granted and the domain account SvcSqlServer will be used as the service account for SqlServer.
 
        #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
     param (
-        [Alias('SqlInstance')]
-        [DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,
+        [Alias('ComputerName')]
+        [DbaInstanceParameter[]]$SqlInstance = $env:COMPUTERNAME,
         [parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [ValidateSet("2008", "2008R2", "2012", "2014", "2016", "2017")]
@@ -137,7 +206,7 @@ function Install-DbaInstance {
         [string]$Feature = "Default",
         [ValidateSet("Windows", "Mixed")]
         [string]$AuthenticationMode = "Windows",
-        [string]$ProgramPath,
+        [string]$InstancePath,
         [string]$DataPath,
         [string]$LogPath,
         [string]$TempPath,
@@ -162,6 +231,7 @@ function Install-DbaInstance {
     )
     begin {
         Function Read-IniFile {
+            # Reads an ini file from a disk and returns a hashtable with a corresponding structure
             Param (
                 $Path
             )
@@ -169,20 +239,25 @@ function Install-DbaInstance {
             Write-Message -Level Verbose -Message "Reading Ini file from $Path"
             $config = @{}
             switch -regex -file $Path {
+                #Comment
+                '^#.*' { break }
                 #Section
                 "^\[(.+)\]\s*$" {
                     $section = $matches[1]
                     $config.$section = @{}
+                    break
                 }
                 #Item
                 "\s*(.+)=(.+)\s*" {
                     $name, $value = $matches[1..2]
                     $config.$section.$name = $value
+                    break
                 }
             }
             return $config
         }
         Function Write-IniFile {
+            # Writes a hashtable into a file in a format of an ini file
             Param (
                 [hashtable]$Content,
                 $Path
@@ -217,6 +292,7 @@ function Install-DbaInstance {
             }
         }
         Function Get-SqlInstallSummary {
+            # Reads Summary.txt from the SQL Server Installation Log folder
             Param (
                 [DbaInstanceParameter]$ComputerName,
                 [pscredential]$Credential,
@@ -235,19 +311,16 @@ function Install-DbaInstance {
                 }
             }
             $params = @{
-                ComputerName = $ComputerName
+                ComputerName = $ComputerName.ComputerName
                 Credential   = $Credential
                 ScriptBlock  = $getSummary
                 ArgumentList = @($Version.ToString())
                 ErrorAction  = 'Stop'
                 Raw          = $true
             }
-            try {
-                return Invoke-Command2 @params
-            } catch {
-                Write-Message -Level Verbose -Message "Could not get the contents of the summary file | $($_.Exception.Message)"
-            }
+            return Invoke-Command2 @params
         }
+        # defining local vars
         $notifiedCredentials = $false
         $notifiedUnsecure = $false
         $pathIsNetwork = $Path | Foreach-Object -Begin { $o = @() } -Process { $o += $_ -like '\\*'} -End { $o -contains $true }
@@ -295,9 +368,9 @@ function Install-DbaInstance {
                 return
             }
         }
-        $actionPlan = @()
 
-        foreach ($computer in $ComputerName) {
+        $actionPlan = @()
+        foreach ($computer in $SqlInstance) {
             # Test elevated console
             $null = Test-ElevationRequirement -ComputerName $computer -Continue
             # notify about credentials once
@@ -347,9 +420,14 @@ function Install-DbaInstance {
                 Stop-Function -Message "Failed to find setup file for SQL$Version in $Path on $fullComputerName" -Continue
             }
             $instance = if ($InstanceName) { $InstanceName } else { $computer.InstanceName }
+            $portNumber = if ($Port) { $Port } else { $computer.Port }
             $mainKey = if ($canonicVersion -gt '11.0') { "OPTIONS" } else { "SQLSERVER2008" }
             if (Test-Bound -ParameterName ConfigurationFile) {
-                $config = Read-IniFile -Path $ConfigurationFile
+                try {
+                    $config = Read-IniFile -Path $ConfigurationFile
+                } catch {
+                    Stop-Function -Message "Failed to read config file $ConfigurationFile" -ErrorRecord $_
+                }
             } else {
                 # determine a default user to assign sqladmin permissions
                 if ($Credential) {
@@ -405,7 +483,7 @@ function Install-DbaInstance {
             }
             $execParams = @()
             # version-specific stuff
-            if ($canonicVersion -ge '10.0') {
+            if ($canonicVersion -gt '10.0') {
                 $execParams += '/IACCEPTSQLSERVERLICENSETERMS'
             }
             # activate .Net 3.5 if missing - only needed on 2012 and 2014
@@ -454,6 +532,9 @@ function Install-DbaInstance {
             $execParams += Update-ServiceCredential -Node $configNode -Credential $PBEngineCredential -AccountName PBENGSVCACCOUNT -PasswordName PBDMSSVCPASSWORD
             $execParams += Update-ServiceCredential -Credential $SaCredential -PasswordName SAPWD
             # And root folders and other variables
+            if (Test-Bound -ParameterName InstancePath) {
+                $configNode.INSTANCEDIR = $InstancePath
+            }
             if (Test-Bound -ParameterName DataPath) {
                 $configNode.SQLUSERDBDIR = $DataPath
             }
@@ -481,22 +562,28 @@ function Install-DbaInstance {
             # save config file
             $tempdir = Get-DbatoolsConfigValue -FullName path.dbatoolstemp
             $configFile = "$tempdir\Configuration_$($fullComputerName)_$instance_$version.ini"
-            Write-IniFile -Content $config -Path $configFile
+            try {
+                Write-IniFile -Content $config -Path $configFile
+            } catch {
+                Stop-Function -Message "Failed to write config file to $configFile" -ErrorRecord $_
+            }
             $execParams += "/CONFIGURATIONFILE=`"$configFile`""
             if ($PSCmdlet.ShouldProcess($fullComputerName, "Install $Version from $setupFile")) {
                 $actionPlan += [pscustomobject]@{
                     ComputerName      = $fullComputerName
                     InstanceName      = $instance
+                    Port              = $portNumber
                     InstallationPath  = $setupFile
                     ConfigurationPath = $configFile
                     ArgumentList      = $execParams
+                    RestartNeeded     = $restartNeeded
                 }
             }
         }
 
         $installAction = {
             $output = [pscustomobject]@{
-                ComputerName = $fullComputerName
+                ComputerName = $_.ComputerName
                 Version      = $Version
                 Build        = $currentVersion.Build
                 SACredential = $null
@@ -504,9 +591,31 @@ function Install-DbaInstance {
                 Restarted    = $false
                 InstanceName = $_.InstanceName
                 Installer    = $_.InstallationPath
+                Port         = $null
                 Notes        = @()
                 ExitCode     = $null
                 Log          = $null
+            }
+            $restartParams = @{
+                ComputerName = $_.ComputerName
+                ErrorAction  = 'Stop'
+                For          = 'WinRM'
+                Wait         = $true
+                Force        = $true
+            }
+            if ($Credential) {
+                $restartParams.Credential = $Credential
+            }
+            if ($_.RestartNeeded -and $Restart) {
+                # Restart the computer prior to doing anything
+                #Write-ProgressHelper -ExcludePercent -Activity $activity -Message "Restarting computer $($computer) due to pending restart"
+                Write-Message -Level Verbose "Restarting computer $($_.ComputerName) due to pending restart" -FunctionName Update-DbaInstance
+                try {
+                    $null = Restart-Computer @restartParams
+                    $output.Restarted = $true
+                } catch {
+                    Stop-Function -Message "Failed to restart computer" -ErrorRecord $_ -FunctionName Update-DbaInstance
+                }
             }
             $sessionParams = @{
                 ComputerName = $_.ComputerName
@@ -533,7 +642,7 @@ function Install-DbaInstance {
                 $session | Remove-PSSession
             } catch {
                 $msg = "Failed to copy file $($_.ConfigurationPath) to the remote session with $($_.ComputerName)"
-                Write-Message -Level Warning -Message $msg
+                Stop-Function -Message $msg -ErrorRecord $_ -FunctionName Update-DbaInstance
                 $output.Notes += $msg
             }
             Write-Message -Level Verbose -Message "Setup starting from $($_.InstallationPath)"
@@ -555,11 +664,16 @@ function Install-DbaInstance {
                 $output.ExitCode = $updateResult.ExitCode
                 $output.SACredential = $SaCredential
                 # Get setup log summary contents
-                $output.Log = Get-SqlInstallSummary -ComputerName $_.ComputerName -Credential $Credential -Version $canonicVersion
+                try {
+                    $output.Log = Get-SqlInstallSummary -ComputerName $_.ComputerName -Credential $Credential -Version $canonicVersion
+                } catch {
+                    $msg = "Could not get the contents of the summary file from $($_.ComputerName). 'Log' property will be empty | $($_.Exception.Message)"
+                    $output.Notes += $msg
+                }
                 if ($installResult.Successful) {
                     $output.Successful = $true
                 } else {
-                    $msg = "Installation failed with exit code $($installResult.ExitCode)"
+                    $msg = "Installation failed with exit code $($installResult.ExitCode). Expand 'Log' property to find more details."
                     $output.Notes += $msg
                     Stop-Function -Message $msg -FunctionName Update-DbaInstance
                     return $output
@@ -584,8 +698,8 @@ function Install-DbaInstance {
                 Set-DbaPrivilege -ComputerName $_.ComputerName -Credential $Credential -Type IFI -EnableException:$EnableException
             }
             # change port after the installation
-            if ($Port) {
-                Set-DbaTcpPort -SqlInstance "$($_.ComputerName)\$($_.InstanceName)" -Credential $Credential -Port $Port
+            if ($_.Port) {
+                Set-DbaTcpPort -SqlInstance "$($_.ComputerName)\$($_.InstanceName)" -Credential $Credential -Port $_.Port -EnableException:$EnableException
             }
             # restart if necessary
             if ($installResult.ExitCode -eq 3010 -or (Test-PendingReboot -ComputerName $_.ComputerName -Credential $Credential)) {
