@@ -82,7 +82,7 @@ function Copy-DbaAgentJobCategory {
         Shows what would happen if the command were executed using force.
 
     #>
-    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldprocess = $true)]
+    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess)]
     param (
         [parameter(Mandatory)]
         [DbaInstanceParameter]$Source,
@@ -100,7 +100,7 @@ function Copy-DbaAgentJobCategory {
         [Alias('Silent')]
         [switch]$EnableException
     )
-    
+
     begin {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Copy-DbaAgentCategory
         function Copy-JobCategory {
@@ -142,7 +142,7 @@ function Copy-DbaAgentJobCategory {
                     if ($destJobCategories.Name -contains $jobCategory.name) {
                         if ($force -eq $false) {
                             $copyJobCategoryStatus.Status = "Skipped"
-                            $copyJobCategoryStatus.Notes = "Already exists"
+                            $copyJobCategoryStatus.Notes = "Already exists on destination"
                             $copyJobCategoryStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                             Write-Message -Level Verbose -Message "Job category $categoryName exists at destination. Use -Force to drop and migrate."
                             continue
@@ -189,7 +189,7 @@ function Copy-DbaAgentJobCategory {
 
                     If the associated credential for the category does not exist on the destination, it will be skipped. If the operator category already exists on the destination, it will be skipped unless -Force is used.
             #>
-            [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldprocess = $true)]
+            [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess)]
             param (
                 [string[]]$operatorCategories
             )
@@ -217,7 +217,7 @@ function Copy-DbaAgentJobCategory {
                     if ($destOperatorCategories.Name -contains $operatorCategory.Name) {
                         if ($force -eq $false) {
                             $copyOperatorCategoryStatus.Status = "Skipped"
-                            $copyOperatorCategoryStatus.Notes = "Already exists"
+                            $copyOperatorCategoryStatus.Notes = "Already exists on destination"
                             $copyOperatorCategoryStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                             Write-Message -Level Verbose -Message "Operator category $categoryName exists at destination. Use -Force to drop and migrate."
                             continue
@@ -268,7 +268,7 @@ function Copy-DbaAgentJobCategory {
 
                     If the associated credential for the category does not exist on the destination, it will be skipped. If the alert category already exists on the destination, it will be skipped unless -Force is used.
             #>
-            [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldprocess = $true)]
+            [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess)]
             param (
                 [string[]]$AlertCategories
             )
@@ -301,7 +301,7 @@ function Copy-DbaAgentJobCategory {
                     if ($destAlertCategories.Name -contains $alertCategory.name) {
                         if ($force -eq $false) {
                             $copyAlertCategoryStatus.Status = "Skipped"
-                            $copyAlertCategoryStatus.Notes = "Already exists"
+                            $copyAlertCategoryStatus.Notes = "Already exists on destination"
                             $copyAlertCategoryStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                             Write-Message -Level Verbose -Message "Alert category $categoryName exists at destination. Use -Force to drop and migrate."
                             continue

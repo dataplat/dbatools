@@ -69,4 +69,30 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
             $dbs[0].Owner -eq $dbs[1].Owner
         }
     }
+    
+    Context "Backup restore" {
+        $quickbackup = Get-DbaDatabase -SqlInstance $script:instance2 -ExcludeSystem | Backup-DbaDatabase -BackupDirectory C:\temp
+        $results = Start-DbaMigration -Force -Source $script:instance2 -Destination $script:instance3 -UseLastBackup -Exclude Logins, SpConfigure, SysDbUserObjects, AgentServer, CentralManagementServer, ExtendedEvents, PolicyManagement, ResourceGovernor, Endpoints, ServerAuditSpecifications, Audits, LinkedServers, SystemTriggers, DataCollector, DatabaseMail, BackupDevices, Credentials
+        
+        It "returns at least one result" {
+            $results | Should -Not -Be $null
+        }
+        
+        foreach ($result in $results) {
+            It "copies a database successfully" {
+                $result.Type -eq "Database"
+                $result.Status -eq "Successful"
+            }
+        }
+        
+        It "retains its name, recovery model, and status." {
+            $dbs = Get-DbaDatabase -SqlInstance $script:instance2, $script:instance3 -Database $startmigrationrestoredb2
+            $dbs[0].Name -ne $null
+            # Compare its variables
+            $dbs[0].Name -eq $dbs[1].Name
+            $dbs[0].RecoveryModel -eq $dbs[1].RecoveryModel
+            $dbs[0].Status -eq $dbs[1].Status
+            $dbs[0].Owner -eq $dbs[1].Owner
+        }
+    }
 }

@@ -256,9 +256,9 @@ function Invoke-DbaDiagnosticQuery {
 
             if (!$instanceOnly) {
                 if (-not $Database) {
-                    $databases = (Get-DbaDatabase -SqlInstance $server -ExcludeAllSystemDb -ExcludeDatabase $ExcludeDatabase).Name
+                    $databases = (Get-DbaDatabase -SqlInstance $server -ExcludeSystem -ExcludeDatabase $ExcludeDatabase).Name
                 } else {
-                    $databases = (Get-DbaDatabase -SqlInstance $server -ExcludeAllSystemDb -Database $Database -ExcludeDatabase $ExcludeDatabase).Name
+                    $databases = (Get-DbaDatabase -SqlInstance $server -ExcludeSystem -Database $Database -ExcludeDatabase $ExcludeDatabase).Name
                 }
             }
 

@@ -52,11 +52,9 @@ function Get-DbaSpn {
     [cmdletbinding()]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseApprovedVerbs", "", Justification = "Internal functions are ignored")]
     param (
-        [Parameter(Mandatory = $false, ValueFromPipeline)]
+        [Parameter(ValueFromPipeline)]
         [string[]]$ComputerName,
-        [Parameter(Mandatory = $false)]
         [string[]]$AccountName,
-        [Parameter(Mandatory = $false)]
         [PSCredential]$Credential,
         [Alias('Silent')]
         [switch]$EnableException

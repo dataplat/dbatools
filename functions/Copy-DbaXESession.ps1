@@ -74,7 +74,7 @@ function Copy-DbaXESession {
         Copies only the Extended Events named CheckQueries and MonitorUserDefinedException from sqlserver2014a to sqlcluster.
 
     #>
-    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
+    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess)]
     param (
         [parameter(Mandatory)]
         [DbaInstanceParameter]$Source,
@@ -140,7 +140,7 @@ function Copy-DbaXESession {
                     if ($force -eq $false) {
                         if ($Pscmdlet.ShouldProcess($destinstance, "Extended Event Session '$sessionName' was skipped because it already exists on $destinstance.")) {
                             $copyXeSessionStatus.Status = "Skipped"
-                            $copyXeSessionStatus.Notes = "Already exists"
+                            $copyXeSessionStatus.Notes = "Already exists on destination"
                             $copyXeSessionStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
                             Write-Message -Level Verbose -Message "Extended Event Session '$sessionName' was skipped because it already exists on $destinstance."

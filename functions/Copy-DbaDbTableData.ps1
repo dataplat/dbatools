@@ -154,7 +154,7 @@ function Copy-DbaDbTableData {
         Keeps identity columns and Nulls, truncates the destination and processes in BatchSize of 10000.
 
        #>
-    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
+    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess)]
     param (
         [Alias("ServerInstance", "SqlServer", "Source")]
         [DbaInstanceParameter]$SqlInstance,
@@ -201,7 +201,15 @@ function Copy-DbaDbTableData {
             }
         }'
 
-        Add-Type -ReferencedAssemblies System.Data.dll -TypeDefinition $sourcecode -ErrorAction SilentlyContinue
+        Add-Type -ReferencedAssemblies System.Data.dll -TypeDefinition $sourcecode -ErrorAction Stop
+        if (-not $script:core) {
+            try {
+                Add-Type -ReferencedAssemblies System.Data.dll -TypeDefinition $sourcecode -ErrorAction Stop
+            } catch {
+                $null = 1
+            }
+        }
+
         $bulkCopyOptions = 0
         $options = "TableLock", "CheckConstraints", "FireTriggers", "KeepIdentity", "KeepNulls", "Default"
 
@@ -304,7 +312,7 @@ function Copy-DbaDbTableData {
                         }
                         #replacing table schema
                         if ($newTableParts.Schema) {
-                            $rX = "(CREATE TABLE \[)$([regex]::Escape($sqltable.Schema))(\]\.\[$([regex]::Escape($newTableParts.Schema))\]\()"
+                            $rX = "(CREATE TABLE \[)$([regex]::Escape($sqltable.Schema))(\]\.\[$([regex]::Escape($newTableParts.Table))\]\()"
                             $tablescript = $tablescript -replace $rX, "`$1$($newTableParts.Schema)`$2"
                         }
 
@@ -378,7 +386,11 @@ function Copy-DbaDbTableData {
                     if ($Pscmdlet.ShouldProcess($destServer, "Writing rows to $fqtndest")) {
                         $reader = $cmd.ExecuteReader()
                         $bulkCopy.WriteToServer($reader)
-                        $RowsTotal = [System.Data.SqlClient.SqlBulkCopyExtension]::RowsCopiedCount($bulkCopy)
+                        if ($script:core) {
+                            $RowsTotal = "Unsupported in Core"
+                        } else {
+                            $RowsTotal = [System.Data.SqlClient.SqlBulkCopyExtension]::RowsCopiedCount($bulkCopy)
+                        }
                         $TotalTime = [math]::Round($elapsed.Elapsed.TotalSeconds, 1)
                         Write-Message -Level Verbose -Message "$RowsTotal rows inserted in $TotalTime sec"
                         if ($rowCount -is [int]) {
@@ -392,9 +404,11 @@ function Copy-DbaDbTableData {
                         [pscustomobject]@{
                             SourceInstance      = $server.Name
                             SourceDatabase      = $Database
+                            SourceSchema        = $sqltable.Schema
                             SourceTable         = $sqltable.Name
                             DestinationInstance = $destServer.name
                             DestinationDatabase = $DestinationDatabase
+                            DestinationSchema   = $desttable.Schema
                             DestinationTable    = $desttable.Name
                             RowsCopied          = $rowstotal
                             Elapsed             = [prettytimespan]$elapsed.Elapsed

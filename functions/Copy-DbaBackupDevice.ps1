@@ -66,7 +66,7 @@ function Copy-DbaBackupDevice {
         Shows what would happen if the command were executed using force.
 
     #>
-    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
+    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess)]
     param (
         [parameter(Mandatory)]
         [DbaInstanceParameter]$Source,
@@ -80,6 +80,10 @@ function Copy-DbaBackupDevice {
         [switch]$EnableException
     )
     begin {
+        if (-not $script:isWindows) {
+            Stop-Function -Message "Copy-DbaBackupDevice does not support Linux yet though it looks doable"
+            return
+        }
         try {
             $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
         } catch {
@@ -120,7 +124,7 @@ function Copy-DbaBackupDevice {
                 if ($destBackupDevices.Name -contains $deviceName) {
                     if ($force -eq $false) {
                         $copyBackupDeviceStatus.Status = "Skipped"
-                        $copyBackupDeviceStatus.Notes = "Already exists"
+                        $copyBackupDeviceStatus.Notes = "Already exists on destination"
                         $copyBackupDeviceStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
                         Write-Message -Level Verbose -Message "backup device $deviceName exists at destination. Use -Force to drop and migrate."
@@ -163,7 +167,7 @@ function Copy-DbaBackupDevice {
 
                 Write-Message -Level Verbose -Message "Checking if directory $destPath exists"
 
-                if ($(Test-DbaPath -SqlInstance $destinstance -Path $path) -eq $false) {
+                if ($(Test-DbaPath -SqlInstance $destServer -Path $path) -eq $false) {
                     $backupDirectory = $destServer.BackupDirectory
                     $destPath = Join-AdminUnc $destNetBios $backupDirectory
 

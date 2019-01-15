@@ -64,7 +64,7 @@ function Test-DbaBackupInformation {
         Those records that pass are marked as verified. We can then use the IsVerified property to divide the failures and successes
 
     #>
-    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "Low")]
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseOutputTypeCorrectly", "", Justification = "PSSA Rule Ignored by BOH")]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
@@ -164,6 +164,13 @@ function Test-DbaBackupInformation {
                         }
                     }
                 }
+                #Test for LSN chain
+                if ($true -ne $Continue) {
+                    if (!($DbHistory | Test-DbaLsnChain)) {
+                        Write-Message -Message "LSN Check failed" -Level Verbose
+                        $VerificationErrors++
+                    }
+                }
             }
 
             #Test all backups readable
@@ -175,13 +182,7 @@ function Test-DbaBackupInformation {
                     $VerificationErrors++
                 }
             }
-            #Test for LSN chain
-            if ($true -ne $Continue) {
-                if (!($DbHistory | Test-DbaLsnChain)) {
-                    Write-Message -Message "LSN Check failed" -Level Verbose
-                    $VerificationErrors++
-                }
-            }
+
             if ($VerificationErrors -eq 0) {
                 Write-Message -Message "Marking $Database as verified" -Level Verbose
                 $InternalHistory | Where-Object {$_.Database -eq $Database} | Foreach-Object {$_.IsVerified = $True}

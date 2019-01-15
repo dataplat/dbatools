@@ -77,15 +77,15 @@ function Measure-DbaDiskSpaceRequirement {
         [DbaInstanceParameter]$Source,
         [Parameter(Mandatory, ValueFromPipelineByPropertyName = $true)]
         [string]$Database,
-        [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true)]
+        [Parameter(ValueFromPipelineByPropertyName = $true)]
         [PSCredential]$SourceSqlCredential,
         [Parameter(Mandatory, ValueFromPipelineByPropertyName = $true)]
         [DbaInstanceParameter]$Destination,
-        [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true)]
+        [Parameter(ValueFromPipelineByPropertyName = $true)]
         [string]$DestinationDatabase,
-        [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true)]
+        [Parameter(ValueFromPipelineByPropertyName = $true)]
         [PSCredential]$DestinationSqlCredential,
-        [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true)]
+        [Parameter(ValueFromPipelineByPropertyName = $true)]
         [PSCredential]$Credential,
         [Alias('Silent')]
         [switch]$EnableException

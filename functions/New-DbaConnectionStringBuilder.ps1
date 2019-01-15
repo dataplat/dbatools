@@ -69,29 +69,20 @@ function New-DbaConnectionStringBuilder {
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingPlainTextForPassword", "")]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingUserNameAndPassWordParams", "")]
     param (
-        [Parameter(Mandatory = $false, ValueFromPipeline)]
+        [Parameter(ValueFromPipeline)]
         [string[]]$ConnectionString = "",
-        [Parameter(Mandatory = $false)]
         [string]$ApplicationName = "dbatools Powershell Module",
-        [Parameter(Mandatory = $false)]
         [string]$DataSource = $null,
-        [Parameter(Mandatory = $false)]
         [string]$InitialCatalog = $null,
-        [Parameter(Mandatory = $false)]
         [Nullable[bool]]$IntegratedSecurity = $null,
-        [Parameter(Mandatory = $false)]
         [string]$UserName = $null,
         # No point in securestring here, the memory is never stored securely in memory.
-        [Parameter(Mandatory = $false)]
         [string]$Password = $null,
         [Alias('MARS')]
-        [Parameter(Mandatory = $false)]
         [switch]$MultipleActiveResultSets,
         [Alias('AlwaysEncrypted')]
-        [Parameter(Mandatory = $false)]
         [Data.SqlClient.SqlConnectionColumnEncryptionSetting]$ColumnEncryptionSetting =
         [Data.SqlClient.SqlConnectionColumnEncryptionSetting]::Enabled,
-        [Parameter(Mandatory = $false)]
         [string]$WorkstationId = $env:COMPUTERNAME
     )
     process {

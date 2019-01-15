@@ -69,7 +69,7 @@ function Copy-DbaAgentServer {
         Shows what would happen if the command were executed.
 
     #>
-    [cmdletbinding(SupportsShouldProcess = $true)]
+    [cmdletbinding(SupportsShouldProcess)]
     param (
         [parameter(Mandatory)]
         [DbaInstanceParameter]$Source,

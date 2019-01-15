@@ -63,7 +63,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             [System.Management.Automation.CompletionResultType]
             $CompletionResultType = [System.Management.Automation.CompletionResultType]::ParameterValue,
 
-            [Parameter(Mandatory = $false)]
             [switch]
             $NoQuotes = $false
         )

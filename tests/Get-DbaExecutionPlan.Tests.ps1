@@ -4,20 +4,83 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        $paramCount = 9
-        $defaultParamCount = 11
         [object[]]$params = (Get-ChildItem function:\Get-DbaExecutionPlan).Parameters.Keys
         $knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'SinceCreation', 'SinceLastExecution', 'ExcludeEmptyQueryPlan', 'Force', 'EnableException'
         It "Should contain our specific parameters" {
-            ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
-        }
-        It "Should only contain $paramCount parameters" {
-            $params.Count - $defaultParamCount | Should Be $paramCount
+            ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $knownParameters.Count
         }
     }
 }
-<#
-    Integration test should appear below and are custom to the command you are writing.
-    Read https://github.com/sqlcollaborative/dbatools/blob/development/contributing.md#tests
-    for more guidence.
-#>
+
+Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
+
+    Context "Gets Execution Plan" {
+        $results = Get-DbaExecutionPlan -SqlInstance $script:instance2 | Where-Object {$_.statementtype -eq 'SELECT'} | Select-object -First 1
+        It "Gets results" {
+            $results | Should Not Be $null
+        }
+        It "Should be enabled" {
+            $results.CardinalityEstimationModelVersion | Should Be 130
+        }
+    }
+    Context "Gets Execution Plan when using -Database" {
+        $results = Get-DbaExecutionPlan -SqlInstance $script:instance2 -Database Master | Select-object -First 1
+        It "Gets results" {
+            $results | Should Not Be $null
+        }
+        It "Should be enabled" {
+            $results.CardinalityEstimationModelVersion | Should Be 130
+        }
+        It "Should be execution plan on Master" {
+            $results.DatabaseName | Should Be 'Master'
+        }
+    }
+    Context "Gets no Execution Plan when using -ExcludeDatabase" {
+        $results = Get-DbaExecutionPlan -SqlInstance $script:instance2 -ExcludeDatabase Master | Select-object -First 1
+        It "Gets results" {
+            $results | Should Not Be $null
+        }
+        It "Should be enabled" {
+            $results.CardinalityEstimationModelVersion | Should Be 130
+        }
+        It "Should be execution plan on Master" {
+            $results.DatabaseName | Should Not Be 'Master'
+        }
+    }
+    Context "Gets Execution Plan when using -SinceCreation" {
+        $results = Get-DbaExecutionPlan -SqlInstance $script:instance2 -Database Master -SinceCreation '01-01-2000' | Select-object -First 1
+        It "Gets results" {
+            $results | Should Not Be $null
+        }
+        It "Should be enabled" {
+            $results.CardinalityEstimationModelVersion | Should Be 130
+        }
+        It "Should be execution plan on Master" {
+            $results.DatabaseName | Should Be 'Master'
+        }
+        It "Should have a creation date Greater than 01-01-2000" {
+            $results.CreationTime | Should BeGreaterThan '01-01-2000'
+        }
+    }
+    Context "Gets Execution Plan when using -SinceLastExecution" {
+        $results = Get-DbaExecutionPlan -SqlInstance $script:instance2 -Database Master -SinceLastExecution '01-01-2000' | Select-object -First 1
+        It "Gets results" {
+            $results | Should Not Be $null
+        }
+        It "Should be enabled" {
+            $results.CardinalityEstimationModelVersion | Should Be 130
+        }
+        It "Should be execution plan on Master" {
+            $results.DatabaseName | Should Be 'Master'
+        }
+        It "Should have a execution time Greater than 01-01-2000" {
+            $results.LastExecutionTime | Should BeGreaterThan '01-01-2000'
+        }
+    }
+    Context "Gets Execution Plan when using -ExcludeDatabase" {
+        $results = Get-DbaExecutionPlan -SqlInstance $script:instance2 -ExcludeEmptyQueryPlan
+        It "Gets no results" {
+            $results | Should Not Be $null
+        }
+    }
+}

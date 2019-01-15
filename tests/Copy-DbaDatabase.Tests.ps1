@@ -65,7 +65,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
         It "Should say skipped" {
             $results = Copy-DbaDatabase -Source $script:instance2 -Destination $script:instance3 -Database $detachattachdb -DetachAttach -Reattach
             $results.Status | Should be "Skipped"
-            $results.Notes | Should be "Already exists"
+            $results.Notes | Should be "Already exists on destination"
         }
     }
 
@@ -92,7 +92,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
         It  "Should say skipped" {
             $result = Copy-DbaDatabase -Source $script:instance2 -Destination $script:instance3 -Database $backuprestoredb2 -BackupRestore -SharedPath $NetworkPath 3>$null
             $result.Status | Should be "Skipped"
-            $result.Notes | Should be "Already exists"
+            $result.Notes | Should be "Already exists on destination"
         }
 
         # needs regr test once #3377 is fixed
@@ -157,11 +157,11 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     Context "Copying with renames using backup/restore" {
         BeforeAll {
             Get-DbaProcess -SqlInstance $script:instance2, $script:instance3 -Program 'dbatools PowerShell module - dbatools.io' | Stop-DbaProcess -WarningAction SilentlyContinue
-            Get-DbaDatabase -SqlInstance $script:instance3 -ExcludeAllSystemDb | Remove-DbaDatabase -Confirm:$false
+            Get-DbaDatabase -SqlInstance $script:instance3 -ExcludeSystem | Remove-DbaDatabase -Confirm:$false
         }
         AfterAll {
             Get-DbaProcess -SqlInstance $script:instance2, $script:instance3 -Program 'dbatools PowerShell module - dbatools.io' | Stop-DbaProcess -WarningAction SilentlyContinue
-            Get-DbaDatabase -SqlInstance $script:instance3 -ExcludeAllSystemDb | Remove-DbaDatabase -Confirm:$false
+            Get-DbaDatabase -SqlInstance $script:instance3 -ExcludeSystem | Remove-DbaDatabase -Confirm:$false
         }
         It "Should have renamed a single db" {
             $newname = "copy$(Get-Random)"

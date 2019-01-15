@@ -105,7 +105,7 @@ function Test-DbaBuild {
         [version]$MinimumBuild,
         [string]$MaxBehind,
         [switch] $Latest,
-        [parameter(Mandatory = $false, ValueFromPipeline)]
+        [parameter(ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [Alias("Credential")]
@@ -137,14 +137,6 @@ function Test-DbaBuild {
         }
         if ($ComplianceSpec.Length -eq 0) {
             Stop-Function -Category InvalidArgument -Message "You need to choose one from -MinimumBuild, -MaxBehind and -Latest. Quitting."
-            return
-        }
-        try {
-            # Empty call just to make sure the buildref is updated and on the right path
-            Get-DbaBuildReference -Update:$Update -EnableException:$true
-            $IdxRef = Get-DbaBuildReferenceIndex
-        } catch {
-            Stop-Function -Message "Error loading SQL build reference" -ErrorRecord $_
             return
         }
         if ($MaxBehind) {
@@ -188,7 +180,20 @@ function Test-DbaBuild {
         } elseif ($MaxBehind -or $Latest) {
             $hiddenProps += 'MinimumBuild'
         }
-        $BuildVersions = Get-DbaBuildReference -Build $Build -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Update:$Update -EnableException:$EnableException
+        if ($Build) {
+            $BuildVersions = Get-DbaBuildReference -Build $Build -Update:$Update -EnableException:$EnableException
+        } elseif ($SqlInstance) {
+            $BuildVersions = Get-DbaBuildReference -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Update:$Update -EnableException:$EnableException
+        }
+        # Moving it down here to only trigger after -Update was properly called
+        if (!$IdxRef) {
+            try {
+                $IdxRef = Get-DbaBuildReferenceIndex
+            } catch {
+                Stop-Function -Message "Error loading SQL build reference" -ErrorRecord $_
+                return
+            }
+        }
         foreach ($BuildVersion in $BuildVersions) {
             $inputbuild = $BuildVersion.Build
             $compliant = $false
@@ -237,7 +242,7 @@ function Test-DbaBuild {
                         $targetedBuild = $SPsAndCUs | Where-Object SP -eq $targetSPName | Select-Object -First 1
                     }
                     if ($ParsedMaxBehind.ContainsKey('CU')) {
-                        $AllCUs = ($SPsAndCUs | Where-Object VersionObject -gt $targetedBuild.VersionObject).CU | Select-Object -Unique
+                        [string[]]$AllCUs = ($SPsAndCUs | Where-Object VersionObject -gt $targetedBuild.VersionObject).CU | Select-Object -Unique
                         if ($AllCUs.Length -gt 0) {
                             #CU after the targeted build available
                             $targetCU = $AllCUs.Length - $ParsedMaxBehind['CU'] - 1

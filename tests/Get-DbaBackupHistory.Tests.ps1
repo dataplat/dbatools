@@ -4,15 +4,10 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        $paramCount = 17
-        $defaultParamCount = 11
         [object[]]$params = (Get-ChildItem function:\Get-DbaBackupHistory).Parameters.Keys
         $knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'IncludeCopyOnly', 'Force', 'Since', 'Last', 'LastFull', 'LastDiff', 'LastLog', 'DeviceType', 'Raw', 'LastLsn', 'Type', 'EnableException', 'RecoveryFork'
         It "Should contain our specific parameters" {
-            ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
-        }
-        It "Should only contain $paramCount parameters" {
-            $params.Count - $defaultParamCount | Should Be $paramCount
+            ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $knownParameters.Count
         }
     }
 }
@@ -60,6 +55,21 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         $results = Get-DbaBackupHistory -SqlInstance $script:instance1
         It "Should be more than one database" {
             ($results | Where-Object Database -match "master").Count | Should BeGreaterThan 0
+        }
+    }
+
+    Context "ExcludeDatabase is honored" {
+        $results = Get-DbaBackupHistory -SqlInstance $script:instance1 -ExcludeDatabase 'master'
+        It "Should not report about excluded database master" {
+            ($results | Where-Object Database -match "master").Count | Should Be 0
+        }
+        $results = Get-DbaBackupHistory -SqlInstance $script:instance1 -ExcludeDatabase 'master' -Type Full
+        It "Should not report about excluded database master" {
+            ($results | Where-Object Database -match "master").Count | Should Be 0
+        }
+        $results = Get-DbaBackupHistory -SqlInstance $script:instance1 -ExcludeDatabase 'master' -LastFull
+        It "Should not report about excluded database master" {
+            ($results | Where-Object Database -match "master").Count | Should Be 0
         }
     }
 

@@ -63,7 +63,7 @@ function Copy-DbaDbQueryStoreOption {
         Copy the Query Store configuration of the AdventureWorks database in the ServerA\SQL instance and apply it to the WorldWideTraders database in the ServerB\SQL Instance.
 
     #>
-    [CmdletBinding(SupportsShouldProcess = $true)]
+    [CmdletBinding(SupportsShouldProcess)]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter]$Source,
@@ -79,7 +79,7 @@ function Copy-DbaDbQueryStoreOption {
         [Alias('Silent')]
         [switch]$EnableException
     )
-    
+
     begin {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Copy-DbaQueryStoreConfig
         try {
@@ -109,7 +109,7 @@ function Copy-DbaDbQueryStoreOption {
                 }
 
                 # We have to exclude all the system databases since they cannot have the Query Store feature enabled
-                $dbs = Get-DbaDatabase -SqlInstance $destServer -ExcludeAllSystemDb
+                $dbs = Get-DbaDatabase -SqlInstance $destServer -ExcludeSystem
 
                 if ($DestinationDatabase.count -gt 0) {
                     $dbs = $dbs | Where-Object { $DestinationDatabase -contains $_.Name }
@@ -148,15 +148,22 @@ function Copy-DbaDbQueryStoreOption {
                     # Set the Query Store configuration through the Set-DbaQueryStoreConfig function
                     if ($PSCmdlet.ShouldProcess("$db", "Copying QueryStoreConfig")) {
                         try {
-                            $null = Set-DbaDbQueryStoreOption -SqlInstance $destinationServer -SqlCredential $DestinationSqlCredential `
-                                -Database $db.name `
-                                -State $SourceQSConfig.ActualState `
-                                -FlushInterval $SourceQSConfig.FlushInterval `
-                                -CollectionInterval $SourceQSConfig.CollectionInterval `
-                                -MaxSize $SourceQSConfig.MaxSize `
-                                -CaptureMode $SourceQSConfig.CaptureMode `
-                                -CleanupMode $SourceQSConfig.CleanupMode `
-                                -StaleQueryThreshold $SourceQSConfig.StaleQueryThreshold
+
+                            $setDbaDbQueryStoreOptionParameters = @{
+
+                                SqlInstance         = $destinationServer;
+                                SqlCredential       = $DestinationSqlCredential;
+                                Database            = $db.name;
+                                State               = $SourceQSConfig.ActualState;
+                                FlushInterval       = $SourceQSConfig.DataFlushIntervalInSeconds;
+                                CollectionInterval  = $SourceQSConfig.StatisticsCollectionIntervalInMinutes;
+                                MaxSize             = $SourceQSConfig.MaxStorageSizeInMB;
+                                CaptureMode         = $SourceQSConfig.QueryCaptureMode;
+                                CleanupMode         = $SourceQSConfig.SizeBasedCleanupMode;
+                                StaleQueryThreshold = $SourceQSConfig.StaleQueryThresholdInDays;
+                            }
+
+                            $null = Set-DbaDbQueryStoreOption @setDbaDbQueryStoreOptionParameters;
                             $copyQueryStoreStatus.Status = "Successful"
                         } catch {
                             $copyQueryStoreStatus.Status = "Failed"

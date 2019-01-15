@@ -70,6 +70,9 @@ function Get-DbaUptime {
         $nowutc = (Get-Date).ToUniversalTime()
     }
     process {
+        # uses cim commands
+        
+        
         foreach ($instance in $SqlInstance) {
             if ($instance.Gettype().FullName -eq [System.Management.Automation.PSCustomObject] ) {
                 $servername = $instance.SqlInstance

@@ -73,7 +73,7 @@ function Copy-DbaCmsRegServer {
         If SwitchServerName is not specified, "sqlcluster" will be skipped.
 
     #>
-    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
+    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess)]
     param (
         [parameter(Mandatory)]
         [DbaInstanceParameter]$Source,
@@ -88,6 +88,11 @@ function Copy-DbaCmsRegServer {
         [switch]$EnableException
     )
     begin {
+        if (-not $script:isWindows) {
+            Stop-Function -Message "Copy-DbaCmsRegServer does not support Linux - we're still waiting for the Core SMOs from Microsoft"
+            return
+        }
+        
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Copy-DbaCentralManagementServer
         function Invoke-ParseServerGroup {
             [cmdletbinding()]
@@ -116,7 +121,7 @@ function Copy-DbaCmsRegServer {
                     if ($force -eq $false) {
                         if ($Pscmdlet.ShouldProcess($destinstance, "Checking to see if $groupName exists")) {
                             $copyDestinationGroupStatus.Status = "Skipped"
-                            $copyDestinationGroupStatus.Notes = "Already exists"
+                            $copyDestinationGroupStatus.Notes = "Already exists on destination"
                             $copyDestinationGroupStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                             Write-Message -Level Verbose -Message "Destination group $groupName exists at destination. Use -Force to drop and migrate."
                         }
@@ -181,7 +186,7 @@ function Copy-DbaCmsRegServer {
                     if ($force -eq $false) {
                         if ($Pscmdlet.ShouldProcess($destinstance, "Checking to see if $instanceName in $groupName exists")) {
                             $copyInstanceStatus.Status = "Skipped"
-                            $copyInstanceStatus.Notes = "Already exists"
+                            $copyInstanceStatus.Notes = "Already exists on destination"
                             $copyInstanceStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
                             Write-Message -Level Verbose -Message "Instance $instanceName exists in group $groupName at destination. Use -Force to drop and migrate."
@@ -249,7 +254,7 @@ function Copy-DbaCmsRegServer {
                     if ($force -eq $false) {
                         if ($Pscmdlet.ShouldProcess($destinstance, "Checking to see if subgroup $fromSubGroupName exists")) {
                             $copyGroupStatus.Status = "Skipped"
-                            $copyGroupStatus.Notes = "Already exists"
+                            $copyGroupStatus.Notes = "Already exists on destination"
                             $copyGroupStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
                             Write-Message -Level Verbose -Message "Subgroup $fromSubGroupName exists at destination. Use -Force to drop and migrate."

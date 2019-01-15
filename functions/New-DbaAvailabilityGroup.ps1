@@ -162,7 +162,7 @@ function New-DbaAvailabilityGroup {
     .EXAMPLE
         PS C:\> New-DbaAvailabilityGroup -Primary sql2016a -Name SharePoint -Secondary sql2016b
 
-        Creates a new availability group on sql2016b named SharePoint with a secondary replica, sql2016b
+        Creates a new availability group on sql2016a named SharePoint with a secondary replica, sql2016b
 
     .EXAMPLE
         PS C:\> New-DbaAvailabilityGroup -Primary sql2016std -Name BAG1 -Basic -Confirm:$false
@@ -187,17 +187,17 @@ function New-DbaAvailabilityGroup {
     .EXAMPLE
         PS C:\> $cred = Get-Credential sqladmin
         PS C:\> $params = @{
-                    >> Primary = "sql1"
-                    >> PrimarySqlCredential = $cred
-                    >> Secondary = "sql2"
-                    >> SecondarySqlCredential = $cred
-                    >> Name = "test-ag"
-                    >> Database = "pubs"
-                    >> ClusterType = "None"
-                    >> SeedingMode = "Automatic"
-                    >> FailoverMode = "Manual"
-                    >> Confirm = $false
-                >> }
+        >> Primary = "sql1"
+        >> PrimarySqlCredential = $cred
+        >> Secondary = "sql2"
+        >> SecondarySqlCredential = $cred
+        >> Name = "test-ag"
+        >> Database = "pubs"
+        >> ClusterType = "None"
+        >> SeedingMode = "Automatic"
+        >> FailoverMode = "Manual"
+        >> Confirm = $false
+        >> }
         PS C:\> New-DbaAvailabilityGroup @params
 
         This exact command was used to create an availability group on docker!
@@ -389,10 +389,10 @@ function New-DbaAvailabilityGroup {
                 $ag.AutomatedBackupPreference = [Microsoft.SqlServer.Management.Smo.AvailabilityGroupAutomatedBackupPreference]::$AutomatedBackupPreference
                 $ag.FailureConditionLevel = [Microsoft.SqlServer.Management.Smo.AvailabilityGroupFailureConditionLevel]::$FailureConditionLevel
                 $ag.HealthCheckTimeout = $HealthCheckTimeout
-                $ag.DatabaseHealthTrigger = $DatabaseHealthTrigger
 
                 if ($server.VersionMajor -ge 13) {
                     $ag.BasicAvailabilityGroup = $Basic
+                    $ag.DatabaseHealthTrigger = $DatabaseHealthTrigger
                 }
 
                 if ($server.VersionMajor -ge 14) {
@@ -411,10 +411,13 @@ function New-DbaAvailabilityGroup {
                     BackupPriority                = $BackupPriority
                     ConnectionModeInPrimaryRole   = $ConnectionModeInPrimaryRole
                     ConnectionModeInSecondaryRole = $ConnectionModeInSecondaryRole
-                    SeedingMode                   = $SeedingMode
                     Endpoint                      = $Endpoint
                     ReadonlyRoutingConnectionUrl  = $ReadonlyRoutingConnectionUrl
                     Certificate                   = $Certificate
+                }
+
+                if ($server.VersionMajor -ge 13) {
+                    $replicaparams += @{SeedingMode = $SeedingMode}
                 }
 
                 $null = Add-DbaAgReplica @replicaparams -EnableException -SqlInstance $server
@@ -476,55 +479,13 @@ function New-DbaAvailabilityGroup {
             return
         }
 
-        # Add databases
-        Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Adding databases"
-
-        $allbackups = @{
-        }
-
-        foreach ($db in $Database) {
-            if ($SeedingMode -eq "Automatic") {
-                if ($Pscmdlet.ShouldProcess($Primary, "Backing up $db to NUL")) {
-                    $null = Backup-DbaDatabase -BackupFileName NUL -SqlInstance $Primary -SqlCredential $PrimarySqlCredential -Database $db
-                }
-            }
-
-            if ($Pscmdlet.ShouldProcess($Primary, "Adding $db to $Name")) {
-                $null = Add-DbaAgDatabase -SqlInstance $Primary -SqlCredential $PrimarySqlCredential -AvailabilityGroup $Name -Database $db
-            }
-
-            foreach ($second in $secondaries) {
-                if ($Pscmdlet.ShouldProcess($second.Name, "Adding $db to $Name")) {
-                    $primarydb = Get-DbaDatabase -SqlInstance $Primary -SqlCredential $PrimarySqlCredential -Database $db
-                    $seconddb = Get-DbaDatabase -SqlInstance $second -Database $db
-
-                    if ((-not $seconddb -or $Force) -and $SeedingMode -ne 'Automatic') {
-                        try {
-                            if (-not $allbackups[$db]) {
-                                if ($UseLastBackup) {
-                                    $allbackups[$db] = Get-DbaBackupHistory -SqlInstance $primarydb.Parent -Database $primarydb.Name -IncludeCopyOnly -Last -EnableException
-                                } else {
-                                    $fullbackup = $primarydb | Backup-DbaDatabase -BackupDirectory $SharedPath -Type Full -EnableException
-                                    $logbackup = $primarydb | Backup-DbaDatabase -BackupDirectory $SharedPath -Type Log -EnableException
-                                    $allbackups[$db] = $fullbackup, $logbackup
-                                }
-                                Write-Message -Level Verbose -Message "Backups still exist on $SharedPath"
-                            }
-                            if ($Pscmdlet.ShouldProcess("$Secondary", "restoring full and log backups of $primarydb from $Primary")) {
-                                # keep going to ensure output is shown even if dbs aren't added well.
-                                $null = $allbackups[$db] | Restore-DbaDatabase -SqlInstance $second -WithReplace -NoRecovery -TrustDbBackupHistory -EnableException
-                            }
-                        } catch {
-                            Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
-                        }
-                    }
-                    $null = Add-DbaAgDatabase -SqlInstance $second -AvailabilityGroup $Name -Database $db
-                }
-            }
-        }
-
         # Add listener
-        Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Adding listener"
+        if ($IPAddress -or $Dhcp) {
+            $progressmsg = "Adding listener"
+        } else {
+            $progressmsg = "Joining availability group"
+        }
+        Write-ProgressHelper -StepNumber ($stepCounter++) -Message $progressmsg
 
         if ($IPAddress) {
             if ($Pscmdlet.ShouldProcess($Primary, "Adding static IP listener for $Name to the Primary replica")) {
@@ -613,6 +574,11 @@ function New-DbaAvailabilityGroup {
                 Stop-Function -Message "Failure" -ErrorRecord $_
             }
         }
+
+        # Add databases
+        Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Adding databases"
+
+        $null = Add-DbaAgDatabase -SqlInstance $Primary -SqlCredential $PrimarySqlCredential -AvailabilityGroup $Name -Database $Database -SeedingMode $SeedingMode -SharedPath $SharedPath -Secondary $Secondary -SecondarySqlCredential $SecondarySqlCredential
 
         foreach ($second in $secondaries) {
             if ($server.HostPlatform -ne "Linux" -and $second.HostPlatform -ne "Linux") {

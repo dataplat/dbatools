@@ -61,10 +61,10 @@ function Import-DbaXESessionTemplate {
         Creates a new XESession named "Query Wait Stats" using the db_query_wait_stats template.
 
     .EXAMPLE
-        PS C:\> Get-DbaXESession -SqlInstance sql2017 -Session db_ola_health | Remove-DbaXESession
-        PS C:\> Import-DbaXESessionTemplate -SqlInstance sql2017 -Template db_ola_health | Start-DbaXESession
+        PS C:\> Get-DbaXESession -SqlInstance sql2017 -Session 'Database Health 2014' | Remove-DbaXESession
+        PS C:\> Import-DbaXESessionTemplate -SqlInstance sql2017 -Template 'Database Health 2014' | Start-DbaXESession
 
-        Imports a session if it exists, then recreates it using a template.
+        Removes a session if it exists, then recreates it using a template.
 
     .EXAMPLE
         PS C:\> Get-DbaXESessionTemplate | Out-GridView -PassThru | Import-DbaXESessionTemplate -SqlInstance sql2017
@@ -95,8 +95,9 @@ function Import-DbaXESessionTemplate {
             Stop-Function -Message "You must specify Path or Template."
         }
 
-        if (($Path.Count -gt 1 -or $Template.Count -gt 1) -and (Test-Bound -ParameterName Template)) {
+        if (($Path.Count -gt 1 -or $Template.Count -gt 1) -and (Test-Bound -ParameterName Name)) {
             Stop-Function -Message "Name cannot be specified with multiple files or templates because the Session will already exist."
+            return
         }
 
         foreach ($instance in $SqlInstance) {
@@ -191,7 +192,7 @@ function Import-DbaXESessionTemplate {
                 }
 
                 try {
-                    Write-Message -Level Verbose -Message "Importing $file as $name "
+                    Write-Message -Level Verbose -Message "Importing $file as $Name "
                     $session = $store.CreateSessionFromTemplate($Name, $file)
                     $session.Create()
                     if ($file -eq $tempfile) {

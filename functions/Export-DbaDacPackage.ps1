@@ -135,17 +135,20 @@ function Export-DbaDacPackage {
             }
         }
 
-        $dacfxPath = "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Dac.dll"
-        if ((Test-Path $dacfxPath) -eq $false) {
-            Stop-Function -Message 'Dac Fx library not found.' -EnableException $EnableException
-            return
-        } else {
-            try {
-                Add-Type -Path $dacfxPath
-                Write-Message -Level Verbose -Message "Dac Fx loaded."
-            } catch {
-                Stop-Function -Message 'No usable version of Dac Fx found.' -ErrorRecord $_
+        if (-not $script:core) {
+            $dacfxPath = Resolve-Path -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Dac.dll"
+
+            if ((Test-Path $dacfxPath) -eq $false) {
+                Stop-Function -Message 'Dac Fx library not found.' -EnableException $EnableException
                 return
+            } else {
+                try {
+                    Add-Type -Path $dacfxPath
+                    Write-Message -Level Verbose -Message "Dac Fx loaded."
+                } catch {
+                    Stop-Function -Message 'No usable version of Dac Fx found.' -ErrorRecord $_
+                    return
+                }
             }
         }
 
@@ -191,13 +194,18 @@ function Export-DbaDacPackage {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
             $cleaninstance = $instance.ToString().Replace('\', '-')
-
-            $dbs = Get-DbaDatabase -SqlInstance $server -OnlyAccessible -ExcludeAllSystemDb -Database $Database -ExcludeDatabase $ExcludeDatabase
+            if ($Database) {
+                $dbs = Get-DbaDatabase -SqlInstance $server -OnlyAccessible -Database $Database -ExcludeDatabase $ExcludeDatabase
+            } else {
+                # all user databases by default
+                $dbs = Get-DbaDatabase -SqlInstance $server -OnlyAccessible -ExcludeSystem -ExcludeDatabase $ExcludeDatabase
+            }
             if (-not $dbs) {
                 Stop-Function -Message "Databases not found on $instance" -Target $instance -Continue
             }
 
             foreach ($db in $dbs) {
+                $resultstime = [diagnostics.stopwatch]::StartNew()
                 $dbname = $db.name
                 $connstring = $server.ConnectionContext.ConnectionString
                 if ($connstring -notmatch 'Database=') {
@@ -255,7 +263,6 @@ function Export-DbaDacPackage {
                     $cmdConnString = $connstring.Replace('"', "'")
 
                     $sqlPackageArgs = "/action:$action /tf:""$currentFileName"" /SourceConnectionString:""$cmdConnString"" $ExtendedParameters $ExtendedProperties"
-                    $resultstime = [diagnostics.stopwatch]::StartNew()
 
                     try {
                         $startprocess = New-Object System.Diagnostics.ProcessStartInfo

@@ -64,7 +64,6 @@ function Get-DbaComputerCertificate {
         [string]$Folder = "My",
         [string]$Path,
         [string[]]$Thumbprint,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 
@@ -84,12 +83,58 @@ function Get-DbaComputerCertificate {
                 $Certificate.Import($bytes, $null, [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::DefaultKeySet)
                 return $Certificate
             }
-
+            
+            function Get-CoreCertStore {
+                [CmdletBinding()]
+                param (
+                    [ValidateSet("CurrentUser", "LocalMachine")]
+                    [string]$Store,
+                    [ValidateSet("AddressBook", "AuthRoot, CertificateAuthority", "Disallowed", "My", "Root", "TrustedPeople", "TrustedPublisher")]
+                    [string]$Folder,
+                    [ValidateSet("ReadOnly", "ReadWrite")]
+                    [string]$Flag = "ReadOnly"
+                )
+                
+                $storename = [System.Security.Cryptography.X509Certificates.StoreLocation]::$Store
+                $foldername = [System.Security.Cryptography.X509Certificates.StoreName]::$Folder
+                $flags = [System.Security.Cryptography.X509Certificates.OpenFlags]::$Flag
+                $certstore = [System.Security.Cryptography.X509Certificates.X509Store]::New($foldername, $storename)
+                $certstore.Open($flags)
+                
+                $certstore
+            }
+            
+            function Get-CoreCertificate {
+                [CmdletBinding()]
+                param (
+                    [ValidateSet("CurrentUser", "LocalMachine")]
+                    [string]$Store,
+                    [ValidateSet("AddressBook", "AuthRoot, CertificateAuthority", "Disallowed", "My", "Root", "TrustedPeople", "TrustedPublisher")]
+                    [string]$Folder,
+                    [ValidateSet("ReadOnly", "ReadWrite")]
+                    [string]$Flag = "ReadOnly",
+                    [string[]]$Thumbprint,
+                    [System.Security.Cryptography.X509Certificates.X509Store[]]$InputObject
+                )
+                
+                if (-not $InputObject) {
+                    $InputObject += Get-CoreCertStore -Store $Store -Folder $Folder -Flag $Flag
+                }
+                
+                $certs = ($InputObject).Certificates
+                
+                if ($Thumbprint) {
+                    $certs = $certs | Where-Object Thumbprint -in $Thumbprint
+                }
+                
+                $certs
+            }
+            
             if ($Thumbprint) {
                 try {
                     <# DO NOT use Write-Message as this is inside of a script block #>
                     Write-Verbose "Searching Cert:\$Store\$Folder"
-                    Get-ChildItem "Cert:\$Store\$Folder" -Recurse | Where-Object Thumbprint -in $Thumbprint
+                    Get-CoreCertificate -Store $Store -Folder $Folder -Thumbprint $Thumbprint
                 } catch {
                     # don't care - there's a weird issue with remoting where an exception gets thrown for no apparent reason
                     # here to avoid an empty catch
@@ -99,7 +144,7 @@ function Get-DbaComputerCertificate {
                 try {
                     <# DO NOT use Write-Message as this is inside of a script block #>
                     Write-Verbose "Searching Cert:\$Store\$Folder"
-                    Get-ChildItem "Cert:\$Store\$Folder" -Recurse | Where-Object { "$($_.EnhancedKeyUsageList)" -match '1\.3\.6\.1\.5\.5\.7\.3\.1' }
+                    Get-CoreCertificate -Store $Store -Folder $Folder | Where-Object EnhancedKeyUsageList -match '1\.3\.6\.1\.5\.5\.7\.3\.1'
                 } catch {
                     # still don't care
                     # here to avoid an empty catch
@@ -109,7 +154,7 @@ function Get-DbaComputerCertificate {
         }
         #endregion Scriptblock for remoting
     }
-
+    
     process {
         foreach ($computer in $computername) {
             try {

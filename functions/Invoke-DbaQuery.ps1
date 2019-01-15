@@ -55,6 +55,9 @@ function Invoke-DbaQuery {
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
+    .PARAMETER ReadOnly
+        Execute the query with ReadOnly application intent.
+
     .NOTES
         Tags: Database, Query
         Author: Friedrich Weinmann (@FredWeinmann)
@@ -86,6 +89,18 @@ function Invoke-DbaQuery {
 
         Runs the sql commands stored in rebuild.sql against all accessible databases of the instances "server1", "server1\nordwind" and "server2"
 
+    .EXAMPLE
+        PS C:\> Invoke-DbaQuery -SqlInstance . -Query 'SELECT * FROM users WHERE Givenname = @name' -SqlParameters @{ Name = "Maria" }
+
+        Executes a simple query against the users table using SQL Parameters.
+        This avoids accidental SQL Injection and is the safest way to execute queries with dynamic content.
+        Keep in mind the limitations inherent in parameters - it is quite impossible to use them for content references.
+        While it is possible to parameterize a where condition, it is impossible to use this to select which columns to select.
+        The inserted text will always be treated as string content, and not as a reference to any SQL entity (such as columns, tables or databases).
+    .EXAMPLE
+        PS C:\> Invoke-DbaQuery -SqlInstance aglistener1 -ReadOnly -Query "select something from readonlydb.dbo.atable"
+
+        Executes a query with ReadOnly application intent on aglistener1.
     #>
     [CmdletBinding(DefaultParameterSetName = "Query")]
     param (
@@ -110,6 +125,7 @@ function Invoke-DbaQuery {
         [switch]$MessagesToOutput,
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
+        [switch]$ReadOnly,
         [switch]$EnableException
     )
 
@@ -281,7 +297,14 @@ function Invoke-DbaQuery {
         }
         foreach ($instance in $SqlInstance) {
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
+                $connDbaInstanceParams = @{
+                    SqlInstance   = $instance
+                    SqlCredential = $SqlCredential
+                }
+                if ($ReadOnly) {
+                    $connDbaInstanceParams.ApplicationIntent = "ReadOnly"
+                }
+                $server = Connect-DbaInstance @connDbaInstanceParams
             } catch {
                 Stop-Function -Message "Failure" -ErrorRecord $_ -Target $instance -Continue
             }
