@@ -188,6 +188,8 @@ function Copy-DbaDbMail {
             foreach ($profile in $sourceProfiles) {
 
                 $profileName = $profile.name
+                $newProfileName = $profileName -replace [Regex]::Escape($source), $destinstance
+                Write-Message -Message "Updating profile name from $profileName to $newProfileName." -Level Verbose
                 $copyMailProfileStatus = [pscustomobject]@{
                     SourceServer      = $sourceServer.Name
                     DestinationServer = $destServer.Name
@@ -198,30 +200,30 @@ function Copy-DbaDbMail {
                     DateTime          = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
                 }
 
-                if ($profiles.count -gt 0 -and $profiles -notcontains $profileName) {
+                if ($profiles.count -gt 0 -and $profiles -notcontains $newProfileName) {
                     continue
                 }
 
-                if ($destProfiles.name -contains $profileName) {
+                if ($destProfiles.name -contains $newProfileName) {
                     if ($force -eq $false) {
-                        If ($pscmdlet.ShouldProcess($destinstance, "Profile $profileName exists at destination. Use -Force to drop and migrate.")) {
+                        If ($pscmdlet.ShouldProcess($destinstance, "Profile $newProfileName exists at destination. Use -Force to drop and migrate.")) {
                             $copyMailProfileStatus.Status = "Skipped"
                             $copyMailProfileStatus.Notes = "Already exists"
                             $copyMailProfileStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                            Write-Message -Message "Profile $profileName exists at destination. Use -Force to drop and migrate." -Level Verbose
+                            Write-Message -Message "Profile $newProfileName exists at destination. Use -Force to drop and migrate." -Level Verbose
                         }
                         continue
                     }
 
-                    If ($pscmdlet.ShouldProcess($destinstance, "Dropping profile $profileName and recreating.")) {
+                    If ($pscmdlet.ShouldProcess($destinstance, "Dropping profile $newProfileName and recreating.")) {
                         try {
-                            Write-Message -Message "Dropping profile $profileName." -Level Verbose
-                            $destServer.Mail.Profiles[$profileName].Drop()
+                            Write-Message -Message "Dropping profile $newProfileName." -Level Verbose
+                            $destServer.Mail.Profiles[$newProfileName].Drop()
                             $destServer.Mail.Profiles.Refresh()
                         } catch {
                             $copyMailProfileStatus.Status = "Failed"
                             $copyMailProfileStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                            Stop-Function -Message "Issue dropping profile." -Target $profileName -Category InvalidOperation -InnerErrorRecord $_ -Continue
+                            Stop-Function -Message "Issue dropping profile." -Target $newProfileName -Category InvalidOperation -InnerErrorRecord $_ -Continue
                         }
                     }
                 }
