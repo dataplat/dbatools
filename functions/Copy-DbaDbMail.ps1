@@ -124,6 +124,8 @@ function Copy-DbaDbMail {
             Write-Message -Message "Migrating accounts." -Level Verbose
             foreach ($account in $sourceAccounts) {
                 $accountName = $account.name
+                $newAccountName = $accountName -replace [Regex]::Escape($source), $destinstance
+                Write-Message -Message "Updating account name from $accountName to $newAccountName." -Level Verbose
                 $copyMailAccountStatus = [pscustomobject]@{
                     SourceServer      = $sourceServer.Name
                     DestinationServer = $destServer.Name
@@ -134,24 +136,24 @@ function Copy-DbaDbMail {
                     DateTime          = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
                 }
 
-                if ($accounts.count -gt 0 -and $accounts -notcontains $accountName) {
+                if ($accounts.count -gt 0 -and $accounts -notcontains $newAccountName) {
                     continue
                 }
 
-                if ($destAccounts.name -contains $accountName) {
+                if ($destAccounts.name -contains $newAccountName) {
                     if ($force -eq $false) {
-                        If ($pscmdlet.ShouldProcess($destinstance, "Account $accountName exists at destination. Use -Force to drop and migrate.")) {
+                        If ($pscmdlet.ShouldProcess($destinstance, "Account $newAccountName exists at destination. Use -Force to drop and migrate.")) {
                             $copyMailAccountStatus.Status = "Skipped"
                             $copyMailAccountStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                            Write-Message -Message "Account $accountName exists at destination. Use -Force to drop and migrate." -Level Verbose
+                            Write-Message -Message "Account $newAccountName exists at destination. Use -Force to drop and migrate." -Level Verbose
                         }
                         continue
                     }
 
-                    If ($pscmdlet.ShouldProcess($destinstance, "Dropping account $accountName and recreating.")) {
+                    If ($pscmdlet.ShouldProcess($destinstance, "Dropping account $newAccountName and recreating.")) {
                         try {
-                            Write-Message -Message "Dropping account $accountName." -Level Verbose
-                            $destServer.Mail.Accounts[$accountName].Drop()
+                            Write-Message -Message "Dropping account $newAccountName." -Level Verbose
+                            $destServer.Mail.Accounts[$newAccountName].Drop()
                             $destServer.Mail.Accounts.Refresh()
                         } catch {
                             $copyMailAccountStatus.Status = "Failed"
@@ -172,7 +174,7 @@ function Copy-DbaDbMail {
                     } catch {
                         $copyMailAccountStatus.Status = "Failed"
                         $copyMailAccountStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                        Stop-Function -Message "Issue copying mail account." -Target $accountName -Category InvalidOperation -InnerErrorRecord $_
+                        Stop-Function -Message "Issue copying mail account." -Target $newAccountName -Category InvalidOperation -InnerErrorRecord $_
                     }
                     $copyMailAccountStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                 }
