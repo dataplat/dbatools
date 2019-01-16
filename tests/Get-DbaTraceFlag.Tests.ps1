@@ -4,7 +4,7 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        [object[]]$params = (Get-ChildItem function:\Get-DbaTraceFlag).Parameters.Keys
+        [object[]]$params = (Get-ChildItem Function:\Get-DbaTraceFlag).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
         [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'TraceFlag', 'EnableException'
         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         It "Should only contain our specific parameters" {
@@ -12,7 +12,6 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         }
     }
 }
-
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Verifying TraceFlag output" {
         BeforeAll {
