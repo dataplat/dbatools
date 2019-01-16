@@ -24,6 +24,7 @@ function Install-DbaInstance {
         * Enable 'Perform volume maintenance tasks' for the SQL Server account
 
         Note that the dowloaded installation media must be extracted and available to the server where the installation runs.
+        NOTE: If no ProductID (PID) is found in the configuration files/parameters, Evaluation version is going to be installed.
 
     .PARAMETER SqlInstance
         The target computer and, optionally, a new instance name and a port number.
@@ -156,30 +157,44 @@ function Install-DbaInstance {
         License: MIT https://opensource.org/licenses/MIT
 
     .Example
-        C:\PS> Install-DbaInstance -Feature All
+        C:\PS> Install-DbaInstance -Version 2017 -Feature All
 
-        Install a default SQL Server instance and run the installation enabling all features with the default settings. Automatically generates configuration.ini
+        Install a default SQL Server instance and run the installation enabling all features with default settings. Automatically generates configuration.ini
 
     .Example
         C:\PS> Install-DbaInstance -SqlInstance sql2017\sqlexpress, server01 -Version 2017 -Feature Default
 
-        Install a named SQL Server instance named sqlexpress on the remote machine, sql2017, and a default instance on server01. Automatically generates configuration.ini
+        Install a named SQL Server instance named sqlexpress on sql2017, and a default instance on server01. Automatically generates configuration.ini.
+        Default features will be installed.
 
     .Example
-        C:\PS> Install-DbaInstance -SqlInstance sql2017 -ConfigurationFile C:\temp\configuration.ini
+        C:\PS> Install-DbaInstance -Version 2008R2 -SqlInstance sql2017 -ConfigurationFile C:\temp\configuration.ini
 
         Install a default named SQL Server instance on the remote machine, sql2017 and use the local configuration.ini
 
     .Example
-        C:\PS> Install-DbaInstance -InstancePath G:\SQLServer
+        C:\PS> Install-DbaInstance -Version 2017 -InstancePath G:\SQLServer
 
-        Run the installation with default settings apart from the application volume, this will be redirected to G:\SQLServer.
+        Run the installation locally with default settings apart from the application volume, this will be redirected to G:\SQLServer.
 
     .Example
-        C:\PS> Install-DbaInstance -Version 2016 -InstancePath D:\Root -DataPath E: -LogPath L: -PerformVolumeMaintenanceTasks -AdminAccount MyDomain\SvcSqlServer
+        C:\PS> $svcAcc = Get-Credential MyDomain\SvcSqlServer
+        C:\PS> Install-DbaInstance -Version 2016 -InstancePath D:\Root -DataPath E: -LogPath L: -PerformVolumeMaintenanceTasks -EngineCredential $svcAcc
 
-        Install SQL Server 2016 on the D drive, the data on E, the logs on L and the other files on the autodetected drives. The perform volume maintenance
-        permissions are granted and the domain account SvcSqlServer will be used as the service account for SqlServer.
+        Install SQL Server 2016 instance into D:\Root drive, set default data folder as E: and default logs folder as L:.
+        Perform volume maintenance tasks permission is granted. MyDomain\SvcSqlServer is used as a service account for SqlServer.
+
+    .Example
+        C:\PS> $config = @{
+            AGTSVCSTARTUPTYPE     = "Manual"
+            SQLCOLLATION          = "Latin1_General_CI_AS"
+            BROWSERSVCSTARTUPTYPE = "Manual"
+            FILESTREAMLEVEL       = 1
+        }
+        C:\PS> Install-DbaInstance -SqlInstance localhost\v2017:1337 -Version 2017 -Configuration $config
+
+        Run the installation locally with default settings overriding the value of specific configuration items.
+        Instance name will be defined as 'v2017'; TCP port will be changed to 1337 after installation.
 
        #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
@@ -199,7 +214,7 @@ function Install-DbaInstance {
         [Alias("FilePath")]
         [object]$ConfigurationFile,
         [hashtable]$Configuration,
-        [string]$Path = (Get-DbatoolsConfigValue -Name 'Path.SQLServerSetup'),
+        [string[]]$Path = (Get-DbatoolsConfigValue -Name 'Path.SQLServerSetup'),
         [ValidateSet("Default", "All", "Engine", "Tools", "Replication", "FullText", "DataQuality", "PolyBase", "MachineLearning", "AnalysisServices",
             "ReportingServices", "ReportingForSharepoint", "SharepointAddin", "IntegrationServices", "MasterDataServices", "PythonPackages", "RPackages",
             "ReplayController", "ReplayClient", "SDK", "BIDS", "SSMS")]
@@ -224,7 +239,7 @@ function Install-DbaInstance {
         [pscredential]$FTCredential,
         [pscredential]$PBEngineCredential,
         [string]$SaveConfiguration,
-        [string]$DotNetPath,
+        # [string]$DotNetPath,
         [switch]$PerformVolumeMaintenanceTasks,
         [switch]$Restart,
         [switch]$EnableException
@@ -240,18 +255,20 @@ function Install-DbaInstance {
             $config = @{}
             switch -regex -file $Path {
                 #Comment
-                '^#.*' { break }
+                '^#.*' { continue }
                 #Section
                 "^\[(.+)\]\s*$" {
                     $section = $matches[1]
-                    $config.$section = @{}
-                    break
+                    if (-not $config.$section) {
+                        $config.$section = @{}
+                    }
+                    continue
                 }
                 #Item
-                "\s*(.+)=(.+)\s*" {
+                "^(.+)=(.+)$" {
                     $name, $value = $matches[1..2]
-                    $config.$section.$name = $value
-                    break
+                    $config.$section.$name = $value.Trim('''"')
+                    continue
                 }
             }
             return $config
@@ -329,6 +346,10 @@ function Install-DbaInstance {
         $components = Get-Content -Path $Script:PSModuleRoot\bin\dbatools-sqlinstallationcomponents.json -Raw | ConvertFrom-Json
     }
     process {
+        if (!$Path) {
+            Stop-Function -Message "Path to SQL Server setup folder is not set. Consider running Set-DbatoolsConfig -Name Path.SQLServerSetup -Value '\\path\to\updates' or specify the path in the original command"
+            return
+        }
         # getting a numeric version for further comparison
         $canonicVersion = (Get-DbaBuildReference -MajorVersion $Version).BuildLevel
         if (-not $canonicVersion) {
@@ -369,6 +390,14 @@ function Install-DbaInstance {
             }
         }
 
+        # check if installation path(s) is a network path and try to access it from the local machine
+        $isNetworkPath = $true
+        foreach ($p in $Path) { if ($p -notlike '\\*') { $isNetworkPath = $false} }
+        if ($isNetworkPath) {
+            Write-Message -Level Verbose -Message "Looking for installation files in $($Path) on a local machine"
+            $localSetupFile = Find-SqlServerSetup -Version $canonicVersion -Path $Path
+        }
+
         $actionPlan = @()
         foreach ($computer in $SqlInstance) {
             # Test elevated console
@@ -407,20 +436,48 @@ function Install-DbaInstance {
                 }
             }
             # find installation file
-            Write-Message -Level Verbose -Message "Looking for installation files in $($Path) on remote machine into $fullComputerName"
-            $findSetupParams = @{
-                ComputerName   = $fullComputerName
-                Credential     = $Credential
-                Authentication = $Authentication
-                Version        = $canonicVersion
-                Path           = $Path
+            $setupFileIsAccessible = $false
+            if ($localSetupFile) {
+                $testSetupPathParams = @{
+                    ComputerName   = $fullComputerName
+                    Credential     = $Credential
+                    Authentication = $Authentication
+                    ScriptBlock    = {
+                        Param (
+                            [string]$Path
+                        )
+                        try {
+                            return Test-Path $Path
+                        } catch {
+                            return $false
+                        }
+                    }
+                    ArgumentList   = @($localSetupFile)
+                    ErrorAction    = 'Stop'
+                    Raw            = $true
+                }
+                $setupFileIsAccessible = Invoke-CommandWithFallback @testSetupPathParams
             }
-            $setupFile = Find-SqlServerSetup @findSetupParams
+            if ($setupFileIsAccessible) {
+                Write-Message -Level Verbose -Message "Setup file $localSetupFile is reachable from remote machine $fullComputerName"
+                $setupFile = $localSetupFile
+            } else {
+                Write-Message -Level Verbose -Message "Looking for installation files in $($Path) on remote machine $fullComputerName"
+                $findSetupParams = @{
+                    ComputerName   = $fullComputerName
+                    Credential     = $Credential
+                    Authentication = $Authentication
+                    Version        = $canonicVersion
+                    Path           = $Path
+                }
+                $setupFile = Find-SqlServerSetup @findSetupParams
+            }
             if (-not $setupFile) {
                 Stop-Function -Message "Failed to find setup file for SQL$Version in $Path on $fullComputerName" -Continue
             }
             $instance = if ($InstanceName) { $InstanceName } else { $computer.InstanceName }
-            $portNumber = if ($Port) { $Port } else { $computer.Port }
+            # checking if we need to modify port after the installation
+            $portNumber = if ($Port) { $Port } elseif ($computer.Port -in 0, 1433) { $null } else { $computer.Port }
             $mainKey = if ($canonicVersion -gt '11.0') { "OPTIONS" } else { "SQLSERVER2008" }
             if (Test-Bound -ParameterName ConfigurationFile) {
                 try {
@@ -482,34 +539,34 @@ function Install-DbaInstance {
                 return
             }
             $execParams = @()
+            # feature-specific parameters
+            # Python
+            foreach ($pythonFeature in 'SQL_INST_MPY', 'SQL_SHARED_MPY', 'AdvancedAnalytics') {
+                if ($pythonFeature -in $featureList) {
+                    $execParams += '/IACCEPTPYTHONLICENSETERMS'
+                    break
+                }
+            }
+            # R
+            foreach ($rFeature in 'SQL_INST_MR', 'SQL_SHARED_MR', 'AdvancedAnalytics') {
+                if ($rFeature -in $featureList) {
+                    $execParams += '/IACCEPTROPENLICENSETERMS '
+                    break
+                }
+            }
             # version-specific stuff
             if ($canonicVersion -gt '10.0') {
                 $execParams += '/IACCEPTSQLSERVERLICENSETERMS'
             }
-            # activate .Net 3.5 if missing - only needed on 2012 and 2014
-            if ($canonicVersion -ge '11.0' -and $canonicVersion -le '12.0' ) {
-                if (-Not (Get-WindowsFeature NET-Framework-Core| Where-Object $_.InstallState -eq 'Installed')) {
-                    Write-Message -Level Verbose -Message "Installing .Net Framework 3.5 (NET-Framework-Core)"
-                    $dotNetParams = @{ Name = 'NET-Framework-Core' }
-                    if ($DotNetPath) { $dotNetParams += @{ Source = $DotNetPath }
-                    }
-                    try {
-                        $dotNetResults = Install-WindowsFeature @DotNetPath -ErrorAction Stop
-                    } catch {
-                        Stop-Function -Message ".Net3.5 installation returned failure" -ErrorRecord $_
-                    }
-                    if (-Not $dotNetResults.Success) {
-                        Write-Message -Level Warning -Message ".Net3.5 installation was unsuccessful"
-                    }
-                }
-            }
             if ($canonicVersion -ge '13.0') {
                 # configure the number of cores
-                $cores = Get-DbaCmObject -ComputerName $fullComputerName -Credential $Credential -ClassName Win32_processor | Measure-Object NumberOfCores -Sum | Select-Object -ExpandProperty sum
+                [int]$cores = Get-DbaCmObject -ComputerName $fullComputerName -Credential $Credential -ClassName Win32_processor | Measure-Object NumberOfCores -Sum | Select-Object -ExpandProperty sum
                 if ($cores -gt 8) {
                     $cores = 8
                 }
-                $configNode.SQLTEMPDBFILECOUNT = $cores
+                if ($cores) {
+                    $configNode.SQLTEMPDBFILECOUNT = $cores
+                }
             }
             # Apply custom configuration keys if provided
             if ($Configuration) {
@@ -585,13 +642,12 @@ function Install-DbaInstance {
             $output = [pscustomobject]@{
                 ComputerName = $_.ComputerName
                 Version      = $Version
-                Build        = $currentVersion.Build
                 SACredential = $null
                 Successful   = $false
                 Restarted    = $false
                 InstanceName = $_.InstanceName
                 Installer    = $_.InstallationPath
-                Port         = $null
+                Port         = $_.Port
                 Notes        = @()
                 ExitCode     = $null
                 Log          = $null
@@ -617,11 +673,6 @@ function Install-DbaInstance {
                     Stop-Function -Message "Failed to restart computer" -ErrorRecord $_ -FunctionName Update-DbaInstance
                 }
             }
-            $sessionParams = @{
-                ComputerName = $_.ComputerName
-                ErrorAction  = "Stop"
-            }
-            if ($Credential) { $sessionParams.Credential = $Credential }
             # save config if needed
             if ($SaveConfiguration) {
                 try {
@@ -632,19 +683,45 @@ function Install-DbaInstance {
                     $output.Notes += $msg
                 }
             }
-            try {
-                # need to figure out where to store the config file
-                $session = New-PSSession @sessionParams
-                $chosenPath = Invoke-Command -Session $session -ScriptBlock { (Get-Item ([System.IO.Path]::GetTempPath())).FullName } -ErrorAction Stop
-                $remoteConfig = Join-DbaPath $chosenPath (Split-Path $_.ConfigurationPath -Leaf)
-                Write-Message -Level Verbose -Message "Copying $($_.ConfigurationPath) to remote machine into $chosenPath"
-                Copy-Item -Path $_.ConfigurationPath -Destination $remoteConfig -ToSession $session -Force -ErrorAction Stop
-                $session | Remove-PSSession
-            } catch {
-                $msg = "Failed to copy file $($_.ConfigurationPath) to the remote session with $($_.ComputerName)"
-                Stop-Function -Message $msg -ErrorRecord $_ -FunctionName Update-DbaInstance
-                $output.Notes += $msg
+            $connectionParams = @{
+                ComputerName = $_.ComputerName
+                ErrorAction  = "Stop"
             }
+            if ($Credential) { $connectionParams.Credential = $Credential }
+            # need to figure out where to store the config file
+            if (([DbaInstanceParameter]$_.ComputerName).IsLocalHost) {
+                $remoteConfig = $_.ConfigurationPath
+            } else {
+                try {
+                    $session = New-PSSession @connectionParams
+                    $chosenPath = Invoke-Command -Session $session -ScriptBlock { (Get-Item ([System.IO.Path]::GetTempPath())).FullName } -ErrorAction Stop
+                    $remoteConfig = Join-DbaPath $chosenPath (Split-Path $_.ConfigurationPath -Leaf)
+                    Write-Message -Level Verbose -Message "Copying $($_.ConfigurationPath) to remote machine into $chosenPath"
+                    Copy-Item -Path $_.ConfigurationPath -Destination $remoteConfig -ToSession $session -Force -ErrorAction Stop
+                    $session | Remove-PSSession
+                } catch {
+                    $msg = "Failed to copy file $($_.ConfigurationPath) to the remote session with $($_.ComputerName)"
+                    Stop-Function -Message $msg -ErrorRecord $_ -FunctionName Update-DbaInstance
+                    $output.Notes += $msg
+                }
+            }
+            # activate .Net 3.5 if missing - only needed on 2012 and 2014. Disabled for now, seems to be out of scope
+            # if ($canonicVersion -ge '11.0' -and $canonicVersion -le '12.0' ) {
+            #     if (-Not (Get-WindowsFeature NET-Framework-Core| Where-Object InstallState -eq 'Installed')) {
+            #         Write-Message -Level Verbose -Message "Installing .Net Framework 3.5 (NET-Framework-Core)"
+            #         $dotNetParams = @{ Name = 'NET-Framework-Core' }
+            #         if ($DotNetPath) { $dotNetParams += @{ Source = $DotNetPath }
+            #         }
+            #         try {
+            #             $dotNetResults = Install-WindowsFeature @DotNetPath -ErrorAction Stop
+            #         } catch {
+            #             Stop-Function -Message ".Net3.5 installation returned failure" -ErrorRecord $_
+            #         }
+            #         if (-Not $dotNetResults.Success) {
+            #             Write-Message -Level Warning -Message ".Net3.5 installation was unsuccessful"
+            #         }
+            #     }
+            # }
             Write-Message -Level Verbose -Message "Setup starting from $($_.InstallationPath)"
             $execParams = @{
                 ComputerName   = $_.ComputerName
@@ -684,11 +761,13 @@ function Install-DbaInstance {
                 return $output
             } finally {
                 ## Cleanup temp
-                $null = Invoke-Command2 @sessionParams -ScriptBlock {
-                    if ($args[0] -like '*\Configuration_*.ini' -and (Test-Path $args[0])) {
-                        Remove-Item -LiteralPath $args[0] -ErrorAction Stop
-                    }
-                } -Raw -ArgumentList $setupFile
+                if (([DbaInstanceParameter]$_.ComputerName).IsLocalHost) {
+                    $null = Invoke-Command2 @connectionParams -ScriptBlock {
+                        if ($args[0] -like '*\Configuration_*.ini' -and (Test-Path $args[0])) {
+                            Remove-Item -LiteralPath $args[0] -ErrorAction Stop
+                        }
+                    } -Raw -ArgumentList $setupFile
+                }
                 # cleanup config file
                 Remove-Item $_.ConfigurationPath
             }
@@ -721,6 +800,7 @@ function Install-DbaInstance {
             return $output
         }
         $outputHandler = {
+            $_ | Add-Member -MemberType NoteProperty -Name Configuration -Value $config
             $_ | Select-DefaultView -Property ComputerName, Version, Successful, InstanceName, Installer, Notes
             if ($_.Successful -eq $false) {
                 Write-Message -Level Warning -Message "Installation failed: $($_.Notes -join ' | ')"

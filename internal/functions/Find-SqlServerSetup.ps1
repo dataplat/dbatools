@@ -20,24 +20,20 @@ function Find-SqlServerSetup {
     [CmdletBinding()]
     Param
     (
-        [DbaInstanceParameter]$ComputerName,
+        [DbaInstanceParameter]$ComputerName = $env:COMPUTERNAME,
         [pscredential]$Credential,
         [ValidateSet('Default', 'Basic', 'Negotiate', 'NegotiateWithImplicitCredential', 'Credssp', 'Digest', 'Kerberos')]
         [string]$Authentication = 'Default',
         [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [version]$Version,
-        [string[]]$Path = (Get-DbatoolsConfigValue -Name 'Path.SQLServerSetup'),
+        [string[]]$Path,
         [bool]$EnableException = $EnableException
 
     )
     begin {
     }
     process {
-        if (!$Path) {
-            Stop-Function -Message "Path to SQL Server setup folder is not set. Consider running Set-DbatoolsConfig -Name Path.SQLServerSetup -Value '\\path\to\updates' or specify the path in the original command"
-            return
-        }
         $getFileScript = {
             Param (
                 [string[]]$Path,
