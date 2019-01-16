@@ -234,7 +234,7 @@ function Install-DbaMaintenanceSolution {
                 }
 
                 # OutputFileDirectory
-                if (-not $OutputFileDirectory) {
+                if ($OutputFileDirectory) {
                     $findOutputFileDirectory = 'SET @OutputFileDirectory = NULL'
                     $replaceOutputFileDirectory = 'SET @OutputFileDirectory = N''' + $OutputFileDirectory + ''''
                     $fileContents[$file] = $fileContents[$file].Replace($findOutputFileDirectory, $replaceOutputFileDirectory)
