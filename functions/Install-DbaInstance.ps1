@@ -801,7 +801,7 @@ function Install-DbaInstance {
         }
         $outputHandler = {
             $_ | Add-Member -MemberType NoteProperty -Name Configuration -Value $config
-            $_ | Select-DefaultView -Property ComputerName, Version, Successful, InstanceName, Installer, Notes
+            $_ | Select-DefaultView -Property ComputerName, InstanceName, Version, Port, Successful, Restarted, Installer, Notes
             if ($_.Successful -eq $false) {
                 Write-Message -Level Warning -Message "Installation failed: $($_.Notes -join ' | ')"
             }
