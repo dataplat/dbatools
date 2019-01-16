@@ -101,6 +101,9 @@ function Install-DbaInstance {
     .PARAMETER AgentCredential
         Service account of the SQL Server Agent
 
+    .PARAMETER ASCredential
+        Service account of the Analysis Services
+
     .PARAMETER ISCredential
         Service account of the Integration Services
 
