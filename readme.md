@@ -77,10 +77,7 @@ $startDbaMigrationSplat = @{
     Destination = $new
     BackupRestore = $true
     SharedPath = 'C:\temp'
-    NoSysDbUserObjects = $true
-    NoCredentials = $true
-    NoBackupDevices = $true
-    NoEndPoints = $true
+    Exclude = 'BackupDevice','SysDbUserObjects','Credentials'
 }
 
 Start-DbaMigration @startDbaMigrationSplat -Force | Select * | Out-GridView
