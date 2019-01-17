@@ -125,7 +125,7 @@ function Copy-DbaDbMail {
             foreach ($account in $sourceAccounts) {
                 $accountName = $account.name
                 $newAccountName = $accountName -replace [Regex]::Escape($source), $destinstance
-                Write-Message -Message "Updating account name from $accountName to $newAccountName." -Level Verbose
+                Write-Message -Message "Updating account name from '$accountName' to '$newAccountName'." -Level Verbose
                 $copyMailAccountStatus = [pscustomobject]@{
                     SourceServer      = $sourceServer.Name
                     DestinationServer = $destServer.Name
@@ -142,7 +142,7 @@ function Copy-DbaDbMail {
 
                 if ($destAccounts.name -contains $newAccountName) {
                     if ($force -eq $false) {
-                        If ($pscmdlet.ShouldProcess($destinstance, "Account $newAccountName exists at destination. Use -Force to drop and migrate.")) {
+                        If ($pscmdlet.ShouldProcess($destinstance, "Account '$newAccountName' exists at destination. Use -Force to drop and migrate.")) {
                             $copyMailAccountStatus.Status = "Skipped"
                             $copyMailAccountStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                             Write-Message -Message "Account $newAccountName exists at destination. Use -Force to drop and migrate." -Level Verbose
@@ -150,9 +150,9 @@ function Copy-DbaDbMail {
                         continue
                     }
 
-                    If ($pscmdlet.ShouldProcess($destinstance, "Dropping account $newAccountName and recreating.")) {
+                    If ($pscmdlet.ShouldProcess($destinstance, "Dropping account '$newAccountName' and recreating.")) {
                         try {
-                            Write-Message -Message "Dropping account $newAccountName." -Level Verbose
+                            Write-Message -Message "Dropping account '$newAccountName'." -Level Verbose
                             $destServer.Mail.Accounts[$newAccountName].Drop()
                             $destServer.Mail.Accounts.Refresh()
                         } catch {
@@ -163,11 +163,11 @@ function Copy-DbaDbMail {
                     }
                 }
 
-                if ($pscmdlet.ShouldProcess($destinstance, "Migrating account $accountName.")) {
+                if ($pscmdlet.ShouldProcess($destinstance, "Migrating account '$accountName'.")) {
                     try {
-                        Write-Message -Message "Copying mail account $accountName." -Level Verbose
+                        Write-Message -Message "Copying mail account '$accountName'." -Level Verbose
                         $sql = $account.Script() | Out-String
-                        $sql = $sql -replace [Regex]::Escape("'$source'"), "'$destinstance'"
+                        $sql = $sql -replace "(?<=@account_name=N'[\d\w\s']*)$sourceRegEx(?=[\d\w\s']*',)", $destinstance
                         Write-Message -Message $sql -Level Debug
                         $destServer.Query($sql) | Out-Null
                         $copyMailAccountStatus.Status = "Successful"
@@ -191,7 +191,7 @@ function Copy-DbaDbMail {
 
                 $profileName = $profile.name
                 $newProfileName = $profileName -replace [Regex]::Escape($source), $destinstance
-                Write-Message -Message "Updating profile name from $profileName to $newProfileName." -Level Verbose
+                Write-Message -Message "Updating profile name from '$profileName' to '$newProfileName'." -Level Verbose
                 $copyMailProfileStatus = [pscustomobject]@{
                     SourceServer      = $sourceServer.Name
                     DestinationServer = $destServer.Name
@@ -208,18 +208,18 @@ function Copy-DbaDbMail {
 
                 if ($destProfiles.name -contains $newProfileName) {
                     if ($force -eq $false) {
-                        If ($pscmdlet.ShouldProcess($destinstance, "Profile $newProfileName exists at destination. Use -Force to drop and migrate.")) {
+                        If ($pscmdlet.ShouldProcess($destinstance, "Profile '$newProfileName' exists at destination. Use -Force to drop and migrate.")) {
                             $copyMailProfileStatus.Status = "Skipped"
                             $copyMailProfileStatus.Notes = "Already exists"
                             $copyMailProfileStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                            Write-Message -Message "Profile $newProfileName exists at destination. Use -Force to drop and migrate." -Level Verbose
+                            Write-Message -Message "Profile '$newProfileName' exists at destination. Use -Force to drop and migrate." -Level Verbose
                         }
                         continue
                     }
 
-                    If ($pscmdlet.ShouldProcess($destinstance, "Dropping profile $newProfileName and recreating.")) {
+                    If ($pscmdlet.ShouldProcess($destinstance, "Dropping profile '$newProfileName' and recreating.")) {
                         try {
-                            Write-Message -Message "Dropping profile $newProfileName." -Level Verbose
+                            Write-Message -Message "Dropping profile '$newProfileName'." -Level Verbose
                             $destServer.Mail.Profiles[$newProfileName].Drop()
                             $destServer.Mail.Profiles.Refresh()
                         } catch {
@@ -230,11 +230,12 @@ function Copy-DbaDbMail {
                     }
                 }
 
-                if ($pscmdlet.ShouldProcess($destinstance, "Migrating mail profile $profileName.")) {
+                if ($pscmdlet.ShouldProcess($destinstance, "Migrating mail profile '$profileName'.")) {
                     try {
-                        Write-Message -Message "Copying mail profile $profileName." -Level Verbose
+                        Write-Message -Message "Copying mail profile '$profileName'." -Level Verbose
                         $sql = $profile.Script() | Out-String
-                        $sql = $sql -replace [Regex]::Escape("'$source'"), "'$destinstance'"
+                        $sql = $sql -replace "(?<=@account_name=N'[\d\w\s']*)$sourceRegEx(?=[\d\w\s']*',)", $destinstance
+                        $sql = $sql -replace "(?<=@profile_name=N'[\d\w\s']*)$sourceRegEx(?=[\d\w\s']*',)", $destinstance
                         Write-Message -Message $sql -Level Debug
                         $destServer.Query($sql) | Out-Null
                         $destServer.Mail.Profiles.Refresh()
@@ -297,7 +298,7 @@ function Copy-DbaDbMail {
                     try {
                         Write-Message -Message "Copying mail server $mailServerName." -Level Verbose
                         $sql = $mailServer.Script() | Out-String
-                        $sql = $sql -replace [Regex]::Escape("'$source'"), "'$destinstance'"
+                        $sql = $sql -replace "(?<=@account_name=N'[\d\w\s']*)$sourceRegEx(?=[\d\w\s']*',)", $destinstance
                         Write-Message -Message $sql -Level Debug
                         $destServer.Query($sql) | Out-Null
                         $copyMailServerStatus.Status = "Successful"
@@ -318,6 +319,7 @@ function Copy-DbaDbMail {
             return
         }
         $mail = $sourceServer.mail
+        $sourceRegEx = [RegEx]::Escape($source)
     }
     process {
         if (Test-FunctionInterrupt) { return }
