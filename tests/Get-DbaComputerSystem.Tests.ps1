@@ -4,17 +4,13 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 Describe "Get-DbaComputerSystem Unit Tests" -Tag "UnitTests" {
     InModuleScope dbatools {
         Context "Validate parameters" {
-            $params = (Get-ChildItem function:\Get-DbaComputerSystem).Parameters
-            it "should have a parameter named ComputerName" {
-                $params.ContainsKey("ComputerName") | Should Be $true
-            }
-            it "should have a parameter named Credential" {
-                $params.ContainsKey("Credential") | Should Be $true
-            }
-            it "should have a parameter named EnableException" {
-                $params.ContainsKey("EnableException") | Should Be $true
-            }
+        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
+        [object[]]$knownParameters = 'ComputerName','Credential','IncludeAws','EnableException'
+        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
+        It "Should only contain our specific parameters" {
+            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
         }
+    }
         Context "Validate input" {
             it "Cannot resolve hostname of computer" {
                 mock Resolve-DbaNetworkName {$null}

@@ -4,23 +4,11 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tags "UnitTests" {
     Context "Validate parameters" {
-        $knownParameters = 'SourceSqlInstance', 'DestinationSqlInstance', 'SourceSqlCredential', 'SourceCredential', 'DestinationSqlCredential', 'DestinationCredential', 'Database', 'BackupNetworkPath', 'BackupLocalPath', 'BackupJob', 'BackupRetention', 'BackupSchedule', 'BackupScheduleDisabled', 'BackupScheduleFrequencyType', 'BackupScheduleFrequencyInterval', 'BackupScheduleFrequencySubdayType', 'BackupScheduleFrequencySubdayInterval', 'BackupScheduleFrequencyRelativeInterval', 'BackupScheduleFrequencyRecurrenceFactor', 'BackupScheduleStartDate', 'BackupScheduleEndDate', 'BackupScheduleStartTime', 'BackupScheduleEndTime', 'BackupThreshold', 'CompressBackup', 'CopyDestinationFolder', 'CopyJob', 'CopyRetention', 'CopySchedule', 'CopyScheduleDisabled', 'CopyScheduleFrequencyType', 'CopyScheduleFrequencyInterval', 'CopyScheduleFrequencySubdayType', 'CopyScheduleFrequencySubdayInterval', 'CopyScheduleFrequencyRelativeInterval', 'CopyScheduleFrequencyRecurrenceFactor', 'CopyScheduleStartDate', 'CopyScheduleEndDate', 'CopyScheduleStartTime', 'CopyScheduleEndTime', 'DisconnectUsers', 'FullBackupPath', 'GenerateFullBackup', 'HistoryRetention', 'NoRecovery', 'NoInitialization', 'PrimaryMonitorServer', 'PrimaryMonitorCredential', 'PrimaryMonitorServerSecurityMode', 'PrimaryThresholdAlertEnabled', 'RestoreDataFolder', 'RestoreLogFolder', 'RestoreDelay', 'RestoreAlertThreshold', 'RestoreJob', 'RestoreRetention', 'RestoreSchedule', 'RestoreScheduleDisabled', 'RestoreScheduleFrequencyType', 'RestoreScheduleFrequencyInterval', 'RestoreScheduleFrequencySubdayType', 'RestoreScheduleFrequencySubdayInterval', 'RestoreScheduleFrequencyRelativeInterval', 'RestoreScheduleFrequencyRecurrenceFactor', 'RestoreScheduleStartDate', 'RestoreScheduleEndDate', 'RestoreScheduleStartTime', 'RestoreScheduleEndTime', 'RestoreThreshold', 'SecondaryDatabasePrefix', 'SecondaryDatabaseSuffix', 'SecondaryMonitorServer', 'SecondaryMonitorCredential', 'SecondaryMonitorServerSecurityMode', 'SecondaryThresholdAlertEnabled', 'Standby', 'StandbyDirectory', 'UseExistingFullBackup', 'UseBackupFolder', 'Force', 'EnableException'
-        $SupportShouldProcess = $true
-        $paramCount = $knownParameters.Count
-        if ($SupportShouldProcess) {
-            $defaultParamCount = 13
-        } else {
-            $defaultParamCount = 11
-        }
-        $command = Get-Command -Name $CommandName
-        [object[]]$params = $command.Parameters.Keys
-
-        It "Should contain our specific parameters" {
-            ((Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count) | Should Be $paramCount
-        }
-
-        It "Should only contain $paramCount parameters" {
-            $params.Count - $defaultParamCount | Should Be $paramCount
+        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
+        [object[]]$knownParameters = 'SourceSqlInstance','DestinationSqlInstance','SourceSqlCredential','SourceCredential','DestinationSqlCredential','DestinationCredential','Database','BackupNetworkPath','BackupLocalPath','BackupJob','BackupRetention','BackupSchedule','BackupScheduleDisabled','BackupScheduleFrequencyType','BackupScheduleFrequencyInterval','BackupScheduleFrequencySubdayType','BackupScheduleFrequencySubdayInterval','BackupScheduleFrequencyRelativeInterval','BackupScheduleFrequencyRecurrenceFactor','BackupScheduleStartDate','BackupScheduleEndDate','BackupScheduleStartTime','BackupScheduleEndTime','BackupThreshold','CompressBackup','CopyDestinationFolder','CopyJob','CopyRetention','CopySchedule','CopyScheduleDisabled','CopyScheduleFrequencyType','CopyScheduleFrequencyInterval','CopyScheduleFrequencySubdayType','CopyScheduleFrequencySubdayInterval','CopyScheduleFrequencyRelativeInterval','CopyScheduleFrequencyRecurrenceFactor','CopyScheduleStartDate','CopyScheduleEndDate','CopyScheduleStartTime','CopyScheduleEndTime','DisconnectUsers','FullBackupPath','GenerateFullBackup','HistoryRetention','NoRecovery','NoInitialization','PrimaryMonitorServer','PrimaryMonitorCredential','PrimaryMonitorServerSecurityMode','PrimaryThresholdAlertEnabled','RestoreDataFolder','RestoreLogFolder','RestoreDelay','RestoreAlertThreshold','RestoreJob','RestoreRetention','RestoreSchedule','RestoreScheduleDisabled','RestoreScheduleFrequencyType','RestoreScheduleFrequencyInterval','RestoreScheduleFrequencySubdayType','RestoreScheduleFrequencySubdayInterval','RestoreScheduleFrequencyRelativeInterval','RestoreScheduleFrequencyRecurrenceFactor','RestoreScheduleStartDate','RestoreScheduleEndDate','RestoreScheduleStartTime','RestoreScheduleEndTime','RestoreThreshold','SecondaryDatabasePrefix','SecondaryDatabaseSuffix','SecondaryMonitorServer','SecondaryMonitorCredential','SecondaryMonitorServerSecurityMode','SecondaryThresholdAlertEnabled','Standby','StandbyDirectory','UseExistingFullBackup','UseBackupFolder','Force','EnableException'
+        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
+        It "Should only contain our specific parameters" {
+            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
         }
     }
 }
