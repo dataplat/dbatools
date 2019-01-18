@@ -111,7 +111,7 @@
         'Get-DbaDbSpace',
         'Test-DbaDbOwner',
         'Set-DbaDbOwner',
-        'Test-DbaJobOwner',
+        'Test-DbaAgentJobOwner',
         'Set-DbaAgentJobOwner',
         'Test-DbaDbVirtualLogFile',
         'Get-DbaDbRestoreHistory',
@@ -440,6 +440,8 @@
         'Invoke-DbaDbDbccCheckConstraint',
         'Invoke-DbaDbDbccCleanTable',
         'Invoke-DbaDbDbccUpdateUsage',
+        'Get-DbaDbIdentity',
+        'Set-DbaDbIdentity',
         # noncoresmo
         # SMO issues
         'Export-DbaUser',

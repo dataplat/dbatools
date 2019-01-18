@@ -1010,6 +1010,10 @@ $script:renames = @(
     @{
         "AliasName"  = "Repair-DbaOrphanUser"
         "Definition" = "Repair-DbaDbOrphanUser"
+    },
+    @{
+        "AliasName"  = "Test-DbaJobOwner"
+        "Definition" = "Test-DbaAgentJobOwner"
     }
 )
 
@@ -1084,7 +1088,7 @@ $script:xplat = @(
     'Get-DbaDbSpace',
     'Test-DbaDbOwner',
     'Set-DbaDbOwner',
-    'Test-DbaJobOwner',
+    'Test-DbaAgentJobOwner',
     'Set-DbaAgentJobOwner',
     'Test-DbaDbVirtualLogFile',
     'Get-DbaDbRestoreHistory',
@@ -1413,7 +1417,9 @@ $script:xplat = @(
     'Invoke-DbaDbccDropCleanBuffer',
     'Invoke-DbaDbDbccCheckConstraint',
     'Invoke-DbaDbDbccCleanTable',
-    'Invoke-DbaDbDbccUpdateUsage'
+    'Invoke-DbaDbDbccUpdateUsage',
+    'Get-DbaDbIdentity',
+    'Set-DbaDbIdentity'
 )
 
 $script:noncoresmo = @(
