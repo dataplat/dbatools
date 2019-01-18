@@ -1,22 +1,23 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
+. "$PSScriptRoot\..\internal\functions\Invoke-DbaDbCorruption.ps1"
 
 Describe "$commandname Unit Tests" -Tags "UnitTests" {
-    Context "Validating Database Input" {
-        Invoke-DbaDbCorruption -SqlInstance $script:instance2 -Database "master" -WarningAction SilentlyContinue -WarningVariable systemwarn
-        It "Should not allow you to corrupt system databases." {
-            $systemwarn -match 'may not corrupt system databases' | Should Be $true
-        }
-        It "Should fail if more than one database is specified" {
-            { Invoke-DbaDbCorruption -SqlInstance $script:instance2 -Database "Database1", "Database2" -EnableException } | Should Throw
+
+    Context "Validate parameters" {
+        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
+        [object[]]$knownParameters = 'SqlInstance','SqlCredential','Database','Table','EnableException'
+        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
+        It "Should only contain our specific parameters" {
+            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
         }
     }
-
-    Context "It's Confirm impact should be high" {
-        $command = Get-Command Invoke-DbaDbCorruption
-        $metadata = [System.Management.Automation.CommandMetadata]$command
-        $metadata.ConfirmImpact | Should Be 'High'
+    Context "Validate Confirm impact" {
+        It "Confirm Impact should be high" {
+            $metadata = [System.Management.Automation.CommandMetadata](Get-Command $CommandName)
+            $metadata.ConfirmImpact | Should Be 'High'
+        }
     }
 }
 
@@ -33,6 +34,16 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     AfterAll {
         # Cleanup
         Remove-DbaDatabase -SqlInstance $Server -Database $dbname -Confirm:$false
+    }
+
+    Context "Validating Database Input" {
+        Invoke-DbaDbCorruption -SqlInstance $script:instance2 -Database "master" -WarningAction SilentlyContinue -WarningVariable systemwarn
+        It "Should not allow you to corrupt system databases." {
+            $systemwarn -match 'may not corrupt system databases' | Should Be $true
+        }
+        It "Should fail if more than one database is specified" {
+            { Invoke-DbaDbCorruption -SqlInstance $script:instance2 -Database "Database1", "Database2" -EnableException } | Should Throw
+        }
     }
 
     It "Require at least a single table in the database specified" {
