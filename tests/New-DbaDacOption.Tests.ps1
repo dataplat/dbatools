@@ -3,7 +3,7 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 
 Describe "$commandname Unit Tests" -Tag "UnitTests" {
-    $Context "Validate parameters" {
+    Context "Validate parameters" {
         [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
         [object[]]$knownParameters = 'Type','Action','PublishXml','EnableException'
         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters

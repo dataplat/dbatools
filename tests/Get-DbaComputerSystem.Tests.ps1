@@ -1,9 +1,9 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
+
 Describe "Get-DbaComputerSystem Unit Tests" -Tag "UnitTests" {
-    InModuleScope dbatools {
-        Context "Validate parameters" {
+    Context "Validate parameters" {
         [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
         [object[]]$knownParameters = 'ComputerName','Credential','IncludeAws','EnableException'
         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
@@ -11,11 +11,10 @@ Describe "Get-DbaComputerSystem Unit Tests" -Tag "UnitTests" {
             (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
         }
     }
-        Context "Validate input" {
-            it "Cannot resolve hostname of computer" {
-                mock Resolve-DbaNetworkName {$null}
-                {Get-DbaComputerSystem -ComputerName 'DoesNotExist142' -WarningAction Stop 3> $null} | Should Throw
-            }
+    Context "Validate input" {
+        it "Cannot resolve hostname of computer" {
+            mock Resolve-DbaNetworkName {$null}
+            {Get-DbaComputerSystem -ComputerName 'DoesNotExist142' -WarningAction Stop 3> $null} | Should Throw
         }
     }
 }

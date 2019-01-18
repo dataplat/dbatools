@@ -23,6 +23,8 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
             @{role = 'sysadmin'}
         )
 
+        $command = Get-Command $CommandName
+
         It "Validates -AddRole contains <role>" -TestCases $systemRoles {
             param ($role)
 
