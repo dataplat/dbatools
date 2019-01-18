@@ -1357,7 +1357,7 @@ function Invoke-DbaDbLogShipping {
                 if ($CopyJob) {
                     $DatabaseCopyJob = "$($CopyJob)$($db.Name))"
                 } else {
-                    $DatabaseCopyJob = "LSCopy_$($db.Name)"
+                    $DatabaseCopyJob = "LSCopy_$($SourceServerName)_$($db.Name)"
                 }
                 Write-Message -Message "Copy job name set to $DatabaseCopyJob" -Level Verbose
 
@@ -1365,7 +1365,7 @@ function Invoke-DbaDbLogShipping {
                 if ($CopySchedule) {
                     $DatabaseCopySchedule = "$($CopySchedule)$($db.Name)"
                 } else {
-                    $DatabaseCopySchedule = "LSCopySchedule_$($db.Name)"
+                    $DatabaseCopySchedule = "LSCopySchedule_$($SourceServerName)_$($db.Name)"
                     Write-Message -Message "Copy job schedule name set to $DatabaseCopySchedule" -Level Verbose
                 }
 
@@ -1392,7 +1392,7 @@ function Invoke-DbaDbLogShipping {
                 if ($RestoreJob) {
                     $DatabaseRestoreJob = "$($RestoreJob)$($db.Name)"
                 } else {
-                    $DatabaseRestoreJob = "LSRestore_$($db.Name)"
+                    $DatabaseRestoreJob = "LSRestore_$($SourceServerName)_$($db.Name)"
                 }
                 Write-Message -Message "Restore job name set to $DatabaseRestoreJob" -Level Verbose
 
@@ -1400,7 +1400,7 @@ function Invoke-DbaDbLogShipping {
                 if ($RestoreSchedule) {
                     $DatabaseRestoreSchedule = "$($RestoreSchedule)$($db.Name)"
                 } else {
-                    $DatabaseRestoreSchedule = "LSRestoreSchedule_$($db.Name)"
+                    $DatabaseRestoreSchedule = "LSRestoreSchedule_$($SourceServerName)_$($db.Name)"
                 }
                 Write-Message -Message "Restore job schedule name set to $DatabaseRestoreSchedule" -Level Verbose
 
