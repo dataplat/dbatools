@@ -3,8 +3,7 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 
 Describe "$commandname Unit Tests" -Tag 'UnitTests' {
-    InModuleScope dbatools {
-        Context "Validate parameters" {
+    Context "Validate parameters" {
         [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
         [object[]]$knownParameters = 'BackupHistory','RestoreTime','IgnoreLogs','IgnoreDiffs','DatabaseName','ServerName','ContinuePoints','LastRestoreType','EnableException'
         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
@@ -12,7 +11,10 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
             (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
         }
     }
-        Context "General Diff Restore" {
+}
+Describe "$commandname Integration Tests" -Tag 'IntegrationTests' {
+    InModuleScope dbatools {
+    Context "General Diff Restore" {
             $Header = ConvertFrom-Json -InputObject (Get-Content $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\DiffRestore.json -raw)
             $header | Add-Member -Type NoteProperty -Name FullName -Value 1
             $Output = Select-DbaBackupInformation -BackupHistory $header -EnableException:$true
