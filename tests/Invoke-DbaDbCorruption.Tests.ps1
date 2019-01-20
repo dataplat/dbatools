@@ -66,7 +66,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     }
 
     It "Causes DBCC CHECKDB to fail" {
-        $result = Start-DbccCheck -Server $script:instance2 -dbname $dbname
+        $result = Start-DbccCheck -Server $server -dbname $dbname
         $result | Should Not Be 'Success'
     }
 }
