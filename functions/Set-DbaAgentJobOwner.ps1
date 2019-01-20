@@ -152,7 +152,7 @@ function Set-DbaAgentJobOwner {
                                 #Set job owner to $TargetLogin (default 'sa')
                                 $agentJob.OwnerLoginName = $newLogin
                                 $agentJob.Alter()
-                                $status = 'Succesful'
+                                $status = 'Successful'
                                 $notes = ''
                             } catch {
                                 Stop-Function -Message "Issue setting job owner on $jobName." -Target $jobName -InnerErrorRecord $_ -Category InvalidOperation

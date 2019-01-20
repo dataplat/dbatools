@@ -4,11 +4,11 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        $defaultParamCount = 13
-        [object[]]$params = (Get-ChildItem function:\Publish-DbaDacPackage).Parameters.Keys
-        $knownParameters = 'SqlInstance', 'SqlCredential', 'Path', 'PublishXml', 'Database', 'ConnectionString', 'GenerateDeploymentScript', 'GenerateDeploymentReport', 'ScriptOnly', 'OutputPath', 'IncludeSqlCmdVars', 'EnableException', 'DacFxPath', 'Type', 'DacOption'
-        It "Should contain our specific parameters" {
-            ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $knownParameters.Count
+        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
+        [object[]]$knownParameters = 'SqlInstance','SqlCredential','Path','PublishXml','Database','ConnectionString','GenerateDeploymentScript','GenerateDeploymentReport','ScriptOnly','Type','OutputPath','IncludeSqlCmdVars','DacOption','EnableException','DacFxPath'
+        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
+        It "Should only contain our specific parameters" {
+            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
         }
     }
 }

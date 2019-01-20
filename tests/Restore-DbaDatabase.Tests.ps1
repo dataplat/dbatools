@@ -4,15 +4,11 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        $paramCount = 45
-        $defaultParamCount = 13
-        [object[]]$params = (Get-ChildItem function:\Restore-DbaDatabase).Parameters.Keys
-        $knownParameters = 'SqlInstance', 'SqlCredential', 'Path', 'DatabaseName', 'DestinationDataDirectory', 'DestinationLogDirectory', 'DestinationFileStreamDirectory', 'RestoreTime', 'NoRecovery', 'WithReplace', 'XpDirTree', 'OutputScriptOnly', 'VerifyOnly', 'MaintenanceSolutionBackup', 'FileMapping', 'IgnoreLogBackup', 'useDestinationDefaultDirectories', 'ReuseSourceFolderStructure', 'DestinationFilePrefix', 'RestoredDatabaseNamePrefix', 'TrustDbBackupHistory', 'MaxTransferSize', 'BlockSize', 'BufferCount', 'DirectoryRecurse', 'EnableException', 'StandbyDirectory', 'Continue', 'AzureCredential', 'ReplaceDbNameInFile', 'DestinationFileSuffix', 'Recover', 'KeepCDC', 'AllowContinue', 'GetBackupInformation', 'StopAfterGetBackupInformation', 'SelectBackupInformation', 'StopAfterSelectBackupInformation', 'FormatBackupInformation', 'StopAfterFormatBackupInformation', 'TestBackupInformation', 'StopAfterTestBackupInformation', 'PageRestore', 'PageRestoreTailFolder', 'StatementTimeout'
-        It "Should contain our specific parameters" {
-            ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
-        }
-        It "Should only contain $paramCount parameters" {
-            $params.Count - $defaultParamCount | Should Be $paramCount
+        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
+        [object[]]$knownParameters = 'SqlInstance','SqlCredential','Path','DatabaseName','DestinationDataDirectory','DestinationLogDirectory','DestinationFileStreamDirectory','RestoreTime','NoRecovery','WithReplace','XpDirTree','OutputScriptOnly','VerifyOnly','MaintenanceSolutionBackup','FileMapping','IgnoreLogBackup','UseDestinationDefaultDirectories','ReuseSourceFolderStructure','DestinationFilePrefix','RestoredDatabaseNamePrefix','TrustDbBackupHistory','MaxTransferSize','BlockSize','BufferCount','DirectoryRecurse','EnableException','StandbyDirectory','Continue','AzureCredential','ReplaceDbNameInFile','DestinationFileSuffix','Recover','KeepCDC','AllowContinue','GetBackupInformation','StopAfterGetBackupInformation','SelectBackupInformation','StopAfterSelectBackupInformation','FormatBackupInformation','StopAfterFormatBackupInformation','TestBackupInformation','StopAfterTestBackupInformation','PageRestore','PageRestoreTailFolder','StatementTimeout'
+        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
+        It "Should only contain our specific parameters" {
+            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
         }
     }
 }
