@@ -782,7 +782,7 @@
     "Microsoft.Management.Infrastructure/1.0.0": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-farHXHRCm0ZaioRlsQtHjb18sZ+X2jluOv3L/aOucXW83BmfHfXC7t+GtKZSK7Gd1y2lFh6R/pr31IpvRvZbOg==",
+      "sha512": "sha512-EhQ4sbjNu4rL39YVhRSKMzCaMNBSwSJi17t8LtAOW94WQTkhQCEhlMukFU2AtWOBW3zGIrvg85XRS+w0nuGxKw==",
       "path": "microsoft.management.infrastructure/1.0.0",
       "hashPath": "microsoft.management.infrastructure.1.0.0.nupkg.sha512"
     },
@@ -838,7 +838,7 @@
     "System.Data.SqlClient/4.5.1": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-qXTvTFkBds7bnN+ntBMHGvmH3pCAkfT4TE1z2Xvfqo4wKMQC77O4aXsYCc7dzCESC+/Gom6l0GLuebpFx7MDvg==",
+      "sha512": "sha512-cTPUCClr34EGBnyazUeciMD6sNm9aiE/li3uGvJ7z5dGup9QxKwysUeKXIrCO0E5KtQQAzGORFEYmowyEpcL2A==",
       "path": "system.data.sqlclient/4.5.1",
       "hashPath": "system.data.sqlclient.4.5.1.nupkg.sha512"
     },

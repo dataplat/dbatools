@@ -11,7 +11,7 @@
     RootModule             = 'dbatools.psm1'
 
     # Version number of this module.
-    ModuleVersion          = '0.9.742'
+    ModuleVersion          = '0.9.743'
 
     # ID used to uniquely identify this module
     GUID                   = '9d139310-ce45-41ce-8e8b-d76335aa1789'
@@ -111,7 +111,7 @@
         'Get-DbaDbSpace',
         'Test-DbaDbOwner',
         'Set-DbaDbOwner',
-        'Test-DbaJobOwner',
+        'Test-DbaAgentJobOwner',
         'Set-DbaAgentJobOwner',
         'Test-DbaDbVirtualLogFile',
         'Get-DbaDbRestoreHistory',
@@ -440,6 +440,8 @@
         'Invoke-DbaDbDbccCheckConstraint',
         'Invoke-DbaDbDbccCleanTable',
         'Invoke-DbaDbDbccUpdateUsage',
+        'Get-DbaDbIdentity',
+        'Set-DbaDbIdentity',
         # noncoresmo
         # SMO issues
         'Export-DbaUser',

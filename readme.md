@@ -1,39 +1,47 @@
-# dbatools
+<img align="left" src=bin/dbatools.png alt="dbatools logo">  dbatools is PowerShell module that you may think of like a command-line SQL Server Management Studio. The project initially started out as just `Start-SqlMigration.ps1`, but has now grown into a collection of [over 500 commands](https://dbatools.io/commands) that help automate SQL Server tasks and encourage best practices.
 
-<img align="left" src=https://blog.netnerds.net/wp-content/uploads/2016/05/dbatools.png alt="dbatools logo">  dbatools is sort of like a command-line SQL Server Management Studio. The project initially started out as Start-SqlMigration.ps1, but has now grown into a collection of [over 500 commands](https://dbatools.io/commands) that help automate SQL Server tasks and encourage best practices.
+Want to contribute to the project? We'd love to have you! Visit our [contributing.md](contributing.md) for a jump start.
 
-Got ideas for new commands? Please propose them as [issues](https://dbatools.io/issues) and let us know what you'd like to see. Bug reports should also be filed under this repository's [issues](https://github.com/sqlcollaborative/dbatools/issues) section.
+## Key links for reference:
 
-There's also over 1500 of us on the [SQL Server Community Slack](https://sqlcommunity.slack.com) in the #dbatools channel. Need an invite? Check out the [self-invite page](https://dbatools.io/slack/). Drop by if you'd like to chat about dbatools or even [join the team](https://dbatools.io/team)!
+- [dbatools Slack channel](https://sqlcommunity.slack.com/messages/C1M2WEASG/) for general discussion on the module and asking questions
+- [dbatools-dev Slack channel](https://sqlcommunity.slack.com/messages/C3EJ852JD/) for discussion around contributing to the project
+- [dbatools documentation](https://docs.dbatools.io)
+
+_Need an invite to the SQL Community Slack workspace? Check out the [self-invite page](https://dbatools.io/slack/). Drop by if you'd like to chat about dbatools or even [join the team](https://dbatools.io/team)!_
 
 ## Installer
 
-dbatools now works on PowerShell Core (aka PowerShell 6+). This means that you can run a large majority of our commands on <strong>Linux</strong> and <strong>macoS </strong>🤩👍
+dbatools now works on PowerShell Core (aka PowerShell 6+). This means that you can run a large majority of our commands on <strong>Linux</strong> and <strong>macOS </strong>🤩👍
 
-Run the following from an administrative prompt to install dbatools from the PowerShell Gallery:
+Run the following to install dbatools from the PowerShell Gallery (to install on a server or for all users, remove the `-Scope` parameter and run in an elevated session):
+
 ```powershell
-Install-Module dbatools
+Install-Module dbatools -Scope CurrentUser
 ```
 
-Or if you don't have a version of PowerShell that supports the Gallery, you can install it manually:
+If you don't have a version of PowerShell that supports the PowerShell Gallery, you can install it manually:
+
 ```powershell
 Invoke-Expression (Invoke-WebRequest https://dbatools.io/in)
 ```
 
-Note: please only use `Invoke-Expression (Invoke-WebRequest..)` from sources you trust, like us 👍
+> Note: please only use `Invoke-Expression (Invoke-WebRequest..)` from sources you trust, like us 👍
 
 ## Usage scenarios
 
-In addition to the simple things you can do in SSMS (like starting a job), we've also read a whole bunch of docs and came up with commands that do nifty things quickly.
+In addition to the simple things you can do in SSMS (e.g. starting a job, backing up a database), we've also read a whole bunch of docs and came up with commands that do nifty things quickly.
 
-* Lost sysadmin access and need to regain entry to your SQL Server? Use [Reset-DbaAdmin](http://dbatools.io/Reset-DbaAdmin).
-* Need to easily test your backups? Use [Test-DbaLastBackup](http://dbatools.io/Test-DbaLastBackup).
-* SPN management got you down? Use [our suite of SPN commands](http://dbatools.io/schwifty) to find which SPNs are missing and easily add them.
-* Got so many databases you can't keep track? Congrats on your big ol' environment! Use [Find-DbaDatabase](http://dbatools.io/Find-DbaDatabase) to easily find your database.
+- Lost sysadmin access and need to regain entry to your SQL Server? Use [Reset-DbaAdmin](http://dbatools.io/Reset-DbaAdmin).
+- Need to easily test your backups? Use [Test-DbaLastBackup](http://dbatools.io/Test-DbaLastBackup).
+- SPN management got you down? Use [our suite of SPN commands](http://dbatools.io/schwifty) to find which SPNs are missing and easily add them.
+- Got so many databases you can't keep track? Congrats on your big ol' environment! Use [Find-DbaDatabase](http://dbatools.io/Find-DbaDatabase) to easily find your database.
 
 ## Usage examples
 
-As previously mentioned, dbatools now offers [over 400 commands](https://dbatools.io/commands)! [Here are some of the ones we highlight at conferences](https://gist.github.com/potatoqualitee/e8932b64aeb6ef404e252d656b6318a2) - PowerShell v3 and above required. (See below for important information about alternative logins and specifying SQL Server ports).
+As previously mentioned, dbatools now offers [over 500 commands](https://dbatools.io/commands)! [Here are some of the ones we highlight at conferences](https://gist.github.com/potatoqualitee/e8932b64aeb6ef404e252d656b6318a2).
+
+PowerShell v3 and above required. (See below for important information about alternative logins and specifying SQL Server ports).
 
 ```powershell
 # Set some vars
@@ -77,10 +85,7 @@ $startDbaMigrationSplat = @{
     Destination = $new
     BackupRestore = $true
     SharedPath = 'C:\temp'
-    NoSysDbUserObjects = $true
-    NoCredentials = $true
-    NoBackupDevices = $true
-    NoEndPoints = $true
+    Exclude = 'BackupDevice','SysDbUserObjects','Credentials'
 }
 
 Start-DbaMigration @startDbaMigrationSplat -Force | Select-Object * | Out-GridView
@@ -190,7 +195,6 @@ $servers | Test-DbaSpn | Out-GridView -PassThru | Set-DbaSpn -WhatIf
 # Get Virtual Log File information
 Get-DbaDbVirtualLogFile -SqlInstance $new -Database db1
 Get-DbaDbVirtualLogFile -SqlInstance $new -Database db1 | Measure-Object
-
 ```
 
 ## Important Note
@@ -255,7 +259,3 @@ dbatools aims to support as many configurations as possible, including
 * Auto-populated parameters for command-line completion (think -Database and -Login)
 
 Read more at our website at [dbatools.io](https://dbatools.io)
-
-## Contributing
-
-Want to contribute to the project? We'd love to have you! Visit our [contributing.md](https://github.com/sqlcollaborative/dbatools/blob/master/contributing.md) for a jump start.
