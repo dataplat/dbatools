@@ -113,20 +113,20 @@ function Invoke-DbaDbCorruption {
     }
 
     if ("master", "tempdb", "model", "msdb" -contains $Database) {
-        Stop-Function -Message "You may not corrupt system databases."
+        Stop-Function -EnableException:$EnableException -Message "You may not corrupt system databases."
         return
     }
 
     try {
         $Server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential -MinimumVersion 9
     } catch {
-        Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $SqlInstance
+        Stop-Function -EnableException:$EnableException -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $SqlInstance
         return
     }
 
     $db = $Server.Databases | Where-Object { $_.Name -eq $Database }
     if (!$db) {
-        Stop-Function -Message "The database specified does not exist."
+        Stop-Function -EnableException:$EnableException -Message "The database specified does not exist."
         return
     }
     if ($Table) {
@@ -136,13 +136,13 @@ function Invoke-DbaDbCorruption {
     }
 
     if (-not $tb) {
-        Stop-Function -Message "There are no accessible tables in $Database on $SqlInstance." -Target $Database
+        Stop-Function -EnableException:$EnableException -Message "There are no accessible tables in $Database on $SqlInstance." -Target $Database
         return
     }
 
     $RowCount = $db.Query("select top 1 * from $($tb.name)")
     if ($RowCount.count -eq 0) {
-        Stop-Function -Message "The table $tb has no rows" -Target $table
+        Stop-Function -EnableException:$EnableException -Message "The table $tb has no rows" -Target $table
         return
     }
 
@@ -162,7 +162,7 @@ function Invoke-DbaDbCorruption {
             $Server.ConnectionContext.Disconnect()
             $Server.ConnectionContext.Connect()
             $null = Set-DbaDbState -SqlServer $Server -Database $Database -MultiUser -Force
-            Stop-Function -Message "Failed to write page" -Category WriteError -ErrorRecord $_ -Target $instance
+            Stop-Function -EnableException:$EnableException -Message "Failed to write page" -Category WriteError -ErrorRecord $_ -Target $instance
             return
         }
 

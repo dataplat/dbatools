@@ -3,6 +3,17 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 
 Describe "$commandname Unit Tests" -Tag "UnitTests" {
+    Context "Validate parameters" {
+        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
+        [object[]]$knownParameters = 'InputObject','Property','ExcludeProperty','ExpandProperty','Unique','Last','First','Skip','SkipLast','Wait','Index','ShowProperty','ShowExcludeProperty','TypeName','KeepInputObject'
+        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
+        It "Should only contain our specific parameters" {
+            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        }
+    }
+}
+
+Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     $global:object = [PSCustomObject]@{
         Foo  = 42
         Bar  = 18
