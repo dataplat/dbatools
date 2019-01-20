@@ -138,7 +138,7 @@ Describe "$ModuleName ScriptAnalyzerErrors" -Tag 'Compliance' {
 }
 
 Describe "$ModuleName Tests missing" -Tag 'Tests' {
-    $functions = Get-ChildItem $DevelopmentPath\functions\ -Recurse -Include *.ps1
+    $functions = Get-ChildItem .\functions\ -Recurse -Include *.ps1
     Context "Every function should have tests" {
         foreach ($f in $functions) {
             It "$($f.basename) has a tests.ps1 file" {
