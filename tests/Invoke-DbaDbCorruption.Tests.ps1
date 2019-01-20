@@ -28,12 +28,12 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         $TableName = "Example"
         # Need a clean empty database
         $null = $Server.Query("Create Database [$dbname]")
-        $db = Get-DbaDatabase -SqlInstance $Server -Database $dbname
+        $db = Get-DbaDatabase -SqlInstance $script:instance2 -Database $dbname
     }
 
     AfterAll {
         # Cleanup
-        Remove-DbaDatabase -SqlInstance $Server -Database $dbname -Confirm:$false
+        Remove-DbaDatabase -SqlInstance $script:instance2 -Database $dbname -Confirm:$false
     }
 
     Context "Validating Database Input" {
@@ -47,12 +47,12 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     }
 
     It "Require at least a single table in the database specified" {
-        { Invoke-DbaDbCorruption -SqlInstance $server -Database $dbname -EnableException } | Should Throw
+        { Invoke-DbaDbCorruption -SqlInstance $script:instance2 -Database $dbname -EnableException } | Should Throw
     }
 
     # Creating a table to make sure these are failing for different reasons
     It "Fail if the specified table does not exist" {
-        { Invoke-DbaDbCorruption -SqlInstance $server -Database $dbname -Table "DoesntExist$(New-Guid)" -EnableException } | Should Throw
+        { Invoke-DbaDbCorruption -SqlInstance $script:instance2 -Database $dbname -Table "DoesntExist$(New-Guid)" -EnableException } | Should Throw
     }
 
     $null = $db.Query("
@@ -66,7 +66,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     }
 
     It "Causes DBCC CHECKDB to fail" {
-        $result = Start-DbccCheck -Server $Server -dbname $dbname
+        $result = Start-DbccCheck -Server $script:instance2 -dbname $dbname
         $result | Should Not Be 'Success'
     }
 }
