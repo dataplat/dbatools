@@ -137,7 +137,21 @@ Describe "$ModuleName ScriptAnalyzerErrors" -Tag 'Compliance' {
     }
 }
 
-
+Describe "$ModuleName Tests missing" -Tag 'Tests' {
+    $functions = Get-ChildItem .\functions\ -Recurse -Include *.ps1
+    Context "Every function should have tests" {
+        foreach ($f in $functions) {
+            It "$($f.basename) has a tests.ps1 file" {
+                Test-Path "tests\$($f.basename).tests.ps1" | Should Be $true
+            }
+            If (Test-Path "tests\$($f.basename).tests.ps1") {
+                It "$($f.basename) has validate parameters unit test" {
+                    "tests\$($f.basename).tests.ps1" | should FileContentMatch 'Context "Validate parameters"'
+                }
+            }
+        }
+    }
+}
 
 # test the module manifest - exports the right functions, processes the right formats, and is generally correct
 <#
