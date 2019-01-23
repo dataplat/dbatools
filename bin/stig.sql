@@ -483,7 +483,7 @@ USE tempdb;
                         P.[State],
                         P.[Grantor],
                         P.[Grantor Type],
-                        P.[source view]
+                        P.[Source View]
                     FROM
                         STIG.database_permissions P
                         INNER JOIN Targets T ON T.[Principal] = P.[Grantee]
@@ -694,8 +694,8 @@ USE tempdb;
                 END                    AS [Securable],
                 P1.name                AS [Grantee],
                 P1.type_desc           AS [Grantee Type],
-                sp.permission_name     AS [Permission],
-                sp.state_desc          AS [State],
+                SP.permission_name     AS [Permission],
+                SP.state_desc          AS [State],
                 P2.name                AS [Grantor],
                 P2.type_desc           AS [Grantor Type],
                 CASE
@@ -779,7 +779,7 @@ USE tempdb;
                         P.[State],
                         P.[Grantor],
                         P.[Grantor Type],
-                        P.[source view]
+                        P.[Source View]
                     FROM
                         STIG.server_permissions P
                         INNER JOIN Targets T ON T.[Principal] = P.[Grantee]
