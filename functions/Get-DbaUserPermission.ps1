@@ -4,7 +4,7 @@ function Get-DbaUserPermission {
         Displays detailed permissions information for the server and database roles and securables.
 
     .DESCRIPTION
-        This command will display all server logins, server level securable, database logins and database securables.
+        This command will display all server logins, server level securables, database logins and database securables.
 
         DISA STIG implementators will find this command useful as it uses Permissions.sql provided by DISA.
 
@@ -82,9 +82,6 @@ function Get-DbaUserPermission {
     )
 
     begin {
-
-        $sql = [System.IO.File]::ReadAllText("$script:PSModuleRoot\bin\stig.sql")
-
         $endSQL = "	   BEGIN TRY DROP FUNCTION STIG.server_effective_permissions END TRY BEGIN CATCH END CATCH;
                        GO
                        BEGIN TRY DROP VIEW STIG.server_permissions END TRY BEGIN CATCH END CATCH;
@@ -111,7 +108,7 @@ function Get-DbaUserPermission {
 
         $serverSQL = "SELECT  'SERVER LOGINS' AS Type ,
                                     sl.name AS Member ,
-                                    ISNULL(srm.role, 'None') AS [Role/Securable/Class] ,
+                                    ISNULL(srm.Role, 'None') AS [Role/Securable/Class] ,
                                     ' ' AS [Schema/Owner] ,
                                     ' ' AS [Securable] ,
                                     ' ' AS [Grantee Type] ,
@@ -122,7 +119,7 @@ function Get-DbaUserPermission {
                                     ' ' AS [Grantor Type] ,
                                     ' ' AS [Source View]
                             FROM    master.sys.syslogins sl
-                                    LEFT JOIN tempdb.[STIG].[server_role_members] srm ON sl.name = srm.member
+                                    LEFT JOIN tempdb.[STIG].[server_role_members] srm ON sl.name = srm.Member
                             WHERE   sl.name NOT LIKE 'NT %'
                                     AND sl.name NOT LIKE '##%'
                             UNION
@@ -159,7 +156,7 @@ function Get-DbaUserPermission {
                         UNION
                         SELECT DISTINCT
                                 'DB SECURABLES' AS Type ,
-                                drm.member ,
+                                drm.Member ,
                                 dp.[Securable Type or Class] COLLATE SQL_Latin1_General_CP1_CI_AS ,
                                 dp.[Schema/Owner] ,
                                 dp.Securable ,
@@ -171,8 +168,8 @@ function Get-DbaUserPermission {
                                 dp.[Grantor Type] COLLATE SQL_Latin1_General_CP1_CI_AS ,
                                 dp.[Source View]
                         FROM    tempdb.[STIG].[database_role_members] drm
-                                LEFT JOIN tempdb.[STIG].[database_permissions] dp ON ( drm.member = dp.grantee
-                                                                                      OR drm.role = dp.grantee
+                                LEFT JOIN tempdb.[STIG].[database_permissions] dp ON ( drm.Member = dp.Grantee
+                                                                                      OR drm.Role = dp.Grantee
                                                                                      )
                         WHERE	dp.Grantor IS NOT NULL
                                 AND [Schema/Owner] <> 'sys'"
@@ -211,10 +208,13 @@ function Get-DbaUserPermission {
             foreach ($db in $dbs) {
                 Write-Message -Level Verbose -Message "Processing $db on $instance"
 
+                $db.ExecuteNonQuery($endSQL)
+
                 if ($db.IsAccessible -eq $false) {
                     Stop-Function -Message "The database $db is not accessible" -Continue
                 }
 
+                $sql = [System.IO.File]::ReadAllText("$script:PSModuleRoot\bin\stig.sql")
                 $sql = $sql.Replace("<TARGETDB>", $db.Name)
 
                 #Create objects in active database
@@ -296,8 +296,6 @@ function Get-DbaUserPermission {
                     # here to avoid an empty catch
                     $null = 1
                 }
-                $sql = $sql.Replace($db.Name, "<TARGETDB>")
-
                 #Sashay Away
             }
         }
