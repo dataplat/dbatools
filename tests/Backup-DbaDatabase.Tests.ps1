@@ -4,15 +4,11 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        $paramCount = 29
-        $defaultParamCount = 13
-        [object[]]$params = (Get-ChildItem function:\Backup-DbaDatabase).Parameters.Keys
-        $knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'BackupDirectory', 'BackupFileName', 'ReplaceInName', 'CopyOnly', 'Type', 'InputObject', 'CreateFolder', 'FileCount', 'CompressBackup', 'Checksum', 'Verify', 'MaxTransferSize', 'BlockSize', 'BufferCount', 'AzureBaseUrl', 'AzureCredential', 'NoRecovery', 'BuildPath', 'WithFormat', 'Initialize', 'SkipTapeHeader', 'TimeStampFormat', 'IgnoreFileChecks', 'OutputScriptOnly', 'EnableException'
-        It "Should contain our specific parameters" {
-            ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
-        }
-        It "Should only contain $paramCount parameters" {
-            $params.Count - $defaultParamCount | Should Be $paramCount
+        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
+        [object[]]$knownParameters = 'SqlInstance','SqlCredential','Database','ExcludeDatabase','BackupDirectory','BackupFileName','ReplaceInName','CopyOnly','Type','InputObject','CreateFolder','FileCount','CompressBackup','Checksum','Verify','MaxTransferSize','BlockSize','BufferCount','AzureBaseUrl','AzureCredential','NoRecovery','BuildPath','WithFormat','Initialize','SkipTapeHeader','TimeStampFormat','IgnoreFileChecks','OutputScriptOnly','EnableException'
+        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
+        It "Should only contain our specific parameters" {
+            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
         }
     }
 }
@@ -157,9 +153,11 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
     }
 
-    It "Should have 1 period in file extension" {
-        foreach ($path in $results.BackupFile) {
-            [IO.Path]::GetExtension($path) | Should -Not -BeLike '*..*'
+    Context "Should build filenames properly" {
+        It "Should have 1 period in file extension" {
+            foreach ($path in $results.BackupFile) {
+                [IO.Path]::GetExtension($path) | Should -Not -BeLike '*..*'
+            }
         }
     }
 
@@ -172,6 +170,27 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         It "Should have backed up to the path with the corrrect name" {
             Test-Path "$DefaultPath\PesterTest.bak" | Should -Be $true
         }
+    }
+
+    Context "Test backup  verification" {
+        $null = Invoke-DbaQuery -SqlInstance $script:instance1 -Database master -Query "CREATE DATABASE [backuptest]"
+        $null = Invoke-DbaQuery -SqlInstance $script:instance1 -Database master -Query "ALTER DATABASE [backuptest] SET RECOVERY FULL WITH NO_WAIT"
+        It -Skip "Should perform a full backup and verify it" {
+            $b = Backup-DbaDatabase -SqlInstance $script:instance1 -Database backuptest -Type full -Verify
+            $b.BackupComplete | Should -Be $True
+            $b.Verified | Should -Be $True
+        }
+        It -Skip "Should perform a diff backup and verify it" {
+            $b = Backup-DbaDatabase -SqlInstance $script:instance1 -Database backuptest -Type diff -Verify
+            $b.BackupComplete | Should -Be $True
+            $b.Verified | Should -Be $True
+        }
+        It -Skip "Should perform a log backup and verify it" {
+            $b = Backup-DbaDatabase -SqlInstance $script:instance1 -Database backuptest -Type log -Verify
+            $b.BackupComplete | Should -Be $True
+            $b.Verified | Should -Be $True
+        }
+        $null = Invoke-DbaQuery -SqlInstance $script:instance1 -Database master -Query "DROP DATABASE [backuptest]"
     }
 
     Context "Backup can pipe to restore" {

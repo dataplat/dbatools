@@ -4,15 +4,11 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        $defaultParamCount = 13
-        [object[]]$params = (Get-ChildItem function:\Import-DbaCsv).Parameters.Keys
-        $knownParameters = 'Path', 'SqlInstance', 'SqlCredential', 'ColumnMap', 'Database', 'Table', 'Column', 'Schema', 'Truncate', 'Delimiter', 'SingleColumn', 'NoHeaderRow', 'BatchSize', 'NotifyAfter', 'TableLock', 'CheckConstraints', 'FireTriggers', 'KeepIdentity', 'KeepNulls', 'AutoCreateTable', 'NoProgress', 'EnableException'
-        $paramCount = $knownParameters.Count
-        It "Should contain our specific parameters" {
-            ((Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count) | Should Be $paramCount
-        }
-        It "Should only contain $paramCount parameters" {
-            $params.Count - $defaultParamCount | Should Be $paramCount
+        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
+        [object[]]$knownParameters = 'Path','SqlInstance','SqlCredential','Database','Table','Schema','Truncate','Delimiter','SingleColumn','BatchSize','NotifyAfter','TableLock','CheckConstraints','FireTriggers','KeepIdentity','KeepNulls','Column','ColumnMap','AutoCreateTable','NoProgress','NoHeaderRow','Quote','Escape','Comment','TrimmingOption','BufferSize','ParseErrorAction','Encoding','NullValue','Threshold','MaxQuotedFieldLength','SkipEmptyLine','SupportsMultiline','UseColumnDefault','EnableException'
+        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
+        It "Should only contain our specific parameters" {
+            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
         }
     }
 }

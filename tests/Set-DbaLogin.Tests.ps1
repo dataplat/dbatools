@@ -4,12 +4,11 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        $command = Get-Command $CommandName
-        [object[]]$params = $command.Parameters.Keys
-        $knownParameters = 'SqlInstance', 'SqlCredential', 'Login', 'SecurePassword', 'Unlock', 'MustChange', 'NewName', 'Disable', 'Enable', 'DenyLogin', 'GrantLogin', 'AddRole', 'RemoveRole', 'EnableException', 'InputObject'
-        $paramCount = $knownParameters.Count
-        It "Contains our specific parameters" {
-            ((Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count) | Should Be $paramCount
+        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
+        [object[]]$knownParameters = 'SqlInstance','SqlCredential','Login','SecurePassword','DefaultDatabase','Unlock','MustChange','NewName','Disable','Enable','DenyLogin','GrantLogin','PasswordPolicyEnforced','AddRole','RemoveRole','InputObject','EnableException'
+        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
+        It "Should only contain our specific parameters" {
+            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
         }
 
         $systemRoles = @(
@@ -23,6 +22,8 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
             @{role = 'setupadmin'},
             @{role = 'sysadmin'}
         )
+
+        $command = Get-Command $CommandName
 
         It "Validates -AddRole contains <role>" -TestCases $systemRoles {
             param ($role)

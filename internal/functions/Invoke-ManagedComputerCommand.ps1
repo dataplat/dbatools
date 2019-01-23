@@ -69,6 +69,6 @@ function Invoke-ManagedComputerCommand {
         # For surely resolve stuff, and going by default with kerberos, this needs to match FullComputerName
         $hostname = $resolved.FullComputerName
 
-        Invoke-Command2 -ScriptBlock $ScriptBlock -ArgumentList $ArgumentList -ComputerName $hostname -ErrorAction Stop
+        Invoke-Command2 -ScriptBlock $ScriptBlock -ArgumentList $ArgumentList -ComputerName $hostname -Credential $Credential -ErrorAction Stop
     }
 }

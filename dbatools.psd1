@@ -11,7 +11,7 @@
     RootModule             = 'dbatools.psm1'
 
     # Version number of this module.
-    ModuleVersion          = '0.9.715'
+    ModuleVersion          = '0.9.747'
 
     # ID used to uniquely identify this module
     GUID                   = '9d139310-ce45-41ce-8e8b-d76335aa1789'
@@ -111,7 +111,7 @@
         'Get-DbaDbSpace',
         'Test-DbaDbOwner',
         'Set-DbaDbOwner',
-        'Test-DbaJobOwner',
+        'Test-DbaAgentJobOwner',
         'Set-DbaAgentJobOwner',
         'Test-DbaDbVirtualLogFile',
         'Get-DbaDbRestoreHistory',
@@ -433,6 +433,15 @@
         'Resolve-DbaPath',
         'Invoke-DbaDbDataMasking',
         'New-DbaDbMaskingConfig',
+        'Get-DbaDbccSessionBuffer',
+        'Get-DbaDbccStatistic',
+        'Get-DbaDbDbccOpenTran',
+        'Invoke-DbaDbccDropCleanBuffer',
+        'Invoke-DbaDbDbccCheckConstraint',
+        'Invoke-DbaDbDbccCleanTable',
+        'Invoke-DbaDbDbccUpdateUsage',
+        'Get-DbaDbIdentity',
+        'Set-DbaDbIdentity',
         # noncoresmo
         # SMO issues
         'Export-DbaUser',
@@ -630,7 +639,7 @@
             Category     = "Databases"
 
             # Keyword tags to help users find this module via navigations and search.
-            Tags         = @('sqlserver', 'migrations', 'sql', 'dba', 'databases')
+            Tags         = @('sqlserver', 'migrations', 'sql', 'dba', 'databases', 'mac', 'linux', 'core')
 
             # The web address of an icon which can be used in galleries to represent this module
             IconUri      = "https://dbatools.io/logo.png"

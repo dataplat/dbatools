@@ -36,7 +36,7 @@ function Test-ElevationRequirement {
 
             This will test whether the currently processed instance is localhost and the process is running elevated.
             If it should have elevation but is not running with elevation:
-            - In silent mode it will termiante with an exception
+            - In silent mode it will terminate with an exception
             - In default mode, it will continue with the next instance
 
         .EXAMPLE

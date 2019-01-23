@@ -1,7 +1,7 @@
 
 -- SQL Server 2008 R2 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: November 11, 2018
+-- Last Modified: January 11, 2019
 -- https://www.sqlserverperformance.wordpress.com/
 -- https://www.sqlskills.com/blogs/glenn/
 -- Twitter: GlennAlanBerry
@@ -15,7 +15,7 @@
 -- Please make sure you are using the correct version of these diagnostic queries for your version of SQL Server
 
 --******************************************************************************
---*   Copyright (C) 2018 Glenn Berry, SQLskills.com
+--*   Copyright (C) 2019 Glenn Berry, SQLskills.com
 --*   All rights reserved. 
 --*
 --*   For more scripts and sample code, check out 
@@ -438,9 +438,9 @@ ORDER BY [Overall Latency] OPTION (RECOMPILE);
 
 
 -- Calculates average stalls per read, per write, and per total input/output for each database file  (Query 20) (IO Stalls by File)
-SELECT DB_NAME(fs.database_id) AS [Database Name], CAST(fs.io_stall_read_ms/(1.0 + fs.num_of_reads) AS NUMERIC(10,1)) AS [avg_read_stall_ms],
-CAST(fs.io_stall_write_ms/(1.0 + fs.num_of_writes) AS NUMERIC(10,1)) AS [avg_write_stall_ms],
-CAST((fs.io_stall_read_ms + fs.io_stall_write_ms)/(1.0 + fs.num_of_reads + fs.num_of_writes) AS NUMERIC(10,1)) AS [avg_io_stall_ms],
+SELECT DB_NAME(fs.database_id) AS [Database Name], CAST(fs.io_stall_read_ms/(1.0 + fs.num_of_reads) AS NUMERIC(16,1)) AS [avg_read_stall_ms],
+CAST(fs.io_stall_write_ms/(1.0 + fs.num_of_writes) AS NUMERIC(16,1)) AS [avg_write_stall_ms],
+CAST((fs.io_stall_read_ms + fs.io_stall_write_ms)/(1.0 + fs.num_of_reads + fs.num_of_writes) AS NUMERIC(16,1)) AS [avg_io_stall_ms],
 CONVERT(DECIMAL(18,2), mf.size/128.0) AS [File Size (MB)], mf.physical_name, mf.type_desc, fs.io_stall_read_ms, fs.num_of_reads, 
 fs.io_stall_write_ms, fs.num_of_writes, fs.io_stall_read_ms + fs.io_stall_write_ms AS [io_stalls], fs.num_of_reads + fs.num_of_writes AS [total_io]
 FROM sys.dm_io_virtual_file_stats(null,null) AS fs
@@ -457,7 +457,7 @@ ORDER BY avg_io_stall_ms DESC OPTION (RECOMPILE);
 
 -- Recovery model, log reuse wait description, log file size, log usage size  (Query 21) (Database Properties)
 -- and compatibility level for all databases on instance
-SELECT db.[name] AS [Database Name], db.recovery_model_desc AS [Recovery Model], 
+SELECT db.[name] AS [Database Name], SUSER_SNAME(db.owner_sid) AS [Database Owner], db.recovery_model_desc AS [Recovery Model], 
 db.log_reuse_wait_desc AS [Log Reuse Wait Description], 
 ls.cntr_value AS [Log Size (KB)], lu.cntr_value AS [Log Used (KB)],
 CAST(CAST(lu.cntr_value AS FLOAT) / CAST(ls.cntr_value AS FLOAT)AS DECIMAL(18,2)) * 100 AS [Log Used %], 
@@ -562,6 +562,7 @@ ORDER BY [CPU Rank] OPTION (RECOMPILE);
 ------
 
 -- Helps determine which database is using the most CPU resources on the instance
+-- Note: This only reflects CPU usage from the currently cached query plans
 
 
 -- Get I/O utilization by database (Query 25) (IO Usage By Database)
@@ -1168,18 +1169,24 @@ ORDER BY [BufferCount] DESC OPTION (RECOMPILE);
 
 
 -- Get Table names, row counts, and compression status for clustered index or heap  (Query 55) (Table Sizes)
-SELECT OBJECT_NAME(object_id) AS [ObjectName], 
-SUM(Rows) AS [RowCount], data_compression_desc AS [CompressionType]
-FROM sys.partitions WITH (NOLOCK)
+SELECT SCHEMA_NAME(o.Schema_ID) AS [Schema Name], OBJECT_NAME(p.object_id) AS [ObjectName], 
+SUM(p.Rows) AS [RowCount], data_compression_desc AS [CompressionType]
+FROM sys.partitions AS p WITH (NOLOCK)
+INNER JOIN sys.objects AS o WITH (NOLOCK)
+ON p.object_id = o.object_id
 WHERE index_id < 2 --ignore the partitions from the non-clustered index if any
-AND OBJECT_NAME(object_id) NOT LIKE N'sys%'
-AND OBJECT_NAME(object_id) NOT LIKE N'queue_%' 
-AND OBJECT_NAME(object_id) NOT LIKE N'filestream_tombstone%' 
-AND OBJECT_NAME(object_id) NOT LIKE N'fulltext%'
-AND OBJECT_NAME(object_id) NOT LIKE N'ifts_comp_fragment%'
-AND OBJECT_NAME(object_id) NOT LIKE N'xml_index_nodes%'
-GROUP BY object_id, data_compression_desc
-ORDER BY SUM(Rows) DESC OPTION (RECOMPILE);
+AND OBJECT_NAME(p.object_id) NOT LIKE N'sys%'
+AND OBJECT_NAME(p.object_id) NOT LIKE N'spt_%'
+AND OBJECT_NAME(p.object_id) NOT LIKE N'queue_%' 
+AND OBJECT_NAME(p.object_id) NOT LIKE N'filestream_tombstone%' 
+AND OBJECT_NAME(p.object_id) NOT LIKE N'fulltext%'
+AND OBJECT_NAME(p.object_id) NOT LIKE N'ifts_comp_fragment%'
+AND OBJECT_NAME(p.object_id) NOT LIKE N'filetable_updates%'
+AND OBJECT_NAME(p.object_id) NOT LIKE N'xml_index_nodes%'
+AND OBJECT_NAME(p.object_id) NOT LIKE N'sqlagent_job%'
+AND OBJECT_NAME(p.object_id) NOT LIKE N'plan_persist%'
+GROUP BY  SCHEMA_NAME(o.Schema_ID), p.object_id, data_compression_desc
+ORDER BY SUM(p.Rows) DESC OPTION (RECOMPILE);
 ------
 
 -- Gives you an idea of table sizes, and possible data compression opportunities
@@ -1364,7 +1371,13 @@ ORDER BY bs.backup_finish_date DESC OPTION (RECOMPILE);
 -- Have you done any backup tuning with striped backups, or changing the parameters of the backup command?
 
 
--- These three Pluralsight Courses go into more detail about how to run these queries and interpret the results
+-- These five Pluralsight Courses go into more detail about how to run these queries and interpret the results
+
+-- SQL Server 2017: Diagnosing Performance Issues with DMVs
+-- https://bit.ly/2FqCeti
+
+-- SQL Server 2017: Diagnosing Configuration Issues with DMVs
+-- https://bit.ly/2MSUDUL
 
 -- SQL Server 2014 DMV Diagnostic Queries – Part 1 
 -- https://bit.ly/2plxCer

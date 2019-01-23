@@ -1,28 +1,28 @@
 [
     {
         "TypeName": "Firstname",
-        "Synonim": [
+        "Synonym": [
             "Firstname",
             "Forename"
         ]
     },
     {
         "TypeName": "Lastname",
-        "Synonim": [
+        "Synonym": [
             "Lastname",
             "Surname"
         ]
     },
     {
         "TypeName": "Fullname",
-        "Synonim": [
+        "Synonym": [
             "Fullname",
             "TypeName"
         ]
     },
     {
         "TypeName": "Phone",
-        "Synonim": [
+        "Synonym": [
             "Phonenumber",
             "Phone",
             "Telephone",
@@ -31,7 +31,7 @@
     },
     {
         "TypeName": "Address",
-        "Synonim": [
+        "Synonym": [
             "Address",
             "Location",
             "Headquarters",
@@ -40,7 +40,7 @@
     },
     {
         "TypeName": "Zipcode",
-        "Synonim": [
+        "Synonym": [
             "Zipcode",
             "Zip",
             "Postalcode"
@@ -48,47 +48,56 @@
     },
     {
         "TypeName": "City",
-        "Synonim": [
+        "Synonym": [
             "City"
         ]
     },
     {
         "TypeName": "State",
-        "Synonim": [
+        "Synonym": [
             "State"
         ]
     },
     {
         "TypeName": "Country",
-        "Synonim": [
+        "Synonym": [
             "Country"
         ]
     },
     {
         "TypeName": "CountryCode",
-        "Synonim": [
+        "Synonym": [
             "CountryCode"
         ]
     },
     {
         "TypeName": "Latitude",
-        "Synonim": [
+        "Synonym": [
             "Latitude",
             "Lat"
         ]
     },
     {
         "TypeName": "Longitude",
-        "Synonim": [
+        "Synonym": [
             "Longitude",
             "Lon"
         ]
     },
     {
         "TypeName": "Creditcard",
-        "Synonim": [
+        "Synonym": [
             "Creditcard",
             "CreditcardNumber"
+        ]
+    },
+    {
+        "TypeName": "Username",
+        "Synonym": [
+            "Login",
+			"LoginId",
+            "User",
+            "UserId"
         ]
     }
 ]

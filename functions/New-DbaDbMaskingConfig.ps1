@@ -1,10 +1,19 @@
 function New-DbaDbMaskingConfig {
     <#
     .SYNOPSIS
-        Generates a new data masking configuration file.
+        Generates a new data masking configuration file to be used with Invoke-DbaDbDataMasking
 
     .DESCRIPTION
         Generates a new data masking configuration file. This file is important to apply any data masking to the data in a database.
+
+        Note that the following column and data types are not currently supported:
+        Identity
+        ForeignKey
+        Computed
+        Hierarchyid
+        Geography
+        Geometry
+        Xml
 
         Read more here:
         https://sachabarbs.wordpress.com/2018/06/11/bogus-simple-fake-data-tool/
@@ -15,11 +24,6 @@ function New-DbaDbMaskingConfig {
 
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
-
-    .PARAMETER Credential
-        Allows you to login to servers or folders
-        To use:
-        $scred = Get-Credential, then pass $scred object to the -Credential parameter.
 
     .PARAMETER Database
         Databases to process through
@@ -32,24 +36,13 @@ function New-DbaDbMaskingConfig {
 
     .PARAMETER Path
         Path where to save the generated JSON files.
-        Th naming conventio will be "databasename.tables.json"
+        Th naming convention will be "servername.databasename.tables.json"
 
     .PARAMETER Locale
         Set the local to enable certain settings in the masking
 
     .PARAMETER Force
         Forcefully execute commands when needed
-
-    .PARAMETER EnableException
-        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-
-    .PARAMETER WhatIf
-        If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
-
-    .PARAMETER Confirm
-        If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -83,12 +76,11 @@ function New-DbaDbMaskingConfig {
         Process only table Customer and only the column named "City"
 
     #>
-    [CmdLetBinding(SupportsShouldProcess)]
-    param(
+    [CmdLetBinding()]
+    param (
         [parameter(Mandatory)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [PSCredential]$Credential,
         [string[]]$Database,
         [string[]]$Table,
         [string[]]$Column,
@@ -109,7 +101,7 @@ function New-DbaDbMaskingConfig {
         # Check if the Path is accessible
         if (-not (Test-Path -Path $Path)) {
             try {
-                $null = New-Item -Path $Path -ItemType Directory -Credential $Credential -Force:$Force
+                $null = New-Item -Path $Path -ItemType Directory -Force:$Force
             } catch {
                 Stop-Function -Message "Could not create Path directory" -ErrorRecord $_ -Target $Path
             }
@@ -121,7 +113,9 @@ function New-DbaDbMaskingConfig {
     }
 
     process {
-        if (Test-FunctionInterrupt) { return }
+        if (Test-FunctionInterrupt) {
+            return
+        }
 
         if ($SqlInstance) {
             $InputObject += Get-DbaDatabase -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database
@@ -157,132 +151,251 @@ function New-DbaDbMaskingConfig {
                 }
 
                 foreach ($columnobject in $columncollection) {
-                    # Skip identity columns
-                    if ((-not $columnobject.Identity) -and (-not $columnobject.IsForeignKey)) {
-                        $maskingType = $null
+                    # Skip incompatible columns
+                    if ($columnobject.Identity) {
+                        Write-Message -Level Verbose -Message "Skipping $columnobject because it is an identity column"
+                        continue
+                    }
+                    if ($columnobject.IsForeignKey) {
+                        Write-Message -Level Verbose -Message "Skipping $columnobject because it is a foreign key"
+                        continue
+                    }
+                    if ($columnobject.Computed) {
+                        Write-Message -Level Verbose -Message "Skipping $columnobject because it is a computed column"
+                        continue
+                    }
+                    if ($columnobject.DataType.Name -eq 'hierarchyid') {
+                        Write-Message -Level Verbose -Message "Skipping $columnobject because it is a hierarchyid column"
+                        continue
+                    }
+                    if ($columnobject.DataType.Name -eq 'geography') {
+                        Write-Message -Level Verbose -Message "Skipping $columnobject because it is a geography column"
+                        continue
+                    }
+                    if ($columnobject.DataType.Name -eq 'geometry') {
+                        Write-Message -Level Verbose -Message "Skipping $columnobject because it is a geometry column"
+                        continue
+                    }
+                    if ($columnobject.DataType.SqlDataType.ToString().ToLower() -eq 'xml') {
+                        Write-Message -Level Verbose -Message "Skipping $columnobject because it is a xml column"
+                        continue
+                    }
 
-                        $columnLength = $columnobject.Properties['Length'].Value
+                    $maskingType = $min = $null
+                    $columnLength = $columnobject.Datatype.MaximumLength
+                    $columnType = $columnobject.DataType.SqlDataType.ToString().ToLower()
+
+                    if ($columnobject.InPrimaryKey -and $columnobject.DataType.SqlDataType.ToString().ToLower() -notmatch 'date') {
+                        $min = 2
+                    }
+                    if (-not $columnType) {
                         $columnType = $columnobject.DataType.Name.ToLower()
+                    }
 
-                        # Get the masking type with the synonims
-                        $maskingType = $columnTypes | Where-Object {$columnobject.Name -in $_.Synonim}
+                    # Get the masking type with the synonym
+                    $maskingType = $columnTypes | Where-Object {
+                        $columnobject.Name -in $_.Synonym
+                    }
 
-                        if ($maskingType) {
-                            # Make it easier to get the type name
-                            $maskingType = $maskingType | Select-Object TypeName -ExpandProperty TypeName
+                    if ($maskingType) {
+                        # Make it easier to get the type name
+                        $maskingType = $maskingType | Select-Object TypeName -ExpandProperty TypeName
 
-                            switch ($maskingType.ToLower()) {
-                                "firstname" {
-                                    $columns += [PSCustomObject]@{
-                                        Name        = $columnobject.Name
-                                        ColumnType  = $columnType
-                                        MaxLength   = $columnLength
-                                        MaskingType = "Name"
-                                        SubType     = "Firstname"
-                                    }
-                                }
-                                "lastname" {
-                                    $columns += [PSCustomObject]@{
-                                        Name        = $columnobject.Name
-                                        ColumnType  = $columnType
-                                        MaxLength   = $columnLength
-                                        MaskingType = "Name"
-                                        SubType     = "Lastname"
-                                    }
-                                }
-                                "creditcard" {
-                                    $columns += [PSCustomObject]@{
-                                        Name        = $columnobject.Name
-                                        ColumnType  = $columnType
-                                        MaxLength   = $columnLength
-                                        MaskingType = "Finance"
-                                        SubType     = "CreditcardNumber"
-                                    }
-                                }
-                                "address" {
-                                    $columns += [PSCustomObject]@{
-                                        Name        = $columnobject.Name
-                                        ColumnType  = $columnType
-                                        MaxLength   = $columnLength
-                                        MaskingType = "Address"
-                                        SubType     = "StreetAddress"
-                                    }
-                                }
-                                "city" {
-                                    $columns += [PSCustomObject]@{
-                                        Name        = $columnobject.Name
-                                        ColumnType  = $columnType
-                                        MaxLength   = $columnLength
-                                        MaskingType = "Address"
-                                        SubType     = "City"
-                                    }
-                                }
-                                "zipcode" {
-                                    $columns += [PSCustomObject]@{
-                                        Name        = $columnobject.Name
-                                        ColumnType  = $columnType
-                                        MaxLength   = $columnLength
-                                        MaskingType = "Address"
-                                        SubType     = "Zipcode"
-                                    }
+                        switch ($maskingType.ToLower()) {
+                            "firstname" {
+                                $columns += [PSCustomObject]@{
+                                    Name            = $columnobject.Name
+                                    ColumnType      = $columnType
+                                    CharacterString = $null
+                                    MinValue        = $min
+                                    MaxValue        = $columnLength
+                                    MaskingType     = "Name"
+                                    SubType         = "Firstname"
+                                    Deterministic   = $false
+                                    Nullable        = $columnobject.Nullable
                                 }
                             }
-                        } else {
-                            $type = "Random"
+                            "lastname" {
+                                $columns += [PSCustomObject]@{
+                                    Name            = $columnobject.Name
+                                    ColumnType      = $columnType
+                                    CharacterString = $null
+                                    MinValue        = $min
+                                    MaxValue        = $columnLength
+                                    MaskingType     = "Name"
+                                    SubType         = "Lastname"
+                                    Deterministic   = $false
+                                    Nullable        = $columnobject.Nullable
+                                }
+                            }
+                            "creditcard" {
+                                $columns += [PSCustomObject]@{
+                                    Name            = $columnobject.Name
+                                    ColumnType      = $columnType
+                                    CharacterString = $null
+                                    MinValue        = $min
+                                    MaxValue        = $columnLength
+                                    MaskingType     = "Finance"
+                                    SubType         = "CreditcardNumber"
+                                    Deterministic   = $false
+                                    Nullable        = $columnobject.Nullable
+                                }
+                            }
+                            "address" {
+                                $columns += [PSCustomObject]@{
+                                    Name            = $columnobject.Name
+                                    ColumnType      = $columnType
+                                    CharacterString = $null
+                                    MinValue        = $min
+                                    MaxValue        = $columnLength
+                                    MaskingType     = "Address"
+                                    SubType         = "StreetAddress"
+                                    Deterministic   = $false
+                                    Nullable        = $columnobject.Nullable
+                                }
+                            }
+                            "city" {
+                                $columns += [PSCustomObject]@{
+                                    Name            = $columnobject.Name
+                                    ColumnType      = $columnType
+                                    CharacterString = $null
+                                    MinValue        = $min
+                                    MaxValue        = $columnLength
+                                    MaskingType     = "Address"
+                                    SubType         = "City"
+                                    Deterministic   = $false
+                                    Nullable        = $columnobject.Nullable
+                                }
+                            }
+                            "zipcode" {
+                                $columns += [PSCustomObject]@{
+                                    Name            = $columnobject.Name
+                                    ColumnType      = $columnType
+                                    CharacterString = $null
+                                    MinValue        = $min
+                                    MaxValue        = $columnLength
+                                    MaskingType     = "Address"
+                                    SubType         = "Zipcode"
+                                    Deterministic   = $false
+                                    Nullable        = $columnobject.Nullable
+                                }
+                            }
+                            "company" {
+                                $columns += [PSCustomObject]@{
+                                    Name            = $columnobject.Name
+                                    ColumnType      = $columnType
+                                    CharacterString = $null
+                                    MinValue        = $min
+                                    MaxValue        = $columnLength
+                                    MaskingType     = "Company"
+                                    SubType         = "CompanyName"
+                                    Deterministic   = $false
+                                    Nullable        = $columnobject.Nullable
+                                }
+                            }
+                            "username" {
+                                $columns += [PSCustomObject]@{
+                                    Name            = $columnobject.Name
+                                    ColumnType      = $columnType
+                                    CharacterString = $null
+                                    MinValue        = $min
+                                    MaxValue        = $columnLength
+                                    MaskingType     = "Internet"
+                                    SubType         = "UserName"
+                                    Deterministic   = $false
+                                    Nullable        = $columnobject.Nullable
+                                }
+                            }
+                        }
+                    } else {
+                        $type = "Random"
 
-                            switch ($columnType) {
-                                "bigint" {
-                                    $subType = "Number"
-                                    $maxLength = 9223372036854775807
-                                }
-                                "int" {
-                                    $subType = "Number"
-                                    $maxLength = 2147483647
-                                }
-                                "date" {
-                                    $subType = "Date"
-                                    $maxLength = $null
-                                }
-                                "datetime" {
-                                    $subType = "Date"
-                                    $maxLength = $null
-                                }
-                                "datetime2" {
-                                    $subType = "Date"
-                                    $maxLength = $null
-                                }
-                                "float" {
-                                    $subType = "Float"
-                                    $maxLength = $null
-                                }
-                                "smallint" {
-                                    $subType = "Number"
-                                    $maxLength = 32767
-                                }
-                                "smalldatetime" {
-                                    $subType = "Date"
-                                    $maxLength = $null
-                                }
-                                "tinyint" {
-                                    $subType = "Number"
-                                    $maxLength = 255
-                                }
-                                default {
+                        switch ($columnType) {
+                            {
+                                $_ -in "bit", "bool"
+                            } {
+                                $subType = "Bool"
+                                $MaxValue = $null
+                            }
+                            "bigint" {
+                                $subType = "Number"
+                                $MaxValue = 9223372036854775807
+                            }
+                            "int" {
+                                $subType = "Number"
+                                $MaxValue = 2147483647
+                            }
+                            "date" {
+                                $subType = "Date"
+                                $MaxValue = $null
+                            }
+                            "datetime" {
+                                $subType = "Date"
+                                $MaxValue = $null
+                            }
+                            "datetime2" {
+                                $subType = "Date"
+                                $MaxValue = $null
+                            }
+                            "float" {
+                                $subType = "Float"
+                                $MaxValue = $null
+                            }
+                            "money" {
+                                $type = "Commerce"
+                                $subType = "Price"
+                                $min = -922337203685477.5808
+                                $MaxValue = 922337203685477.5807
+                            }
+                            "smallint" {
+                                $subType = "Number"
+                                $MaxValue = 32767
+                            }
+                            "smalldatetime" {
+                                $subType = "Date"
+                                $MaxValue = $null
+                            }
+                            "text" {
+                                $subType = "String"
+                                $maxValue = 2147483647
+                            }
+                            "tinyint" {
+                                $subType = "Number"
+                                $MaxValue = 255
+                            }
+                            "varbinary" {
+                                $subType = "Byte"
+                                $MaxValue = $columnLength
+                            }
+                            "userdefineddatatype" {
+                                if ($columnLength -eq 1) {
+                                    $subType = "Bool"
+                                    $MaxValue = $columnLength
+                                } else {
                                     $subType = "String"
-                                    $maxLength = $columnLength
+                                    $MaxValue = $columnLength
                                 }
                             }
-
-                            $columns += [PSCustomObject]@{
-                                Name        = $columnobject.Name
-                                ColumnType  = $columnType
-                                MaxLength   = $maxLength
-                                MaskingType = $type
-                                SubType     = $subType
+                            default {
+                                $subType = "String"
+                                $MaxValue = $columnLength
                             }
+                        }
+
+                        $columns += [PSCustomObject]@{
+                            Name            = $columnobject.Name
+                            ColumnType      = $columnType
+                            CharacterString = $null
+                            MinValue        = $min
+                            MaxValue        = $MaxValue
+                            MaskingType     = $type
+                            SubType         = $subType
+                            Deterministic   = $false
+                            Nullable        = $columnobject.Nullable
                         }
                     }
                 }
+
 
                 # Check if something needs to be generated
                 if ($columns) {
@@ -314,7 +427,7 @@ function New-DbaDbMaskingConfig {
                 if (-not $script:isWindows) {
                     $temppath = $temppath.Replace("\", "/")
                 }
-                Set-Content -Path $temppath -Credential $Credential -Value ($results | ConvertTo-Json -Depth 5)
+                Set-Content -Path $temppath -Value ($results | ConvertTo-Json -Depth 5)
                 Get-ChildItem -Path $temppath
             } catch {
                 Stop-Function -Message "Something went wrong writing the results to the Path" -Target $Path -Continue -ErrorRecord $_

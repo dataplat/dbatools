@@ -262,19 +262,22 @@ function Restore-DbaDatabase {
 
     .EXAMPLE
         PS C:\> $files = Get-ChildItem C:\dbatools\db1
-        PS C:\> $files | Restore-DbaDatabase -SqlInstance server\instance1 `
-        >> -DestinationFilePrefix prefix -DatabaseName Restored  `
-        >> -RestoreTime (get-date "14:58:30 22/05/2017") `
-        >> -NoRecovery -WithReplace -StandbyDirectory C:\dbatools\standby
+        PS C:\> $params = @{
+        >> SqlInstance = 'server\instance1'
+        >> DestinationFilePrefix = 'prefix'
+        >> DatabaseName ='Restored'
+        >> RestoreTime = (get-date "14:58:30 22/05/2017")
+        >> NoRecovery = $true
+        >> WithReplace = $true
+        >> StandbyDirectory = 'C:\dbatools\standby'
+        >> }
         >>
-        PS C:\> #It's in standby so we can peek at it
+        PS C:\> $files | Restore-DbaDatabase @params
         PS C:\> Invoke-DbaQuery -SQLInstance server\instance1 -Query "select top 1 * from Restored.dbo.steps order by dt desc"
-        PS C:\> #Not quite there so let's roll on a bit:
-        PS C:\> $files | Restore-DbaDatabase -SqlInstance server\instance1 `
-        >> -DestinationFilePrefix prefix -DatabaseName Restored `
-        >> -continue -WithReplace -RestoreTime (get-date "15:09:30 22/05/2017") `
-        >> -StandbyDirectory C:\dbatools\standby
-        >>
+        PS C:\> $params.RestoredTime = (get-date "15:09:30 22/05/2017")
+        PS C:\> $params.NoRecovery = $false
+        PS C:\> $params.Add("Continue",$true)
+        PS C:\> $files | Restore-DbaDatabase @params
         PS C:\> Invoke-DbaQuery -SQLInstance server\instance1 -Query "select top 1 * from restored.dbo.steps order by dt desc"
         PS C:\> Restore-DbaDatabase -SqlInstance server\instance1 -DestinationFilePrefix prefix -DatabaseName Restored -Continue -WithReplace
 
@@ -424,6 +427,11 @@ function Restore-DbaDatabase {
                 Stop-Function -Category InvalidArgument -Message "The parameter DestinationFileStreamDirectory can only be specified together with DestinationDataDirectory"
                 return
             }
+            if ((Test-Bound "ReuseSourceFolderStructure") -and (Test-Bound "UseDestinationDefaultDirectories")) {
+                Stop-Function -Category InvalidArgument -Message "The parameters UseDestinationDefaultDirectories and ReuseSourceFolderStructure cannot both be applied "
+                return
+            }
+
             if (($null -ne $FileMapping) -or $ReuseSourceFolderStructure -or ($DestinationDataDirectory -ne '')) {
                 $UseDestinationDefaultDirectories = $false
             }
@@ -640,9 +648,11 @@ function Restore-DbaDatabase {
             if ($StopAfterFormatBackupInformation) {
                 return
             }
-
-            $FilteredBackupHistory = $BackupHistory | Select-DbaBackupInformation -RestoreTime $RestoreTime -IgnoreLogs:$IgnoreLogBackups -ContinuePoints $ContinuePoints -LastRestoreType $LastRestoreType -DatabaseName $DatabaseName
-
+            if ($VerifyOnly) {
+                $FilteredBackupHistory = $BackupHistory
+            } else {
+                $FilteredBackupHistory = $BackupHistory | Select-DbaBackupInformation -RestoreTime $RestoreTime -IgnoreLogs:$IgnoreLogBackups -ContinuePoints $ContinuePoints -LastRestoreType $LastRestoreType -DatabaseName $DatabaseName
+            }
             if (Test-Bound -ParameterName SelectBackupInformation) {
                 Write-Message -Message "Setting $SelectBackupInformation to FilteredBackupHistory" -Level Verbose
                 Set-Variable -Name $SelectBackupInformation -Value $FilteredBackupHistory -Scope Global
@@ -667,9 +677,9 @@ function Restore-DbaDatabase {
                     $_.IsVerified -eq $True
                 } | Select-Object -Property Database -Unique).Database -join ','
             Write-Message -Message "$DbVerfied passed testing" -Level Verbose
-            if (($FilteredBackupHistory | Where-Object {
-                        $_.IsVerified -eq $True
-                    }).count -lt $FilteredBackupHistory.count) {
+            if ((@($FilteredBackupHistory | Where-Object {
+                            $_.IsVerified -eq $True
+                        })).count -lt $FilteredBackupHistory.count) {
                 $DbUnVerified = ($FilteredBackupHistory | Where-Object {
                         $_.IsVerified -eq $False
                     } | Select-Object -Property Database -Unique).Database -join ','

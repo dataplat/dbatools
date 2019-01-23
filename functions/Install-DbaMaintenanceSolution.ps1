@@ -72,11 +72,27 @@ function Install-DbaMaintenanceSolution {
         Installs Ola Hallengren's Solution objects on RES14224 in the DBA database.
         Backups will default to the default Backup Directory.
         If the Maintenance Solution already exists, the script will be halted.
-
+    
     .EXAMPLE
         PS C:\> Install-DbaMaintenanceSolution -SqlInstance RES14224 -Database DBA -BackupLocation "Z:\SQLBackup" -CleanupTime 72
 
         This will create the Ola Hallengren's Solution objects. Existing objects are not affected in any way.
+
+    
+    .EXAMPLE
+        PS C:\> $params = @{
+                >> SqlInstance = 'MyServer'
+                >> Database = 'maintenance'
+                >> ReplaceExisting = $true
+                >> InstallJobs = $true
+                >> LogToTable = $true
+                >> BackupLocation = 'C:\Data\Backup'
+                >> CleanupTime = 65
+                >> Verbose = $true
+                >> }
+                >> Install-DbaMaintenanceSolution @params
+    
+        Installs Maintenance Solution to myserver in database. Adds Agent Jobs, and if any currently exist, they'll be replaced.
 
     .EXAMPLE
         PS C:\> Install-DbaMaintenanceSolution -SqlInstance RES14224 -Database DBA -BackupLocation "Z:\SQLBackup" -CleanupTime 72 -ReplaceExisting
@@ -234,7 +250,7 @@ function Install-DbaMaintenanceSolution {
                 }
 
                 # OutputFileDirectory
-                if (-not $OutputFileDirectory) {
+                if ($OutputFileDirectory) {
                     $findOutputFileDirectory = 'SET @OutputFileDirectory = NULL'
                     $replaceOutputFileDirectory = 'SET @OutputFileDirectory = N''' + $OutputFileDirectory + ''''
                     $fileContents[$file] = $fileContents[$file].Replace($findOutputFileDirectory, $replaceOutputFileDirectory)
@@ -288,8 +304,9 @@ function Install-DbaMaintenanceSolution {
 
             $db = $server.Databases[$Database]
 
-            # Required
-            $required = @('CommandExecute.sql')
+            if (-not $Solution -match 'All') {
+                $required = @('CommandExecute.sql')
+            }
 
             if ($LogToTable) {
                 $required += 'CommandLog.sql'
@@ -314,7 +331,6 @@ function Install-DbaMaintenanceSolution {
             $temp = ([System.IO.Path]::GetTempPath()).TrimEnd("\")
             $zipfile = "$temp\ola.zip"
 
-
             $listOfFiles = Get-ChildItem -Filter "*.sql" -Path $LocalCachedCopy -Recurse | Select-Object -ExpandProperty FullName
 
             $fileContents = Get-DbaOlaWithParameters -listOfFiles $listOfFiles
@@ -334,15 +350,21 @@ function Install-DbaMaintenanceSolution {
                                 DROP PROCEDURE [dbo].[IndexOptimize];
                             ")
 
-                Write-Message -Level Output -Message "Dropping objects created by Ola's Maintenance Solution"
-                $null = $db.Query($CleanupQuery)
+                if ($Pscmdlet.ShouldProcess($instance, "Dropping all objects created by Ola's Maintenance Solution")) {
+                    Write-Message -Level Output -Message "Dropping objects created by Ola's Maintenance Solution"
+                    $null = $db.Query($CleanupQuery)
+                }
 
                 # Remove Ola's Jobs
                 if ($InstallJobs -and $ReplaceExisting) {
                     Write-Message -Level Output -Message "Removing existing SQL Agent Jobs created by Ola's Maintenance Solution."
                     $jobs = Get-DbaAgentJob -SqlInstance $server | Where-Object Description -match "hallengren"
                     if ($jobs) {
-                        $jobs | ForEach-Object { Remove-DbaAgentJob -SqlInstance $instance -Job $_.name }
+                        $jobs | ForEach-Object {
+                            if ($Pscmdlet.ShouldProcess($instance, "Dropping job $_.name")) {
+                                Remove-DbaAgentJob -SqlInstance $instance -Job $_.name
+                            }
+                        }
                     }
                 }
             }
@@ -353,14 +375,16 @@ function Install-DbaMaintenanceSolution {
                 foreach ($file in $fileContents.Keys) {
                     $shortFileName = Split-Path $file -Leaf
                     if ($required.Contains($shortFileName)) {
-                        Write-Message -Level Output -Message "Installing $shortFileName."
-                        $sql = $fileContents[$file]
-                        try {
-                            foreach ($query in ($sql -Split "\nGO\b")) {
-                                $null = $db.Query($query)
+                        if ($Pscmdlet.ShouldProcess($instance, "Installing $shortFileName")) {
+                            Write-Message -Level Output -Message "Installing $shortFileName."
+                            $sql = $fileContents[$file]
+                            try {
+                                foreach ($query in ($sql -Split "\nGO\b")) {
+                                    $null = $db.Query($query)
+                                }
+                            } catch {
+                                Stop-Function -Message "Could not execute $shortFileName in $Database on $instance." -ErrorRecord $_ -Target $db -Continue
                             }
-                        } catch {
-                            Stop-Function -Message "Could not execute $shortFileName in $Database on $instance." -ErrorRecord $_ -Target $db -Continue
                         }
                     }
                 }

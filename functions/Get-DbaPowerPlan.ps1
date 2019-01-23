@@ -49,6 +49,8 @@ function Get-DbaPowerPlan {
 
     process {
         foreach ($computer in $ComputerName) {
+            $null = Test-ElevationRequirement -ComputerName $computer -Continue
+
             $server = Resolve-DbaNetworkName -ComputerName $computer -Credential $Credential
 
             $computerResolved = $server.FullComputerName
