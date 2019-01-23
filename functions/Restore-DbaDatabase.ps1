@@ -262,19 +262,22 @@ function Restore-DbaDatabase {
 
     .EXAMPLE
         PS C:\> $files = Get-ChildItem C:\dbatools\db1
-        PS C:\> $files | Restore-DbaDatabase -SqlInstance server\instance1 `
-        >> -DestinationFilePrefix prefix -DatabaseName Restored  `
-        >> -RestoreTime (get-date "14:58:30 22/05/2017") `
-        >> -NoRecovery -WithReplace -StandbyDirectory C:\dbatools\standby
+        PS C:\> $params = @{
+        >> SqlInstance = 'server\instance1'
+        >> DestinationFilePrefix = 'prefix'
+        >> DatabaseName ='Restored'
+        >> RestoreTime = (get-date "14:58:30 22/05/2017")
+        >> NoRecovery = $true
+        >> WithReplace = $true
+        >> StandbyDirectory = 'C:\dbatools\standby'
+        >> }
         >>
-        PS C:\> #It's in standby so we can peek at it
+        PS C:\> $files | Restore-DbaDatabase @params
         PS C:\> Invoke-DbaQuery -SQLInstance server\instance1 -Query "select top 1 * from Restored.dbo.steps order by dt desc"
-        PS C:\> #Not quite there so let's roll on a bit:
-        PS C:\> $files | Restore-DbaDatabase -SqlInstance server\instance1 `
-        >> -DestinationFilePrefix prefix -DatabaseName Restored `
-        >> -continue -WithReplace -RestoreTime (get-date "15:09:30 22/05/2017") `
-        >> -StandbyDirectory C:\dbatools\standby
-        >>
+        PS C:\> $params.RestoredTime = (get-date "15:09:30 22/05/2017")
+        PS C:\> $params.NoRecovery = $false
+        PS C:\> $params.Add("Continue",$true)
+        PS C:\> $files | Restore-DbaDatabase @params
         PS C:\> Invoke-DbaQuery -SQLInstance server\instance1 -Query "select top 1 * from restored.dbo.steps order by dt desc"
         PS C:\> Restore-DbaDatabase -SqlInstance server\instance1 -DestinationFilePrefix prefix -DatabaseName Restored -Continue -WithReplace
 
