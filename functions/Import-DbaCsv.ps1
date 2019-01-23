@@ -8,7 +8,7 @@ function Import-DbaCsv {
 
         The entire import is performed within a transaction, so if a failure occurs or the script is aborted, no changes will persist.
 
-        If the table or view specified does not exist and -AutoCreateTable, it will be automatically created using slow and efficient but accomodating data types.
+        If the table or view specified does not exist and -AutoCreateTable, it will be automatically created using slow and inefficient but accommodating data types.
 
         This importer supports fields spanning multiple lines. The only restriction is that they must be quoted, otherwise it would not be possible to distinguish between malformed data and multi-line values.
 
@@ -49,7 +49,7 @@ function Import-DbaCsv {
 
         If a table name is not specified, the table name will be automatically determined from the filename.
 
-        If the table specified does not exist and -AutoCreateTable, it will be automatically created using slow and efficient but accomodating data types.
+        If the table specified does not exist and -AutoCreateTable, it will be automatically created using slow and inefficient but accommodating data types.
 
         If the automatically generated table datatypes do not work for you, please create the table prior to import.
 
