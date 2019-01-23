@@ -175,7 +175,7 @@ function Format-DbaBackupInformation {
                 }
             }
             $History.Database = $DatabaseNamePrefix + $History.Database
-            if ($true -ne $Continue) {
+          #  if ($true -ne $Continue) {
                 $History.FileList | ForEach-Object {
                     if ($null -ne $FileMapping ) {
                         if ($null -ne $FileMapping[$_.LogicalName]) {
@@ -210,7 +210,7 @@ function Format-DbaBackupInformation {
                         Write-Message -Message "PhysicalName = $($_.PhysicalName) " -Level Verbose
                     }
                 }
-            }
+           # }
             if ('' -ne $RebaseBackupFolder -and $History.FullName[0] -notmatch 'http') {
                 Write-Message -Message 'Rebasing backup files' -Level Verbose
 
