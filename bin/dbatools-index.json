@@ -19412,7 +19412,7 @@
     },
     {
         "Name":  "Get-DbaUserPermission",
-        "Description":  "This command will display all server logins, server level securable, database logins and database securables.\n\nDISA STIG implementators will find this command useful as it uses Permissions.sql provided by DISA.\n\nNote that if you Ctrl-C out of this command and end it prematurely, it will leave behind a STIG schema in tempdb.",
+        "Description":  "This command will display all server logins, server level securables, database logins and database securables.\n\nDISA STIG implementators will find this command useful as it uses Permissions.sql provided by DISA.\n\nNote that if you Ctrl-C out of this command and end it prematurely, it will leave behind a STIG schema in tempdb.",
         "Tags":  [
                      "Discovery",
                      "Permissions",
