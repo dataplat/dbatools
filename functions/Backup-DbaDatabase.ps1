@@ -233,7 +233,7 @@ function Backup-DbaDatabase {
 
             if ($null -eq $BackupDirectory -and $backupfileName -ne 'NUL') {
                 Write-Message -Message 'No backupfolder passed in, setting it to instance default' -Level Verbose
-                $BackupDirectory = (Get-DbaDefaultPath -SqlInstance $SqlInstance).Backup
+                $BackupDirectory = (Get-DbaDefaultPath -SqlInstance $server).Backup
             }
 
             if ($BackupDirectory.Count -gt 1) {
