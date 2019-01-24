@@ -45,7 +45,7 @@ function ConvertTo-DbaTimeline {
     .EXAMPLE
         PS C:\> $messageParameters = @{
         >> Subject = "Backup history for sql2017 and sql2016"
-        >> Body = Get-DbaBackupHistory -SqlInstance sql2017, sql2016 -Since '2018-08-13 00:00' | ConvertTo-DbaTimeline
+        >> Body = Get-DbaBackupHistory -SqlInstance sql2017, sql2016 -Since '2018-08-13 00:00' | ConvertTo-DbaTimeline | Out-String
         >> From = "dba@ad.local"
         >> To = "dba@ad.local"
         >> SmtpServer = "smtp.ad.local"

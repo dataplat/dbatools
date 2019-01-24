@@ -93,27 +93,27 @@ function Invoke-DbaDiagnosticQuery {
         Then it will export the results to Export-DbaDiagnosticQuery.
 
     .EXAMPLE
-        PS C:\> Invoke-DbaDiagnosticQuery -sqlinstance localhost -ExportQueries -outputpath "C:\temp\DiagnosticQueries"
+        PS C:\> Invoke-DbaDiagnosticQuery -SqlInstance localhost -ExportQueries -OutputPath "C:\temp\DiagnosticQueries"
 
         Export All Queries to Disk
 
     .EXAMPLE
-        PS C:\> Invoke-DbaDiagnosticQuery -sqlinstance localhost -DatabaseSpecific -DatabaseName 'tempdb' -ExportQueries -outputpath "C:\temp\DiagnosticQueries"
+        PS C:\> Invoke-DbaDiagnosticQuery -SqlInstance localhost -DatabaseSpecific -ExportQueries -OutputPath "C:\temp\DiagnosticQueries"
 
         Export Database Specific Queries for all User Dbs
 
     .EXAMPLE
-        PS C:\> Invoke-DbaDiagnosticQuery -sqlinstance localhost -DatabaseSpecific -DatabaseName 'tempdb' -ExportQueries -outputpath "C:\temp\DiagnosticQueries"
+        PS C:\> Invoke-DbaDiagnosticQuery -SqlInstance localhost -DatabaseSpecific -DatabaseName 'tempdb' -ExportQueries -OutputPath "C:\temp\DiagnosticQueries"
 
         Export Database Specific Queries For One Target Database
 
     .EXAMPLE
-        PS C:\> Invoke-DbaDiagnosticQuery -sqlinstance localhost -DatabaseSpecific -DatabaseName 'tempdb' -ExportQueries -outputpath "C:\temp\DiagnosticQueries" -queryname 'Database-scoped Configurations'
+        PS C:\> Invoke-DbaDiagnosticQuery -SqlInstance localhost -DatabaseSpecific -DatabaseName 'tempdb' -ExportQueries -OutputPath "C:\temp\DiagnosticQueries" -queryname 'Database-scoped Configurations'
 
         Export Database Specific Queries For One Target Database and One Specific Query
 
     .EXAMPLE
-        PS C:\> Invoke-DbaDiagnosticQuery -sqlinstance localhost -UseSelectionHelper
+        PS C:\> Invoke-DbaDiagnosticQuery -SqlInstance localhost -UseSelectionHelper
 
         Choose Queries To Export
 
