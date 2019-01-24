@@ -359,6 +359,7 @@ function Backup-DbaDatabase {
                 $SMOBackuptype = "Database"
                 $backup.Incremental = $true
                 $outputType = 'Differential'
+                $gbhSwitch = @{'LastDiff' = $true}
             }
             $Backup.NoRecovery = $false
             if ($Type -eq "Log") {
@@ -367,12 +368,14 @@ function Backup-DbaDatabase {
                 $OutputType = 'Log'
                 $SMOBackupType = 'Log'
                 $Backup.NoRecovery = $NoRecovery
+                $gbhSwitch = @{'LastLog' = $true}
             }
 
             if ($Type -in 'Full', 'Database') {
                 Write-Message -Level VeryVerbose -Message "Creating full backup"
                 $SMOBackupType = "Database"
                 $OutputType = 'Full'
+                $gbhSwitch = @{'LastFull' = $true}
             }
 
             $backup.CopyOnly = $copyonly
@@ -527,7 +530,7 @@ function Backup-DbaDatabase {
                             if ($server.VersionMajor -eq '8') {
                                 $HeaderInfo = Get-BackupAncientHistory -SqlInstance $server -Database $dbname
                             } else {
-                                $HeaderInfo = Get-DbaBackupHistory -SqlInstance $server -Database $dbname -Last -IncludeCopyOnly -RecoveryFork $database.RecoveryForkGuid  | Sort-Object -Property End -Descending | Select-Object -First 1
+                                $HeaderInfo = Get-DbaBackupHistory -SqlInstance $server -Database $dbname @gbhSwitch -IncludeCopyOnly -RecoveryFork $database.RecoveryForkGuid  | Sort-Object -Property End -Descending | Select-Object -First 1
                             }
                             $Verified = $false
                             if ($Verify) {
