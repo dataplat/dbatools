@@ -20633,7 +20633,7 @@
     },
     {
         "Name":  "Import-DbaCsv",
-        "Description":  "Import-DbaCsv takes advantage of .NET\u0027s super fast SqlBulkCopy class to import CSV files into SQL Server.\n\nThe entire import is performed within a transaction, so if a failure occurs or the script is aborted, no changes will persist.\n\nIf the table or view specified does not exist and -AutoCreateTable, it will be automatically created using slow and efficient but accomodating data types.\n\nThis importer supports fields spanning multiple lines. The only restriction is that they must be quoted, otherwise it would not be possible to distinguish between malformed data and multi-line values.",
+        "Description":  "Import-DbaCsv takes advantage of .NET\u0027s super fast SqlBulkCopy class to import CSV files into SQL Server.\n\nThe entire import is performed within a transaction, so if a failure occurs or the script is aborted, no changes will persist.\n\nIf the table or view specified does not exist and -AutoCreateTable, it will be automatically created using slow and inefficient but accommodating data types.\n\nThis importer supports fields spanning multiple lines. The only restriction is that they must be quoted, otherwise it would not be possible to distinguish between malformed data and multi-line values.",
         "Tags":  [
                      "Migration",
                      "Import"
@@ -20680,7 +20680,7 @@
                        ],
                        [
                            "Table",
-                           "Specifies the SQL table or view where CSV will be imported into.\nIf a table name is not specified, the table name will be automatically determined from the filename.\nIf the table specified does not exist and -AutoCreateTable, it will be automatically created using slow and efficient but accomodating data types.\nIf the automatically generated table datatypes do not work for you, please create the table prior to import.\nIf you want to import specific columns from a CSV, create a view with corresponding columns.",
+                           "Specifies the SQL table or view where CSV will be imported into.\nIf a table name is not specified, the table name will be automatically determined from the filename.\nIf the table specified does not exist and -AutoCreateTable, it will be automatically created using slow and inefficient but accommodating data types.\nIf the automatically generated table datatypes do not work for you, please create the table prior to import.\nIf you want to import specific columns from a CSV, create a view with corresponding columns.",
                            "",
                            false,
                            "false",
