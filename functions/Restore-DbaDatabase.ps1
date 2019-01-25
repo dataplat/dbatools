@@ -686,8 +686,8 @@ function Restore-DbaDatabase {
                 if ($AllowContinue) {
                     Write-Message -Message "$DbUnverified failed testing, AllowContinue set" -Level Verbose
                 } else {
-                    Stop-Function -Message "Database $DbUnverified failed testing, AllowContinue not set, exiting"
-                    return
+                    Write-Message -Level Warning -Message "Database $DbUnverified failed testing, AllowContinue not set, skipping"
+
                 }
             }
             If ($PSCmdlet.ParameterSetName -eq "RestorePage") {
