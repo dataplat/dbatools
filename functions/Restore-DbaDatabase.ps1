@@ -139,10 +139,6 @@ function Restore-DbaDatabase {
     .PARAMETER Recover
         If set will perform recovery on the indicated database
 
-    .PARAMETER AllowContinue
-        By default, Restore-DbaDatabase will stop restoring any databases if it comes across an error.
-        Use this switch to enable it to restore all databases without issues.
-
     .PARAMETER GetBackupInformation
         Passing a string value into this parameter will cause a global variable to be created holding the output of Get-DbaBackupInformation
 
@@ -295,11 +291,10 @@ function Restore-DbaDatabase {
 
     .EXAMPLE
         PS C:\> Get-DbaBackupHistory - SqlInstance server\instance1 -Database ProdFinance -Last | Restore-DbaDatabase -PageRestore
-        PS C:\> $SuspectPage -PageRestoreTailFolder c:\temp -TrustDbBackupHistory -AllowContinues
+        PS C:\> $SuspectPage -PageRestoreTailFolder c:\temp -TrustDbBackupHistory
 
         Gets a list of Suspect Pages using Get-DbaSuspectPage. The uses Get-DbaBackupHistory and Restore-DbaDatabase to perform a restore of the suspect pages and bring them up to date
         If server\instance1 is Enterprise edition this will be done online, if not it will be performed offline
-        AllowContinue is required to make sure we cope with existing files
 
     .EXAMPLE
         PS C:\> $BackupHistory = Get-DbaBackupInformation -SqlInstance sql2005 -Path \\backups\sql2000\ProdDb
@@ -362,7 +357,6 @@ function Restore-DbaDatabase {
         [parameter(ParameterSetName = "Restore")][string]$DestinationFileSuffix,
         [parameter(ParameterSetName = "Recovery")][switch]$Recover,
         [parameter(ParameterSetName = "Restore")][switch]$KeepCDC,
-        [switch]$AllowContinue,
         [string]$GetBackupInformation,
         [switch]$StopAfterGetBackupInformation,
         [string]$SelectBackupInformation,
@@ -390,9 +384,6 @@ function Restore-DbaDatabase {
             $UseDestinationDefaultDirectories = $true
             $paramCount = 0
 
-            if (!(Test-Bound "AllowContinue") -and $true -ne $AllowContinue) {
-                $AllowContinue = $false
-            }
             if (Test-Bound "FileMapping") {
                 $paramCount += 1
             }
@@ -683,12 +674,7 @@ function Restore-DbaDatabase {
                 $DbUnVerified = ($FilteredBackupHistory | Where-Object {
                         $_.IsVerified -eq $False
                     } | Select-Object -Property Database -Unique).Database -join ','
-                if ($AllowContinue) {
-                    Write-Message -Message "$DbUnverified failed testing, AllowContinue set" -Level Verbose
-                } else {
-                    Write-Message -Level Warning -Message "Database $DbUnverified failed testing, AllowContinue not set, skipping"
-
-                }
+                Write-Message -Level Warning -Message "Database $DbUnverified failed testing,  skipping"
             }
             If ($PSCmdlet.ParameterSetName -eq "RestorePage") {
                 if (($FilteredBackupHistory.Database | select-Object -unique | Measure-Object).count -ne 1) {
