@@ -8,7 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Added
 * Failsafe value in Invoke-DbaDbDataMasking
 
-## [0.9.722] - 2018-12-19
+## [0.9.724] - 2018-12-19
 ### Added
 * Deterministic data masking in Invoke-DbaDbDataMasking & New-DbaDbMaskingConfig
 
