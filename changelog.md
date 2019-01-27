@@ -4,6 +4,168 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
     and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.750] - 2019-01-25
+### Added
+* Type switch for Backup-DbaDatabase to get the correct backup from backup history
+* Reuse server connection for Get-DbaDefaultPath within Backup-DbaDatabase
+
+## [0.9.749] - 2019-01-24
+### Changed
+* Remove LSN check from Backup-DbaDatabase
+
+## [0.9.748] - 2019-01-24
+### Fixed
+* Import-DbaCsv does not accept multiple flags like -KeepNulls and -TableLock [#4998](https://github.com/sqlcollaborative/dbatools/issues/4998)
+
+### Added
+* Build reference for SQL Server 2016 SP2 CU5
+
+## [0.9.747] - 2019-01-23
+### Changed
+* Pass credentials through to Get-DbaRegistryRoot from Get-DbaProductKey
+
+## [0.9.745] - 2019-01-23
+### Fixed
+* Output mismatch in Format-DbaBackupInformation
+
+## [0.9.744] - 2019-01-23
+### Changed
+* Figure out new name before performing checks in Copy-DbaDbMail
+
+## [0.9.743] - 2019-01-20
+### Fixed
+* Correct names of jobs and schedules in Invoke-DbaDbLogShipping [#4972](https://github.com/sqlcollaborative/dbatools/issues/4972)
+* Correct path for output files for Install-DbaMaintenanceSolution [#4950](https://github.com/sqlcollaborative/dbatools/issues/4950)
+### Changed
+* Message formatting in Copy-DbaDbMail
+
+### Added
+* Support hostnames ending with hyphen [#4090] (https://github.com/sqlcollaborative/dbatools/issues/4090)
+
+## [0.9.742] - 2019-01-15
+### Fixed
+* Additional LSN comparison fix in Select-DbaBackupInformation [#4940](https://github.com/sqlcollaborative/dbatools/issues/4940)
+
+## [0.9.741] - 2019-01-11
+### Fixed
+* ApplicationIntent handling in Connect-DbaInstance and Invoke-DbaQuery
+
+## [0.9.740] - 2019-01-11
+### Fixed
+* [Import-DbaXESessionTemplate] Name cannot be specified with multiple files or templates because the Session will already exist. [#4923](https://github.com/sqlcollaborative/dbatools/issues/4923)
+* Correct type conversions for LSN comparison in Select-DbaBackupInformation
+
+### Added
+* Add money & text types to data masking
+
+## [0.9.739] - 2019-01-11
+### Fixed
+* Typo in DefaultDB parameter for Set-DbaLogin & New-DbaLogin
+
+### Changed
+* Verify that cumulative updates passed to Test-DbaBuild are a list
+
+## [0.9.738] - 2019-01-10
+### Fixed
+* Set-DbaAgentJob: Changing EventLogLevel to 0/Never will not be applied [#4927](https://github.com/sqlcollaborative/dbatools/issues/4927)
+
+### Added
+* Set default database with Set-DbaLogin
+
+## [0.9.737] - 2019-01-08
+### Changed
+* Latest versions of Glenn Berry's diagnostic queries
+* Only update fullname in Resolve-DbaNetworkName when running from a remote PC
+* Implement -whatif for Install-DbaMaintenanceSolution [#4901](https://github.com/sqlcollaborative/dbatools/issues/4901)
+
+## [0.9.735] - 2019-01-07
+### Fixed
+* Proper messaging when running Get-DbaPowerPlan on a local instance without an elevated session [#4777](https://github.com/sqlcollaborative/dbatools/issues/4777)
+
+### Added
+* ReadOnly option for Invoke-DbaQuery [#3451](https://github.com/sqlcollaborative/dbatools/issues/3451)
+
+### Removed
+* Officially remove Invoke-SqlCmd2 (use Invoke-DbaQuery instead)
+* Various unit tests [#4695]
+
+## [0.9.734] - 2019-01-02
+### Changed
+* Documentation update for Get-DbaDbIdentity
+* Latest versions of Glenn Berry's diagnostic queries
+
+## [0.9.734] - 2019-01-02
+### Changed
+* Documentation update for Get-DbaDbIdentity
+* Latest versions of Glenn Berry's diagnostic queries
+
+## [0.9.733] - 2018-12-31
+### Added
+* Support for additional DBCC commands [#4493](https://github.com/sqlcollaborative/dbatools/issues/4493)
+* Support for PSCore related to Test-Connection [#4840](https://github.com/sqlcollaborative/dbatools/issues/4840)
+
+## [0.9.732] - 2018-12-26
+### Changed
+* Logic in Resolve-DbaNetworkName
+* Revised output object construction in Resolve-DbaNetworkName
+* Revised exception handling in Get-DbaDependency
+
+### Added
+* New options for Import-DbaCsv
+* Support for -whatif and -confirm to Publish-DbaDacPackage [#4824](https://github.com/sqlcollaborative/dbatools/issues/4824)
+
+## [0.9.731] - 2018-12-23
+### Fixed
+* Excessive error messages & conflicting parameters in Restore-DbaDatabase
+* Warning with no output in Get-DbaBuildReference [#4794](https://github.com/sqlcollaborative/dbatools/issues/4794)
+* Invalid type conversion in Get-DbaDependency [#4768](https://github.com/sqlcollaborative/dbatools/issues/4768)
+
+### Changed
+* Logic in Resolve-DbaNetworkName
+
+### Added
+* PSCore enhancements in Test-DbaConnection
+* Verify backup for log & diff backups in Restore-DbaDatabase [#4861](https://github.com/sqlcollaborative/dbatools/issues/4861)
+* Support packages to CI build process
+
+### Removed
+* Test-Connection in Reset-DbaAdmin, Resolve-DbaNetworkName, internal functions
+
+## [0.9.730] - 2018-12-21
+### Fixed
+* Elapsed transaction control in Invoke-DbaDbDataMasking
+
+## [0.9.729] - 2018-12-21
+### Fixed
+* Elapsed time tracking in Invoke-DbaDbDataMasking
+
+## [0.9.728] - 2018-12-21
+### Fixed
+* SQL output for striped restores in Get-DbaBackupInformation
+
+## [0.9.727] - 2018-12-20
+### Added
+* Enhancements to data masking
+* Enhancements to Update-DbaInstance
+
+## [0.9.725] - 2018-12-20
+### Added
+* Failsafe value in Invoke-DbaDbDataMasking
+
+## [0.9.724] - 2018-12-19
+### Added
+* Deterministic data masking in Invoke-DbaDbDataMasking & New-DbaDbMaskingConfig
+
+## [0.9.722] - 2018-12-19
+### Fixed
+* Random creation of values in Invoke-DbaDbDataMasking
+
+## [0.9.721] - 2018-12-18
+### Added
+* Dynamic database list to Invoke-DbaDbDataMasking
+* Add Geometry to check of unsupported data types for Invoke-DbaDbDataMasking
+
+
 ## [0.9.720] - 2018-12-16
 ### Fixed
 * Enhanced outputs of Invoke-DbaDbDataMasking
@@ -32,7 +194,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Added
 * Added check for ps v2 for those that bypass psd1
 * Pipeline support for Get-DbaDbSpace
-* xplat support notification to find-dbacommand / docs.dbatools.io
+* xplat support notification to Find-DbaCommand / docs.dbatools.io
 * More integration tests
 * New commands: Invoke-DbaDbDataMasking and New-DbaDbMaskingConfig
 
@@ -41,9 +203,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 * Get-DbaBackupHistory - fully honors need to exclude system dbs
 * Fixed docs/typos in various commands
 
-## [0.9.712] - 2018-12-9
+## [0.9.712] - 2018-12-09
 ### Changed
-* Renamed DbaOrphanUwer series
+* Renamed DbaOrphanUser series
 
 ### Added
 * More integration tests!
@@ -53,7 +215,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Fixed
 * Variable bug fix in Invoke-DbaLogShipping
 
-## [0.9.711] - 2018-12-7
+## [0.9.711] - 2018-12-07
 ### Added
 * Multi-threading to Update-DbaInstance
 * System db export capabilities to Export-DbaDacPackage
@@ -61,11 +223,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Fixed
 * Ag replica now works when run outside of New-DbaAvailabilityGroup
 
-## [0.9.710] - 2018-12-5
+## [0.9.710] - 2018-12-05
 ### Fixed
 * Start-DbaMigration xplat support
 
-## [0.9.709] - 2018-12-4
+## [0.9.709] - 2018-12-04
 ### Fixed
 * Invoke-DbaAgFailover try/catch wrap to make errors pretty.
 * Renamed Set-DbaJobOwner to Set-DbaAgentJobOwner
@@ -76,31 +238,31 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 * VSCode default settings
 * Pipe support in Test-DbaDbOwner
 
-## [0.9.708] - 2018-12-4
+## [0.9.708] - 2018-12-04
 ### Fixed
 * Sync AG bug having to do with read-only dbs
 
 # Added
 * Update-DbaInstance final touches
 
-## [0.9.707] - 2018-12-3
+## [0.9.707] - 2018-12-03
 ### Fixed
 * Explicit export of cmdlet module members (fixes older OS/PS issues)
 
-## [0.9.705] - 2018-12-3
+## [0.9.705] - 2018-12-03
 ### Fixed
 * Docker support for AGs
 
-## [0.9.704] - 2018-12-3
+## [0.9.704] - 2018-12-03
 ### Fixed
 * Issue where the dll was repeatedly copied in Windows
 * Command exports
 
-## [0.9.703] - 2018-12-3
+## [0.9.703] - 2018-12-03
 ### Added
-* Faster import by uisng zip instead of big ol' ps1
+* Faster import by using zip instead of big ol' ps1
 
-## [0.9.702] - 2018-12-2
+## [0.9.702] - 2018-12-02
 ### Fixed
 * Core support for Copy-DbaDbDatatable, Write-DbaDataTable,
 * Parameter names for Copy-DbaDbQueryStoreOption
@@ -108,7 +270,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Added
 * Core support for Import-DbaCsv
 
-## [0.9.700] - 2018-12-1
+## [0.9.700] - 2018-12-01
 ### Added
 * For real true xplat including library and configs 🎉🎉🎉🎉🎉
 * Added Update-DbaInstance 🎉🎉🎉🎉🎉
@@ -156,7 +318,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [0.9.532] - 2018-11-26
 ### Fixed
-- Publish-DbaDacpackage param issues introduced by core fixes
+- Publish-DbaDacPackage param issues introduced by core fixes
 - Resolve-DbaNetworkName resolution issue introduced by core fixes
 - Some long-standing `Get-DbaBackupHistory -Force` problems were resolved
 
