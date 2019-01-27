@@ -4,6 +4,56 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
     and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.733] - 2018-12-31
+### Added
+* Support for additional DBCC commands [#4493](https://github.com/sqlcollaborative/dbatools/issues/4493)
+* Support for PSCore related to Test-Connection [#4840](https://github.com/sqlcollaborative/dbatools/issues/4840)
+
+
+## [0.9.732] - 2018-12-26
+### Changed
+* Logic in Resolve-DbaNetworkName
+* Revised output object construction in Resolve-DbaNetworkName
+* Revised exception handling in Get-DbaDependency
+
+### Added
+* New options for Import-DbaCsv
+* Support for -whatif and -confirm to Publish-DbaDacPackage [#4824](https://github.com/sqlcollaborative/dbatools/issues/4824)
+
+## [0.9.731] - 2018-12-23
+### Changed
+* Logic in Resolve-DbaNetworkName
+
+### Fixed
+* Excessive error messages & conflicting parameters in Restore-DbaDatabase
+* Warning with no output in Get-DbaBuildReference [#4794](https://github.com/sqlcollaborative/dbatools/issues/4794)
+* Invalid type conversion in Get-DbaDependency [#4768](https://github.com/sqlcollaborative/dbatools/issues/4768)
+
+### Added
+* PSCore enhancements in Test-DbaConnection
+* Verify backup for log & diff backups in Restore-DbaDatabase [#4861](https://github.com/sqlcollaborative/dbatools/issues/4861)
+* Support packages to CI build process
+
+### Removed
+* Test-Connection in Reset-DbaAdmin, Resolve-DbaNetworkName, internal functions
+
+## [0.9.730] - 2018-12-21
+### Fixed
+* Elapsed transaction control in Invoke-DbaDbDataMasking
+
+## [0.9.729] - 2018-12-21
+### Fixed
+* Elapsed time tracking in Invoke-DbaDbDataMasking
+
+## [0.9.728] - 2018-12-21
+### Fixed
+* SQL output for striped restores in Get-DbaBackupInformation
+
+## [0.9.727] - 2018-12-20
+### Added
+* Enhancements to data masking
+* Enhancements to Update-DbaInstance
+
 ## [0.9.725] - 2018-12-20
 ### Added
 * Failsafe value in Invoke-DbaDbDataMasking
