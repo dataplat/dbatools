@@ -4,11 +4,105 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
     and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.750] - 2019-01-25
+### Added
+* Type switch for Backup-DbaDatabase to get the correct backup from backup history
+* Reuse server connection for Get-DbaDefaultPath within Backup-DbaDatabase
+
+## [0.9.749] - 2019-01-24
+### Changed
+* Remove LSN check from Backup-DbaDatabase
+
+## [0.9.748] - 2019-01-24
+### Fixed
+* Import-Dbacsv does not accept multiple flags like -KeepNulls and -TableLock [#4998](https://github.com/sqlcollaborative/dbatools/issues/4998)
+
+### Added
+* Build reference for SQL Server 2016 SP2 CU5
+
+## [0.9.747] - 2019-01-23
+### Changed
+* Pass credentials through to Get-DbaRegistryRoot from Get-DbaProductKey
+
+## [0.9.745] - 2019-01-23
+### Fixed
+* Output mismatch in Format-DbaBackupInformation
+
+## [0.9.744] - 2019-01-23
+### Changed
+* Figure out new name before performing checks in Copy-DbaDbMail
+
+## [0.9.743] - 2019-01-20
+### Fixed
+* Correct names of jobs and schedules in Invoke-DbaDbLogshipping [#4972](https://github.com/sqlcollaborative/dbatools/issues/4972)
+* Correct path for output files for Install-DbaMaintenanceSolution [#4950](https://github.com/sqlcollaborative/dbatools/issues/4950)
+### Changed
+* Message formatting in Copy-DbaDbMail
+
+### Added
+* Support hostnames ending with hyphen [#4090] (https://github.com/sqlcollaborative/dbatools/issues/4090)
+
+## [0.9.742] - 2019-01-15
+### Fixed
+* Additional LSN comparison fix in Select-DbaBackupInformation [#4940](https://github.com/sqlcollaborative/dbatools/issues/4940)
+
+## [0.9.741] - 2019-01-11
+### Fixed
+* ApplicationIntent handling in Connect-DbaInstance and Invoke-DbaQuery
+
+## [0.9.740] - 2019-01-11
+### Fixed
+* [Import-DbaXESessionTemplate] Name cannot be specified with multiple files or templates because the Session will already exist. [#4923](https://github.com/sqlcollaborative/dbatools/issues/4923)
+* Correct type conversions for LSN comparison in Select-DbaBackupInformation
+
+### Added
+* Add money & text types to data masking
+
+## [0.9.739] - 2019-01-11
+### Fixed
+* Typo in DefaultDB parameter for Set-DbaLogin & New-DbaLogin
+
+### Changed
+* Verify that cumulative updates passed to Test-DbaBuild are a list
+
+## [0.9.738] - 2019-01-10
+### Fixed
+* Set-DbaAgentJob: Changing EventLogLevel to 0/Never will not be applied [#4927](https://github.com/sqlcollaborative/dbatools/issues/4927)
+
+### Added
+* Set default database with Set-DbaLogin
+
+## [0.9.737] - 2019-01-08
+### Changed
+* Latest versions of Glenn Berry's diagnostic queries
+* Only update fullname in Resolve-DbaNetworkName when running from a remote PC
+* Implement -whatif for Intall-DbaMaintenanceSolution [#4901](https://github.com/sqlcollaborative/dbatools/issues/4901)
+
+## [0.9.735] - 2019-01-07
+### Fixed
+* Proper messaging when running Get-DbaPowerPlan on a local instance without an elevated session [#4777](https://github.com/sqlcollaborative/dbatools/issues/4777)
+
+### Added
+* ReadOnly option for Invoke-DbaQuery [#3451](https://github.com/sqlcollaborative/dbatools/issues/3451)
+
+### Removed
+* Officially remove Invoke-SqlCmd2 (use Invoke-DbaQuery instead)
+* Various unit tests [#4695]
+
+## [0.9.734] - 2019-01-02
+### Changed
+* Documentation update for Get-DbaDbIdentity
+* Latest versions of Glenn Berry's diagnostic queries
+
+## [0.9.734] - 2019-01-02
+### Changed
+* Documentation update for Get-DbaDbIdentity
+* Latest versions of Glenn Berry's diagnostic queries
+
 ## [0.9.733] - 2018-12-31
 ### Added
 * Support for additional DBCC commands [#4493](https://github.com/sqlcollaborative/dbatools/issues/4493)
 * Support for PSCore related to Test-Connection [#4840](https://github.com/sqlcollaborative/dbatools/issues/4840)
-
 
 ## [0.9.732] - 2018-12-26
 ### Changed
@@ -21,13 +115,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 * Support for -whatif and -confirm to Publish-DbaDacPackage [#4824](https://github.com/sqlcollaborative/dbatools/issues/4824)
 
 ## [0.9.731] - 2018-12-23
-### Changed
-* Logic in Resolve-DbaNetworkName
-
 ### Fixed
 * Excessive error messages & conflicting parameters in Restore-DbaDatabase
 * Warning with no output in Get-DbaBuildReference [#4794](https://github.com/sqlcollaborative/dbatools/issues/4794)
 * Invalid type conversion in Get-DbaDependency [#4768](https://github.com/sqlcollaborative/dbatools/issues/4768)
+
+### Changed
+* Logic in Resolve-DbaNetworkName
 
 ### Added
 * PSCore enhancements in Test-DbaConnection
