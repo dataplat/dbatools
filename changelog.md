@@ -15,7 +15,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [0.9.748] - 2019-01-24
 ### Fixed
-* Import-Dbacsv does not accept multiple flags like -KeepNulls and -TableLock [#4998](https://github.com/sqlcollaborative/dbatools/issues/4998)
+* Import-DbaCsv does not accept multiple flags like -KeepNulls and -TableLock [#4998](https://github.com/sqlcollaborative/dbatools/issues/4998)
 
 ### Added
 * Build reference for SQL Server 2016 SP2 CU5
@@ -34,7 +34,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [0.9.743] - 2019-01-20
 ### Fixed
-* Correct names of jobs and schedules in Invoke-DbaDbLogshipping [#4972](https://github.com/sqlcollaborative/dbatools/issues/4972)
+* Correct names of jobs and schedules in Invoke-DbaDbLogShipping [#4972](https://github.com/sqlcollaborative/dbatools/issues/4972)
 * Correct path for output files for Install-DbaMaintenanceSolution [#4950](https://github.com/sqlcollaborative/dbatools/issues/4950)
 ### Changed
 * Message formatting in Copy-DbaDbMail
@@ -76,7 +76,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Changed
 * Latest versions of Glenn Berry's diagnostic queries
 * Only update fullname in Resolve-DbaNetworkName when running from a remote PC
-* Implement -whatif for Intall-DbaMaintenanceSolution [#4901](https://github.com/sqlcollaborative/dbatools/issues/4901)
+* Implement -whatif for Install-DbaMaintenanceSolution [#4901](https://github.com/sqlcollaborative/dbatools/issues/4901)
 
 ## [0.9.735] - 2019-01-07
 ### Fixed
@@ -194,7 +194,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Added
 * Added check for ps v2 for those that bypass psd1
 * Pipeline support for Get-DbaDbSpace
-* xplat support notification to find-dbacommand / docs.dbatools.io
+* xplat support notification to Find-DbaCommand / docs.dbatools.io
 * More integration tests
 * New commands: Invoke-DbaDbDataMasking and New-DbaDbMaskingConfig
 
@@ -203,9 +203,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 * Get-DbaBackupHistory - fully honors need to exclude system dbs
 * Fixed docs/typos in various commands
 
-## [0.9.712] - 2018-12-9
+## [0.9.712] - 2018-12-09
 ### Changed
-* Renamed DbaOrphanUwer series
+* Renamed DbaOrphanUser series
 
 ### Added
 * More integration tests!
@@ -215,7 +215,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Fixed
 * Variable bug fix in Invoke-DbaLogShipping
 
-## [0.9.711] - 2018-12-7
+## [0.9.711] - 2018-12-07
 ### Added
 * Multi-threading to Update-DbaInstance
 * System db export capabilities to Export-DbaDacPackage
@@ -223,11 +223,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Fixed
 * Ag replica now works when run outside of New-DbaAvailabilityGroup
 
-## [0.9.710] - 2018-12-5
+## [0.9.710] - 2018-12-05
 ### Fixed
 * Start-DbaMigration xplat support
 
-## [0.9.709] - 2018-12-4
+## [0.9.709] - 2018-12-04
 ### Fixed
 * Invoke-DbaAgFailover try/catch wrap to make errors pretty.
 * Renamed Set-DbaJobOwner to Set-DbaAgentJobOwner
@@ -238,31 +238,31 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 * VSCode default settings
 * Pipe support in Test-DbaDbOwner
 
-## [0.9.708] - 2018-12-4
+## [0.9.708] - 2018-12-04
 ### Fixed
 * Sync AG bug having to do with read-only dbs
 
 # Added
 * Update-DbaInstance final touches
 
-## [0.9.707] - 2018-12-3
+## [0.9.707] - 2018-12-03
 ### Fixed
 * Explicit export of cmdlet module members (fixes older OS/PS issues)
 
-## [0.9.705] - 2018-12-3
+## [0.9.705] - 2018-12-03
 ### Fixed
 * Docker support for AGs
 
-## [0.9.704] - 2018-12-3
+## [0.9.704] - 2018-12-03
 ### Fixed
 * Issue where the dll was repeatedly copied in Windows
 * Command exports
 
-## [0.9.703] - 2018-12-3
+## [0.9.703] - 2018-12-03
 ### Added
-* Faster import by uisng zip instead of big ol' ps1
+* Faster import by using zip instead of big ol' ps1
 
-## [0.9.702] - 2018-12-2
+## [0.9.702] - 2018-12-02
 ### Fixed
 * Core support for Copy-DbaDbDatatable, Write-DbaDataTable,
 * Parameter names for Copy-DbaDbQueryStoreOption
@@ -270,7 +270,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Added
 * Core support for Import-DbaCsv
 
-## [0.9.700] - 2018-12-1
+## [0.9.700] - 2018-12-01
 ### Added
 * For real true xplat including library and configs 🎉🎉🎉🎉🎉
 * Added Update-DbaInstance 🎉🎉🎉🎉🎉
@@ -318,7 +318,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [0.9.532] - 2018-11-26
 ### Fixed
-- Publish-DbaDacpackage param issues introduced by core fixes
+- Publish-DbaDacPackage param issues introduced by core fixes
 - Resolve-DbaNetworkName resolution issue introduced by core fixes
 - Some long-standing `Get-DbaBackupHistory -Force` problems were resolved
 
