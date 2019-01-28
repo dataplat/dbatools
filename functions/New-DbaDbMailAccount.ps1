@@ -1,5 +1,5 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
-function New-DbaDbAccount {
+function New-DbaDbMailAccount {
     <#
     .SYNOPSIS
         Creates a new database mail account
@@ -48,10 +48,10 @@ function New-DbaDbAccount {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/New-DbaDbAccount
+        https://dbatools.io/New-DbaDbMailAccount
 
     .EXAMPLE
-        PS C:\> $account = New-DbaDbAccount -SqlInstance sql2017 -Name 'The DBA Team'
+        PS C:\> $account = New-DbaDbMailAccount -SqlInstance sql2017 -Name 'The DBA Team'
 
         Creates a new db mail account
 
