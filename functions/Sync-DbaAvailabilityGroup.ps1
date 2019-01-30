@@ -111,7 +111,7 @@ function Sync-DbaAvailabilityGroup {
     .EXAMPLE
         PS C:\> Get-DbaAvailabilityGroup -SqlInstance sql2016a | Sync-DbaAvailabilityGroup -ExcludeType LoginPermissions, LinkedServers -ExcludeLogin login1, login2 -Job job1, job2
 
-        Syncs the following on all replicas found all AGs on the specified instance:
+        Syncs the following on all replicas found in all AGs on the specified instance:
         SpConfigure, CustomErrors, Credentials, DatabaseMail, Logins,
         SystemTriggers, DatabaseOwner, AgentCategory, AgentOperator
         AgentAlert, AgentProxy, AgentSchedule, AgentJob.
