@@ -68,10 +68,10 @@ function Sync-DbaAvailabilityGroup {
         Specific logins to exclude when performing the sync. If unspecified, all logins will be processed.
 
     .PARAMETER Job
-        Specific jobs to sync. If unspecified, all logins will be processed.
+        Specific jobs to sync. If unspecified, all jobs will be processed.
 
     .PARAMETER ExcludeJob
-         Specific jobs to exclude when performing the sync. If unspecified, all logins will be processed.
+         Specific jobs to exclude when performing the sync. If unspecified, all jobs will be processed.
 
     .PARAMETER InputObject
         Enables piping from Get-DbaAvailabilityGroup.
@@ -106,15 +106,15 @@ function Sync-DbaAvailabilityGroup {
         Syncs the following on all replicas found in the db3 AG:
         SpConfigure, CustomErrors, Credentials, DatabaseMail, LinkedServers
         Logins, LoginPermissions, SystemTriggers, DatabaseOwner, AgentCategory,
-        AgentOperator, AgentAlert, AgentProxy, AgentScheduleAgentJob
+        AgentOperator, AgentAlert, AgentProxy, AgentSchedule, AgentJob
 
     .EXAMPLE
         PS C:\> Get-DbaAvailabilityGroup -SqlInstance sql2016a | Sync-DbaAvailabilityGroup -ExcludeType LoginPermissions, LinkedServers -ExcludeLogin login1, login2 -Job job1, job2
 
-        Syncs the following on all replicas found in the db3 AG:
+        Syncs the following on all replicas found in all AGs on the specified instance:
         SpConfigure, CustomErrors, Credentials, DatabaseMail, Logins,
         SystemTriggers, DatabaseOwner, AgentCategory, AgentOperator
-        AgentAlert, AgentProxy, AgentScheduleAgentJob.
+        AgentAlert, AgentProxy, AgentSchedule, AgentJob.
 
         Copies all logins except for login1 and login2 and only syncs job1 and job2
 
