@@ -208,7 +208,7 @@ function Set-DbaAgentJobStep {
             foreach ($j in $Job) {
 
                 # Check if the job exists
-                if ($server.JobServer.Jobs.Name -notcontains $j.Name) {
+                if ($server.JobServer.Jobs.Name -notcontains $j) {
                     Stop-Function -Message "Job $j doesn't exists on $instance" -Target $instance
                 } else {
                     # Get the job step
@@ -224,6 +224,14 @@ function Set-DbaAgentJobStep {
             }
         }
 
+        if($Job){
+            $InputObject = $InputObject | Where-Object {$_.Parent.Name -in $Job}
+        }
+
+        if($StepName){
+            $InputObject = $InputObject | Where-Object Name -in $StepName
+        }
+
         foreach ($instance in $sqlinstance) {
 
             # Try connecting to the instance
@@ -234,10 +242,10 @@ function Set-DbaAgentJobStep {
             }
 
             foreach($currentJobStep in $InputObject){
-                if (-not $Force -and ($Server.JobServer.Jobs[$j].JobSteps.Name -notcontains $currentJobStep.Name)) {
+                if (-not $Force -and ($Server.JobServer.Jobs[$currentJobStep.Parent.Name].JobSteps.Name -notcontains $currentJobStep.Name)) {
                     Stop-Function -Message "Step $StepName doesn't exists for job $j" -Target $instance -Continue
                 }
-                elseif($Force -and ($Server.JobServer.Jobs[$j].JobSteps.Name -notcontains $currentJobStep.Name)) {
+                elseif($Force -and ($Server.JobServer.Jobs[$currentJobStep.Parent.Name].JobSteps.Name -notcontains $currentJobStep.Name)) {
                     Write-Message -Message "Adding job step $($currentJobStep.Name) to $($currentJobStep.Parent.Name) on $instance" -Level Verbose
 
                     try{
@@ -344,7 +352,7 @@ function Set-DbaAgentJobStep {
 
                     if ($Database) {
                         # Check if the database is present on the server
-                        if ($Server.Databases.Name -contains $Database) {
+                        if ($server.Databases.Name -contains $Database) {
                             Write-Message -Message "Setting job step database name to $Database" -Level Verbose
                             $JobStep.DatabaseName = $Database
                         } else {
@@ -353,7 +361,7 @@ function Set-DbaAgentJobStep {
                     }
                     else {
                         # Check if the database is present on the server
-                        if ($Server.Databases.Name -contains $Database) {
+                        if ($server.Databases.Name -contains $currentJobStep.DatabaseName) {
                             Write-Message -Message "Setting job step database name to $($currentJobStep.DatabaseName)" -Level Verbose
                             $JobStep.DatabaseName = $currentJobStep.DatabaseName
                         } else {
@@ -372,7 +380,7 @@ function Set-DbaAgentJobStep {
                     }
                     else {
                         # Check if the username is present in the database
-                        if ($Server.Databases[$Database].Users.Name -contains $DatabaseUser) {
+                        if ($Server.Databases[$Database].Users.Name -contains $currentJobStep.DatabaseUserName) {
                             Write-Message -Message "Setting job step database username to $($currentJobStep.DatabaseUserName)" -Level Verbose
                             $JobStep.DatabaseUserName = $currentJobStep.DatabaseUserName
                         } else {
