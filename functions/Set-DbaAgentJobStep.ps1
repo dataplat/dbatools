@@ -299,7 +299,7 @@ function Set-DbaAgentJobStep {
                     if ($SubsystemServer) {
                         Write-Message -Message "Setting job step subsystem server to $SubsystemServer" -Level Verbose
                         $JobStep.Server = $SubsystemServer
-                    } else {
+                    } elseif($currentJobStep.Server) {
                         Write-Message -Message "Setting job step subsystem server to $($currentJobStep.Server)" -Level Verbose
                         $JobStep.Server = $currentJobStep.Server
                     }
