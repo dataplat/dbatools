@@ -164,7 +164,7 @@ function Set-DbaAgentJobStep {
         [string]$ProxyName,
         [parameter(ValueFromPipeline)]
         #[Microsoft.SqlServer.Management.Smo.Agent.JobStep[]]$InputObject,
-        [object[]]$InputObject,
+        [Microsoft.SqlServer.Management.Smo.Agent.JobStep[]]$InputObject,
         [Alias('Silent')]
         [switch]$EnableException,
         [switch]$Force
@@ -235,10 +235,10 @@ function Set-DbaAgentJobStep {
             }
 
             foreach($currentJobStep in $InputObject){
-                if (-not $Force -and ($Server.JobServer.Jobs[$j].JobSteps.Name -notcontains $StepName)) {
+                if (-not $Force -and ($Server.JobServer.Jobs[$j].JobSteps.Name -notcontains $currentJobStep.Name)) {
                     Stop-Function -Message "Step $StepName doesn't exists for job $j" -Target $instance -Continue
                 }
-                elseif($Force -and ($Server.JobServer.Jobs[$j].JobSteps.Name -notcontains $StepName)) {
+                elseif($Force -and ($Server.JobServer.Jobs[$j].JobSteps.Name -notcontains $currentJobStep.Name)) {
                     Write-Message -Message "Adding job step $($currentJobStep.Name) to $($currentJobStep.Parent.Name) on $instance" -Level Verbose
 
                     try{
