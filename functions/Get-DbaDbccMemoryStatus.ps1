@@ -64,13 +64,7 @@ function Get-DbaDbccMemoryStatus {
 
             Write-Message -Level Verbose -Message "Collecting $query data from server: $instance"
             try {
-                $sqlconnection = New-Object System.Data.SqlClient.SqlConnection
-                $sqlconnection.ConnectionString = $server.ConnectionContext.ConnectionString
-                $sqlconnection.Open()
-
-                $datatable = New-Object system.Data.DataSet
-                $dataadapter = New-Object system.Data.SqlClient.SqlDataAdapter($query, $sqlconnection)
-                $dataadapter.fill($datatable) | Out-Null
+                $datatable = $Server.ConnectionContext.ExecuteWithResults($query)
 
                 $recordset = 0
                 $rowId = 0
