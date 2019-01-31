@@ -137,15 +137,11 @@ function Set-DbaAgentJobStep {
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
     param (
-        [parameter(Mandatory, ValueFromPipeline)]
+        [parameter(Mandatory)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [Parameter(Mandatory)]
-        [ValidateNotNullOrEmpty()]
         [object[]]$Job,
-        [Parameter(Mandatory)]
-        [ValidateNotNullOrEmpty()]
         [string]$StepName,
         [string]$NewName,
         [ValidateSet('ActiveScripting', 'AnalysisCommand', 'AnalysisQuery', 'CmdExec', 'Distribution', 'LogReader', 'Merge', 'PowerShell', 'QueueReader', 'Snapshot', 'Ssis', 'TransactSql')]
@@ -166,6 +162,9 @@ function Set-DbaAgentJobStep {
         [ValidateSet('AppendAllCmdExecOutputToJobHistory', 'AppendToJobHistory', 'AppendToLogFile', 'LogToTableWithOverwrite', 'None', 'ProvideStopProcessEvent')]
         [string[]]$Flag,
         [string]$ProxyName,
+        [parameter(ValueFromPipeline)]
+        #[Microsoft.SqlServer.Management.Smo.Agent.JobStep[]]$InputObject,
+        [object[]]$InputObject,
         [Alias('Silent')]
         [switch]$EnableException,
         [switch]$Force
@@ -189,6 +188,82 @@ function Set-DbaAgentJobStep {
 
         if (Test-FunctionInterrupt) { return }
 
+        if ((-not $InputObject) -and (-not $Job)) {
+            Stop-Function -Message "You must specify a job name or pipe in results from another command" -Target $sqlinstance
+            return
+        }
+
+        if ((-not $InputObject) -and (-not $StepName)) {
+            Stop-Function -Message "You must specify a job step name or pipe in results from another command" -Target $sqlinstance
+            return
+        }
+
+        foreach ($instance in $sqlinstance) {
+            # Try connecting to the instance
+            try {
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
+            } catch {
+                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+            }
+
+            foreach ($j in $Job) {
+
+                # Check if the job exists
+                if ($server.JobServer.Jobs.Name -notcontains $j) {
+                    Stop-Function -Message "Job $j doesn't exists on $instance" -Target $instance
+                } else {
+                    # Get the job step
+                    try {
+                        $InputObject += $server.JobServer.Jobs[$j].JobSteps | Where-Object Name -in $StepName
+
+                        # Refresh the object
+                        $InputObject.Refresh()
+                    } catch {
+                        Stop-Function -Message "Something went wrong retrieving the job step(s)" -Target $j -ErrorRecord $_ -Continue
+                    }
+                }
+            }
+        }
+
+        foreach ($instance in $sqlinstance) {
+
+            # Try connecting to the instance
+            try {
+                $Server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
+            } catch {
+                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+            }
+
+            foreach($currentJobStep in $InputObject){
+                if (-not $Force -and ($Server.JobServer.Jobs[$j].JobSteps.Name -notcontains $StepName)) {
+                    Stop-Function -Message "Step $StepName doesn't exists for job $j" -Target $instance -Continue
+                }
+                elseif($Force -and ($Server.JobServer.Jobs[$j].JobSteps.Name -notcontains $StepName)) {
+                    New-DbaAgentJobStep -SqlInstance $instance -SqlCredential $SqlCredential `
+                        -Job $currentJobStep.Parent.Name `
+                        -StepId $currentJobStep.ID `
+                        -StepName $currentJobStep.Name `
+                        -Subsystem $currentJobStep.SubSystem `
+                        -SubsystemServer $currentJobStep.Server `
+                        -Command $currentJobStep.Command `
+                        -CmdExecSuccessCode $currentJobStep.CmdExecSuccessCode `
+                        -OnFailAction $currentJobStep.OnFailAction `
+                        -OnSuccessAction $currentJobStep.OnSuccessAction `
+                        -OnSuccessStepId $currentJobStep..OnSuccessStepId `
+                        -OnFailStepId $currentJobStep.OnFailStepId `
+                        -Database $currentJobStep.Database `
+                        -DatabaseUser $currentJobStep.DatabaseUser `
+                        -RetryAttempts $currentJobStep.RetryAttempts `
+                        -RetryInterval $currentJobStep.RetryInterval `
+                        -OutputFileName $currentJobStep.OutputFileName `
+                        -Flag $currentJobStep.Flag `
+                        -ProxyName $currentJobStep.ProxyName
+
+                }
+            }
+
+        }
+
         foreach ($instance in $sqlinstance) {
 
             # Try connecting to the instance
@@ -200,10 +275,7 @@ function Set-DbaAgentJobStep {
 
             foreach ($j in $Job) {
 
-                # Check if the job exists
-                if ($Server.JobServer.Jobs.Name -notcontains $j) {
-                    Stop-Function -Message "Job $j doesn't exists on $instance" -Target $instance -Continue
-                } else {
+
                     # Check if the job step exists
                     if ($Server.JobServer.Jobs[$j].JobSteps.Name -notcontains $StepName) {
                         Stop-Function -Message "Step $StepName doesn't exists for job $j" -Target $instance -Continue
@@ -319,7 +391,6 @@ function Set-DbaAgentJobStep {
                             }
                         }
                     }
-                }
 
             } # foreach object job
         } # foreach object intance
