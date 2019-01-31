@@ -3035,7 +3035,7 @@
     },
     {
         "Name":  "Copy-DbaDatabase",
-        "Description":  "This script provides the ability to migrate databases using detach/copy/attach or backup/restore. This script works with named instances, clusters and SQL Server Express Edition.\n\nBy default, databases will be migrated to the destination SQL Server\u0027s default data and log directories. You can override this by specifying -ReuseSourceFolderStructure. Filestreams and filegroups are also migrated. Safety is emphasized.",
+        "Description":  "This script provides the ability to migrate databases using detach/copy/attach or backup/restore. This script works with named instances, clusters and SQL Server Express Edition.\n\nBy default, databases will be migrated to the destination SQL Server\u0027s default data and log directories. You can override this by specifying -ReuseSourceFolderStructure. Filestreams and filegroups are also migrated. Safety is emphasized.\n\nIf you are experiencing issues with Copy-DbaDatabase, please use Backup-DbaDatabase | Restore-DbaDatabase instead.",
         "Tags":  [
                      "Migration",
                      "Backup",
@@ -40303,7 +40303,7 @@
         "CommandName":  "Sync-DbaAvailabilityGroup",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Sync-DbaAvailabilityGroup",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eSync-DbaAvailabilityGroup -Primary sql2016a -AvailabilityGroup db3\nSyncs the following on all replicas found in the db3 AG:\r\nSpConfigure, CustomErrors, Credentials, DatabaseMail, LinkedServers\r\nLogins, LoginPermissions, SystemTriggers, DatabaseOwner, AgentCategory,\r\nAgentOperator, AgentAlert, AgentProxy, AgentScheduleAgentJob\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaAvailabilityGroup -SqlInstance sql2016a | Sync-DbaAvailabilityGroup -ExcludeType LoginPermissions, LinkedServers -ExcludeLogin login1, login2 -Job job1, job2\nSyncs the following on all replicas found in the db3 AG:\r\nSpConfigure, CustomErrors, Credentials, DatabaseMail, Logins,\r\nSystemTriggers, DatabaseOwner, AgentCategory, AgentOperator\r\nAgentAlert, AgentProxy, AgentScheduleAgentJob.\nCopies all logins except for login1 and login2 and only syncs job1 and job2\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaAvailabilityGroup -SqlInstance sql2016a | Sync-DbaAvailabilityGroup -WhatIf\nShows what would happen if the command were to run but doesn\u0027t actually perform the action.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eSync-DbaAvailabilityGroup -Primary sql2016a -AvailabilityGroup db3\nSyncs the following on all replicas found in the db3 AG:\r\nSpConfigure, CustomErrors, Credentials, DatabaseMail, LinkedServers\r\nLogins, LoginPermissions, SystemTriggers, DatabaseOwner, AgentCategory,\r\nAgentOperator, AgentAlert, AgentProxy, AgentSchedule, AgentJob\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaAvailabilityGroup -SqlInstance sql2016a | Sync-DbaAvailabilityGroup -ExcludeType LoginPermissions, LinkedServers -ExcludeLogin login1, login2 -Job job1, job2\nSyncs the following on all replicas found in all AGs on the specified instance:\r\nSpConfigure, CustomErrors, Credentials, DatabaseMail, Logins,\r\nSystemTriggers, DatabaseOwner, AgentCategory, AgentOperator\r\nAgentAlert, AgentProxy, AgentSchedule, AgentJob.\nCopies all logins except for login1 and login2 and only syncs job1 and job2\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaAvailabilityGroup -SqlInstance sql2016a | Sync-DbaAvailabilityGroup -WhatIf\nShows what would happen if the command were to run but doesn\u0027t actually perform the action.",
         "Params":  [
                        [
                            "Primary",
@@ -40371,7 +40371,7 @@
                        ],
                        [
                            "Job",
-                           "Specific jobs to sync. If unspecified, all logins will be processed.",
+                           "Specific jobs to sync. If unspecified, all jobs will be processed.",
                            "",
                            false,
                            "false",
@@ -40379,7 +40379,7 @@
                        ],
                        [
                            "ExcludeJob",
-                           "Specific jobs to exclude when performing the sync. If unspecified, all logins will be processed.",
+                           "Specific jobs to exclude when performing the sync. If unspecified, all jobs will be processed.",
                            "",
                            false,
                            "false",
