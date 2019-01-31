@@ -163,7 +163,6 @@ function Set-DbaAgentJobStep {
         [string[]]$Flag,
         [string]$ProxyName,
         [parameter(ValueFromPipeline)]
-        #[Microsoft.SqlServer.Management.Smo.Agent.JobStep[]]$InputObject,
         [Microsoft.SqlServer.Management.Smo.Agent.JobStep[]]$InputObject,
         [Alias('Silent')]
         [switch]$EnableException,
@@ -209,7 +208,7 @@ function Set-DbaAgentJobStep {
             foreach ($j in $Job) {
 
                 # Check if the job exists
-                if ($server.JobServer.Jobs.Name -notcontains $j) {
+                if ($server.JobServer.Jobs.Name -notcontains $j.Name) {
                     Stop-Function -Message "Job $j doesn't exists on $instance" -Target $instance
                 } else {
                     # Get the job step
