@@ -26,6 +26,9 @@ function Set-DbaAgentJobStep {
         The subsystem used by the SQL Server Agent service to execute command.
         Allowed values 'ActiveScripting','AnalysisCommand','AnalysisQuery','CmdExec','Distribution','LogReader','Merge','PowerShell','QueueReader','Snapshot','Ssis','TransactSql'
 
+    .PARAMETER SubSystemServer
+        The subsystems AnalysisScripting, AnalysisCommand, AnalysisQuery ned the server property to be able to apply
+
     .PARAMETER Command
         The commands to be executed by SQLServerAgent service through subsystem.
 
@@ -146,6 +149,7 @@ function Set-DbaAgentJobStep {
         [string]$NewName,
         [ValidateSet('ActiveScripting', 'AnalysisCommand', 'AnalysisQuery', 'CmdExec', 'Distribution', 'LogReader', 'Merge', 'PowerShell', 'QueueReader', 'Snapshot', 'Ssis', 'TransactSql')]
         [string]$Subsystem,
+        [string]$SubsystemServer,
         [string]$Command,
         [int]$CmdExecSuccessCode,
         [ValidateSet('QuitWithSuccess', 'QuitWithFailure', 'GoToNextStep', 'GoToStep')]
@@ -290,6 +294,15 @@ function Set-DbaAgentJobStep {
                     } else {
                         Write-Message -Message "Setting job step subsystem to $($currentJobStep.SubSystem)" -Level Verbose
                         $JobStep.Subsystem = $currentJobStep.Subsystem
+                    }
+
+                    if ($SubsystemServer) {
+                        Write-Message -Message "Setting job step subsystem server to $SubsystemServer" -Level Verbose
+                        $JobStep.Server = $SubsystemServer
+                    }
+                    else {
+                        Write-Message -Message "Setting job step subsystem server to $($currentJobStep.Server)" -Level Verbose
+                        $JobStep.Server = $currentJobStep.Server
                     }
 
                     if ($Command) {
