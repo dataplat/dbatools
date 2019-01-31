@@ -8,6 +8,8 @@ function Copy-DbaDatabase {
 
         By default, databases will be migrated to the destination SQL Server's default data and log directories. You can override this by specifying -ReuseSourceFolderStructure. Filestreams and filegroups are also migrated. Safety is emphasized.
 
+        If you are experiencing issues with Copy-DbaDatabase, please use Backup-DbaDatabase | Restore-DbaDatabase instead.
+    
     .PARAMETER Source
         Source SQL Server.
 
