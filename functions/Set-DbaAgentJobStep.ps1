@@ -224,11 +224,11 @@ function Set-DbaAgentJobStep {
             }
         }
 
-        if($Job){
+        if ($Job) {
             $InputObject = $InputObject | Where-Object {$_.Parent.Name -in $Job}
         }
 
-        if($StepName){
+        if ($StepName) {
             $InputObject = $InputObject | Where-Object Name -in $StepName
         }
 
@@ -241,14 +241,13 @@ function Set-DbaAgentJobStep {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
-            foreach($currentJobStep in $InputObject){
+            foreach ($currentJobStep in $InputObject) {
                 if (-not $Force -and ($Server.JobServer.Jobs[$currentJobStep.Parent.Name].JobSteps.Name -notcontains $currentJobStep.Name)) {
                     Stop-Function -Message "Step $StepName doesn't exists for job $j" -Target $instance -Continue
-                }
-                elseif($Force -and ($Server.JobServer.Jobs[$currentJobStep.Parent.Name].JobSteps.Name -notcontains $currentJobStep.Name)) {
+                } elseif ($Force -and ($Server.JobServer.Jobs[$currentJobStep.Parent.Name].JobSteps.Name -notcontains $currentJobStep.Name)) {
                     Write-Message -Message "Adding job step $($currentJobStep.Name) to $($currentJobStep.Parent.Name) on $instance" -Level Verbose
 
-                    try{
+                    try {
                         New-DbaAgentJobStep -SqlInstance $instance -SqlCredential $SqlCredential `
                             -Job $currentJobStep.Parent.Name `
                             -StepId $currentJobStep.ID `
@@ -269,13 +268,11 @@ function Set-DbaAgentJobStep {
                             -Flag $currentJobStep.Flag `
                             -ProxyName $currentJobStep.ProxyName `
                             -EnableException
-                    }
-                    catch{
+                    } catch {
                         Stop-Function -Message "Something went wrong creating the job step" -Target $instance -ErrorRecord $_ -Continue
                     }
 
-                }
-                else{
+                } else {
                     $JobStep = $server.JobServer.Jobs[$currentJobStep.Parent.Name].JobSteps[$currentJobStep.Name]
 
                     Write-Message -Message "Modifying job $j on $instance" -Level Verbose
@@ -290,8 +287,7 @@ function Set-DbaAgentJobStep {
                     if ($Subsystem) {
                         Write-Message -Message "Setting job step subsystem to $Subsystem" -Level Verbose
                         $JobStep.Subsystem = $Subsystem
-                    }
-                    else {
+                    } else {
                         Write-Message -Message "Setting job step subsystem to $($currentJobStep.SubSystem)" -Level Verbose
                         $JobStep.Subsystem = $currentJobStep.Subsystem
                     }
@@ -299,8 +295,7 @@ function Set-DbaAgentJobStep {
                     if ($Command) {
                         Write-Message -Message "Setting job step command to $Command" -Level Verbose
                         $JobStep.Command = $Command
-                    }
-                    else {
+                    } else {
                         Write-Message -Message "Setting job step command to $($currentJobStep.Command)" -Level Verbose
                         $JobStep.Command = $currentJobStep.Command
                     }
@@ -308,8 +303,7 @@ function Set-DbaAgentJobStep {
                     if ($CmdExecSuccessCode) {
                         Write-Message -Message "Setting job step command exec success code to $CmdExecSuccessCode" -Level Verbose
                         $JobStep.CommandExecutionSuccessCode = $CmdExecSuccessCode
-                    }
-                    else {
+                    } else {
                         Write-Message -Message "Setting job step command exec success code to $($currentJobStep.CommandExecutionSuccessCode)" -Level Verbose
                         $JobStep.CommandExecutionSuccessCode = $currentJobStep.CommandExecutionSuccessCode
                     }
@@ -317,8 +311,7 @@ function Set-DbaAgentJobStep {
                     if ($OnSuccessAction) {
                         Write-Message -Message "Setting job step success action to $OnSuccessAction" -Level Verbose
                         $JobStep.OnSuccessAction = $OnSuccessAction
-                    }
-                    else {
+                    } else {
                         Write-Message -Message "Setting job step success action to $($currentJobStep.OnSuccessAction)" -Level Verbose
                         $JobStep.OnSuccessAction = $currentJobStep.OnSuccessAction
                     }
@@ -326,8 +319,7 @@ function Set-DbaAgentJobStep {
                     if ($OnSuccessStepId) {
                         Write-Message -Message "Setting job step success step id to $OnSuccessStepId" -Level Verbose
                         $JobStep.OnSuccessStep = $OnSuccessStepId
-                    }
-                    else {
+                    } else {
                         Write-Message -Message "Setting job step success step id to $($currentJobStep.OnSuccessStep)" -Level Verbose
                         $JobStep.OnSuccessStep = $currentJobStep.OnSuccessStep
                     }
@@ -335,8 +327,7 @@ function Set-DbaAgentJobStep {
                     if ($OnFailAction) {
                         Write-Message -Message "Setting job step fail action to $OnFailAction" -Level Verbose
                         $JobStep.OnFailAction = $OnFailAction
-                    }
-                    else {
+                    } else {
                         Write-Message -Message "Setting job step fail action to $($currentJobStep.OnFailAction)" -Level Verbose
                         $JobStep.OnFailAction = $currentJobStep.OnFailAction
                     }
@@ -344,8 +335,7 @@ function Set-DbaAgentJobStep {
                     if ($OnFailStepId) {
                         Write-Message -Message "Setting job step fail step id to $OnFailStepId" -Level Verbose
                         $JobStep.OnFailStep = $OnFailStepId
-                    }
-                    else {
+                    } else {
                         Write-Message -Message "Setting job step fail step id to $($currentJobStep.OnFailStep)" -Level Verbose
                         $JobStep.OnFailStep = $currentJobStep.OnFailStep
                     }
@@ -358,8 +348,7 @@ function Set-DbaAgentJobStep {
                         } else {
                             Stop-Function -Message "The database is not present on instance $instance." -Target $instance -Continue
                         }
-                    }
-                    else {
+                    } else {
                         # Check if the database is present on the server
                         if ($server.Databases.Name -contains $currentJobStep.DatabaseName) {
                             Write-Message -Message "Setting job step database name to $($currentJobStep.DatabaseName)" -Level Verbose
@@ -371,28 +360,26 @@ function Set-DbaAgentJobStep {
 
                     if (($DatabaseUser) -and ($Database)) {
                         # Check if the username is present in the database
-                        if ($Server.Databases[$Database].Users.Name -contains $DatabaseUser) {
+                        if ($Server.Databases[$currentJobStep.DatabaseName].Users.Name -contains $DatabaseUser) {
                             Write-Message -Message "Setting job step database username to $DatabaseUser" -Level Verbose
                             $JobStep.DatabaseUserName = $DatabaseUser
                         } else {
-                            Stop-Function -Message "The database user is not present in the database $Database on instance $instance." -Target $instance -Continue
+                            Stop-Function -Message "The database user is not present in the database $($currentJobStep.DatabaseName) on instance $instance." -Target $instance -Continue
                         }
-                    }
-                    else {
+                    } elseif($currentJobStep.DatabaseUserName) {
                         # Check if the username is present in the database
-                        if ($Server.Databases[$Database].Users.Name -contains $currentJobStep.DatabaseUserName) {
+                        if ($Server.Databases[$currentJobStep.DatabaseName].Users.Name -contains $currentJobStep.DatabaseUserName) {
                             Write-Message -Message "Setting job step database username to $($currentJobStep.DatabaseUserName)" -Level Verbose
                             $JobStep.DatabaseUserName = $currentJobStep.DatabaseUserName
                         } else {
-                            Stop-Function -Message "The database user is not present in the database $Database on instance $instance." -Target $instance -Continue
+                            Stop-Function -Message "The database user is not present in the database $($currentJobStep.DatabaseName) on instance $instance." -Target $instance -Continue
                         }
                     }
 
                     if ($RetryAttempts) {
                         Write-Message -Message "Setting job step retry attempts to $RetryAttempts" -Level Verbose
                         $JobStep.RetryAttempts = $RetryAttempts
-                    }
-                    else {
+                    } else {
                         Write-Message -Message "Setting job step retry attempts to $($currentJobStep.RetryAttempts)" -Level Verbose
                         $JobStep.RetryAttempts = $currentJobStep.RetryAttempts
                     }
@@ -400,8 +387,7 @@ function Set-DbaAgentJobStep {
                     if ($RetryInterval) {
                         Write-Message -Message "Setting job step retry interval to $RetryInterval" -Level Verbose
                         $JobStep.RetryInterval = $RetryInterval
-                    }
-                   else {
+                    } else {
                         Write-Message -Message "Setting job step retry interval to $($currentJobStep.RetryInterval)" -Level Verbose
                         $JobStep.RetryInterval = $currentJobStep.RetryInterval
                     }
@@ -409,8 +395,7 @@ function Set-DbaAgentJobStep {
                     if ($OutputFileName) {
                         Write-Message -Message "Setting job step output file name to $OutputFileName" -Level Verbose
                         $JobStep.OutputFileName = $OutputFileName
-                    }
-                    else {
+                    } else {
                         Write-Message -Message "Setting job step output file name to $($currentJobStep.OutputFileName)" -Level Verbose
                         $JobStep.OutputFileName = $currentJobStep.OutputFileName
                     }
@@ -423,22 +408,20 @@ function Set-DbaAgentJobStep {
                         } else {
                             Stop-Function -Message "The proxy name $ProxyName doesn't exist on instance $instance." -Target $instance -Continue
                         }
-                    }
-                    else {
+                    } elseif($currentJobStep.ProxyName) {
                         # Check if the proxy exists
-                        if ($Server.JobServer.ProxyAccounts.Name -contains $ProxyName) {
+                        if ($Server.JobServer.ProxyAccounts.Name -contains $currentJobStep.ProxyName) {
                             Write-Message -Message "Setting job step proxy name to $($currentJobStep.ProxyName)" -Level Verbose
                             $JobStep.ProxyName = $ProxyName
                         } else {
-                            Stop-Function -Message "The proxy name $ProxyName doesn't exist on instance $instance." -Target $instance -Continue
+                            Stop-Function -Message "The proxy name $($currentJobStep.ProxyName) doesn't exist on instance $instance." -Target $instance -Continue
                         }
                     }
 
                     if ($Flag.Count -ge 1) {
                         Write-Message -Message "Setting job step flag(s) to $($Flags -join ',')" -Level Verbose
                         $JobStep.JobStepFlags = $Flag
-                    }
-                    else {
+                    } else {
                         Write-Message -Message "Setting job step flag(s) to $($currentJobStep.JobStepFlags -join ',')" -Level Verbose
                         $JobStep.JobStepFlags = $currentJobStep.JobStepFlags
                     }
