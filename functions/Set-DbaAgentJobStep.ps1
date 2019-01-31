@@ -141,7 +141,6 @@ function Set-DbaAgentJobStep {
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
     param (
         [parameter(Mandatory)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [object[]]$Job,
@@ -168,7 +167,6 @@ function Set-DbaAgentJobStep {
         [string]$ProxyName,
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Agent.JobStep[]]$InputObject,
-        [Alias('Silent')]
         [switch]$EnableException,
         [switch]$Force
     )
