@@ -299,8 +299,7 @@ function Set-DbaAgentJobStep {
                     if ($SubsystemServer) {
                         Write-Message -Message "Setting job step subsystem server to $SubsystemServer" -Level Verbose
                         $JobStep.Server = $SubsystemServer
-                    }
-                    else {
+                    } else {
                         Write-Message -Message "Setting job step subsystem server to $($currentJobStep.Server)" -Level Verbose
                         $JobStep.Server = $currentJobStep.Server
                     }
@@ -379,7 +378,7 @@ function Set-DbaAgentJobStep {
                         } else {
                             Stop-Function -Message "The database user is not present in the database $($currentJobStep.DatabaseName) on instance $instance." -Target $instance -Continue
                         }
-                    } elseif($currentJobStep.DatabaseUserName) {
+                    } elseif ($currentJobStep.DatabaseUserName) {
                         # Check if the username is present in the database
                         if ($Server.Databases[$currentJobStep.DatabaseName].Users.Name -contains $currentJobStep.DatabaseUserName) {
                             Write-Message -Message "Setting job step database username to $($currentJobStep.DatabaseUserName)" -Level Verbose
@@ -421,7 +420,7 @@ function Set-DbaAgentJobStep {
                         } else {
                             Stop-Function -Message "The proxy name $ProxyName doesn't exist on instance $instance." -Target $instance -Continue
                         }
-                    } elseif($currentJobStep.ProxyName) {
+                    } elseif ($currentJobStep.ProxyName) {
                         # Check if the proxy exists
                         if ($Server.JobServer.ProxyAccounts.Name -contains $currentJobStep.ProxyName) {
                             Write-Message -Message "Setting job step proxy name to $($currentJobStep.ProxyName)" -Level Verbose
