@@ -217,7 +217,6 @@ function Invoke-DbaDbDataMasking {
                     $sqlconn.ChangeDatabase($db.Name)
 
                     $uniqueIndex = @()
-                    $rowCount = $table.RowCount
                     if ($tableobject.HasUniqueIndexes) {
 
                         foreach ($index in ($table.Indexes | Where-Object IsUnique -eq $true )) {
@@ -231,12 +230,51 @@ function Invoke-DbaDbDataMasking {
                                 }
                             }
 
+                            $values = @()
+
+                            for ($i = 1; $i -le $table.RowCount; $i++) {
+                                $value = @()
+
+                                foreach ($column in $index.IndexedColumns) {
+
+                                    $columnMaskInfo = $tableobject.Columns | Where-Object Name -eq $column.Name
+
+                                    $newValue = $faker.$($columnMaskInfo.MaskingType).$($columnMaskInfo.SubType)()
+
+                                    while ($item.$column -contains $newValue) {
+                                        $newValue = $faker.$($columnMaskInfo.MaskingType).$($columnMaskInfo.SubType)()
+                                    }
+
+                                    $value += $newValue
+
+                                }
+
+                                $valueString = $value -join "||||"
+
+                                while($valueString -in $values){
+                                    foreach ($column in $index.IndexedColumns) {
+                                        $columnMaskInfo = $tableobject.Columns | Where-Object Name -eq $column.Name
+
+                                        $newValue = $faker.$($columnMaskInfo.MaskingType).$($columnMaskInfo.SubType)()
+
+                                        $value += $newValue
+                                    }
+
+                                    $valueString = $value -join "||||"
+                                }
+
+                                $values += $valueString
+
+                            }
+
+                            $values
+
                             $uniqueIndex += [PSCustomObject]@{
                                 TableName   = $table.Name
                                 IndexName   = $index.Name
                                 Columns     = $index.IndexedColumns.Name
                                 ColumnOrder = ($columnOrder | Sort-Object ColumnOrder)
-
+                                Values      = $values
                             }
 
                         }
@@ -263,6 +301,7 @@ function Invoke-DbaDbDataMasking {
                     }
 
 
+
                     if ($Pscmdlet.ShouldProcess($instance, "Masking $($tablecolumns.Name -join ', ') in $($data.Rows.Count) rows in $($db.Name).$($tableobject.Schema).$($tableobject.Name)")) {
 
                         $transaction = $sqlconn.BeginTransaction()
@@ -277,6 +316,7 @@ function Invoke-DbaDbDataMasking {
                                 if ($columnobject.Nullable -and (($nullmod++) % $ModulusFactor -eq 0)) {
                                     $newValue = $null
                                 } else {
+
                                     # make sure max is good
                                     if ($MaxValue) {
                                         if ($columnobject.MaxValue -le $MaxValue) {
