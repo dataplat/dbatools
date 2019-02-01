@@ -396,6 +396,7 @@ function New-DbaDbMaskingConfig {
                             MaxValue        = $MaxValue
                             MaskingType     = $type
                             SubType         = $subType
+                            Format          = $null
                             Deterministic   = $false
                             Nullable        = $columnobject.Nullable
                         }
