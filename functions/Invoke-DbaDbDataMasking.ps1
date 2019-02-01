@@ -236,11 +236,10 @@ function Invoke-DbaDbDataMasking {
                                 IndexName   = $index.Name
                                 Columns     = $index.IndexedColumns.Name
                                 ColumnOrder = ($columnOrder | Sort-Object ColumnOrder)
+
                             }
 
                         }
-
-
                     }
 
                     $deterministicColumns = $tables.Tables.Columns | Where-Object Deterministic -eq $true
@@ -432,7 +431,7 @@ function Invoke-DbaDbDataMasking {
                                                     $faker.System.Random.Bool()
                                                 }
                                                 {
-                                                    $psitem -in 'name', 'address', 'finance'
+                                                    $psitem -in 'address','commerce','company','context','database','date','finance','hacker','hashids','image','internet','lorem','name','person','phone','random','rant','system'
                                                 } {
                                                     $faker.$($columnobject.MaskingType).$($columnobject.SubType)()
                                                 }
