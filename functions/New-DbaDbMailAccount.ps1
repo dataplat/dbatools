@@ -1,4 +1,4 @@
-﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function New-DbaDbMailAccount {
     <#
     .SYNOPSIS
@@ -18,16 +18,16 @@ function New-DbaDbMailAccount {
 
     .PARAMETER DisplayName
         Sets the name of the mail account that is displayed in messages.
-    
+
     .PARAMETER Description
         Sets the description of the purpose of the mail account.
-    
+
     .PARAMETER EmailAddress
         Sets the e-mail address of the mail account.
-    
+
     .PARAMETER ReplyToAddress
         Sets the e-mail address to which the mail account replies.
-    
+
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
@@ -51,12 +51,12 @@ function New-DbaDbMailAccount {
         https://dbatools.io/New-DbaDbMailAccount
 
     .EXAMPLE
-        PS C:\> $account = New-DbaDbMailAccount -SqlInstance sql2017 -Name 'The DBA Team'
+        PS C:\> $account = New-DbaDbMailAccount -SqlInstance sql2017 -Name 'The DBA Team' -EmailAddress admin@ad.local
 
-        Creates a new db mail account
+        Creates a new db mail account with the email address admin@ad.local on sql2017 named "The DBA Team"
 
     #>
-    [CmdletBinding(SupportsShouldProcess, ConfirmImpact="Low")]
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
@@ -66,6 +66,7 @@ function New-DbaDbMailAccount {
         [string]$Name,
         [string]$DisplayName = $Name,
         [string]$Description,
+        [parameter(Mandatory)]
         [string]$EmailAddress,
         [string]$ReplyToAddress,
         [switch]$EnableException
