@@ -192,6 +192,7 @@ function Invoke-DbaDbDataMasking {
 
             foreach ($db in $dbs) {
                 $stepcounter = $nullmod = 0
+
                 foreach ($tableobject in $tables.Tables) {
 
                     $table = Get-DbaDbTable -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database DB1 -Table $tableobject.Name
@@ -216,70 +217,59 @@ function Invoke-DbaDbDataMasking {
 
                     $sqlconn.ChangeDatabase($db.Name)
 
-                    $uniqueIndex = @()
+                    # Check if the table contains unique indexes
                     if ($tableobject.HasUniqueIndexes) {
+                        # Loop through the rows and generate a unique value for each row
+                        for ($i = 0; $i -lt $table.RowCount; $i++) {
 
-                        foreach ($index in ($table.Indexes | Where-Object IsUnique -eq $true )) {
+                            [PSCustomObject]$rowvalue = New-Object PSCustomObject
 
-                            $columnOrder = @()
+                            # Loop through each of the unique indexes
+                            foreach ($index in ($table.Indexes | Where-Object IsUnique -eq $true )) {
 
-                            for ($i = 0; $i -lt $index.IndexedColumns.Count; $i++) {
-                                $columnOrder += [PSCustomObject]@{
-                                    ColumnName  = $index.IndexedColumns[$i].Name
-                                    ColumnOrder = $i
-                                }
-                            }
-
-                            $values = @()
-
-                            for ($i = 1; $i -le $table.RowCount; $i++) {
-                                $value = @()
-
+                                # Loop through the index columns
                                 foreach ($column in $index.IndexedColumns) {
-
+                                    # Get the column mask info
                                     $columnMaskInfo = $tableobject.Columns | Where-Object Name -eq $column.Name
 
-                                    if ($columnMaskInfo) {
-                                        $newValue = $faker.$($columnMaskInfo.MaskingType).$($columnMaskInfo.SubType)()
+                                    # Generate a new value
+                                    $newValue = $faker.$($columnMaskInfo.MaskingType).$($columnMaskInfo.SubType)()
 
-                                        while ($item.$column -contains $newValue) {
-                                            $newValue = $faker.$($columnMaskInfo.MaskingType).$($columnMaskInfo.SubType)()
-                                        }
-
-                                        $value += $newValue
+                                    # Check if the value is already present as a property
+                                    if (($rowValue | Get-Member -MemberType NoteProperty) -notcontains $column.Name) {
+                                        $rowValue | Add-Member -Name $column.Name -Type NoteProperty -Value $newValue
                                     }
 
                                 }
 
-                                $valueString = $value -join "||||"
+                                # To be sure the values are unique, loop as long as long as needed to generate a unique value
+                                while (($uniqueValues | Select-Object -Property ($rowValue | Get-Member -MemberType NoteProperty | Select-Object -ExpandProperty Name)) -match $rowvalue) {
 
-                                while ($valueString -in $values) {
+                                    [PSCustomObject]$rowvalue = New-Object PSCustomObject
+
+                                    # Loop through the index columns
                                     foreach ($column in $index.IndexedColumns) {
+                                        # Get the column mask info
                                         $columnMaskInfo = $tableobject.Columns | Where-Object Name -eq $column.Name
 
+                                        # Generate a new value
                                         $newValue = $faker.$($columnMaskInfo.MaskingType).$($columnMaskInfo.SubType)()
 
-                                        $value += $newValue
-                                    }
+                                        # Check if the value is already present as a property
+                                        if (($rowValue | Get-Member -MemberType NoteProperty) -notcontains $column.Name) {
+                                            $rowValue | Add-Member -Name $column.Name -Type NoteProperty -Value $newValue
+                                        }
 
-                                    $valueString = $value -join "||||"
+                                    }
                                 }
 
-                                $values += $valueString
-
                             }
 
-                            $values
-
-                            $uniqueIndex += [PSCustomObject]@{
-                                TableName   = $table.Name
-                                IndexName   = $index.Name
-                                Columns     = $index.IndexedColumns.Name
-                                ColumnOrder = ($columnOrder | Sort-Object ColumnOrder)
-                                Values      = $values
-                            }
+                            # Add the row value to the array
+                            $uniqueValues += $rowValue
 
                         }
+
                     }
 
                     $deterministicColumns = $tables.Tables.Columns | Where-Object Deterministic -eq $true
@@ -302,8 +292,6 @@ function Invoke-DbaDbDataMasking {
                         continue
                     }
 
-
-
                     if ($Pscmdlet.ShouldProcess($instance, "Masking $($tablecolumns.Name -join ', ') in $($data.Rows.Count) rows in $($db.Name).$($tableobject.Schema).$($tableobject.Name)")) {
 
                         $transaction = $sqlconn.BeginTransaction()
@@ -311,12 +299,15 @@ function Invoke-DbaDbDataMasking {
                         Write-ProgressHelper -StepNumber ($stepcounter++) -TotalSteps $tables.Tables.Count -Activity "Masking data" -Message "Updating $($data.Rows.Count) rows in $($tableobject.Schema).$($tableobject.Name) in $($db.Name) on $instance"
 
                         # Loop through each of the rows and change them
+                        $rowNumber = 0
                         foreach ($row in $data.Rows) {
                             $updates = $wheres = @()
 
                             foreach ($columnobject in $tablecolumns) {
                                 if ($columnobject.Nullable -and (($nullmod++) % $ModulusFactor -eq 0)) {
                                     $newValue = $null
+                                } elseif ($tableobject.HasUniqueIndex) {
+                                    $newValue = $uniqueValues[$rowNumber].$($columnobject.Name)
                                 } else {
 
                                     # make sure max is good
@@ -557,6 +548,9 @@ function Invoke-DbaDbDataMasking {
                                 $errormessage = $_.Exception.Message.ToString()
                                 Stop-Function -Message "Error updating $($tableobject.Schema).$($tableobject.Name): $errormessage" -Target $updatequery -Continue -ErrorRecord $_
                             }
+
+                            # Increase the row number
+                            $rowNumber++
                         }
                         try {
                             $null = $transaction.Commit()
