@@ -3,6 +3,18 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 . "$PSScriptRoot\..\internal\functions\Connect-SqlInstance.ps1"
 
+Describe "$commandname Unit Tests" -Tags "UnitTests" {
+    Context "Validate parameters" {
+        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
+        [object[]]$knownParameters = 'SqlInstance','SqlCredential','ParameterConnection','RegularUser','StatementTimeout','MinimumVersion','AzureUnsupported','NonPooled'
+
+        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
+        It "Should only contain our specific parameters" {
+            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        }
+    }
+}
+
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     $password = 'MyV3ry$ecur3P@ssw0rd'
     $securePassword = ConvertTo-SecureString $password -AsPlainText -Force

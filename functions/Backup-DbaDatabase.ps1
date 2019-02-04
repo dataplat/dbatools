@@ -96,7 +96,7 @@ function Backup-DbaDatabase {
     .PARAMETER AzureBaseUrl
         The URL to the base container of an Azure Storage account to write backups to.
 
-        If specified, the only other parameters than can be used are "NoCopyOnly", "Type", "CompressBackup", "Checksum", "Verify", "AzureCredential", "CreateFolder".
+        If specified, the only other parameters than can be used are "CopyOnly", "Type", "CompressBackup", "Checksum", "Verify", "AzureCredential", "CreateFolder".
 
     .PARAMETER AzureCredential
         The name of the credential on the SQL instance that can write to the AzureBaseUrl, only needed if using Storage access keys
@@ -233,7 +233,7 @@ function Backup-DbaDatabase {
 
             if ($null -eq $BackupDirectory -and $backupfileName -ne 'NUL') {
                 Write-Message -Message 'No backupfolder passed in, setting it to instance default' -Level Verbose
-                $BackupDirectory = (Get-DbaDefaultPath -SqlInstance $SqlInstance).Backup
+                $BackupDirectory = (Get-DbaDefaultPath -SqlInstance $server).Backup
             }
 
             if ($BackupDirectory.Count -gt 1) {
@@ -359,6 +359,7 @@ function Backup-DbaDatabase {
                 $SMOBackuptype = "Database"
                 $backup.Incremental = $true
                 $outputType = 'Differential'
+                $gbhSwitch = @{'LastDiff' = $true}
             }
             $Backup.NoRecovery = $false
             if ($Type -eq "Log") {
@@ -367,12 +368,14 @@ function Backup-DbaDatabase {
                 $OutputType = 'Log'
                 $SMOBackupType = 'Log'
                 $Backup.NoRecovery = $NoRecovery
+                $gbhSwitch = @{'LastLog' = $true}
             }
 
             if ($Type -in 'Full', 'Database') {
                 Write-Message -Level VeryVerbose -Message "Creating full backup"
                 $SMOBackupType = "Database"
                 $OutputType = 'Full'
+                $gbhSwitch = @{'LastFull' = $true}
             }
 
             $backup.CopyOnly = $copyonly
@@ -515,8 +518,6 @@ function Backup-DbaDatabase {
 
                 try {
                     if ($Pscmdlet.ShouldProcess($server.Name, "Backing up $dbname to $humanBackupFile")) {
-                        $CurrentLsn = (Read-DbaTransactionLog -SqlInstance $server -Database $dbname -RowLimit 1).'Current LSN'
-                        $NumericLSN = (Convert-DbaLSN -LSN $CurrentLsn).Numeric
                         if ($OutputScriptOnly -ne $True) {
                             $Filelist = @()
                             $FileList += $server.Databases[$dbname].FileGroups.Files | Select-Object @{ Name = "FileType"; Expression = { "D" } }, @{ Name = "Type"; Expression = { "D" } }, @{ Name = "LogicalName"; Expression = { $_.Name } }, @{ Name = "PhysicalName"; Expression = { $_.FileName } }
@@ -529,7 +530,7 @@ function Backup-DbaDatabase {
                             if ($server.VersionMajor -eq '8') {
                                 $HeaderInfo = Get-BackupAncientHistory -SqlInstance $server -Database $dbname
                             } else {
-                                $HeaderInfo = Get-DbaBackupHistory -SqlInstance $server -Database $dbname -Last -IncludeCopyOnly -LastLsn $NumericLsn -RecoveryFork $database.RecoveryForkGuid  | Sort-Object -Property End -Descending | Select-Object -First 1
+                                $HeaderInfo = Get-DbaBackupHistory -SqlInstance $server -Database $dbname @gbhSwitch -IncludeCopyOnly -RecoveryFork $database.RecoveryForkGuid  | Sort-Object -Property End -Descending | Select-Object -First 1
                             }
                             $Verified = $false
                             if ($Verify) {

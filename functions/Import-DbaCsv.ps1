@@ -8,7 +8,7 @@ function Import-DbaCsv {
 
         The entire import is performed within a transaction, so if a failure occurs or the script is aborted, no changes will persist.
 
-        If the table or view specified does not exist and -AutoCreateTable, it will be automatically created using slow and efficient but accomodating data types.
+        If the table or view specified does not exist and -AutoCreateTable, it will be automatically created using slow and inefficient but accommodating data types.
 
         This importer supports fields spanning multiple lines. The only restriction is that they must be quoted, otherwise it would not be possible to distinguish between malformed data and multi-line values.
 
@@ -49,7 +49,7 @@ function Import-DbaCsv {
 
         If a table name is not specified, the table name will be automatically determined from the filename.
 
-        If the table specified does not exist and -AutoCreateTable, it will be automatically created using slow and efficient but accomodating data types.
+        If the table specified does not exist and -AutoCreateTable, it will be automatically created using slow and inefficient but accommodating data types.
 
         If the automatically generated table datatypes do not work for you, please create the table prior to import.
 
@@ -485,23 +485,22 @@ function Import-DbaCsv {
                 Write-Message -Level Verbose -Message "Starting bulk copy for $(Split-Path $file -Leaf)"
 
                 # Setup bulk copy options
-                $bulkCopyOptions = @()
+                [int]$bulkCopyOptions = ([System.Data.SqlClient.SqlBulkCopyOptions]::Default)
                 $options = "TableLock", "CheckConstraints", "FireTriggers", "KeepIdentity", "KeepNulls", "Default"
                 foreach ($option in $options) {
                     $optionValue = Get-Variable $option -ValueOnly -ErrorAction SilentlyContinue
                     if ($optionValue -eq $true) {
-                        $bulkCopyOptions += "$option"
+                        $bulkCopyOptions = $bulkCopyOptions -bor (Invoke-Expression "[System.Data.SqlClient.SqlBulkCopyOptions]::$option")
                     }
                 }
-                $bulkCopyOptions = $bulkCopyOptions -join " & "
 
                 if ($PSCmdlet.ShouldProcess($instance, "Performing import from $file")) {
                     try {
                         # Create SqlBulkCopy using default options, or options specified in command line.
                         if ($bulkCopyOptions) {
-                            $bulkcopy = New-Object Data.SqlClient.SqlBulkCopy($oleconnstring, $bulkCopyOptions, $transaction)
+                            $bulkcopy = New-Object Data.SqlClient.SqlBulkCopy($sqlconn, $bulkCopyOptions, $transaction)
                         } else {
-                            $bulkcopy = New-Object Data.SqlClient.SqlBulkCopy($sqlconn, "Default", $transaction)
+                            $bulkcopy = New-Object Data.SqlClient.SqlBulkCopy($sqlconn, ([System.Data.SqlClient.SqlBulkCopyOptions]::Default), $transaction)
                         }
 
                         $bulkcopy.DestinationTableName = "[$schema].[$table]"

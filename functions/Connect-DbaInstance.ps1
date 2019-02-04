@@ -352,6 +352,9 @@ function Connect-DbaInstance {
                 if (Test-Bound -ParameterName 'WorkstationId') {
                     $server.ConnectionContext.WorkstationId = $WorkstationId
                 }
+                if (Test-Bound -ParameterName 'ApplicationIntent') {
+                    $server.ConnectionContext.ApplicationIntent = $ApplicationIntent
+                }
 
                 $connstring = $server.ConnectionContext.ConnectionString
                 if (Test-Bound -ParameterName 'MultiSubnetFailover') {
@@ -359,9 +362,6 @@ function Connect-DbaInstance {
                 }
                 if (Test-Bound -ParameterName 'FailoverPartner') {
                     $connstring = "$connstring;Failover Partner=$FailoverPartner"
-                }
-                if (Test-Bound -ParameterName 'ApplicationIntent') {
-                    $connstring = "$connstring;ApplicationIntent=$ApplicationIntent"
                 }
 
                 if ($connstring -ne $server.ConnectionContext.ConnectionString) {

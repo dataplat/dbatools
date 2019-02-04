@@ -163,9 +163,9 @@ function Add-DbaAgDatabase {
 
                 if ($SeedingMode) {
                     $agreplica.SeedingMode = $SeedingMode
-                    $agreplica.alter()
+                    $agreplica.Alter()
                 }
-                $agreplica.refresh()
+                $agreplica.Refresh()
                 $SeedingModeReplica = $agreplica.SeedingMode
 
                 $primarydb = Get-DbaDatabase -SqlInstance $Primary -SqlCredential $SqlCredential -Database $db.name

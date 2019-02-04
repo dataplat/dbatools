@@ -22,7 +22,7 @@ function Test-PSRemoting {
             $true
         } catch {
             $false
-            Stop-Function -Message "Testing $($ComputerName.Computername)" -Target $ComputerName -ErrorRecord $_
+            Stop-Function -Message "Testing $($ComputerName.Computername)" -Target $ComputerName -ErrorRecord $_ -EnableException:$EnableException
         }
 
     } #process

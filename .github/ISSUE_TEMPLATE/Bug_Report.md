@@ -10,6 +10,9 @@ about: Found errors or unexpected behavior using dbatools module
 - [ ] Verified this bug is not already reported in an issue
 - [ ] Verified errors are not related to permissions
 - [ ] Can reproduce in a clean PowerShell session (_clean = `powershell -NoProfile`_)
+- [ ] If issue is with `Copy-DbaDatabase`, using `Backup-DbaDatabase | Restore-DbaDatabase` still does not work
+
+Note that we do not have the resources to make `Copy-DbaDatabase` work in every environment. Instead, we try to ensure Backup & Restore work in your enviornment.
 
 ## Steps to Reproduce
 

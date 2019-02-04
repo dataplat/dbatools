@@ -982,7 +982,7 @@
                        ],
                        [
                            "AzureBaseUrl",
-                           "The URL to the base container of an Azure Storage account to write backups to.\nIf specified, the only other parameters than can be used are \"NoCopyOnly\", \"Type\", \"CompressBackup\", \"Checksum\", \"Verify\", \"AzureCredential\", \"CreateFolder\".",
+                           "The URL to the base container of an Azure Storage account to write backups to.\nIf specified, the only other parameters than can be used are \"CopyOnly\", \"Type\", \"CompressBackup\", \"Checksum\", \"Verify\", \"AzureCredential\", \"CreateFolder\".",
                            "",
                            false,
                            "false",
@@ -1844,7 +1844,7 @@
         "CommandName":  "ConvertTo-DbaTimeline",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/ConvertTo-DbaTimeline",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaAgentJobHistory -SqlInstance sql-1 -StartDate \u00272018-08-13 00:00\u0027 -EndDate \u00272018-08-13 23:59\u0027 -ExcludeJobSteps | ConvertTo-DbaTimeline | Out-File C:\\temp\\DbaAgentJobHistory.html \r\n-Encoding ASCII\nCreates an output file containing a pretty timeline for all of the agent job history results for sql-1 the whole day of 2018-08-13\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaCmsRegServer -SqlInstance sqlcm | Get-DbaBackupHistory -Since \u00272018-08-13 00:00\u0027 | ConvertTo-DbaTimeline | Out-File C:\\temp\\DbaBackupHistory.html -Encoding ASCII\nCreates an output file containing a pretty timeline for the agent job history since 2018-08-13 for all of the registered servers on sqlcm\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003e$messageParameters = @{\n\u003e\u003e Subject = \"Backup history for sql2017 and sql2016\"\r\n\u003e\u003e Body = Get-DbaBackupHistory -SqlInstance sql2017, sql2016 -Since \u00272018-08-13 00:00\u0027 | ConvertTo-DbaTimeline\r\n\u003e\u003e From = \"dba@ad.local\"\r\n\u003e\u003e To = \"dba@ad.local\"\r\n\u003e\u003e SmtpServer = \"smtp.ad.local\"\r\n\u003e\u003e }\r\n\u003e\u003e\r\nPS C:\\\u003e Send-MailMessage @messageParameters -BodyAsHtml\nSends an email to dba@ad.local with the results of Get-DbaBackupHistory. Note that viewing these reports may not be supported in all email clients.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaAgentJobHistory -SqlInstance sql-1 -StartDate \u00272018-08-13 00:00\u0027 -EndDate \u00272018-08-13 23:59\u0027 -ExcludeJobSteps | ConvertTo-DbaTimeline | Out-File C:\\temp\\DbaAgentJobHistory.html \r\n-Encoding ASCII\nCreates an output file containing a pretty timeline for all of the agent job history results for sql-1 the whole day of 2018-08-13\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaCmsRegServer -SqlInstance sqlcm | Get-DbaBackupHistory -Since \u00272018-08-13 00:00\u0027 | ConvertTo-DbaTimeline | Out-File C:\\temp\\DbaBackupHistory.html -Encoding ASCII\nCreates an output file containing a pretty timeline for the agent job history since 2018-08-13 for all of the registered servers on sqlcm\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003e$messageParameters = @{\n\u003e\u003e Subject = \"Backup history for sql2017 and sql2016\"\r\n\u003e\u003e Body = Get-DbaBackupHistory -SqlInstance sql2017, sql2016 -Since \u00272018-08-13 00:00\u0027 | ConvertTo-DbaTimeline | Out-String\r\n\u003e\u003e From = \"dba@ad.local\"\r\n\u003e\u003e To = \"dba@ad.local\"\r\n\u003e\u003e SmtpServer = \"smtp.ad.local\"\r\n\u003e\u003e }\r\n\u003e\u003e\r\nPS C:\\\u003e Send-MailMessage @messageParameters -BodyAsHtml\nSends an email to dba@ad.local with the results of Get-DbaBackupHistory. Note that viewing these reports may not be supported in all email clients.",
         "Params":  [
                        [
                            "InputObject",
@@ -3035,7 +3035,7 @@
     },
     {
         "Name":  "Copy-DbaDatabase",
-        "Description":  "This script provides the ability to migrate databases using detach/copy/attach or backup/restore. This script works with named instances, clusters and SQL Server Express Edition.\n\nBy default, databases will be migrated to the destination SQL Server\u0027s default data and log directories. You can override this by specifying -ReuseSourceFolderStructure. Filestreams and filegroups are also migrated. Safety is emphasized.",
+        "Description":  "This script provides the ability to migrate databases using detach/copy/attach or backup/restore. This script works with named instances, clusters and SQL Server Express Edition.\n\nBy default, databases will be migrated to the destination SQL Server\u0027s default data and log directories. You can override this by specifying -ReuseSourceFolderStructure. Filestreams and filegroups are also migrated. Safety is emphasized.\n\nIf you are experiencing issues with Copy-DbaDatabase, please use Backup-DbaDatabase | Restore-DbaDatabase instead.",
         "Tags":  [
                      "Migration",
                      "Backup",
@@ -12207,6 +12207,77 @@
         "Syntax":  "Get-DbaDbForeignKey [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cObject[]\u003e] [[-ExcludeDatabase] \u003cObject[]\u003e] [-ExcludeSystemTable] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
+        "Name":  "Get-DbaDbIdentity",
+        "Description":  "Use the command DBCC CHECKIDENT with NORESEED option to checks the current identity value of a table and return results\n\nRead more:\n    - https://docs.microsoft.com/en-us/sql/t-sql/database-console-commands/dbcc-checkident-transact-sql",
+        "Tags":  "DBCC",
+        "Synopsis":  "Checks the current identity value via DBCC CHECKIDENT with NORESEED optuin",
+        "Alias":  "",
+        "Author":  "Patrick Flynn (@sqllensman)",
+        "CommandName":  "Get-DbaDbIdentity",
+        "Availability":  "Windows, Linux, macOS",
+        "Links":  "https://dbatools.io/Get-DbaDbIdentity",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaDbIdentity -SqlInstance SQLServer2017 -Database AdventureWorks2014 -Table \u0027Production.ScrapReason\u0027\nConnects to AdventureWorks2014 on instance SqlServer2017 using Windows Authentication and runs the command DBCC CHECKIDENT(\u0027Production.ScrapReason\u0027, NORESEED) to return the current identity value.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003e$cred = Get-Credential sqladmin\nPS C:\\\u003e \u0027Sql1\u0027,\u0027Sql2/sqlexpress\u0027 | Get-DbaDbIdentity -SqlCredential $cred -Database AdventureWorks2014 -Table \u0027Production.ScrapReason\u0027\nConnects to AdventureWorks2014 on instances Sql1 and Sql2/sqlexpress using sqladmin credential and runs the command DBCC CHECKIDENT(\u0027Production.ScrapReason\u0027, NORESEED) to return the current identity \r\nvalue.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003e$query = \"Select Quotename(Schema_Name(t.schema_id)) +\u0027.\u0027 + QuoteName(t.name) as TableName from sys.columns c INNER JOIN sys.tables t on t.object_id = c.object_id WHERE is_identity = 1 and \r\nis_memory_optimized = 0\"\nPS C:\\\u003e $IdentityTables = Invoke-DbaQuery -SqlInstance SQLServer2017 -Database AdventureWorks2014 -Query $query -As SingleValue\r\nPS C:\\\u003e Get-DbaDbIdentity -SqlInstance SQLServer2017 -Database AdventureWorks2014 -Table $IdentityTables\nChecks the current identity value for all non memory optimized tables with an Identity in the AdventureWorks2014 database on the SQLServer2017 instance.",
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "The target SQL Server instance or instances.",
+                           "",
+                           true,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
+                           "SqlCredential",
+                           "Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Database",
+                           "The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Table",
+                           "The table(s) for which to check the current identity value.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "WhatIf",
+                           "Shows what would happen if the cmdlet runs. The cmdlet is not run.",
+                           "wi",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Confirm",
+                           "Prompts you for confirmation before running the cmdlet.",
+                           "cf",
+                           false,
+                           "false",
+                           ""
+                       ]
+                   ],
+        "Syntax":  "Get-DbaDbIdentity [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString[]\u003e] [[-Table] \u003cString[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+    },
+    {
         "Name":  "Get-DbaDbLogShipError",
         "Description":  "When your log shipping fails it\u0027s sometimes hard to see why is fails.\nUsing this function you\u0027ll be able to find out what went wrong in a short amount of time.",
         "Tags":  "LogShipping",
@@ -19341,7 +19412,7 @@
     },
     {
         "Name":  "Get-DbaUserPermission",
-        "Description":  "This command will display all server logins, server level securable, database logins and database securables.\n\nDISA STIG implementators will find this command useful as it uses Permissions.sql provided by DISA.\n\nNote that if you Ctrl-C out of this command and end it prematurely, it will leave behind a STIG schema in tempdb.",
+        "Description":  "This command will display all server logins, server level securables, database logins and database securables.\n\nDISA STIG implementators will find this command useful as it uses Permissions.sql provided by DISA.\n\nNote that if you Ctrl-C out of this command and end it prematurely, it will leave behind a STIG schema in tempdb.",
         "Tags":  [
                      "Discovery",
                      "Permissions",
@@ -20562,7 +20633,7 @@
     },
     {
         "Name":  "Import-DbaCsv",
-        "Description":  "Import-DbaCsv takes advantage of .NET\u0027s super fast SqlBulkCopy class to import CSV files into SQL Server.\n\nThe entire import is performed within a transaction, so if a failure occurs or the script is aborted, no changes will persist.\n\nIf the table or view specified does not exist and -AutoCreateTable, it will be automatically created using slow and efficient but accomodating data types.\n\nThis importer supports fields spanning multiple lines. The only restriction is that they must be quoted, otherwise it would not be possible to distinguish between malformed data and multi-line values.",
+        "Description":  "Import-DbaCsv takes advantage of .NET\u0027s super fast SqlBulkCopy class to import CSV files into SQL Server.\n\nThe entire import is performed within a transaction, so if a failure occurs or the script is aborted, no changes will persist.\n\nIf the table or view specified does not exist and -AutoCreateTable, it will be automatically created using slow and inefficient but accommodating data types.\n\nThis importer supports fields spanning multiple lines. The only restriction is that they must be quoted, otherwise it would not be possible to distinguish between malformed data and multi-line values.",
         "Tags":  [
                      "Migration",
                      "Import"
@@ -20609,7 +20680,7 @@
                        ],
                        [
                            "Table",
-                           "Specifies the SQL table or view where CSV will be imported into.\nIf a table name is not specified, the table name will be automatically determined from the filename.\nIf the table specified does not exist and -AutoCreateTable, it will be automatically created using slow and efficient but accomodating data types.\nIf the automatically generated table datatypes do not work for you, please create the table prior to import.\nIf you want to import specific columns from a CSV, create a view with corresponding columns.",
+                           "Specifies the SQL table or view where CSV will be imported into.\nIf a table name is not specified, the table name will be automatically determined from the filename.\nIf the table specified does not exist and -AutoCreateTable, it will be automatically created using slow and inefficient but accommodating data types.\nIf the automatically generated table datatypes do not work for you, please create the table prior to import.\nIf you want to import specific columns from a CSV, create a view with corresponding columns.",
                            "",
                            false,
                            "false",
@@ -21440,7 +21511,7 @@
         "CommandName":  "Install-DbaMaintenanceSolution",
         "Availability":  "Windows only",
         "Links":  "http://dbatools.io/Install-DbaMaintenanceSolution",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eInstall-DbaMaintenanceSolution -SqlInstance RES14224 -Database DBA -CleanupTime 72\nInstalls Ola Hallengren\u0027s Solution objects on RES14224 in the DBA database.\r\nBackups will default to the default Backup Directory.\r\nIf the Maintenance Solution already exists, the script will be halted.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eInstall-DbaMaintenanceSolution -SqlInstance RES14224 -Database DBA -BackupLocation \"Z:\\SQLBackup\" -CleanupTime 72\nThis will create the Ola Hallengren\u0027s Solution objects. Existing objects are not affected in any way.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eInstall-DbaMaintenanceSolution -SqlInstance RES14224 -Database DBA -BackupLocation \"Z:\\SQLBackup\" -CleanupTime 72 -ReplaceExisting\nThis will drop and then recreate the Ola Hallengren\u0027s Solution objects\r\nThe cleanup script will drop and recreate:\r\n- TABLE [dbo].[CommandLog]\r\n- STORED PROCEDURE [dbo].[CommandExecute]\r\n- STORED PROCEDURE [dbo].[DatabaseBackup]\r\n- STORED PROCEDURE [dbo].[DatabaseIntegrityCheck]\r\n- STORED PROCEDURE [dbo].[IndexOptimize]\nThe following SQL Agent jobs will be deleted:\r\n- \u0027Output File Cleanup\u0027\r\n- \u0027IndexOptimize - USER_DATABASES\u0027\r\n- \u0027sp_delete_backuphistory\u0027\r\n- \u0027DatabaseBackup - USER_DATABASES - LOG\u0027\r\n- \u0027DatabaseBackup - SYSTEM_DATABASES - FULL\u0027\r\n- \u0027DatabaseBackup - USER_DATABASES - FULL\u0027\r\n- \u0027sp_purge_jobhistory\u0027\r\n- \u0027DatabaseIntegrityCheck - SYSTEM_DATABASES\u0027\r\n- \u0027CommandLog Cleanup\u0027\r\n- \u0027DatabaseIntegrityCheck - USER_DATABASES\u0027\r\n- \u0027DatabaseBackup - USER_DATABASES - DIFF\u0027",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eInstall-DbaMaintenanceSolution -SqlInstance RES14224 -Database DBA -CleanupTime 72\nInstalls Ola Hallengren\u0027s Solution objects on RES14224 in the DBA database.\r\nBackups will default to the default Backup Directory.\r\nIf the Maintenance Solution already exists, the script will be halted.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eInstall-DbaMaintenanceSolution -SqlInstance RES14224 -Database DBA -BackupLocation \"Z:\\SQLBackup\" -CleanupTime 72\nThis will create the Ola Hallengren\u0027s Solution objects. Existing objects are not affected in any way.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003e$params = @{\n\u003e\u003e SqlInstance = \u0027MyServer\u0027\r\n        \u003e\u003e Database = \u0027maintenance\u0027\r\n        \u003e\u003e ReplaceExisting = $true\r\n        \u003e\u003e InstallJobs = $true\r\n        \u003e\u003e LogToTable = $true\r\n        \u003e\u003e BackupLocation = \u0027C:\\Data\\Backup\u0027\r\n        \u003e\u003e CleanupTime = 65\r\n        \u003e\u003e Verbose = $true\r\n        \u003e\u003e }\r\n        \u003e\u003e Install-DbaMaintenanceSolution @params\nInstalls Maintenance Solution to myserver in database. Adds Agent Jobs, and if any currently exist, they\u0027ll be replaced.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eInstall-DbaMaintenanceSolution -SqlInstance RES14224 -Database DBA -BackupLocation \"Z:\\SQLBackup\" -CleanupTime 72 -ReplaceExisting\nThis will drop and then recreate the Ola Hallengren\u0027s Solution objects\r\nThe cleanup script will drop and recreate:\r\n- TABLE [dbo].[CommandLog]\r\n- STORED PROCEDURE [dbo].[CommandExecute]\r\n- STORED PROCEDURE [dbo].[DatabaseBackup]\r\n- STORED PROCEDURE [dbo].[DatabaseIntegrityCheck]\r\n- STORED PROCEDURE [dbo].[IndexOptimize]\nThe following SQL Agent jobs will be deleted:\r\n- \u0027Output File Cleanup\u0027\r\n- \u0027IndexOptimize - USER_DATABASES\u0027\r\n- \u0027sp_delete_backuphistory\u0027\r\n- \u0027DatabaseBackup - USER_DATABASES - LOG\u0027\r\n- \u0027DatabaseBackup - SYSTEM_DATABASES - FULL\u0027\r\n- \u0027DatabaseBackup - USER_DATABASES - FULL\u0027\r\n- \u0027sp_purge_jobhistory\u0027\r\n- \u0027DatabaseIntegrityCheck - SYSTEM_DATABASES\u0027\r\n- \u0027CommandLog Cleanup\u0027\r\n- \u0027DatabaseIntegrityCheck - USER_DATABASES\u0027\r\n- \u0027DatabaseBackup - USER_DATABASES - DIFF\u0027",
         "Params":  [
                        [
                            "SqlInstance",
@@ -24223,7 +24294,7 @@
         "CommandName":  "Invoke-DbaDiagnosticQuery",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Invoke-DbaDiagnosticQuery",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eInvoke-DbaDiagnosticQuery -SqlInstance sql2016\nRun the selection made by the user on the Sql Server instance specified.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eInvoke-DbaDiagnosticQuery -SqlInstance sql2016 -UseSelectionHelper | Export-DbaDiagnosticQuery -Path C:\\temp\\gboutput\nProvides a gridview with all the queries to choose from and will run the selection made by the user on the SQL Server instance specified.\r\nThen it will export the results to Export-DbaDiagnosticQuery.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eInvoke-DbaDiagnosticQuery -sqlinstance localhost -ExportQueries -outputpath \"C:\\temp\\DiagnosticQueries\"\nExport All Queries to Disk\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eInvoke-DbaDiagnosticQuery -sqlinstance localhost -DatabaseSpecific -DatabaseName \u0027tempdb\u0027 -ExportQueries -outputpath \"C:\\temp\\DiagnosticQueries\"\nExport Database Specific Queries for all User Dbs\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eInvoke-DbaDiagnosticQuery -sqlinstance localhost -DatabaseSpecific -DatabaseName \u0027tempdb\u0027 -ExportQueries -outputpath \"C:\\temp\\DiagnosticQueries\"\nExport Database Specific Queries For One Target Database\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eInvoke-DbaDiagnosticQuery -sqlinstance localhost -DatabaseSpecific -DatabaseName \u0027tempdb\u0027 -ExportQueries -outputpath \"C:\\temp\\DiagnosticQueries\" -queryname \u0027Database-scoped Configurations\u0027\nExport Database Specific Queries For One Target Database and One Specific Query\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003eInvoke-DbaDiagnosticQuery -sqlinstance localhost -UseSelectionHelper\nChoose Queries To Export\n-------------------------- EXAMPLE 8 --------------------------\nPS C:\\\u003e[PSObject[]]$results = Invoke-DbaDiagnosticQuery -SqlInstance localhost -whatif\nParse the appropriate diagnostic queries by connecting to server, and instead of running them, return as [PSCustomObject[]] to work with further\n-------------------------- EXAMPLE 9 --------------------------\nPS C:\\\u003e$results = Invoke-DbaDiagnosticQuery -SqlInstance Sql2017 -DatabaseSpecific -queryname \u0027Database-scoped Configurations\u0027 -databasename TestStuff\nRun diagnostic queries targeted at specific database, and only run database level queries against this database.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eInvoke-DbaDiagnosticQuery -SqlInstance sql2016\nRun the selection made by the user on the Sql Server instance specified.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eInvoke-DbaDiagnosticQuery -SqlInstance sql2016 -UseSelectionHelper | Export-DbaDiagnosticQuery -Path C:\\temp\\gboutput\nProvides a gridview with all the queries to choose from and will run the selection made by the user on the SQL Server instance specified.\r\nThen it will export the results to Export-DbaDiagnosticQuery.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eInvoke-DbaDiagnosticQuery -SqlInstance localhost -ExportQueries -OutputPath \"C:\\temp\\DiagnosticQueries\"\nExport All Queries to Disk\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eInvoke-DbaDiagnosticQuery -SqlInstance localhost -DatabaseSpecific -ExportQueries -OutputPath \"C:\\temp\\DiagnosticQueries\"\nExport Database Specific Queries for all User Dbs\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eInvoke-DbaDiagnosticQuery -SqlInstance localhost -DatabaseSpecific -DatabaseName \u0027tempdb\u0027 -ExportQueries -OutputPath \"C:\\temp\\DiagnosticQueries\"\nExport Database Specific Queries For One Target Database\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eInvoke-DbaDiagnosticQuery -SqlInstance localhost -DatabaseSpecific -DatabaseName \u0027tempdb\u0027 -ExportQueries -OutputPath \"C:\\temp\\DiagnosticQueries\" -queryname \u0027Database-scoped Configurations\u0027\nExport Database Specific Queries For One Target Database and One Specific Query\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003eInvoke-DbaDiagnosticQuery -SqlInstance localhost -UseSelectionHelper\nChoose Queries To Export\n-------------------------- EXAMPLE 8 --------------------------\nPS C:\\\u003e[PSObject[]]$results = Invoke-DbaDiagnosticQuery -SqlInstance localhost -whatif\nParse the appropriate diagnostic queries by connecting to server, and instead of running them, return as [PSCustomObject[]] to work with further\n-------------------------- EXAMPLE 9 --------------------------\nPS C:\\\u003e$results = Invoke-DbaDiagnosticQuery -SqlInstance Sql2017 -DatabaseSpecific -queryname \u0027Database-scoped Configurations\u0027 -databasename TestStuff\nRun diagnostic queries targeted at specific database, and only run database level queries against this database.",
         "Params":  [
                        [
                            "SqlInstance",
@@ -28657,7 +28728,7 @@
                        [
                            "DefaultDatabase",
                            "Default database for the login",
-                           "DefaulDB",
+                           "DefaultDB",
                            false,
                            "false",
                            ""
@@ -33724,7 +33795,7 @@
         "CommandName":  "Restore-DbaDatabase",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Restore-DbaDatabase",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eRestore-DbaDatabase -SqlInstance server1\\instance1 -Path \\\\server2\\backups\nScans all the backup files in \\\\server2\\backups, filters them and restores the database to server1\\instance1\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eRestore-DbaDatabase -SqlInstance server1\\instance1 -Path \\\\server2\\backups -MaintenanceSolutionBackup -DestinationDataDirectory c:\\restores\nScans all the backup files in \\\\server2\\backups$ stored in an Ola Hallengren style folder structure,\r\nfilters them and restores the database to the c:\\restores folder on server1\\instance1\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-ChildItem c:\\SQLbackups1\\, \\\\server\\sqlbackups2 | Restore-DbaDatabase -SqlInstance server1\\instance1\nTakes the provided files from multiple directories and restores them on  server1\\instance1\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003e$RestoreTime = Get-Date(\u002711:19 23/12/2016\u0027)\nPS C:\\\u003e Restore-DbaDatabase -SqlInstance server1\\instance1 -Path \\\\server2\\backups -MaintenanceSolutionBackup -DestinationDataDirectory c:\\restores -RestoreTime $RestoreTime\nScans all the backup files in \\\\server2\\backups stored in an Ola Hallengren style folder structure,\r\nfilters them and restores the database to the c:\\restores folder on server1\\instance1 up to 11:19 23/12/2016\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003e$result = Restore-DbaDatabase -SqlInstance server1\\instance1 -Path \\\\server2\\backups -DestinationDataDirectory c:\\restores -OutputScriptOnly\nPS C:\\\u003e $result | Select-Object -ExpandProperty Tsql | Out-File -Filepath c:\\scripts\\restore.sql\nScans all the backup files in \\\\server2\\backups stored in an Ola Hallengren style folder structure,\r\nfilters them and generate the T-SQL Scripts to restore the database to the latest point in time,\r\nand then stores the output in a file for later retrieval\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eRestore-DbaDatabase -SqlInstance server1\\instance1 -Path c:\\backups -DestinationDataDirectory c:\\DataFiles -DestinationLogDirectory c:\\LogFile\nScans all the files in c:\\backups and then restores them onto the SQL Server Instance server1\\instance1, placing data files\r\nc:\\DataFiles and all the log files into c:\\LogFiles\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003eRestore-DbaDatabase -SqlInstance server1\\instance1 -Path http://demo.blob.core.windows.net/backups/dbbackup.bak -AzureCredential MyAzureCredential\nWill restore the backup held at  http://demo.blob.core.windows.net/backups/dbbackup.bak to server1\\instance1. The connection to Azure will be made using the\r\ncredential MyAzureCredential held on instance Server1\\instance1\n-------------------------- EXAMPLE 8 --------------------------\nPS C:\\\u003eRestore-DbaDatabase -SqlInstance server1\\instance1 -Path http://demo.blob.core.windows.net/backups/dbbackup.bak\nWill attempt to restore the backups from http://demo.blob.core.windows.net/backups/dbbackup.bak if a SAS credential with the name http://demo.blob.core.windows.net/backups exists on server1\\instance1\n-------------------------- EXAMPLE 9 --------------------------\nPS C:\\\u003e$File = Get-ChildItem c:\\backups, \\\\server1\\backups -recurse\nPS C:\\\u003e $File | Restore-DbaDatabase -SqlInstance Server1\\Instance -UseDestinationDefaultDirectories\nThis will take all of the files found under the folders c:\\backups and \\\\server1\\backups, and pipeline them into\r\nRestore-DbaDatabase. Restore-DbaDatabase will then scan all of the files, and restore all of the databases included\r\nto the latest point in time covered by their backups. All data and log files will be moved to the default SQL Server\r\nfolder for those file types as defined on the target instance.\n-------------------------- EXAMPLE 10 --------------------------\nPS C:\\\u003e$files = Get-ChildItem C:\\dbatools\\db1\nPS C:\\\u003e $files | Restore-DbaDatabase -SqlInstance server\\instance1 `\r\n\u003e\u003e -DestinationFilePrefix prefix -DatabaseName Restored  `\r\n\u003e\u003e -RestoreTime (get-date \"14:58:30 22/05/2017\") `\r\n\u003e\u003e -NoRecovery -WithReplace -StandbyDirectory C:\\dbatools\\standby\r\n\u003e\u003e\r\nPS C:\\\u003e #It\u0027s in standby so we can peek at it\r\nPS C:\\\u003e Invoke-DbaQuery -SQLInstance server\\instance1 -Query \"select top 1 * from Restored.dbo.steps order by dt desc\"\r\nPS C:\\\u003e #Not quite there so let\u0027s roll on a bit:\r\nPS C:\\\u003e $files | Restore-DbaDatabase -SqlInstance server\\instance1 `\r\n\u003e\u003e -DestinationFilePrefix prefix -DatabaseName Restored `\r\n\u003e\u003e -continue -WithReplace -RestoreTime (get-date \"15:09:30 22/05/2017\") `\r\n\u003e\u003e -StandbyDirectory C:\\dbatools\\standby\r\n\u003e\u003e\r\nPS C:\\\u003e Invoke-DbaQuery -SQLInstance server\\instance1 -Query \"select top 1 * from restored.dbo.steps order by dt desc\"\r\nPS C:\\\u003e Restore-DbaDatabase -SqlInstance server\\instance1 -DestinationFilePrefix prefix -DatabaseName Restored -Continue -WithReplace\nIn this example we step through the backup files held in c:\\dbatools\\db1 folder.\r\nFirst we restore the database to a point in time in standby mode. This means we can check some details in the databases\r\nWe then roll it on a further 9 minutes to perform some more checks\r\nAnd finally we continue by rolling it all the way forward to the latest point in the backup.\r\nAt each step, only the log files needed to roll the database forward are restored.\n-------------------------- EXAMPLE 11 --------------------------\nPS C:\\\u003eRestore-DbaDatabase -SqlInstance server\\instance1 -Path c:\\backups -DatabaseName example1 -NoRecovery\nPS C:\\\u003e Restore-DbaDatabase -SqlInstance server\\instance1 -Recover -DatabaseName example1\nIn this example we restore example1 database with no recovery, and then the second call is to set the database to recovery.\n-------------------------- EXAMPLE 12 --------------------------\nPS C:\\\u003eGet-DbaBackupHistory - SqlInstance server\\instance1 -Database ProdFinance -Last | Restore-DbaDatabase -PageRestore\nPS C:\\\u003e $SuspectPage -PageRestoreTailFolder c:\\temp -TrustDbBackupHistory -AllowContinues\nGets a list of Suspect Pages using Get-DbaSuspectPage. The uses Get-DbaBackupHistory and Restore-DbaDatabase to perform a restore of the suspect pages and bring them up to date\r\nIf server\\instance1 is Enterprise edition this will be done online, if not it will be performed offline\r\nAllowContinue is required to make sure we cope with existing files\n-------------------------- EXAMPLE 13 --------------------------\nPS C:\\\u003e$BackupHistory = Get-DbaBackupInformation -SqlInstance sql2005 -Path \\\\backups\\sql2000\\ProdDb\nPS C:\\\u003e $BackupHistory | Restore-DbaDatabase -SqlInstance sql2000 -TrustDbBackupHistory\nDue to SQL Server 2000 not returning all the backup headers we cannot restore directly. As this is an issues with the SQL engine all we can offer is the following workaround\r\nThis will use a SQL Server instance \u003e 2000 to read the headers, and then pass them in to Restore-DbaDatabase as a BackupHistory object.\n-------------------------- EXAMPLE 14 --------------------------\nPS C:\\\u003eRestore-DbaDatabase -SqlInstance server1\\instance1 -Path \"C:\\Temp\\devops_prod_full.bak\" -DatabaseName \"DevOps_DEV\" -ReplaceDbNameInFile\nPS C:\\\u003e Rename-DbaDatabase -SqlInstance server1\\instance1 -Database \"DevOps_DEV\" -LogicalName \"\u003cDBN\u003e_\u003cFT\u003e\"\nThis will restore the database from the \"C:\\Temp\\devops_prod_full.bak\" file, with the new name \"DevOps_DEV\" and store the different physical files with the new name. It will use the system default \r\nconfigured data and log locations.\r\nAfter the restore the logical names of the database files will be renamed with the \"DevOps_DEV_ROWS\" for MDF/NDF and \"DevOps_DEV_LOG\" for LDF\n-------------------------- EXAMPLE 15 --------------------------\nPS C:\\\u003e$FileStructure = @{\n\u003e\u003e \u0027database_data\u0027 = \u0027C:\\Data\\database_data.mdf\u0027\r\n\u003e\u003e \u0027database_log\u0027 = \u0027C:\\Log\\database_log.ldf\u0027\r\n\u003e\u003e }\r\n\u003e\u003e\r\nPS C:\\\u003e Restore-DbaDatabase -SqlInstance server1 -Path \\\\ServerName\\ShareName\\File -DatabaseName database -FileMapping $FileStructure\nRestores \u0027database\u0027 to \u0027server1\u0027 and moves the files to new locations. The format for the $FileStructure HashTable is the file logical name as the Key, and the new location as the Value.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eRestore-DbaDatabase -SqlInstance server1\\instance1 -Path \\\\server2\\backups\nScans all the backup files in \\\\server2\\backups, filters them and restores the database to server1\\instance1\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eRestore-DbaDatabase -SqlInstance server1\\instance1 -Path \\\\server2\\backups -MaintenanceSolutionBackup -DestinationDataDirectory c:\\restores\nScans all the backup files in \\\\server2\\backups$ stored in an Ola Hallengren style folder structure,\r\nfilters them and restores the database to the c:\\restores folder on server1\\instance1\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-ChildItem c:\\SQLbackups1\\, \\\\server\\sqlbackups2 | Restore-DbaDatabase -SqlInstance server1\\instance1\nTakes the provided files from multiple directories and restores them on  server1\\instance1\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003e$RestoreTime = Get-Date(\u002711:19 23/12/2016\u0027)\nPS C:\\\u003e Restore-DbaDatabase -SqlInstance server1\\instance1 -Path \\\\server2\\backups -MaintenanceSolutionBackup -DestinationDataDirectory c:\\restores -RestoreTime $RestoreTime\nScans all the backup files in \\\\server2\\backups stored in an Ola Hallengren style folder structure,\r\nfilters them and restores the database to the c:\\restores folder on server1\\instance1 up to 11:19 23/12/2016\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003e$result = Restore-DbaDatabase -SqlInstance server1\\instance1 -Path \\\\server2\\backups -DestinationDataDirectory c:\\restores -OutputScriptOnly\nPS C:\\\u003e $result | Select-Object -ExpandProperty Tsql | Out-File -Filepath c:\\scripts\\restore.sql\nScans all the backup files in \\\\server2\\backups stored in an Ola Hallengren style folder structure,\r\nfilters them and generate the T-SQL Scripts to restore the database to the latest point in time,\r\nand then stores the output in a file for later retrieval\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eRestore-DbaDatabase -SqlInstance server1\\instance1 -Path c:\\backups -DestinationDataDirectory c:\\DataFiles -DestinationLogDirectory c:\\LogFile\nScans all the files in c:\\backups and then restores them onto the SQL Server Instance server1\\instance1, placing data files\r\nc:\\DataFiles and all the log files into c:\\LogFiles\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003eRestore-DbaDatabase -SqlInstance server1\\instance1 -Path http://demo.blob.core.windows.net/backups/dbbackup.bak -AzureCredential MyAzureCredential\nWill restore the backup held at  http://demo.blob.core.windows.net/backups/dbbackup.bak to server1\\instance1. The connection to Azure will be made using the\r\ncredential MyAzureCredential held on instance Server1\\instance1\n-------------------------- EXAMPLE 8 --------------------------\nPS C:\\\u003eRestore-DbaDatabase -SqlInstance server1\\instance1 -Path http://demo.blob.core.windows.net/backups/dbbackup.bak\nWill attempt to restore the backups from http://demo.blob.core.windows.net/backups/dbbackup.bak if a SAS credential with the name http://demo.blob.core.windows.net/backups exists on server1\\instance1\n-------------------------- EXAMPLE 9 --------------------------\nPS C:\\\u003e$File = Get-ChildItem c:\\backups, \\\\server1\\backups -recurse\nPS C:\\\u003e $File | Restore-DbaDatabase -SqlInstance Server1\\Instance -UseDestinationDefaultDirectories\nThis will take all of the files found under the folders c:\\backups and \\\\server1\\backups, and pipeline them into\r\nRestore-DbaDatabase. Restore-DbaDatabase will then scan all of the files, and restore all of the databases included\r\nto the latest point in time covered by their backups. All data and log files will be moved to the default SQL Server\r\nfolder for those file types as defined on the target instance.\n-------------------------- EXAMPLE 10 --------------------------\nPS C:\\\u003e$files = Get-ChildItem C:\\dbatools\\db1\nPS C:\\\u003e $params = @{\r\n\u003e\u003e SqlInstance = \u0027server\\instance1\u0027\r\n\u003e\u003e DestinationFilePrefix = \u0027prefix\u0027\r\n\u003e\u003e DatabaseName =\u0027Restored\u0027\r\n\u003e\u003e RestoreTime = (get-date \"14:58:30 22/05/2017\")\r\n\u003e\u003e NoRecovery = $true\r\n\u003e\u003e WithReplace = $true\r\n\u003e\u003e StandbyDirectory = \u0027C:\\dbatools\\standby\u0027\r\n\u003e\u003e }\r\n\u003e\u003e\r\nPS C:\\\u003e $files | Restore-DbaDatabase @params\r\nPS C:\\\u003e Invoke-DbaQuery -SQLInstance server\\instance1 -Query \"select top 1 * from Restored.dbo.steps order by dt desc\"\r\nPS C:\\\u003e $params.RestoredTime = (get-date \"15:09:30 22/05/2017\")\r\nPS C:\\\u003e $params.NoRecovery = $false\r\nPS C:\\\u003e $params.Add(\"Continue\",$true)\r\nPS C:\\\u003e $files | Restore-DbaDatabase @params\r\nPS C:\\\u003e Invoke-DbaQuery -SQLInstance server\\instance1 -Query \"select top 1 * from restored.dbo.steps order by dt desc\"\r\nPS C:\\\u003e Restore-DbaDatabase -SqlInstance server\\instance1 -DestinationFilePrefix prefix -DatabaseName Restored -Continue -WithReplace\nIn this example we step through the backup files held in c:\\dbatools\\db1 folder.\r\nFirst we restore the database to a point in time in standby mode. This means we can check some details in the databases\r\nWe then roll it on a further 9 minutes to perform some more checks\r\nAnd finally we continue by rolling it all the way forward to the latest point in the backup.\r\nAt each step, only the log files needed to roll the database forward are restored.\n-------------------------- EXAMPLE 11 --------------------------\nPS C:\\\u003eRestore-DbaDatabase -SqlInstance server\\instance1 -Path c:\\backups -DatabaseName example1 -NoRecovery\nPS C:\\\u003e Restore-DbaDatabase -SqlInstance server\\instance1 -Recover -DatabaseName example1\nIn this example we restore example1 database with no recovery, and then the second call is to set the database to recovery.\n-------------------------- EXAMPLE 12 --------------------------\nPS C:\\\u003eGet-DbaBackupHistory - SqlInstance server\\instance1 -Database ProdFinance -Last | Restore-DbaDatabase -PageRestore\nPS C:\\\u003e $SuspectPage -PageRestoreTailFolder c:\\temp -TrustDbBackupHistory -AllowContinues\nGets a list of Suspect Pages using Get-DbaSuspectPage. The uses Get-DbaBackupHistory and Restore-DbaDatabase to perform a restore of the suspect pages and bring them up to date\r\nIf server\\instance1 is Enterprise edition this will be done online, if not it will be performed offline\r\nAllowContinue is required to make sure we cope with existing files\n-------------------------- EXAMPLE 13 --------------------------\nPS C:\\\u003e$BackupHistory = Get-DbaBackupInformation -SqlInstance sql2005 -Path \\\\backups\\sql2000\\ProdDb\nPS C:\\\u003e $BackupHistory | Restore-DbaDatabase -SqlInstance sql2000 -TrustDbBackupHistory\nDue to SQL Server 2000 not returning all the backup headers we cannot restore directly. As this is an issues with the SQL engine all we can offer is the following workaround\r\nThis will use a SQL Server instance \u003e 2000 to read the headers, and then pass them in to Restore-DbaDatabase as a BackupHistory object.\n-------------------------- EXAMPLE 14 --------------------------\nPS C:\\\u003eRestore-DbaDatabase -SqlInstance server1\\instance1 -Path \"C:\\Temp\\devops_prod_full.bak\" -DatabaseName \"DevOps_DEV\" -ReplaceDbNameInFile\nPS C:\\\u003e Rename-DbaDatabase -SqlInstance server1\\instance1 -Database \"DevOps_DEV\" -LogicalName \"\u003cDBN\u003e_\u003cFT\u003e\"\nThis will restore the database from the \"C:\\Temp\\devops_prod_full.bak\" file, with the new name \"DevOps_DEV\" and store the different physical files with the new name. It will use the system default \r\nconfigured data and log locations.\r\nAfter the restore the logical names of the database files will be renamed with the \"DevOps_DEV_ROWS\" for MDF/NDF and \"DevOps_DEV_LOG\" for LDF\n-------------------------- EXAMPLE 15 --------------------------\nPS C:\\\u003e$FileStructure = @{\n\u003e\u003e \u0027database_data\u0027 = \u0027C:\\Data\\database_data.mdf\u0027\r\n\u003e\u003e \u0027database_log\u0027 = \u0027C:\\Log\\database_log.ldf\u0027\r\n\u003e\u003e }\r\n\u003e\u003e\r\nPS C:\\\u003e Restore-DbaDatabase -SqlInstance server1 -Path \\\\ServerName\\ShareName\\File -DatabaseName database -FileMapping $FileStructure\nRestores \u0027database\u0027 to \u0027server1\u0027 and moves the files to new locations. The format for the $FileStructure HashTable is the file logical name as the Key, and the new location as the Value.",
         "Params":  [
                        [
                            "SqlInstance",
@@ -34609,7 +34680,7 @@
                      "Agent",
                      "Alert"
                  ],
-        "Synopsis":  "Set-DbaAgentAlert updates a the status of a SQL Agent Alert.",
+        "Synopsis":  "Set-DbaAgentAlert updates the status of a SQL Agent Alert.",
         "Alias":  "",
         "Author":  "Garry Bargsley (@gbargsley), garrybargsley.com",
         "CommandName":  "Set-DbaAgentAlert",
@@ -35201,9 +35272,9 @@
                        [
                            "SqlInstance",
                            "The target SQL Server instance or instances. You must have sysadmin access and server version must be SQL Server version 2000 or greater.",
-                           "ServerInstance,SqlServer",
+                           "",
                            true,
-                           "true (ByValue)",
+                           "false",
                            ""
                        ],
                        [
@@ -35218,7 +35289,7 @@
                            "Job",
                            "The name of the job. Can be null if the the job id is being used.",
                            "",
-                           true,
+                           false,
                            "false",
                            ""
                        ],
@@ -35226,7 +35297,7 @@
                            "StepName",
                            "The name of the step.",
                            "",
-                           true,
+                           false,
                            "false",
                            ""
                        ],
@@ -35241,6 +35312,14 @@
                        [
                            "Subsystem",
                            "The subsystem used by the SQL Server Agent service to execute command.\r\nAllowed values \u0027ActiveScripting\u0027,\u0027AnalysisCommand\u0027,\u0027AnalysisQuery\u0027,\u0027CmdExec\u0027,\u0027Distribution\u0027,\u0027LogReader\u0027,\u0027Merge\u0027,\u0027PowerShell\u0027,\u0027QueueReader\u0027,\u0027Snapshot\u0027,\u0027Ssis\u0027,\u0027TransactSql\u0027",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "SubsystemServer",
+                           "The subsystems AnalysisScripting, AnalysisCommand, AnalysisQuery ned the server property to be able to apply",
                            "",
                            false,
                            "false",
@@ -35351,9 +35430,17 @@
                            ""
                        ],
                        [
+                           "InputObject",
+                           "Enables piping job objects",
+                           "",
+                           false,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
                            "EnableException",
                            "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
-                           "Silent",
+                           "",
                            false,
                            "false",
                            "False"
@@ -35383,7 +35470,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Set-DbaAgentJobStep [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [-Job] \u003cObject[]\u003e [-StepName] \u003cString\u003e [[-NewName] \u003cString\u003e] [[-Subsystem] \u003cString\u003e] [[-Command] \u003cString\u003e] [[-CmdExecSuccessCode] \u003cInt32\u003e] [[-OnSuccessAction] \u003cString\u003e] [[-OnSuccessStepId] \u003cInt32\u003e] [[-OnFailAction] \u003cString\u003e] [[-OnFailStepId] \u003cInt32\u003e] [[-Database] \u003cString\u003e] [[-DatabaseUser] \u003cString\u003e] [[-RetryAttempts] \u003cInt32\u003e] [[-RetryInterval] \u003cInt32\u003e] [[-OutputFileName] \u003cString\u003e] [[-Flag] \u003cString[]\u003e] [[-ProxyName] \u003cString\u003e] [-EnableException] [-Force] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Set-DbaAgentJobStep [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Job] \u003cObject[]\u003e] [[-StepName] \u003cString\u003e] [[-NewName] \u003cString\u003e] [[-Subsystem] \u003cString\u003e] [[-SubsystemServer] \u003cString\u003e] [[-Command] \u003cString\u003e] [[-CmdExecSuccessCode] \u003cInt32\u003e] [[-OnSuccessAction] \u003cString\u003e] [[-OnSuccessStepId] \u003cInt32\u003e] [[-OnFailAction] \u003cString\u003e] [[-OnFailStepId] \u003cInt32\u003e] [[-Database] \u003cString\u003e] [[-DatabaseUser] \u003cString\u003e] [[-RetryAttempts] \u003cInt32\u003e] [[-RetryInterval] \u003cInt32\u003e] [[-OutputFileName] \u003cString\u003e] [[-Flag] \u003cString[]\u003e] [[-ProxyName] \u003cString\u003e] [[-InputObject] \u003cJobStep[]\u003e] \r\n[-EnableException] [-Force] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Set-DbaAgentSchedule",
@@ -36575,6 +36662,85 @@
         "Syntax":  "Set-DbaDbCompression [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cObject[]\u003e] [[-ExcludeDatabase] \u003cObject[]\u003e] [[-CompressionType] \u003cObject\u003e] [[-MaxRunTime] \u003cInt32\u003e] [[-PercentCompression] \u003cInt32\u003e] [[-InputObject] \u003cObject\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
+        "Name":  "Set-DbaDbIdentity",
+        "Description":  "Use the command DBCC CHECKIDENT to check and if necessary update the current identity value of a table and return results\nCan update an individual table via the ReSeedValue and RESEED option of DBCC CHECKIDENT\n\nRead more:\n    - https://docs.microsoft.com/en-us/sql/t-sql/database-console-commands/dbcc-checkident-transact-sql",
+        "Tags":  "DBCC",
+        "Synopsis":  "Checks and updates the current identity value via DBCC CHECKIDENT",
+        "Alias":  "",
+        "Author":  "Patrick Flynn (@sqllensman)",
+        "CommandName":  "Set-DbaDbIdentity",
+        "Availability":  "Windows, Linux, macOS",
+        "Links":  "https://dbatools.io/Set-DbaDbIdentity",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eSet-DbaDbIdentity -SqlInstance SQLServer2017 -Database AdventureWorks2014 -Table \u0027Production.ScrapReason\u0027\nConnects to AdventureWorks2014 on instance SqlServer2017 using Windows Authentication and runs the command DBCC CHECKIDENT(\u0027Production.ScrapReason\u0027) to return the current identity value.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003e$cred = Get-Credential sqladmin\nPS C:\\\u003e \u0027Sql1\u0027,\u0027Sql2/sqlexpress\u0027 | Set-DbaDbIdentity -SqlCredential $cred -Database AdventureWorks2014 -Table \u0027Production.ScrapReason\u0027\nConnects to AdventureWorks2014 on instances Sql1 and Sql2/sqlexpress using sqladmin credential and runs the command DBCC CHECKIDENT(\u0027Production.ScrapReason\u0027) to return the current identity value.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003e$query = \"Select Schema_Name(t.schema_id) +\u0027.\u0027 + t.name as TableName from sys.columns c INNER JOIN sys.tables t on t.object_id = c.object_id WHERE is_identity = 1\"\nPS C:\\\u003e $IdentityTables = Invoke-DbaQuery -SqlInstance SQLServer2017 -Database AdventureWorks2014 -Query $query\r\nPS C:\\\u003e foreach ($tbl in $IdentityTables) {\r\nPS C:\\\u003e    Set-DbaDbIdentity -SqlInstance SQLServer2017 -Database AdventureWorks2014 -Table $tbl.TableName\r\nPS C:\\\u003e }\nChecks the current identity value for all tables with an Identity in the AdventureWorks2014 database on the SQLServer2017 and, if it is needed, changes the identity value.",
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "The target SQL Server instance or instances.",
+                           "",
+                           true,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
+                           "SqlCredential",
+                           "Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Database",
+                           "The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.\r\nOnly one database should be specified when using a RESEED value",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Table",
+                           "The table(s) for which to check the current identity value.\r\nOnly one table should be specified when using a RESEED value",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "ReSeedValue",
+                           "The new reseed value to be used to set as the current identity value.",
+                           "",
+                           false,
+                           "false",
+                           "0"
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "WhatIf",
+                           "Shows what would happen if the cmdlet runs. The cmdlet is not run.",
+                           "wi",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Confirm",
+                           "Prompts you for confirmation before running the cmdlet.",
+                           "cf",
+                           false,
+                           "false",
+                           ""
+                       ]
+                   ],
+        "Syntax":  "Set-DbaDbIdentity [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString[]\u003e] [[-Table] \u003cString[]\u003e] [[-ReSeedValue] \u003cInt32\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+    },
+    {
         "Name":  "Set-DbaDbMirror",
         "Description":  "Sets properties of database mirrors.",
         "Tags":  [
@@ -37345,7 +37511,7 @@
         "CommandName":  "Set-DbaLogin",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Set-DbaLogin",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003e$SecurePassword = ConvertTo-SecureString \"PlainTextPassword\" -AsPlainText -Force\nPS C:\\\u003e $cred = New-Object System.Management.Automation.PSCredential (\"username\", $SecurePassword)\r\nPS C:\\\u003e Set-DbaLogin -SqlInstance sql1 -Login login1 -SecurePassword $cred -Unlock -MustChange\nSet the new password for login1 using a credential, unlock the account and set the option\r\nthat the user must change password at next logon.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eSet-DbaLogin -SqlInstance sql1 -Login login1 -Enable\nEnable the login\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eSet-DbaLogin -SqlInstance sql1 -Login login1, login2, login3, login4 -Enable\nEnable multiple logins\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eSet-DbaLogin -SqlInstance sql1, sql2, sql3 -Login login1, login2, login3, login4 -Enable\nEnable multiple logins on multiple instances\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eSet-DbaLogin -SqlInstance sql1 -Login login1 -Disable\nDisable the login\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eSet-DbaLogin -SqlInstance sql1 -Login login1 -DenyLogin\nDeny the login to connect to the instance\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003eSet-DbaLogin -SqlInstance sql1 -Login login1 -GrantLogin\nGrant the login to connect to the instance\n-------------------------- EXAMPLE 8 --------------------------\nPS C:\\\u003eSet-DbaLogin -SqlInstance sql1 -Login login1 -PasswordPolicyEnforced\nEnforces the password policy on a login\n-------------------------- EXAMPLE 9 --------------------------\nPS C:\\\u003eSet-DbaLogin -SqlInstance sql1 -Login login1 -PasswordPolicyEnforced:$false\nDisables enforcement of the password policy on a login\n-------------------------- EXAMPLE 10 --------------------------\nPS C:\\\u003eSet-DbaLogin -SqlInstance sql1 -Login test -AddRole serveradmin\nAdd the server role \"serveradmin\" to the login\n-------------------------- EXAMPLE 11 --------------------------\nPS C:\\\u003eSet-DbaLogin -SqlInstance sql1 -Login test -RemoveRole bulkadmin\nRemove the server role \"bulkadmin\" to the login\n-------------------------- EXAMPLE 12 --------------------------\nPS C:\\\u003e$login = Get-DbaLogin -SqlInstance sql1 -Login test\nPS C:\\\u003e $login | Set-DbaLogin -Disable\nDisable the login from the pipeline",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003e$SecurePassword = ConvertTo-SecureString \"PlainTextPassword\" -AsPlainText -Force\nPS C:\\\u003e $cred = New-Object System.Management.Automation.PSCredential (\"username\", $SecurePassword)\r\nPS C:\\\u003e Set-DbaLogin -SqlInstance sql1 -Login login1 -SecurePassword $cred -Unlock -MustChange\nSet the new password for login1 using a credential, unlock the account and set the option\r\nthat the user must change password at next logon.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eSet-DbaLogin -SqlInstance sql1 -Login login1 -Enable\nEnable the login\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eSet-DbaLogin -SqlInstance sql1 -Login login1, login2, login3, login4 -Enable\nEnable multiple logins\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eSet-DbaLogin -SqlInstance sql1, sql2, sql3 -Login login1, login2, login3, login4 -Enable\nEnable multiple logins on multiple instances\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eSet-DbaLogin -SqlInstance sql1 -Login login1 -Disable\nDisable the login\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eSet-DbaLogin -SqlInstance sql1 -Login login1 -DenyLogin\nDeny the login to connect to the instance\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003eSet-DbaLogin -SqlInstance sql1 -Login login1 -GrantLogin\nGrant the login to connect to the instance\n-------------------------- EXAMPLE 8 --------------------------\nPS C:\\\u003eSet-DbaLogin -SqlInstance sql1 -Login login1 -PasswordPolicyEnforced\nEnforces the password policy on a login\n-------------------------- EXAMPLE 9 --------------------------\nPS C:\\\u003eSet-DbaLogin -SqlInstance sql1 -Login login1 -PasswordPolicyEnforced:$false\nDisables enforcement of the password policy on a login\n-------------------------- EXAMPLE 10 --------------------------\nPS C:\\\u003eSet-DbaLogin -SqlInstance sql1 -Login test -AddRole serveradmin\nAdd the server role \"serveradmin\" to the login\n-------------------------- EXAMPLE 11 --------------------------\nPS C:\\\u003eSet-DbaLogin -SqlInstance sql1 -Login test -RemoveRole bulkadmin\nRemove the server role \"bulkadmin\" to the login\n-------------------------- EXAMPLE 12 --------------------------\nPS C:\\\u003e$login = Get-DbaLogin -SqlInstance sql1 -Login test\nPS C:\\\u003e $login | Set-DbaLogin -Disable\nDisable the login from the pipeline\n-------------------------- EXAMPLE 13 --------------------------\nPS C:\\\u003eSet-DbaLogin -SqlInstance sql1 -Login login1 -DefaultDatabase master\nSet the default database to master on a login",
         "Params":  [
                        [
                            "SqlInstance",
@@ -37375,6 +37541,14 @@
                            "SecurePassword",
                            "The new password for the login This can be either a credential or a secure string.",
                            "Password",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "DefaultDatabase",
+                           "Default database for the login",
+                           "DefaultDB",
                            false,
                            "false",
                            ""
@@ -37492,7 +37666,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Set-DbaLogin [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Login] \u003cString[]\u003e] [[-SecurePassword] \u003cObject\u003e] [-Unlock] [-MustChange] [[-NewName] \u003cString\u003e] [-Disable] [-Enable] [-DenyLogin] [-GrantLogin] [-PasswordPolicyEnforced] [[-AddRole] \u003cString[]\u003e] [[-RemoveRole] \u003cString[]\u003e] [[-InputObject] \u003cLogin[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Set-DbaLogin [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Login] \u003cString[]\u003e] [[-SecurePassword] \u003cObject\u003e] [[-DefaultDatabase] \u003cString\u003e] [-Unlock] [-MustChange] [[-NewName] \u003cString\u003e] [-Disable] [-Enable] [-DenyLogin] [-GrantLogin] [-PasswordPolicyEnforced] [[-AddRole] \u003cString[]\u003e] [[-RemoveRole] \u003cString[]\u003e] [[-InputObject] \u003cLogin[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Set-DbaMaxDop",
@@ -40145,7 +40319,7 @@
         "CommandName":  "Sync-DbaAvailabilityGroup",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Sync-DbaAvailabilityGroup",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eSync-DbaAvailabilityGroup -Primary sql2016a -AvailabilityGroup db3\nSyncs the following on all replicas found in the db3 AG:\r\nSpConfigure, CustomErrors, Credentials, DatabaseMail, LinkedServers\r\nLogins, LoginPermissions, SystemTriggers, DatabaseOwner, AgentCategory,\r\nAgentOperator, AgentAlert, AgentProxy, AgentScheduleAgentJob\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaAvailabilityGroup -SqlInstance sql2016a | Sync-DbaAvailabilityGroup -ExcludeType LoginPermissions, LinkedServers -ExcludeLogin login1, login2 -Job job1, job2\nSyncs the following on all replicas found in the db3 AG:\r\nSpConfigure, CustomErrors, Credentials, DatabaseMail, Logins,\r\nSystemTriggers, DatabaseOwner, AgentCategory, AgentOperator\r\nAgentAlert, AgentProxy, AgentScheduleAgentJob.\nCopies all logins except for login1 and login2 and only syncs job1 and job2\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaAvailabilityGroup -SqlInstance sql2016a | Sync-DbaAvailabilityGroup -WhatIf\nShows what would happen if the command were to run but doesn\u0027t actually perform the action.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eSync-DbaAvailabilityGroup -Primary sql2016a -AvailabilityGroup db3\nSyncs the following on all replicas found in the db3 AG:\r\nSpConfigure, CustomErrors, Credentials, DatabaseMail, LinkedServers\r\nLogins, LoginPermissions, SystemTriggers, DatabaseOwner, AgentCategory,\r\nAgentOperator, AgentAlert, AgentProxy, AgentSchedule, AgentJob\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaAvailabilityGroup -SqlInstance sql2016a | Sync-DbaAvailabilityGroup -ExcludeType LoginPermissions, LinkedServers -ExcludeLogin login1, login2 -Job job1, job2\nSyncs the following on all replicas found in all AGs on the specified instance:\r\nSpConfigure, CustomErrors, Credentials, DatabaseMail, Logins,\r\nSystemTriggers, DatabaseOwner, AgentCategory, AgentOperator\r\nAgentAlert, AgentProxy, AgentSchedule, AgentJob.\nCopies all logins except for login1 and login2 and only syncs job1 and job2\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaAvailabilityGroup -SqlInstance sql2016a | Sync-DbaAvailabilityGroup -WhatIf\nShows what would happen if the command were to run but doesn\u0027t actually perform the action.",
         "Params":  [
                        [
                            "Primary",
@@ -40213,7 +40387,7 @@
                        ],
                        [
                            "Job",
-                           "Specific jobs to sync. If unspecified, all logins will be processed.",
+                           "Specific jobs to sync. If unspecified, all jobs will be processed.",
                            "",
                            false,
                            "false",
@@ -40221,7 +40395,7 @@
                        ],
                        [
                            "ExcludeJob",
-                           "Specific jobs to exclude when performing the sync. If unspecified, all logins will be processed.",
+                           "Specific jobs to exclude when performing the sync. If unspecified, all jobs will be processed.",
                            "",
                            false,
                            "false",
@@ -40359,6 +40533,81 @@
                        ]
                    ],
         "Syntax":  "Sync-DbaLoginPermission [-Source] \u003cDbaInstanceParameter\u003e [[-SourceSqlCredential] \u003cPSCredential\u003e] [-Destination] \u003cDbaInstanceParameter[]\u003e [[-DestinationSqlCredential] \u003cPSCredential\u003e] [[-Login] \u003cString[]\u003e] [[-ExcludeLogin] \u003cString[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+    },
+    {
+        "Name":  "Test-DbaAgentJobOwner",
+        "Description":  "This function checks all SQL Agent Jobs on an instance against a SQL login to validate if that login owns those SQL Agent Jobs or not. By default, the function checks against \u0027sa\u0027 for ownership, but the user can pass a specific login if they use something else.\n\nOnly SQL Agent Jobs that do not match this ownership will be displayed.\nBest practice reference: http://sqlmag.com/blog/sql-server-tip-assign-ownership-jobs-sysadmin-account",
+        "Tags":  [
+                     "Agent",
+                     "Job",
+                     "Owner"
+                 ],
+        "Synopsis":  "Checks SQL Agent Job owners against a login to validate which jobs do not match that owner.",
+        "Alias":  "Test-DbaJobOwner",
+        "Author":  "Michael Fal (@Mike_Fal), http://mikefal.net",
+        "CommandName":  "Test-DbaAgentJobOwner",
+        "Availability":  "Windows, Linux, macOS",
+        "Links":  "https://dbatools.io/Test-DbaAgentJobOwner",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eTest-DbaAgentJobOwner -SqlInstance localhost\nReturns all SQL Agent Jobs where the owner does not match \u0027sa\u0027.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eTest-DbaAgentJobOwner -SqlInstance localhost -ExcludeJob \u0027syspolicy_purge_history\u0027\nReturns SQL Agent Jobs except for the syspolicy_purge_history job\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eTest-DbaAgentJobOwner -SqlInstance localhost -Login DOMAIN\\account\nReturns all SQL Agent Jobs where the owner does not match DOMAIN\\account. Note\r\nthat Login must be a valid security principal that exists on the target server.",
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "The target SQL Server instance or instances.",
+                           "ServerInstance,SqlServer",
+                           true,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
+                           "SqlCredential",
+                           "Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Job",
+                           "Specifies the job(s) to process. Options for this list are auto-populated from the server. If unspecified, all jobs will be processed.",
+                           "Jobs",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "ExcludeJob",
+                           "Specifies the job(s) to exclude from processing. Options for this list are auto-populated from the server.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Login",
+                           "Specifies the login that you wish check for ownership. This defaults to \u0027sa\u0027 or the sysadmin name if sa was renamed. This must be a valid security principal which exists on the target server.",
+                           "TargetLogin",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Detailed",
+                           "Output all properties, will be deprecated in 1.0.0 release.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "Silent",
+                           false,
+                           "false",
+                           "False"
+                       ]
+                   ],
+        "Syntax":  "Test-DbaAgentJobOwner [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Job] \u003cObject[]\u003e] [[-ExcludeJob] \u003cObject[]\u003e] [[-Login] \u003cString\u003e] [-Detailed] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Test-DbaBackupInformation",
@@ -41459,7 +41708,7 @@
     },
     {
         "Name":  "Test-DbaDiskSpeed",
-        "Description":  "Tests how disks are performing.\n\nThis command uses a query from Rich Benner which was adapted from David Pless\u0027s article:\nhttps://blogs.msdn.microsoft.com/dpless/2010/12/01/leveraging-sys-dm_io_virtual_file_stats/\nhttps://github.com/RichBenner/PersonalCode/blob/master/Disk_Speed_Check.sql",
+        "Description":  "Tests how disks are performing.\n\nThis command uses a query from Rich Benner\nhttps://github.com/RichBenner/PersonalCode/blob/master/Disk_Speed_Check.sql",
         "Tags":  "Performance",
         "Synopsis":  "Tests how disks are performing.",
         "Alias":  "",
