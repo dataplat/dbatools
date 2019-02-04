@@ -191,9 +191,12 @@ function Invoke-DbaDbDataMasking {
             $sqlconn.Open()
 
             foreach ($db in $dbs) {
+
                 $stepcounter = $nullmod = 0
 
                 foreach ($tableobject in $tables.Tables) {
+
+                    $uniqueValues = @()
 
                     $table = Get-DbaDbTable -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database DB1 -Table $tableobject.Name
 
@@ -243,9 +246,9 @@ function Invoke-DbaDbDataMasking {
                                 }
 
                                 # To be sure the values are unique, loop as long as long as needed to generate a unique value
-                                while (($uniqueValues | Select-Object -Property ($rowValue | Get-Member -MemberType NoteProperty | Select-Object -ExpandProperty Name)) -match $rowvalue) {
+                                while (($uniqueValues | Select-Object -Property ($rowValue | Get-Member -MemberType NoteProperty | Select-Object -ExpandProperty Name)) -match $rowValue) {
 
-                                    [PSCustomObject]$rowvalue = New-Object PSCustomObject
+                                    [PSCustomObject]$rowValue = New-Object PSCustomObject
 
                                     # Loop through the index columns
                                     foreach ($column in $index.IndexedColumns) {
@@ -580,3 +583,4 @@ function Invoke-DbaDbDataMasking {
         }
     }
 }
+
