@@ -196,11 +196,7 @@ function Invoke-DbaDbDataMasking {
 
                 foreach ($tableobject in $tables.Tables) {
 
-                    $uniqueValues = @()
-
-                    $table = Get-DbaDbTable -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database DB1 -Table $tableobject.Name
-
-                    if ($tableobject.Name -in $ExcludeTable -or ($Table -and $tableobject.Name -notin $Table)) {
+                    if ($tableobject.Name -in $ExcludeTable) {
                         Write-Message -Level Verbose -Message "Skipping $($tableobject.Name) because it is explicitly excluded"
                         continue
                     }
@@ -208,6 +204,8 @@ function Invoke-DbaDbDataMasking {
                     if ($tableobject.Name -notin $db.Tables.Name) {
                         Stop-Function -Message "Table $($tableobject.Name) is not present in $db" -Target $db -Continue
                     }
+
+                    $table = $db.Tables[$($tableobject.Name)]
 
                     try {
                         if (-not (Test-Bound -ParameterName Query)) {
@@ -221,26 +219,27 @@ function Invoke-DbaDbDataMasking {
                     $sqlconn.ChangeDatabase($db.Name)
 
                     # Check if the table contains unique indexes
-                    if ($tableobject.HasUniqueIndexes) {
-                        # Loop through the rows and generate a unique value for each row
-                        for ($i = 0; $i -lt $table.RowCount; $i++) {
+                    if ($tableobject.HasUniqueIndex) {
+                        $uniqueValues = @()
 
-                            [PSCustomObject]$rowvalue = New-Object PSCustomObject
+                        # Loop through the rows and generate a unique value for each row
+                        for ($i = 0; $i -lt $data.Rows.Count; $i++) {
+                            $rowValue = New-Object PSCustomObject
 
                             # Loop through each of the unique indexes
-                            foreach ($index in ($table.Indexes | Where-Object IsUnique -eq $true )) {
+                            foreach ($index in ($db.Tables[$($tableobject.Name)].Indexes | Where-Object IsUnique -eq $true )) {
 
                                 # Loop through the index columns
-                                foreach ($column in $index.IndexedColumns) {
+                                foreach ($indexColumn in $index.IndexedColumns) {
                                     # Get the column mask info
-                                    $columnMaskInfo = $tableobject.Columns | Where-Object Name -eq $column.Name
+                                    $columnMaskInfo = $tableobject.Columns | Where-Object Name -eq $indexColumn.Name
 
                                     # Generate a new value
                                     $newValue = $faker.$($columnMaskInfo.MaskingType).$($columnMaskInfo.SubType)()
 
                                     # Check if the value is already present as a property
-                                    if (($rowValue | Get-Member -MemberType NoteProperty) -notcontains $column.Name) {
-                                        $rowValue | Add-Member -Name $column.Name -Type NoteProperty -Value $newValue
+                                    if (($rowValue | Get-Member -MemberType NoteProperty).Name -notcontains $indexColumn.Name) {
+                                        $rowValue | Add-Member -Name $indexColumn.Name -Type NoteProperty -Value $newValue
                                     }
 
                                 }
@@ -248,19 +247,19 @@ function Invoke-DbaDbDataMasking {
                                 # To be sure the values are unique, loop as long as long as needed to generate a unique value
                                 while (($uniqueValues | Select-Object -Property ($rowValue | Get-Member -MemberType NoteProperty | Select-Object -ExpandProperty Name)) -match $rowValue) {
 
-                                    [PSCustomObject]$rowValue = New-Object PSCustomObject
+                                    $rowValue = New-Object PSCustomObject
 
                                     # Loop through the index columns
-                                    foreach ($column in $index.IndexedColumns) {
+                                    foreach ($indexColumn in $index.IndexedColumns) {
                                         # Get the column mask info
-                                        $columnMaskInfo = $tableobject.Columns | Where-Object Name -eq $column.Name
+                                        $columnMaskInfo = $tableobject.Columns | Where-Object Name -eq $indexColumn.Name
 
                                         # Generate a new value
                                         $newValue = $faker.$($columnMaskInfo.MaskingType).$($columnMaskInfo.SubType)()
 
                                         # Check if the value is already present as a property
-                                        if (($rowValue | Get-Member -MemberType NoteProperty) -notcontains $column.Name) {
-                                            $rowValue | Add-Member -Name $column.Name -Type NoteProperty -Value $newValue
+                                        if (($rowValue | Get-Member -MemberType NoteProperty).Name -notcontains $indexColumn.Name) {
+                                            $rowValue | Add-Member -Name $indexColumn.Name -Type NoteProperty -Value $newValue
                                         }
 
                                     }
@@ -303,6 +302,7 @@ function Invoke-DbaDbDataMasking {
 
                         # Loop through each of the rows and change them
                         $rowNumber = 0
+
                         foreach ($row in $data.Rows) {
                             $updates = $wheres = @()
 
@@ -310,7 +310,14 @@ function Invoke-DbaDbDataMasking {
                                 if ($columnobject.Nullable -and (($nullmod++) % $ModulusFactor -eq 0)) {
                                     $newValue = $null
                                 } elseif ($tableobject.HasUniqueIndex) {
+
+                                    if ($uniqueValues.Count -lt 1) {
+                                        Stop-Function -Message "Could not find any unique values in dictionary" -Target $tableobject
+                                        return
+                                    }
+
                                     $newValue = $uniqueValues[$rowNumber].$($columnobject.Name)
+
                                 } else {
 
                                     # make sure max is good
