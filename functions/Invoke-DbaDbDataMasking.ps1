@@ -311,11 +311,12 @@ function Invoke-DbaDbDataMasking {
 
                         foreach ($row in $data.Rows) {
                             $updates = $wheres = @()
+                            $newValue = $null
 
                             foreach ($columnobject in $tablecolumns) {
                                 if ($columnobject.Nullable -and (($nullmod++) % $ModulusFactor -eq 0)) {
                                     $newValue = $null
-                                } elseif ($tableobject.HasUniqueIndex -and $columnobject.Name -in ($uniqueValues | Get-Member -MemberType NoteProperty | Select-Object Name -ExpandProperty Name)) {
+                                } elseif ($tableobject.HasUniqueIndex -and $columnobject.Name -in $uniqueValueColumns) {
 
                                     if ($uniqueValues.Count -lt 1) {
                                         Stop-Function -Message "Could not find any unique values in dictionary" -Target $tableobject
@@ -323,6 +324,9 @@ function Invoke-DbaDbDataMasking {
                                     }
 
                                     $newValue = $uniqueValues[$rowNumber].$($columnobject.Name)
+
+                                    # Increase the row number
+                                    $rowNumber++
 
                                 } else {
 
@@ -565,8 +569,7 @@ function Invoke-DbaDbDataMasking {
                                 Stop-Function -Message "Error updating $($tableobject.Schema).$($tableobject.Name): $errormessage" -Target $updatequery -Continue -ErrorRecord $_
                             }
 
-                            # Increase the row number
-                            $rowNumber++
+
                         }
                         try {
                             $null = $transaction.Commit()
