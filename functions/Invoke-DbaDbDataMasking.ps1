@@ -221,8 +221,11 @@ function Invoke-DbaDbDataMasking {
                     # Check if the table contains unique indexes
                     if ($tableobject.HasUniqueIndex) {
                         $uniqueValues = @()
+                        $uniqueValueColumns = @()
 
                         # Loop through the rows and generate a unique value for each row
+                        Write-Message -Level Verbose -Message "Generating unique values for $($tableobject.Name)"
+
                         for ($i = 0; $i -lt $data.Rows.Count; $i++) {
                             $rowValue = New-Object PSCustomObject
 
@@ -260,6 +263,7 @@ function Invoke-DbaDbDataMasking {
                                         # Check if the value is already present as a property
                                         if (($rowValue | Get-Member -MemberType NoteProperty).Name -notcontains $indexColumn.Name) {
                                             $rowValue | Add-Member -Name $indexColumn.Name -Type NoteProperty -Value $newValue
+                                            $uniqueValueColumns += $indexColumn.Name
                                         }
 
                                     }
@@ -273,6 +277,8 @@ function Invoke-DbaDbDataMasking {
                         }
 
                     }
+
+                    $uniqueValueColumns = $uniqueValueColumns | Select-Object -Unique
 
                     $deterministicColumns = $tables.Tables.Columns | Where-Object Deterministic -eq $true
                     $tablecolumns = $tableobject.Columns
@@ -309,7 +315,7 @@ function Invoke-DbaDbDataMasking {
                             foreach ($columnobject in $tablecolumns) {
                                 if ($columnobject.Nullable -and (($nullmod++) % $ModulusFactor -eq 0)) {
                                     $newValue = $null
-                                } elseif ($tableobject.HasUniqueIndex) {
+                                } elseif ($tableobject.HasUniqueIndex -and $columnobject.Name -in ($uniqueValues | Get-Member -MemberType NoteProperty | Select-Object Name -ExpandProperty Name)) {
 
                                     if ($uniqueValues.Count -lt 1) {
                                         Stop-Function -Message "Could not find any unique values in dictionary" -Target $tableobject
@@ -580,6 +586,9 @@ function Invoke-DbaDbDataMasking {
                             Stop-Function -Message "Error updating $($tableobject.Schema).$($tableobject.Name)" -Target $updatequery -Continue -ErrorRecord $_
                         }
                     }
+
+                    # Empty the unique values array
+                    $uniqueValues = $null
                 }
             }
             try {
