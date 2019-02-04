@@ -106,6 +106,17 @@ function Get-DbaDbRoleMember {
                 Stop-Function -Message 'Failure' -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
+            foreach($item in $Database) {
+                try {
+                    if($server.Databases[$item].IsAccessible -eq $false) {
+                        throw "Database: $item is not accessible. Check your permissions or database state."
+                    }
+                }
+                catch {
+                    Stop-Function -Message 'Failure' -Category ResourceUnavailable -ErrorRecord $_ -Target $instance -Continue
+                }
+            }
+
             $databases = $server.Databases | Where-Object { $_.IsAccessible -eq $true }
 
             if (Test-Bound -Parameter 'Database') {
