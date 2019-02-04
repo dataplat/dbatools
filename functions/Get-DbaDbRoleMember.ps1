@@ -107,6 +107,7 @@ function Get-DbaDbRoleMember {
             }
 
             foreach($item in $Database) {
+                Write-Message -Level Verbose -Message "Check if database: $item on $instance is accessible or not"
                 try {
                     if($server.Databases[$item].IsAccessible -eq $false) {
                         throw "Database: $item is not accessible. Check your permissions or database state."
