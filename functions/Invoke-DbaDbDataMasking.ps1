@@ -239,19 +239,21 @@ function Invoke-DbaDbDataMasking {
 
                                     $columnMaskInfo = $tableobject.Columns | Where-Object Name -eq $column.Name
 
-                                    $newValue = $faker.$($columnMaskInfo.MaskingType).$($columnMaskInfo.SubType)()
-
-                                    while ($item.$column -contains $newValue) {
+                                    if ($columnMaskInfo) {
                                         $newValue = $faker.$($columnMaskInfo.MaskingType).$($columnMaskInfo.SubType)()
-                                    }
 
-                                    $value += $newValue
+                                        while ($item.$column -contains $newValue) {
+                                            $newValue = $faker.$($columnMaskInfo.MaskingType).$($columnMaskInfo.SubType)()
+                                        }
+
+                                        $value += $newValue
+                                    }
 
                                 }
 
                                 $valueString = $value -join "||||"
 
-                                while($valueString -in $values){
+                                while ($valueString -in $values) {
                                     foreach ($column in $index.IndexedColumns) {
                                         $columnMaskInfo = $tableobject.Columns | Where-Object Name -eq $column.Name
 
@@ -471,12 +473,11 @@ function Invoke-DbaDbDataMasking {
                                                     $faker.System.Random.Bool()
                                                 }
                                                 {
-                                                    $psitem -in 'address','commerce','company','context','database','date','finance','hacker','hashids','image','internet','lorem','name','person','phone','random','rant','system'
+                                                    $psitem -in 'address', 'commerce', 'company', 'context', 'database', 'date', 'finance', 'hacker', 'hashids', 'image', 'internet', 'lorem', 'name', 'person', 'phone', 'random', 'rant', 'system'
                                                 } {
-                                                    if($columnobject.Format){
+                                                    if ($columnobject.Format) {
                                                         $faker.$($columnobject.MaskingType).$($columnobject.SubType)("$($columnobject.Format)")
-                                                    }
-                                                    else{
+                                                    } else {
                                                         $faker.$($columnobject.MaskingType).$($columnobject.SubType)()
                                                     }
                                                 }
@@ -491,10 +492,9 @@ function Invoke-DbaDbDataMasking {
                                                         $faker.System.Random.Bool()
                                                     } else {
                                                         try {
-                                                            if($columnobject.Format){
+                                                            if ($columnobject.Format) {
                                                                 $faker.$($columnobject.MaskingType).$($columnobject.SubType)("$($columnobject.Format)")
-                                                            }
-                                                            else{
+                                                            } else {
                                                                 $faker.$($columnobject.MaskingType).$($columnobject.SubType)()
                                                             }
                                                         } catch {
