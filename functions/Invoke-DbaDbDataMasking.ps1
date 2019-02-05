@@ -481,12 +481,28 @@ function Invoke-DbaDbDataMasking {
                                                     $faker.System.Random.Bool()
                                                 }
                                                 {
-                                                    $psitem -in 'address', 'commerce', 'company', 'context', 'database', 'date', 'finance', 'hacker', 'hashids', 'image', 'internet', 'lorem', 'name', 'person', 'phone', 'random', 'rant', 'system'
+                                                    $psitem -in 'address', 'commerce', 'company', 'context', 'database', 'finance', 'hacker', 'hashids', 'image', 'internet', 'lorem', 'name', 'person', 'phone', 'random', 'rant', 'system'
                                                 } {
                                                     if ($columnobject.Format) {
                                                         $faker.$($columnobject.MaskingType).$($columnobject.SubType)("$($columnobject.Format)")
                                                     } else {
                                                         $faker.$($columnobject.MaskingType).$($columnobject.SubType)()
+                                                    }
+                                                }
+                                                {
+                                                    $psitem -in 'finance'
+                                                } {
+                                                    if ($columnobject.Format) {
+                                                        $faker.$($columnobject.MaskingType).$($columnobject.SubType)("$($columnobject.Format)")
+                                                    }
+                                                    else {
+                                                        try{
+                                                            $faker.$($columnobject.MaskingType).$($columnobject.SubType)($max)
+                                                        }
+                                                        catch{
+                                                            $faker.$($columnobject.MaskingType).$($columnobject.SubType)()
+                                                        }
+
                                                     }
                                                 }
                                                 default {
