@@ -625,8 +625,10 @@ function Restore-DbaDatabase {
         if (Test-FunctionInterrupt) {
             return
         }
+        $internalBackupHistory = @()
+        $internalBackupHistory = $BackupHistory | Select-Object *
         if ($PSCmdlet.ParameterSetName -like "Restore*") {
-            if ($BackupHistory.Count -eq 0) {
+            if ($internalBackupHistory.Count -eq 0) {
                 Write-Message -Level Warning -Message "No backups passed through. `n This could mean the SQL instance cannot see the referenced files, the file's headers could not be read or some other issue"
                 return
             }
@@ -634,24 +636,24 @@ function Restore-DbaDatabase {
             $FilteredBackupHistory = @()
             if (Test-Bound -ParameterName GetBackupInformation) {
                 Write-Message -Message "Setting $GetBackupInformation to BackupHistory" -Level Verbose
-                Set-Variable -Name $GetBackupInformation -Value $BackupHistory -Scope Global
+                Set-Variable -Name $GetBackupInformation -Value $internalBackupHistory -Scope Global
             }
             if ($StopAfterGetBackupInformation) {
                 return
             }
             $pathSep = Get-DbaPathSep -Server $RestoreInstance
-            $null = $BackupHistory | Format-DbaBackupInformation -DataFileDirectory $DestinationDataDirectory -LogFileDirectory $DestinationLogDirectory -DestinationFileStreamDirectory $DestinationFileStreamDirectory -DatabaseFileSuffix $DestinationFileSuffix -DatabaseFilePrefix $DestinationFilePrefix -DatabaseNamePrefix $RestoredDatabaseNamePrefix -ReplaceDatabaseName $DatabaseName -Continue:$Continue -ReplaceDbNameInFile:$ReplaceDbNameInFile -FileMapping $FileMapping -PathSep $pathSep
+            $null = $internalBackupHistory | Format-DbaBackupInformation -DataFileDirectory $DestinationDataDirectory -LogFileDirectory $DestinationLogDirectory -DestinationFileStreamDirectory $DestinationFileStreamDirectory -DatabaseFileSuffix $DestinationFileSuffix -DatabaseFilePrefix $DestinationFilePrefix -DatabaseNamePrefix $RestoredDatabaseNamePrefix -ReplaceDatabaseName $DatabaseName -Continue:$Continue -ReplaceDbNameInFile:$ReplaceDbNameInFile -FileMapping $FileMapping -PathSep $pathSep
 
             if (Test-Bound -ParameterName FormatBackupInformation) {
-                Set-Variable -Name $FormatBackupInformation -Value $BackupHistory -Scope Global
+                Set-Variable -Name $FormatBackupInformation -Value $internalBackupHistory -Scope Global
             }
             if ($StopAfterFormatBackupInformation) {
                 return
             }
             if ($VerifyOnly) {
-                $FilteredBackupHistory = $BackupHistory
+                $FilteredBackupHistory = $internalBackupHistory
             } else {
-                $FilteredBackupHistory = $BackupHistory | Select-DbaBackupInformation -RestoreTime $RestoreTime -IgnoreLogs:$IgnoreLogBackups -ContinuePoints $ContinuePoints -LastRestoreType $LastRestoreType -DatabaseName $DatabaseName
+                $FilteredBackupHistory = $internalBackupHistory | Select-DbaBackupInformation -RestoreTime $RestoreTime -IgnoreLogs:$IgnoreLogBackups -ContinuePoints $ContinuePoints -LastRestoreType $LastRestoreType -DatabaseName $DatabaseName
             }
             if (Test-Bound -ParameterName SelectBackupInformation) {
                 Write-Message -Message "Setting $SelectBackupInformation to FilteredBackupHistory" -Level Verbose
