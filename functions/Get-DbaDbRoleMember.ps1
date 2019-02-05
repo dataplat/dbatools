@@ -162,9 +162,10 @@ function Get-DbaDbRoleMember {
                             Add-Member -Force -InputObject $user -MemberType NoteProperty -Name Database -Value $db.Name
                             Add-Member -Force -InputObject $user -MemberType NoteProperty -Name Role -Value $dbRole.Name
                             Add-Member -Force -InputObject $user -MemberType NoteProperty -Name UserName -Value $user.Name
+                            Add-Member -Force -InputObject $user -MemberType NoteProperty -Name LoginType -Value $user.LoginType
 
                             # Select object because Select-DefaultView causes strange behaviors when assigned to a variable (??)
-                            Select-Object -InputObject $user -Property 'ComputerName', 'InstanceName', 'SqlInstance', 'Database', 'Role', 'UserName', 'Login', 'IsSystemObject'
+                            Select-Object -InputObject $user -Property 'ComputerName', 'InstanceName', 'SqlInstance', 'Database', 'Role', 'UserName', 'Login', 'IsSystemObject', 'LoginType'
                         }
                     }
                 }
