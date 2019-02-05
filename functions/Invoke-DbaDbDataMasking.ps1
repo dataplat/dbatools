@@ -483,20 +483,20 @@ function Invoke-DbaDbDataMasking {
                                                 {
                                                     $psitem -in 'finance'
                                                 } {
-                                                    if ($columnobject.Format) {
-                                                        $faker.$($columnobject.MaskingType).$($columnobject.SubType)("$($columnobject.Format)")
-                                                    } else {
-                                                        try{
+                                                    if($columnobject.SubType.ToLower()){
+                                                        if($max){
                                                             $faker.$($columnobject.MaskingType).$($columnobject.SubType)($max)
                                                         }
-                                                        catch{
+                                                        else{
                                                             $faker.$($columnobject.MaskingType).$($columnobject.SubType)()
                                                         }
-
+                                                    }
+                                                    else{
+                                                        $faker.$($columnobject.MaskingType).$($columnobject.SubType)()
                                                     }
                                                 }
                                                 {
-                                                    $psitem -in 'address', 'commerce', 'company', 'context', 'database', 'finance', 'hacker', 'hashids', 'image', 'internet', 'lorem', 'name', 'person', 'phone', 'random', 'rant', 'system'
+                                                    $psitem -in 'address', 'commerce', 'company', 'context', 'database', 'date', 'finance', 'hacker', 'hashids', 'image', 'internet', 'lorem', 'name', 'person', 'phone', 'random', 'rant', 'system'
                                                 } {
                                                     if ($columnobject.Format) {
                                                         $faker.$($columnobject.MaskingType).$($columnobject.SubType)("$($columnobject.Format)")
