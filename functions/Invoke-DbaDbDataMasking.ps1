@@ -324,15 +324,15 @@ function Invoke-DbaDbDataMasking {
                             foreach ($columnobject in $tablecolumns) {
 
                                 if($columnobject.ColumnType -notin $supportedDataTypes){
-                                    Stop-Function -Message "Unsupported data type '$($columnobject.ColumnType)'" -Target $columnobject -Continue
+                                    Stop-Function -Message "Unsupported data type '$($columnobject.ColumnType)' for column $($columnobject.Name)" -Target $columnobject -Continue
                                 }
 
                                 if($columnobject.MaskingType -notin $supportedFakerMaskingTypes){
-                                    Stop-Function -Message "Unsupported masking type '$($columnobject.MaskingType)'" -Target $columnobject -Continue
+                                    Stop-Function -Message "Unsupported masking type '$($columnobject.MaskingType)' for column $($columnobject.Name)" -Target $columnobject -Continue
                                 }
 
                                 if($columnobject.SubType -notin $supportedFakerSubTypes){
-                                    Stop-Function -Message "Unsupported masking sub type '$($columnobject.SubType)'" -Target $columnobject -Continue
+                                    Stop-Function -Message "Unsupported masking sub type '$($columnobject.SubType)' for column $($columnobject.Name)" -Target $columnobject -Continue
                                 }
 
                                 if ($columnobject.Nullable -and (($nullmod++) % $ModulusFactor -eq 0)) {
