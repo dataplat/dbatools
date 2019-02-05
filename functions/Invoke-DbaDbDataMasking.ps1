@@ -483,13 +483,16 @@ function Invoke-DbaDbDataMasking {
                                                 {
                                                     $psitem -in 'finance'
                                                 } {
-                                                    if($columnobject.SubType.ToLower()){
-                                                        if($max){
-                                                            $faker.$($columnobject.MaskingType).$($columnobject.SubType)($max)
+                                                    switch($columnobject.SubType.ToLower()){
+                                                        'account' {
+                                                            if($max){
+                                                                $faker.$($columnobject.MaskingType).$($columnobject.SubType)($max)
+                                                            }
+                                                            else{
+                                                                $faker.$($columnobject.MaskingType).$($columnobject.SubType)()
+                                                            }
                                                         }
-                                                        else{
-                                                            $faker.$($columnobject.MaskingType).$($columnobject.SubType)()
-                                                        }
+
                                                     }
                                                     else{
                                                         $faker.$($columnobject.MaskingType).$($columnobject.SubType)()
