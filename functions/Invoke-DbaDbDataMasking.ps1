@@ -132,6 +132,14 @@ function Invoke-DbaDbDataMasking {
         # Create the faker objects
         Add-Type -Path (Resolve-Path -Path "$script:PSModuleRoot\bin\datamasking\Bogus.dll")
         $faker = New-Object Bogus.Faker($Locale)
+
+        $supportedDataTypes = 'bit','bool','char','date','datetime','datetime2','int','money','nchar','nvarchar','smalldatetime','time','uniqueidentifier','userdefineddatatype','varchar'
+
+        $supportedFakerMaskingTypes = ($faker | Get-Member -MemberType Property | Select-Object Name -ExpandProperty Name)
+
+        $supportedFakerSubTypes = ($faker | Get-Member -MemberType Property) | ForEach-Object { ($faker.$($_.Name)) | Get-Member -MemberType Method | Where-Object {$_.Name -notlike 'To*' -and $_.Name -notlike 'Get*' -and $_.Name -notlike 'Trim*' -and $_.Name -notin 'Add','Equals', 'CompareTo', 'Clone','Contains','CopyTo','EndsWith','IndexOf','IndexOfAny','Insert','IsNormalized','LastIndexOf','LastIndexOfAny','Normalize','PadLeft','PadRight','Remove','Replace','Split','StartsWith','Substring','Letter','Lines','Paragraph','Paragraphs','Sentence','Sentences'} | Select-Object name -ExpandProperty Name }
+
+        $supportedFakerSubTypes += "Date"
     }
 
     process {
@@ -315,15 +323,15 @@ function Invoke-DbaDbDataMasking {
 
                             foreach ($columnobject in $tablecolumns) {
 
-                                if($columnobject.ColumnType -notin 'bit','bool','char','date','datetime','datetime2','int','money','nchar','nvarchar','smalldatetime','time','uniqueidentifier','userdefineddatatype'){
+                                if($columnobject.ColumnType -notin $supportedDataTypes){
                                     Stop-Function -Message "Unsupported data type '$($columnobject.ColumnType)'" -Target $columnobject -Continue
                                 }
 
-                                if($columnobject.MaskingType -notin ($faker | Get-Member -MemberType Property | Select-Object Name -ExpandProperty Name){
+                                if($columnobject.MaskingType -notin $supportedFakerMaskingTypes){
                                     Stop-Function -Message "Unsupported masking type '$($columnobject.MaskingType)'" -Target $columnobject -Continue
                                 }
 
-                                if($columnobject.SubType -notin ($faker | Get-Member -MemberType Property) | ForEach-Object { $faker.$($_.Name) | Get-Member -MemberType Method | Where-Object {$_.Name -notlike 'To*' -and $_.Name -notlike 'Get*' -and $_.Name -notlike 'Trim*' -and $_.Name -notin 'Add','Equals', 'CompareTo', 'Clone','Contains','CopyTo','EndsWith','IndexOf','IndexOfAny','Insert','IsNormalized','LastIndexOf','LastIndexOfAny','Normalize','PadLeft','PadRight','Remove','Replace','Split','StartsWith','Substring','Letter','Lines','Paragraph','Paragraphs','Sentence','Sentences'} | Select-Object name -ExpandProperty Name }){
+                                if($columnobject.SubType -notin $supportedFakerSubTypes){
                                     Stop-Function -Message "Unsupported masking sub type '$($columnobject.SubType)'" -Target $columnobject -Continue
                                 }
 
