@@ -481,16 +481,6 @@ function Invoke-DbaDbDataMasking {
                                                     $faker.System.Random.Bool()
                                                 }
                                                 {
-                                                    $psitem -in 'finance' -and ($columnobject.SubType.ToLower() -in 'account')
-                                                } {
-                                                    if($max){
-                                                        $faker.$($columnobject.MaskingType).$($columnobject.SubType)($max)
-                                                    }
-                                                    else{
-                                                        $faker.$($columnobject.MaskingType).$($columnobject.SubType)()
-                                                    }
-                                                }
-                                                {
                                                     $psitem -in 'address', 'commerce', 'company', 'context', 'database', 'date', 'finance', 'hacker', 'hashids', 'image', 'internet', 'lorem', 'name', 'person', 'phone', 'random', 'rant', 'system'
                                                 } {
                                                     if ($columnobject.Format) {
