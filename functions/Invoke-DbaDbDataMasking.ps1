@@ -314,6 +314,19 @@ function Invoke-DbaDbDataMasking {
                             $newValue = $null
 
                             foreach ($columnobject in $tablecolumns) {
+
+                                if($columnobject.ColumnType -notin 'bit','bool','char','date','datetime','datetime2','int','money','nchar','nvarchar','smalldatetime','time','uniqueidentifier','userdefineddatatype'){
+                                    Stop-Function -Message "Unsupported data type '$($columnobject.ColumnType)'" -Target $columnobject -Continue
+                                }
+
+                                if($columnobject.MaskingType -notin ($faker | Get-Member -MemberType Property | Select-Object Name -ExpandProperty Name){
+                                    Stop-Function -Message "Unsupported masking type '$($columnobject.MaskingType)'" -Target $columnobject -Continue
+                                }
+
+                                if($columnobject.SubType -notin ($faker | Get-Member -MemberType Property) | ForEach-Object { $faker.$($_.Name) | Get-Member -MemberType Method | Where-Object {$_.Name -notlike 'To*' -and $_.Name -notlike 'Get*' -and $_.Name -notlike 'Trim*' -and $_.Name -notin 'Add','Equals', 'CompareTo', 'Clone','Contains','CopyTo','EndsWith','IndexOf','IndexOfAny','Insert','IsNormalized','LastIndexOf','LastIndexOfAny','Normalize','PadLeft','PadRight','Remove','Replace','Split','StartsWith','Substring','Letter','Lines','Paragraph','Paragraphs','Sentence','Sentences'} | Select-Object name -ExpandProperty Name }){
+                                    Stop-Function -Message "Unsupported masking sub type '$($columnobject.SubType)'" -Target $columnobject -Continue
+                                }
+
                                 if ($columnobject.Nullable -and (($nullmod++) % $ModulusFactor -eq 0)) {
                                     $newValue = $null
                                 } elseif ($tableobject.HasUniqueIndex -and $columnobject.Name -in $uniqueValueColumns) {
