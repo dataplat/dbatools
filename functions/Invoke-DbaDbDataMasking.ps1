@@ -195,6 +195,8 @@ function Invoke-DbaDbDataMasking {
                 $stepcounter = $nullmod = 0
 
                 foreach ($tableobject in $tables.Tables) {
+                    $uniqueValues = @()
+                    $uniqueValueColumns = @()
 
                     if ($tableobject.Name -in $ExcludeTable) {
                         Write-Message -Level Verbose -Message "Skipping $($tableobject.Name) because it is explicitly excluded"
@@ -220,8 +222,6 @@ function Invoke-DbaDbDataMasking {
 
                     # Check if the table contains unique indexes
                     if ($tableobject.HasUniqueIndex) {
-                        $uniqueValues = @()
-                        $uniqueValueColumns = @()
 
                         # Loop through the rows and generate a unique value for each row
                         Write-Message -Level Verbose -Message "Generating unique values for $($tableobject.Name)"
@@ -324,9 +324,6 @@ function Invoke-DbaDbDataMasking {
                                     }
 
                                     $newValue = $uniqueValues[$rowNumber].$($columnobject.Name)
-
-                                    # Increase the row number
-                                    $rowNumber++
 
                                 } else {
 
@@ -569,7 +566,8 @@ function Invoke-DbaDbDataMasking {
                                 Stop-Function -Message "Error updating $($tableobject.Schema).$($tableobject.Name): $errormessage" -Target $updatequery -Continue -ErrorRecord $_
                             }
 
-
+                            # Increase the row number
+                            $rowNumber++
                         }
                         try {
                             $null = $transaction.Commit()
