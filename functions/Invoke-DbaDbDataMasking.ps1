@@ -553,6 +553,13 @@ function Invoke-DbaDbDataMasking {
                                     } else {
                                         $updates += "[$($columnobject.Name)] = $newValue"
                                     }
+                                }
+                                elseif($columnobject.ColumnType -in 'text', 'ntext'){
+                                    if ($null -eq $newValue -and $columnobject.Nullable) {
+                                        $updates += "[$($columnobject.Name)] = NULL"
+                                    } else {
+                                        $updates += "[$($columnobject.Name)] = $newValue"
+                                    }
                                 } else {
                                     if ($null -eq $newValue -and $columnobject.Nullable) {
                                         $updates += "[$($columnobject.Name)] = NULL"
@@ -565,7 +572,11 @@ function Invoke-DbaDbDataMasking {
                                 if ($columnobject.ColumnType -notin 'xml', 'geography', 'geometry') {
                                     if (($row.$($columnobject.Name)).GetType().Name -match 'DBNull') {
                                         $wheres += "[$($columnobject.Name)] IS NULL"
-                                    } else {
+                                    }
+                                    elseif ($columnobject.ColumnType.ToLower() -in 'text', 'ntext') {
+                                        $wheres += "CAST([$($columnobject.Name)] AS VARCHAR) = '$oldValue'"
+                                    }
+                                    else {
                                         $oldValue = ($row.$($columnobject.Name)).Tostring().Replace("'", "''")
                                         $wheres += "[$($columnobject.Name)] = '$oldValue'"
                                     }
