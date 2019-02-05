@@ -374,10 +374,18 @@ function ConvertTo-DbaDataTable {
 
                                     $datarow.Item($property.Name) = $newColumn.Value
                                 } catch {
-                                    Write-Message -Level Warning -Message "Failed to add property $($property.Name) from $object" -ErrorRecord $_ -Target $object
+                                    if ($EnableException) {
+                                        Stop-Function -Message "Failed to add property $($property.Name) from $object" -ErrorRecord $_ -Target $object
+                                    } else {
+                                        Write-Message -Level $levl -Message "Failed to add property $($property.Name) from $object" -ErrorRecord $_ -Target $object
+                                    }
                                 }
                             } else {
-                                Write-Message -Level Warning -Message "Failed to add property $($property.Name) from $object" -ErrorRecord $_ -Target $object
+                                if ($EnableException) {
+                                    Stop-Function -Message "Failed to add property $($property.Name) from $object" -ErrorRecord $_ -Target $object
+                                } else {
+                                    Write-Message -Level $levl -Message "Failed to add property $($property.Name) from $object" -ErrorRecord $_ -Target $object
+                                }
                             }
                         }
                     }
