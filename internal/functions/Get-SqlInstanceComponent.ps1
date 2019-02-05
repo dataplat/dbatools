@@ -69,8 +69,7 @@ function Get-SQLInstanceComponent {
         [DbaInstanceParameter[]]$ComputerName = $Env:COMPUTERNAME,
         [ValidateSet('SSDS', 'SSAS', 'SSRS')]
         [string[]]$Component = @('SSDS', 'SSAS', 'SSRS'),
-        [pscredential]$Credential,
-        [bool]$EnableException = $EnableException
+        [pscredential]$Credential
     )
 
     begin {
