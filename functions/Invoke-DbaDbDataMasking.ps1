@@ -496,7 +496,7 @@ function Invoke-DbaDbDataMasking {
                                                     }
                                                 }
                                                 {
-                                                    $psitem -in 'address', 'commerce', 'company', 'context', 'database', 'date', 'finance', 'hacker', 'hashids', 'image', 'internet', 'lorem', 'name', 'person', 'phone', 'random', 'rant', 'system'
+                                                    $psitem -in 'address', 'commerce', 'company', 'context', 'database', 'date', 'hacker', 'hashids', 'image', 'internet', 'lorem', 'name', 'person', 'phone', 'random', 'rant', 'system'
                                                 } {
                                                     if ($columnobject.Format) {
                                                         $faker.$($columnobject.MaskingType).$($columnobject.SubType)("$($columnobject.Format)")
