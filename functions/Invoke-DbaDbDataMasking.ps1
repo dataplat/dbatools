@@ -221,7 +221,6 @@ function Invoke-DbaDbDataMasking {
                         if (-not (Test-Bound -ParameterName Query)) {
                             $columnString = "[" + (($dbTable.Columns | Where-Object DataType -in $supportedDataTypes | Select-Object Name -ExpandProperty Name) -join "],[") + "]"
                             $query = "SELECT $($columnString) FROM [$($tableobject.Schema)].[$($tableobject.Name)]"
-                            $query
                         }
                         $data = $server.Databases[$($db.Name)].Query($query) | ConvertTo-DbaDataTable
                     } catch {
@@ -589,7 +588,7 @@ function Invoke-DbaDbDataMasking {
                             }
 
                             $updatequery = "UPDATE [$($tableobject.Schema)].[$($tableobject.Name)] SET $($updates -join ', ') WHERE $($wheres -join ' AND ')"
-                            $updatequery
+
                             try {
                                 #$sqlcmd = New-Object System.Data.SqlClient.SqlCommand($updatequery, $sqlconn, $transaction)
                                 $null = $sqlcmd.ExecuteNonQuery()
