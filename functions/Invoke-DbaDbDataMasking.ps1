@@ -133,7 +133,7 @@ function Invoke-DbaDbDataMasking {
         Add-Type -Path (Resolve-Path -Path "$script:PSModuleRoot\bin\datamasking\Bogus.dll")
         $faker = New-Object Bogus.Faker($Locale)
 
-        $supportedDataTypes = 'bit','bool','char','date','datetime','datetime2','int','money','nchar','ntext','nvarchar','smalldatetime','text','time','uniqueidentifier','userdefineddatatype','varchar'
+        $supportedDataTypes = 'bit','bool','char','date','datetime','datetime2','decimal','int','money','nchar','ntext','nvarchar','smalldatetime','text','time','uniqueidentifier','userdefineddatatype','varchar'
 
         $supportedFakerMaskingTypes = ($faker | Get-Member -MemberType Property | Select-Object Name -ExpandProperty Name)
 
