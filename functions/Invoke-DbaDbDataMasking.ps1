@@ -277,15 +277,6 @@ function Invoke-DbaDbDataMasking {
 
                     $table = $db.Tables[$($tableobject.Name)]
 
-                    try {
-                        if (-not (Test-Bound -ParameterName Query)) {
-                            $query = "SELECT * FROM [$($tableobject.Schema)].[$($tableobject.Name)]"
-                        }
-                        $data = $server.Databases[$($db.Name)].Query($query) | ConvertTo-DbaDataTable
-                    } catch {
-                        Stop-Function -Message "Failure retrieving the data from table $($tableobject.Name)" -Target $Database -ErrorRecord $_ -Continue
-                    }
-
                     $sqlconn.ChangeDatabase($db.Name)
 
                     $deterministicColumns = $tables.Tables.Columns | Where-Object Deterministic -eq $true
@@ -306,6 +297,16 @@ function Invoke-DbaDbDataMasking {
                     if (-not $tablecolumns) {
                         Write-Message -Level Verbose "No columns to process in $($db.Name).$($tableobject.Schema).$($tableobject.Name), moving on"
                         continue
+                    }
+
+                    try {
+                        if (-not (Test-Bound -ParameterName Query)) {
+                            $columnString = "[" + (($tablecolumns | Where-Object ColumnType -in $supportedDataTypes | Select-Object Name -ExpandProperty Name) -join "],[") + "]"
+                            $query = "SELECT $($columnString) FROM [$($tableobject.Schema)].[$($tableobject.Name)]"
+                        }
+                        $data = $server.Databases[$($db.Name)].Query($query) | ConvertTo-DbaDataTable
+                    } catch {
+                        Stop-Function -Message "Failure retrieving the data from table $($tableobject.Name)" -Target $Database -ErrorRecord $_ -Continue
                     }
 
                     if ($Pscmdlet.ShouldProcess($instance, "Masking $($tablecolumns.Name -join ', ') in $($data.Rows.Count) rows in $($db.Name).$($tableobject.Schema).$($tableobject.Name)")) {
