@@ -169,7 +169,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
                 $result = Install-DbaInstance @splat -EnableException -Confirm:$false
                 Assert-MockCalled -CommandName Invoke-Program -Exactly 1 -Scope It -ModuleName dbatools
                 Assert-MockCalled -CommandName Find-SqlServerSetup -Exactly 1 -Scope It -ModuleName dbatools
-                Assert-MockCalled -CommandName Test-PendingReboot -Exactly 1 -Scope It -ModuleName dbatools
+                Assert-MockCalled -CommandName Test-PendingReboot -Exactly 2 -Scope It -ModuleName dbatools
                 Assert-MockCalled -CommandName Restart-Computer -Exactly 1 -Scope It -ModuleName dbatools
 
                 $result | Should -Not -BeNullOrEmpty

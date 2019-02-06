@@ -416,6 +416,7 @@ function Install-DbaInstance {
         }
 
         # check if installation path(s) is a network path and try to access it from the local machine
+        Write-ProgressHelper -ExcludePercent -Activity "Looking for setup files" -StepNumber 0 -Message "Checking if installation is available locally"
         $isNetworkPath = $true
         foreach ($p in $Path) { if ($p -notlike '\\*') { $isNetworkPath = $false} }
         if ($isNetworkPath) {
@@ -428,7 +429,10 @@ function Install-DbaInstance {
         }
 
         $actionPlan = @()
+        $stepCounter = 0
         foreach ($computer in $SqlInstance) {
+            $stepCounter++
+            $activity = "Preparing to install SQL Server $Version on $computer"
             # Test elevated console
             $null = Test-ElevationRequirement -ComputerName $computer -Continue
             # notify about credentials once
@@ -437,9 +441,11 @@ function Install-DbaInstance {
                 $notifiedCredentials = $true
             }
             # resolve names
+            Write-ProgressHelper -TotatSteps $SqlInstance.Count -Activity $activity -StepNumber $stepCounter -Message "Resolving computer name"
             $resolvedName = Resolve-DbaNetworkName -ComputerName $computer -Credential $Credential
             $fullComputerName = $resolvedName.FullComputerName
             # test if the restart is needed
+            Write-ProgressHelper -TotatSteps $SqlInstance.Count -Activity $activity -StepNumber $stepCounter -Message "Checking for pending restarts"
             try {
                 $restartNeeded = Test-PendingReboot -ComputerName $fullComputerName -Credential $Credential
             } catch {
@@ -451,6 +457,7 @@ function Install-DbaInstance {
             }
             # Attempt to configure CredSSP for the remote host when credentials are defined
             if ($Credential -and -not ([DbaInstanceParameter]$computer).IsLocalHost -and $Authentication -eq 'Credssp') {
+                Write-ProgressHelper -TotatSteps $SqlInstance.Count -Activity $activity -StepNumber $stepCounter -Message "Configuring CredSSP protocol"
                 Write-Message -Level Verbose -Message "Attempting to configure CredSSP for remote connections"
                 Initialize-CredSSP -ComputerName $fullComputerName -Credential $Credential -EnableException $false
                 # Verify remote connection and confirm using unsecure credentials
@@ -469,6 +476,7 @@ function Install-DbaInstance {
                 }
             }
             # find installation file
+            Write-ProgressHelper -TotatSteps $SqlInstance.Count -Activity $activity -StepNumber $stepCounter -Message "Verifying access to setup files"
             $setupFileIsAccessible = $false
             if ($localSetupFile) {
                 $testSetupPathParams = @{
@@ -512,10 +520,11 @@ function Install-DbaInstance {
             if (-not $setupFile) {
                 Stop-Function -Message "Failed to find setup file for SQL$Version in $Path on $fullComputerName" -Continue
             }
+            Write-ProgressHelper -TotatSteps $SqlInstance.Count -Activity $activity -StepNumber $stepCounter -Message "Generating a configuration file"
             $instance = if ($InstanceName) { $InstanceName } else { $computer.InstanceName }
             # checking if we need to modify port after the installation
             $portNumber = if ($Port) { $Port } elseif ($computer.Port -in 0, 1433) { $null } else { $computer.Port }
-            $mainKey = if ($canonicVersion -gt '11.0') { "OPTIONS" } else { "SQLSERVER2008" }
+            $mainKey = if ($canonicVersion -ge '11.0') { "OPTIONS" } else { "SQLSERVER2008" }
             if (Test-Bound -ParameterName ConfigurationFile) {
                 try {
                     $config = Read-IniFile -Path $ConfigurationFile
@@ -676,12 +685,15 @@ function Install-DbaInstance {
         }
 
         $installAction = {
+            $activity = "Installing SQL Server $Version on $($_.ComputerName)"
+            Write-ProgressHelper -ExcludePercent -Activity $activity -Message "Preparing the installation"
             $output = [pscustomobject]@{
                 ComputerName      = $_.ComputerName
                 Version           = $Version
                 SACredential      = $null
                 Successful        = $false
                 Restarted         = $false
+                Configuration     = $config
                 InstanceName      = $_.InstanceName
                 Installer         = $_.InstallationPath
                 Port              = $_.Port
@@ -745,6 +757,7 @@ function Install-DbaInstance {
                     $output.Notes += $msg
                 }
             }
+            Write-ProgressHelper -ExcludePercent -Activity $activity -Message "Running the installation"
             Write-Message -Level Verbose -Message "Setup starting from $($_.InstallationPath)"
             $execParams = @{
                 ComputerName   = $_.ComputerName
@@ -797,7 +810,7 @@ function Install-DbaInstance {
                 # cleanup config file
                 Remove-Item $_.ConfigurationPath
             }
-
+            Write-ProgressHelper -ExcludePercent -Activity $activity -Message "Performing post-installation tasks"
             # perform volume maintenance tasks if requested
             if ($PerformVolumeMaintenanceTasks) {
                 $null = Set-DbaPrivilege -ComputerName $_.ComputerName -Credential $Credential -Type IFI -EnableException:$EnableException
@@ -832,7 +845,6 @@ function Install-DbaInstance {
             return $output
         }
         $outputHandler = {
-            $_ | Add-Member -MemberType NoteProperty -Name Configuration -Value $config
             $_ | Select-DefaultView -Property ComputerName, InstanceName, Version, Port, Successful, Restarted, Installer, ExitCode, Notes
             if ($_.Successful -eq $false) {
                 Write-Message -Level Warning -Message "Installation failed: $($_.Notes -join ' | ')"
