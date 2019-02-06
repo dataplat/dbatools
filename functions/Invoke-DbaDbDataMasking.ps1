@@ -569,21 +569,21 @@ function Invoke-DbaDbDataMasking {
                                     }
                                 }
 
-                                $rowItems = $row | Get-Member -MemberType Properties | Select-Object Name -ExpandProperty Name
-                                foreach ($item in $rowItems) {
-                                    if (($row.$($item)).GetType().Name -match 'DBNull') {
-                                        $wheres += "[$item] IS NULL"
-                                    } elseif ($dbTable.Columns[$item].DataType.SqlDataType.ToString().ToLower() -in 'text', 'ntext') {
-                                        $oldValue = ($row.$item).Tostring().Replace("'", "''")
-                                        $wheres += "CAST([$item] AS VARCHAR) = '$oldValue'"
-                                    } else {
-                                        $oldValue = ($row.$item).Tostring().Replace("'", "''")
-                                        $wheres += "[$item] = '$oldValue'"
-                                    }
-                                }
-
                                 if ($columnobject.Deterministic -and ($row.$($columnobject.Name) -notin $dictionary.Keys)) {
                                     $dictionary.Add($row.$($columnobject.Name), $newValue)
+                                }
+                            }
+
+                            $rowItems = $row | Get-Member -MemberType Properties | Select-Object Name -ExpandProperty Name
+                            foreach ($item in $rowItems) {
+                                if (($row.$($item)).GetType().Name -match 'DBNull') {
+                                    $wheres += "[$item] IS NULL"
+                                } elseif ($dbTable.Columns[$item].DataType.SqlDataType.ToString().ToLower() -in 'text', 'ntext') {
+                                    $oldValue = ($row.$item).Tostring().Replace("'", "''")
+                                    $wheres += "CAST([$item] AS VARCHAR) = '$oldValue'"
+                                } else {
+                                    $oldValue = ($row.$item).Tostring().Replace("'", "''")
+                                    $wheres += "[$item] = '$oldValue'"
                                 }
                             }
 
