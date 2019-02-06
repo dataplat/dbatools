@@ -11,8 +11,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [0.9.752] - 2019-01-31
 ### Fixed
+* Corrected math in Invoke-DbaDbShrink [#5039](https://github.com/sqlcollaborative/dbatools/issues/5039)
 ### Changed
+* Remove dependency on System.Data objects in Get-DbaDbccMemoryStatus [#5031](https://github.com/sqlcollaborative/dbatools/pull/5031)
 ### Added
+* Support for pipeline input on Set-DbaAgentJobStep [#4350](https://github.com/sqlcollaborative/dbatools/issues/4350)
+* Add missing server parameter in Set-DbaAgentJobStep [#4715](https://github.com/sqlcollaborative/dbatools/issues/4715)
 
 ## [0.9.751] - 2019-01-31
 ### Fixed
