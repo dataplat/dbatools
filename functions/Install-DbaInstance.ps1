@@ -231,7 +231,7 @@ function Install-DbaInstance {
         [string]$BackupPath,
         [string[]]$AdminAccount,
         [int]$Port,
-        [int]$Throttle,
+        [int]$Throttle = 50,
         [Alias('PID')]
         [string]$ProductID,
         [pscredential]$EngineCredential,
@@ -429,9 +429,9 @@ function Install-DbaInstance {
         }
 
         $actionPlan = @()
-        $stepCounter = 0
         foreach ($computer in $SqlInstance) {
-            $stepCounter++
+            $stepCounter = 0
+            $totalSteps = 5
             $activity = "Preparing to install SQL Server $Version on $computer"
             # Test elevated console
             $null = Test-ElevationRequirement -ComputerName $computer -Continue
@@ -441,11 +441,11 @@ function Install-DbaInstance {
                 $notifiedCredentials = $true
             }
             # resolve names
-            Write-ProgressHelper -TotatSteps $SqlInstance.Count -Activity $activity -StepNumber $stepCounter -Message "Resolving computer name"
+            Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Resolving computer name"
             $resolvedName = Resolve-DbaNetworkName -ComputerName $computer -Credential $Credential
             $fullComputerName = $resolvedName.FullComputerName
             # test if the restart is needed
-            Write-ProgressHelper -TotatSteps $SqlInstance.Count -Activity $activity -StepNumber $stepCounter -Message "Checking for pending restarts"
+            Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Checking for pending restarts"
             try {
                 $restartNeeded = Test-PendingReboot -ComputerName $fullComputerName -Credential $Credential
             } catch {
@@ -457,7 +457,7 @@ function Install-DbaInstance {
             }
             # Attempt to configure CredSSP for the remote host when credentials are defined
             if ($Credential -and -not ([DbaInstanceParameter]$computer).IsLocalHost -and $Authentication -eq 'Credssp') {
-                Write-ProgressHelper -TotatSteps $SqlInstance.Count -Activity $activity -StepNumber $stepCounter -Message "Configuring CredSSP protocol"
+                Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Configuring CredSSP protocol"
                 Write-Message -Level Verbose -Message "Attempting to configure CredSSP for remote connections"
                 Initialize-CredSSP -ComputerName $fullComputerName -Credential $Credential -EnableException $false
                 # Verify remote connection and confirm using unsecure credentials
@@ -476,7 +476,7 @@ function Install-DbaInstance {
                 }
             }
             # find installation file
-            Write-ProgressHelper -TotatSteps $SqlInstance.Count -Activity $activity -StepNumber $stepCounter -Message "Verifying access to setup files"
+            Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Verifying access to setup files"
             $setupFileIsAccessible = $false
             if ($localSetupFile) {
                 $testSetupPathParams = @{
@@ -520,7 +520,7 @@ function Install-DbaInstance {
             if (-not $setupFile) {
                 Stop-Function -Message "Failed to find setup file for SQL$Version in $Path on $fullComputerName" -Continue
             }
-            Write-ProgressHelper -TotatSteps $SqlInstance.Count -Activity $activity -StepNumber $stepCounter -Message "Generating a configuration file"
+            Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Generating a configuration file"
             $instance = if ($InstanceName) { $InstanceName } else { $computer.InstanceName }
             # checking if we need to modify port after the installation
             $portNumber = if ($Port) { $Port } elseif ($computer.Port -in 0, 1433) { $null } else { $computer.Port }
