@@ -133,11 +133,11 @@ function Invoke-DbaDbDataMasking {
         Add-Type -Path (Resolve-Path -Path "$script:PSModuleRoot\bin\datamasking\Bogus.dll")
         $faker = New-Object Bogus.Faker($Locale)
 
-        $supportedDataTypes = 'bit','bool','char','date','datetime','datetime2','decimal','int','money','nchar','ntext','nvarchar','smalldatetime','text','time','uniqueidentifier','userdefineddatatype','varchar'
+        $supportedDataTypes = 'bit', 'bool', 'char', 'date', 'datetime', 'datetime2', 'decimal', 'int', 'money', 'nchar', 'ntext', 'nvarchar', 'smalldatetime', 'text', 'time', 'uniqueidentifier', 'userdefineddatatype', 'varchar'
 
         $supportedFakerMaskingTypes = ($faker | Get-Member -MemberType Property | Select-Object Name -ExpandProperty Name)
 
-        $supportedFakerSubTypes = ($faker | Get-Member -MemberType Property) | ForEach-Object { ($faker.$($_.Name)) | Get-Member -MemberType Method | Where-Object {$_.Name -notlike 'To*' -and $_.Name -notlike 'Get*' -and $_.Name -notlike 'Trim*' -and $_.Name -notin 'Add','Equals', 'CompareTo', 'Clone','Contains','CopyTo','EndsWith','IndexOf','IndexOfAny','Insert','IsNormalized','LastIndexOf','LastIndexOfAny','Normalize','PadLeft','PadRight','Remove','Replace','Split','StartsWith','Substring','Letter','Lines','Paragraph','Paragraphs','Sentence','Sentences'} | Select-Object name -ExpandProperty Name }
+        $supportedFakerSubTypes = ($faker | Get-Member -MemberType Property) | ForEach-Object { ($faker.$($_.Name)) | Get-Member -MemberType Method | Where-Object {$_.Name -notlike 'To*' -and $_.Name -notlike 'Get*' -and $_.Name -notlike 'Trim*' -and $_.Name -notin 'Add', 'Equals', 'CompareTo', 'Clone', 'Contains', 'CopyTo', 'EndsWith', 'IndexOf', 'IndexOfAny', 'Insert', 'IsNormalized', 'LastIndexOf', 'LastIndexOfAny', 'Normalize', 'PadLeft', 'PadRight', 'Remove', 'Replace', 'Split', 'StartsWith', 'Substring', 'Letter', 'Lines', 'Paragraph', 'Paragraphs', 'Sentence', 'Sentences'} | Select-Object name -ExpandProperty Name }
 
         $supportedFakerSubTypes += "Date"
     }
@@ -301,7 +301,8 @@ function Invoke-DbaDbDataMasking {
 
                     try {
                         if (-not (Test-Bound -ParameterName Query)) {
-                            $query = "SELECT * FROM [$($tableobject.Schema)].[$($tableobject.Name)]"
+                            $columnString = "[" + (($table.Columns | Where-Object DataType -in $supportedDataTypes | Select-Object Name -ExpandProperty Name) -join "],[") + "]"
+                            $query = "SELECT $($columnString) FROM [$($tableobject.Schema)].[$($tableobject.Name)]"
                         }
                         $data = $server.Databases[$($db.Name)].Query($query) | ConvertTo-DbaDataTable
                     } catch {
@@ -323,15 +324,15 @@ function Invoke-DbaDbDataMasking {
 
                             foreach ($columnobject in $tablecolumns) {
 
-                                if($columnobject.ColumnType -notin $supportedDataTypes){
+                                if ($columnobject.ColumnType -notin $supportedDataTypes) {
                                     Stop-Function -Message "Unsupported data type '$($columnobject.ColumnType)' for column $($columnobject.Name)" -Target $columnobject -Continue
                                 }
 
-                                if($columnobject.MaskingType -notin $supportedFakerMaskingTypes){
+                                if ($columnobject.MaskingType -notin $supportedFakerMaskingTypes) {
                                     Stop-Function -Message "Unsupported masking type '$($columnobject.MaskingType)' for column $($columnobject.Name)" -Target $columnobject -Continue
                                 }
 
-                                if($columnobject.SubType -notin $supportedFakerSubTypes){
+                                if ($columnobject.SubType -notin $supportedFakerSubTypes) {
                                     Stop-Function -Message "Unsupported masking sub type '$($columnobject.SubType)' for column $($columnobject.Name)" -Target $columnobject -Continue
                                 }
 
@@ -553,8 +554,7 @@ function Invoke-DbaDbDataMasking {
                                     } else {
                                         $updates += "[$($columnobject.Name)] = $newValue"
                                     }
-                                }
-                                elseif($columnobject.ColumnType -in 'text', 'ntext'){
+                                } elseif ($columnobject.ColumnType -in 'text', 'ntext') {
                                     if ($null -eq $newValue -and $columnobject.Nullable) {
                                         $updates += "[$($columnobject.Name)] = NULL"
                                     } else {
@@ -572,11 +572,9 @@ function Invoke-DbaDbDataMasking {
                                 if ($columnobject.ColumnType -notin 'xml', 'geography', 'geometry') {
                                     if (($row.$($columnobject.Name)).GetType().Name -match 'DBNull') {
                                         $wheres += "[$($columnobject.Name)] IS NULL"
-                                    }
-                                    elseif ($columnobject.ColumnType.ToLower() -in 'text', 'ntext') {
+                                    } elseif ($columnobject.ColumnType.ToLower() -in 'text', 'ntext') {
                                         $wheres += "CAST([$($columnobject.Name)] AS VARCHAR) = '$oldValue'"
-                                    }
-                                    else {
+                                    } else {
                                         $oldValue = ($row.$($columnobject.Name)).Tostring().Replace("'", "''")
                                         $wheres += "[$($columnobject.Name)] = '$oldValue'"
                                     }
