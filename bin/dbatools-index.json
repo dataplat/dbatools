@@ -982,7 +982,7 @@
                        ],
                        [
                            "AzureBaseUrl",
-                           "The URL to the base container of an Azure Storage account to write backups to.\nIf specified, the only other parameters than can be used are \"NoCopyOnly\", \"Type\", \"CompressBackup\", \"Checksum\", \"Verify\", \"AzureCredential\", \"CreateFolder\".",
+                           "The URL to the base container of an Azure Storage account to write backups to.\nIf specified, the only other parameters than can be used are \"CopyOnly\", \"Type\", \"CompressBackup\", \"Checksum\", \"Verify\", \"AzureCredential\", \"CreateFolder\".",
                            "",
                            false,
                            "false",
@@ -3251,7 +3251,7 @@
                        ],
                        [
                            "Force",
-                           "If this switch is enabled, existing databases on Destination with matching names from Source will be dropped. If using -DetachReattach, mirrors will be broken and the database(s) dropped from \r\nAvailability Groups.",
+                           "If this switch is enabled, existing databases on Destination with matching names from Source will be dropped.\r\nIf using -DetachReattach, mirrors will be broken and the database(s) dropped from Availability Groups.\r\nIf using -SetSourceReadonly, this will instantly roll back any open transactions that may be stopping the process.",
                            "",
                            false,
                            "false",
@@ -35272,9 +35272,9 @@
                        [
                            "SqlInstance",
                            "The target SQL Server instance or instances. You must have sysadmin access and server version must be SQL Server version 2000 or greater.",
-                           "ServerInstance,SqlServer",
+                           "",
                            true,
-                           "true (ByValue)",
+                           "false",
                            ""
                        ],
                        [
@@ -35289,7 +35289,7 @@
                            "Job",
                            "The name of the job. Can be null if the the job id is being used.",
                            "",
-                           true,
+                           false,
                            "false",
                            ""
                        ],
@@ -35297,7 +35297,7 @@
                            "StepName",
                            "The name of the step.",
                            "",
-                           true,
+                           false,
                            "false",
                            ""
                        ],
@@ -35312,6 +35312,14 @@
                        [
                            "Subsystem",
                            "The subsystem used by the SQL Server Agent service to execute command.\r\nAllowed values \u0027ActiveScripting\u0027,\u0027AnalysisCommand\u0027,\u0027AnalysisQuery\u0027,\u0027CmdExec\u0027,\u0027Distribution\u0027,\u0027LogReader\u0027,\u0027Merge\u0027,\u0027PowerShell\u0027,\u0027QueueReader\u0027,\u0027Snapshot\u0027,\u0027Ssis\u0027,\u0027TransactSql\u0027",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "SubsystemServer",
+                           "The subsystems AnalysisScripting, AnalysisCommand, AnalysisQuery ned the server property to be able to apply",
                            "",
                            false,
                            "false",
@@ -35422,9 +35430,17 @@
                            ""
                        ],
                        [
+                           "InputObject",
+                           "Enables piping job objects",
+                           "",
+                           false,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
                            "EnableException",
                            "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
-                           "Silent",
+                           "",
                            false,
                            "false",
                            "False"
@@ -35454,7 +35470,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Set-DbaAgentJobStep [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [-Job] \u003cObject[]\u003e [-StepName] \u003cString\u003e [[-NewName] \u003cString\u003e] [[-Subsystem] \u003cString\u003e] [[-Command] \u003cString\u003e] [[-CmdExecSuccessCode] \u003cInt32\u003e] [[-OnSuccessAction] \u003cString\u003e] [[-OnSuccessStepId] \u003cInt32\u003e] [[-OnFailAction] \u003cString\u003e] [[-OnFailStepId] \u003cInt32\u003e] [[-Database] \u003cString\u003e] [[-DatabaseUser] \u003cString\u003e] [[-RetryAttempts] \u003cInt32\u003e] [[-RetryInterval] \u003cInt32\u003e] [[-OutputFileName] \u003cString\u003e] [[-Flag] \u003cString[]\u003e] [[-ProxyName] \u003cString\u003e] [-EnableException] [-Force] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Set-DbaAgentJobStep [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Job] \u003cObject[]\u003e] [[-StepName] \u003cString\u003e] [[-NewName] \u003cString\u003e] [[-Subsystem] \u003cString\u003e] [[-SubsystemServer] \u003cString\u003e] [[-Command] \u003cString\u003e] [[-CmdExecSuccessCode] \u003cInt32\u003e] [[-OnSuccessAction] \u003cString\u003e] [[-OnSuccessStepId] \u003cInt32\u003e] [[-OnFailAction] \u003cString\u003e] [[-OnFailStepId] \u003cInt32\u003e] [[-Database] \u003cString\u003e] [[-DatabaseUser] \u003cString\u003e] [[-RetryAttempts] \u003cInt32\u003e] [[-RetryInterval] \u003cInt32\u003e] [[-OutputFileName] \u003cString\u003e] [[-Flag] \u003cString[]\u003e] [[-ProxyName] \u003cString\u003e] [[-InputObject] \u003cJobStep[]\u003e] \r\n[-EnableException] [-Force] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Set-DbaAgentSchedule",
@@ -43121,7 +43137,7 @@
                            "",
                            false,
                            "false",
-                           ""
+                           "(Get-DbatoolsConfigValue -Name \u0027Path.SQLServerUpdates\u0027)"
                        ],
                        [
                            "Restart",

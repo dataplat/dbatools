@@ -157,13 +157,13 @@ function Invoke-DbaDbShrink {
             return
         }
 
-        if ((Test-Bound -ParameterName StepSize) -and $stepsize -lt 1024) {
+        if ((Test-Bound -ParameterName StepSize) -and $StepSize -lt 1024) {
             Stop-Function -Message "StepSize is measured in bits. Did you mean $StepSize bits? If so, please use 1024 or above. If not, then use the PowerShell bit notation like $($StepSize)MB or $($StepSize)GB"
             return
         }
 
-        if ($stepsize) {
-            $StepSizeKB = ([dbasize]($StepSize)).Kilobyte
+        if ($StepSize) {
+            $stepSizeKB = ([dbasize]($StepSize)).Kilobyte
         }
         $StatementTimeoutSeconds = $StatementTimeout * 60
 
@@ -248,12 +248,12 @@ function Invoke-DbaDbShrink {
 
                                 $shrinkGap = ($startingSize - $desiredFileSize)
                                 Write-Message -Level Verbose -Message "ShrinkGap: $([int]$shrinkGap) KB"
-                                Write-Message -Level Verbose -Message "Step Size: $(([dbasize]$StepSize).Megabyte) MB"
+                                Write-Message -Level Verbose -Message "Step Size: $($stepSizeKB) KB"
 
-                                if ($StepSizeKB -and ($shrinkGap -gt $stepSizeKB)) {
+                                if ($stepSizeKB -and ($shrinkGap -ge $stepSizeKB)) {
                                     for ($i = 1; $i -le [int](($shrinkGap) / $stepSizeKB); $i++) {
-                                        Write-Message -Level Verbose -Message "Step: $i"
-                                        $shrinkSize = $startingSize - (($StepSizeKB * 1024 * 1024) * $i)
+                                        Write-Message -Level Verbose -Message "Step: $i / $([int](($shrinkGap) / $stepSizeKB))"
+                                        $shrinkSize = $startingSize - ($stepSizeKB * $i)
                                         if ($shrinkSize -lt $desiredFileSize) {
                                             $shrinkSize = $desiredFileSize
                                         }
