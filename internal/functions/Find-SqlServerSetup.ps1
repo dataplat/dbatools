@@ -27,8 +27,7 @@ function Find-SqlServerSetup {
         [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [version]$Version,
-        [string[]]$Path,
-        [bool]$EnableException = $EnableException
+        [string[]]$Path
 
     )
     begin {
@@ -72,11 +71,6 @@ function Find-SqlServerSetup {
             ErrorAction    = 'Stop'
             Raw            = $true
         }
-        try {
-            Invoke-CommandWithFallback @params
-        } catch {
-            Stop-Function -Message "Failed to enumerate files in $Path" -ErrorRecord $_
-            return
-        }
+        Invoke-CommandWithFallback @params
     }
 }

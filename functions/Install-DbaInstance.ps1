@@ -325,9 +325,22 @@ function Install-DbaInstance {
                     [version]$Version
                 )
                 $versionNumber = "$($Version.Major)$($Version.Minor)".Substring(0, 3)
-                $path = "$env:ProgramFiles\Microsoft SQL Server\$versionNumber\Setup Bootstrap\Log\Summary.txt"
-                if (Test-Path $path) {
-                    return Get-Content -Path $path
+                $rootPath = "$env:ProgramFiles\Microsoft SQL Server\$versionNumber\Setup Bootstrap\Log"
+                $summaryPath = "$rootPath\Summary.txt"
+                $output = [PSCustomObject]@{
+                    Path              = $null
+                    Content           = $null
+                    ConfigurationFile = $null
+                }
+                if (Test-Path $summaryPath) {
+                    $output.Path = $summaryPath
+                    $output.Content = Get-Content -Path $summaryPath
+                    # get last folder created - that's our setup
+                    $lastLogFolder = Get-ChildItem -Path $rootPath -Directory | Sort-Object -Property Name -Descending | Select-Object -First 1 -ExpandProperty FullName
+                    if (Test-Path $lastLogFolder\ConfigurationFile.ini) {
+                        $output.ConfigurationFile = "$lastLogFolder\ConfigurationFile.ini"
+                    }
+                    return $output
                 }
             }
             $params = @{
@@ -354,10 +367,19 @@ function Install-DbaInstance {
             return
         }
         # getting a numeric version for further comparison
-        $canonicVersion = (Get-DbaBuildReference -MajorVersion $Version).BuildLevel
-        if (-not $canonicVersion) {
-            Stop-Function -Message "Version $Version was not found in the build reference database"
-            return
+        #$canonicVersion = (Get-DbaBuildReference -MajorVersion $Version).BuildLevel
+        [version]$canonicVersion = switch ($Version) {
+            2008 { '10.0' }
+            2008R2 { '10.50' }
+            2012 { '11.0' }
+            2014 { '12.0' }
+            2016 { '13.0' }
+            2017 { '14.0' }
+            2019 { '15.0' }
+            default {
+                Stop-Function -Message "Version $Version is not supported"
+                return
+            }
         }
 
         # build feature list
@@ -398,7 +420,11 @@ function Install-DbaInstance {
         foreach ($p in $Path) { if ($p -notlike '\\*') { $isNetworkPath = $false} }
         if ($isNetworkPath) {
             Write-Message -Level Verbose -Message "Looking for installation files in $($Path) on a local machine"
-            $localSetupFile = Find-SqlServerSetup -Version $canonicVersion -Path $Path
+            try {
+                $localSetupFile = Find-SqlServerSetup -Version $canonicVersion -Path $Path
+            } catch {
+                Write-Message -Level Verbose -Message "Failed to access $($Path) on a local machine, ignoring for now"
+            }
         }
 
         $actionPlan = @()
@@ -414,7 +440,11 @@ function Install-DbaInstance {
             $resolvedName = Resolve-DbaNetworkName -ComputerName $computer -Credential $Credential
             $fullComputerName = $resolvedName.FullComputerName
             # test if the restart is needed
-            $restartNeeded = Test-PendingReboot -ComputerName $fullComputerName -Credential $Credential
+            try {
+                $restartNeeded = Test-PendingReboot -ComputerName $fullComputerName -Credential $Credential
+            } catch {
+                Stop-Function -Message "Failed to get reboot status from $fullComputerName" -Continue -ErrorRecord $_
+            }
             if ($restartNeeded -and (-not $Restart -or $computer.IsLocalHost)) {
                 #Exit the actions loop altogether - nothing can be installed here anyways
                 Stop-Function -Message "$computer is pending a reboot. Reboot the computer before proceeding." -Continue
@@ -473,7 +503,11 @@ function Install-DbaInstance {
                     Version        = $canonicVersion
                     Path           = $Path
                 }
-                $setupFile = Find-SqlServerSetup @findSetupParams
+                try {
+                    $setupFile = Find-SqlServerSetup @findSetupParams
+                } catch {
+                    Stop-Function -Message "Failed to enumerate files in $Path" -ErrorRecord $_ -Continue
+                }
             }
             if (-not $setupFile) {
                 Stop-Function -Message "Failed to find setup file for SQL$Version in $Path on $fullComputerName" -Continue
@@ -563,7 +597,7 @@ function Install-DbaInstance {
             }
             if ($canonicVersion -ge '13.0') {
                 # configure the number of cores
-                [int]$cores = Get-DbaCmObject -ComputerName $fullComputerName -Credential $Credential -ClassName Win32_processor | Measure-Object NumberOfCores -Sum | Select-Object -ExpandProperty sum
+                [int]$cores = Get-DbaCmObject -ComputerName $fullComputerName -Credential $Credential -ClassName Win32_processor -EnableException:$EnableException | Measure-Object NumberOfCores -Sum | Select-Object -ExpandProperty sum
                 if ($cores -gt 8) {
                     $cores = 8
                 }
@@ -643,17 +677,20 @@ function Install-DbaInstance {
 
         $installAction = {
             $output = [pscustomobject]@{
-                ComputerName = $_.ComputerName
-                Version      = $Version
-                SACredential = $null
-                Successful   = $false
-                Restarted    = $false
-                InstanceName = $_.InstanceName
-                Installer    = $_.InstallationPath
-                Port         = $_.Port
-                Notes        = @()
-                ExitCode     = $null
-                Log          = $null
+                ComputerName      = $_.ComputerName
+                Version           = $Version
+                SACredential      = $null
+                Successful        = $false
+                Restarted         = $false
+                InstanceName      = $_.InstanceName
+                Installer         = $_.InstallationPath
+                Port              = $_.Port
+                Notes             = @()
+                ExitCode          = $null
+                Log               = $null
+                LogFile           = $null
+                ConfigurationFile = $null
+
             }
             $restartParams = @{
                 ComputerName = $_.ComputerName
@@ -708,23 +745,6 @@ function Install-DbaInstance {
                     $output.Notes += $msg
                 }
             }
-            # activate .Net 3.5 if missing - only needed on 2012 and 2014. Disabled for now, seems to be out of scope
-            # if ($canonicVersion -ge '11.0' -and $canonicVersion -le '12.0' ) {
-            #     if (-Not (Get-WindowsFeature NET-Framework-Core| Where-Object InstallState -eq 'Installed')) {
-            #         Write-Message -Level Verbose -Message "Installing .Net Framework 3.5 (NET-Framework-Core)"
-            #         $dotNetParams = @{ Name = 'NET-Framework-Core' }
-            #         if ($DotNetPath) { $dotNetParams += @{ Source = $DotNetPath }
-            #         }
-            #         try {
-            #             $dotNetResults = Install-WindowsFeature @DotNetPath -ErrorAction Stop
-            #         } catch {
-            #             Stop-Function -Message ".Net3.5 installation returned failure" -ErrorRecord $_
-            #         }
-            #         if (-Not $dotNetResults.Success) {
-            #             Write-Message -Level Warning -Message ".Net3.5 installation was unsuccessful"
-            #         }
-            #     }
-            # }
             Write-Message -Level Verbose -Message "Setup starting from $($_.InstallationPath)"
             $execParams = @{
                 ComputerName   = $_.ComputerName
@@ -745,7 +765,10 @@ function Install-DbaInstance {
                 $output.SACredential = $SaCredential
                 # Get setup log summary contents
                 try {
-                    $output.Log = Get-SqlInstallSummary -ComputerName $_.ComputerName -Credential $Credential -Version $canonicVersion
+                    $summary = Get-SqlInstallSummary -ComputerName $_.ComputerName -Credential $Credential -Version $canonicVersion
+                    $output.Log = $summary.Content
+                    $output.LogFile = $summary.Path
+                    $output.ConfigurationFile = $summary.ConfigurationFile
                 } catch {
                     $msg = "Could not get the contents of the summary file from $($_.ComputerName). 'Log' property will be empty | $($_.Exception.Message)"
                     $output.Notes += $msg
@@ -777,14 +800,20 @@ function Install-DbaInstance {
 
             # perform volume maintenance tasks if requested
             if ($PerformVolumeMaintenanceTasks) {
-                Set-DbaPrivilege -ComputerName $_.ComputerName -Credential $Credential -Type IFI -EnableException:$EnableException
+                $null = Set-DbaPrivilege -ComputerName $_.ComputerName -Credential $Credential -Type IFI -EnableException:$EnableException
             }
             # change port after the installation
             if ($_.Port) {
-                Set-DbaTcpPort -SqlInstance "$($_.ComputerName)\$($_.InstanceName)" -Credential $Credential -Port $_.Port -EnableException:$EnableException
+                $null = Set-DbaTcpPort -SqlInstance "$($_.ComputerName)\$($_.InstanceName)" -Credential $Credential -Port $_.Port -EnableException:$EnableException
             }
             # restart if necessary
-            if ($installResult.ExitCode -eq 3010 -or (Test-PendingReboot -ComputerName $_.ComputerName -Credential $Credential)) {
+            try {
+                $restartNeeded = Test-PendingReboot -ComputerName $_.ComputerName -Credential $Credential
+            } catch {
+                $restartNeeded = $false
+                Stop-Function -Message "Failed to get reboot status from $($_.ComputerName)" -Continue -ErrorRecord $_
+            }
+            if ($installResult.ExitCode -eq 3010 -or $restartNeeded) {
                 if ($Restart) {
                     # Restart the computer
                     #Write-ProgressHelper -ExcludePercent -Activity $activity -Message "Restarting computer $($computer) and waiting for it to come back online"
@@ -804,7 +833,7 @@ function Install-DbaInstance {
         }
         $outputHandler = {
             $_ | Add-Member -MemberType NoteProperty -Name Configuration -Value $config
-            $_ | Select-DefaultView -Property ComputerName, InstanceName, Version, Port, Successful, Restarted, Installer, Notes
+            $_ | Select-DefaultView -Property ComputerName, InstanceName, Version, Port, Successful, Restarted, Installer, ExitCode, Notes
             if ($_.Successful -eq $false) {
                 Write-Message -Level Warning -Message "Installation failed: $($_.Notes -join ' | ')"
             }
@@ -813,7 +842,7 @@ function Install-DbaInstance {
         if ($actionPlan.Count -eq 1) {
             $actionPlan | ForEach-Object -Process $installAction | ForEach-Object -Process $outputHandler
         } elseif ($actionPlan.Count -ge 2) {
-            $actionPlan | Invoke-Parallel -ImportModules -ImportVariables -ScriptBlock $installAction -Throttle $Throttle | ForEach-Object -Process $outputHandler
+            $actionPlan | Invoke-Parallel -ImportModules -ImportFunctions -ImportVariables -ScriptBlock $installAction -Throttle $Throttle | ForEach-Object -Process $outputHandler
         }
     }
 }
