@@ -232,7 +232,7 @@ function New-DbaDbMaskingConfig {
                                     Nullable        = $columnobject.Nullable
                                 }
                             }
-                            "bitcoin"
+                            "bitcoin"{
                                 $columns += [PSCustomObject]@{
                                     Name            = $columnobject.Name
                                     ColumnType      = $columnType
