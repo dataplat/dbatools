@@ -134,6 +134,13 @@
         ]
     },
     {
+        "TypeName": "StateAbbr",
+        "Synonym": [
+            "StateAbbreviation",
+            "StateCode"
+        ]
+    },
+    {
         "TypeName": "Username",
         "Synonym": [
             "Login",
