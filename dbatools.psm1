@@ -205,14 +205,7 @@ if ($script:multiFileImport) {
     Write-ImportTime -Text "Loading Public Commands"
 
 } else {
-    Add-Type -Assembly System.IO.Compression.FileSystem
-    $zip = [System.IO.Compression.ZipFile]::OpenRead((Resolve-Path -Path "$script:PSModuleRoot\allcommands.zip"))
-    $stream = $zip.Entries.Open()
-    $reader = New-Object IO.StreamReader($stream)
-    $ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create(($reader.ReadToEnd()))), $null, $null)
-    $reader.Close()
-    $stream.Close()
-    $zip.Dispose()
+    . (Resolve-Path -Path "$script:PSModuleRoot\allcommands.ps1")
     Write-ImportTime -Text "Loading Public and Private Commands"
 
     . Import-ModuleFile (Resolve-Path -Path "$script:PSModuleRoot\internal\scripts\cmdlets.ps1")
@@ -1609,7 +1602,7 @@ if (-not $script:multiFileImport) {
 
     Export-ModuleMember -Alias $script:renames
     Export-ModuleMember -Alias $forever
-    
+
     Export-ModuleMember -Cmdlet Select-DbaObject, Set-DbatoolsConfig
 
     Write-ImportTime -Text "Exported module member"

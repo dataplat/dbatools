@@ -286,7 +286,11 @@ function Update-DbaInstance {
             $activity = "Preparing to update SQL Server on $resolvedName"
             ## Find the current version on the computer
             Write-ProgressHelper -ExcludePercent -Activity $activity -StepNumber 0 -Message "Gathering all SQL Server instance versions"
-            $components = Get-SQLInstanceComponent -ComputerName $resolvedName -Credential $Credential
+            try {
+                $components = Get-SQLInstanceComponent -ComputerName $resolvedName -Credential $Credential
+            } catch {
+                Stop-Function -Message "Error while looking for SQL Server installations on $resolvedName" -Continue -ErrorRecord $_
+            }
             if (!$components) {
                 Stop-Function -Message "No SQL Server installations found on $resolvedName" -Continue
             }
@@ -295,13 +299,17 @@ function Update-DbaInstance {
             if ($InstanceName) {
                 $components = $components | Where-Object {$_.InstanceName -eq $InstanceName }
             }
+            try {
+                $restartNeeded = Test-PendingReboot -ComputerName $resolvedName -Credential $Credential
+            } catch {
+                Stop-Function -Message "Failed to get reboot status from $resolvedName" -Continue -ErrorRecord $_
+            }
+            if ($restartNeeded -and (-not $Restart -or ([DbaInstanceParameter]$resolvedName).IsLocalHost)) {
+                #Exit the actions loop altogether - nothing can be installed here anyways
+                Stop-Function -Message "$resolvedName is pending a reboot. Reboot the computer before proceeding." -Continue
+            }
             $upgrades = @()
             :actions foreach ($currentAction in $actions) {
-                $restartNeeded = Test-PendingReboot -ComputerName $resolvedName -Credential $Credential
-                if ($restartNeeded -and (-not $Restart -or ([DbaInstanceParameter]$resolvedName).IsLocalHost)) {
-                    #Exit the actions loop altogether - nothing can be installed here anyways
-                    Stop-Function -Message "$resolvedName is pending a reboot. Reboot the computer before proceeding." -Continue -ContinueLabel computers
-                }
                 # Attempt to configure CredSSP for the remote host when credentials are defined
                 if ($Credential -and -not ([DbaInstanceParameter]$resolvedName).IsLocalHost -and $Authentication -eq 'Credssp') {
                     Write-Message -Level Verbose -Message "Attempting to configure CredSSP for remote connections"
@@ -350,7 +358,11 @@ function Update-DbaInstance {
                         Path           = $Path
                         KB             = $detail.KB
                     }
-                    $installer = Find-SqlServerUpdate @kbLookupParams
+                    try {
+                        $installer = Find-SqlServerUpdate @kbLookupParams
+                    } catch {
+                        Stop-Function -Message "Failed to enumerate files in -Path" -ErrorRecord $_ -Continue
+                    }
                     if ($installer) {
                         $detail.Installer = $installer.FullName
                     } else {
@@ -487,7 +499,13 @@ function Update-DbaInstance {
                     }
                 }
                 #double check if restart is needed
-                if ($updateResult.ExitCode -eq 3010 -or (Test-PendingReboot -ComputerName $resolvedName -Credential $Credential)) {
+                try {
+                    $restartNeeded = Test-PendingReboot -ComputerName $resolvedName -Credential $Credential
+                } catch {
+                    $restartNeeded = $false
+                    Stop-Function -Message "Failed to get reboot status from $resolvedName" -ErrorRecord $_ -FunctionName Update-DbaInstance
+                }
+                if ($updateResult.ExitCode -eq 3010 -or $restartNeeded) {
                     if ($Restart) {
                         # Restart the computer
                         Write-ProgressHelper -ExcludePercent -Activity $activity -Message "Restarting computer $($computer) and waiting for it to come back online"
@@ -511,7 +529,7 @@ function Update-DbaInstance {
         if ($installActions.Count -eq 1) {
             $installActions | ForEach-Object -Process $installScript | ForEach-Object -Process $outputHandler
         } elseif ($installActions.Count -ge 2) {
-            $installActions | Invoke-Parallel -ImportModules -ImportVariables -ScriptBlock $installScript -Throttle $Throttle | ForEach-Object -Process $outputHandler
+            $installActions | Invoke-Parallel -ImportModules -ImportVariables -ImportFunctions -ScriptBlock $installScript -Throttle $Throttle | ForEach-Object -Process $outputHandler
         }
     }
 }
