@@ -4,6 +4,31 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
     and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.753] - 2019-02-06
+### Fixed
+* Authentication issue in New-DbaAgentJobCategory [#5034](https://github.com/sqlcollaborative/dbatools/issues/5034)
+* Piping issue in Backup-DbaDatabase [#5041](https://github.com/sqlcollaborative/dbatools/pull/5041)
+* ConvertTo-DbaDataTable no longer ignores -EnableException [#5050](https://github.com/sqlcollaborative/dbatools/issues/5050)
+* Copy-DbaDatabase now passes -Force to Set-DbaDbState [#5055](https://github.com/sqlcollaborative/dbatools/issues/5055)
+* Parallelism and exception handling fixes in Get-SqlInstancComponent [#4988](https://github.com/sqlcollaborative/dbatools/issues/4988)
+### Added
+* Check that databases are accessible in Get-DbaDbRoleMember [#5046](https://github.com/sqlcollaborative/dbatools/pull/5046)
+
+## [0.9.752] - 2019-02-03
+### Fixed
+* Corrected math in Invoke-DbaDbShrink [#5039](https://github.com/sqlcollaborative/dbatools/issues/5039)
+### Changed
+* Remove dependency on System.Data objects in Get-DbaDbccMemoryStatus [#5031](https://github.com/sqlcollaborative/dbatools/pull/5031)
+### Added
+* Support for pipeline input on Set-DbaAgentJobStep [#4350](https://github.com/sqlcollaborative/dbatools/issues/4350)
+* Add missing server parameter in Set-DbaAgentJobStep [#4715](https://github.com/sqlcollaborative/dbatools/issues/4715)
+
+## [0.9.751] - 2019-01-31
+### Fixed
+* Properly support individual databases in Invoke-DbaDbClone [#5015](https://github.com/sqlcollaborative/dbatools/issues/5015)
+* Properly support pipeline data for Remove-DbaAgReplica [#5013](https://github.com/sqlcollaborative/dbatools/issues/5013)
+* Add-DbaAgReplica now adds replicas [#4847](https://github.com/sqlcollaborative/dbatools/issues/4847)
+
 ## [0.9.750] - 2019-01-25
 ### Added
 * Type switch for Backup-DbaDatabase to get the correct backup from backup history
