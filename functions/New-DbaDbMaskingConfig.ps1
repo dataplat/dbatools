@@ -110,6 +110,8 @@ function New-DbaDbMaskingConfig {
                 Stop-Function -Message "$Path is not a directory"
             }
         }
+
+        $supportedDataTypes = 'bit','bool','char','date','datetime','datetime2','decimal','int','money','nchar','ntext','nvarchar','smalldatetime','text','time','uniqueidentifier','userdefineddatatype','varchar'
     }
 
     process {
@@ -171,18 +173,11 @@ function New-DbaDbMaskingConfig {
                         continue
                     }
 
-                    if ($columnobject.DataType.Name -eq 'hierarchyid') {
-                        Write-Message -Level Verbose -Message "Skipping $columnobject because it is a hierarchyid column"
+                    if($columnobject.DataType.Name -notin $supportedDataTypes){
+                        Write-Message -Level Verbose -Message "Skipping $columnobject because it is not a supported data type"
                         continue
                     }
-                    if ($columnobject.DataType.Name -eq 'geography') {
-                        Write-Message -Level Verbose -Message "Skipping $columnobject because it is a geography column"
-                        continue
-                    }
-                    if ($columnobject.DataType.Name -eq 'geometry') {
-                        Write-Message -Level Verbose -Message "Skipping $columnobject because it is a geometry column"
-                        continue
-                    }
+
                     if ($columnobject.DataType.SqlDataType.ToString().ToLower() -eq 'xml') {
                         Write-Message -Level Verbose -Message "Skipping $columnobject because it is a xml column"
                         continue
