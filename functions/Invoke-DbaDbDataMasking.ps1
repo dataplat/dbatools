@@ -215,19 +215,6 @@ function Invoke-DbaDbDataMasking {
                         Stop-Function -Message "Table $($tableobject.Name) is not present in $db" -Target $db -Continue
                     }
 
-                    $table = $db.Tables[$($tableobject.Name)]
-
-                    try {
-                        if (-not (Test-Bound -ParameterName Query)) {
-                            $query = "SELECT * FROM [$($tableobject.Schema)].[$($tableobject.Name)]"
-                        }
-                        $data = $server.Databases[$($db.Name)].Query($query) | ConvertTo-DbaDataTable
-                    } catch {
-                        Stop-Function -Message "Failure retrieving the data from table $($tableobject.Name)" -Target $Database -ErrorRecord $_ -Continue
-                    }
-
-                    $sqlconn.ChangeDatabase($db.Name)
-
                     # Check if the table contains unique indexes
                     if ($tableobject.HasUniqueIndex) {
 
@@ -287,6 +274,19 @@ function Invoke-DbaDbDataMasking {
                     }
 
                     $uniqueValueColumns = $uniqueValueColumns | Select-Object -Unique
+
+                    $table = $db.Tables[$($tableobject.Name)]
+
+                    try {
+                        if (-not (Test-Bound -ParameterName Query)) {
+                            $query = "SELECT * FROM [$($tableobject.Schema)].[$($tableobject.Name)]"
+                        }
+                        $data = $server.Databases[$($db.Name)].Query($query) | ConvertTo-DbaDataTable
+                    } catch {
+                        Stop-Function -Message "Failure retrieving the data from table $($tableobject.Name)" -Target $Database -ErrorRecord $_ -Continue
+                    }
+
+                    $sqlconn.ChangeDatabase($db.Name)
 
                     $deterministicColumns = $tables.Tables.Columns | Where-Object Deterministic -eq $true
                     $tablecolumns = $tableobject.Columns
