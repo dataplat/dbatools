@@ -108,12 +108,8 @@ function Get-DbaDbRoleMember {
 
             foreach ($item in $Database) {
                 Write-Message -Level Verbose -Message "Check if database: $item on $instance is accessible or not"
-                try {
-                    if ($server.Databases[$item].IsAccessible -eq $false) {
-                        throw "Database: $item is not accessible. Check your permissions or database state."
-                    }
-                } catch {
-                    Stop-Function -Message 'Failure' -Category ResourceUnavailable -ErrorRecord $_ -Target $instance -Continue
+                if ($server.Databases[$item].IsAccessible -eq $false) {
+                    Stop-Function -Message "Database: $item is not accessible. Check your permissions or database state." -Category ResourceUnavailable -ErrorRecord $_ -Target $instance -Continue
                 }
             }
 
@@ -164,7 +160,7 @@ function Get-DbaDbRoleMember {
                             Add-Member -Force -InputObject $user -MemberType NoteProperty -Name UserName -Value $user.Name
 
                             # Select object because Select-DefaultView causes strange behaviors when assigned to a variable (??)
-                            Select-Object -InputObject $user -Property 'ComputerName', 'InstanceName', 'SqlInstance', 'Database', 'Role', 'UserName', 'Login', 'IsSystemObject'
+                            Select-Object -InputObject $user -Property 'ComputerName', 'InstanceName', 'SqlInstance', 'Database', 'Role', 'UserName', 'Login', 'IsSystemObject', 'LoginType'
                         }
                     }
                 }
