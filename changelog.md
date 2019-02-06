@@ -4,6 +4,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
     and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.753] - 2019-01-31
+### Fixed
+### Changed
+### Added
+
+## [0.9.752] - 2019-01-31
+### Fixed
+### Changed
+### Added
+
+## [0.9.751] - 2019-01-31
+### Fixed
+* Properly support individual databases in Invoke-DbaDbClone [#5015](https://github.com/sqlcollaborative/dbatools/issues/5015)
+* Properly support pipeline data for Remove-DbaAgReplica [#5013](https://github.com/sqlcollaborative/dbatools/issues/5013)
+* Add-DbaAgReplica now adds replicas [#4847](https://github.com/sqlcollaborative/dbatools/issues/4847)
+
 ## [0.9.750] - 2019-01-25
 ### Added
 * Type switch for Backup-DbaDatabase to get the correct backup from backup history
