@@ -430,7 +430,7 @@ function Install-DbaInstance {
 
         $actionPlan = @()
         foreach ($computer in $SqlInstance) {
-            $stepCounter = 0
+            $stepCounter = 1
             $totalSteps = 5
             $activity = "Preparing to install SQL Server $Version on $computer"
             # Test elevated console
@@ -682,11 +682,10 @@ function Install-DbaInstance {
                     RestartNeeded     = $restartNeeded
                 }
             }
+            Write-Progress -Activity $activity -Complete
         }
 
         $installAction = {
-            $activity = "Installing SQL Server $Version on $($_.ComputerName)"
-            Write-ProgressHelper -ExcludePercent -Activity $activity -Message "Preparing the installation"
             $output = [pscustomobject]@{
                 ComputerName      = $_.ComputerName
                 Version           = $Version
@@ -757,7 +756,6 @@ function Install-DbaInstance {
                     $output.Notes += $msg
                 }
             }
-            Write-ProgressHelper -ExcludePercent -Activity $activity -Message "Running the installation"
             Write-Message -Level Verbose -Message "Setup starting from $($_.InstallationPath)"
             $execParams = @{
                 ComputerName   = $_.ComputerName
@@ -774,7 +772,7 @@ function Install-DbaInstance {
             }
             try {
                 $installResult = Invoke-Program @execParams -Path $_.InstallationPath -ArgumentList $_.ArgumentList -Fallback
-                $output.ExitCode = $updateResult.ExitCode
+                $output.ExitCode = $installResult.ExitCode
                 $output.SACredential = $SaCredential
                 # Get setup log summary contents
                 try {
@@ -810,14 +808,13 @@ function Install-DbaInstance {
                 # cleanup config file
                 Remove-Item $_.ConfigurationPath
             }
-            Write-ProgressHelper -ExcludePercent -Activity $activity -Message "Performing post-installation tasks"
             # perform volume maintenance tasks if requested
             if ($PerformVolumeMaintenanceTasks) {
                 $null = Set-DbaPrivilege -ComputerName $_.ComputerName -Credential $Credential -Type IFI -EnableException:$EnableException
             }
             # change port after the installation
             if ($_.Port) {
-                $null = Set-DbaTcpPort -SqlInstance "$($_.ComputerName)\$($_.InstanceName)" -Credential $Credential -Port $_.Port -EnableException:$EnableException
+                $null = Set-DbaTcpPort -SqlInstance "$($_.ComputerName)\$($_.InstanceName)" -Credential $Credential -Port $_.Port -EnableException:$EnableException -Confirm:$false
             }
             # restart if necessary
             try {
@@ -854,7 +851,14 @@ function Install-DbaInstance {
         if ($actionPlan.Count -eq 1) {
             $actionPlan | ForEach-Object -Process $installAction | ForEach-Object -Process $outputHandler
         } elseif ($actionPlan.Count -ge 2) {
-            $actionPlan | Invoke-Parallel -ImportModules -ImportFunctions -ImportVariables -ScriptBlock $installAction -Throttle $Throttle | ForEach-Object -Process $outputHandler
+            $invokeParallelSplat = @{
+                ScriptBlock = $installAction
+                Throttle    = $Throttle
+                Activity    = "Installing SQL Server $Version on $($actionPlan.Count) computers"
+                Status      = "Running the installation"
+                ObjectName  = 'computers'
+            }
+            $actionPlan | Invoke-Parallel -ImportModules -ImportFunctions -ImportVariables @invokeParallelSplat | ForEach-Object -Process $outputHandler
         }
     }
 }
