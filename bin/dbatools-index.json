@@ -3251,7 +3251,7 @@
                        ],
                        [
                            "Force",
-                           "If this switch is enabled, existing databases on Destination with matching names from Source will be dropped. If using -DetachReattach, mirrors will be broken and the database(s) dropped from \r\nAvailability Groups.",
+                           "If this switch is enabled, existing databases on Destination with matching names from Source will be dropped.\r\nIf using -DetachReattach, mirrors will be broken and the database(s) dropped from Availability Groups.\r\nIf using -SetSourceReadonly, this will instantly roll back any open transactions that may be stopping the process.",
                            "",
                            false,
                            "false",
@@ -43137,7 +43137,7 @@
                            "",
                            false,
                            "false",
-                           ""
+                           "(Get-DbatoolsConfigValue -Name \u0027Path.SQLServerUpdates\u0027)"
                        ],
                        [
                            "Restart",
