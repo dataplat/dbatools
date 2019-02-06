@@ -215,6 +215,19 @@ function Invoke-DbaDbDataMasking {
                         Stop-Function -Message "Table $($tableobject.Name) is not present in $db" -Target $db -Continue
                     }
 
+                    $dbTable = $db.Tables | Where-Object {$_.Schema -eq $tableobject.Schema -and $_.Name -eq $tableobject.Name}
+
+                    try {
+                        if (-not (Test-Bound -ParameterName Query)) {
+                            $columnString = "[" + (($dbTable.Columns | Where-Object DataType -in $supportedDataTypes | Select-Object Name -ExpandProperty Name) -join "],[") + "]"
+                            $query = "SELECT $($columnString) FROM [$($tableobject.Schema)].[$($tableobject.Name)]"
+                            $query
+                        }
+                        $data = $server.Databases[$($db.Name)].Query($query) | ConvertTo-DbaDataTable
+                    } catch {
+                        Stop-Function -Message "Failure retrieving the data from table $($tableobject.Name)" -Target $Database -ErrorRecord $_ -Continue
+                    }
+
                     # Check if the table contains unique indexes
                     if ($tableobject.HasUniqueIndex) {
 
@@ -275,8 +288,6 @@ function Invoke-DbaDbDataMasking {
 
                     $uniqueValueColumns = $uniqueValueColumns | Select-Object -Unique
 
-                    $table = $db.Tables[$($tableobject.Name)]
-
                     $sqlconn.ChangeDatabase($db.Name)
 
                     $deterministicColumns = $tables.Tables.Columns | Where-Object Deterministic -eq $true
@@ -297,16 +308,6 @@ function Invoke-DbaDbDataMasking {
                     if (-not $tablecolumns) {
                         Write-Message -Level Verbose "No columns to process in $($db.Name).$($tableobject.Schema).$($tableobject.Name), moving on"
                         continue
-                    }
-
-                    try {
-                        if (-not (Test-Bound -ParameterName Query)) {
-                            $columnString = "[" + (($table.Columns | Where-Object DataType -in $supportedDataTypes | Select-Object Name -ExpandProperty Name) -join "],[") + "]"
-                            $query = "SELECT $($columnString) FROM [$($tableobject.Schema)].[$($tableobject.Name)]"
-                        }
-                        $data = $server.Databases[$($db.Name)].Query($query) | ConvertTo-DbaDataTable
-                    } catch {
-                        Stop-Function -Message "Failure retrieving the data from table $($tableobject.Name)" -Target $Database -ErrorRecord $_ -Continue
                     }
 
                     if ($Pscmdlet.ShouldProcess($instance, "Masking $($tablecolumns.Name -join ', ') in $($data.Rows.Count) rows in $($db.Name).$($tableobject.Schema).$($tableobject.Name)")) {
@@ -569,14 +570,16 @@ function Invoke-DbaDbDataMasking {
                                     }
                                 }
 
-                                if ($columnobject.ColumnType -notin 'xml', 'geography', 'geometry') {
-                                    if (($row.$($columnobject.Name)).GetType().Name -match 'DBNull') {
-                                        $wheres += "[$($columnobject.Name)] IS NULL"
-                                    } elseif ($columnobject.ColumnType.ToLower() -in 'text', 'ntext') {
-                                        $wheres += "CAST([$($columnobject.Name)] AS VARCHAR) = '$oldValue'"
+                                $rowItems = $row | Get-Member -MemberType Properties | Select-Object Name -ExpandProperty Name
+                                foreach ($item in $rowItems) {
+                                    if (($row.$($item)).GetType().Name -match 'DBNull') {
+                                        $wheres += "[$item] IS NULL"
+                                    } elseif ($dbTable.Columns[$item].DataType.SqlDataType.ToString().ToLower() -in 'text', 'ntext') {
+                                        $oldValue = ($row.$item).Tostring().Replace("'", "''")
+                                        $wheres += "CAST([$item] AS VARCHAR) = '$oldValue'"
                                     } else {
-                                        $oldValue = ($row.$($columnobject.Name)).Tostring().Replace("'", "''")
-                                        $wheres += "[$($columnobject.Name)] = '$oldValue'"
+                                        $oldValue = ($row.$item).Tostring().Replace("'", "''")
+                                        $wheres += "[$item] = '$oldValue'"
                                     }
                                 }
 
@@ -586,9 +589,9 @@ function Invoke-DbaDbDataMasking {
                             }
 
                             $updatequery = "UPDATE [$($tableobject.Schema)].[$($tableobject.Name)] SET $($updates -join ', ') WHERE $($wheres -join ' AND ')"
-
+                            $updatequery
                             try {
-                                $sqlcmd = New-Object System.Data.SqlClient.SqlCommand($updatequery, $sqlconn, $transaction)
+                                #$sqlcmd = New-Object System.Data.SqlClient.SqlCommand($updatequery, $sqlconn, $transaction)
                                 $null = $sqlcmd.ExecuteNonQuery()
                             } catch {
                                 Write-Message -Level VeryVerbose -Message "$updatequery"
