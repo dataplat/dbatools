@@ -96,7 +96,7 @@ function New-DbaDbMaskingConfig {
         try {
             $columnTypes = Get-Content -Path "$script:PSModuleRoot\bin\datamasking\columntypes.json" | ConvertFrom-Json
         } catch {
-            Stop-Function -Message "Something went wrong importing the column types" -Continue
+            Stop-Function -Message "Something went wrong importing the column types" -ErrorRecord $_ -Continue
         }
         # Check if the Path is accessible
         if (-not (Test-Path -Path $Path)) {
