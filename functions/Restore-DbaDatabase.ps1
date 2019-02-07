@@ -177,6 +177,9 @@ function Restore-DbaDatabase {
     .PARAMETER PageRestoreTailFolder
         This parameter passes in a location for the tail log backup required for page level restore
 
+    .PARAMETER AllowContinue
+        This parameter has been deprecated and will be removed in v1.0
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -367,7 +370,8 @@ function Restore-DbaDatabase {
         [switch]$StopAfterTestBackupInformation,
         [parameter(Mandatory, ParameterSetName = "RestorePage")][object]$PageRestore,
         [parameter(Mandatory, ParameterSetName = "RestorePage")][string]$PageRestoreTailFolder,
-        [int]$StatementTimeout = 0
+        [int]$StatementTimeout = 0,
+        [switch]$AllowContinue
     )
     begin {
         Write-Message -Level InternalComment -Message "Starting"
@@ -384,6 +388,9 @@ function Restore-DbaDatabase {
             $UseDestinationDefaultDirectories = $true
             $paramCount = 0
 
+            if (Test-Bound "AllowContinue") {
+                Write-Message -Level Warning -Message "AllowContinue is deprecated and will be removed in v1.0"
+            }
             if (Test-Bound "FileMapping") {
                 $paramCount += 1
             }
