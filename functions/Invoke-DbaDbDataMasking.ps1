@@ -554,12 +554,6 @@ function Invoke-DbaDbDataMasking {
                                     } else {
                                         $updates += "[$($columnobject.Name)] = $newValue"
                                     }
-                                } elseif ($columnobject.ColumnType -in 'text', 'ntext') {
-                                    if ($null -eq $newValue -and $columnobject.Nullable) {
-                                        $updates += "[$($columnobject.Name)] = NULL"
-                                    } else {
-                                        $updates += "[$($columnobject.Name)] = $newValue"
-                                    }
                                 } else {
                                     if ($null -eq $newValue -and $columnobject.Nullable) {
                                         $updates += "[$($columnobject.Name)] = NULL"
@@ -580,7 +574,7 @@ function Invoke-DbaDbDataMasking {
                                     $wheres += "[$item] IS NULL"
                                 } elseif ($dbTable.Columns[$item].DataType.SqlDataType.ToString().ToLower() -in 'text', 'ntext') {
                                     $oldValue = ($row.$item).Tostring().Replace("'", "''")
-                                    $wheres += "CAST([$item] AS VARCHAR) = '$oldValue'"
+                                    $wheres += "CAST([$item] AS VARCHAR(MAX)) = '$oldValue'"
                                 } elseif ($dbTable.Columns[$item].DataType.SqlDataType.ToString().ToLower() -like '*date*') {
                                     $oldValue = ($row.$item).Tostring("yyyy-MM-dd HH:mm:ss.fffffff")
                                     $wheres += "[$item] = '$oldValue'"
@@ -591,6 +585,7 @@ function Invoke-DbaDbDataMasking {
                             }
 
                             $updatequery = "UPDATE [$($tableobject.Schema)].[$($tableobject.Name)] SET $($updates -join ', ') WHERE $($wheres -join ' AND ')"
+
                             try {
                                 $sqlcmd = New-Object System.Data.SqlClient.SqlCommand($updatequery, $sqlconn, $transaction)
                                 $null = $sqlcmd.ExecuteNonQuery()
