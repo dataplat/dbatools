@@ -96,7 +96,7 @@ function Backup-DbaDatabase {
     .PARAMETER AzureBaseUrl
         The URL to the base container of an Azure Storage account to write backups to.
 
-        If specified, the only other parameters than can be used are "NoCopyOnly", "Type", "CompressBackup", "Checksum", "Verify", "AzureCredential", "CreateFolder".
+        If specified, the only other parameters than can be used are "CopyOnly", "Type", "CompressBackup", "Checksum", "Verify", "AzureCredential", "CreateFolder".
 
     .PARAMETER AzureCredential
         The name of the credential on the SQL instance that can write to the AzureBaseUrl, only needed if using Storage access keys
@@ -233,7 +233,7 @@ function Backup-DbaDatabase {
 
             if ($null -eq $BackupDirectory -and $backupfileName -ne 'NUL') {
                 Write-Message -Message 'No backupfolder passed in, setting it to instance default' -Level Verbose
-                $BackupDirectory = (Get-DbaDefaultPath -SqlInstance $SqlInstance).Backup
+                $BackupDirectory = (Get-DbaDefaultPath -SqlInstance $server).Backup
             }
 
             if ($BackupDirectory.Count -gt 1) {
@@ -287,44 +287,43 @@ function Backup-DbaDatabase {
 
         Write-Message -Level Verbose -Message "$($InputObject.Count) database to backup"
 
-        foreach ($Database in $InputObject) {
+        foreach ($db in $InputObject) {
             $ProgressId = Get-Random
             $failures = @()
-            $dbname = $Database.Name
+            $dbname = $db.Name
+            $server = $db.Parent
 
             if ($dbname -eq "tempdb") {
                 Stop-Function -Message "Backing up tempdb not supported" -Continue
             }
 
-            if ('Normal' -notin ($Database.Status -split ',')) {
+            if ('Normal' -notin ($db.Status -split ',')) {
                 Stop-Function -Message "Database status not Normal. $dbname skipped." -Continue
             }
 
-            if ($Database.DatabaseSnapshotBaseName) {
+            if ($db.DatabaseSnapshotBaseName) {
                 Stop-Function -Message "Backing up snapshots not supported. $dbname skipped." -Continue
             }
 
-            if ($null -eq $server) { $server = $Database.Parent }
+            Write-Message -Level Verbose -Message "Backup database $db"
 
-            Write-Message -Level Verbose -Message "Backup database $database"
-
-            if ($null -eq $Database.RecoveryModel) {
-                $Database.RecoveryModel = $server.Databases[$Database.Name].RecoveryModel
-                Write-Message -Level Verbose -Message "$dbname is in $($Database.RecoveryModel) recovery model"
+            if ($null -eq $db.RecoveryModel) {
+                $db.RecoveryModel = $server.Databases[$db.Name].RecoveryModel
+                Write-Message -Level Verbose -Message "$dbname is in $($db.RecoveryModel) recovery model"
             }
 
             # Fixes one-off cases of StackOverflowException crashes, see issue 1481
-            $dbRecovery = $Database.RecoveryModel.ToString()
+            $dbRecovery = $db.RecoveryModel.ToString()
             if ($dbRecovery -eq 'Simple' -and $Type -eq 'Log') {
-                $failreason = "$database is in simple recovery mode, cannot take log backup"
+                $failreason = "$db is in simple recovery mode, cannot take log backup"
                 $failures += $failreason
                 Write-Message -Level Warning -Message "$failreason"
             }
 
-            $lastfull = $database.Refresh().LastBackupDate.Year
+            $lastfull = $db.Refresh().LastBackupDate.Year
 
             if ($Type -notin @("Database", "Full") -and $lastfull -eq 1) {
-                $failreason = "$database does not have an existing full backup, cannot take log or differentialbackup"
+                $failreason = "$db does not have an existing full backup, cannot take log or differentialbackup"
                 $failures += $failreason
                 Write-Message -Level Warning -Message "$failreason"
             }
@@ -335,11 +334,11 @@ function Backup-DbaDatabase {
 
             $server.ConnectionContext.StatementTimeout = 0
             $backup = New-Object Microsoft.SqlServer.Management.Smo.Backup
-            $backup.Database = $Database.Name
+            $backup.Database = $db.Name
             $Suffix = "bak"
 
             if ($CompressBackup) {
-                if ($database.EncryptionEnabled) {
+                if ($db.EncryptionEnabled) {
                     Write-Message -Level Warning -Message "$dbname is enabled for encryption, will not compress"
                     $backup.CompressionOption = 2
                 } elseif ($server.Edition -like 'Express*' -or ($server.VersionMajor -eq 10 -and $server.VersionMinor -eq 0 -and $server.Edition -notlike '*enterprise*') -or $server.VersionMajor -lt 10) {
@@ -359,6 +358,7 @@ function Backup-DbaDatabase {
                 $SMOBackuptype = "Database"
                 $backup.Incremental = $true
                 $outputType = 'Differential'
+                $gbhSwitch = @{'LastDiff' = $true}
             }
             $Backup.NoRecovery = $false
             if ($Type -eq "Log") {
@@ -367,12 +367,14 @@ function Backup-DbaDatabase {
                 $OutputType = 'Log'
                 $SMOBackupType = 'Log'
                 $Backup.NoRecovery = $NoRecovery
+                $gbhSwitch = @{'LastLog' = $true}
             }
 
             if ($Type -in 'Full', 'Database') {
                 Write-Message -Level VeryVerbose -Message "Creating full backup"
                 $SMOBackupType = "Database"
                 $OutputType = 'Full'
+                $gbhSwitch = @{'LastFull' = $true}
             }
 
             $backup.CopyOnly = $copyonly
@@ -515,8 +517,6 @@ function Backup-DbaDatabase {
 
                 try {
                     if ($Pscmdlet.ShouldProcess($server.Name, "Backing up $dbname to $humanBackupFile")) {
-                        $CurrentLsn = (Read-DbaTransactionLog -SqlInstance $server -Database $dbname -RowLimit 1).'Current LSN'
-                        $NumericLSN = (Convert-DbaLSN -LSN $CurrentLsn).Numeric
                         if ($OutputScriptOnly -ne $True) {
                             $Filelist = @()
                             $FileList += $server.Databases[$dbname].FileGroups.Files | Select-Object @{ Name = "FileType"; Expression = { "D" } }, @{ Name = "Type"; Expression = { "D" } }, @{ Name = "LogicalName"; Expression = { $_.Name } }, @{ Name = "PhysicalName"; Expression = { $_.FileName } }
@@ -529,12 +529,14 @@ function Backup-DbaDatabase {
                             if ($server.VersionMajor -eq '8') {
                                 $HeaderInfo = Get-BackupAncientHistory -SqlInstance $server -Database $dbname
                             } else {
-                                $HeaderInfo = Get-DbaBackupHistory -SqlInstance $server -Database $dbname -Last -IncludeCopyOnly -LastLsn $NumericLsn -RecoveryFork $database.RecoveryForkGuid  | Sort-Object -Property End -Descending | Select-Object -First 1
+                                $HeaderInfo = Get-DbaBackupHistory -SqlInstance $server -Database $dbname @gbhSwitch -IncludeCopyOnly -RecoveryFork $db.RecoveryForkGuid  | Sort-Object -Property End -Descending | Select-Object -First 1
                             }
                             $Verified = $false
                             if ($Verify) {
                                 $verifiedresult = [PSCustomObject]@{
-                                    SqlInstance          = $server.name
+                                    ComputerName         = $server.ComputerName
+                                    InstanceName         = $server.ServiceName
+                                    SqlInstance          = $server.DomainInstanceName
                                     DatabaseName         = $dbname
                                     BackupComplete       = $BackupComplete
                                     BackupFilesCount     = $FinalBackupPath.Count
