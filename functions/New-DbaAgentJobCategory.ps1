@@ -114,7 +114,7 @@ function New-DbaAgentJobCategory {
                 } # end else category exists
 
                 # Return the job category
-                Get-DbaAgentJobCategory -SqlInstance $instance -Category $cat
+                Get-DbaAgentJobCategory -SqlInstance $server -Category $cat
 
             } # for each category
 

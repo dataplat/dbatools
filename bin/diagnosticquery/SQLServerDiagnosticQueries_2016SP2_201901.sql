@@ -1,7 +1,7 @@
 
 -- SQL Server 2016 SP2 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: January 14, 2019
+-- Last Modified: February 1, 2019
 -- https://www.sqlskills.com/blogs/glenn/
 -- http://sqlserverperformance.wordpress.com/
 -- Twitter: GlennAlanBerry
@@ -68,7 +68,8 @@ SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version In
 -- 13.0.5149.0		SP2 CU1				5/30/2018		https://support.microsoft.com/en-us/help/4135048/cumulative-update-1-for-sql-server-2016-sp2
 -- 13.0.5153.0		SP2 CU2				7/16/2018		https://support.microsoft.com/en-us/help/4340355
 -- 13.0.5216.0		SP2 CU3				9/20/2018		https://support.microsoft.com/en-us/help/4458871
--- 13.0.5233.0		SP2 CU4			   11/13/2018		https://support.microsoft.com/en-us/help/4464106/cumulative-update-4-for-sql-server-2016-sp2	
+-- 13.0.5233.0		SP2 CU4			   11/13/2018		https://support.microsoft.com/en-us/help/4464106/cumulative-update-4-for-sql-server-2016-sp2
+-- 13.0.5264.1		SP2 CU5             1/23/2019	    https://support.microsoft.com/en-us/help/4475776/cumulative-update-5-for-sql-server-2016-sp2
 
 		
 															
