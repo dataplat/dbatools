@@ -148,7 +148,7 @@
             "User",
             "UserId"
         ]
-    }
+    },
     {
         "TypeName": "Zipcode",
         "Synonym": [
@@ -156,5 +156,5 @@
             "Zip",
             "Postalcode"
         ]
-    },
+    }
 ]
