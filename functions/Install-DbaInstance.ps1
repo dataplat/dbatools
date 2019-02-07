@@ -206,7 +206,7 @@ function Install-DbaInstance {
         [DbaInstanceParameter[]]$SqlInstance = $env:COMPUTERNAME,
         [parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
-        [ValidateSet("2008", "2008R2", "2012", "2014", "2016", "2017")]
+        [ValidateSet("2008", "2008R2", "2012", "2014", "2016", "2017", "2019")]
         [string]$Version,
         [string]$InstanceName,
         [PSCredential]$SaCredential,
