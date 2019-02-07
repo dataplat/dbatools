@@ -581,6 +581,9 @@ function Invoke-DbaDbDataMasking {
                                 } elseif ($dbTable.Columns[$item].DataType.SqlDataType.ToString().ToLower() -in 'text', 'ntext') {
                                     $oldValue = ($row.$item).Tostring().Replace("'", "''")
                                     $wheres += "CAST([$item] AS VARCHAR) = '$oldValue'"
+                                } elseif ($dbTable.Columns[$item].DataType.SqlDataType.ToString().ToLower() -like '*date*') {
+                                    $oldValue = ($row.$item).Tostring("yyyy-MM-dd HH:mm:ss.fffffff")
+                                    $wheres += "[$item] = '$oldValue'"
                                 } else {
                                     $oldValue = ($row.$item).Tostring().Replace("'", "''")
                                     $wheres += "[$item] = '$oldValue'"
@@ -588,9 +591,8 @@ function Invoke-DbaDbDataMasking {
                             }
 
                             $updatequery = "UPDATE [$($tableobject.Schema)].[$($tableobject.Name)] SET $($updates -join ', ') WHERE $($wheres -join ' AND ')"
-
                             try {
-                                #$sqlcmd = New-Object System.Data.SqlClient.SqlCommand($updatequery, $sqlconn, $transaction)
+                                $sqlcmd = New-Object System.Data.SqlClient.SqlCommand($updatequery, $sqlconn, $transaction)
                                 $null = $sqlcmd.ExecuteNonQuery()
                             } catch {
                                 Write-Message -Level VeryVerbose -Message "$updatequery"
