@@ -625,8 +625,9 @@ function Restore-DbaDatabase {
         if (Test-FunctionInterrupt) {
             return
         }
-        $internalBackupHistory = @()
-        $internalBackupHistory = $BackupHistory | Select-Object *
+        $internalBackupHistory = Copy-DbaObject $BackupHistory
+        $internalBackupHistory
+
         if ($PSCmdlet.ParameterSetName -like "Restore*") {
             if ($internalBackupHistory.Count -eq 0) {
                 Write-Message -Level Warning -Message "No backups passed through. `n This could mean the SQL instance cannot see the referenced files, the file's headers could not be read or some other issue"
