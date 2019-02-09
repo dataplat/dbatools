@@ -139,10 +139,6 @@ function Restore-DbaDatabase {
     .PARAMETER Recover
         If set will perform recovery on the indicated database
 
-    .PARAMETER AllowContinue
-        By default, Restore-DbaDatabase will stop restoring any databases if it comes across an error.
-        Use this switch to enable it to restore all databases without issues.
-
     .PARAMETER GetBackupInformation
         Passing a string value into this parameter will cause a global variable to be created holding the output of Get-DbaBackupInformation
 
@@ -180,6 +176,9 @@ function Restore-DbaDatabase {
 
     .PARAMETER PageRestoreTailFolder
         This parameter passes in a location for the tail log backup required for page level restore
+
+    .PARAMETER AllowContinue
+        This parameter has been deprecated and will be removed in v1.0
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -295,11 +294,10 @@ function Restore-DbaDatabase {
 
     .EXAMPLE
         PS C:\> Get-DbaBackupHistory - SqlInstance server\instance1 -Database ProdFinance -Last | Restore-DbaDatabase -PageRestore
-        PS C:\> $SuspectPage -PageRestoreTailFolder c:\temp -TrustDbBackupHistory -AllowContinues
+        PS C:\> $SuspectPage -PageRestoreTailFolder c:\temp -TrustDbBackupHistory
 
         Gets a list of Suspect Pages using Get-DbaSuspectPage. The uses Get-DbaBackupHistory and Restore-DbaDatabase to perform a restore of the suspect pages and bring them up to date
         If server\instance1 is Enterprise edition this will be done online, if not it will be performed offline
-        AllowContinue is required to make sure we cope with existing files
 
     .EXAMPLE
         PS C:\> $BackupHistory = Get-DbaBackupInformation -SqlInstance sql2005 -Path \\backups\sql2000\ProdDb
@@ -362,7 +360,6 @@ function Restore-DbaDatabase {
         [parameter(ParameterSetName = "Restore")][string]$DestinationFileSuffix,
         [parameter(ParameterSetName = "Recovery")][switch]$Recover,
         [parameter(ParameterSetName = "Restore")][switch]$KeepCDC,
-        [switch]$AllowContinue,
         [string]$GetBackupInformation,
         [switch]$StopAfterGetBackupInformation,
         [string]$SelectBackupInformation,
@@ -373,7 +370,8 @@ function Restore-DbaDatabase {
         [switch]$StopAfterTestBackupInformation,
         [parameter(Mandatory, ParameterSetName = "RestorePage")][object]$PageRestore,
         [parameter(Mandatory, ParameterSetName = "RestorePage")][string]$PageRestoreTailFolder,
-        [int]$StatementTimeout = 0
+        [int]$StatementTimeout = 0,
+        [switch]$AllowContinue
     )
     begin {
         Write-Message -Level InternalComment -Message "Starting"
@@ -390,8 +388,8 @@ function Restore-DbaDatabase {
             $UseDestinationDefaultDirectories = $true
             $paramCount = 0
 
-            if (!(Test-Bound "AllowContinue") -and $true -ne $AllowContinue) {
-                $AllowContinue = $false
+            if (Test-Bound "AllowContinue") {
+                Write-Message -Level Warning -Message "AllowContinue is deprecated and will be removed in v1.0"
             }
             if (Test-Bound "FileMapping") {
                 $paramCount += 1
@@ -683,12 +681,7 @@ function Restore-DbaDatabase {
                 $DbUnVerified = ($FilteredBackupHistory | Where-Object {
                         $_.IsVerified -eq $False
                     } | Select-Object -Property Database -Unique).Database -join ','
-                if ($AllowContinue) {
-                    Write-Message -Message "$DbUnverified failed testing, AllowContinue set" -Level Verbose
-                } else {
-                    Stop-Function -Message "Database $DbUnverified failed testing, AllowContinue not set, exiting"
-                    return
-                }
+                Write-Message -Level Warning -Message "Database $DbUnverified failed testing,  skipping"
             }
             If ($PSCmdlet.ParameterSetName -eq "RestorePage") {
                 if (($FilteredBackupHistory.Database | select-Object -unique | Measure-Object).count -ne 1) {
