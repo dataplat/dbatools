@@ -111,7 +111,7 @@ function New-DbaDbMaskingConfig {
             }
         }
 
-        $supportedDataTypes = 'bit','bool','char','date','datetime','datetime2','decimal','int','money','nchar','ntext','nvarchar','smalldatetime','text','time','uniqueidentifier','userdefineddatatype','varchar'
+        $supportedDataTypes = 'bit', 'bool', 'char', 'date', 'datetime', 'datetime2', 'decimal', 'int', 'money', 'nchar', 'ntext', 'nvarchar', 'smalldatetime', 'text', 'time', 'uniqueidentifier', 'userdefineddatatype', 'varchar'
     }
 
     process {
@@ -164,16 +164,23 @@ function New-DbaDbMaskingConfig {
                         Write-Message -Level Verbose -Message "Skipping $columnobject because it is an identity column"
                         continue
                     }
+
                     if ($columnobject.IsForeignKey) {
                         Write-Message -Level Verbose -Message "Skipping $columnobject because it is a foreign key"
                         continue
                     }
+
                     if ($columnobject.Computed) {
                         Write-Message -Level Verbose -Message "Skipping $columnobject because it is a computed column"
                         continue
                     }
 
-                    if($columnobject.DataType.Name -notin $supportedDataTypes){
+                    if ($columnobject.GeneratedAlwaysType -ne 'None') {
+                        Write-Message -Level Verbose -Message "Skipping $columnobject because it is a computed column for temporal tables"
+                        continue
+                    }
+
+                    if ($columnobject.DataType.Name -notin $supportedDataTypes) {
                         Write-Message -Level Verbose -Message "Skipping $columnobject because it is not a supported data type"
                         continue
                     }
@@ -232,7 +239,7 @@ function New-DbaDbMaskingConfig {
                                     Nullable        = $columnobject.Nullable
                                 }
                             }
-                            "bitcoin"{
+                            "bitcoin" {
                                 $columns += [PSCustomObject]@{
                                     Name            = $columnobject.Name
                                     ColumnType      = $columnType
@@ -344,7 +351,7 @@ function New-DbaDbMaskingConfig {
                                     Nullable        = $columnobject.Nullable
                                 }
                             }
-                            "email"{
+                            "email" {
                                 $columns += [PSCustomObject]@{
                                     Name            = $columnobject.Name
                                     ColumnType      = $columnType
@@ -386,7 +393,7 @@ function New-DbaDbMaskingConfig {
                                     Nullable        = $columnobject.Nullable
                                 }
                             }
-                            "iban"{
+                            "iban" {
                                 $columns += [PSCustomObject]@{
                                     Name            = $columnobject.Name
                                     ColumnType      = $columnType
@@ -428,7 +435,7 @@ function New-DbaDbMaskingConfig {
                                     Nullable        = $columnobject.Nullable
                                 }
                             }
-                            "longitude"{
+                            "longitude" {
                                 $columns += [PSCustomObject]@{
                                     Name            = $columnobject.Name
                                     ColumnType      = $columnType
@@ -442,7 +449,7 @@ function New-DbaDbMaskingConfig {
                                     Nullable        = $columnobject.Nullable
                                 }
                             }
-                            "phone"{
+                            "phone" {
                                 $columns += [PSCustomObject]@{
                                     Name            = $columnobject.Name
                                     ColumnType      = $columnType
@@ -456,7 +463,7 @@ function New-DbaDbMaskingConfig {
                                     Nullable        = $columnobject.Nullable
                                 }
                             }
-                            "state"{
+                            "state" {
                                 $columns += [PSCustomObject]@{
                                     Name            = $columnobject.Name
                                     ColumnType      = $columnType
@@ -470,7 +477,7 @@ function New-DbaDbMaskingConfig {
                                     Nullable        = $columnobject.Nullable
                                 }
                             }
-                            "stateabbr"{
+                            "stateabbr" {
                                 $columns += [PSCustomObject]@{
                                     Name            = $columnobject.Name
                                     ColumnType      = $columnType
@@ -638,7 +645,7 @@ function New-DbaDbMaskingConfig {
                 Set-Content -Path $temppath -Value ($results | ConvertTo-Json -Depth 5)
                 Get-ChildItem -Path $temppath
             } catch {
-                Stop-Function -Message "Something went wrong writing the results to the Path" -Target $Path -Continue -ErrorRecord $_
+                Stop-Function -Message "Something went wrong writing the results to the $Path" -Target $Path -Continue -ErrorRecord $_
             }
         } else {
             Write-Message -Message "No tables to save for database $($db.Name) on $($server.Name)" -Level Verbose
