@@ -550,6 +550,10 @@ function New-DbaDbMaskingConfig {
                                 $subType = "Date"
                                 $MaxValue = $null
                             }
+                            "decimal" {
+                                $subType = "Decimal"
+                                $MaxValue = $null
+                            }
                             "float" {
                                 $subType = "Float"
                                 $MaxValue = $null
