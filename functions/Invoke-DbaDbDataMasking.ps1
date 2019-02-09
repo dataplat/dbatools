@@ -553,14 +553,13 @@ function Invoke-DbaDbDataMasking {
                                     } else {
                                         $updates += "[$($columnobject.Name)] = $newValue"
                                     }
-                                } elseif ($columnobject.ColumnType -match 'bit') {
+                                } elseif ($columnobject.ColumnType -in 'bit', 'bool') {
                                     if ($null -eq $newValue -and $columnobject.Nullable) {
                                         $updates += "[$($columnobject.Name)] = NULL"
                                     } else {
-                                        if($newValue){
+                                        if ($newValue) {
                                             $updates += "[$($columnobject.Name)] = 1"
-                                        }
-                                        else{
+                                        } else {
                                             $updates += "[$($columnobject.Name)] = 0"
                                         }
                                     }
@@ -595,7 +594,7 @@ function Invoke-DbaDbDataMasking {
                             }
 
                             $updatequery = "UPDATE [$($tableobject.Schema)].[$($tableobject.Name)] SET $($updates -join ', ') WHERE $($wheres -join ' AND ')"
-                            $updatequery
+
                             try {
                                 $sqlcmd = New-Object System.Data.SqlClient.SqlCommand($updatequery, $sqlconn, $transaction)
                                 $null = $sqlcmd.ExecuteNonQuery()
