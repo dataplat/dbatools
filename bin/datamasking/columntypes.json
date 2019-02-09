@@ -121,6 +121,8 @@
     {
         "TypeName": "Phone",
         "Synonym": [
+            "Fax",
+            "FaxNumber",
             "Phonenumber",
             "Phone",
             "Telephone",
