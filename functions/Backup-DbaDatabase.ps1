@@ -287,6 +287,14 @@ function Backup-DbaDatabase {
 
         Write-Message -Level Verbose -Message "$($InputObject.Count) database to backup"
 
+        if ($Database) {
+            $InputObject = $InputObject | Where Name -contains $Database
+        }
+
+        if ($ExcludeDatabase) {
+            $InputObject = $InputObject | Where Name -notcontains $ExcludeDatabase
+        }
+
         foreach ($db in $InputObject) {
             $ProgressId = Get-Random
             $failures = @()
