@@ -80,6 +80,12 @@ function Invoke-ManagedComputerCommand {
 			$wmi = New-Object ('Microsoft.SqlServer.Management.Smo.Wmi.ManagedComputer') $ipaddr ;
 			$null = $wmi.Initialize()
 		}
+		Else
+		{
+			[void][System.Reflection.Assembly]::LoadWithPartialName('Microsoft.SqlServer.SqlWmiManagement')
+        		$wmi = New-Object Microsoft.SqlServer.Management.Smo.Wmi.ManagedComputer $ipaddr
+        		$null = $wmi.Initialize()
+		}
     }
 
     $prescriptblock = $setupScriptBlock.ToString()
