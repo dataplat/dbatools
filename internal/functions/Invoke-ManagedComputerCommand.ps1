@@ -68,6 +68,7 @@ function Invoke-ManagedComputerCommand {
 						If($CheckJob -eq $true)
 						{
 							$Count = $i
+							$job | Remove-Job -Force
 							Return
 						}
 						$job | Remove-Job -Force
