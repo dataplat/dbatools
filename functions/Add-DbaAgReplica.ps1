@@ -175,6 +175,7 @@ function Add-DbaAgReplica {
                     if ($InputObject.State -eq 'Existing') {
                         Invoke-Create -Object $replica
                         $null = Join-DbaAvailabilityGroup -SqlInstance $instance -SqlCredential $SqlCredential -AvailabilityGroup $InputObject.Name
+                        $agreplica.Alter()
                     }
                     Add-Member -Force -InputObject $agreplica -MemberType NoteProperty -Name ComputerName -value $agreplica.Parent.ComputerName
                     Add-Member -Force -InputObject $agreplica -MemberType NoteProperty -Name InstanceName -value $agreplica.Parent.InstanceName
