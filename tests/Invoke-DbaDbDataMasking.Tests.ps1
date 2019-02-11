@@ -43,8 +43,8 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
 
     Context "Command works" {
         It "starts with the right data" {
-            Invoke-DbaQuery -SqlInstance $script:instance1 -Database $db -Query "select * from people where fname = 'Joe'" | Should -NotBe $null
-            Invoke-DbaQuery -SqlInstance $script:instance1 -Database $db -Query "select * from people where lname = 'Schmee'" | Should -NotBe $null
+            Invoke-DbaQuery -SqlInstance $script:instance1 -Database $db -Query "select * from people where fname = 'Joe'" | Should -Not -Be $null
+            Invoke-DbaQuery -SqlInstance $script:instance1 -Database $db -Query "select * from people where lname = 'Schmee'" | Should -Not -Be $null
         }
         It "returns the proper output" {
             $file = New-DbaDbMaskingConfig -SqlInstance $script:instance1 -Database $db -Path C:\temp
@@ -56,7 +56,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
 
         }
         It "masks the data and does not delete it" {
-            Invoke-DbaQuery -SqlInstance $script:instance1 -Database $db -Query "select * from people" | Should -NotBe $null
+            Invoke-DbaQuery -SqlInstance $script:instance1 -Database $db -Query "select * from people" | Should -Not -Be $null
             Invoke-DbaQuery -SqlInstance $script:instance1 -Database $db -Query "select * from people where fname = 'Joe'" | Should -Be $null
             Invoke-DbaQuery -SqlInstance $script:instance1 -Database $db -Query "select * from people where lname = 'Schmee'" | Should -Be $null
         }
