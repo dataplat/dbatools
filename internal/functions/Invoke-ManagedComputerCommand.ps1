@@ -58,19 +58,19 @@ function Invoke-ManagedComputerCommand {
 		$t | Foreach{
 						$t1 = $Null;
 						$t1 = Get-ChildItem $_.FullName;
-						Start-Job -Name $i -ScriptBlock {
+						$job = Start-Job -Name $i -ScriptBlock {
 									$ipaddr =  $args[1]
 									$test = Add-Type -Path  $args[0] -PassThru;
 									$m = New-Object ('Microsoft.SqlServer.Management.Smo.Wmi.ManagedComputer') $ipaddr;
 									$m.Initialize()
-							} -ArgumentList $t1.FullName,$ipaddr | Out-Null;
-						$job = Get-Job -Name $i |  Wait-Job
+							} -ArgumentList $t1.FullName,$ipaddr |  Wait-Job;
 						$CheckJob = Receive-Job -Job $job -Keep -ErrorAction SilentlyContinue
 						If($CheckJob -eq $true)
 						{
 							$Count = $i
 							Return
 						}
+						$job | Remove-Job -Force
 						$i ++
 		}
 		Get-Job | Remove-Job
