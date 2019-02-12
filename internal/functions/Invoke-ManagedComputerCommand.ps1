@@ -54,7 +54,7 @@ function Invoke-ManagedComputerCommand {
 	# Find right library
 	$Count = -1
 	$i = 0
-	[array]$t = Get-ChildItem "C:\Windows\assembly\GAC_MSIL\Microsoft.SqlServer.SqlWmiManagement" -Recurse -Filter "*.dll"|Sort FullName -Descending
+	[array]$t = Get-ChildItem "$($env:windir)\assembly\GAC_MSIL\Microsoft.SqlServer.SqlWmiManagement" -Recurse -Filter "*.dll"|Sort FullName -Descending
 		
 	if($t.count -gt 0)
 	{
