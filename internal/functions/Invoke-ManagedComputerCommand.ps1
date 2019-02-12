@@ -52,47 +52,10 @@ function Invoke-ManagedComputerCommand {
         # Just in case we go remote, ensure the assembly is loaded. Wenn SQL Server 2014 and 13.0.0.0__89845dcd8080cc91 -> 
         #[void][System.Reflection.Assembly]::LoadWithPartialName('Microsoft.SqlServer.SqlWmiManagement') - Failed!!!
 	# Find right library
-	$Count = -1
-	$i = 0
-	[array]$t = Get-ChildItem "$($env:windir)\assembly\GAC_MSIL\Microsoft.SqlServer.SqlWmiManagement" -Recurse -Filter "*.dll"|Sort FullName -Descending
-		
-	if($t.count -gt 0)
-	{
-		Foreach($a in $t)
-		{
-			$job = Start-Job -Name $i -ScriptBlock {
-				$ipaddr =  $args[1]
-				$test = Add-Type -Path  $args[0] -PassThru;
-				$m = New-Object ('Microsoft.SqlServer.Management.Smo.Wmi.ManagedComputer') $ipaddr;
-				$m.Initialize()
-				} -ArgumentList $a.FullName,$ipaddr |  Wait-Job;
-			$CheckJob = Receive-Job -Job $job -Keep -ErrorAction SilentlyContinue
-			if($CheckJob -eq $true)
-			{
-				$job | Remove-Job -Force
-				$Count = $i
-				Return
-			}
-			$job | Remove-Job -Force
-			$i ++
-		}
-			
-		if($Count -ge 0)
-		{
-			$test = Add-Type -Path ($t[$count].FullName) -PassThru;				
-		}
-		else
-		{
-			[void][System.Reflection.Assembly]::LoadWithPartialName('Microsoft.SqlServer.SqlWmiManagement')
-		}
-	}
-	else
-	{
-		[void][System.Reflection.Assembly]::LoadWithPartialName('Microsoft.SqlServer.SqlWmiManagement')
-	}
-		
-	$wmi = New-Object ('Microsoft.SqlServer.Management.Smo.Wmi.ManagedComputer') $ipaddr ;
-	$null = $wmi.Initialize()
+	# Just check origin code
+        [void][System.Reflection.Assembly]::LoadWithPartialName('Microsoft.SqlServer.SqlWmiManagement')
+        $wmi = New-Object Microsoft.SqlServer.Management.Smo.Wmi.ManagedComputer $ipaddr
+        $null = $wmi.Initialize()
     }
 
     $prescriptblock = $setupScriptBlock.ToString()
