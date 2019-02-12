@@ -112,7 +112,7 @@ function Get-DecryptedObject {
     $sql = switch ($Type) {
         "LinkedServer" {
             "SELECT sysservers.srvname,
-                syslnklgns.Name,
+                syslnklgns.name,
                 substring(syslnklgns.pwdhash,5,$ivlen) iv,
                 substring(syslnklgns.pwdhash,$($ivlen + 5),
                 len(syslnklgns.pwdhash)-$($ivlen + 4)) pass
@@ -122,7 +122,7 @@ function Get-DecryptedObject {
             WHERE len(pwdhash) > 0"
         }
         "Credential" {
-            "SELECT QUOTENAME(name) AS name,credential_identity,substring(imageval,5,$ivlen) iv, substring(imageval,$($ivlen + 5),len(imageval)-$($ivlen + 4)) pass from sys.Credentials cred inner join sys.sysobjvalues obj on cred.credential_id = obj.objid where valclass=28 and valnum=2"
+            "SELECT QUOTENAME(name) AS name,credential_identity,substring(imageval,5,$ivlen) iv, substring(imageval,$($ivlen + 5),len(imageval)-$($ivlen + 4)) pass from sys.credentials cred inner join sys.sysobjvalues obj on cred.credential_id = obj.objid where valclass=28 and valnum=2"
         }
     }
 
