@@ -119,12 +119,14 @@ function Copy-DbaLinkedServer {
                 }
 
                 $linkedServerName = $currentLinkedServer.Name
+                $linkedServerProductName = $currentLinkedServer.ProductName
                 $linkedServerDataSource = $currentLinkedServer.DataSource
 
                 $copyLinkedServer = [pscustomobject]@{
                     SourceServer      = $sourceServer.Name
                     DestinationServer = $destServer.Name
                     Name              = $linkedServerName
+                    ProductName       = $linkedServerProductName
                     DataSource        = $linkedServerDataSource
                     Type              = "Linked Server"
                     Status            = $null
@@ -183,7 +185,7 @@ function Copy-DbaLinkedServer {
 
                         $destServer.Query($sql)
 
-                        if ($copyLinkedServer.Name -ne $copyLinkedServer.DataSource) {
+                        if ($copyLinkedServer.ProductName -eq 'SQL Server' -and $copyLinkedServer.Name -ne $copyLinkedServer.DataSource) {
                             $sql2 = "EXEC sp_setnetname '$($copyLinkedServer.Name)', '$($copyLinkedServer.DataSource)'; "
                             $destServer.Query($sql2)
                         }
