@@ -112,7 +112,7 @@ function Get-DecryptedObject {
     $sql = switch ($Type) {
         "LinkedServer" {
             "SELECT sysservers.srvname,
-                syslnklgns.Name,
+                syslnklgns.name,
                 substring(syslnklgns.pwdhash,5,$ivlen) iv,
                 substring(syslnklgns.pwdhash,$($ivlen + 5),
                 len(syslnklgns.pwdhash)-$($ivlen + 4)) pass
