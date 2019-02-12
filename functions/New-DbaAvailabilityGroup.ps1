@@ -578,7 +578,9 @@ function New-DbaAvailabilityGroup {
         # Add databases
         Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Adding databases"
 
-        $null = Add-DbaAgDatabase -SqlInstance $Primary -SqlCredential $PrimarySqlCredential -AvailabilityGroup $Name -Database $Database -SeedingMode $SeedingMode -SharedPath $SharedPath -Secondary $Secondary -SecondarySqlCredential $SecondarySqlCredential
+        if ($Database) {
+            $null = Add-DbaAgDatabase -SqlInstance $Primary -SqlCredential $PrimarySqlCredential -AvailabilityGroup $Name -Database $Database -SeedingMode $SeedingMode -SharedPath $SharedPath -Secondary $Secondary -SecondarySqlCredential $SecondarySqlCredential
+        }
 
         foreach ($second in $secondaries) {
             if ($server.HostPlatform -ne "Linux" -and $second.HostPlatform -ne "Linux") {
