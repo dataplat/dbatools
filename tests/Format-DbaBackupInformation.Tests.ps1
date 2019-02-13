@@ -22,7 +22,7 @@ Describe "$CommandName Integration Tests" -Tags 'IntegrationTests' {
             ($output | Where-Object {$_.Database -ne 'Pester'}).count | Should be 0
         }
         It "Should have renamed datafiles as well" {
-            ($output | Select-Object -ExpandProperty filelist | Where-Object {$_.PhysicalName -like '*ContinuePointTest*'}).count
+            ($output | Select-Object -ExpandProperty NewFilelist | Where-Object {$_.PhysicalName -like '*ContinuePointTest*'}).count
         }
 
     }
@@ -34,7 +34,7 @@ Describe "$CommandName Integration Tests" -Tags 'IntegrationTests' {
             ($output | Where-Object {$_.Database -ne 'Pester'}).count | Should be 0
         }
         It "Should have renamed datafiles as well" {
-            ($out | Select-Object -ExpandProperty filelist | Where-Object {$_.PhysicalName -like 'ContinuePointTest'}).count | Should Be 0
+            ($out | Select-Object -ExpandProperty NewFilelist | Where-Object {$_.PhysicalName -like 'ContinuePointTest'}).count | Should Be 0
         }
     }
 
@@ -49,16 +49,16 @@ Describe "$CommandName Integration Tests" -Tags 'IntegrationTests' {
             ($Output | Where-Object {$_.OriginalDatabase -eq 'RestoreTimeClean'} | Where-Object {$_.Database -ne 'Eldritch'}).count | Should be 0
         }
         It "Should have renamed all the RestoreTimeClean files to Eldritch" {
-            ($out | Where-Object {$_.OriginalDatabase -eq 'RestoreTimeClean'} | Select-Object -ExpandProperty filelist | Where-Object {$_.PhysicalName -like 'RestoreTimeClean'}).count | Should Be 0
-            ($out | Where-Object {$_.OriginalDatabase -eq 'RestoreTimeClean'} | Select-Object -ExpandProperty filelist | Where-Object {$_.PhysicalName -like 'eldritch'}).count | Should Be ($out | Where-Object {$_.OriginalDatabase -eq 'ContinuePointTest'} | Select-Object -ExpandProperty filelist).count
+            ($out | Where-Object {$_.OriginalDatabase -eq 'RestoreTimeClean'} | Select-Object -ExpandProperty NewFilelist | Where-Object {$_.PhysicalName -like 'RestoreTimeClean'}).count | Should Be 0
+            ($out | Where-Object {$_.OriginalDatabase -eq 'RestoreTimeClean'} | Select-Object -ExpandProperty NewFilelist | Where-Object {$_.PhysicalName -like 'eldritch'}).count | Should Be ($out | Where-Object {$_.OriginalDatabase -eq 'ContinuePointTest'} | Select-Object -ExpandProperty NewFilelist).count
 
         }
         It "Should have renamed all ContinuePointTest to Spiggy" {
             ($Output | Where-Object {$_.OriginalDatabase -eq 'ContinuePointTest'} | Where-Object {$_.Database -ne 'Spiggy'}).count | Should be 0
         }
         It "Should have renamed all the ContinuePointTest files to Spiggy" {
-            ($out | Where-Object {$_.OriginalDatabase -eq 'ContinuePointTest'} | Select-Object -ExpandProperty filelist | Where-Object {$_.PhysicalName -like 'ContinuePointTest'}).count | Should Be 0
-            ($out | Where-Object {$_.OriginalDatabase -eq 'ContinuePointTest'} | Select-Object -ExpandProperty filelist | Where-Object {$_.PhysicalName -like 'spiggy'}).count | Should Be ($out | Where-Object {$_.OriginalDatabase -eq 'ContinuePointTest'} | Select-Object -ExpandProperty filelist).count
+            ($out | Where-Object {$_.OriginalDatabase -eq 'ContinuePointTest'} | Select-Object -ExpandProperty NewFilelist | Where-Object {$_.PhysicalName -like 'ContinuePointTest'}).count | Should Be 0
+            ($out | Where-Object {$_.OriginalDatabase -eq 'ContinuePointTest'} | Select-Object -ExpandProperty NewFilelist | Where-Object {$_.PhysicalName -like 'spiggy'}).count | Should Be ($out | Where-Object {$_.OriginalDatabase -eq 'ContinuePointTest'} | Select-Object -ExpandProperty NewFilelist).count
 
         }
     }
@@ -77,8 +77,8 @@ Describe "$CommandName Integration Tests" -Tags 'IntegrationTests' {
             ($Output | Where-Object {$_.OriginalDatabase -eq 'ContinuePointTest'} | Where-Object {$_.Database -ne 'Alice'}).count | Should be 0
         }
         It "Should have renamed all the ContinuePointTest files to Alice" {
-            ($Output | Where-Object {$_.OriginalDatabase -eq 'ContinuePointTest'} | Select-Object -ExpandProperty filelist | Where-Object {$_.PhysicalName -like 'ContinuePointTest'}).count | Should Be 0
-            ($Output | Where-Object {$_.OriginalDatabase -eq 'ContinuePointTest'} | Select-Object -ExpandProperty filelist | Where-Object {$_.PhysicalName -like 'alice'}).count | Should Be ($out | Where-Object {$_.OriginalDatabase -eq 'ContinuePointTest'} | Select-Object -ExpandProperty filelist).count
+            ($Output | Where-Object {$_.OriginalDatabase -eq 'ContinuePointTest'} | Select-Object -ExpandProperty NewFilelist | Where-Object {$_.PhysicalName -like 'ContinuePointTest'}).count | Should Be 0
+            ($Output | Where-Object {$_.OriginalDatabase -eq 'ContinuePointTest'} | Select-Object -ExpandProperty NewFilelist | Where-Object {$_.PhysicalName -like 'alice'}).count | Should Be ($out | Where-Object {$_.OriginalDatabase -eq 'ContinuePointTest'} | Select-Object -ExpandProperty NewFilelist).count
         }
     }
 
@@ -97,7 +97,7 @@ Describe "$CommandName Integration Tests" -Tags 'IntegrationTests' {
         $output = Format-DbaBackupInformation -BackupHistory $History -DataFileDirectory c:\restores
 
         It "Should have move ALL files to c:\restores\" {
-            (($Output | Select-Object -ExpandProperty Filelist).PhysicalName | split-path | Where-Object {$_ -ne 'c:\restores'}).count | Should Be 0
+            (($Output | Select-Object -ExpandProperty NewFilelist).PhysicalName | split-path | Where-Object {$_ -ne 'c:\restores'}).count | Should Be 0
         }
     }
 
@@ -107,10 +107,10 @@ Describe "$CommandName Integration Tests" -Tags 'IntegrationTests' {
         $output = Format-DbaBackupInformation -BackupHistory $History -DataFileDirectory c:\restores\ -LogFileDirectory c:\logs
 
         It "Should  have moved all data files to c:\restores\" {
-            (($Output | Select-Object -ExpandProperty Filelist | Where-Object {$_.Type -eq 'D'}).PhysicalName | split-path | Where-Object {$_ -ne 'c:\restores'}).count | Should Be 0
+            (($Output | Select-Object -ExpandProperty NewFilelist | Where-Object {$_.Type -eq 'D'}).PhysicalName | split-path | Where-Object {$_ -ne 'c:\restores'}).count | Should Be 0
         }
         It "Should have moved all log files to c:\logs\" {
-            (($Output | Select-Object -ExpandProperty Filelist | Where-Object {$_.Type -eq 'L'}).PhysicalName | split-path | Where-Object {$_ -ne 'c:\logs'}).count | Should Be 0
+            (($Output | Select-Object -ExpandProperty NewFilelist | Where-Object {$_.Type -eq 'L'}).PhysicalName | split-path | Where-Object {$_ -ne 'c:\logs'}).count | Should Be 0
         }
     }
 
@@ -120,10 +120,10 @@ Describe "$CommandName Integration Tests" -Tags 'IntegrationTests' {
         $Output = Format-DbaBackupInformation -BackupHistory $History -DataFileDirectory c:\restores\ -LogFileDirectory c:\logs
 
         It "Should not have moved all data files to c:\restores\" {
-            (($Output | Select-Object -ExpandProperty Filelist | Where-Object {$_.Type -eq 'D'}).PhysicalName | split-path | Where-Object {$_ -eq 'c:\logs'}).count | Should Be 0
+            (($Output | Select-Object -ExpandProperty NewFilelist | Where-Object {$_.Type -eq 'D'}).PhysicalName | split-path | Where-Object {$_ -eq 'c:\logs'}).count | Should Be 0
         }
         It "Should have moved all log files to c:\logs\" {
-            (($Output | Select-Object -ExpandProperty Filelist | Where-Object {$_.Type -eq 'L'}).PhysicalName | split-path | Where-Object {$_ -ne 'c:\logs'}).count | Should Be 0
+            (($Output | Select-Object -ExpandProperty NewFilelist | Where-Object {$_.Type -eq 'L'}).PhysicalName | split-path | Where-Object {$_ -ne 'c:\logs'}).count | Should Be 0
         }
     }
 
@@ -163,13 +163,13 @@ Describe "$CommandName Integration Tests" -Tags 'IntegrationTests' {
             ($output | Where-Object {$_.Database -ne 'Pester'}).count | Should be 0
         }
         It "Should have renamed datafiles as well" {
-            ($output | Select-Object -ExpandProperty filelist | Where-Object {$_.PhysicalName -like '*ContinuePointTest*'}).count
+            ($output | Select-Object -ExpandProperty NewFilelist | Where-Object {$_.PhysicalName -like '*ContinuePointTest*'}).count
         }
         It "Should have moved all data files to c:\restores\" {
-            (($Output | Select-Object -ExpandProperty Filelist | Where-Object {$_.Type -eq 'D'}).PhysicalName | split-path | Where-Object {$_ -ne 'c:\restores'}).count | Should Be 0
+            (($Output | Select-Object -ExpandProperty NewFilelist | Where-Object {$_.Type -eq 'D'}).PhysicalName | split-path | Where-Object {$_ -ne 'c:\restores'}).count | Should Be 0
         }
         It "Should have moved all log files to c:\logs\" {
-            (($Output | Select-Object -ExpandProperty Filelist | Where-Object {$_.Type -eq 'L'}).PhysicalName | split-path | Where-Object {$_ -ne 'c:\logs'}).count | Should Be 0
+            (($Output | Select-Object -ExpandProperty NewFilelist | Where-Object {$_.Type -eq 'L'}).PhysicalName | split-path | Where-Object {$_ -ne 'c:\logs'}).count | Should Be 0
         }
         It "Should not have moved all backup files to c:\backups" {
             ($Output | Select-Object -ExpandProperty FullName | Split-Path | Where-Object {$_ -eq 'c:\backups'}).count | Should Be $History.count
