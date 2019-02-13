@@ -326,7 +326,7 @@ function Invoke-DbaAdvancedRestore {
                                 BackupSizeMB           = if ([bool]($backup.psobject.Properties.Name -contains 'TotalSize')) { [Math]::Round(($backup | Measure-Object -Property TotalSize -Sum).Sum / 1mb, 2) } else { $null }
                                 CompressedBackupSizeMB = if ([bool]($backup.psobject.Properties.Name -contains 'CompressedBackupSize')) { [Math]::Round(($backup | Measure-Object -Property CompressedBackupSize -Sum).Sum / 1mb, 2) } else { $null }
                                 BackupFile             = $backup.FullName -Join ','
-                                RestoredFile           = $((Split-Path $backup.FileList.PhysicalName -Leaf) | Sort-Object -Unique) -Join ','
+                                RestoredFile           = $((Split-Path $backup.NewFilelist.PhysicalName -Leaf) | Sort-Object -Unique) -Join ','
                                 RestoredFileFull       = ($backup.NewFilelist.PhysicalName -Join ',')
                                 RestoreDirectory       = $RestoreDirectory
                                 BackupSize             = if ([bool]($backup.psobject.Properties.Name -contains 'TotalSize')) { [dbasize](($backup | Measure-Object -Property TotalSize -Sum).Sum) } else { $null }
