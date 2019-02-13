@@ -625,7 +625,7 @@ function Restore-DbaDatabase {
         if (Test-FunctionInterrupt) {
             return
         }
-        $internalBackupHistory = Copy-DbaObject $BackupHistory
+        $internalBackupHistory = $BackupHistory
 
         if ($PSCmdlet.ParameterSetName -like "Restore*") {
             if ($internalBackupHistory.Count -eq 0) {

@@ -148,9 +148,8 @@ function Format-DbaBackupInformation {
             if ("OriginalDatabase" -notin $History.PSobject.Properties.name) {
                 $History | Add-Member -Name 'OriginalDatabase' -Type NoteProperty -Value $History.Database
             }
-            if ("OriginalFileList" -notin $History.PSobject.Properties.name) {
-                $History | Add-Member -Name 'OriginalFileList' -Type NoteProperty -Value ''
-                $History | ForEach-Object {$_.OriginalFileList = $_.FileList}
+            if ("NewFileList" -notin $History.PSobject.Properties.name) {
+                $History | Add-Member -Name 'NewFileList' -Type NoteProperty -Value (Copy-DbaObject $History.FileList)
             }
             if ("OriginalFullName" -notin $History.PSobject.Properties.name) {
                 $History | Add-Member -Name 'OriginalFullName' -Type NoteProperty -Value $History.FullName
@@ -176,14 +175,14 @@ function Format-DbaBackupInformation {
             }
             $History.Database = $DatabaseNamePrefix + $History.Database
 
-            $History.FileList | ForEach-Object {
+            $History.NewFileList | ForEach-Object {
                 if ($null -ne $FileMapping ) {
                     if ($null -ne $FileMapping[$_.LogicalName]) {
                         $_.PhysicalName = $FileMapping[$_.LogicalName]
                     }
                 } else {
                     if ($ReplaceDbNameInFile -eq $true) {
-                        $_.PhysicalName = $_.PhysicalName -Replace $History.OriginalDatabase, $History.Database
+                        $_.PhysicalName = ($History.FileList | Where-Object LogicalName -eq $_.LogicalName).PhysicalName -Replace [Regex]::Escape($History.OriginalDatabase), $History.Database
                     }
                     Write-Message -Message " 1 PhysicalName = $($_.PhysicalName) " -Level Verbose
                     $Pname = [System.Io.FileInfo]$_.PhysicalName

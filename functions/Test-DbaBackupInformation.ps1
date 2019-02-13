@@ -118,7 +118,7 @@ function Test-DbaBackupInformation {
 
                 $DBFileCheck = ($RegisteredFileCheck | Where-Object Name -eq $Database).PhysicalName
                 $OtherFileCheck = ($RegisteredFileCheck | Where-Object Name -ne $Database).PhysicalName
-                $DBHistoryPhysicalPaths = ($DbHistory | Select-Object -ExpandProperty filelist | Select-Object PhysicalName -Unique).PhysicalName
+                $DBHistoryPhysicalPaths = ($DbHistory | Select-Object -ExpandProperty NewFileList | Select-Object PhysicalName -Unique).PhysicalName
                 $DBHistoryPhysicalPathsTest = Test-DbaPath -SqlInstance $RestoreInstance -Path $DBHistoryPhysicalPaths
                 $DBHistoryPhysicalPathsExists = ($DBHistoryPhysicalPathsTest | Where-Object FileExists -eq $True).FilePath
                 $pathSep = Get-DbaPathSep -Server $RestoreInstance

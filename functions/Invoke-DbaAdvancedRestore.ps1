@@ -211,7 +211,7 @@ function Invoke-DbaAdvancedRestore {
                     $Restore.Blocksize = $BlockSize
                 }
                 if ($true -ne $Continue -and ($null -eq $Pages)) {
-                    foreach ($file in $backup.FileList) {
+                    foreach ($file in $backup.NewFileList) {
                         $MoveFile = New-Object Microsoft.SqlServer.Management.Smo.RelocateFile
                         $MoveFile.LogicalFileName = $File.LogicalName
                         $MoveFile.PhysicalFileName = $File.PhysicalName
@@ -309,7 +309,7 @@ function Invoke-DbaAdvancedRestore {
                     } finally {
                         if ($OutputScriptOnly -eq $false) {
                             $pathSep = Get-DbaPathSep -Server $server
-                            $RestoreDirectory = ((Split-Path $backup.FileList.PhysicalName -Parent) | Sort-Object -Unique).Replace('\', $pathSep) -Join ','
+                            $RestoreDirectory = ((Split-Path $backup.NewFileList.PhysicalName -Parent) | Sort-Object -Unique).Replace('\', $pathSep) -Join ','
                             [PSCustomObject]@{
                                 ComputerName           = $server.ComputerName
                                 InstanceName           = $server.ServiceName
@@ -322,12 +322,12 @@ function Invoke-DbaAdvancedRestore {
                                 WithReplace            = $WithReplace
                                 RestoreComplete        = $RestoreComplete
                                 BackupFilesCount       = $backup.FullName.Count
-                                RestoredFilesCount     = $backup.Filelist.PhysicalName.count
+                                RestoredFilesCount     = $backup.NewFilelist.PhysicalName.count
                                 BackupSizeMB           = if ([bool]($backup.psobject.Properties.Name -contains 'TotalSize')) { [Math]::Round(($backup | Measure-Object -Property TotalSize -Sum).Sum / 1mb, 2) } else { $null }
                                 CompressedBackupSizeMB = if ([bool]($backup.psobject.Properties.Name -contains 'CompressedBackupSize')) { [Math]::Round(($backup | Measure-Object -Property CompressedBackupSize -Sum).Sum / 1mb, 2) } else { $null }
                                 BackupFile             = $backup.FullName -Join ','
                                 RestoredFile           = $((Split-Path $backup.FileList.PhysicalName -Leaf) | Sort-Object -Unique) -Join ','
-                                RestoredFileFull       = ($backup.Filelist.PhysicalName -Join ',')
+                                RestoredFileFull       = ($backup.NewFilelist.PhysicalName -Join ',')
                                 RestoreDirectory       = $RestoreDirectory
                                 BackupSize             = if ([bool]($backup.psobject.Properties.Name -contains 'TotalSize')) { [dbasize](($backup | Measure-Object -Property TotalSize -Sum).Sum) } else { $null }
                                 CompressedBackupSize   = if ([bool]($backup.psobject.Properties.Name -contains 'CompressedBackupSize')) { [dbasize](($backup | Measure-Object -Property CompressedBackupSize -Sum).Sum) } else { $null }
