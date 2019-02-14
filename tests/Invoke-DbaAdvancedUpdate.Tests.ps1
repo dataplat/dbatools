@@ -122,7 +122,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
             $result.Successful | Should -Be $true
             $result.Restarted | Should -Be $false
             $result.Installer | Should -Be 'dummy'
-            $result.Notes | Should -Be 'Restart is required for computer PRGLT10059 to finish the installation of SQL2017RTMCU12'
+            $result.Notes | Should -BeLike 'Restart is required for computer * to finish the installation of SQL2017RTMCU12'
             $result.ExtractPath | Should -BeLike '*\dbatools_KB*Extract'
         }
         It "Should mock-upgrade 2008 to SP3CU7" {
