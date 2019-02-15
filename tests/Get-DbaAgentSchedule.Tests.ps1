@@ -32,7 +32,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 
     Context "Monthly schedule is correct" {
         $results = Get-DbaAgentSchedule -SqlInstance $script:instance2 -Schedule dbatoolsci_MonthlyTest
-        It "Should   get one schedule" {
+        It "Should  get one schedule" {
             $results.count | Should Be 1
         }
         It "Results are not empty" {
@@ -47,8 +47,8 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         It "Should be enabled" {
             $results.IsEnabled | Should Be $true
         }
-        It "Should have a SqlInstance of $($script:instance2)" {
-            $results.SqlInstance | Should Be $script:instance2
+        It "SqlInstance should not be null" {
+            $results.SqlInstance | Should Not BeNullOrEmpty
         }
         It "Should have correct description" {
             $datetimeFormat = (Get-culture).DateTimeFormat
