@@ -1,8 +1,34 @@
 ﻿# Changelog
+
 All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
     and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [0.9.753] - 2019-02-06
+### Fixed
+* Authentication issue in New-DbaAgentJobCategory [#5034](https://github.com/sqlcollaborative/dbatools/issues/5034)
+* Piping issue in Backup-DbaDatabase [#5041](https://github.com/sqlcollaborative/dbatools/pull/5041)
+* ConvertTo-DbaDataTable no longer ignores -EnableException [#5050](https://github.com/sqlcollaborative/dbatools/issues/5050)
+* Copy-DbaDatabase now passes -Force to Set-DbaDbState [#5055](https://github.com/sqlcollaborative/dbatools/issues/5055)
+* Parallelism and exception handling fixes in Get-SqlInstanceComponent [#4988](https://github.com/sqlcollaborative/dbatools/issues/4988)
+### Added
+* Check that databases are accessible in Get-DbaDbRoleMember [#5046](https://github.com/sqlcollaborative/dbatools/pull/5046)
+
+## [0.9.752] - 2019-02-03
+### Fixed
+* Corrected math in Invoke-DbaDbShrink [#5039](https://github.com/sqlcollaborative/dbatools/issues/5039)
+### Changed
+* Remove dependency on System.Data objects in Get-DbaDbccMemoryStatus [#5031](https://github.com/sqlcollaborative/dbatools/pull/5031)
+### Added
+* Support for pipeline input on Set-DbaAgentJobStep [#4350](https://github.com/sqlcollaborative/dbatools/issues/4350)
+* Add missing server parameter in Set-DbaAgentJobStep [#4715](https://github.com/sqlcollaborative/dbatools/issues/4715)
+
+## [0.9.751] - 2019-01-31
+### Fixed
+* Properly support individual databases in Invoke-DbaDbClone [#5015](https://github.com/sqlcollaborative/dbatools/issues/5015)
+* Properly support pipeline data for Remove-DbaAgReplica [#5013](https://github.com/sqlcollaborative/dbatools/issues/5013)
+* Add-DbaAgReplica now adds replicas [#4847](https://github.com/sqlcollaborative/dbatools/issues/4847)
 
 ## [0.9.750] - 2019-01-25
 ### Added
@@ -40,7 +66,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 * Message formatting in Copy-DbaDbMail
 
 ### Added
-* Support hostnames ending with hyphen [#4090] (https://github.com/sqlcollaborative/dbatools/issues/4090)
+* Support hostnames ending with hyphen [#4090](https://github.com/sqlcollaborative/dbatools/issues/4090)
 
 ## [0.9.742] - 2019-01-15
 ### Fixed
@@ -165,7 +191,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 * Dynamic database list to Invoke-DbaDbDataMasking
 * Add Geometry to check of unsupported data types for Invoke-DbaDbDataMasking
 
-
 ## [0.9.720] - 2018-12-16
 ### Fixed
 * Enhanced outputs of Invoke-DbaDbDataMasking
@@ -234,7 +259,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 * Failed logic in Remove-DbaOrphanUser
 * Removed ability to specify both KeepDays and Database from Remove-DbaDbBackupRestoreHistory
 
-# Added
+### Added
 * VSCode default settings
 * Pipe support in Test-DbaDbOwner
 
@@ -242,7 +267,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Fixed
 * Sync AG bug having to do with read-only dbs
 
-# Added
+### Added
 * Update-DbaInstance final touches
 
 ## [0.9.707] - 2018-12-03
@@ -289,9 +314,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [0.9.535] - 2018-11-29
 ### Fixed
-- Backup recoveryfork bug
-- Standardized output for Copy command notes
-- New-DbaAgentJobStep issue with server / SubSystemServer
+* Backup recoveryfork bug
+* Standardized output for Copy command notes
+* New-DbaAgentJobStep issue with server / SubSystemServer
 
 ### Added
 * Get-DbaDbccHelp
@@ -300,89 +325,87 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [0.9.534] - 2018-11-29
 ### Fixed
-- Removed mandatory=$false on parameters because it's implied
+* Removed mandatory=$false on parameters because it's implied
 
 ### Added
 * Get-DbaAgentServer
 * Set-DbaAgentServer
 * Path parameter to audit copies
 
-
 ## [0.9.533] - 2018-11-27
 ### Fixed
-- Removed mandatory=$false on parameters because it's implied
+* Removed mandatory=$false on parameters because it's implied
 
 ### Added
-- Extra include and exclude options to `Sync-DbaAvailabilityGroup`
-- Extra column parameters to `Import-DbaCsv`
+* Extra include and exclude options to `Sync-DbaAvailabilityGroup`
+* Extra column parameters to `Import-DbaCsv`
 
 ## [0.9.532] - 2018-11-26
 ### Fixed
-- Publish-DbaDacPackage param issues introduced by core fixes
-- Resolve-DbaNetworkName resolution issue introduced by core fixes
-- Some long-standing `Get-DbaBackupHistory -Force` problems were resolved
+* Publish-DbaDacPackage param issues introduced by core fixes
+* Resolve-DbaNetworkName resolution issue introduced by core fixes
+* Some long-standing `Get-DbaBackupHistory -Force` problems were resolved
 
 ### Added
-- Added VS Code recommendations
-
-## [0.9.531] - 2018-11-24
-### Added
-- Support for Core and Certs
-- Solution file upgraded to Core combination and VS 2017
+* Added VS Code recommendations
 
 ## [0.9.531] - 2018-11-24
 ### Added
-- Support for Core and Certs
-- Solution file upgraded to Core combination and VS 2017
+* Support for Core and Certs
+* Solution file upgraded to Core combination and VS 2017
+
+## [0.9.531] - 2018-11-24
+### Added
+* Support for Core and Certs
+* Solution file upgraded to Core combination and VS 2017
 
 ## [0.9.530] - 2018-11-24
 ### Fixed
-- Fixed non-Windows imports. "Fixed" used loosely - disabled configuration to speed up import. Xplat still not fully delivered.
+* Fixed non-Windows imports. "Fixed" used loosely - disabled configuration to speed up import. Xplat still not fully delivered.
 
 ### Added
-- Seeding support to Add-DbaAgDatabase
-- More integration tests!
-- Category and Database filters to Get-DbaAgentJob
+* Seeding support to Add-DbaAgDatabase
+* More integration tests!
+* Category and Database filters to Get-DbaAgentJob
 
 ## [0.9.525] - 2018-11-23
 ### Added
-- CROSS PLATFORM SUPPORT INCLUDING MACOS AND LINUX 🎉
+* CROSS PLATFORM SUPPORT INCLUDING MACOS AND LINUX 🎉
 
 ![image](https://user-images.githubusercontent.com/8278033/48960127-ac3c3980-ef6a-11e8-90ca-1e8e56df8ee0.png)
 
 ## [0.9.524] - 2018-11-23
 ### Added
-- $script:core for easy core detection in functions
+* $script:core for easy core detection in functions
 
 ### Fixed
-- Resolve-Path added to core import routine
+* Resolve-Path added to core import routine
 
 ## [0.9.523] - 2018-11-23
 ### Added
-- Support for Dacfx for core 🎉
+* Support for Dacfx for core 🎉
 
 ### Fixed
-- Weird thing in Core where a string comparison didn't work so it tried to copy dbatools.dll onto itself
-- Get-DbaDbFile now works for CS collation
+* Weird thing in Core where a string comparison didn't work so it tried to copy dbatools.dll onto itself
+* Get-DbaDbFile now works for CS collation
 
 ## [0.9.522] - 2018-11-23
 ### Added
-- Support for PS Core on Windows 🎉
-- SMO core DLLs from the SqlServer module
+* Support for PS Core on Windows 🎉
+* SMO core DLLs from the SqlServer module
 
 ### Fixed
-- AG versioning bugs
+* AG versioning bugs
 
 ## [0.9.521] - 2018-11-22
 ### Added
-- This changelog.md! 🎉
+* This changelog.md! 🎉
 
 ### Removed
-- Extra DLLs that did not seem necessary
+* Extra DLLs that did not seem necessary
 
 ### Changed
-- Updated Glen Berry's scripts
-
+* Updated Glen Berry's scripts
 
 ## changelog background and additional info
 

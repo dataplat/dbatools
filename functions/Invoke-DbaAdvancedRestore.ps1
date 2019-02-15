@@ -172,8 +172,8 @@ function Invoke-DbaAdvancedRestore {
                         }
                     }
                 } elseif (-not $WithReplace -and (-not $VerifyOnly)) {
-                    Stop-Function -Message "$Database exists and WithReplace not specified, stopping" -EnableException $EnableException
-                    return
+                    Write-Message -Level verbose -Message "$Database exists and WithReplace not specified, stopping"
+                    continue
                 }
             }
             Write-Message -Message "WithReplace  = $WithReplace" -Level Debug
