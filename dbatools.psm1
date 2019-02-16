@@ -1472,6 +1472,7 @@ $script:windowsonly = @(
     'Rename-DbaDatabase', # can maybebe fixed by not remoting when linux is detected
     # CM and Windows functions
     'Update-DbaInstance',
+    'Invoke-DbaAdvancedUpdate',
     'Invoke-DbaPfRelog',
     'Get-DbaPfDataCollectorCounter',
     'Get-DbaPfDataCollectorCounterSample',
