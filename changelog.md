@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
     and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.770] - 2019-02-16
+### Fixed
+* `Get-DbaAgentSchedule` returns `NULL` description [#5090](https://github.com/sqlcollaborative/dbatools/issues/5090)
+### Added
+* Multithreading for `Update-DbaInstance`
+
 ## [0.9.757] - 2019-02-09
 ### Fixed
 * Handling of multiple databases in `Invoke-DbaDbUpgrade` [#5047](https://github.com/sqlcollaborative/dbatools/issues/5047)
