@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
     and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.755] - 2019-02-09
+### Fixed
+* Handling of multiple databases in `Invoke-DbaDbUpgrade` [#5047](https://github.com/sqlcollaborative/dbatools/issues/5047)
+* `Restore-DbaBackup` quits prematurely when target database exists [#4949](https://github.com/sqlcollaborative/dbatools/issues/4949)
+### Added
+* Support for `markdownlint` VS Code extension
+
+## [0.9.754] - 2019-02-07
+### Fixed
+* EOL date for SQL Server 2014 SP2
+
 ## [0.9.753] - 2019-02-06
 ### Fixed
 * Authentication issue in New-DbaAgentJobCategory [#5034](https://github.com/sqlcollaborative/dbatools/issues/5034)
