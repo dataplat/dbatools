@@ -190,9 +190,9 @@ function Invoke-DbaDbDataMasking {
             }
 
             if ($Database) {
-                $dbs = Get-DbaDatabase -SqlInstance $server -Database $Database
+                $dbs = Get-DbaDatabase -SqlInstance $server -SqlCredential $SqlCredential -Database $Database
             } else {
-                $dbs = Get-DbaDatabase -SqlInstance $server -Database $tables.Name
+                $dbs = Get-DbaDatabase -SqlInstance $server -SqlCredential $SqlCredential -Database $tables.Name
             }
 
             $sqlconn = $server.ConnectionContext.SqlConnectionObject.PsObject.Copy()
