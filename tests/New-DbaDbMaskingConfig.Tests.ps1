@@ -24,18 +24,18 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
                 GO
                 INSERT INTO people (fname, lname, dob) VALUES ('Joe','Schmoe','2/2/2000')
                 INSERT INTO people (fname, lname, dob) VALUES ('Jane','Schmee','2/2/1950')"
-        New-DbaDatabase -SqlInstance $script:instance1 -Name $db
-        Invoke-DbaQuery -SqlInstance $script:instance1 -Query $sql -Database $db
+        New-DbaDatabase -SqlInstance $script:instance2 -Name $db
+        Invoke-DbaQuery -SqlInstance $script:instance2 -Query $sql -Database $db
     }
     AfterAll {
-        Remove-DbaDatabase -SqlInstance $script:instance1 -Database $db -Confirm:$false
+        Remove-DbaDatabase -SqlInstance $script:instance2 -Database $db -Confirm:$false
         $results | Remove-Item -Confirm:$false -ErrorAction Ignore
     }
 
     Context "Command works" {
 
         It "Should output a file with specific content" {
-            $results = New-DbaDbMaskingConfig -SqlInstance $script:instance1 -Database $db -Path C:\temp
+            $results = New-DbaDbMaskingConfig -SqlInstance $script:instance2 -Database $db -Path C:\temp
             $results.Directory.Name | Should -Be temp
             $results.FullName | Should -FileContentMatch $db
             $results.FullName | Should -FileContentMatch fname
