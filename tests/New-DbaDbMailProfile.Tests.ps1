@@ -15,24 +15,33 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
-        $accountname = "dbatoolsci_test_$(get-random)"
+        $profilename = "dbatoolsci_test_$(get-random)"
         $server = Connect-DbaInstance -SqlInstance $script:instance2
         $description = 'Mail account for email alerts'
         $mailaccountname = 'dbatoolssci@dbatools.io'
         $mailaccountpriority = 1
+
+        $sql = "EXECUTE msdb.dbo.sysmail_add_account_sp
+        @account_name = '$mailaccountname',
+        @description = 'Mail account for administrative e-mail.',
+        @email_address = 'dba@ad.local',
+        @display_name = 'Automated Mailer',
+        @mailserver_name = 'smtp.ad.local'"
+        $server.Query($sql)
     }
     AfterAll {
         $server = Connect-DbaInstance -SqlInstance $script:instance2
-        $mailAccountSettings = "EXEC msdb.dbo.sysmail_delete_profile_sp
-            @account_name = '$accountname';"
+        $mailAccountSettings = "EXEC msdb.dbo.sysmail_delete_profile_sp @profile_name = '$profilename';"
         $server.query($mailAccountSettings)
+        $regularaccountsettings = "EXEC msdb.dbo.sysmail_delete_account_sp @account_name = '$mailaccountname';"
+        $server.query($regularaccountsettings)
     }
 
     Context "Sets DbMail Profile" {
 
         $splat = @{
             SqlInstance         = $script:instance2
-            Name                = $accountname
+            Name                = $profilename
             Description         = $description
             MailAccountName     = $mailaccountname
             MailAccountPriority = $mailaccountpriority
@@ -42,17 +51,11 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         It "Gets results" {
             $results | Should Not Be $null
         }
-        It "Should have Name of $accountname" {
-            $results.name | Should Be $accountname
+        It "Should have Name of $profilename" {
+            $results.name | Should Be $profilename
         }
         It "Should have Description of $description " {
             $results.description | Should Be $description
-        }
-        It "Should have MailAccountName of $mailaccountname " {
-            $results.mailaccountname | Should Be $mailaccountname
-        }
-        It "Shoud have a Priority of $mailaccountpriority" {
-            $results.mailaccountpriority | Should Be $mailaccountpriority
         }
     }
 }
