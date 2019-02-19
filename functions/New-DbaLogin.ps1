@@ -423,8 +423,7 @@ function New-DbaLogin {
                                     $BSTR = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($SecurePassword) # Azure SQL doesn't support HASHED so we have to dump out the plain text password :(
                                     $unsecurePassword = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto($BSTR)
                                     $sql = "CREATE LOGIN [$loginName] WITH PASSWORD = '$unsecurePassword'"
-                                }
-                                elseif ($loginType -eq 'SqlLogin' ) { $sql = "CREATE LOGIN [$loginName] WITH PASSWORD = $currentHashedPassword HASHED" + $withParams }
+                                } elseif ($loginType -eq 'SqlLogin' ) { $sql = "CREATE LOGIN [$loginName] WITH PASSWORD = $currentHashedPassword HASHED" + $withParams }
                                 else { $sql = "CREATE LOGIN [$loginName] FROM WINDOWS" + $withParams }
 
                                 $null = $server.Query($sql)
