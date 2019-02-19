@@ -5,7 +5,7 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
         [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Name', 'Description', 'AccountName', 'EnableException'
+        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Name', 'Description', 'AccountName', 'Priority', 'EnableException'
         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         It "Should only contain our specific parameters" {
             (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
@@ -19,6 +19,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         $server = Connect-DbaInstance -SqlInstance $script:instance2
         $description = 'Mail account for email alerts'
         $name = 'dbatoolssci@dbatools.io'
+        $priority = 1
     }
     AfterAll {
         $server = Connect-DbaInstance -SqlInstance $script:instance2
@@ -27,48 +28,28 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         $server.query($mailAccountSettings)
     }
 
-    Context "Gets DbMail Profile" {
+    Context "Sets DbMail Profile" {
 
         $splat = @{
-            SqlInstance    = $script:instance2
-            Name           = $accountname
-            Description    = $description
-            DisplayName    = $display_name
+            SqlInstance = $script:instance2
+            Name        = $accountname
+            Description = $description
+            DisplayName = $display_name
         }
         $results = New-DbaDbMailProfile @splat
 
         It "Gets results" {
             $results | Should Not Be $null
         }
-        It "Should have Name of $accounName" {
+        It "Should have Name of $accountname" {
             $results.name | Should Be $accountname
         }
-        It "Should have Desctiption of 'Mail account for email alerts' " {
-            $results.description | Should Be 'Mail account for email alerts'
+        It "Should have Description of $description " {
+            $results.description | Should Be $description
         }
-        It -Skip "Should have MailServer of '[smtp.dbatools.io]' " {
-            $results.MailServers | Should Be '[smtp.dbatools.io]'
-        }
-    }
-    Context "Gets DbMail when using -Account" {
-        $results = Get-DbaDbMailProfile -SqlInstance $script:instance2 -Account $accountname
-        It "Gets results" {
-            $results | Should Not Be $null
-        }
-        It "Should have Name of $accounName" {
-            $results.name | Should Be $accountname
-        }
-        It "Should have Desctiption of 'Mail account for email alerts' " {
-            $results.description | Should Be 'Mail account for email alerts'
-        }
-        It "Should have MailServer of '[smtp.dbatools.io]' " {
-            $results.MailServers | Should Be '[smtp.dbatools.io]'
-        }
-    }
-    Context "Gets no DbMail when using -ExcludeAccount" {
-        $results = Get-DbaDbMailProfile -SqlInstance $script:instance2 -ExcludeAccount $accountname
-        It "Gets no results" {
-            $results | Should Be $null
+
+        It "Shoud have a Priority of $priority" {
+            $results.description | Should Be $priority
         }
     }
 }
