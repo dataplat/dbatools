@@ -15,16 +15,16 @@ function New-DbaDbMailProfile {
 
     .PARAMETER Name
         The Name of the profile to be created.
-    
+
     .PARAMETER Description
         Sets the description of the purpose of the mail profile.
-    
+
     .PARAMETER MailAccountName
         Associates a db mail account to link to this db mail profile.
-    
+
     .PARAMETER MailAccountPriority
         Sets the priority of the linked db mail account when linking to this db mail profile.
-    
+
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
@@ -53,7 +53,7 @@ function New-DbaDbMailProfile {
         Creates a new db mail profile
 
     #>
-    [CmdletBinding(SupportsShouldProcess, ConfirmImpact="Low")]
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
@@ -85,12 +85,12 @@ function New-DbaDbMailProfile {
                         if (!$MailAccountPriority) {
                             $MailAccountPriority = 1
                         }
-                        $profile.AddAccount($MailAccountName,$MailAccountPriority) # sequenceNumber correlates to "Priority" when associating a Mail Account to a Profile
+                        $profile.AddAccount($MailAccountName, $MailAccountPriority) # sequenceNumber correlates to "Priority" when associating a DbMail Account to a DbMail Profile
                     }
                     Add-Member -Force -InputObject $profile -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
                     Add-Member -Force -InputObject $profile -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
                     Add-Member -Force -InputObject $profile -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
-                    
+
                     $profile | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, Id, Name, Description, IsBusyProfile
                 } catch {
                     Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
