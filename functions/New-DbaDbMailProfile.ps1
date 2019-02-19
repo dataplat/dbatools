@@ -85,7 +85,7 @@ function New-DbaDbMailProfile {
                         if (!$MailAccountPriority) {
                             $MailAccountPriority = 1
                         }
-                        $profile.AddAccount($MailAccountName, $MailAccountPriority) # sequenceNumber correlates to "Priority" when associating a DbMail Account to a DbMail Profile
+                        $profile.AddAccount($MailAccountName, $MailAccountPriority) # sequenceNumber correlates to "Priority" when associating a db mail Account to a db mail Profile
                     }
                     Add-Member -Force -InputObject $profile -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
                     Add-Member -Force -InputObject $profile -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
