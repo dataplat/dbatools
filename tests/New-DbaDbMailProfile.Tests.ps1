@@ -5,7 +5,7 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
         [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Name', 'Description', 'AccountName', 'Priority', 'EnableException'
+        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Name', 'Description', 'MailAccountName', 'MailAccountPriority', 'EnableException'
         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         It "Should only contain our specific parameters" {
             (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
@@ -18,8 +18,8 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         $accountname = "dbatoolsci_test_$(get-random)"
         $server = Connect-DbaInstance -SqlInstance $script:instance2
         $description = 'Mail account for email alerts'
-        $name = 'dbatoolssci@dbatools.io'
-        $priority = 1
+        $mailaccountname = 'dbatoolssci@dbatools.io'
+        $mailaccountpriority = 1
     }
     AfterAll {
         $server = Connect-DbaInstance -SqlInstance $script:instance2
@@ -31,10 +31,11 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     Context "Sets DbMail Profile" {
 
         $splat = @{
-            SqlInstance = $script:instance2
-            Name        = $accountname
-            Description = $description
-            DisplayName = $display_name
+            SqlInstance         = $script:instance2
+            Name                = $accountname
+            Description         = $description
+            MailAccountName     = $mailaccountname
+            MailAccountPriority = $mailaccountpriority
         }
         $results = New-DbaDbMailProfile @splat
 
@@ -47,9 +48,11 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         It "Should have Description of $description " {
             $results.description | Should Be $description
         }
-
-        It "Shoud have a Priority of $priority" {
-            $results.description | Should Be $priority
+        It "Should have MailAccountName of $mailaccountname " {
+            $results.mailaccountname | Should Be $mailaccountname
+        }
+        It "Shoud have a Priority of $mailaccountpriority" {
+            $results.mailaccountpriority | Should Be $mailaccountpriority
         }
     }
 }
