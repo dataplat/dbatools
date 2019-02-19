@@ -28,6 +28,9 @@ function New-DbaDbMailAccount {
     .PARAMETER ReplyToAddress
         Sets the e-mail address to which the mail account replies.
 
+    .PARAMETER MailServer
+        The name of the mail server.
+
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
@@ -51,9 +54,9 @@ function New-DbaDbMailAccount {
         https://dbatools.io/New-DbaDbMailAccount
 
     .EXAMPLE
-        PS C:\> $account = New-DbaDbMailAccount -SqlInstance sql2017 -Name 'The DBA Team' -EmailAddress admin@ad.local
+        PS C:\> $account = New-DbaDbMailAccount -SqlInstance sql2017 -Name 'The DBA Team' -EmailAddress admin@ad.local -MailServer smtp.ad.local
 
-        Creates a new db mail account with the email address admin@ad.local on sql2017 named "The DBA Team"
+        Creates a new db mail account with the email address admin@ad.local on sql2017 named "The DBA Team" using the smtp.ad.local mail server
 
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
@@ -69,6 +72,7 @@ function New-DbaDbMailAccount {
         [parameter(Mandatory)]
         [string]$EmailAddress,
         [string]$ReplyToAddress,
+        [string]$MailServer,
         [switch]$EnableException
     )
     process {
@@ -79,6 +83,13 @@ function New-DbaDbMailAccount {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
+            if (Test-Bound -ParameterName MailServer) {
+                if (-not (Get-DbaDbMailServer -SqlInstance $instance -Server $MailServer)) {
+                    # Perhaps we should add a force to auto create the mail server
+                    Stop-Function -Message "The mail server '$MailServer' does not exist on $instance" $_ -Target $instance -Continue
+                }
+            }
+
             if ($Pscmdlet.ShouldProcess($instance, "Creating new db mail account called $name")) {
                 try {
                     $account = New-Object Microsoft.SqlServer.Management.SMO.Mail.MailAccount $server.Mail, $Name
@@ -87,6 +98,10 @@ function New-DbaDbMailAccount {
                     $account.EmailAddress = $EmailAddress
                     $account.ReplyToAddress = $ReplyToAddress
                     $account.Create()
+
+                    $account.MailServers.Item($instance).Rename($MailServer)
+                    $account.Alter()
+                    $account.Refresh()
                     Add-Member -Force -InputObject $account -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
                     Add-Member -Force -InputObject $account -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
                     Add-Member -Force -InputObject $account -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
