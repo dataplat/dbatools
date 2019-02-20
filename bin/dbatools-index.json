@@ -22016,6 +22016,83 @@
         "Syntax":  "Invoke-DbaAdvancedRestore [-BackupHistory] \u003cObject[]\u003e [[-SqlInstance] \u003cDbaInstanceParameter\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [-OutputScriptOnly] [-VerifyOnly] [[-RestoreTime] \u003cDateTime\u003e] [[-StandbyDirectory] \u003cString\u003e] [-NoRecovery] [[-MaxTransferSize] \u003cInt32\u003e] [[-BlockSize] \u003cInt32\u003e] [[-BufferCount] \u003cInt32\u003e] [-Continue] [[-AzureCredential] \u003cString\u003e] [-WithReplace] [-KeepCDC] [[-PageRestore] \u003cObject[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
+        "Name":  "Invoke-DbaAdvancedUpdate",
+        "Description":  "Invokes an update process for a single computer and restarts it if needed",
+        "Synopsis":  "Designed for internal use, implements parallel execution for Update-DbaInstance.",
+        "Alias":  "",
+        "CommandName":  "Invoke-DbaAdvancedUpdate",
+        "Availability":  "Windows only",
+        "Links":  null,
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eInvoke-DbaAdvancedUpdate -ComputerName SQL1 -Action $actions -RestartNeeded $true\nInvokes update actions on SQL1 after restarting it.",
+        "Params":  [
+                       [
+                           "ComputerName",
+                           "Target computer with SQL instance or instances.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Action",
+                           "An object containing the action plan",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Restart",
+                           "Restart computer automatically after a successful installation of a patch and wait until it comes back online.\r\nUsing this parameter is the only way to chain-install more than 1 patch on a computer, since every single patch will require a restart of said computer.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "Authentication",
+                           "Chooses an authentication protocol for remote connections.\r\nIf the protocol fails to establish a connection\nDefaults:\r\n* CredSSP when -Credential is specified - due to the fact that repository Path is usually a network share and credentials need to be passed to the remote host\r\n  to avoid the double-hop issue.\r\n* Default when -Credential is not specified. Will likely fail if a network path is specified.",
+                           "",
+                           false,
+                           "false",
+                           "Credssp"
+                       ],
+                       [
+                           "Credential",
+                           "Windows Credential with permission to log on to the remote server.\r\nMust be specified for any remote connection if update Repository is located on a network folder.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "WhatIf",
+                           "Shows what would happen if the command were to run. No actions are actually performed.",
+                           "wi",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Confirm",
+                           "Prompts you for confirmation before executing any changing operations within the command.",
+                           "cf",
+                           false,
+                           "false",
+                           ""
+                       ]
+                   ],
+        "Syntax":  "Invoke-DbaAdvancedUpdate [[-ComputerName] \u003cString\u003e] [[-Action] \u003cObject[]\u003e] [[-Restart] \u003cBoolean\u003e] [[-Authentication] \u003cString\u003e] [[-Credential] \u003cPSCredential\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+    },
+    {
         "Name":  "Invoke-DbaAgFailover",
         "Description":  "Failover an availability group.",
         "Tags":  [
@@ -28013,6 +28090,93 @@
                        ]
                    ],
         "Syntax":  "New-DbaDbCertificate [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Name] \u003cString[]\u003e] [[-Database] \u003cString[]\u003e] [[-Subject] \u003cString[]\u003e] [[-StartDate] \u003cDateTime\u003e] [[-ExpirationDate] \u003cDateTime\u003e] [-ActiveForServiceBrokerDialog] [[-SecurePassword] \u003cSecureString\u003e] [[-InputObject] \u003cDatabase[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+    },
+    {
+        "Name":  "New-DbaDbMailProfile",
+        "Description":  "Creates a new database mail profile, and optionally associates it to a database mail account",
+        "Tags":  "DbMail",
+        "Synopsis":  "Creates a new database mail profile",
+        "Alias":  "",
+        "Author":  "Ian Lanham (@ilanham)",
+        "CommandName":  "New-DbaDbMailProfile",
+        "Availability":  "Windows, Linux, macOS",
+        "Links":  "https://dbatools.io/New-DbaDbMailProfile",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003e$profile = New-DbaDbMailProfile -SqlInstance sql2017 -Name \u0027The DBA Team\u0027\nCreates a new db mail profile",
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "The target SQL Server instance or instances. You must have sysadmin access and server version must be SQL Server version 2008 or higher.",
+                           "ServerInstance,SqlServer",
+                           true,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
+                           "SqlCredential",
+                           "Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Name",
+                           "The Name of the profile to be created.",
+                           "",
+                           true,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Description",
+                           "Sets the description of the purpose of the mail profile.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "MailAccountName",
+                           "Associates a db mail account to link to this db mail profile.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "MailAccountPriority",
+                           "Sets the priority of the linked db mail account when linking to this db mail profile.",
+                           "",
+                           false,
+                           "false",
+                           "0"
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "WhatIf",
+                           "If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.",
+                           "wi",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Confirm",
+                           "If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.",
+                           "cf",
+                           false,
+                           "false",
+                           ""
+                       ]
+                   ],
+        "Syntax":  "New-DbaDbMailProfile [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [-Name] \u003cString\u003e [[-Description] \u003cString\u003e] [[-MailAccountName] \u003cString\u003e] [[-MailAccountPriority] \u003cInt32\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "New-DbaDbMaskingConfig",
