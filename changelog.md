@@ -7,7 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [0.9.771] - 2019-02-19
 ### Fixed
-* Azure SQL DB support for `New-DbaLogin` [#5100](https://github.com/sqlcollaborative/dbatools/issues/5100)
+* Azure SQL DB support for creating SQL Logins in `New-DbaLogin` [#5100](https://github.com/sqlcollaborative/dbatools/issues/5100)
 ### Added
 * `New-DbaDbMailProfile` function to create new profile for database mail
 
