@@ -191,7 +191,7 @@ function Invoke-DbaDbShrink {
             $dbs = $server.Databases | Where-Object {$_.IsAccessible}
 
             if ($AllUserDatabases) {
-                $dbs = $dbs | Where-Object  { $_.IsSystemObject -eq $false }
+                $dbs = $dbs | Where-Object { $_.IsSystemObject -eq $false }
             }
 
             if ($Database) {
