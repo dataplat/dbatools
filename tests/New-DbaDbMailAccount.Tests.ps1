@@ -4,7 +4,7 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
+        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('WhatIf', 'Confirm')}
         [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Name', 'DisplayName', 'Description', 'EmailAddress', 'ReplyToAddress', 'MailServer', 'EnableException'
         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         It "Should only contain our specific parameters" {
@@ -15,17 +15,21 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
-        $accountname = "dbatoolsci_test_$(get-random)"
+        $accountName = "dbatoolsci_test_$(get-random)"
         $server = Connect-DbaInstance -SqlInstance $script:instance2
         $description = 'Mail account for email alerts'
-        $email_address = 'dbatoolssci@dbatools.io'
+        $email_address = 'dbatoolssci@dbatools.net'
         $display_name = 'dbatoolsci mail alerts'
         $mailserver_name = 'smtp.dbatools.io'
-        $replyto_address = 'no-reply@dbatools.io'
+        $replyto_address = 'no-reply@dbatools.net'
+
+        if ( (Get-DbaSpConfigure -SqlInstance $server -Name 'Database Mail XPs').RunningValue -ne 1 ) {
+            Set-DbaSpConfigure -SqlInstance $server -Name 'Database Mail XPs' -Value 1
+        }
     }
     AfterAll {
         $server = Connect-DbaInstance -SqlInstance $script:instance2
-        $mailAccountSettings = "EXEC msdb.dbo.sysmail_delete_account_sp @account_name = '$accountname';"
+        $mailAccountSettings = "EXEC msdb.dbo.sysmail_delete_account_sp @account_name = '$accountName';"
         $server.query($mailAccountSettings)
     }
 
@@ -33,7 +37,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 
         $splat = @{
             SqlInstance    = $script:instance2
-            Name           = $accountname
+            Name           = $accountName
             Description    = $description
             EmailAddress   = $email_address
             DisplayName    = $display_name
@@ -44,45 +48,45 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         It "Gets results" {
             $results | Should Not Be $null
         }
-        It "Should have Name of $accounName" {
-            $results.name | Should Be $accountname
+        It "Should have Name of $accountName" {
+            $results.Name | Should Be $accountName
         }
-        It "Should have Desctiption of 'Mail account for email alerts' " {
-            $results.description | Should Be 'Mail account for email alerts'
+        It "Should have Description of 'Mail account for email alerts' " {
+            $results.Description | Should Be 'Mail account for email alerts'
         }
-        It "Should have EmailAddress of 'dbatoolssci@dbatools.io' " {
-            $results.EmailAddress | Should Be 'dbatoolssci@dbatools.io'
+        It "Should have EmailAddress of 'dbatoolssci@dbatools.net' " {
+            $results.EmailAddress | Should Be 'dbatoolssci@dbatools.net'
         }
-        It "Should have ReplyToAddress of 'no-reply@dbatools.io' " {
-            $results.ReplyToAddress | Should Be 'no-reply@dbatools.io'
+        It "Should have ReplyToAddress of 'no-reply@dbatools.net' " {
+            $results.ReplyToAddress | Should Be 'no-reply@dbatools.net'
         }
         It -Skip "Should have MailServer of '[smtp.dbatools.io]' " {
             $results.MailServers | Should Be '[smtp.dbatools.io]'
         }
     }
     Context "Gets DbMail when using -Account" {
-        $results = Get-DbaDbMailAccount -SqlInstance $script:instance2 -Account $accountname
+        $results = Get-DbaDbMailAccount -SqlInstance $server -Account $accountName
         It "Gets results" {
             $results | Should Not Be $null
         }
-        It "Should have Name of $accountname" {
-            $results.name | Should Be $accountname
+        It "Should have Name of $accountName" {
+            $results.name | Should Be $accountName
         }
-        It "Should have Desctiption of 'Mail account for email alerts' " {
+        It "Should have Description of 'Mail account for email alerts' " {
             $results.description | Should Be 'Mail account for email alerts'
         }
-        It "Should have EmailAddress of 'dbatoolssci@dbatools.io' " {
-            $results.EmailAddress | Should Be 'dbatoolssci@dbatools.io'
+        It "Should have EmailAddress of 'dbatoolssci@dbatools.net' " {
+            $results.EmailAddress | Should Be 'dbatoolssci@dbatools.net'
         }
-        It "Should have ReplyToAddress of 'no-reply@dbatools.io' " {
-            $results.ReplyToAddress | Should Be 'no-reply@dbatools.io'
+        It "Should have ReplyToAddress of 'no-reply@dbatools.net' " {
+            $results.ReplyToAddress | Should Be 'no-reply@dbatools.net'
         }
         It -Skip "Should have MailServer of '[smtp.dbatools.io]' " {
             $results.MailServers | Should Be '[smtp.dbatools.io]'
         }
     }
     Context "Gets no DbMail when using -ExcludeAccount" {
-        $results = Get-DbaDbMailAccount -SqlInstance $script:instance2 -ExcludeAccount $accountname
+        $results = Get-DbaDbMailAccount -SqlInstance $server -ExcludeAccount $accountName
         It "Gets no results" {
             $results | Should Be $null
         }
