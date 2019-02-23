@@ -81,13 +81,10 @@ if ($ImportLibrary) {
                 $hasCompiledDll = Test-Path -Path $dll -ErrorAction Stop
             }
 
-            $reslibdll = Resolve-Path -Path "$libraryBase\dbatools.dll"
-
-            if ((-not $script:alwaysBuildLibrary) -and $hasCompiledDll -and ([System.Diagnostics.FileVersionInfo]::GetVersionInfo($reslibdll).FileVersion -eq $currentLibraryVersion)) {
+            if ((-not $script:alwaysBuildLibrary) -and $hasCompiledDll -and ([System.Diagnostics.FileVersionInfo]::GetVersionInfo($dll).FileVersion -eq $currentLibraryVersion)) {
                 $start = Get-Date
 
                 try {
-                    $libraryBase = Resolve-Path -Path "$libraryBase\"
                     $script:DllRoot = Resolve-Path -Path $script:DllRoot
                     Write-Verbose -Message "Found library, trying to copy & import"
                     # this looks excessive but for some reason the explicit string to string is required
