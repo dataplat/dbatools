@@ -442,6 +442,8 @@
         'Invoke-DbaDbDbccUpdateUsage',
         'Get-DbaDbIdentity',
         'Set-DbaDbIdentity',
+        'New-DbaDbMailAccount',
+        'Get-DbaDbMailServer',
         # noncoresmo
         # SMO issues
         'Export-DbaUser',
