@@ -13,7 +13,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     }
 }
 
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
+Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
         $accountName = "dbatoolsci_test_$(get-random)"
         $server = Connect-DbaInstance -SqlInstance $script:instance2
