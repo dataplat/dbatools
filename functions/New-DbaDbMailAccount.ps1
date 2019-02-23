@@ -84,13 +84,13 @@ function New-DbaDbMailAccount {
             }
 
             if (Test-Bound -ParameterName MailServer) {
-                if (-not (Get-DbaDbMailServer -SqlInstance $instance -Server $MailServer)) {
+                if (-not (Get-DbaDbMailServer -SqlInstance $server -Server $MailServer)) {
                     # Perhaps we should add a force to auto create the mail server
                     Stop-Function -Message "The mail server '$MailServer' does not exist on $instance" $_ -Target $instance -Continue
                 }
             }
 
-            if ($Pscmdlet.ShouldProcess($instance, "Creating new db mail account called $name")) {
+            if ($Pscmdlet.ShouldProcess($instance, "Creating new db mail account called $Name")) {
                 try {
                     $account = New-Object Microsoft.SqlServer.Management.SMO.Mail.MailAccount $server.Mail, $Name
                     $account.DisplayName = $DisplayName
@@ -98,7 +98,11 @@ function New-DbaDbMailAccount {
                     $account.EmailAddress = $EmailAddress
                     $account.ReplyToAddress = $ReplyToAddress
                     $account.Create()
+                } catch {
+                    Stop-Function -Message "Failure creating db mail account" -Target $Name -ErrorRecord $_ -Continue
+                }
 
+                try {
                     $account.MailServers.Item($instance).Rename($MailServer)
                     $account.Alter()
                     $account.Refresh()
@@ -107,7 +111,7 @@ function New-DbaDbMailAccount {
                     Add-Member -Force -InputObject $account -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
                     $account | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, Id, Name, DisplayName, Description, EmailAddress, ReplyToAddress, IsBusyAccount, MailServers
                 } catch {
-                    Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
+                    Stop-Function -Message "Failure returning output" -ErrorRecord $_ -Continue
                 }
             }
         }
