@@ -4,9 +4,9 @@ param (
     [ValidateSet('ps3', 'ps4', 'Release', 'Debug')]
     [string]$MsbuildConfiguration = "Release",
     [Parameter(HelpMessage = 'Target to run instead of build')]
-	[string]$MsbuildTarget = 'Build',
-	[string]$DllRoot = $script:DllRoot,
-	[string]$LibraryBase = (Join-Path $PSModuleRoot "bin")
+    [string]$MsbuildTarget = 'Build',
+    [string]$DllRoot = $script:DllRoot,
+    [string]$LibraryBase = (Join-Path $PSModuleRoot "bin")
 )
 
 if (-not $PSBoundParameters.ContainsKey('MsbuildConfiguration')) {
@@ -30,8 +30,8 @@ function Get-DotNetPath {
     [OutputType([string])]
     param ()
     process {
-		if (Get-Command dotnet.exe -CommandType Application -ErrorAction SilentlyContinue) { return (Get-Command dotnet.exe -CommandType Application).Source }
-		"$($env:ProgramFiles)\dotnet\dotnet.exe"
+        if (Get-Command dotnet.exe -CommandType Application -ErrorAction SilentlyContinue) { return (Get-Command dotnet.exe -CommandType Application).Source }
+        "$($env:ProgramFiles)\dotnet\dotnet.exe"
     }
 }
 
@@ -55,18 +55,18 @@ Write-Verbose -Message "Building the library with command $dotnet build $Project
 
 if ($MsbuildTarget -eq 'Build')
 {
-	if ($PSVersionTable.PSVersion.Major -ge 6) {
-		$dll = (Resolve-Path -Path "$libraryBase\netcoreapp2.1\dbatools.dll" -ErrorAction Ignore)
-	}
-	else {
-		$dll = (Resolve-Path -Path "$libraryBase\net452\dbatools.dll" -ErrorAction Ignore)
-	}
-	try {
+    if ($PSVersionTable.PSVersion.Major -ge 6) {
+        $dll = (Resolve-Path -Path "$libraryBase\netcoreapp2.1\dbatools.dll" -ErrorAction Ignore)
+    }
+    else {
+        $dll = (Resolve-Path -Path "$libraryBase\net452\dbatools.dll" -ErrorAction Ignore)
+    }
+    try {
         Write-Verbose -Message "Found library, trying to copy & import"
         if ($script:alwaysBuildLibrary) {
-			Move-Item -Path $dll -Destination $DllRoot -Force -ErrorAction Stop
+            Move-Item -Path $dll -Destination $DllRoot -Force -ErrorAction Stop
         } else {
-			Copy-Item -Path $dll -Destination $DllRoot -Force -ErrorAction Stop
+            Copy-Item -Path $dll -Destination $DllRoot -Force -ErrorAction Stop
         }
         Add-Type -Path (Resolve-Path -Path "$DllRoot\dbatools.dll") -ErrorAction Stop
     } catch {
