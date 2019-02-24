@@ -86,7 +86,7 @@ function New-DbaDbMailAccount {
             if (Test-Bound -ParameterName MailServer) {
                 if (-not (Get-DbaDbMailServer -SqlInstance $server -Server $MailServer)) {
                     # Perhaps we should add a force to auto create the mail server
-                    Stop-Function -Message "The mail server '$MailServer' does not exist on $instance" $_ -Target $instance -Continue
+                    Stop-Function -Message "The mail server '$MailServer' does not exist on $instance" -ErrorRecord $_ -Target $instance -Continue
                 }
             }
 
