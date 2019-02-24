@@ -65,27 +65,26 @@ if ($ImportLibrary) {
             }
         }
         # Else we prioritize user convenience
-else {
+        else {
             try {
-                $sln = (Resolve-Path -Path "$libraryBase\projects\dbatools\dbatools.sln" -ErrorAction Stop)
-                $hasProject = Test-Path -Path $sln -ErrorAction Stop
+                if ((Test-Path -Path "$libraryBase/projects/dbatools/dbatools.sln")) {
+                    $sln = (Resolve-Path -Path "$libraryBase\projects\dbatools\dbatools.sln" -ErrorAction Stop)
+                    $hasProject = Test-Path -Path $sln -ErrorAction Stop
+                }
             } catch {
                 $null = 1
             }
-            
+
             if (-not $dll) {
                 $hasCompiledDll = $false
             } else {
                 $hasCompiledDll = Test-Path -Path $dll -ErrorAction Stop
             }
-            
-            $reslibdll = Resolve-Path -Path "$libraryBase\dbatools.dll"
-            
-            if ((-not $script:alwaysBuildLibrary) -and $hasCompiledDll -and ([System.Diagnostics.FileVersionInfo]::GetVersionInfo($reslibdll).FileVersion -eq $currentLibraryVersion)) {
+
+            if ((-not $script:alwaysBuildLibrary) -and $hasCompiledDll -and ([System.Diagnostics.FileVersionInfo]::GetVersionInfo($dll).FileVersion -eq $currentLibraryVersion)) {
                 $start = Get-Date
-                
+
                 try {
-                    $libraryBase = Resolve-Path -Path "$libraryBase\"
                     $script:DllRoot = Resolve-Path -Path $script:DllRoot
                     Write-Verbose -Message "Found library, trying to copy & import"
                     # this looks excessive but for some reason the explicit string to string is required
@@ -104,7 +103,7 @@ else {
                 throw "No valid dbatools library found! Check your module integrity"
             }
         }
-        
+
         #region PowerShell TypeData
         Update-TypeData -TypeName "Sqlcollaborative.Dbatools.dbaSystem.DbatoolsException" -SerializationDepth 2 -ErrorAction Ignore
         Update-TypeData -TypeName "Sqlcollaborative.Dbatools.dbaSystem.DbatoolsExceptionRecord" -SerializationDepth 2 -ErrorAction Ignore
