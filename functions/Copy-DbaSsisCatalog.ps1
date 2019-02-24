@@ -102,6 +102,7 @@ function Copy-DbaSsisCatalog {
     )
     <# Developer note: The throw calls must stay in this command #>
     begin {
+        $ISNamespace = "Microsoft.SqlServer.Management.IntegrationServices"
         function Get-RemoteIntegrationService {
             param (
                 [Object]$Computer
