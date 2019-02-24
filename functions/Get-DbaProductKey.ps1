@@ -167,7 +167,7 @@ function Get-DbaProductKey {
     process {
         foreach ($computer in $ComputerName) {
             try {
-                $registryroot = Get-DbaRegistryRoot -ComputerName $computer.ComputerName -EnableException
+                $registryroot = Get-DbaRegistryRoot -ComputerName $computer.ComputerName -Credential $Credential -EnableException
             } catch {
                 Stop-Function -Message "Can't access registry for $($computer.ComputerName). Is the Remote Registry service started?" -Continue
             }

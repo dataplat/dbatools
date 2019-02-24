@@ -134,10 +134,10 @@ function Invoke-DbaDbUpgrade {
 
         $InputObject = $InputObject | Where-Object { $_.IsSystemObject -eq $false }
         if ($Database) {
-            $InputObject = $InputObject | Where-Object { $_.Name -contains $Database }
+            $InputObject = $InputObject | Where-Object Name -In $Database
         }
         if ($ExcludeDatabase) {
-            $InputObject = $InputObject | Where-Object { $_.Name -notcontains $ExcludeDatabase }
+            $InputObject = $InputObject | Where-Object Name -NotIn $ExcludeDatabase
         }
 
         foreach ($db in $InputObject) {

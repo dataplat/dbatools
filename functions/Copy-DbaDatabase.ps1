@@ -8,6 +8,8 @@ function Copy-DbaDatabase {
 
         By default, databases will be migrated to the destination SQL Server's default data and log directories. You can override this by specifying -ReuseSourceFolderStructure. Filestreams and filegroups are also migrated. Safety is emphasized.
 
+        If you are experiencing issues with Copy-DbaDatabase, please use Backup-DbaDatabase | Restore-DbaDatabase instead.
+    
     .PARAMETER Source
         Source SQL Server.
 
@@ -118,7 +120,9 @@ function Copy-DbaDatabase {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .PARAMETER Force
-        If this switch is enabled, existing databases on Destination with matching names from Source will be dropped. If using -DetachReattach, mirrors will be broken and the database(s) dropped from Availability Groups.
+        If this switch is enabled, existing databases on Destination with matching names from Source will be dropped.
+        If using -DetachReattach, mirrors will be broken and the database(s) dropped from Availability Groups.
+        If using -SetSourceReadonly, this will instantly roll back any open transactions that may be stopping the process.
 
     .NOTES
         Tags: Migration, Backup, Restore
@@ -1111,7 +1115,7 @@ function Copy-DbaDatabase {
                         If ($Pscmdlet.ShouldProcess($source, "Set $dbName to read-only")) {
                             Write-Message -Level Verbose -Message "Setting database to read-only."
                             try {
-                                $result = Set-DbaDbState -SqlInstance $sourceServer -Database $dbName -ReadOnly -EnableException
+                                $result = Set-DbaDbState -SqlInstance $sourceServer -Database $dbName -ReadOnly -EnableException -Force:$Force
                             } catch {
                                 Stop-Function -Continue -Message "Couldn't set database to read-only. Aborting routine for this database" -ErrorRecord $_
                             }

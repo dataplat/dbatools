@@ -11,7 +11,7 @@
     RootModule             = 'dbatools.psm1'
 
     # Version number of this module.
-    ModuleVersion          = '0.9.741'
+    ModuleVersion          = '0.9.772'
 
     # ID used to uniquely identify this module
     GUID                   = '9d139310-ce45-41ce-8e8b-d76335aa1789'
@@ -111,7 +111,7 @@
         'Get-DbaDbSpace',
         'Test-DbaDbOwner',
         'Set-DbaDbOwner',
-        'Test-DbaJobOwner',
+        'Test-DbaAgentJobOwner',
         'Set-DbaAgentJobOwner',
         'Test-DbaDbVirtualLogFile',
         'Get-DbaDbRestoreHistory',
@@ -361,6 +361,9 @@
         'Get-DbaDbMailProfile',
         'Get-DbaDbMailConfig',
         'Get-DbaDbMailServer',
+        'New-DbaDbMailServer',
+        'New-DbaDbMailAccount',
+        'New-DbaDbMailProfile',
         'Get-DbaResourceGovernor',
         'Get-DbaRgResourcePool',
         'Get-DbaRgWorkloadGroup',
@@ -440,6 +443,8 @@
         'Invoke-DbaDbDbccCheckConstraint',
         'Invoke-DbaDbDbccCleanTable',
         'Invoke-DbaDbDbccUpdateUsage',
+        'Get-DbaDbIdentity',
+        'Set-DbaDbIdentity',
         # noncoresmo
         # SMO issues
         'Export-DbaUser',
@@ -495,6 +500,7 @@
         'Rename-DbaDatabase', # can maybebe fixed by not remoting when linux is detected
         # CM and Windows functions
         'Update-DbaInstance',
+        'Invoke-DbaAdvancedUpdate',
         'Invoke-DbaPfRelog',
         'Get-DbaPfDataCollectorCounter',
         'Get-DbaPfDataCollectorCounterSample',
