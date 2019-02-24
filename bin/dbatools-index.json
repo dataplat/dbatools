@@ -24095,7 +24095,7 @@
         "CommandName":  "Invoke-DbaDbShrink",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Invoke-DbaDbShrink",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eInvoke-DbaDbShrink -SqlInstance sql2016 -Database Northwind,pubs,Adventureworks2014\nShrinks Northwind, pubs and Adventureworks2014 to have as little free space as possible.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eInvoke-DbaDbShrink -SqlInstance sql2014 -Database AdventureWorks2014 -PercentFreeSpace 50\nShrinks AdventureWorks2014 to have 50% free space. So let\u0027s say AdventureWorks2014 was 1GB and it\u0027s using 100MB space. The database free space would be reduced to 50MB.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eInvoke-DbaDbShrink -SqlInstance sql2014 -Database AdventureWorks2014 -PercentFreeSpace 50 -FileType Data -StepSize 25MB\nShrinks AdventureWorks2014 to have 50% free space, runs shrinks in 25MB chunks for improved performance.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eInvoke-DbaDbShrink -SqlInstance sql2012 -AllUserDatabases\nShrinks all databases on SQL2012 (not ideal for production)",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eInvoke-DbaDbShrink -SqlInstance sql2016 -Database Northwind,pubs,Adventureworks2014\nShrinks Northwind, pubs and Adventureworks2014 to have as little free space as possible.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eInvoke-DbaDbShrink -SqlInstance sql2014 -Database AdventureWorks2014 -PercentFreeSpace 50\nShrinks AdventureWorks2014 to have 50% free space. So let\u0027s say AdventureWorks2014 was 1GB and it\u0027s using 100MB space. The database free space would be reduced to 50MB.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eInvoke-DbaDbShrink -SqlInstance sql2014 -Database AdventureWorks2014 -PercentFreeSpace 50 -FileType Data -StepSize 25MB\nShrinks AdventureWorks2014 to have 50% free space, runs shrinks in 25MB chunks for improved performance.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eInvoke-DbaDbShrink -SqlInstance sql2012 -AllUserDatabases\nShrinks all user databases on SQL2012 (not ideal for production)",
         "Params":  [
                        [
                            "SqlInstance",
@@ -29282,7 +29282,8 @@
         "Tags":  [
                      "ExtendedEvent",
                      "XE",
-                     "XEvent"
+                     "XEvent",
+                     "SmartTarget"
                  ],
         "Synopsis":  "This response type is used to write Extended Events to a CSV file.",
         "Alias":  "",
@@ -29365,7 +29366,8 @@
         "Tags":  [
                      "ExtendedEvent",
                      "XE",
-                     "XEvent"
+                     "XEvent",
+                     "SmartTarget"
                  ],
         "Synopsis":  "This response type can be used to send an email each time an event is captured.",
         "Alias":  "",
@@ -29512,7 +29514,8 @@
         "Tags":  [
                      "ExtendedEvent",
                      "XE",
-                     "XEvent"
+                     "XEvent",
+                     "SmartTarget"
                  ],
         "Synopsis":  "This response type executes a T-SQL command against a target database whenever an event is recorded.",
         "Alias":  "",
@@ -29603,7 +29606,8 @@
         "Tags":  [
                      "ExtendedEvent",
                      "XE",
-                     "XEvent"
+                     "XEvent",
+                     "SmartTarget"
                  ],
         "Synopsis":  "This response type can be used to replay execution related events to a target SQL Server instance.",
         "Alias":  "",
@@ -29710,7 +29714,8 @@
         "Tags":  [
                      "ExtendedEvent",
                      "XE",
-                     "XEvent"
+                     "XEvent",
+                     "SmartTarget"
                  ],
         "Synopsis":  "This response type is used to write Extended Events to a database table.",
         "Alias":  "",
@@ -39624,7 +39629,8 @@
         "Tags":  [
                      "ExtendedEvent",
                      "XE",
-                     "XEvent"
+                     "XEvent",
+                     "SmartTarget"
                  ],
         "Synopsis":  "XESmartTarget runs as a client application for an Extended Events session running on a SQL Server instance.",
         "Alias":  "",
