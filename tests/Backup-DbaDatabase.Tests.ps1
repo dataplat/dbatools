@@ -76,7 +76,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     }
 
     Context "Database parameter works when using pipes (fixes #5044)" {
-        $results = Get-DbaDatabase -SqlInstance $script:instance1 | Backup-DbaDatabase -Database master -BackupFileName PesterTest.bak
+        $results = Get-DbaDatabase -SqlInstance $script:instance1 | Backup-DbaDatabase -Database master -BackupFileName PesterTest.bak -BackupDirectory $DestBackupDir
         It "Should report it has backed up to the path with the correct name" {
             $results.Fullname | Should -BeLike "$DestBackupDir*PesterTest.bak"
         }
