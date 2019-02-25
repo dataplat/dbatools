@@ -151,9 +151,9 @@ function Copy-DbaAgentAlert {
                 }
 
                 $operatorDoesntExist = $false
-                $sourceAlertNotifications = Get-DbaAgentAlert -SqlInstance $sourceServer.Name | Where-Object Name -eq $serverAlert.name | Select-Object Notifications                  
+                $sourceAlertNotifications = Get-DbaAgentAlert -SqlInstance $sourceServer.Name | Where-Object Name -eq $serverAlert.name | Select-Object Notifications
                 foreach ($sourceAlertNotification in $sourceAlertNotifications)
-                { 
+                {
                  $operatorName = $sourceAlertNotification.Notifications.OperatorName
                  if (-Not(Get-DbaAgentOperator -SqlInstance $destinstance | Where-Object Name -eq $operatorName))
                  {
