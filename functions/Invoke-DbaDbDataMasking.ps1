@@ -590,8 +590,7 @@ function Invoke-DbaDbDataMasking {
                                 } elseif ($dbTable.Columns[$item].DataType.SqlDataType.ToString().ToLower() -like 'datetime2') {
                                     $oldValue = ($row.$item).Tostring("yyyy-MM-dd HH:mm:ss.ffffff")
                                     $wheres += "[$item] = '$oldValue'"
-                                }
-                                elseif ($dbTable.Columns[$item].DataType.SqlDataType.ToString().ToLower() -like '*date*') {
+                                } elseif ($dbTable.Columns[$item].DataType.SqlDataType.ToString().ToLower() -like '*date*') {
                                     $oldValue = ($row.$item).Tostring("yyyy-MM-dd HH:mm:ss")
                                     $wheres += "[$item] = '$oldValue'"
                                 } else {
@@ -645,4 +644,3 @@ function Invoke-DbaDbDataMasking {
         }
     }
 }
-
