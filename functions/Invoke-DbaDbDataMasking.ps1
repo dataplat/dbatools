@@ -584,8 +584,15 @@ function Invoke-DbaDbDataMasking {
                                 } elseif ($dbTable.Columns[$item].DataType.SqlDataType.ToString().ToLower() -in 'text', 'ntext') {
                                     $oldValue = ($row.$item).Tostring().Replace("'", "''")
                                     $wheres += "CAST([$item] AS VARCHAR(MAX)) = '$oldValue'"
-                                } elseif ($dbTable.Columns[$item].DataType.SqlDataType.ToString().ToLower() -like '*date*') {
-                                    $oldValue = ($row.$item).Tostring("yyyy-MM-dd HH:mm:ss.fffffff")
+                                } elseif ($dbTable.Columns[$item].DataType.SqlDataType.ToString().ToLower() -like 'datetime') {
+                                    $oldValue = ($row.$item).Tostring("yyyy-MM-dd HH:mm:ss.fff")
+                                    $wheres += "[$item] = '$oldValue'"
+                                } elseif ($dbTable.Columns[$item].DataType.SqlDataType.ToString().ToLower() -like 'datetime2') {
+                                    $oldValue = ($row.$item).Tostring("yyyy-MM-dd HH:mm:ss.ffffff")
+                                    $wheres += "[$item] = '$oldValue'"
+                                }
+                                elseif ($dbTable.Columns[$item].DataType.SqlDataType.ToString().ToLower() -like '*date*') {
+                                    $oldValue = ($row.$item).Tostring("yyyy-MM-dd HH:mm:ss")
                                     $wheres += "[$item] = '$oldValue'"
                                 } else {
                                     $oldValue = ($row.$item).Tostring().Replace("'", "''")
