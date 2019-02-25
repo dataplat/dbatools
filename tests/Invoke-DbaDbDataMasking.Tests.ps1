@@ -36,6 +36,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         New-DbaDatabase -SqlInstance $script:instance1 -Name $db
         Invoke-DbaQuery -SqlInstance $script:instance1 -Database $db -Query $sql
     }
+
     AfterAll {
         Remove-DbaDatabase -SqlInstance $script:instance1 -Database $db -Confirm:$false
         $file | Remove-Item -Confirm:$false -ErrorAction Ignore
@@ -53,7 +54,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
                 $result.Rows | Should -Be 2
                 $result.Database | Should -Contain $db
             }
-            
+
         }
         It "masks the data and does not delete it" {
             Invoke-DbaQuery -SqlInstance $script:instance1 -Database $db -Query "select * from people" | Should -Not -Be $null
