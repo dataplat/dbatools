@@ -175,7 +175,7 @@ function New-DbaDbMaskingConfig {
                         continue
                     }
 
-                    if ($columnobject.GeneratedAlwaysType -ne 'None') {
+                    if ($server.VersionMajor -ge 13 -and $columnobject.GeneratedAlwaysType -ne 'None') {
                         Write-Message -Level Verbose -Message "Skipping $columnobject because it is a computed column for temporal tables"
                         continue
                     }
