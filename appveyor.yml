@@ -76,7 +76,6 @@ environment:
 clone_folder: c:\github\dbatools
 
 before_test:
-  - ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
   # turn tests\ (at least) to CRLF, as it's faster to do this on the zipball rather than checking out the repo
   - cmd: pushd C:\github\dbatools\tests & unix2dos -q  *.ps1 & popd
   # grab appveyor lab files and needed requirements for tests in CI
