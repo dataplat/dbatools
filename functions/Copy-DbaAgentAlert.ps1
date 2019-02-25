@@ -150,6 +150,28 @@ function Copy-DbaAgentAlert {
                     continue
                 }
 
+                $operatorDoesntExist = $false
+                $sourceAlertNotifications = Get-DbaAgentAlert -SqlInstance $sourceServer.Name | Where-Object Name -eq $serverAlert.name | Select-Object Notifications                  
+                foreach ($sourceAlertNotification in $sourceAlertNotifications)
+                { 
+                 $operatorName = $sourceAlertNotification.Notifications.OperatorName
+                 if (-Not(Get-DbaAgentOperator -SqlInstance $destinstance | Where-Object Name -eq $operatorName))
+                 {
+                  $operatorDoesntExist = $true
+                  if ($PSCmdlet.ShouldProcess($destinstance, "Operator [$operatorName] does not exist at destination.")) {
+                      $copyAgentAlertStatus.Status = "Skipped"
+                      $copyAgentAlertStatus.Notes = "Operator [$operatorName] doesn't exist on destination"
+                      $copyAgentAlertStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                      Write-Message -Message "Operator [$operatorName] does not exist at destination." -Level Verbose
+                  }
+                 }
+                }
+                if ($operatorDoesntExist)
+                {
+                 Stop-Function -Message "Issue moving notifications for the alert [$alertName]: Operator [$operatorName] does not exist at destination." -Category InvalidOperation -Target $destServer
+                 continue
+                }
+    
                 if ($destAlerts.name -contains $serverAlert.name) {
                     if ($force -eq $false) {
                         if ($PSCmdlet.ShouldProcess($destinstance, "Alert [$alertName] exists at destination. Use -Force to drop and migrate.")) {
