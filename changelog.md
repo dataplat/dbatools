@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
     and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.773] - 2019-02-24
+### Fixed
+* `Install-DbaMaintenanceSolution` now removes jobs when `-SqlCredential` is used [#5096](https://github.com/sqlcollaborative/dbatools/issues/5096)
+* `Copy-DbaSsisCatalog` now properly resolves type names [#4821](https://github.com/sqlcollaborative/dbatools/issues/4821)
+* Can now set schedule start & end dates with `Set-DbaAgentSchedule` [#4908](https://github.com/sqlcollaborative/dbatools/issues/4908)
+
+## [0.9.772] - 2019-02-24
+### Fixed
+* `Invoke-DbaDbShrink` now properly excludes system databases when `-AllUserDatabase` is specified [#5108](https://github.com/sqlcollaborative/dbatools/issues/5108)
+
 ## [0.9.771] - 2019-02-19
 ### Fixed
 * Azure SQL DB support for creating SQL Logins in `New-DbaLogin` [#5100](https://github.com/sqlcollaborative/dbatools/issues/5100)
