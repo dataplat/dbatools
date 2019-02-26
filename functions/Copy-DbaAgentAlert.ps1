@@ -155,7 +155,7 @@ function Copy-DbaAgentAlert {
                 $sourceAlertNotifications = Get-DbaAgentAlert -SqlInstance $sourceServer | Where-Object Name -eq $alertName | Select-Object Notifications
                 $sourceAlertOperators = $sourceAlertNotifications.Notifications.OperatorName
                 if ($null -ne $sourceAlertOperators) {
-                    $missingOperators = Compare-Object -ReferenceObject $sourceAlertOperators -DifferenceObject $destServerOperators | Where-Object {$_.sideIndicator -eq "<="} | Select-Object -expandproperty InputObject                
+                    $missingOperators = Compare-Object -ReferenceObject $sourceAlertOperators -DifferenceObject $destServerOperators | Where-Object {$_.sideIndicator -eq "<="} | Select-Object -expandproperty InputObject
                     if ($null -ne $missingOperators) {
                         if ($PSCmdlet.ShouldProcess($destinstance, "Missing operator(s) at destination.")) {
                             $copyAgentAlertStatus.Status = "Skipped"
