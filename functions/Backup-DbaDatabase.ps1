@@ -213,7 +213,8 @@ function Backup-DbaDatabase {
             Write-Message -Message 'Setting Default timestampformat' -Level Verbose
             $TimeStampFormat = "yyyyMMddHHmm"
         }
-        if ($SqlInstance.length -ne 0) {
+
+        if ($SqlInstance) {
             try {
                 $Server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential -AzureUnsupported
             } catch {
@@ -221,10 +222,10 @@ function Backup-DbaDatabase {
                 return
             }
 
+            $InputObject = $server.Databases | Where-Object Name -ne 'tempdb'
+
             if ($Database) {
-                $InputObject = $server.Databases | Where-Object Name -in $Database
-            } else {
-                $InputObject = $server.Databases | Where-Object Name -ne 'tempdb'
+                $InputObject = $InputObject | Where-Object Name -in $Database
             }
 
             if ($ExcludeDatabase) {
@@ -280,12 +281,20 @@ function Backup-DbaDatabase {
     }
 
     process {
-        if (!$SqlInstance -and !$InputObject) {
+        if (-not $SqlInstance -and -not $InputObject) {
             Stop-Function -Message "You must specify a server and database or pipe some databases"
             return
         }
 
         Write-Message -Level Verbose -Message "$($InputObject.Count) database to backup"
+
+        if ($Database) {
+            $InputObject = $InputObject | Where-Object Name -in $Database
+        }
+
+        if ($ExcludeDatabase) {
+            $InputObject = $InputObject | Where-Object Name -notin $ExcludeDatabase
+        }
 
         foreach ($db in $InputObject) {
             $ProgressId = Get-Random
