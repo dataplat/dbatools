@@ -135,6 +135,8 @@ function Copy-DbaAgentAlert {
                 }
             }
 
+            $destServerOperators = $destServer.JobServer.Operators.Name
+
             foreach ($serverAlert in $serverAlerts) {
                 $alertName = $serverAlert.name
                 $copyAgentAlertStatus = [pscustomobject]@{
@@ -150,28 +152,18 @@ function Copy-DbaAgentAlert {
                     continue
                 }
 
-                $operatorDoesntExist = $false
-                $sourceAlertNotifications = Get-DbaAgentAlert -SqlInstance $sourceServer.Name | Where-Object Name -eq $serverAlert.name | Select-Object Notifications
-                foreach ($sourceAlertNotification in $sourceAlertNotifications)
-                {
-                 $operatorName = $sourceAlertNotification.Notifications.OperatorName
-                 if (-Not(Get-DbaAgentOperator -SqlInstance $destinstance | Where-Object Name -eq $operatorName))
-                 {
-                  $operatorDoesntExist = $true
-                  if ($PSCmdlet.ShouldProcess($destinstance, "Operator [$operatorName] does not exist at destination.")) {
-                      $copyAgentAlertStatus.Status = "Skipped"
-                      $copyAgentAlertStatus.Notes = "Operator [$operatorName] doesn't exist on destination"
-                      $copyAgentAlertStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                      Write-Message -Message "Operator [$operatorName] does not exist at destination." -Level Verbose
-                  }
-                 }
+                $sourceAlertNotifications = Get-DbaAgentAlert -SqlInstance $sourceServer | Where-Object Name -eq $alertName | Select-Object Notifications
+                $missingOperators = Compare-Object -ReferenceObject $sourceAlertNotifications.Notifications.OperatorName -DifferenceObject $destServerOperators | Where-Object {$_.sideIndicator -eq "<="} | Select-Object -expandproperty InputObject                
+                if ($null -ne $missingOperators) {
+                    if ($PSCmdlet.ShouldProcess($destinstance, "Missing operator(s) at destination.")) {
+                        $copyAgentAlertStatus.Status = "Skipped"
+                        $copyAgentAlertStatus.Notes = "Operator(s) $($missingOperators -join ',') does not exist on destination"
+                        $copyAgentAlertStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                        Write-Message -Message "One or more operators alerted by $alertName is not present at the destination. Alert will not be copied. Use Copy-DbaAgentOperator to copy the operator(s) to the destination. Missing operator(s): $($missingOperators -join ',')" -Level Warning
+                        continue
+                    }
                 }
-                if ($operatorDoesntExist)
-                {
-                 Stop-Function -Message "Issue moving notifications for the alert [$alertName]: Operator [$operatorName] does not exist at destination." -Category InvalidOperation -Target $destServer
-                 continue
-                }
-    
+
                 if ($destAlerts.name -contains $serverAlert.name) {
                     if ($force -eq $false) {
                         if ($PSCmdlet.ShouldProcess($destinstance, "Alert [$alertName] exists at destination. Use -Force to drop and migrate.")) {
