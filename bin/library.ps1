@@ -61,7 +61,7 @@ if ($ImportLibrary) {
             if (Test-Path -Path $dll) {
                 Add-Type -Path $dll -ErrorAction Stop
             } else {
-                throw "Library not found, terminating!"
+                throw "Library not found, terminating"
             }
         }
         # Else we prioritize user convenience
@@ -85,16 +85,12 @@ if ($ImportLibrary) {
                 $start = Get-Date
 
                 try {
-                    $script:DllRoot = Resolve-Path -Path $script:DllRoot
                     Write-Verbose -Message "Found library, trying to copy & import"
-                    # this looks excessive but for some reason the explicit string to string is required
-                    if (("$($dll)" -ne "$(Join-Path -Path $script:DllRoot -ChildPath dbatools.dll)") -and $script:isWindows) {
-                        Copy-Item -Path $dll -Destination $script:DllRoot -Force -ErrorAction Stop
-                    }
-                    Add-Type -Path (Resolve-Path -Path "$script:DllRoot\dbatools.dll") -ErrorAction Stop
+                    Add-Type -Path (Resolve-Path -Path "$dll") -ErrorAction Stop
                 } catch {
                     Write-Verbose -Message "Failed to copy and import, attempting to import straight from the module directory"
-                    Add-Type -Path $dll -ErrorAction Stop
+                    $script:DllRoot = Resolve-Path -Path $script:DllRoot
+                    Add-Type -Path "$(Join-Path -Path $script:DllRoot -ChildPath dbatools.dll)" -ErrorAction Stop
                 }
                 Write-Verbose -Message "Total duration: $((Get-Date) - $start)"
             } elseif ($hasProject) {
