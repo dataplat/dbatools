@@ -262,7 +262,6 @@ function Copy-DbaDbTableData {
                         Stop-Function -Message "The table $tbl matches $($dbTable.Count) objects. Unable to determine which object to copy" -Continue
                     }
                 }
-                
             } catch {
                 Stop-Function -Message "Unable to determine source table : $Table"
                 return
