@@ -4,24 +4,20 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        $paramCount = 6
-        $defaultParamCount = 11
-        [object[]]$params = (Get-ChildItem function:\Get-DbaDbUdf).Parameters.Keys
-        $knownParameters = 'SqlInstance','SqlCredential','Database','ExcludeDatabase','ExcludeSystemUdf','EnableException'
-        It "Should contain our specific parameters" {
-            ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
-        }
-        It "Should only contain $paramCount parameters" {
-            $params.Count - $defaultParamCount | Should Be $paramCount
+        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
+        [object[]]$knownParameters = 'SqlInstance','SqlCredential','Database','ExcludeDatabase','ExcludeSystemUdf','EnableException'
+        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
+        It "Should only contain our specific parameters" {
+            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
         }
     }
 }
 
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
-    BeforeAll{
-#Test Function adapted from examples at:
-#https://docs.microsoft.com/en-us/sql/t-sql/statements/create-function-transact-sql?view=sql-server-2017#examples
-$CreateTestUDFunction = @"
+    BeforeAll {
+        #Test Function adapted from examples at:
+        #https://docs.microsoft.com/en-us/sql/t-sql/statements/create-function-transact-sql?view=sql-server-2017#examples
+        $CreateTestUDFunction = @"
 CREATE FUNCTION dbo.dbatoolssci_ISOweek (@DATE datetime)
 RETURNS int
 WITH EXECUTE AS CALLER
@@ -41,22 +37,22 @@ BEGIN
      RETURN(@ISOweek);
 END;
 "@
-        Invoke-Sqlcmd2 -ServerInstance $script:instance2 -Query $CreateTestUDFunction -Database master
+        Invoke-DbaQuery -SqlInstance $script:instance2 -Query $CreateTestUDFunction -Database master
     }
-    AfterAll{
+    AfterAll {
         $DropTestUDFunction = "DROP FUNCTION dbo.dbatoolssci_ISOweek;"
-        Invoke-Sqlcmd2 -ServerInstance $script:instance2 -Query $DropTestUDFunction -Database master
+        Invoke-DbaQuery -SqlInstance $script:instance2 -Query $DropTestUDFunction -Database master
     }
 
     Context "Partition Functions are correctly located" {
         $results1 = Get-DbaDbUdf -SqlInstance $script:instance2 -Database master | Where-object {$_.name -eq 'dbatoolssci_ISOweek'} | Select-Object *
         $results2 = Get-DbaDbUdf -SqlInstance $script:instance2
 
-        It "Should execute and return results"{
+        It "Should execute and return results" {
             $results2 | Should -Not -Be $null
         }
 
-        It "Should execute against Master and return results"{
+        It "Should execute against Master and return results" {
             $results1 | Should -Not -Be $null
         }
 

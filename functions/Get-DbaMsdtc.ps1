@@ -44,7 +44,7 @@ function Get-DbaMsdtc {
 
         Get DTC status for the computer srv0042 and show in a grid view
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [Parameter(ValueFromPipeline)]
@@ -132,4 +132,3 @@ function Get-DbaMsdtc {
         }
     }
 }
-

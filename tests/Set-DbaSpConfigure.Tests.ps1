@@ -4,15 +4,11 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        $paramCount = 6
-        $defaultParamCount = 13
-        [object[]]$params = (Get-ChildItem function:\Set-DbaSpConfigure).Parameters.Keys
-        $knownParameters = 'SqlInstance','SqlCredential','Value','Name','InputObject','EnableException'
-        It "Should contain our specific parameters" {
-            ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
-        }
-        It "Should only contain $paramCount parameters" {
-            $params.Count - $defaultParamCount | Should Be $paramCount
+        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
+        [object[]]$knownParameters = 'SqlInstance','SqlCredential','Value','Name','InputObject','EnableException'
+        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
+        It "Should only contain our specific parameters" {
+            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
         }
     }
 }
@@ -31,13 +27,13 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 
         It "changes the remote query timeout from $remotequerytimeout to $newtimeout" {
             $results = Set-DbaSpConfigure -SqlInstance $script:instance1 -ConfigName RemoteQueryTimeout -Value $newtimeout
-            $results.OldValue | Should Be $remotequerytimeout
+            $results.PreviousValue | Should Be $remotequerytimeout
             $results.NewValue | Should Be $newtimeout
         }
 
         It "changes the remote query timeout from $newtimeout to $remotequerytimeout" {
             $results = Set-DbaSpConfigure -SqlInstance $script:instance1 -ConfigName RemoteQueryTimeout -Value $remotequerytimeout
-            $results.OldValue | Should Be $newtimeout
+            $results.PreviousValue | Should Be $newtimeout
             $results.NewValue | Should Be $remotequerytimeout
         }
 

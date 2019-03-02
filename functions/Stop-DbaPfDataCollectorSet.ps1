@@ -66,7 +66,7 @@ function Stop-DbaPfDataCollectorSet {
 
         Stops the 'System Correlation' Collector.
 
-#>
+    #>
     [CmdletBinding(SupportsShouldProcess)]
     param (
         [DbaInstance[]]$ComputerName = $env:COMPUTERNAME,
@@ -91,6 +91,8 @@ function Stop-DbaPfDataCollectorSet {
         }
     }
     process {
+        
+        
         if (-not $InputObject -or ($InputObject -and (Test-Bound -ParameterName ComputerName))) {
             foreach ($computer in $ComputerName) {
                 $InputObject += Get-DbaPfDataCollectorSet -ComputerName $computer -Credential $Credential -CollectorSet $CollectorSet
@@ -126,4 +128,3 @@ function Stop-DbaPfDataCollectorSet {
         }
     }
 }
-

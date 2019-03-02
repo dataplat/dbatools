@@ -50,7 +50,7 @@ function Get-DbaDbMailHistory {
 
         Returns the all DBMail history for "sql2014","sql2016" and "sqlcluster\sharepoint"
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [Parameter(ValueFromPipeline)]
@@ -141,4 +141,3 @@ function Get-DbaDbMailHistory {
         }
     }
 }
-

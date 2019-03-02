@@ -59,7 +59,7 @@ function Move-DbaCmsRegServer {
 
         Moves the registered server 'Web SQL Cluster' on sql2017 to the Web group, also on sql2017
 
-#>
+    #>
 
     [CmdletBinding(SupportsShouldProcess)]
     param (
@@ -121,4 +121,3 @@ function Move-DbaCmsRegServer {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Move-DbaRegisteredServer
     }
 }
-

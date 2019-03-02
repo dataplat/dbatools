@@ -57,7 +57,7 @@ function Test-DbaDbCollation {
 
         Returns db/server collation information for every database on every server listed in the Central Management Server on sql2016.
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
@@ -111,4 +111,3 @@ function Test-DbaDbCollation {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Test-DbaDatabaseCollation
     }
 }
-

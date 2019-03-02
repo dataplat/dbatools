@@ -69,7 +69,7 @@ function Test-DbaLoginPassword {
 
         Test selected logins on all servers in the $servers variable
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [Alias("ServerInstance", "SqlServer", "SqlServers")]
@@ -146,4 +146,3 @@ function Test-DbaLoginPassword {
         }
     }
 }
-

@@ -2,7 +2,7 @@ function Test-SqlSa {
     <#
     .SYNOPSIS
         Internal function. Ensures sysadmin account access on SQL Server.
-#>
+    #>
     [CmdletBinding()]
     param (
         [Parameter(Mandatory)]
@@ -22,5 +22,3 @@ function Test-SqlSa {
         return ($server.ConnectionContext.FixedServerRoles -match "SysAdmin")
     } catch { return $false }
 }
-
-

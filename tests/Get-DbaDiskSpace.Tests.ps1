@@ -4,15 +4,11 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        $paramCount = 9
-        $defaultParamCount = 11
-        [object[]]$params = (Get-ChildItem function:\Get-DbaDiskSpace).Parameters.Keys
-        $knownParameters = 'ComputerName','Credential','Unit','CheckForSql','SqlCredential','ExcludeDrive','CheckFragmentation','Force','EnableException'
-        It "Should contain our specific parameters" {
-            ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
-        }
-        It "Should only contain $paramCount parameters" {
-            $params.Count - $defaultParamCount | Should Be $paramCount
+        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
+        [object[]]$knownParameters = 'ComputerName','Credential','Unit','CheckForSql','SqlCredential','ExcludeDrive','CheckFragmentation','Force','EnableException'
+        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
+        It "Should only contain our specific parameters" {
+            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
         }
     }
 }
@@ -50,23 +46,23 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             return @(
                 @{
                     ComputerName = 'MadeUpServer'
-                    ServiceName = 'MSSQLSERVER'
-                    ServiceType = 'Engine'
+                    ServiceName  = 'MSSQLSERVER'
+                    ServiceType  = 'Engine'
                     InstanceName = 'MSSQLSERVER'
-                    DisplayName = 'SQL Server (MSSQLSERVER)'
-                    StartName = 'FAKEDOMAIN\FAKEUSER'
-                    State = 'Running'
-                    StartMode = 'Automatic'
+                    DisplayName  = 'SQL Server (MSSQLSERVER)'
+                    StartName    = 'FAKEDOMAIN\FAKEUSER'
+                    State        = 'Running'
+                    StartMode    = 'Automatic'
                 },
                 @{
                     ComputerName = 'MadeUpServer'
-                    ServiceName = 'MSSQLSERVER$MADEUPINSTANCE'
-                    ServiceType = 'Engine'
+                    ServiceName  = 'MSSQLSERVER$MADEUPINSTANCE'
+                    ServiceType  = 'Engine'
                     InstanceName = 'MadeUpInstance'
-                    DisplayName = 'SQL Server (MSSQLSERVER)'
-                    StartName = 'FAKEDOMAIN\FAKEUSER'
-                    State = 'Running'
-                    StartMode = 'Automatic'
+                    DisplayName  = 'SQL Server (MSSQLSERVER)'
+                    StartName    = 'FAKEDOMAIN\FAKEUSER'
+                    State        = 'Running'
+                    StartMode    = 'Automatic'
                 }
             )
         }
@@ -74,23 +70,23 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         Mock -ModuleName 'dbatools' -CommandName 'Get-DbaCmObject' -ParameterFilter { $ComputerName::InputObject -eq 'MadeUpServer' -and $Query -like '*Win32_Volume*' } -MockWith {
             return @(
                 @{
-                    Name = 'D:\Data\'
-                    Label = 'Log'
-                    Capacity = 32209043456
-                    Freespace = 11653545984
-                    BlockSize = 65536
-                    FileSystem = 'NTFS'
-                    DriveType = 3
+                    Name        = 'D:\Data\'
+                    Label       = 'Log'
+                    Capacity    = 32209043456
+                    Freespace   = 11653545984
+                    BlockSize   = 65536
+                    FileSystem  = 'NTFS'
+                    DriveType   = 3
                     DriveLetter = ''
                 },
                 @{
-                    Name = 'C:\'
-                    Label = 'OS'
-                    Capacity = 32209043456
-                    Freespace = 11653545984
-                    BlockSize = 4096
-                    FileSystem = 'NTFS'
-                    DriveType = 2
+                    Name        = 'C:\'
+                    Label       = 'OS'
+                    Capacity    = 32209043456
+                    Freespace   = 11653545984
+                    BlockSize   = 4096
+                    FileSystem  = 'NTFS'
+                    DriveType   = 2
                     DriveLetter = 'C:'
                 }
             )
@@ -110,33 +106,33 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         Mock -ModuleName 'dbatools' -CommandName 'Get-DbaCmObject' -ParameterFilter { $Query -like '*Win32_Volume*' } -MockWith {
             return @(
                 @{
-                    Name = 'D:\Data\'
-                    Label = 'Log'
-                    Capacity = 32209043456
-                    Freespace = 11653545984
-                    BlockSize = 65536
-                    FileSystem = 'NTFS'
-                    DriveType = 3
+                    Name        = 'D:\Data\'
+                    Label       = 'Log'
+                    Capacity    = 32209043456
+                    Freespace   = 11653545984
+                    BlockSize   = 65536
+                    FileSystem  = 'NTFS'
+                    DriveType   = 3
                     DriveLetter = ''
                 },
                 @{
-                    Name = 'C:\'
-                    Label = 'OS'
-                    Capacity = 32209043456
-                    Freespace = 11653545984
-                    BlockSize = 4096
-                    FileSystem = 'NTFS'
-                    DriveType = 2
+                    Name        = 'C:\'
+                    Label       = 'OS'
+                    Capacity    = 32209043456
+                    Freespace   = 11653545984
+                    BlockSize   = 4096
+                    FileSystem  = 'NTFS'
+                    DriveType   = 2
                     DriveLetter = 'C:'
                 },
                 @{
-                    Name = 'T:\'
-                    Label = 'Data'
-                    Capacity = 32209043456
-                    Freespace = 11653545984
-                    BlockSize = 4096
-                    FileSystem = 'NTFS'
-                    DriveType = 2
+                    Name        = 'T:\'
+                    Label       = 'Data'
+                    Capacity    = 32209043456
+                    Freespace   = 11653545984
+                    BlockSize   = 4096
+                    FileSystem  = 'NTFS'
+                    DriveType   = 2
                     DriveLetter = 'T:'
                 }
             )

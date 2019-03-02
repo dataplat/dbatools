@@ -41,7 +41,7 @@ function Get-DbaRgClassifierFunction {
 
         Gets the classifier function object on Sql1 and Sql2/sqlexpress instances
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [DbaInstanceParameter[]]$SqlInstance,
@@ -78,4 +78,3 @@ function Get-DbaRgClassifierFunction {
         }
     }
 }
-

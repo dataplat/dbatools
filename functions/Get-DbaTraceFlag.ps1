@@ -21,7 +21,7 @@ function Get-DbaTraceFlag {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: TraceFlag
+        Tags: TraceFlag, DBCC
         Author: Kevin Bullen (@sqlpadawan)
 
         Website: https://dbatools.io
@@ -48,7 +48,7 @@ function Get-DbaTraceFlag {
 
         Returns Trace Flag status for TF 4199 and 3205 for the local SQL Server instance if they are enabled.
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Position = 0, Mandatory, ValueFromPipeline)]
@@ -94,4 +94,3 @@ function Get-DbaTraceFlag {
         }
     }
 }
-

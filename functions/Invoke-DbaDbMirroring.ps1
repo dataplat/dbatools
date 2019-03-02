@@ -40,7 +40,7 @@ function Invoke-DbaDbMirroring {
     .PARAMETER Database
         The database or databases to mirror.
 
-    .PARAMETER NetworkShare
+    .PARAMETER SharedPath
         The network share where the backups will be backed up and restored from.
 
         Each SQL Server service account must have access to this share.
@@ -50,7 +50,7 @@ function Invoke-DbaDbMirroring {
     .PARAMETER InputObject
         Enables piping from Get-DbaDatabase.
 
-    .PARAMETER UseLastBackups
+    .PARAMETER UseLastBackup
         Use the last full backup of database.
 
     .PARAMETER Force
@@ -85,10 +85,10 @@ function Invoke-DbaDbMirroring {
         >> MirrorSqlCredential = 'sqladmin'
         >> Witness = 'sql2019'
         >> Database = 'pubs'
-        >> NetworkShare = '\\nas\sql\share'
+        >> SharedPath = '\\nas\sql\share'
         >> }
         >>
-        PS C:\> Invoke-DbaDbMirror @params
+        PS C:\> Invoke-DbaDbMirroring @params
 
         Performs a bunch of checks to ensure the pubs database on sql2017a
         can be mirrored from sql2017a to sql2017b. Logs in to sql2019 and sql2017a
@@ -104,12 +104,12 @@ function Invoke-DbaDbMirroring {
         >> MirrorSqlCredential = 'sqladmin'
         >> Witness = 'sql2019'
         >> Database = 'pubs'
-        >> NetworkShare = '\\nas\sql\share'
+        >> SharedPath = '\\nas\sql\share'
         >> Force = $true
         >> Confirm = $false
         >> }
         >>
-        PS C:\> Invoke-DbaDbMirror @params
+        PS C:\> Invoke-DbaDbMirroring @params
 
         Performs a bunch of checks to ensure the pubs database on sql2017a
         can be mirrored from sql2017a to sql2017b. Logs in to sql2019 and sql2017a
@@ -129,11 +129,11 @@ function Invoke-DbaDbMirroring {
 
     .EXAMPLE
         PS C:\> Get-DbaDatabase -SqlInstance sql2017a -Database pubs |
-        >> Invoke-DbaDbMirroring -Mirror sql2017b -UseLastBackups -Confirm:$false
+        >> Invoke-DbaDbMirroring -Mirror sql2017b -UseLastBackup -Confirm:$false
 
         Mirrors pubs on sql2017a to sql2017b and uses the last full and logs from sql2017a to seed. Doesn't prompt for confirmation.
 
-    #>
+       #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
     param (
         [DbaInstanceParameter]$Primary,
@@ -144,16 +144,19 @@ function Invoke-DbaDbMirroring {
         [DbaInstanceParameter]$Witness,
         [PSCredential]$WitnessSqlCredential,
         [string[]]$Database,
-        [string]$NetworkShare,
+        [Alias("NetworkShare")]
+        [string]$SharedPath,
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
-        [switch]$UseLastBackups,
+        [switch]$UseLastBackup,
         [switch]$Force,
         [switch]$EnableException
     )
     begin {
+        Test-DbaDeprecation -DeprecatedOn 1.0.0 -Parameter NetworkShare -CustomMessage "Using the parameter NetworkShare is deprecated. This parameter will be removed in version 1.0.0 or before. Use SharedPath instead."
+        
         $params = $PSBoundParameters
-        $null = $params.Remove('UseLastBackups')
+        $null = $params.Remove('UseLastBackup')
         $null = $params.Remove('Force')
         $null = $params.Remove('Confirm')
         $null = $params.Remove('Whatif')
@@ -164,8 +167,8 @@ function Invoke-DbaDbMirroring {
             return
         }
 
-        if ($Force -and (-not $NetworkShare -and -not $UseLastBackups)) {
-            Stop-Function -Message "NetworkShare or UseLastBackups is required when Force is used"
+        if ($Force -and (-not $SharedPath -and -not $UseLastBackup)) {
+            Stop-Function -Message "SharedPath or UseLastBackup is required when Force is used"
             return
         }
 
@@ -194,8 +197,8 @@ function Invoke-DbaDbMirroring {
 
             $validation = Invoke-DbMirrorValidation @params
 
-            if ((Test-Bound -ParameterName NetworkShare) -and -not $validation.AccessibleShare) {
-                Stop-Function -Continue -Message "Cannot access $NetworkShare from $($dest.Name)"
+            if ((Test-Bound -ParameterName SharedPath) -and -not $validation.AccessibleShare) {
+                Stop-Function -Continue -Message "Cannot access $SharedPath from $($dest.Name)"
             }
 
             if (-not $validation.EditionMatch) {
@@ -213,8 +216,8 @@ function Invoke-DbaDbMirroring {
             Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Setting recovery model for $dbName on $($source.Name) to Full"
 
             if ($primarydb.RecoveryModel -ne "Full") {
-                if ((Test-Bound -ParameterName UseLastBackups)) {
-                    Stop-Function -Continue -Message "$dbName not set to full recovery. UseLastBackups cannot be used."
+                if ((Test-Bound -ParameterName UseLastBackup)) {
+                    Stop-Function -Continue -Message "$dbName not set to full recovery. UseLastBackup cannot be used."
                 } else {
                     Set-DbaDbRecoveryModel -SqlInstance $source -Database $primarydb.Name -RecoveryModel Full
                 }
@@ -222,12 +225,12 @@ function Invoke-DbaDbMirroring {
 
             Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Copying $dbName from primary to mirror"
             if (-not $validation.DatabaseExistsOnMirror -or $Force) {
-                if ($UseLastBackups) {
+                if ($UseLastBackup) {
                     $allbackups = Get-DbaBackupHistory -SqlInstance $primarydb.Parent -Database $primarydb.Name -IncludeCopyOnly -Last
                 } else {
-                    if ($Force -or $Pscmdlet.ShouldProcess("$Primary", "Creating full and log backups of $primarydb on $networkshare")) {
-                        $fullbackup = $primarydb | Backup-DbaDatabase -BackupDirectory $NetworkShare -Type Full
-                        $logbackup = $primarydb | Backup-DbaDatabase -BackupDirectory $NetworkShare -Type Log
+                    if ($Force -or $Pscmdlet.ShouldProcess("$Primary", "Creating full and log backups of $primarydb on $SharedPath")) {
+                        $fullbackup = $primarydb | Backup-DbaDatabase -BackupDirectory $SharedPath -Type Full
+                        $logbackup = $primarydb | Backup-DbaDatabase -BackupDirectory $SharedPath -Type Log
                         $allbackups = $fullbackup, $logbackup
                     }
                 }
@@ -241,8 +244,8 @@ function Invoke-DbaDbMirroring {
                     }
                 }
 
-                if ($NetworkShare) {
-                    Write-Message -Level Verbose -Message "Backups still exist on $NetworkShare"
+                if ($SharedPath) {
+                    Write-Message -Level Verbose -Message "Backups still exist on $SharedPath"
                 }
             }
 
@@ -252,12 +255,12 @@ function Invoke-DbaDbMirroring {
 
             if ($Witness -and (-not $validation.DatabaseExistsOnWitness -or $Force)) {
                 if (-not $allbackups) {
-                    if ($UseLastBackups) {
+                    if ($UseLastBackup) {
                         $allbackups = Get-DbaBackupHistory -SqlInstance $primarydb.Parent -Database $primarydb.Name -IncludeCopyOnly -Last
                     } else {
-                        if ($Force -or $Pscmdlet.ShouldProcess("$Primary", "Creating full and log backups of $primarydb on $networkshare")) {
-                            $fullbackup = $primarydb | Backup-DbaDatabase -BackupDirectory $NetworkShare -Type Full
-                            $logbackup = $primarydb | Backup-DbaDatabase -BackupDirectory $NetworkShare -Type Log
+                        if ($Force -or $Pscmdlet.ShouldProcess("$Primary", "Creating full and log backups of $primarydb on $SharedPath")) {
+                            $fullbackup = $primarydb | Backup-DbaDatabase -BackupDirectory $SharedPath -Type Full
+                            $logbackup = $primarydb | Backup-DbaDatabase -BackupDirectory $SharedPath -Type Log
                             $allbackups = $fullbackup, $logbackup
                         }
                     }

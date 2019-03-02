@@ -28,7 +28,7 @@ function Get-DbaXESmartTarget {
 
         Gets an XESmartTarget PowerShell Job created by Start-DbaXESmartTarget.
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [switch]$EnableException
@@ -41,4 +41,3 @@ function Get-DbaXESmartTarget {
         }
     }
 }
-

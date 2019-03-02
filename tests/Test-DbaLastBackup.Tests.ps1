@@ -4,15 +4,11 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        $defaultParamCount = 13
-        [object[]]$params = (Get-ChildItem function:\Test-DbaLastBackup).Parameters.Keys
-        $knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'Destination', 'DestinationCredential', 'DataDirectory', 'LogDirectory', 'Prefix', 'VerifyOnly', 'NoCheck', 'NoDrop', 'CopyFile', 'CopyPath', 'MaxSize', 'IncludeCopyOnly', 'IgnoreLogBackup', 'AzureCredential', 'InputObject', 'EnableException'
-        $paramCount = $knownParameters.Count
-        It "Should contain our specific parameters" {
-            ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
-        }
-        It "Should only contain $paramCount parameters" {
-            $params.Count - $defaultParamCount | Should Be $paramCount
+        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
+        [object[]]$knownParameters = 'SqlInstance','SqlCredential','Database','ExcludeDatabase','Destination','DestinationCredential','DataDirectory','LogDirectory','Prefix','VerifyOnly','NoCheck','NoDrop','CopyFile','CopyPath','MaxSize','IncludeCopyOnly','IgnoreLogBackup','AzureCredential','InputObject','EnableException'
+        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
+        It "Should only contain our specific parameters" {
+            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
         }
     }
 }
@@ -36,7 +32,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     }
     AfterAll {
         # these for sure
-        Get-DbaDatabase -SqlInstance $script:instance1 -Database $dbs | Remove-DbaDatabase -Confirm:$false
+        Get-DbaDatabase -SqlInstance $script:instance1 -Database $dbs, "bigtestrest", "smalltestrest" | Remove-DbaDatabase -Confirm:$false
         # those just in case test-dbalastbackup didn't cooperate
         Get-DbaDatabase -SqlInstance $script:instance1 | Where-Object Name -like 'dbatools-testrestore-dbatoolsci_*' | Remove-DbaDatabase -Confirm:$false
         # see "Restores using a specific path"

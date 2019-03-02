@@ -53,7 +53,7 @@ function Get-DbaIoLatency {
         PS C:\> Get-DbaIoLatency -SqlInstance sql2008 -SqlCredential $cred
 
         Connects using sqladmin credential and returns IO subsystem latency statistics from sql2008
-#>
+    #>
     [CmdletBinding()]
     Param (
         [parameter(Mandatory, ValueFromPipeline)]
@@ -165,4 +165,3 @@ function Get-DbaIoLatency {
         }
     }
 }
-

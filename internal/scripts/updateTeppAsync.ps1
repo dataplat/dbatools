@@ -28,8 +28,7 @@ $scriptBlock = {
                 $server = New-Object Microsoft.SqlServer.Management.Smo.Server($instance.ConnectionObject)
                 try {
                     $server.ConnectionContext.Connect()
-                }
-                catch {
+                } catch {
                     continue
                 }
 
@@ -71,8 +70,7 @@ $scriptBlock = {
             Start-Sleep -Seconds 5
         }
         #endregion Main Execution
-    }
-    catch { }
+    } catch { }
     finally {
         [Sqlcollaborative.Dbatools.Runspace.RunspaceHost]::Runspaces[$___ScriptName.ToLower()].SignalStopped()
     }
@@ -82,4 +80,3 @@ Register-DbaRunspace -ScriptBlock $scriptBlock -Name "dbatools-teppasynccache"
 if (-not ([Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::TeppAsyncDisabled -or [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::TeppDisabled)) {
     Start-DbaRunspace -Name "dbatools-teppasynccache"
 }
-

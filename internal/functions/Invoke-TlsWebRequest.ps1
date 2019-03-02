@@ -5,7 +5,7 @@ function Invoke-TlsWebRequest {
     rather than the default, which on a lot
     of standard installations is just TLS 1.0
 
-    #>
+       #>
     $currentVersionTls = [Net.ServicePointManager]::SecurityProtocol
     $currentSupportableTls = [Math]::Max($currentVersionTls.value__, [Net.SecurityProtocolType]::Tls.value__)
     $availableTls = [enum]::GetValues('Net.SecurityProtocolType') | Where-Object { $_ -gt $currentSupportableTls }
@@ -17,4 +17,3 @@ function Invoke-TlsWebRequest {
 
     [Net.ServicePointManager]::SecurityProtocol = $currentVersionTls
 }
-

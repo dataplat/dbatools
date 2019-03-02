@@ -90,7 +90,7 @@ function New-DbaDbSnapshot {
 
         Creates a snapshot for the database df on sql2016
 
-#>
+    #>
 
     [CmdletBinding(SupportsShouldProcess)]
     param (
@@ -330,4 +330,3 @@ function New-DbaDbSnapshot {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias New-DbaDatabaseSnapshot
     }
 }
-

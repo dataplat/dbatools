@@ -40,7 +40,7 @@ function Get-DbaDbMirror {
 
         Gets properties of database mirrors and mirror witnesses on localhost and sql2016 SQL Server instances
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
@@ -80,4 +80,3 @@ function Get-DbaDbMirror {
         }
     }
 }
-

@@ -47,7 +47,7 @@ function ConvertTo-DbaXESession {
 
         Converts trace ID 1 on sql2014 to an Extended Event and outputs the resulting T-SQL.
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
@@ -115,4 +115,3 @@ function ConvertTo-DbaXESession {
         }
     }
 }
-

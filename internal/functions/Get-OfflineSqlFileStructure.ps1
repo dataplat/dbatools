@@ -3,7 +3,7 @@ function Get-OfflineSqlFileStructure {
 .SYNOPSIS
 Internal function. Returns dictionary object that contains file structures for SQL databases.
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [Parameter(Mandatory, Position = 0)]
@@ -13,7 +13,7 @@ Internal function. Returns dictionary object that contains file structures for S
         [string]$dbname,
         [Parameter(Mandatory, Position = 2)]
         [object]$filelist,
-        [Parameter(Mandatory = $false, Position = 3)]
+        [Parameter(Position = 3)]
         [bool]$ReuseSourceFolderStructure,
         [PSCredential]$SqlCredential
     )
@@ -64,5 +64,3 @@ Internal function. Returns dictionary object that contains file structures for S
 
     return $destinationfiles
 }
-
-

@@ -2,7 +2,7 @@ function Resolve-NetBiosName {
     <#
 .SYNOPSIS
 Internal function. Takes a best guess at the NetBIOS name of a server.
- #>
+    #>
     [CmdletBinding()]
     param (
         [Parameter(Mandatory)]
@@ -13,4 +13,3 @@ Internal function. Takes a best guess at the NetBIOS name of a server.
     $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
     $server.ComputerName
 }
-

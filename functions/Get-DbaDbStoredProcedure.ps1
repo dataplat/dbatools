@@ -59,7 +59,7 @@ function Get-DbaDbStoredProcedure {
 
         Gets the Stored Procedures for the databases on Sql1 and Sql2/sqlexpress
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
@@ -118,4 +118,3 @@ function Get-DbaDbStoredProcedure {
         }
     }
 }
-

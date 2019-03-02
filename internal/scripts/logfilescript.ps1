@@ -78,8 +78,7 @@ $scriptBlock = {
             $path = [Sqlcollaborative.Dbatools.Message.LogHost]::LoggingPath
             if (-not (Test-Path $path)) {
                 $root = New-Item $path -ItemType Directory -Force -ErrorAction Stop
-            }
-            else { $root = Get-Item -Path $path }
+            } else { $root = Get-Item -Path $path }
 
             try { [int]$num_Error = (Get-ChildItem -Path $root.FullName -Filter "dbatools_$($pid)_error_*.xml" | Sort-Object LastWriteTime -Descending | Select-Object -First 1 -ExpandProperty Name | Select-String -Pattern "(\d+)" -AllMatches).Matches[1].Value }
             catch { }
@@ -127,8 +126,7 @@ $scriptBlock = {
 
             Start-Sleep -Seconds 5
         }
-    }
-    catch { }
+    } catch { }
     finally {
         [Sqlcollaborative.Dbatools.Runspace.RunspaceHost]::Runspaces[$___ScriptName.ToLower()].SignalStopped()
     }

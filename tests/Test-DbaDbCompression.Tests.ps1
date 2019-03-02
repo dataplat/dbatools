@@ -4,15 +4,11 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        $paramCount = 10
-        $defaultParamCount = 11
-        [object[]]$params = (Get-ChildItem function:\Test-DbaDbCompression).Parameters.Keys
-        $knownParameters = 'SqlInstance', 'SqlCredential','Database','ExcludeDatabase','Schema','Table','ResultSize','Rank','FilterBy', 'EnableException'
-        It "Should contain our specific parameters" {
-            ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
-        }
-        It "Should only contain $paramCount parameters" {
-            $params.Count - $defaultParamCount | Should Be $paramCount
+        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
+        [object[]]$knownParameters = 'SqlInstance','SqlCredential','Database','ExcludeDatabase','Schema','Table','ResultSize','Rank','FilterBy','EnableException'
+        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
+        It "Should only contain our specific parameters" {
+            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
         }
     }
 }
@@ -23,14 +19,14 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         $dbname = "dbatoolsci_test_$(get-random)"
         $server = Connect-DbaInstance -SqlInstance $script:instance2
         $null = $server.Query("Create Database [$dbname]")
-        $null = $server.Query("Create Schema test",$dbname)
+        $null = $server.Query("Create Schema test", $dbname)
         $null = $server.Query(" select * into syscols from sys.all_columns
                                 select * into test.sysallparams from sys.all_parameters
                                 create clustered index CL_sysallparams on test.sysallparams (object_id)
                                 create nonclustered index NC_syscols on syscols (precision) include (collation_name)
                                 update test.sysallparams set is_xml_document = 1 where name = '@dbname'
-                                ",$dbname)
-       }
+                                ", $dbname)
+    }
     AfterAll {
         Get-DbaProcess -SqlInstance $script:instance2 -Database $dbname | Stop-DbaProcess -WarningAction SilentlyContinue
         Remove-DbaDatabase -SqlInstance $script:instance2 -Database $dbname -Confirm:$false
@@ -42,7 +38,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
         $results.foreach{
             It "Should suggest ROW, PAGE or NO_GAIN for $($PSitem.TableName) - $($PSitem.IndexType) " {
-                $PSitem.CompressionTypeRecommendation | Should BeIn ("ROW","PAGE","NO_GAIN")
+                $PSitem.CompressionTypeRecommendation | Should BeIn ("ROW", "PAGE", "NO_GAIN")
             }
             It "Should have values for PercentScan and PercentUpdate  $($PSitem.TableName) - $($PSitem.IndexType) " {
                 $PSitem.PercentUpdate | Should Not BeNullOrEmpty

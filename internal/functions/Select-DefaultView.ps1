@@ -9,36 +9,36 @@ function Select-DefaultView {
     https://learn-powershell.net/2013/08/03/quick-hits-set-the-default-property-display-in-powershell-on-custom-objects/
 
     TypeName creates a new type so that we can use ps1xml to modify the output
-    #>
-    
+       #>
+
     [CmdletBinding()]
     param (
         [parameter(ValueFromPipeline)]
         [object]
         $InputObject,
-        
+
         [string[]]
         $Property,
-        
+
         [string[]]
         $ExcludeProperty,
-        
+
         [string]
         $TypeName
     )
     process {
-        
+
         if ($null -eq $InputObject) { return }
-        
+
         if ($TypeName) {
             $InputObject.PSObject.TypeNames.Insert(0, "dbatools.$TypeName")
         }
-        
+
         if ($ExcludeProperty) {
             if ($InputObject.GetType().Name.ToString() -eq 'DataRow') {
                 $ExcludeProperty += 'Item', 'RowError', 'RowState', 'Table', 'ItemArray', 'HasErrors'
             }
-            
+
             $props = ($InputObject | Get-Member | Where-Object MemberType -in 'Property', 'NoteProperty', 'AliasProperty' | Where-Object { $_.Name -notin $ExcludeProperty }).Name
             $defaultset = New-Object System.Management.Automation.PSPropertySet('DefaultDisplayPropertySet', [string[]]$props)
         } else {
@@ -59,13 +59,12 @@ function Select-DefaultView {
             }
             $defaultset = New-Object System.Management.Automation.PSPropertySet('DefaultDisplayPropertySet', [string[]]$Property)
         }
-        
+
         $standardmembers = [System.Management.Automation.PSMemberInfo[]]@($defaultset)
-        
+
         # Do not be tempted to not pipe here
         $inputobject | Add-Member -Force -MemberType MemberSet -Name PSStandardMembers -Value $standardmembers -ErrorAction SilentlyContinue
-        
+
         $inputobject
     }
 }
-

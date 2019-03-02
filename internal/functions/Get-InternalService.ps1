@@ -43,7 +43,7 @@ function Get-InternalService {
         Get-InternalService -ComputerName "server1","server2","server3" -Name Lanman%
 
         Scans the servers server1, server2 and server3 for all services whose name starts with 'lanman'
-#>
+    #>
     [CmdletBinding()]
     param (
         [string[]]
@@ -110,5 +110,3 @@ function Get-InternalService {
         Write-Message -Level InternalComment -Message "Ending"
     }
 }
-
-

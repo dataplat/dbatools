@@ -87,7 +87,7 @@ function Get-DbaPfDataCollectorCounterSample {
 
         Gets a single sample for all counters for the 'System Correlation' CollectorSet.
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [DbaInstance[]]$ComputerName = $env:COMPUTERNAME,
@@ -106,7 +106,8 @@ function Get-DbaPfDataCollectorCounterSample {
         [switch]$EnableException
     )
     process {
-
+        
+        
         if ($InputObject.Credential -and (Test-Bound -ParameterName Credential -Not)) {
             $Credential = $InputObject.Credential
         }
@@ -196,4 +197,3 @@ function Get-DbaPfDataCollectorCounterSample {
         }
     }
 }
-

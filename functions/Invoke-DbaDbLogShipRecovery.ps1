@@ -89,7 +89,7 @@ function Invoke-DbaDbLogShipRecovery {
 
         Shows what would happen if the command were executed.
 
-#>
+    #>
     [CmdletBinding(SupportsShouldProcess)]
     param
     (
@@ -329,4 +329,3 @@ function Invoke-DbaDbLogShipRecovery {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Invoke-DbaLogShippingRecovery
     }
 }
-

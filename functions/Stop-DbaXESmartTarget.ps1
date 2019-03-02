@@ -43,7 +43,7 @@ function Stop-DbaXESmartTarget {
 
         Stops a specific XESmartTarget job.
 
-#>
+    #>
     [CmdletBinding(SupportsShouldProcess)]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
@@ -63,4 +63,3 @@ function Stop-DbaXESmartTarget {
         }
     }
 }
-

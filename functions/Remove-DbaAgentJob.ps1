@@ -74,7 +74,7 @@ function Remove-DbaAgentJob {
 
         Removes the job from multiple servers
 
-#>
+    #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
     param (
         [Alias("ServerInstance", "SqlServer")]
@@ -152,4 +152,3 @@ function Remove-DbaAgentJob {
         }
     }
 }
-

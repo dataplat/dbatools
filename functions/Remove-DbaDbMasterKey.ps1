@@ -61,7 +61,7 @@ function Remove-DbaDbMasterKey {
 
         Suppresses all prompts to remove the master key in the 'db1' database and drops the key.
 
-#>
+    #>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess, ConfirmImpact = "High")]
     param (
         [Alias("ServerInstance", "SqlServer")]
@@ -111,4 +111,3 @@ function Remove-DbaDbMasterKey {
         }
     }
 }
-

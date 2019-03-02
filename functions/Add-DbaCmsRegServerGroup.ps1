@@ -64,7 +64,7 @@ function Add-DbaCmsRegServerGroup {
 
         Creates a registered server group on sql2012 and sql2014 called sub-folder within the HR group of each server
 
-#>
+    #>
     [CmdletBinding(SupportsShouldProcess)]
     param (
         [Alias("ServerInstance", "SqlServer")]
@@ -117,4 +117,3 @@ function Add-DbaCmsRegServerGroup {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Add-DbaRegisteredServerGroup
     }
 }
-

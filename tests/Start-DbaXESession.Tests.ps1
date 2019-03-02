@@ -4,15 +4,11 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        $paramCount = 7
-        $defaultParamCount = 13
-        [object[]]$params = (Get-ChildItem function:\Start-DbaXESession).Parameters.Keys
-        $knownParameters = 'SqlInstance','SqlCredential','Session','StopAt','AllSessions','InputObject','EnableException'
-        It "Should contain our specific parameters" {
-            ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
-        }
-        It "Should only contain $paramCount parameters" {
-            $params.Count - $defaultParamCount | Should Be $paramCount
+        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
+        [object[]]$knownParameters = 'SqlInstance','SqlCredential','Session','StopAt','AllSessions','InputObject','EnableException'
+        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
+        It "Should only contain our specific parameters" {
+            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
         }
     }
 }
@@ -38,7 +34,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         if ($systemhealth.IsRunning) {
             $systemhealth.Stop()
         }
-        #>
+               #>
         $systemhealth | Stop-DbaXESession #-ErrorAction SilentlyContinue
     }
     AfterAll {
@@ -49,8 +45,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
                 if ($session.IsRunning) {
                     $session.Stop()
                 }
-            }
-            else {
+            } else {
                 if (-Not $session.IsRunning) {
                     $session.Start()
                 }

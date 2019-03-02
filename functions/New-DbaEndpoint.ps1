@@ -84,7 +84,7 @@ function New-DbaEndpoint {
 
         Returns all Endpoint(s) for the local and sql2016 SQL Server instances
 
-#>
+    #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Low')]
     param (
         [parameter(Position = 0, Mandatory, ValueFromPipeline)]

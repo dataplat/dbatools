@@ -4,15 +4,11 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        $paramCount = 7
-        $defaultParamCount = 11
-        [object[]]$params = (Get-ChildItem function:\Test-DbaIdentityUsage).Parameters.Keys
-        $knownParameters = 'SqlInstance','SqlCredential','Database','ExcludeDatabase','Threshold','ExcludeSystemDb','EnableException'
-        It "Should contain our specific parameters" {
-            ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
-        }
-        It "Should only contain $paramCount parameters" {
-            $params.Count - $defaultParamCount | Should Be $paramCount
+        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
+        [object[]]$knownParameters = 'SqlInstance','SqlCredential','Database','ExcludeDatabase','Threshold','ExcludeSystem','EnableException'
+        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
+        It "Should only contain our specific parameters" {
+            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
         }
     }
 }
@@ -22,17 +18,17 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         BeforeAll {
             $table = "TestTable_$(Get-random)"
             $tableDDL = "CREATE TABLE $table (testId TINYINT IDENTITY(1,1),testData DATETIME2 DEFAULT getdate() )"
-            Invoke-Sqlcmd2 -ServerInstance $script:instance1 -Query $tableDDL -database TempDb
+            Invoke-DbaQuery -SqlInstance $script:instance1 -Query $tableDDL -database TempDb
 
         }
         AfterAll {
             $cleanup = "Drop table $table"
-            Invoke-Sqlcmd2 -ServerInstance $script:instance1 -Query $cleanup -database TempDb
+            Invoke-DbaQuery -SqlInstance $script:instance1 -Query $cleanup -database TempDb
         }
 
         $insertSql = "INSERT INTO $table (testData) DEFAULT VALUES"
         for ($i = 1; $i -le 128; $i++) {
-            Invoke-Sqlcmd2 -ServerInstance $script:instance1 -Query $insertSql -database TempDb
+            Invoke-DbaQuery -SqlInstance $script:instance1 -Query $insertSql -database TempDb
         }
         $results = Test-DbaIdentityUsage -SqlInstance $script:instance1 -Database TempDb | Where-Object {$_.Table -eq $table}
 
@@ -45,7 +41,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 
         $insertSql = "INSERT INTO $table (testData) DEFAULT VALUES"
         for ($i = 1; $i -le 127; $i++) {
-            Invoke-Sqlcmd2 -ServerInstance $script:instance1 -Query $insertSql -database TempDb
+            Invoke-DbaQuery -SqlInstance $script:instance1 -Query $insertSql -database TempDb
         }
         $results = Test-DbaIdentityUsage -SqlInstance $script:instance1 -Database TempDb | Where-Object {$_.Table -eq $table}
 
@@ -62,17 +58,17 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         BeforeAll {
             $table = "TestTable_$(Get-random)"
             $tableDDL = "CREATE TABLE $table (testId tinyint IDENTITY(0,5),testData DATETIME2 DEFAULT getdate() )"
-            Invoke-Sqlcmd2 -ServerInstance $script:instance1 -Query $tableDDL -database TempDb
+            Invoke-DbaQuery -SqlInstance $script:instance1 -Query $tableDDL -database TempDb
 
         }
         AfterAll {
             $cleanup = "Drop table $table"
-            Invoke-Sqlcmd2 -ServerInstance $script:instance1 -Query $cleanup -database TempDb
+            Invoke-DbaQuery -SqlInstance $script:instance1 -Query $cleanup -database TempDb
         }
 
         $insertSql = "INSERT INTO $table (testData) DEFAULT VALUES"
         for ($i = 1; $i -le 25; $i++) {
-            Invoke-Sqlcmd2 -ServerInstance $script:instance1 -Query $insertSql -database TempDb
+            Invoke-DbaQuery -SqlInstance $script:instance1 -Query $insertSql -database TempDb
         }
         $results = Test-DbaIdentityUsage -SqlInstance $script:instance1 -Database TempDb | Where-Object {$_.Table -eq $table}
 

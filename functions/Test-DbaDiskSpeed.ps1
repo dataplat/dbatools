@@ -6,8 +6,7 @@ function Test-DbaDiskSpeed {
     .DESCRIPTION
         Tests how disks are performing.
 
-        This command uses a query from Rich Benner which was adapted from David Pless's article:
-        https://blogs.msdn.microsoft.com/dpless/2010/12/01/leveraging-sys-dm_io_virtual_file_stats/
+        This command uses a query from Rich Benner
         https://github.com/RichBenner/PersonalCode/blob/master/Disk_Speed_Check.sql
 
     .PARAMETER SqlInstance
@@ -48,7 +47,7 @@ function Test-DbaDiskSpeed {
 
         Tests how disks storing tempdb files on sql2008 are performing.
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Position = 0, Mandatory, ValueFromPipeline)]
@@ -118,4 +117,3 @@ function Test-DbaDiskSpeed {
         }
     }
 }
-

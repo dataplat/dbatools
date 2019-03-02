@@ -54,7 +54,7 @@ function Get-DbaAgListener {
 
         Returns all listeners found on sql2017a on sql2017a for the availability group OPP
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [DbaInstanceParameter[]]$SqlInstance,
@@ -86,4 +86,3 @@ function Get-DbaAgListener {
         }
     }
 }
-

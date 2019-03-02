@@ -38,7 +38,7 @@ function Get-DbaAgentAlert {
 
         Returns all SQL Agent alerts  on serverA and serverB\instanceB
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Position = 0, Mandatory, ValueFromPipeline)]
@@ -83,4 +83,3 @@ function Get-DbaAgentAlert {
         }
     }
 }
-

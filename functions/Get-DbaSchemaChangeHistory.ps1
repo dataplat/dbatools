@@ -62,7 +62,7 @@ function Get-DbaSchemaChangeHistory {
 
         Returns all DDL changes made  to the AccountsTable object in the Finance database on the SQL Server instance localhost in the last 7 days
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Position = 0, Mandatory, ValueFromPipeline)]
@@ -146,4 +146,3 @@ function Get-DbaSchemaChangeHistory {
         }
     }
 }
-

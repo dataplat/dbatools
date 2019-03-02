@@ -53,7 +53,7 @@ function Get-DbaDbQueryStoreOption {
 
         Returns Query Store configuration settings for every database on the ServerA\sql instance inside a table format.
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
@@ -99,4 +99,3 @@ function Get-DbaDbQueryStoreOption {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-DbaDbQueryStoreOptions
     }
 }
-

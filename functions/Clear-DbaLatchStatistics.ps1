@@ -54,7 +54,7 @@ function Clear-DbaLatchStatistics {
         PS C:\> Clear-DbaLatchStatistics -SqlInstance sql2008 -SqlCredential $cred
 
         Connects using sqladmin credential and clears latch statistics on servers sql2008 and sqlserver2012
-#>
+    #>
     [CmdletBinding(ConfirmImpact = 'High', SupportsShouldProcess)]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseSingularNouns", "", Justification = "Singular Noun doesn't make sense")]
     param (

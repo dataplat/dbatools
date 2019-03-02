@@ -43,7 +43,7 @@ function Get-DbaManagementObject {
 
         Returns just the version specified. If the version does not exist then it will return nothing.
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(ValueFromPipeline)]
@@ -152,4 +152,3 @@ function Get-DbaManagementObject {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-DbaSqlManagementObject
     }
 }
-

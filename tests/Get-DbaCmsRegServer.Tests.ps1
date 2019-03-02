@@ -4,24 +4,11 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tags "UnitTests" {
     Context "Validate parameters" {
-        $knownParameters = 'SqlInstance','SqlCredential','Name','ServerName','Group','ExcludeGroup','Id','IncludeSelf','ExcludeCmsServer','ResolveNetworkName','EnableException'
-        $SupportShouldProcess = $false
-        $paramCount = $knownParameters.Count
-        if ($SupportShouldProcess) {
-            $defaultParamCount = 13
-        }
-        else {
-            $defaultParamCount = 11
-        }
-        $command = Get-Command -Name $CommandName
-        [object[]]$params = $command.Parameters.Keys
-
-        It "Should contain our specific parameters" {
-            ((Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count) | Should Be $paramCount
-        }
-
-        It "Should only contain $paramCount parameters" {
-            $params.Count - $defaultParamCount | Should Be $paramCount
+        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
+        [object[]]$knownParameters = 'SqlInstance','SqlCredential','Name','ServerName','Group','ExcludeGroup','Id','IncludeSelf','ExcludeCmsServer','ResolveNetworkName','EnableException'
+        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
+        It "Should only contain our specific parameters" {
+            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
         }
     }
 }
@@ -38,7 +25,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $regSrvName = "dbatoolsci-server12"
             $regSrvDesc = "dbatoolsci-server123"
 
-            <# Create that first group #>
+            <# Create that first group            #>
             $newGroup = New-Object Microsoft.SqlServer.Management.RegisteredServers.ServerGroup($dbStore, $group)
             $newGroup.Create()
             $dbStore.Refresh()
@@ -94,4 +81,3 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         # Property Comparisons will come later when we have the commands
     }
 }
-

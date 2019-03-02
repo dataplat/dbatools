@@ -26,7 +26,7 @@ function Convert-HexStringToByte {
     Convert-HexStringToByte '1234'
 
     Returns byte[] object [byte[]]@(18,52)
-#>
+    #>
     param (
         [string]$InputObject
     )
@@ -35,4 +35,3 @@ function Convert-HexStringToByte {
     [byte[]]$outByte = $null; $outByte += 0 .. (($hexString.Length) / 2 - 1) | ForEach-Object { [Int16]::Parse($hexString.Substring($_ * 2, 2), 'HexNumber') }
     Return $outByte
 }
-

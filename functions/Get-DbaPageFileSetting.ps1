@@ -43,7 +43,7 @@ function Get-DbaPageFileSetting {
 
         Returns a custom object displaying ComputerName, AutoPageFile, FileName, Status, LastModified, LastAccessed, AllocatedBaseSize, InitialSize, MaximumSize, PeakUsage, CurrentUsage  for ServerA
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [Parameter(Position = 0, ValueFromPipeline, ValueFromPipelineByPropertyName = $true)]
@@ -113,5 +113,3 @@ function Get-DbaPageFileSetting {
         }
     }
 }
-
-

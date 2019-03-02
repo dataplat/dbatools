@@ -61,7 +61,7 @@ function Test-DbaServerName {
         Returns ServerInstanceName, SqlServerName, IsEqual and RenameRequired for sqlserver2014a and sql2016.
         If a Rename is required, it will also show Updatable, and Reasons if the server name is not updatable.
 
-#>
+    #>
     [CmdletBinding()]
     [OutputType([System.Collections.ArrayList])]
     param (
@@ -181,4 +181,3 @@ function Test-DbaServerName {
         }
     }
 }
-

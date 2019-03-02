@@ -52,7 +52,7 @@ function Get-DbaDbExtentDiff {
 
         Get the changes for the DB01 database on multiple servers.
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
@@ -85,7 +85,7 @@ function Get-DbaDbExtentDiff {
 
         foreach ($instance in $SqlInstance) {
             try {
-                $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential -NonPooled
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -NonPooled
             } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
@@ -168,4 +168,3 @@ function Get-DbaDbExtentDiff {
         }
     }
 }
-

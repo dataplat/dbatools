@@ -11,4 +11,3 @@ Function Remove-InvalidFileNameChars {
     $re = "[{0}]" -f [RegEx]::Escape($invalidChars)
     return ($Name -replace $re)
 }
-

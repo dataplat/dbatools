@@ -59,7 +59,7 @@ function Get-DbaCredential {
 
         Returns the SQL Credentials for the account 'ad\powershell' on the local and sql2016 SQL Server instances
 
-#>
+    #>
     [CmdletBinding()]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingPlainTextForPassword", "")]
     param (
@@ -112,4 +112,3 @@ function Get-DbaCredential {
         }
     }
 }
-

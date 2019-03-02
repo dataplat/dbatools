@@ -65,7 +65,7 @@ function ConvertTo-DbaDataTable {
 
         Creates a DataTable with the running processes and converts any TimeSpan property to TotalSeconds.
 
-#>
+    #>
     [CmdletBinding()]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseOutputTypeCorrectly", "", Justification = "PSSA Rule Ignored by BOH")]
     [OutputType([System.Object[]])]
@@ -374,10 +374,10 @@ function ConvertTo-DbaDataTable {
 
                                     $datarow.Item($property.Name) = $newColumn.Value
                                 } catch {
-                                    Write-Message -Level Warning -Message "Failed to add property $($property.Name) from $object" -ErrorRecord $_ -Target $object
+                                    Stop-Function -Message "Failed to add property $($property.Name) from $object" -ErrorRecord $_ -Target $object
                                 }
                             } else {
-                                Write-Message -Level Warning -Message "Failed to add property $($property.Name) from $object" -ErrorRecord $_ -Target $object
+                                Stop-Function -Message "Failed to add property $($property.Name) from $object" -ErrorRecord $_ -Target $object
                             }
                         }
                     }
@@ -399,4 +399,3 @@ function ConvertTo-DbaDataTable {
         , $datatable
     }
 }
-

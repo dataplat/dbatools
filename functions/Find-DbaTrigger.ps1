@@ -69,7 +69,7 @@ function Find-DbaTrigger {
 
         Searches in "mydb" database triggers for "runtime" in the text body
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Position = 0, Mandatory, ValueFromPipeline)]
@@ -319,4 +319,3 @@ function Find-DbaTrigger {
         Write-Message -Level Verbose -Message "Evaluated $everyserverstcount total triggers"
     }
 }
-

@@ -39,7 +39,7 @@ function Get-DbaServerAuditSpecification {
 
         Returns all Security Audit Specifications for the local and sql2016 SQL Server instances
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Position = 0, Mandatory, ValueFromPipeline)]
@@ -70,4 +70,3 @@ function Get-DbaServerAuditSpecification {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-SqlServerAuditSpecification
     }
 }
-

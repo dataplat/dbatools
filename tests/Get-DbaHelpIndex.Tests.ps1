@@ -4,15 +4,11 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        $paramCount = 11
-        $defaultParamCount = 11
-        [object[]]$params = (Get-ChildItem function:\$CommandName).Parameters.Keys
-        $knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'InputObject', 'ObjectName', 'IncludeStats','IncludeDataTypes','Raw','IncludeFragmentation','EnableException'
-        It "Should contain our specific parameters" {
-            ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
-        }
-        It "Should only contain $paramCount parameters" {
-            $params.Count - $defaultParamCount | Should Be $paramCount
+        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
+        [object[]]$knownParameters = 'SqlInstance','SqlCredential','Database','ExcludeDatabase','InputObject','ObjectName','IncludeStats','IncludeDataTypes','Raw','IncludeFragmentation','EnableException'
+        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
+        It "Should only contain our specific parameters" {
+            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
         }
     }
 }
@@ -22,8 +18,8 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         $random = Get-Random
         $dbname = "dbatoolsci_$random"
         $server.Query("CREATE DATABASE $dbname")
-        $server.Query("Create Table Test (col1 varchar(50) PRIMARY KEY, col2 int)",$dbname)
-        $server.Query("Insert into test values ('value1',1),('value2',2)",$dbname)
+        $server.Query("Create Table Test (col1 varchar(50) PRIMARY KEY, col2 int)", $dbname)
+        $server.Query("Insert into test values ('value1',1),('value2',2)", $dbname)
         $server.Query("create statistics dbatools_stats on test (col2)", $dbname)
         $server.Query("select * from test", $dbname)
     }
@@ -46,12 +42,12 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
     }
     Context "Command works when including statistics" {
-        $results = Get-DbaHelpIndex -SqlInstance $script:instance2 -Database $dbname -IncludeStats | Where-Object {$_.IndexType -eq 'Statistics'}
+        $results = Get-DbaHelpIndex -SqlInstance $script:instance2 -Database $dbname -IncludeStats | Where-Object {$_.Statistics}
         It 'Results should be returned' {
             $results | Should Not BeNullOrEmpty
         }
         It 'Returns dbatools_stats from test object' {
-            $results.Index | Should Be 'dbatools_stats'
+            $results.Statistics | Should Contain 'dbatools_stats'
         }
     }
     Context "Command output includes data types" {
@@ -68,7 +64,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         It 'Formatted as strings' {
             $results.IndexReads | Should BeOfType 'String'
             $results.IndexUpdates | Should BeOfType 'String'
-            $results.SizeKB | Should BeOfType 'String'
+            $results.Size | Should BeOfType 'String'
             $results.IndexRows | Should BeOfType 'String'
             $results.IndexLookups | Should BeOfType 'String'
             $results.StatsSampleRows | Should BeOfType 'String'
@@ -80,7 +76,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         It 'Formatted as Long' {
             $results.IndexReads | Should BeOfType 'Long'
             $results.IndexUpdates | Should BeOfType 'Long'
-            $results.SizeKB | Should BeOfType 'Long'
+            $results.Size | Should BeOfType 'dbasize'
             $results.IndexRows | Should BeOfType 'Long'
             $results.IndexLookups | Should BeOfType 'Long'
         }

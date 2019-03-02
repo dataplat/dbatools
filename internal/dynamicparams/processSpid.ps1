@@ -25,13 +25,10 @@ $scriptBlock = {
         $instance.EnumProcesses().Spid | Select-Object -Unique | Where-DbaObject -Like "$wordToComplete*" | ForEach-Object {
             if (-not ([string]::IsNullOrWhiteSpace($_))) { New-DbaTeppCompletionResult -CompletionText $_ -ToolTip $_ }
         }
-    }
-    catch {
+    } catch {
         return
-    }
-    finally {
+    } finally {
     }
 }
 
 Register-DbaTeppScriptblock -ScriptBlock $scriptBlock -Name processspid
-

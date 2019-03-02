@@ -14,8 +14,7 @@ Register-DbatoolsConfigValidation -Name "bool" -ScriptBlock {
             $Result.Success = $False
             return $Result
         }
-    }
-    catch {
+    } catch {
         $Result.Message = "Not a boolean: $Value"
         $Result.Success = $False
         return $Result

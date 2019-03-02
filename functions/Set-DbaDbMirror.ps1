@@ -74,7 +74,7 @@ function Set-DbaDbMirror {
 
         Does not prompt for confirmation and sets the state to suspend for the database "dbtools"
 
-#>
+    #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
     param (
         [DbaInstanceParameter[]]$SqlInstance,
@@ -132,4 +132,3 @@ function Set-DbaDbMirror {
         }
     }
 }
-

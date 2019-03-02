@@ -50,7 +50,7 @@ function Get-DbaRgResourcePool {
         Gets the external resource pools on Sql1 and Sql2/sqlexpress instances
 
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [Parameter(ValueFromPipeline)]
@@ -89,4 +89,3 @@ function Get-DbaRgResourcePool {
         }
     }
 }
-

@@ -68,7 +68,7 @@ function Get-DbaXESessionTemplate {
 
         Returns more information about the template, including the full path/filename.
 
-#>
+    #>
 
     [CmdletBinding()]
     param (
@@ -137,4 +137,3 @@ function Get-DbaXESessionTemplate {
         }
     }
 }
-

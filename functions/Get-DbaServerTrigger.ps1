@@ -33,7 +33,7 @@ function Get-DbaServerTrigger {
 
         Returns all server triggers on sql2017
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [Parameter(Mandatory, ValueFromPipeline)]
@@ -64,4 +64,3 @@ function Get-DbaServerTrigger {
         }
     }
 }
-

@@ -55,7 +55,7 @@ function Export-DbaLinkedServer {
 
         Exports the linked servers, without passwords, from sql2017 to the file C:\temp\ls.sql
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [Parameter(Mandatory, ValueFromPipeline)]
@@ -149,4 +149,3 @@ function Export-DbaLinkedServer {
         }
     }
 }
-

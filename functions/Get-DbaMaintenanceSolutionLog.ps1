@@ -67,7 +67,7 @@ function Get-DbaMaintenanceSolutionLog {
 
         Gets the outcome of the IndexOptimize job on sqlserver2014a, the other options are not yet available! sorry
 
-#>
+    #>
     [CmdletBinding(DefaultParameterSetName = "Default")]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseApprovedVerbs", "", Justification = "Internal functions are ignored")]
     param (

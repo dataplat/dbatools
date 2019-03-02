@@ -77,7 +77,7 @@ function Get-DbaAgentJobOutputFile {
         This will return the configured paths to the output files for each of the job step of all the Agent Jobs
         on the SERVERNAME instance and also show the job steps without an output file
 
-#>
+    #>
     [CmdletBinding()]
     param
     (
@@ -90,7 +90,7 @@ function Get-DbaAgentJobOutputFile {
         [ValidateNotNullOrEmpty()]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
-        [Parameter(Mandatory = $false, HelpMessage = 'SQL Credential',
+        [Parameter(HelpMessage = 'SQL Credential',
             ValueFromPipelineByPropertyName = $true,
             ValueFromRemainingArguments = $false,
             Position = 1)]
@@ -137,4 +137,3 @@ function Get-DbaAgentJobOutputFile {
         }
     }
 }
-

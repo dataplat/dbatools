@@ -22,7 +22,7 @@ function Get-BackupAncientHistory {
        Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
-    #>
+       #>
     [CmdletBinding(DefaultParameterSetName = "Default")]
     param (
         [parameter(Mandatory)]
@@ -183,4 +183,3 @@ function Get-BackupAncientHistory {
 
     END {}
 }
-

@@ -78,7 +78,7 @@ function Get-DbaADObject {
 
     Searches in the contoso domain for a ctrlb user, suppressing all error messages and throw exceptions that can be caught instead
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [string[]]$ADObject,
@@ -189,6 +189,3 @@ function Get-DbaADObject {
         }
     }
 }
-
-
-

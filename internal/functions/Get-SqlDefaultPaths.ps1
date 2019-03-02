@@ -2,7 +2,7 @@ function Get-SqlDefaultPaths {
     <#
     .SYNOPSIS
         Internal function. Returns the default data and log paths for SQL Server. Needed because SMO's server.defaultpath is sometimes null.
-#>
+    #>
     [CmdletBinding()]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseSingularNouns", "")]
     param (
@@ -54,5 +54,3 @@ function Get-SqlDefaultPaths {
     $filepath = $filepath.TrimEnd("\")
     return $filepath
 }
-
-

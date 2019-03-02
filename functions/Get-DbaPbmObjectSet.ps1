@@ -47,7 +47,7 @@ function Get-DbaPbmObjectSet {
 
         Uses a credential $cred to connect and return all object sets from the sql2016 PBM instance
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [Alias("ServerInstance", "SqlServer")]
@@ -85,4 +85,3 @@ function Get-DbaPbmObjectSet {
         }
     }
 }
-

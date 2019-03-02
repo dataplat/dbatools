@@ -66,7 +66,7 @@ function Get-DbaCpuRingBuffer {
         PS C:\> Get-DbaCpuRingBuffer -SqlInstance sql2008 -SqlCredential $cred
 
         Connects using sqladmin credential and returns CPU Statistics from sys.dm_os_ring_buffers from sql2008
-#>
+    #>
     [CmdletBinding()]
     Param (
         [parameter(Mandatory, ValueFromPipeline)]
@@ -140,4 +140,3 @@ function Get-DbaCpuRingBuffer {
         }
     }
 }
-

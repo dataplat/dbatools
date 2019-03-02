@@ -46,7 +46,7 @@ function Get-DbaDbCompression {
 
         Returns objects size and current compression level for objects in all databases except the TestDatabase database.
 
-#>
+    #>
     [CmdletBinding(DefaultParameterSetName = "Default")]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
@@ -132,4 +132,3 @@ function Get-DbaDbCompression {
         }
     }
 }
-

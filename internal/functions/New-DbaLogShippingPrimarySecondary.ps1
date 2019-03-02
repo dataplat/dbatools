@@ -48,8 +48,8 @@ function New-DbaLogShippingPrimarySecondary {
 
         .EXAMPLE
             New-DbaLogShippingPrimarySecondary -SqlInstance sql1 -PrimaryDatabase DB1 -SecondaryServer sql2 -SecondaryDatabase DB1_DR
-    #>
-    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "Low")]
+       #>
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
     param (
         [parameter(Mandatory)]
         [Alias("ServerInstance", "SqlServer")]
@@ -132,4 +132,3 @@ function New-DbaLogShippingPrimarySecondary {
     Write-Message -Message "Finished configuring of primary database $PrimaryDatabase to secondary database $SecondaryDatabase." -Level Verbose
 
 }
-

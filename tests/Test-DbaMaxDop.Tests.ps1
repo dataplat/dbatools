@@ -4,15 +4,11 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        $paramCount = 4
-        $defaultParamCount = 11
-        [object[]]$params = (Get-ChildItem function:\Test-DbaMaxDop).Parameters.Keys
-        $knownParameters = 'SqlInstance', 'SqlCredential', 'Detailed', 'EnableException'
-        It "Should contain our specific parameters" {
-            ((Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count) | Should Be $paramCount
-        }
-        It "Should only contain $paramCount parameters" {
-            $params.Count - $defaultParamCount | Should Be $paramCount
+        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
+        [object[]]$knownParameters = 'SqlInstance','SqlCredential','Detailed','EnableException'
+        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
+        It "Should only contain our specific parameters" {
+            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
         }
     }
 }
@@ -32,19 +28,19 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     AfterAll {
         Get-DbaDatabase -SqlInstance $script:instance2 -Database $db1 | Remove-DbaDatabase -Confirm:$false
     }
-    
+
     # Just not messin with this in appveyor
     if ($setupright) {
         Context "Command works on SQL Server 2016 or higher instances" {
             $results = Test-DbaMaxDop -SqlInstance $script:instance2
-            
+
             It "Should have correct properties" {
                 $ExpectedProps = 'ComputerName,InstanceName,SqlInstance,Database,DatabaseMaxDop,CurrentInstanceMaxDop,RecommendedMaxDop,Notes'.Split(',')
                 foreach ($result in $results) {
                     ($result.PSStandardMembers.DefaultDIsplayPropertySet.ReferencedPropertyNames | Sort-Object) | Should Be ($ExpectedProps | Sort-Object)
                 }
             }
-            
+
             It "Should have only one result for database name of dbatoolsci_testMaxDop" {
                 @($results | Where-Object Database -eq dbatoolsci_testMaxDop).Count | Should Be 1
             }

@@ -91,7 +91,7 @@ function Stop-DbaProcess {
 
         Finds processes that were created with dbatools, then kills them.
 
-#>
+    #>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess)]
     param (
         [parameter(Mandatory, ParameterSetName = "Server")]
@@ -152,4 +152,3 @@ function Stop-DbaProcess {
         }
     }
 }
-

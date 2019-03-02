@@ -57,7 +57,7 @@ function Get-DbaDbEncryption {
 
         List all encryption found for all databases including the system databases.
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(ValueFromPipeline, Mandatory)]
@@ -182,4 +182,3 @@ function Get-DbaDbEncryption {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-DbaDatabaseEncryption
     }
 }
-

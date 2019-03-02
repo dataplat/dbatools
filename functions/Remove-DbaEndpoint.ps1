@@ -57,7 +57,7 @@ function Remove-DbaEndpoint {
         PS C:\> Get-DbaEndpoint -SqlInstance sqlserver2012 -Endpoint endpoint1 | Remove-DbaEndpoint
 
         Removes the endpoints returned from the Get-DbaEndpoint function. Prompts for confirmation.
-#>
+    #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
     param (
         [DbaInstanceParameter[]]$SqlInstance,
@@ -96,4 +96,3 @@ function Remove-DbaEndpoint {
         }
     }
 }
-

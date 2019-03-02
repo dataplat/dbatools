@@ -57,7 +57,7 @@ function Set-DbaAgListener {
         PS C:\> Get-DbaAgListener -SqlInstance sql2017 | Out-GridView -Passthru | Set-DbaAgListener -Port 1433 -Confirm:$false
 
         Changes the port for selected AG listeners to 1433. Does not prompt for confirmation.
-#>
+    #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
     param (
         [DbaInstanceParameter[]]$SqlInstance,

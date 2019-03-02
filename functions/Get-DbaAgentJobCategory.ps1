@@ -53,7 +53,7 @@ function Get-DbaAgentJobCategory {
 
         Return all the job categories that have a type MultiServerJob.
 
-#>
+    #>
     [CmdletBinding(DefaultParameterSetName = "Default")]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
@@ -119,4 +119,3 @@ function Get-DbaAgentJobCategory {
     }
 
 }
-

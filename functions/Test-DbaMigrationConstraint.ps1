@@ -69,7 +69,7 @@ function Test-DbaMigrationConstraint {
 
         Only db1 database will be verified for features in use that can't be supported on the destination server.
 
-#>
+    #>
     [CmdletBinding(DefaultParameterSetName = "DbMigration")]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
@@ -296,4 +296,3 @@ function Test-DbaMigrationConstraint {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Test-SqlMigrationConstraint
     }
 }
-

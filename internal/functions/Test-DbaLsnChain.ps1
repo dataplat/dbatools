@@ -25,7 +25,7 @@ function Test-DbaLsnChain {
 
         Checks that the Restore chain in $FilteredFiles is complete and can be fully restored
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
@@ -120,5 +120,3 @@ function Test-DbaLsnChain {
         return $true
     }
 }
-
-

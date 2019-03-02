@@ -38,7 +38,7 @@ function Get-DbaSuspectPage {
 
         Retrieve any records stored for Suspect Pages on the sql2016 SQL Server and the Test database only.
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Position = 0, Mandatory, ValueFromPipeline)]
@@ -101,4 +101,3 @@ function Get-DbaSuspectPage {
         }
     }
 }
-

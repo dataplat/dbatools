@@ -44,7 +44,7 @@ function Get-DbaInstanceUserOption {
 
         Returns SQL Instance user options on sql2 and sql4
 
-#>
+    #>
     [CmdletBinding(DefaultParameterSetName = "Default")]
     param (
         [parameter(Position = 0, Mandatory, ValueFromPipeline)]
@@ -75,4 +75,3 @@ function Get-DbaInstanceUserOption {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-DbaSqlInstanceUserOption
     }
 }
-

@@ -80,7 +80,7 @@ function Start-DbaAgentJob {
 
         Start all the jobs
 
-#>
+    #>
     [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = "Default")]
     param (
         [parameter(Mandatory, ParameterSetName = "Instance")]
@@ -177,4 +177,3 @@ function Start-DbaAgentJob {
         }
     }
 }
-

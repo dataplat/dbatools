@@ -59,7 +59,7 @@ function Stop-DbaEndpoint {
 
         Stops the endpoints returned from the Get-Endpoint command.
 
-#>
+    #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
     param (
         [DbaInstanceParameter[]]$SqlInstance,
@@ -92,4 +92,3 @@ function Stop-DbaEndpoint {
         }
     }
 }
-

@@ -69,7 +69,7 @@ function Get-DbaReportingService {
 
         Calls a Restart method for each Reporting service on computer sql1.
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(ValueFromPipeline, Position = 1)]

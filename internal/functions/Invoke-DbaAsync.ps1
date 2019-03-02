@@ -39,7 +39,7 @@ function Invoke-DbaAsync {
 
         .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-    #>
+       #>
 
     param (
         [Alias('Connection', 'Conn')]
@@ -174,7 +174,7 @@ function Invoke-DbaAsync {
 
             $ds = New-Object system.Data.DataSet
             $da = New-Object system.Data.SqlClient.SqlDataAdapter($cmd)
-            
+
             if ($MessagesToOutput) {
                 $defaultrunspace = [System.Management.Automation.Runspaces.Runspace]::DefaultRunspace
                 $pool = [RunspaceFactory]::CreateRunspacePool(1, [int]$env:NUMBER_OF_PROCESSORS + 1)
@@ -291,5 +291,3 @@ function Invoke-DbaAsync {
 
     }
 }
-
-

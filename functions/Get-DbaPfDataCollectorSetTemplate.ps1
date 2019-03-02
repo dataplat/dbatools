@@ -47,7 +47,7 @@ function Get-DbaPfDataCollectorSetTemplate {
 
         Returns more information about the template, including the full path/filename.
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [string[]]$Path = "$script:PSModuleRoot\bin\perfmontemplates\collectorsets",
@@ -61,6 +61,8 @@ function Get-DbaPfDataCollectorSetTemplate {
         $Pattern = $Pattern.Replace("*", ".*").Replace("..*", ".*")
     }
     process {
+        
+        
         foreach ($directory in $Path) {
             $files = Get-ChildItem "$directory\*.xml"
 
@@ -106,4 +108,3 @@ function Get-DbaPfDataCollectorSetTemplate {
         }
     }
 }
-

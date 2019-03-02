@@ -131,7 +131,7 @@ function Set-DbaCmConnection {
         In this example, the configuration settings will also be reset, since after re-import those will be set to explicit, rather than deriving them from the global settings.
         In many cases, using the default settings is desirable. For specific settings, use New-DbaCmConnection as part of the profile in order to explicitly configure a connection.
 
-#>
+    #>
     [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = 'Credential')]
     param (
         [Parameter(ValueFromPipeline)]
@@ -295,4 +295,3 @@ function Set-DbaCmConnection {
         Write-Message -Level InternalComment -Message "Stopping execution"
     }
 }
-

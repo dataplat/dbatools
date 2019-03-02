@@ -53,7 +53,7 @@ function Suspend-DbaAgDbDataMovement {
 
         Suspends data movement on the selected availability group databases. Does not prompt for confirmation.
 
-#>
+    #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
     param (
         [DbaInstanceParameter[]]$SqlInstance,

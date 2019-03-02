@@ -55,7 +55,7 @@ function Get-DbaLastBackup {
 
         Returns a gridview displaying Server, Database, RecoveryModel, LastFullBackup, LastDiffBackup, LastLogBackup, SinceFull, SinceDiff, SinceLog, Status, DatabaseCreated, DaysSinceDbCreated.
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
@@ -161,4 +161,3 @@ function Get-DbaLastBackup {
         }
     }
 }
-

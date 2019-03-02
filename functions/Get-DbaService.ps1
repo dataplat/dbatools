@@ -19,7 +19,7 @@ function Get-DbaService {
 
     .PARAMETER Type
         Use -Type to collect only services of the desired SqlServiceType.
-        Can be one of the following: "Agent","Browser","Engine","FullText","SSAS","SSIS","SSRS"
+        Can be one of the following: "Agent","Browser","Engine","FullText","SSAS","SSIS","SSRS", "PolyBase"
 
     .PARAMETER ServiceName
         Can be used to specify service names explicitly, without looking for service types/instances.
@@ -88,7 +88,7 @@ function Get-DbaService {
 
         Calls a Restart method for each Engine service on computer sql1.
 
-#>
+    #>
     [CmdletBinding(DefaultParameterSetName = "Search")]
     param (
         [parameter(ValueFromPipeline, Position = 1)]
@@ -99,7 +99,7 @@ function Get-DbaService {
         [string[]]$InstanceName,
         [PSCredential]$Credential,
         [Parameter(ParameterSetName = "Search")]
-        [ValidateSet("Agent", "Browser", "Engine", "FullText", "SSAS", "SSIS", "SSRS")]
+        [ValidateSet("Agent", "Browser", "Engine", "FullText", "SSAS", "SSIS", "SSRS", "PolyBase")]
         [string[]]$Type,
         [Parameter(ParameterSetName = "ServiceName")]
         [string[]]$ServiceName,
@@ -118,6 +118,7 @@ function Get-DbaService {
             @{ Name = "SSAS"; Id = 5 },
             @{ Name = "SSRS"; Id = 6 },
             @{ Name = "Browser"; Id = 7 },
+            @{ Name = "PolyBase"; Id = 10, 11 },
             @{ Name = "Unknown"; Id = 8 }
         )
         if ($PsCmdlet.ParameterSetName -match 'Search') {
@@ -274,4 +275,3 @@ function Get-DbaService {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-DbaSqlService
     }
 }
-

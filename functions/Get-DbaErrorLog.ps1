@@ -82,7 +82,7 @@ function Get-DbaErrorLog {
 
         Returns every log entry found before the date 16 August 2016 from sql101\sharepoint SQL Server instance.
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [Parameter(ValueFromPipeline)]
@@ -143,4 +143,3 @@ function Get-DbaErrorLog {
         }
     }
 }
-

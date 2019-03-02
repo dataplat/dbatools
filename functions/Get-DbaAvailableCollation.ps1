@@ -34,7 +34,7 @@ function Get-DbaAvailableCollation {
 
         Gets all the collations from server sql2016 using NT authentication
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Position = 0, Mandatory, ValueFromPipeline)]
@@ -105,4 +105,3 @@ function Get-DbaAvailableCollation {
         }
     }
 }
-

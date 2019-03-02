@@ -4,15 +4,11 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        $paramCount = 5
-        $defaultParamCount = 13
-        [object[]]$params = (Get-ChildItem function:\New-DbaSsisCatalog).Parameters.Keys
-        $knownParameters = 'SqlInstance','SqlCredential','Password','SsisCatalog','EnableException'
-        It "Should contain our specific parameters" {
-            ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
-        }
-        It "Should only contain $paramCount parameters" {
-            $params.Count - $defaultParamCount | Should Be $paramCount
+        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
+        [object[]]$knownParameters = 'SqlInstance','SqlCredential','Credential','SecurePassword','SsisCatalog','EnableException'
+        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
+        It "Should only contain our specific parameters" {
+            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
         }
     }
 }
@@ -32,8 +28,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
                 if (-not $env:APPVEYOR_REPO_BRANCH) {
                     Write-Warning "$warn"
                 }
-            }
-            else {
+            } else {
                 It "uses the specified database" {
                     $results.SsisCatalog | Should Be $database
                 }

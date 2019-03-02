@@ -72,7 +72,7 @@ function Find-DbaDuplicateIndex {
 
         Finds both duplicate and overlapping indexes on all user databases.
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
@@ -484,4 +484,3 @@ function Find-DbaDuplicateIndex {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-SqlDuplicateIndex
     }
 }
-

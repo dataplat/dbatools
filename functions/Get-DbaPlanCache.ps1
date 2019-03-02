@@ -42,7 +42,7 @@ function Get-DbaPlanCache {
 
         Returns the single use plan cache usage information for SQL Server instance 2017 using login 'sqladmin'
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
@@ -62,7 +62,7 @@ function Get-DbaPlanCache {
     process {
         foreach ($instance in $SqlInstance) {
             try {
-                $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $sqlcredential
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
             } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
@@ -75,5 +75,3 @@ function Get-DbaPlanCache {
         }
     }
 }
-
-

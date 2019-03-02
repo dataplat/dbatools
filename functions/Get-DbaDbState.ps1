@@ -60,7 +60,7 @@ function Get-DbaDbState {
 
         Gets options for all databases of sqlserver2014a and sqlserver2014b instances
 
-#>
+    #>
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseLiteralInitializerForHashtable", "")]
     [CmdletBinding()]
     param (
@@ -132,4 +132,3 @@ FROM sys.databases
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-DbaDatabaseState
     }
 }
-

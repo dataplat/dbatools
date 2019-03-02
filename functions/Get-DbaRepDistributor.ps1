@@ -33,7 +33,7 @@ function Get-DbaRepDistributor {
 
         Retrieve distributor information for servers sql2008 and sqlserver2012.
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Position = 0, Mandatory, ValueFromPipeline)]
@@ -83,4 +83,3 @@ function Get-DbaRepDistributor {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-DbaDistributor
     }
 }
-

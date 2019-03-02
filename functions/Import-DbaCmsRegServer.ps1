@@ -62,7 +62,7 @@ function Import-DbaCmsRegServer {
 
         Imports all registered servers from the hr\Seattle group on sql2008 to the Seattle group on sql2017
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Mandatory)]
@@ -149,4 +149,3 @@ function Import-DbaCmsRegServer {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Import-DbaRegisteredServer
     }
 }
-

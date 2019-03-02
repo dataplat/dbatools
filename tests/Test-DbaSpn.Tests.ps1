@@ -4,15 +4,11 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        $paramCount = 3
-        $defaultParamCount = 11
-        [object[]]$params = (Get-ChildItem function:\Test-DbaSpn).Parameters.Keys
-        $knownParameters = 'ComputerName','Credential','EnableException'
-        It "Should contain our specific parameters" {
-            ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
-        }
-        It "Should only contain $paramCount parameters" {
-            $params.Count - $defaultParamCount | Should Be $paramCount
+        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
+        [object[]]$knownParameters = 'ComputerName','Credential','EnableException'
+        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
+        It "Should only contain our specific parameters" {
+            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
         }
     }
 }
@@ -21,15 +17,15 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     Context "gets spn information" {
         Mock Resolve-DbaNetworkName {
             [pscustomobject]@{
-                InputName         = $env:COMPUTERNAME
-                ComputerName      = $env:COMPUTERNAME
-                IPAddress         = "127.0.0.1"
-                DNSHostName       = $env:COMPUTERNAME
-                DNSDomain         = $env:COMPUTERNAME
-                Domain            = $env:COMPUTERNAME
-                DNSHostEntry      = $env:COMPUTERNAME
-                FQDN              = $env:COMPUTERNAME
-                FullComputerName  = $env:COMPUTERNAME
+                InputName        = $env:COMPUTERNAME
+                ComputerName     = $env:COMPUTERNAME
+                IPAddress        = "127.0.0.1"
+                DNSHostName      = $env:COMPUTERNAME
+                DNSDomain        = $env:COMPUTERNAME
+                Domain           = $env:COMPUTERNAME
+                DNSHostEntry     = $env:COMPUTERNAME
+                FQDN             = $env:COMPUTERNAME
+                FullComputerName = $env:COMPUTERNAME
             }
         }
         $results = Test-DbaSpn -ComputerName $env:COMPUTERNAME -WarningAction SilentlyContinue

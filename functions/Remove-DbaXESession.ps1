@@ -64,7 +64,7 @@ function Remove-DbaXESession {
 
         Removes the sessions returned from the Get-DbaXESession function.
 
-#>
+    #>
     [CmdletBinding(DefaultParameterSetName = 'Session', SupportsShouldProcess, ConfirmImpact = 'High')]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseSingularNouns", "", Justification = "Internal functions are ignored")]
     param (

@@ -22,7 +22,7 @@ function Invoke-TagCommand ([string]$Tag, [string]$Keyword) {
     Tag-Command -Tag SQLWMI -Keyword Invoke-ManagedComputerCommand
     Tag-Command -Tag WSMan -Keyword Invoke-Command
 
-#>
+    #>
 
     $tagsRex = ([regex]'(?m)^[\s]{0,15}Tags:(.*)$')
     $modulepath = (Get-Module -Name dbatools).Path
@@ -79,5 +79,3 @@ function Invoke-TagCommand ([string]$Tag, [string]$Keyword) {
         }
     }
 }
-
-

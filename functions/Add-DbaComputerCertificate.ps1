@@ -13,7 +13,7 @@ function Add-DbaComputerCertificate {
     .PARAMETER Credential
         Allows you to login to $ComputerName using alternative credentials.
 
-    .PARAMETER Password
+    .PARAMETER SecurePassword
         The password for the certificate, if it is password protected.
 
     .PARAMETER Certificate
@@ -57,13 +57,14 @@ function Add-DbaComputerCertificate {
 
         Adds the local C:\temp\cert.cer to the local computer's LocalMachine\My (Personal) certificate store.
 
-#>
-    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "High")]
+    #>
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
     param (
         [Alias("ServerInstance", "SqlServer", "SqlInstance")]
         [DbaInstance[]]$ComputerName = $env:COMPUTERNAME,
         [PSCredential]$Credential,
-        [SecureString]$Password,
+        [Alias("Password")]
+        [SecureString]$SecurePassword,
         [parameter(ValueFromPipeline)]
         [System.Security.Cryptography.X509Certificates.X509Certificate2[]]$Certificate,
         [string]$Path,
@@ -85,7 +86,7 @@ function Add-DbaComputerCertificate {
                 # This may be too much, but oh well
                 $bytes = [System.IO.File]::ReadAllBytes($Path)
                 $Certificate = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2
-                $Certificate.Import($bytes, $Password, [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::DefaultKeySet)
+                $Certificate.Import($bytes, $SecurePassword, [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::DefaultKeySet)
             } catch {
                 Stop-Function -Message "Can't import certificate." -ErrorRecord $_
                 return
@@ -98,7 +99,7 @@ function Add-DbaComputerCertificate {
             param (
                 $CertificateData,
 
-                [SecureString]$Password,
+                [SecureString]$SecurePassword,
 
                 $Store,
 
@@ -106,7 +107,7 @@ function Add-DbaComputerCertificate {
             )
 
             $cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2
-            $cert.Import($CertificateData, $Password, [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::DefaultKeySet)
+            $cert.Import($CertificateData, $SecurePassword, [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::DefaultKeySet)
             Write-Message -Level Verbose -Message "Importing cert to $Folder\$Store"
             $tempStore = New-Object System.Security.Cryptography.X509Certificates.X509Store($Folder, $Store)
             $tempStore.Open('ReadWrite')
@@ -129,7 +130,7 @@ function Add-DbaComputerCertificate {
         foreach ($cert in $Certificate) {
 
             try {
-                $certData = $cert.Export([System.Security.Cryptography.X509Certificates.X509ContentType]::PFX, $Password)
+                $certData = $cert.Export([System.Security.Cryptography.X509Certificates.X509ContentType]::PFX, $SecurePassword)
             } catch {
                 Stop-Function -Message "Can't export certificate" -ErrorRecord $_ -Continue
             }
@@ -138,7 +139,7 @@ function Add-DbaComputerCertificate {
 
                 if ($PSCmdlet.ShouldProcess("local", "Connecting to $computer to import cert")) {
                     try {
-                        Invoke-Command2 -ComputerName $computer -Credential $Credential -ArgumentList $certdata, $Password, $Store, $Folder -ScriptBlock $scriptblock -ErrorAction Stop |
+                        Invoke-Command2 -ComputerName $computer -Credential $Credential -ArgumentList $certdata, $SecurePassword, $Store, $Folder -ScriptBlock $scriptblock -ErrorAction Stop |
                             Select-DefaultView -Property FriendlyName, DnsNameList, Thumbprint, NotBefore, NotAfter, Subject, Issuer
                     } catch {
                         Stop-Function -Message "Failure" -ErrorRecord $_ -Target $computer -Continue
@@ -148,4 +149,3 @@ function Add-DbaComputerCertificate {
         }
     }
 }
-

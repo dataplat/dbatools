@@ -45,7 +45,7 @@ function New-DbaXESmartReplay {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: ExtendedEvent, XE, XEvent
+        Tags: ExtendedEvent, XE, XEvent, SmartTarget
         Author: Chrissy LeMaire (@cl) | SmartTarget by Gianluca Sartori (@spaghettidba)
 
         Website: https://dbatools.io
@@ -69,7 +69,7 @@ function New-DbaXESmartReplay {
 
         Replays events from the 'Profiler Standard' session on sql2016 to sql2017's planning database. Does not run as a job so you can see the raw output.
 
-#>
+    #>
     [CmdletBinding(SupportsShouldProcess)]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
@@ -127,4 +127,3 @@ function New-DbaXESmartReplay {
         }
     }
 }
-

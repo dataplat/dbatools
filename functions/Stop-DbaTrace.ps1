@@ -53,7 +53,7 @@ function Stop-DbaTrace {
 
         Stops selected traces on sql2008
 
-#>
+    #>
     [CmdletBinding(SupportsShouldProcess)]
     param (
         [Alias("ServerInstance", "SqlServer")]
@@ -125,4 +125,3 @@ function Stop-DbaTrace {
         }
     }
 }
-

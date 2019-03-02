@@ -58,7 +58,7 @@ function Get-DbaSpinLockStatistic {
         PS C:\> Get-DbaSpinLockStatistic -SqlInstance sql2008 -SqlCredential $cred
 
         Connects using sqladmin credential and returns SpinLock Statistics from sql2008
-#>
+    #>
     [CmdletBinding()]
     Param (
         [parameter(Mandatory, ValueFromPipeline)]
@@ -110,4 +110,3 @@ function Get-DbaSpinLockStatistic {
         }
     }
 }
-

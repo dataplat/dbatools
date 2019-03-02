@@ -50,7 +50,7 @@ function Read-DbaTransactionLog {
 
         Will read the contents of the transaction log of MyDatabase on SQL Server Instance sql2016 into the local PowerShell object $Log, ignoring the recommendation of not returning more that 0.5GB of log
 
-#>
+    #>
     [CmdletBinding(DefaultParameterSetName = "Default")]
     param (
         [parameter(Position = 0, Mandatory)]
@@ -77,14 +77,15 @@ function Read-DbaTransactionLog {
         return
     }
 
-    if ($server.databases[$Database].Status -ne 'Normal') {
+    if ('Normal' -notin ($server.databases[$Database].Status -split ',')) {
         Stop-Function -Message "$Database is not in a normal State, command will not run."
         return
     }
 
     if ($RowLimit -gt 0) {
-        Write-Message -Message "Limiting reults to $RowLimit rows" -Level Verbose
+        Write-Message -Message "Limiting results to $RowLimit rows" -Level Verbose
         $RowLimitSql = " TOP $RowLimit "
+        $IgnoreLimit = $true
     } else {
         $RowLimitSql = ""
     }
@@ -111,4 +112,3 @@ function Read-DbaTransactionLog {
     $server.Query($sql, $Database)
 
 }
-

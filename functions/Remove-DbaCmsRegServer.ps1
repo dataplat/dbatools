@@ -64,7 +64,7 @@ function Remove-DbaCmsRegServer {
 
         Removes all registered servers on sql2012 and turns off all prompting
 
-#>
+    #>
 
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
     param (
@@ -110,4 +110,3 @@ function Remove-DbaCmsRegServer {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Remove-DbaRegisteredServer
     }
 }
-

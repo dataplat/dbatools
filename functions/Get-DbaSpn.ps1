@@ -48,15 +48,13 @@ function Get-DbaSpn {
 
         Returns a custom object with SearchTerm (ServerName) and the SPNs that were found for multiple computers
 
-#>
+    #>
     [cmdletbinding()]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseApprovedVerbs", "", Justification = "Internal functions are ignored")]
     param (
-        [Parameter(Mandatory = $false, ValueFromPipeline)]
+        [Parameter(ValueFromPipeline)]
         [string[]]$ComputerName,
-        [Parameter(Mandatory = $false)]
         [string[]]$AccountName,
-        [Parameter(Mandatory = $false)]
         [PSCredential]$Credential,
         [Alias('Silent')]
         [switch]$EnableException

@@ -13,7 +13,7 @@ function Get-CodePage {
             Get-CodePage 1252
 
             Returns a pscustomobject with id, alias and name
-    #>
+       #>
     [CmdletBinding()]
     param (
         [int]$id
@@ -24,5 +24,3 @@ function Get-CodePage {
         Select-DefaultView -InputObject $encoding -Property $IncludeProps
     }
 }
-
-

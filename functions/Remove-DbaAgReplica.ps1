@@ -54,7 +54,7 @@ function Remove-DbaAgReplica {
 
         Returns full object properties on all availability group replicas found on sql2017a
 
-#>
+    #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
     param (
         [DbaInstanceParameter[]]$SqlInstance,
@@ -78,7 +78,7 @@ function Remove-DbaAgReplica {
         foreach ($agreplica in $InputObject) {
             if ($Pscmdlet.ShouldProcess($agreplica.Parent.Parent.Name, "Removing availability group replica $agreplica")) {
                 try {
-                    $agreplica.Parent.AvailabilityGroupReplicas[$agreplica.Name].Drop()
+                    $agreplica.Drop()
                     [pscustomobject]@{
                         ComputerName      = $agreplica.ComputerName
                         InstanceName      = $agreplica.InstanceName

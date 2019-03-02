@@ -49,7 +49,7 @@ function Enable-DbaForceNetworkEncryption {
 
         Shows what would happen if the command were executed.
 
-#>
+    #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low", DefaultParameterSetName = 'Default')]
     param (
         [Parameter(ValueFromPipeline)]
@@ -138,4 +138,3 @@ function Enable-DbaForceNetworkEncryption {
         }
     }
 }
-

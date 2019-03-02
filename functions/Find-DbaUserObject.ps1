@@ -53,7 +53,7 @@ function Find-DbaUserObject {
 
         Shows all user owned (non-sa, non-dbo) objects and verbose output
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Position = 0, Mandatory, ValueFromPipeline)]
@@ -325,4 +325,3 @@ function Find-DbaUserObject {
         }
     }
 }
-

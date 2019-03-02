@@ -28,7 +28,7 @@ function Copy-DbaLogin {
     .PARAMETER ExcludeLogin
         The login(s) to exclude. Options for this list are auto-populated from the server.
 
-    .PARAMETER ExcludeSystemLogin
+    .PARAMETER ExcludeSystemLogins
         If this switch is enabled, NT SERVICE accounts will be skipped.
 
     .PARAMETER ExcludePermissionSync
@@ -116,16 +116,16 @@ function Copy-DbaLogin {
         If a matching Login does not exist on Destination, the Login will be skipped.
 
     .EXAMPLE
-        PS C:\> Copy-DbaLogin -LoginRenameHashtable @{ "OldUser" = "newlogin" } -Source $Sql01 -Destination Localhost -SourceSqlCredential $sqlcred
+        PS C:\> Copy-DbaLogin -LoginRenameHashtable @{ "PreviousUser" = "newlogin" } -Source $Sql01 -Destination Localhost -SourceSqlCredential $sqlcred
 
-        Copies OldUser and then renames it to newlogin.
+        Copies PreviousUser and then renames it to newlogin.
 
     .EXAMPLE
         PS C:\> Get-DbaLogin -SqlInstance sql2016 | Out-GridView -Passthru | Copy-DbaLogin -Destination sql2017
 
         Displays all available logins on sql2016 in a grid view, then copies all selected logins to sql2017.
 
-#>
+    #>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess)]
     param (
         [parameter(ParameterSetName = "SqlInstance", Mandatory)]
@@ -136,7 +136,7 @@ function Copy-DbaLogin {
         [PSCredential]$DestinationSqlCredential,
         [object[]]$Login,
         [object[]]$ExcludeLogin,
-        [switch]$ExcludeSystemLogin,
+        [switch]$ExcludeSystemLogins,
         [switch]$SyncOnly,
         [parameter(ParameterSetName = "Live")]
         [parameter(ParameterSetName = "SqlInstance")]
@@ -208,9 +208,9 @@ function Copy-DbaLogin {
                         }
                         continue
                     } else {
-                        if ($ExcludeSystemLogin) {
-                            if ($Pscmdlet.ShouldProcess("console", "$userName was skipped because ExcludeSystemLogin was specified.")) {
-                                Write-Message -Level Verbose -Message "$userName was skipped because ExcludeSystemLogin was specified."
+                        if ($ExcludeSystemLogins) {
+                            if ($Pscmdlet.ShouldProcess("console", "$userName was skipped because ExcludeSystemLogins was specified.")) {
+                                Write-Message -Level Verbose -Message "$userName was skipped because ExcludeSystemLogins was specified."
 
                                 $copyLoginStatus.Status = "Skipped"
                                 $copyLoginStatus.Notes = "System login"
@@ -229,7 +229,7 @@ function Copy-DbaLogin {
                     if ($Pscmdlet.ShouldProcess("console", "Stating $userName is skipped because it exists at destination.")) {
                         Write-Message -Level Verbose -Message "$userName already exists in destination. Use -Force to drop and recreate."
                         $copyLoginStatus.Status = "Skipped"
-                        $copyLoginStatus.Notes = "Already exists"
+                        $copyLoginStatus.Notes = "Already exists on destination"
                         $copyLoginStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                     }
                     continue
@@ -551,4 +551,3 @@ function Copy-DbaLogin {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-SqlLogin
     }
 }
-

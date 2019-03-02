@@ -80,7 +80,7 @@ function Get-DbaDbLogShipError {
         Get the errors that have occurred between "01/05/2018" and "01/07/2018".
         See that is doesn't matter how the date is represented.
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
@@ -224,4 +224,3 @@ DROP TABLE #DatabaseID;"
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Get-DbaLogShippingError
     }
 }
-

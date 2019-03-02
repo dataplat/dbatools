@@ -38,7 +38,7 @@ function Find-DbaCommand {
 
     .NOTES
         Tags: Find, Help, Command
-        Author: Simone Bizzotto (@niphold)
+        Author: Simone Bizzotto (@niphlod)
 
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
@@ -82,8 +82,8 @@ function Find-DbaCommand {
 
         Finds all commands searching the entire help for "snapshot", rebuilding the index (good for developers)
 
-#>
-    [CmdletBinding(SupportsShouldProcess = $true)]
+    #>
+    [CmdletBinding(SupportsShouldProcess)]
     param (
         [String]$Pattern,
         [String[]]$Tag,
@@ -105,10 +105,16 @@ function Find-DbaCommand {
         $maxverRex = ([regex]'(?m)^[\s]{0,15}MaximumVersion:(.*)$')
 
         function Get-DbaHelp([String]$commandName) {
+            $availability = 'Windows, Linux, macOS'
+            if ($commandName -in $script:noncoresmo -or $commandName -in $script:windowsonly) {
+                $availability = 'Windows only'
+            }
             $thishelp = Get-Help $commandName -Full
             $thebase = @{ }
             $thebase.CommandName = $commandName
             $thebase.Name = $thishelp.Name
+
+            $thebase.Availability = $availability
 
             $alias = Get-Alias -Definition $commandName -ErrorAction SilentlyContinue
             $thebase.Alias = $alias.Name -Join ','
@@ -223,4 +229,3 @@ function Find-DbaCommand {
         Select-DefaultView -InputObject $result -Property CommandName, Synopsis
     }
 }
-

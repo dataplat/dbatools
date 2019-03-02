@@ -55,7 +55,7 @@ function Get-DbaDbMailConfig {
 
         Returns the DBMail configs for "sql2014","sql2016" and "sqlcluster\sharepoint"
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [Alias("ServerInstance", "SqlServer")]
@@ -96,4 +96,3 @@ function Get-DbaDbMailConfig {
         }
     }
 }
-

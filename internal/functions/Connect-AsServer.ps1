@@ -21,7 +21,7 @@ License: MIT https://opensource.org/licenses/MIT
 Connect-AsServer -AsServer localhost
 Connects to SSAS on the local server
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [Parameter(Mandatory)]
@@ -58,5 +58,3 @@ Connects to SSAS on the local server
 
     return $server
 }
-
-

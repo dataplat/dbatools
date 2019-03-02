@@ -93,7 +93,7 @@ function Remove-DbaDbSnapshot {
 
         Removes all database snapshots from sql2014 and prompts for each database
 
-#>
+    #>
     [CmdletBinding(SupportsShouldProcess)]
     param (
         [Alias("ServerInstance", "SqlServer")]
@@ -172,4 +172,3 @@ function Remove-DbaDbSnapshot {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Remove-DbaDatabaseSnapshot
     }
 }
-

@@ -4,24 +4,11 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 
 Describe "$commandname Unit Tests" -Tag "UnitTests", Set-DbaMaxDop {
     Context "Validate parameters" {
-        $knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'MaxDop', 'Collection', 'AllDatabases', 'EnableException'
-        $SupportShouldProcess = $true
-        $paramCount = $knownParameters.Count
-        if ($SupportShouldProcess) {
-            $defaultParamCount = 13
-        }
-        else {
-            $defaultParamCount = 11
-        }
-        $command = Get-Command -Name $CommandName
-        [object[]]$params = $command.Parameters.Keys
-
-        It "Should contain our specific parameters" {
-            ((Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count) | Should Be $paramCount
-        }
-
-        It "Should only contain $paramCount parameters" {
-            $params.Count - $defaultParamCount | Should Be $paramCount
+        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
+        [object[]]$knownParameters = 'SqlInstance','SqlCredential','Database','ExcludeDatabase','MaxDop','InputObject','AllDatabases','EnableException'
+        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
+        It "Should only contain our specific parameters" {
+            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
         }
     }
 
@@ -34,10 +21,10 @@ Describe "$commandname Unit Tests" -Tag "UnitTests", Set-DbaMaxDop {
         }
         It "Validates that Stop Function Mock has been called" {
             $assertMockParams = @{
-                'CommandName'  = 'Stop-Function'
-                'Times'        = 1
-                'Exactly'      = $true
-                'Module'       = 'dbatools'
+                'CommandName' = 'Stop-Function'
+                'Times'       = 1
+                'Exactly'     = $true
+                'Module'      = 'dbatools'
             }
             Assert-MockCalled @assertMockParams
         }

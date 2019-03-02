@@ -61,7 +61,7 @@ function Get-DbaServerInstallDate {
 
         Returns an object with SQL Instance install date as a string for every server listed in the Central Management Server on sql2014
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
@@ -122,4 +122,3 @@ function Get-DbaServerInstallDate {
         }
     }
 }
-

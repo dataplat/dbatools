@@ -45,7 +45,7 @@ function Get-DbaAgentSchedule {
         PS C:\> Get-DbaAgentSchedule -SqlInstance sql2016 -Schedule "Maintenance10min","Maintenance60min"
 
         Returns the "Maintenance10min" & "Maintenance60min" schedules from the sql2016 SQL Server instance
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Position = 0, Mandatory, ValueFromPipeline)]
@@ -252,14 +252,13 @@ function Get-DbaAgentSchedule {
         foreach ($schedule in $scheduleCollection) {
             $description = Get-ScheduleDescription -Schedule $schedule
 
-            Add-Member -Force -InputObject $schedule -MemberType NoteProperty ComputerName -value $server.ComputerName
-            Add-Member -Force -InputObject $schedule -MemberType NoteProperty InstanceName -value $server.ServiceName
-            Add-Member -Force -InputObject $schedule -MemberType NoteProperty SqlInstance -value $server.DomainInstanceName
-            Add-Member -Force -InputObject $schedule -MemberType NoteProperty Description -Value $description
+            $schedule | Add-Member -Type NoteProperty -Name ComputerName -Value $server.ComputerName
+            $schedule | Add-Member -Type NoteProperty -Name InstanceName -Value $server.ServiceName
+            $schedule | Add-Member -Type NoteProperty -Name SqlInstance -Value $server.DomainInstanceName
+            $schedule | Add-Member -Type NoteProperty -Name Description -Value $description
 
             Select-DefaultView -InputObject $schedule -Property $defaults
         }
 
     }
 }
-

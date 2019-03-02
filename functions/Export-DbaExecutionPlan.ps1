@@ -79,8 +79,8 @@ function Export-DbaExecutionPlan {
 
         Gets all execution plans for sqlserver2014a. Then shows what would happen if the results where piped to Export-DbaExecutionPlan
 
-#>
-    [cmdletbinding(SupportsShouldProcess = $true, DefaultParameterSetName = "Default")]
+    #>
+    [cmdletbinding(SupportsShouldProcess, DefaultParameterSetName = "Default")]
     param (
         [parameter(ParameterSetName = 'NotPiped', Mandatory)]
         [Alias("ServerInstance", "SqlServer")]
@@ -249,4 +249,3 @@ function Export-DbaExecutionPlan {
         }
     }
 }
-

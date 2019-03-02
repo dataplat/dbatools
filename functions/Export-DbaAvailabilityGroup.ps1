@@ -67,8 +67,8 @@ function Export-DbaAvailabilityGroup {
 
         Exports all Availability Groups from SQL server "sql2014". Output scripts are written to the C:\temp\availability_group_exports directory. If the export file already exists it will not be overwritten.
 
-#>
-    [CmdletBinding(SupportsShouldProcess = $true)]
+    #>
+    [CmdletBinding(SupportsShouldProcess)]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
@@ -170,4 +170,3 @@ function Export-DbaAvailabilityGroup {
         }
     }
 }
-

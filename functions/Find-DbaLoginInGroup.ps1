@@ -47,7 +47,7 @@ function Find-DbaLoginInGroup {
 
         Returns all active directory users within all windows AD groups that have logins on the instance whose login contains "stephen"
 
-#>
+    #>
     [CmdletBinding()]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseSingularNouns", "", Justification = "Internal functions are ignored")]
     param (

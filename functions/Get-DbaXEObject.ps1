@@ -46,7 +46,7 @@ function Get-DbaXEObject {
 
         Lists all the XE Objects of type Action and Event on the sql2017 SQL Server.
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Position = 0, Mandatory, ValueFromPipeline)]
@@ -109,5 +109,3 @@ function Get-DbaXEObject {
         }
     }
 }
-
-

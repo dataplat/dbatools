@@ -4,15 +4,11 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        $paramCount = 45
-        $defaultParamCount = 13
-        [object[]]$params = (Get-ChildItem function:\Restore-DbaDatabase).Parameters.Keys
-        $knownParameters = 'SqlInstance','SqlCredential','Path','DatabaseName','DestinationDataDirectory','DestinationLogDirectory','DestinationFileStreamDirectory','RestoreTime','NoRecovery','WithReplace','XpDirTree','OutputScriptOnly','VerifyOnly','MaintenanceSolutionBackup','FileMapping','IgnoreLogBackup','useDestinationDefaultDirectories','ReuseSourceFolderStructure','DestinationFilePrefix','RestoredDatabaseNamePrefix','TrustDbBackupHistory','MaxTransferSize','BlockSize','BufferCount','DirectoryRecurse','EnableException','StandbyDirectory','Continue','AzureCredential','ReplaceDbNameInFile','DestinationFileSuffix','Recover','KeepCDC','AllowContinue','GetBackupInformation','StopAfterGetBackupInformation','SelectBackupInformation','StopAfterSelectBackupInformation','FormatBackupInformation','StopAfterFormatBackupInformation','TestBackupInformation','StopAfterTestBackupInformation','PageRestore','PageRestoreTailFolder','StatementTimeout'
-        It "Should contain our specific parameters" {
-            ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
-        }
-        It "Should only contain $paramCount parameters" {
-            $params.Count - $defaultParamCount | Should Be $paramCount
+        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
+        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Path', 'DatabaseName', 'DestinationDataDirectory', 'DestinationLogDirectory', 'DestinationFileStreamDirectory', 'RestoreTime', 'NoRecovery', 'WithReplace', 'XpDirTree', 'OutputScriptOnly', 'VerifyOnly', 'MaintenanceSolutionBackup', 'FileMapping', 'IgnoreLogBackup', 'UseDestinationDefaultDirectories', 'ReuseSourceFolderStructure', 'DestinationFilePrefix', 'RestoredDatabaseNamePrefix', 'TrustDbBackupHistory', 'MaxTransferSize', 'BlockSize', 'BufferCount', 'DirectoryRecurse', 'EnableException', 'StandbyDirectory', 'Continue', 'AzureCredential', 'ReplaceDbNameInFile', 'DestinationFileSuffix', 'Recover', 'KeepCDC', 'AllowContinue', 'GetBackupInformation', 'StopAfterGetBackupInformation', 'SelectBackupInformation', 'StopAfterSelectBackupInformation', 'FormatBackupInformation', 'StopAfterFormatBackupInformation', 'TestBackupInformation', 'StopAfterTestBackupInformation', 'PageRestore', 'PageRestoreTailFolder', 'StatementTimeout'
+        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
+        It "Should only contain our specific parameters" {
+            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
         }
     }
 }
@@ -26,7 +22,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     New-Item -ItemType Directory $LogFolder -ErrorAction SilentlyContinue
 
     Context "Properly restores a database on the local drive using Path" {
-        $null = Get-DbaDatabase -SqlInstance $script:instance2 -ExcludeAllSystemDb | Remove-DbaDatabase -Confirm:$false
+        $null = Get-DbaDatabase -SqlInstance $script:instance2 -ExcludeSystem | Remove-DbaDatabase -Confirm:$false
         $results = Restore-DbaDatabase -SqlInstance $script:instance2 -Path $script:appveyorlabrepo\singlerestore\singlerestore.bak
         It "Should Return the proper backup file location" {
             $results.BackupFile | Should Be "$script:appveyorlabrepo\singlerestore\singlerestore.bak"
@@ -39,7 +35,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     Context "Ensuring warning is thrown if database already exists" {
         $results = Restore-DbaDatabase -SqlInstance $script:instance2 -Path $script:appveyorlabrepo\singlerestore\singlerestore.bak -WarningVariable warning -WarningAction SilentlyContinue
         It "Should warn" {
-            $warning | Where-Object { $_ -like '*Test-DbaBackupInformation*Database*' } | Should Match "exists and WithReplace not specified, stopping"
+            $warning | Where-Object { $_ -like '*Test-DbaBackupInformation*Database*' } | Should Match "exists, so WithReplace must be specified"
         }
         It "Should not return object" {
             $results | Should Be $null
@@ -56,7 +52,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         }
     }
 
-    Get-DbaProcess $script:instance2 -NoSystemSpid | Stop-DbaProcess -WarningVariable warn -WarningAction SilentlyContinue
+    Get-DbaProcess $script:instance2 -ExcludeSystemSpids | Stop-DbaProcess -WarningVariable warn -WarningAction SilentlyContinue
     Context "Properly restores a database on the local drive using piped Get-ChildItem results" {
         $results = Get-ChildItem $script:appveyorlabrepo\singlerestore\singlerestore.bak | Restore-DbaDatabase -SqlInstance $script:instance2
         It "Should Return the proper backup file location" {
@@ -74,7 +70,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         }
     }
 
-    Get-DbaProcess $script:instance2 -NoSystemSpid | Stop-DbaProcess -WarningVariable warn -WarningAction SilentlyContinue
+    Get-DbaProcess $script:instance2 -ExcludeSystemSpids | Stop-DbaProcess -WarningVariable warn -WarningAction SilentlyContinue
     Context "Database is properly removed again after gci tests" {
         $results = Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance2 -Database singlerestore
         It "Should say the status was dropped" {
@@ -98,7 +94,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
 
     }
 
-    Get-DbaProcess $script:instance2 -NoSystemSpid | Stop-DbaProcess -WarningVariable warn -WarningAction SilentlyContinue
+    Get-DbaProcess $script:instance2 -ExcludeSystemSpids | Stop-DbaProcess -WarningVariable warn -WarningAction SilentlyContinue
     Clear-DbaConnectionPool
     Start-Sleep -Seconds 2
 
@@ -126,7 +122,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         }
     }
 
-    Get-DbaProcess $script:instance2 -NoSystemSpid | Stop-DbaProcess -WarningVariable warn -WarningAction SilentlyContinue
+    Get-DbaProcess $script:instance2 -ExcludeSystemSpids | Stop-DbaProcess -WarningVariable warn -WarningAction SilentlyContinue
     Context "Database is properly removed again post prefix and suffix tests" {
         $results = Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance2 -Database singlerestore
         It "Should say the status was dropped" {
@@ -154,7 +150,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         }
     }
 
-    Get-DbaProcess $script:instance2 -NoSystemSpid | Stop-DbaProcess -WarningVariable warn -WarningAction SilentlyContinue
+    Get-DbaProcess $script:instance2 -ExcludeSystemSpids | Stop-DbaProcess -WarningVariable warn -WarningAction SilentlyContinue
     Clear-DbaConnectionPool
     Start-Sleep -Seconds 2
 
@@ -226,7 +222,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         }
     }
 
-    Get-DbaProcess $script:instance2 -NoSystemSpid | Stop-DbaProcess -WarningVariable warn -WarningAction SilentlyContinue
+    Get-DbaProcess $script:instance2 -ExcludeSystemSpids | Stop-DbaProcess -WarningVariable warn -WarningAction SilentlyContinue
     Clear-DbaConnectionPool
     Start-Sleep -Seconds 5
     Clear-DbaConnectionPool
@@ -243,10 +239,10 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     }
 
     Context "Database is properly removed again after ola pipe test" {
-        Get-DbaProcess $script:instance2 -NoSystemSpid | Stop-DbaProcess -WarningVariable warn -WarningAction SilentlyContinue
-        $results = Get-DbaDatabase -SqlInstance $script:instance2 -ExcludeAllSystemDb | Remove-DbaDatabase -Confirm:$false
-        Get-DbaProcess $script:instance2 -NoSystemSpid | Stop-DbaProcess -WarningVariable warn -WarningAction SilentlyContinue
-        $results = Get-DbaDatabase -SqlInstance $script:instance2 -ExcludeAllSystemDb | Remove-DbaDatabase -Confirm:$false
+        Get-DbaProcess $script:instance2 -ExcludeSystemSpids | Stop-DbaProcess -WarningVariable warn -WarningAction SilentlyContinue
+        $results = Get-DbaDatabase -SqlInstance $script:instance2 -ExcludeSystem | Remove-DbaDatabase -Confirm:$false
+        Get-DbaProcess $script:instance2 -ExcludeSystemSpids | Stop-DbaProcess -WarningVariable warn -WarningAction SilentlyContinue
+        $results = Get-DbaDatabase -SqlInstance $script:instance2 -ExcludeSystem | Remove-DbaDatabase -Confirm:$false
 
         It "Should say the status was dropped or null" {
             foreach ($result in $results) {
@@ -266,22 +262,22 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         }
     }
 
-    Get-DbaProcess $script:instance2 -NoSystemSpid | Stop-DbaProcess -WarningVariable warn -WarningAction SilentlyContinue
+    Get-DbaProcess $script:instance2 -ExcludeSystemSpids | Stop-DbaProcess -WarningVariable warn -WarningAction SilentlyContinue
 
     Context "All user databases are removed post ola-style test" {
-        $results = Get-DbaDatabase -SqlInstance $script:instance2 -ExcludeAllSystemDb | Remove-DbaDatabase -Confirm:$false
+        $results = Get-DbaDatabase -SqlInstance $script:instance2 -ExcludeSystem | Remove-DbaDatabase -Confirm:$false
         It -Skip "Should say the status was dropped" {
             $results | ForEach-Object { $_.Status | Should Be "Dropped" }
         }
     }
 
-    Get-DbaProcess $script:instance2 -NoSystemSpid | Stop-DbaProcess -WarningVariable warn -WarningAction SilentlyContinue
+    Get-DbaProcess $script:instance2 -ExcludeSystemSpids | Stop-DbaProcess -WarningVariable warn -WarningAction SilentlyContinue
     Clear-DbaConnectionPool
     Start-Sleep -Seconds 2
 
     Context "RestoreTime setup checks" {
         $results = Restore-DbaDatabase -SqlInstance $script:instance2 -path $script:appveyorlabrepo\RestoreTimeClean
-        $sqlResults = Invoke-Sqlcmd2 -ServerInstance $script:instance2 -Query "select convert(datetime,convert(varchar(20),max(dt),120)) as maxdt, convert(datetime,convert(varchar(20),min(dt),120)) as mindt from RestoreTimeClean.dbo.steps"
+        $sqlResults = Invoke-DbaQuery -SqlInstance $script:instance2 -Query "select convert(datetime,convert(varchar(20),max(dt),120)) as maxdt, convert(datetime,convert(varchar(20),min(dt),120)) as mindt from RestoreTimeClean.dbo.steps"
         It "Should restore cleanly" {
             ($results.RestoreComplete -contains $false) | Should Be $false
             ($results.count -gt 0) | Should be $True
@@ -301,7 +297,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     Start-Sleep -Seconds 1
 
     Context "All user databases are removed post RestoreTime check" {
-        $results = Get-DbaDatabase -SqlInstance $script:instance2 -ExcludeAllSystemDb | Remove-DbaDatabase -Confirm:$false
+        $results = Get-DbaDatabase -SqlInstance $script:instance2 -ExcludeSystem | Remove-DbaDatabase -Confirm:$false
         It "Should say the status was dropped" {
             Foreach ($db in $results) { $db.Status | Should Be "Dropped" }
         }
@@ -312,7 +308,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
 
     Context "RestoreTime point in time" {
         $results = Restore-DbaDatabase -SqlInstance $script:instance2 -path $script:appveyorlabrepo\RestoreTimeClean -RestoreTime (get-date "2017-06-01 13:22:44")
-        $sqlResults = Invoke-Sqlcmd2 -ServerInstance $script:instance2 -Query "select convert(datetime,convert(varchar(20),max(dt),120)) as maxdt, convert(datetime,convert(varchar(20),min(dt),120)) as mindt from RestoreTimeClean.dbo.steps"
+        $sqlResults = Invoke-DbaQuery -SqlInstance $script:instance2 -Query "select convert(datetime,convert(varchar(20),max(dt),120)) as maxdt, convert(datetime,convert(varchar(20),min(dt),120)) as mindt from RestoreTimeClean.dbo.steps"
         It "Should have restored 4 files" {
             $results.count | Should be 4
         }
@@ -325,7 +321,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     }
 
     Context "All user databases are removed" {
-        $results = Get-DbaDatabase -SqlInstance $script:instance2 -ExcludeAllSystemDb | Remove-DbaDatabase -Confirm:$false
+        $results = Get-DbaDatabase -SqlInstance $script:instance2 -ExcludeSystem | Remove-DbaDatabase -Confirm:$false
         It -Skip "Should say the status was dropped post point in time test" {
             Foreach ($db in $results) { $db.Status | Should Be "Dropped" }
         }
@@ -336,7 +332,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
 
     Context "RestoreTime point in time with Simple Model" {
         $results = Restore-DbaDatabase -SqlInstance $script:instance2 -path $script:appveyorlabrepo\sql2008-backups\SimpleRecovery\ -RestoreTime (get-date "2018-04-06 10:37:44")
-        $sqlResults = Invoke-Sqlcmd2 -ServerInstance $script:instance2 -Query "select convert(datetime,convert(varchar(20),max(dt),120)) as maxdt, convert(datetime,convert(varchar(20),min(dt),120)) as mindt from SimpleBackTest.dbo.steps"
+        $sqlResults = Invoke-DbaQuery -SqlInstance $script:instance2 -Query "select convert(datetime,convert(varchar(20),max(dt),120)) as maxdt, convert(datetime,convert(varchar(20),min(dt),120)) as mindt from SimpleBackTest.dbo.steps"
 
         It "Should have restored 2 files" {
             $results.count | Should be 2
@@ -350,7 +346,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     }
 
     Context "All user databases are removed" {
-        $results = Get-DbaDatabase -SqlInstance $script:instance2 -ExcludeAllSystemDb | Remove-DbaDatabase -Confirm:$false
+        $results = Get-DbaDatabase -SqlInstance $script:instance2 -ExcludeSystem | Remove-DbaDatabase -Confirm:$false
         It "Should say the status was dropped post point in time test" {
             Foreach ($db in $results) { $db.Status | Should Be "Dropped" }
         }
@@ -361,7 +357,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
 
     Context "RestoreTime point in time and continue" {
         AfterAll {
-            $null = Get-DbaDatabase -SqlInstance $script:instance2 -ExcludeAllSystemDb | Remove-DbaDatabase -Confirm:$false
+            $null = Get-DbaDatabase -SqlInstance $script:instance2 -ExcludeSystem | Remove-DbaDatabase -Confirm:$false
         }
         $Should_Run = (Connect-DbaInstance -SqlInstance $script:instance2).Version.ToString() -like '13.*'
         if (-not ($Should_Run)) {
@@ -371,7 +367,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             return
         }
         $results = Restore-DbaDatabase -SqlInstance $script:instance2 -path $script:appveyorlabrepo\RestoreTimeClean -RestoreTime (get-date "2017-06-01 13:22:44") -StandbyDirectory c:\temp
-        $sqlResults = Invoke-Sqlcmd2 -ServerInstance $script:instance2 -Query "select convert(datetime,convert(varchar(20),max(dt),120)) as maxdt, convert(datetime,convert(varchar(20),min(dt),120)) as mindt from RestoreTimeClean.dbo.steps"
+        $sqlResults = Invoke-DbaQuery -SqlInstance $script:instance2 -Query "select convert(datetime,convert(varchar(20),max(dt),120)) as maxdt, convert(datetime,convert(varchar(20),min(dt),120)) as mindt from RestoreTimeClean.dbo.steps"
         It "Should have restored 4 files" {
             $results.count | Should be 4
         }
@@ -382,7 +378,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $sqlResults.maxdt | Should be (get-date "2017-06-01 13:22:43")
         }
         $results2 = Restore-DbaDatabase -SqlInstance $script:instance2 -path $script:appveyorlabrepo\RestoreTimeClean -Continue
-        $sqlResults2 = Invoke-Sqlcmd2 -ServerInstance $script:instance2 -Query "select convert(datetime,convert(varchar(20),max(dt),120)) as maxdt, convert(datetime,convert(varchar(20),min(dt),120)) as mindt from RestoreTimeClean.dbo.steps"
+        $sqlResults2 = Invoke-DbaQuery -SqlInstance $script:instance2 -Query "select convert(datetime,convert(varchar(20),max(dt),120)) as maxdt, convert(datetime,convert(varchar(20),min(dt),120)) as mindt from RestoreTimeClean.dbo.steps"
         It "Should have restored 2 files" {
             $results2.count | Should be 2
         }
@@ -397,7 +393,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
 
     Context "RestoreTime point in time and continue with rename" {
         AfterAll {
-            $null = Get-DbaDatabase -SqlInstance $script:instance2 -ExcludeAllSystemDb | Remove-DbaDatabase -Confirm:$false
+            $null = Get-DbaDatabase -SqlInstance $script:instance2 -ExcludeSystem | Remove-DbaDatabase -Confirm:$false
         }
         $Should_Run = (Connect-DbaInstance -SqlInstance $script:instance2).Version.ToString() -like '13.*'
         if (-not ($Should_Run)) {
@@ -407,7 +403,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             return
         }
         $results = Restore-DbaDatabase -SqlInstance $script:instance2 -Databasename contest -path $script:appveyorlabrepo\RestoreTimeClean -RestoreTime (get-date "2017-06-01 13:22:44") -StandbyDirectory c:\temp
-        $sqlResults = Invoke-Sqlcmd2 -ServerInstance $script:instance2 -Query "select convert(datetime,convert(varchar(20),max(dt),120)) as maxdt, convert(datetime,convert(varchar(20),min(dt),120)) as mindt from contest.dbo.steps"
+        $sqlResults = Invoke-DbaQuery -SqlInstance $script:instance2 -Query "select convert(datetime,convert(varchar(20),max(dt),120)) as maxdt, convert(datetime,convert(varchar(20),min(dt),120)) as mindt from contest.dbo.steps"
         It "Should have restored 4 files" {
             $results.count | Should be 4
         }
@@ -418,7 +414,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $sqlResults.maxdt | Should be (get-date "2017-06-01 13:22:43")
         }
         $results2 = Restore-DbaDatabase -SqlInstance $script:instance2 -Databasename contest -path $script:appveyorlabrepo\RestoreTimeClean -Continue
-        $sqlResults2 = Invoke-Sqlcmd2 -ServerInstance $script:instance2 -Query "select convert(datetime,convert(varchar(20),max(dt),120)) as maxdt, convert(datetime,convert(varchar(20),min(dt),120)) as mindt from contest.dbo.steps"
+        $sqlResults2 = Invoke-DbaQuery -SqlInstance $script:instance2 -Query "select convert(datetime,convert(varchar(20),max(dt),120)) as maxdt, convert(datetime,convert(varchar(20),min(dt),120)) as mindt from contest.dbo.steps"
         It "Should have restored 2 files" {
             $results2.count | Should be 2
         }
@@ -433,7 +429,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
 
     Context "Continue Restore with Differentials" {
         AfterAll {
-            $null = Get-DbaDatabase -SqlInstance $script:instance2 -ExcludeAllSystemDb | Remove-DbaDatabase -Confirm:$false
+            $null = Get-DbaDatabase -SqlInstance $script:instance2 -ExcludeSystem | Remove-DbaDatabase -Confirm:$false
         }
         $Results = Restore-DbaDatabase -SqlInstance $script:instance2 -Path $script:appveyorlabrepo\sql2008-backups\ft1\FULL\ -NoRecovery
         It "Should Have restored the database cleanly" {
@@ -443,7 +439,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         It "Should have left the db in a norecovery state" {
             (Get-DbaDatabase -SqlInstance $script:instance2 -Database ft1).Status | Should Be "Restoring"
         }
-        $Results2  = Restore-DbaDatabase -SqlInstance $script:instance2 -Path $script:appveyorlabrepo\sql2008-backups\ft1\ -Continue
+        $Results2 = Restore-DbaDatabase -SqlInstance $script:instance2 -Path $script:appveyorlabrepo\sql2008-backups\ft1\ -Continue
         It "Should Have restored the database cleanly" {
             ($results.RestoreComplete -contains $false) | Should be $False
             (($results | Measure-Object).count -gt 0) | Should be $True
@@ -455,7 +451,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
 
     Context "Continue Restore with Differentials and rename " {
         AfterAll {
-            $null = Get-DbaDatabase -SqlInstance $script:instance2 -ExcludeAllSystemDb | Remove-DbaDatabase -Confirm:$false
+            $null = Get-DbaDatabase -SqlInstance $script:instance2 -ExcludeSystem | Remove-DbaDatabase -Confirm:$false
         }
         $Results = Restore-DbaDatabase -SqlInstance $script:instance2 -DatabaseName contest -Path $script:appveyorlabrepo\sql2008-backups\ft1\FULL\ -NoRecovery
         It "Should Have restored the database cleanly" {
@@ -465,7 +461,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         It "Should have left the db in a norecovery state" {
             (Get-DbaDatabase -SqlInstance $script:instance2 -Database contest).Status | Should Be "Restoring"
         }
-        $Results2  = Restore-DbaDatabase -SqlInstance $script:instance2 -DatabaseName contest -Path $script:appveyorlabrepo\sql2008-backups\ft1\ -Continue
+        $Results2 = Restore-DbaDatabase -SqlInstance $script:instance2 -DatabaseName contest -Path $script:appveyorlabrepo\sql2008-backups\ft1\ -Continue
         It "Should Have restored the database cleanly" {
             ($results2.RestoreComplete -contains $false) | Should be $False
             (($results2 | Measure-Object).count -gt 0) | Should be $True
@@ -477,7 +473,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
 
     Context "Continue Restore with multiple databases" {
         AfterAll {
-           $null = Get-DbaDatabase -SqlInstance $script:instance2 -ExcludeAllSystemDb | Remove-DbaDatabase -Confirm:$false
+            $null = Get-DbaDatabase -SqlInstance $script:instance2 -ExcludeSystem | Remove-DbaDatabase -Confirm:$false
         }
         $files = @()
         $files += Get-ChildItem $script:appveyorlabrepo\sql2008-backups\db1\FULL\
@@ -493,7 +489,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         $files = @()
         $files += Get-ChildItem $script:appveyorlabrepo\sql2008-backups\db1\ -Recurse
         $files += Get-ChildItem $script:appveyorlabrepo\sql2008-backups\dbareports\ -Recurse
-        $Results2  = $files | ?{$_.PsIsContainer -eq $false} | Restore-DbaDatabase -SqlInstance $script:instance2 -Continue
+        $Results2 = $files | ? {$_.PsIsContainer -eq $false} | Restore-DbaDatabase -SqlInstance $script:instance2 -Continue
         It "Should Have restored the database cleanly" {
             ($results2.RestoreComplete -contains $false) | Should be $False
             (($results2 | Measure-Object).count -gt 0) | Should be $True
@@ -512,7 +508,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     }
 
     Context "All user databases are removed post continue test" {
-        $results = Get-DbaDatabase -SqlInstance $script:instance2 -ExcludeAllSystemDb | Remove-DbaDatabase -Confirm:$false
+        $results = Get-DbaDatabase -SqlInstance $script:instance2 -ExcludeSystem | Remove-DbaDatabase -Confirm:$false
         It "Should say the status was dropped" {
             Foreach ($db in $results) { $db.Status | Should Be "Dropped" }
         }
@@ -535,7 +531,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     Start-Sleep -Seconds 1
 
     Context "All user databases are removed post history test" {
-        $results = Get-DbaDatabase -SqlInstance $script:instance2 -ExcludeAllSystemDb | Remove-DbaDatabase -Confirm:$false
+        $results = Get-DbaDatabase -SqlInstance $script:instance2 -ExcludeSystem | Remove-DbaDatabase -Confirm:$false
         It "Should say the status was dropped" {
             Foreach ($db in $results) { $db.Status | Should Be "Dropped" }
         }
@@ -552,7 +548,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     Start-Sleep -Seconds 1
 
     Context "All user databases are removed post history test" {
-        $results = Get-DbaDatabase -SqlInstance $script:instance2 -ExcludeAllSystemDb | Remove-DbaDatabase -Confirm:$false
+        $results = Get-DbaDatabase -SqlInstance $script:instance2 -ExcludeSystem | Remove-DbaDatabase -Confirm:$false
         It "Should say the status was dropped" {
             Foreach ($db in $results) { $db.Status | Should Be "Dropped" }
         }
@@ -632,7 +628,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     }
 
     Context "All user databases are removed post port test" {
-        $results = Get-DbaDatabase -SqlInstance $script:instance2 -ExcludeAllSystemDb | Remove-DbaDatabase -Confirm:$false
+        $results = Get-DbaDatabase -SqlInstance $script:instance2 -ExcludeSystem | Remove-DbaDatabase -Confirm:$false
         It "Should say the status was dropped" {
             Foreach ($db in $results) { $db.Status | Should Be "Dropped" }
         }
@@ -663,7 +659,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         $db | Remove-DbaDatabase -Confirm:$false
     }
     Context "All user databases are removed post Output script test" {
-        $results = Get-DbaDatabase -SqlInstance $script:instance2 -ExcludeAllSystemDb | Remove-DbaDatabase -Confirm:$false
+        $results = Get-DbaDatabase -SqlInstance $script:instance2 -ExcludeSystem | Remove-DbaDatabase -Confirm:$false
         It "Should say the status was dropped" {
             Foreach ($db in $results) { $db.Status | Should Be "Dropped" }
         }
@@ -690,7 +686,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     }
 
     Context "All user databases are removed post Output vs Input test" {
-        $results = Get-DbaDatabase -SqlInstance $script:instance2 -ExcludeAllSystemDb | Remove-DbaDatabase -Confirm:$false
+        $results = Get-DbaDatabase -SqlInstance $script:instance2 -ExcludeSystem | Remove-DbaDatabase -Confirm:$false
         It "Should say the status was dropped" {
             Foreach ($db in $results) { $db.Status | Should Be "Dropped" }
         }
@@ -714,7 +710,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     }
 
     Context "Page level restores" {
-        Get-DbaDatabase -SqlInstance $script:instance2 -ExcludeAllSystemDb | Remove-DbaDatabase -confirm:$false
+        Get-DbaDatabase -SqlInstance $script:instance2 -ExcludeSystem | Remove-DbaDatabase -confirm:$false
         $null = Restore-DbaDatabase -SqlInstance $script:instance2 -Path $script:appveyorlabrepo\singlerestore\singlerestore.bak -DatabaseName PageRestore -DestinationFilePrefix PageRestore
         $sql = "alter database PageRestore set Recovery Full
         Create table testpage(
@@ -767,14 +763,14 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
 
         insert into testpage values (REPLICATE('f','8000'))
         use master"
-        $null = Invoke-Sqlcmd2 -ServerInstance $script:instance2 -Query $sql -Database Pagerestore
-        $sqlResults2 = Invoke-SqlCmd2 -ServerInstance $script:instance2 -Database Master -Query "select * from pagerestore.dbo.testpage where filler like 'a%'" -ErrorVariable errvar -ErrorAction SilentlyContinue
+        $null = Invoke-DbaQuery -SqlInstance $script:instance2 -Query $sql -Database Pagerestore
+        $sqlResults2 = Invoke-DbaQuery -SqlInstance $script:instance2 -Database Master -Query "select * from pagerestore.dbo.testpage where filler like 'a%'" -ErrorVariable errvar -ErrorAction SilentlyContinue
         It "Should have warned about corruption" {
             ($errvar -match "SQL Server detected a logical consistency-based I/O error: incorrect checksum \(expected") | Should be $True
             ($null -eq $sqlResults2) | SHould be $True
         }
         $null = Get-DbaBackupHistory -SqlInstance $script:instance2 -Database pagerestore -last | Restore-DbaDatabase -SqlInstance $script:instance2 -PageRestore (Get-DbaSuspectPage -SqlInstance $script:instance2 -Database PageRestore) -TrustDbBackupHistory -AllowContinue -DatabaseName PageRestore -PageRestoreTailFolder c:\temp -ErrorAction SilentlyContinue
-        $sqlResults3 = Invoke-SqlCmd2 -ServerInstance $script:instance2 -Query "select * from pagerestore.dbo.testpage where filler like 'f%'" -ErrorVariable errvar3 -ErrorAction SilentlyContinue
+        $sqlResults3 = Invoke-DbaQuery -SqlInstance $script:instance2 -Query "select * from pagerestore.dbo.testpage where filler like 'f%'" -ErrorVariable errvar3 -ErrorAction SilentlyContinue
         It -Skip "Should work after page restore" {
             #($null -eq $errvar3) | Should Be $True
             ($null -eq $sqlResults3) | SHould be $False
@@ -784,7 +780,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     }
 
     Context "Testing Backup to Restore piping" {
-        Get-DbaDatabase -SqlInstance $script:instance2 -ExcludeAllSystemDb | Remove-DbaDatabase -Confirm:$false
+        Get-DbaDatabase -SqlInstance $script:instance2 -ExcludeSystem | Remove-DbaDatabase -Confirm:$false
         $null = Restore-DbaDatabase -SqlInstance $script:instance2 -Path $script:appveyorlabrepo\singlerestore\singlerestore.bak -DatabaseName PipeTest -DestinationFilePrefix PipeTest
         $results = Backup-DbaDatabase -SqlInstance $script:instance2 -Database Pipetest -BackupDirectory c:\temp -CopyOnly -WarningAction SilentlyContinue -WarningVariable bwarnvar -ErrorAction SilentlyContinue -ErrorVariable berrvar | Restore-DbaDatabase -SqlInstance $script:instance2 -DatabaseName restored -ReplaceDbNameInFile -WarningAction SilentlyContinue -WarningVariable rwarnvar -ErrorAction SilentlyContinue -ErrorVariable rerrvar
         It "Should backup and restore cleanly" {
@@ -793,14 +789,14 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     }
 
     Context "Check we restore striped database" {
-        Get-DbaDatabase -SqlInstance $script:instance2 -ExcludeAllSystemDb | Remove-DbaDatabase -Confirm:$false
+        Get-DbaDatabase -SqlInstance $script:instance2 -ExcludeSystem | Remove-DbaDatabase -Confirm:$false
         $results = Restore-DbaDatabase -SqlInstance $script:instance2 -Path $script:appveyorlabrepo\sql2008-backups\RestoreTimeStripe -DatabaseName StripeTest -DestinationFilePrefix StripeTest
         It "Should backup and restore cleanly" {
             ($results | Where-Object { $_.RestoreComplete -eq $True }).count | Should Be $Results.count
         }
     }
 
-    Context "Don't try to create/test folders with OutputScriptOnly (Issue 4046)"{
+    Context "Don't try to create/test folders with OutputScriptOnly (Issue 4046)" {
         $null = Restore-DbaDatabase -SqlInstance $script:instance2 -Path $script:appveyorlabrepo\RestoreTimeClean\RestoreTimeClean.bak -DestinationDataDirectory g:\DoesNtExist -OutputScriptOnly -WarningVariable warnvar
         It "Should not raise a warning" {
             ('' -eq $warnvar) | Should -Be $True
@@ -811,7 +807,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         Context "Restores From Azure using SAS" {
             BeforeAll {
                 $server = Connect-DbaInstance -SqlInstance $script:instance2
-                if (Get-DbaCredential -SqlInstance $script:instance2 -Name "[$script:azureblob]" ){
+                if (Get-DbaCredential -SqlInstance $script:instance2 -Name "[$script:azureblob]" ) {
                     $sql = "DROP CREDENTIAL [$script:azureblob]"
                     $server.Query($sql)
                 }
@@ -831,7 +827,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         }
     }
 
-    if ($env:azurepasswd) {
+    if ($env:azurepasswd -and -not $env:appveyor) {
         Context "Restores Striped backup From Azure using SAS" {
             BeforeAll {
                 $server = Connect-DbaInstance -SqlInstance $script:instance2
@@ -848,7 +844,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
                 Get-DbaDatabase -SqlInstance $script:instance2 -Database "dbatoolsci_azure" | Remove-DbaDatabase -Confirm:$false
             }
             It "Should restore cleanly" {
-                $results = @("$script:azureblob/az-1.bak","$script:azureblob/az-2.bak","$script:azureblob/az-3.bak") | Restore-DbaDatabase -SqlInstance $script:instance2 -DatabaseName azstripetest  -WithReplace -ReplaceDbNameInFile
+                $results = @("$script:azureblob/az-1.bak", "$script:azureblob/az-2.bak", "$script:azureblob/az-3.bak") | Restore-DbaDatabase -SqlInstance $script:instance2 -DatabaseName azstripetest  -WithReplace -ReplaceDbNameInFile
                 $results.RestoreComplete | Should Be $True
             }
         }

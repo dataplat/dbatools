@@ -53,15 +53,14 @@ function Set-DbaAgentJobCategory {
 
         Rename multiple jobs in one go on multiple servers.
 
-#>
-    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "Low")]
+    #>
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseOutputTypeCorrectly", "", Justification = "PSSA Rule Ignored by BOH")]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [Parameter(Mandatory = $false)]
         [ValidateNotNullOrEmpty()]
         [string[]]$Category,
         [string[]]$NewName,
@@ -119,34 +118,15 @@ function Set-DbaAgentJobCategory {
                             $newCategoryName = $currentCategory.Name
                         }
 
-                        # Set up the custom object
-                        $null = $collection.Add([PSCustomObject]@{
-                                ComputerName    = $server.ComputerName
-                                InstanceName    = $server.ServiceName
-                                SqlInstance     = $server.DomainInstanceName
-                                CategoryName    = $originalCategoryName
-                                NewCategoryName = $newCategoryName
-                            })
-
+                        Get-DbaAgentJobCategory -SqlInstance $server -Category $newCategoryName
                     } catch {
                         Stop-Function -Message "Something went wrong changing the job category $cat on $instance" -Target $cat -Continue -ErrorRecord $_
                     }
-
-                } # if should process
-
-            } # for each category
-
-        } # foreach instance
-
-        # Return result
-        return $collection
-
-    } # end process
-
+                }
+            }
+        }
+    }
     end {
-        if (Test-FunctionInterrupt) { return }
         Write-Message -Message "Finished changing job category." -Level Verbose
     }
-
 }
-

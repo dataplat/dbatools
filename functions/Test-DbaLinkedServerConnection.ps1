@@ -55,7 +55,7 @@ function Test-DbaLinkedServerConnection {
 
         Test all Linked Servers for the SQL Server instances sql2016, sql2014 and sql2012
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [Parameter(Mandatory, ValueFromPipeline)]
@@ -96,4 +96,3 @@ function Test-DbaLinkedServerConnection {
         }
     }
 }
-

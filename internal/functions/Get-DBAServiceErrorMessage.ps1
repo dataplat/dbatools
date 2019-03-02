@@ -3,7 +3,7 @@ function Get-DbaServiceErrorMessage {
     .SYNOPSIS
     Internal function. Returns the list of error code messages for Windows service management.
 
-#>
+    #>
     param(
         [parameter(ValueFromPipeline, Position = 1)]
         [int]$ErrorNumber
@@ -40,4 +40,3 @@ function Get-DbaServiceErrorMessage {
         $returnCodes
     }
 }
-

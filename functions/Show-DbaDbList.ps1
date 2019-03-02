@@ -47,7 +47,7 @@ function Show-DbaDbList {
 
         Shows a GUI list of databases using Windows Authentication to connect to the SQL Server. The "master" database will be selected when the lists shows. Returns a string of the selected database.
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
@@ -200,4 +200,3 @@ function Show-DbaDbList {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Show-DbaDatabaseList
     }
 }
-

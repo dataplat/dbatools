@@ -66,7 +66,7 @@ function Dismount-DbaDatabase {
 
         Shows what would happen if the command were to execute (without actually executing the detach/break/remove commands).
 
-#>
+    #>
     [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = "Default")]
     param (
         [parameter(Mandatory, ParameterSetName = 'SqlInstance')]
@@ -205,5 +205,3 @@ function Dismount-DbaDatabase {
         }
     }
 }
-
-

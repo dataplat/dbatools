@@ -85,7 +85,7 @@ function Remove-DbaBackup {
         '*.bak' files in 'C:\MSSQL\Backup\' and all subdirectories that are more than 1 week old will be removed. Any folders left empty will be removed as well.
 
 #>
-    [CmdletBinding(SupportsShouldProcess = $true)]
+    [CmdletBinding(SupportsShouldProcess)]
     param (
         [parameter(Mandatory, HelpMessage = "Full path to the root level backup folder (ex. 'C:\SQL\Backups'")]
         [Alias("BackupFolder")]
@@ -94,9 +94,7 @@ function Remove-DbaBackup {
         [string]$BackupFileExtension ,
         [parameter(Mandatory, HelpMessage = "Backup retention period. (ex. 24h, 7d, 4w, 6m)")]
         [string]$RetentionPeriod ,
-        [parameter(Mandatory = $false)]
         [switch]$CheckArchiveBit = $false ,
-        [parameter(Mandatory = $false)]
         [switch]$RemoveEmptyBackupFolder = $false,
         [Alias('Silent')]
         [switch]$EnableException
@@ -155,4 +153,3 @@ function Remove-DbaBackup {
         }
     }
 }
-

@@ -7,7 +7,7 @@ function Get-RestoreContinuableDatabase {
     Takes a SQL instance and checks for databases with a redo_start_lsn value, and returns the database name and that value
     -gt SQl 2005 it comes from master.sys.master_files
     -eq SQL 2000 DBCC DBINFO
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
@@ -37,5 +37,3 @@ function Get-RestoreContinuableDatabase {
     }
     $server.ConnectionContext.ExecuteWithResults($sql).Tables.Rows
 }
-
-

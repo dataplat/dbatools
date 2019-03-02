@@ -47,7 +47,7 @@ function Read-DbaXEFile {
 
         Reads remote XEvents by accessing the file over the admin UNC share.
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
@@ -146,4 +146,3 @@ function Read-DbaXEFile {
         }
     }
 }
-

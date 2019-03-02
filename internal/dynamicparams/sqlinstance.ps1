@@ -25,4 +25,3 @@ $ScriptBlock = {
 }
 Register-DbaTeppScriptblock -ScriptBlock $ScriptBlock -Name "sqlinstance"
 #endregion Tepp Data return
-

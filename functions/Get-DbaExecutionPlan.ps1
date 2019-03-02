@@ -77,7 +77,7 @@ function Get-DbaExecutionPlan {
 
         Gets super detailed information for execution plans on sqlserver2014a and sql2016
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
@@ -214,4 +214,3 @@ function Get-DbaExecutionPlan {
         }
     }
 }
-

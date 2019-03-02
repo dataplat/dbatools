@@ -22,7 +22,7 @@ function Uninstall-DbaWatchUpdate {
 
         Removes the scheduled task created by Install-DbaWatchUpdate.
 
-#>
+    #>
     process {
         if (([Environment]::OSVersion).Version.Major -lt 10) {
             Write-Message -Level Warning -Message "This command only supports Windows 10 and higher."
@@ -71,4 +71,3 @@ function Uninstall-DbaWatchUpdate {
         Write-Message -Level Output -Message "All done!"
     }
 }
-

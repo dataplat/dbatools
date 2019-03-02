@@ -36,7 +36,7 @@ function Test-DbaOptimizeForAdHoc {
 
         Validates whether Optimize for AdHoc Workloads setting is enabled for servers sql2008 and sqlserver2012.
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Position = 0, Mandatory, ValueFromPipeline)]
@@ -82,4 +82,3 @@ function Test-DbaOptimizeForAdHoc {
         }
     }
 }
-

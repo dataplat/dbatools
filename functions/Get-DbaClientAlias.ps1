@@ -48,7 +48,7 @@ function Get-DbaClientAlias {
 
         Gets all SQL Server client aliases on Server1 and Server2
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [Parameter(ValueFromPipeline)]
@@ -128,5 +128,3 @@ function Get-DbaClientAlias {
         }
     }
 }
-
-

@@ -41,7 +41,7 @@ function Show-DbaServerFileSystem {
 
         Shows a list of databases using SQL credentials to connect to the SQL Server. Returns a string of the selected path.
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
@@ -212,4 +212,3 @@ function Show-DbaServerFileSystem {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Show-SqlServerFileSystem
     }
 }
-

@@ -4,15 +4,11 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        $paramCount = 16
-        $defaultParamCount = 13
-        [object[]]$params = (Get-ChildItem function:\Copy-DbaLogin).Parameters.Keys
-        $knownParameters = 'Source', 'SourceSqlCredential', 'Destination', 'DestinationSqlCredential', 'Login', 'ExcludeLogin', 'ExcludeSystemLogin', 'SyncOnly', 'SyncSaName', 'OutFile', 'InputObject', 'LoginRenameHashtable', 'KillActiveConnection', 'Force', 'EnableException', 'ExcludePermissionSync'
-        It "Should contain our specific parameters" {
-            ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
-        }
-        It "Should only contain $paramCount parameters" {
-            $params.Count - $defaultParamCount | Should Be $paramCount
+        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
+        [object[]]$knownParameters = 'Source','SourceSqlCredential','Destination','DestinationSqlCredential','Login','ExcludeLogin','ExcludeSystemLogins','SyncOnly','SyncSaName','OutFile','InputObject','LoginRenameHashtable','KillActiveConnection','Force','ExcludePermissionSync','EnableException'
+        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
+        It "Should only contain our specific parameters" {
+            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
         }
     }
 }
@@ -29,7 +25,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
     }
 
-    $null = Invoke-Sqlcmd2 -ServerInstance $script:instance1 -InputFile $script:appveyorlabrepo\sql2008-scripts\logins.sql
+    $null = Invoke-DbaQuery -SqlInstance $script:instance1 -InputFile $script:appveyorlabrepo\sql2008-scripts\logins.sql
 
     Context "Copy login with the same properties." {
         It "Should copy successfully" {
@@ -70,12 +66,12 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         $results = Copy-DbaLogin -Source $script:instance1 -Destination $script:instance2 -Login tester
         It "Should say skipped" {
             $results.Status | Should be "Skipped"
-            $results.Notes | Should be "Already exists"
+            $results.Notes | Should be "Already exists on destination"
         }
     }
 
-    Context "ExcludeSystemLogin Parameter" {
-        $results = Copy-DbaLogin -Source $script:instance1 -Destination $script:instance2 -ExcludeSystemLogin
+    Context "ExcludeSystemLogins Parameter" {
+        $results = Copy-DbaLogin -Source $script:instance1 -Destination $script:instance2 -ExcludeSystemLogins
         It "Should say skipped" {
             $results.Status.Contains('Skipped') | Should Be $true
             $results.Notes.Contains('System login') | Should Be $true

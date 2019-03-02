@@ -74,7 +74,7 @@ function Get-DbaLatchStatistic {
         PS C:\> foreach ($row in ($output | Sort-Object -Unique Url)) { Start-Process ($row).Url }
 
         Displays the output then loads the associated sqlskills website for each result. Opens one tab per unique URL.
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
@@ -141,4 +141,3 @@ function Get-DbaLatchStatistic {
         }
     }
 }
-

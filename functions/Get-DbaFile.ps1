@@ -67,7 +67,7 @@ function Get-DbaFile {
 
         Finds files in E:\Dir1 ending with ".fsf" and ".mld" for both the servers sql2014 and sql2016.
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
@@ -212,4 +212,3 @@ function Get-DbaFile {
         }
     }
 }
-

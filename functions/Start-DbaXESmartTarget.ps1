@@ -47,7 +47,7 @@ function Start-DbaXESmartTarget {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: ExtendedEvent, XE, XEvent
+        Tags: ExtendedEvent, XE, XEvent, SmartTarget
         Author: Chrissy LeMaire (@cl) | SmartTarget by Gianluca Sartori (@spaghettidba)
 
         Website: https://dbatools.io
@@ -86,7 +86,7 @@ function Start-DbaXESmartTarget {
 
         Writes Extended Events to the deadlocktracker table in dbadb on sql2017.
 
-#>
+    #>
     [CmdletBinding(SupportsShouldProcess)]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
@@ -224,4 +224,3 @@ function Start-DbaXESmartTarget {
         }
     }
 }
-

@@ -10,22 +10,11 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 #>
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        <#
-            The $paramCount is adjusted based on the parameters your command will have.
-
-            The $defaultParamCount is adjusted based on what type of command you are writing the test for:
-                - Commands that *do not* include SupportShouldProcess, set defaultParamCount    = 11
-                - Commands that *do* include SupportShouldProcess, set defaultParamCount        = 13
-        #>
-        $paramCount = 4
-        $defaultParamCount = 11
-        [object[]]$params = (Get-ChildItem function:\Test-DbaPath).Parameters.Keys
-        $knownParameters = 'SqlInstance', 'SqlCredential', 'Path', 'EnableException'
-        It "Should contain our specific parameters" {
-            ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
-        }
-        It "Should only contain $paramCount parameters" {
-            $params.Count - $defaultParamCount | Should Be $paramCount
+        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
+        [object[]]$knownParameters = 'SqlInstance','SqlCredential','Path','EnableException'
+        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
+        It "Should only contain our specific parameters" {
+            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
         }
     }
 }
@@ -56,9 +45,9 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             ($results | Where-Object FilePath -eq $trueTest).FileExists | Should Be $true
             ($results | Where-Object FilePath -eq $falseTest).FileExists | Should Be $false
         }
-        $results = Test-DbaPath -SqlInstance $script:instance2,$script:instance1 -Path $falseTest
+        $results = Test-DbaPath -SqlInstance $script:instance2, $script:instance1 -Path $falseTest
         It "Should return multiple results when passed multiple instances" {
-            foreach($result in $results) {
+            foreach ($result in $results) {
                 $result.FileExists | Should Be $false
             }
             ($results.SqlInstance | Sort-Object -Unique).Count | Should Be 2
@@ -76,4 +65,3 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
     }
 }
-

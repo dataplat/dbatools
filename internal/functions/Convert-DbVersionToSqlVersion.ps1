@@ -14,7 +14,7 @@ Convert-DbVersionToSqlVersion -dbversion 856
 
 Returns "SQL Server vNext CTP1"
 
-#>
+    #>
     param (
         [string]$dbversion
     )
@@ -40,5 +40,3 @@ Returns "SQL Server vNext CTP1"
 
     return $dbversion
 }
-
-

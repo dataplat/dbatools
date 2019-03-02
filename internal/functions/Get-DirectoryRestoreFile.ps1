@@ -5,7 +5,7 @@ Internal Function to get SQL Server backfiles from a specified folder
 
 .DESCRIPTION
 Takes path, checks for validity. Scans for usual backup file
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
@@ -38,5 +38,3 @@ Takes path, checks for validity. Scans for usual backup file
     $Results = Get-ChildItem -path $Path -Recurse:$Recurse | Where-Object {$_.PsIsContainer -eq $false}
     return $Results
 }
-
-

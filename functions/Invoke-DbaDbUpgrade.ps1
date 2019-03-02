@@ -90,7 +90,7 @@ function Invoke-DbaDbUpgrade {
 
         Get only specific databases using GridView and pass those to Invoke-DbaDbUpgrade
 
-#>
+    #>
     [CmdletBinding(SupportsShouldProcess)]
     param (
         [parameter(Position = 0)]
@@ -134,10 +134,10 @@ function Invoke-DbaDbUpgrade {
 
         $InputObject = $InputObject | Where-Object { $_.IsSystemObject -eq $false }
         if ($Database) {
-            $InputObject = $InputObject | Where-Object { $_.Name -contains $Database }
+            $InputObject = $InputObject | Where-Object Name -In $Database
         }
         if ($ExcludeDatabase) {
-            $InputObject = $InputObject | Where-Object { $_.Name -notcontains $ExcludeDatabase }
+            $InputObject = $InputObject | Where-Object Name -NotIn $ExcludeDatabase
         }
 
         foreach ($db in $InputObject) {
@@ -278,4 +278,3 @@ function Invoke-DbaDbUpgrade {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Invoke-DbaDatabaseUpgrade
     }
 }
-

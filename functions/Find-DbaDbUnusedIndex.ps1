@@ -58,7 +58,7 @@ function Find-DbaDbUnusedIndex {
 
         Finds unused databases on all databases on sql2016
 
-    #>
+       #>
     [CmdletBinding()]
     param (
         [parameter(ValueFromPipeline)]
@@ -89,7 +89,7 @@ function Find-DbaDbUnusedIndex {
         ,last_user_seek  as 'LastUserSeek'
         ,last_user_scan  as 'LastUserScan'
         ,last_user_lookup  as 'LastUserLookup'
-        ,last_user_UPDATE  as 'LastUserUpdate'
+        ,last_user_update  as 'LastUserUpdate'
         ,system_seeks  as 'SystemSeeks'
         ,system_scans  as 'SystemScans'
         ,system_lookups  as 'SystemLookup'
@@ -98,10 +98,10 @@ function Find-DbaDbUnusedIndex {
         ,last_system_scan  as 'LastSystemScan'
         ,last_system_lookup  as 'LastSystemLookup'
         ,last_system_update as 'LastSystemUpdate'
-        FROM SYS.TABLES T
-        JOIN SYS.SCHEMAS S
-            ON T.schema_id = s.schema_id
-        JOIN SYS.indexes i
+        FROM sys.tables t
+        JOIN sys.schemas s
+            ON t.schema_id = s.schema_id
+        JOIN sys.indexes i
             ON i.object_id = t.object_id LEFT OUTER
         JOIN sys.dm_db_index_usage_stats iu
             ON iu.object_id = i.object_id

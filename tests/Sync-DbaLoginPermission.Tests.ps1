@@ -4,24 +4,20 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        $paramCount = 7
-        $defaultParamCount = 13
-        [object[]]$params = (Get-ChildItem function:\Sync-DbaLoginPermission).Parameters.Keys
-        $knownParameters = 'Source','SourceSqlCredential','Destination','DestinationSqlCredential','Login','ExcludeLogin','EnableException'
-        It "Should contain our specific parameters" {
-            ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
-        }
-        It "Should only contain $paramCount parameters" {
-            $params.Count - $defaultParamCount | Should Be $paramCount
+        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
+        [object[]]$knownParameters = 'Source','SourceSqlCredential','Destination','DestinationSqlCredential','Login','ExcludeLogin','EnableException'
+        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
+        It "Should only contain our specific parameters" {
+            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
         }
     }
 }
 
 Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
-    BeforeAll{
+    BeforeAll {
         $tempguid = [guid]::newguid();
         $DBUserName = "dbatoolssci_$($tempguid.guid)"
-$CreateTestUser = @"
+        $CreateTestUser = @"
 CREATE LOGIN [$DBUserName]
     WITH PASSWORD = '$($tempguid.guid)';
 USE Master;
@@ -29,17 +25,17 @@ CREATE USER [$DBUserName] FOR LOGIN [$DBUserName]
     WITH DEFAULT_SCHEMA = dbo;
 GRANT VIEW ANY DEFINITION to [$DBUserName];
 "@
-        Invoke-Sqlcmd2 -ServerInstance $script:instance2 -Query $CreateTestUser -Database master
+        Invoke-DbaQuery -SqlInstance $script:instance2 -Query $CreateTestUser -Database master
 
-#This is used later in the test
-$CreateTestLogin = @"
+        #This is used later in the test
+        $CreateTestLogin = @"
 CREATE LOGIN [$DBUserName]
     WITH PASSWORD = '$($tempguid.guid)';
 "@
     }
-    AfterAll{
+    AfterAll {
         $DropTestUser = "DROP LOGIN [$DBUserName]"
-        Invoke-Sqlcmd2 -ServerInstance $script:instance2,$script:instance3 -Query $DropTestUser -Database master
+        Invoke-DbaQuery -SqlInstance $script:instance2, $script:instance3 -Query $DropTestUser -Database master
     }
 
     Context "Verifying command output" {
@@ -51,7 +47,7 @@ CREATE LOGIN [$DBUserName]
 
         It "Should execute against active nodes" {
             #Creates the user on
-            Invoke-Sqlcmd2 -ServerInstance $script:instance3 -Query $CreateTestLogin
+            Invoke-DbaQuery -SqlInstance $script:instance3 -Query $CreateTestLogin
             $results = Sync-DbaLoginPermission -Source $script:instance2 -Destination $script:instance3 -Login $DBUserName -ExcludeLogin 'NotaLogin' -Warningvariable $warn
             $results | Should -be $null
             $warn | Should -be $null

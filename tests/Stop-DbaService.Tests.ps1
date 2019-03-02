@@ -5,15 +5,11 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        $paramCount = 8
-        $defaultParamCount = 13
-        [object[]]$params = (Get-ChildItem function:\Stop-DbaService).Parameters.Keys
-        $knownParameters = 'ComputerName','InstanceName','Type','InputObject','Timeout','Credential','Force','EnableException'
-        It "Should contain our specific parameters" {
-            ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
-        }
-        It "Should only contain $paramCount parameters" {
-            $params.Count - $defaultParamCount | Should Be $paramCount
+        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
+        [object[]]$knownParameters = 'ComputerName','InstanceName','Type','InputObject','Timeout','Credential','Force','EnableException'
+        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
+        It "Should only contain our specific parameters" {
+            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
         }
     }
 }
@@ -38,8 +34,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         #Start services using native cmdlets
         if ($instanceName -eq 'MSSQLSERVER') {
             $serviceName = "SQLSERVERAGENT"
-        }
-        else {
+        } else {
             $serviceName = "SqlAgent`$$instanceName"
         }
         Get-Service -ComputerName $computerName -Name $serviceName | Start-Service -WarningAction SilentlyContinue | Out-Null
@@ -56,8 +51,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         #Start services using native cmdlets
         if ($instanceName -eq 'MSSQLSERVER') {
             $serviceName = "MSSQLSERVER", "SQLSERVERAGENT"
-        }
-        else {
+        } else {
             $serviceName = "MsSql`$$instanceName", "SqlAgent`$$instanceName"
         }
         foreach ($sn in $servicename) { Get-Service -ComputerName $computerName -Name $sn | Start-Service -WarningAction SilentlyContinue | Out-Null }

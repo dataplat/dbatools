@@ -89,7 +89,7 @@ function Get-DbaDiskSpace {
 
         Get all disk and volume space information.
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [Parameter(ValueFromPipeline)]
@@ -213,4 +213,3 @@ function Get-DbaDiskSpace {
         }
     }
 }
-

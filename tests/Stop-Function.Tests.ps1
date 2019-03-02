@@ -1,20 +1,16 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
-. "$PSScriptRoot\..\internal\functions\Stop-Function.ps1"
+. "$PSScriptRoot\..\internal\functions\flowcontrol\Stop-Function.ps1"
 $PSDefaultParameterValues.Remove('*:WarningAction')
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        $paramCount = 14
-        $defaultParamCount = 11
-        [object[]]$params = (Get-ChildItem function:\Stop-Function).Parameters.Keys
-        $knownParameters = 'Message','Category','ErrorRecord','Tag','FunctionName','File','Line','Target','Exception','OverrideExceptionMessage','Continue','SilentlyContinue','ContinueLabel','EnableException'
-        It "Should contain our specific parameters" {
-            ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
-        }
-        It "Should only contain $paramCount parameters" {
-            $params.Count - $defaultParamCount | Should Be $paramCount
+        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
+        [object[]]$knownParameters = 'Message', 'Category', 'ErrorRecord', 'Tag', 'FunctionName', 'File', 'Line', 'Target', 'Exception', 'OverrideExceptionMessage', 'Continue', 'SilentlyContinue', 'ContinueLabel', 'EnableException'
+        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
+        It "Should only contain our specific parameters" {
+            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
         }
     }
 
@@ -23,8 +19,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
             $warning = Stop-Function -WarningAction Continue -Message "Nonsilent Foo" -EnableException $false -Category InvalidResult -FunctionName "Invoke-Pester" -Target "Bar" -ErrorAction Stop 3>&1
             $record = $Error[0]
             $failed = $false
-        }
-        catch {
+        } catch {
             $record = $null
             $failed = $true
         }
@@ -58,14 +53,12 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         try {
             try {
                 $null.GetType()
-            }
-            catch {
+            } catch {
                 $warning = Stop-Function -WarningAction Continue -Message "Nonsilent Foo" -EnableException $false -ErrorRecord $_ -FunctionName "Invoke-Pester" -Target "Bar" -ErrorAction Stop 3>&1
                 $record = $Error[0]
                 $failed = $false
             }
-        }
-        catch {
+        } catch {
             $record = $null
             $failed = $true
         }
@@ -97,8 +90,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         It "Should have created an error record with the an inner NULL-invocation exception" {
             try {
                 $ExceptionName = $record.Exception.InnerException.GetType().FullName
-            }
-            catch {
+            } catch {
                 $ExceptionName = "Meeep!"
             }
 
@@ -119,8 +111,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
                 Stop-Function -Message "Nonsilent Foo" -EnableException $false -Category InvalidOperation -Continue -ErrorAction Stop 3>&1
                 $b++
             }
-        }
-        catch {
+        } catch {
             $failed = $true
         }
 
@@ -140,8 +131,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
                 }
                 $f++
             }
-        }
-        catch {
+        } catch {
             $failed2 = $true
         }
         #endregion Run Tests
@@ -176,8 +166,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
             Stop-Function -Message "Nonsilent Foo" -EnableException $true -Category InvalidResult -FunctionName "Invoke-Pester" -Target "Bar" -ErrorAction Stop
             $record = $null
             $failed = $false
-        }
-        catch {
+        } catch {
             $record = $_
             $failed = $true
         }
@@ -207,14 +196,12 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         try {
             try {
                 $null.GetType()
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Nonsilent Foo" -EnableException $true -ErrorRecord $_ -FunctionName "Invoke-Pester" -Target "Bar" -ErrorAction Stop
                 $record = $null
                 $failed = $false
             }
-        }
-        catch {
+        } catch {
             $record = $_
             $failed = $true
         }
@@ -253,8 +240,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
                 Stop-Function -Message "Nonsilent Foo" -EnableException $true -Category InvalidOperation -SilentlyContinue -ErrorAction Stop
                 $b++
             }
-        }
-        catch {
+        } catch {
             $failed = $true
         }
 
@@ -274,8 +260,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
                 }
                 $f++
             }
-        }
-        catch {
+        } catch {
             $failed2 = $true
         }
         #endregion Run Tests
@@ -306,4 +291,3 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     }
 }
 $PSDefaultParameterValues['*:WarningAction'] = 'SilentlyContinue'
-

@@ -25,10 +25,10 @@ function Get-DbaModule {
     .PARAMETER Type
         Limit by specific type of module. Valid choices include: View, TableValuedFunction, DefaultConstraint, StoredProcedure, Rule, InlineTableValuedFunction, Trigger, ScalarFunction
 
-    .PARAMETER NoSystemDb
+    .PARAMETER ExcludeSystemDatabases
         Allows you to suppress output on system databases
 
-    .PARAMETER NoSystemObjects
+    .PARAMETER ExcludeSystemObjects
         Allows you to suppress output on system objects
 
     .PARAMETER EnableException
@@ -67,7 +67,7 @@ function Get-DbaModule {
 
         Return all modules on server sql2008 for all databases that are triggers, views or scalar functions.
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [Parameter(Mandatory, ValueFromPipeline)]
@@ -81,8 +81,8 @@ function Get-DbaModule {
         [datetime]$ModifiedSince = "1900-01-01",
         [ValidateSet("View", "TableValuedFunction", "DefaultConstraint", "StoredProcedure", "Rule", "InlineTableValuedFunction", "Trigger", "ScalarFunction")]
         [string[]]$Type,
-        [switch]$NoSystemDb,
-        [switch]$NoSystemObjects,
+        [switch]$ExcludeSystemDatabases,
+        [switch]$ExcludeSystemObjects,
         [Alias('Silent')]
         [switch]$EnableException
     )
@@ -118,7 +118,7 @@ function Get-DbaModule {
         FROM sys.sql_modules sm
         LEFT JOIN sys.objects so ON sm.object_id = so.object_id
         WHERE so.modify_date >= '$($ModifiedSince)'"
-        if ($NoSystemObjects) {
+        if ($ExcludeSystemObjects) {
             $sql += "`n AND so.is_ms_shipped = 0"
         }
         if ($Type) {
@@ -178,4 +178,3 @@ function Get-DbaModule {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-DbaSqlModule
     }
 }
-

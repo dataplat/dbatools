@@ -93,7 +93,7 @@ function New-DbaAgentProxy {
         By default, only sysadmins have access to create job steps with proxies. This will allow 3 additional principals access:
         The proxy is then added to the CmdExec and PowerShell subsystems
 
-#>
+    #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Low')]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingPlainTextForPassword", "", Justification = "For Parameter ProxyCredential")]
     param (
@@ -152,7 +152,7 @@ function New-DbaAgentProxy {
 
                 if ($Pscmdlet.ShouldProcess($instance, "Adding $proxyname with the $ProxyCredential credential")) {
                     # the new-object is stubborn and $true/$false has to be forced in
-                    switch (Test-Bound $disabled) {
+                    switch (Test-Bound -ParameterName Disabled) {
                         $false {
                             $proxy = New-Object Microsoft.SqlServer.Management.Smo.Agent.ProxyAccount -ArgumentList $jobServer, $ProxyName, $ProxyCredential, $true, $Description
                         }
@@ -221,4 +221,3 @@ function New-DbaAgentProxy {
         }
     }
 }
-

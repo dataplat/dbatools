@@ -18,4 +18,3 @@ if ($env:SCENARIO) {
         Update-AppveyorTest -Name $Setup_Script -Framework NUnit -FileName $Setup_Script -Outcome Passed -Duration $sw.ElapsedMilliseconds
     }
 }
-

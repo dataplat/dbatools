@@ -42,7 +42,7 @@ Function Uninstall-DbaSqlWatch {
         Uninstall-DbaSqlWatch -SqlInstance server1
 
         Deletes all user objects, agent jobs, and historical data associated with SqlWatch from the master database.
-    #>
+       #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
     param (
         [Parameter(Mandatory, ValueFromPipeline)]

@@ -1,5 +1,5 @@
 # Current library Version the module expects
-$currentLibraryVersion = New-Object System.Version(0, 10, 0, 58)
+$currentLibraryVersion = New-Object System.Version(0, 10, 0, 70)
 
 <#
 Library Versioning 101:
@@ -39,48 +39,67 @@ if (([System.Management.Automation.PSTypeName]'Sqlcollaborative.Dbatools.Configu
     # No need to load the library again, if the module was once already imported.
     Write-Verbose -Message "Library already loaded, will not load again"
     $ImportLibrary = $false
-}
-else {
+} else {
     Write-Verbose -Message "Library not present already, will import"
     $ImportLibrary = $true
 }
 #endregion Test whether the module had already been imported
 
+$libraryBase = (Resolve-Path -Path ($ExecutionContext.SessionState.Module.ModuleBase + "\bin"))
+
+if ($PSVersionTable.PSVersion.Major -ge 6) {
+    $dll = (Resolve-Path -Path "$libraryBase\netcoreapp2.1\dbatools.dll" -ErrorAction Ignore)
+} else {
+    $dll = (Resolve-Path -Path "$libraryBase\net452\dbatools.dll" -ErrorAction Ignore)
+}
+
 if ($ImportLibrary) {
     #region Add Code
     try {
-        $libraryBase = $ExecutionContext.SessionState.Module.ModuleBase + "\bin"
         # In strict security mode, only load from the already pre-compiled binary within the module
         if ($script:strictSecurityMode) {
-            if (Test-Path -Path "$libraryBase\dbatools.dll") {
-                Add-Type -Path "$libraryBase\dbatools.dll" -ErrorAction Stop
-            }
-            else {
+            if (Test-Path -Path $dll) {
+                Add-Type -Path $dll -ErrorAction Stop
+            } else {
                 throw "Library not found, terminating!"
             }
         }
         # Else we prioritize user convenience
         else {
-            $hasProject = Test-Path -Path "$libraryBase\projects\dbatools\dbatools.sln"
-            $hasCompiledDll = Test-Path -Path "$libraryBase\dbatools.dll"
-
-            if ((-not $script:alwaysBuildLibrary) -and $hasCompiledDll -and ([System.Diagnostics.FileVersionInfo]::GetVersionInfo("$libraryBase\dbatools.dll").FileVersion -eq $currentLibraryVersion)) {
-                $start = Get-Date
-                try {
-                    Write-Verbose -Message "Found library, trying to copy & import"
-                    if ($libraryBase -ne $script:DllRoot) { Copy-Item -Path "$libraryBase\dbatools.dll" -Destination $script:DllRoot -Force -ErrorAction Stop }
-                    Add-Type -Path "$script:DllRoot\dbatools.dll" -ErrorAction Stop
+            try {
+                if ((Test-Path -Path "$libraryBase/projects/dbatools/dbatools.sln")) {
+                    $sln = (Resolve-Path -Path "$libraryBase\projects\dbatools\dbatools.sln" -ErrorAction Stop)
+                    $hasProject = Test-Path -Path $sln -ErrorAction Stop
                 }
-                catch {
-                    Write-Verbose -Message "Failed to copy&import, attempting to import straight from the module directory"
-                    Add-Type -Path "$libraryBase\dbatools.dll" -ErrorAction Stop
+            } catch {
+                $null = 1
+            }
+
+            if (-not $dll) {
+                $hasCompiledDll = $false
+            } else {
+                $hasCompiledDll = Test-Path -Path $dll -ErrorAction Stop
+            }
+
+            if ((-not $script:alwaysBuildLibrary) -and $hasCompiledDll -and ([System.Diagnostics.FileVersionInfo]::GetVersionInfo($dll).FileVersion -eq $currentLibraryVersion)) {
+                $start = Get-Date
+
+                try {
+                    $script:DllRoot = Resolve-Path -Path $script:DllRoot
+                    Write-Verbose -Message "Found library, trying to copy & import"
+                    # this looks excessive but for some reason the explicit string to string is required
+                    if (("$($dll)" -ne "$(Join-Path -Path $script:DllRoot -ChildPath dbatools.dll)") -and $script:isWindows) {
+                        Copy-Item -Path $dll -Destination $script:DllRoot -Force -ErrorAction Stop
+                    }
+                    Add-Type -Path (Resolve-Path -Path "$script:DllRoot\dbatools.dll") -ErrorAction Stop
+                } catch {
+                    Write-Verbose -Message "Failed to copy and import, attempting to import straight from the module directory"
+                    Add-Type -Path $dll -ErrorAction Stop
                 }
                 Write-Verbose -Message "Total duration: $((Get-Date) - $start)"
-            }
-            elseif ($hasProject) {
-                . Import-ModuleFile "$($script:PSModuleRoot)\bin\build-project.ps1"
-            }
-            else {
+            } elseif ($hasProject) {
+                . Import-ModuleFile (Resolve-Path -Path "$($script:PSModuleRoot)\bin\build-project.ps1")
+            } else {
                 throw "No valid dbatools library found! Check your module integrity"
             }
         }
@@ -89,10 +108,9 @@ if ($ImportLibrary) {
         Update-TypeData -TypeName "Sqlcollaborative.Dbatools.dbaSystem.DbatoolsException" -SerializationDepth 2 -ErrorAction Ignore
         Update-TypeData -TypeName "Sqlcollaborative.Dbatools.dbaSystem.DbatoolsExceptionRecord" -SerializationDepth 2 -ErrorAction Ignore
         #endregion PowerShell TypeData
-    }
-    catch {
+    } catch {
         #region Warning
-        Write-Warning @'
+        Write-Verbose @'
 Dear User,
 
 in the name of the dbatools team I apologize for the inconvenience.
@@ -127,7 +145,7 @@ aka "The guy who made most of The Library that Failed to import"
 
 #region Version Warning
 if ($currentLibraryVersion -ne ([version](([AppDomain]::CurrentDomain.GetAssemblies() | Where-Object ManifestModule -like "dbatools.dll").CustomAttributes | Where-Object AttributeType -like "System.Reflection.AssemblyFileVersionAttribute").ConstructorArguments.Value)) {
-    Write-Warning @"
+    Write-Verbose @"
 A version missmatch between the dbatools library loaded and the one expected by
 this module. This usually happens when you update the dbatools module and use
 Remove-Module / Import-Module in order to load the latest version without
@@ -139,4 +157,3 @@ If the issues continue to persist, please Remove-Item '$script:PSModuleRoot\bin\
 "@
 }
 #endregion Version Warning
-

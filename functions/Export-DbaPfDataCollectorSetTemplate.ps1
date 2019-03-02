@@ -50,7 +50,7 @@ function Export-DbaPfDataCollectorSetTemplate {
 
         Exports the 'System Correlation' data collector set from sql2017 to C:\temp.
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [DbaInstance[]]$ComputerName = $env:COMPUTERNAME,
@@ -95,4 +95,3 @@ function Export-DbaPfDataCollectorSetTemplate {
         }
     }
 }
-

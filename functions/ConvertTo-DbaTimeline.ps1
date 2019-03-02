@@ -33,7 +33,7 @@ function ConvertTo-DbaTimeline {
         https://dbatools.io/ConvertTo-DbaTimeline
 
     .EXAMPLE
-        PS C:\> Get-DbaAgentJobHistory -SqlInstance sql-1 -StartDate '2018-08-13 00:00' -EndDate '2018-08-13 23:59' -NoJobSteps | ConvertTo-DbaTimeline | Out-File C:\temp\DbaAgentJobHistory.html -Encoding ASCII
+        PS C:\> Get-DbaAgentJobHistory -SqlInstance sql-1 -StartDate '2018-08-13 00:00' -EndDate '2018-08-13 23:59' -ExcludeJobSteps | ConvertTo-DbaTimeline | Out-File C:\temp\DbaAgentJobHistory.html -Encoding ASCII
 
         Creates an output file containing a pretty timeline for all of the agent job history results for sql-1 the whole day of 2018-08-13
 
@@ -45,7 +45,7 @@ function ConvertTo-DbaTimeline {
     .EXAMPLE
         PS C:\> $messageParameters = @{
         >> Subject = "Backup history for sql2017 and sql2016"
-        >> Body = Get-DbaBackupHistory -SqlInstance sql2017, sql2016 -Since '2018-08-13 00:00' | ConvertTo-DbaTimeline
+        >> Body = Get-DbaBackupHistory -SqlInstance sql2017, sql2016 -Since '2018-08-13 00:00' | ConvertTo-DbaTimeline | Out-String
         >> From = "dba@ad.local"
         >> To = "dba@ad.local"
         >> SmtpServer = "smtp.ad.local"
@@ -55,7 +55,7 @@ function ConvertTo-DbaTimeline {
 
         Sends an email to dba@ad.local with the results of Get-DbaBackupHistory. Note that viewing these reports may not be supported in all email clients.
 
-#>
+    #>
     [CmdletBinding()]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseOutputTypeCorrectly", "", Justification = "PSSA Rule Ignored by BOH")]
     param (
@@ -213,4 +213,3 @@ function ConvertTo-DbaTimeline {
         $begin, $body, $end
     }
 }
-

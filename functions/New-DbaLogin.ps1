@@ -15,7 +15,7 @@ function New-DbaLogin {
     .PARAMETER Login
         The Login name(s)
 
-    .PARAMETER Password
+    .PARAMETER SecurePassword
         Secure string used to authenticate the Login
 
     .PARAMETER HashedPassword
@@ -108,7 +108,7 @@ function New-DbaLogin {
 
         Creates a new Windows Authentication backed login on sql1. The login will be part of the public server role.
 
-#>
+    #>
     [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = "Password", ConfirmImpact = "Low")]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingPlainTextForPassword", "", Justification = "For Parameters Password and MapToCredential")]
     param (
@@ -131,7 +131,8 @@ function New-DbaLogin {
         [Alias("Rename")]
         [hashtable]$LoginRenameHashtable,
         [parameter(ParameterSetName = "Password", Position = 3)]
-        [Security.SecureString]$Password,
+        [Alias("Password")]
+        [Security.SecureString]$SecurePassword,
         [Alias("Hash", "PasswordHash")]
         [parameter(ParameterSetName = "PasswordHash")]
         [string]$HashedPassword,
@@ -141,7 +142,7 @@ function New-DbaLogin {
         [string]$MapToAsymmetricKey,
         [string]$MapToCredential,
         [object]$Sid,
-        [Alias("DefaulDB")]
+        [Alias("DefaultDB")]
         [parameter(ParameterSetName = "Password")]
         [parameter(ParameterSetName = "PasswordHash")]
         [string]$DefaultDatabase,
@@ -222,7 +223,7 @@ function New-DbaLogin {
                     $currentDisabled = $loginItem.IsDisabled
 
                     #Get previous password
-                    if ($loginType -eq 'SqlLogin' -and !($Password -or $HashedPassword)) {
+                    if ($loginType -eq 'SqlLogin' -and !($SecurePassword -or $HashedPassword)) {
                         $sourceServer = $loginItem.Parent
                         switch ($sourceServer.versionMajor) {
                             0 { $sql = "SELECT CONVERT(VARBINARY(256),password) as hashedpass FROM master.dbo.syslogins WHERE loginname='$loginName'" }
@@ -310,8 +311,8 @@ function New-DbaLogin {
                 }
 
                 #Requesting password if required
-                if ($loginItem.GetType().Name -ne 'Login' -and $loginType -eq 'SqlLogin' -and !($Password -or $HashedPassword)) {
-                    $Password = Read-Host -AsSecureString -Prompt "Enter a new password for the SQL Server login(s)"
+                if ($loginItem.GetType().Name -ne 'Login' -and $loginType -eq 'SqlLogin' -and !($SecurePassword -or $HashedPassword)) {
+                    $SecurePassword = Read-Host -AsSecureString -Prompt "Enter a new password for the SQL Server login(s)"
                 }
 
                 #verify if login exists on the server
@@ -375,8 +376,8 @@ function New-DbaLogin {
                             }
 
                             #Generate hashed password if necessary
-                            if ($Password) {
-                                $currentHashedPassword = Get-PasswordHash $Password $server.versionMajor
+                            if ($SecurePassword) {
+                                $currentHashedPassword = Get-PasswordHash $SecurePassword $server.versionMajor
                             } elseif ($HashedPassword) {
                                 $currentHashedPassword = $HashedPassword
                             }
@@ -418,7 +419,11 @@ function New-DbaLogin {
                             try {
                                 if ($loginType -eq 'AsymmetricKey') { $sql = "CREATE LOGIN [$loginName] FROM ASYMMETRIC KEY [$currentAsymmetricKey]" }
                                 elseif ($loginType -eq 'Certificate') { $sql = "CREATE LOGIN [$loginName] FROM CERTIFICATE [$currentCertificate]" }
-                                elseif ($loginType -eq "SqlLogin") { $sql = "CREATE LOGIN [$loginName] WITH PASSWORD = $currentHashedPassword HASHED" + $withParams }
+                                elseif ($loginType -eq 'SqlLogin' -and $server.DatabaseEngineType -eq 'SqlAzureDatabase') {
+                                    $BSTR = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($SecurePassword) # Azure SQL doesn't support HASHED so we have to dump out the plain text password :(
+                                    $unsecurePassword = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto($BSTR)
+                                    $sql = "CREATE LOGIN [$loginName] WITH PASSWORD = '$unsecurePassword'"
+                                } elseif ($loginType -eq 'SqlLogin' ) { $sql = "CREATE LOGIN [$loginName] WITH PASSWORD = $currentHashedPassword HASHED" + $withParams }
                                 else { $sql = "CREATE LOGIN [$loginName] FROM WINDOWS" + $withParams }
 
                                 $null = $server.Query($sql)
@@ -455,4 +460,3 @@ function New-DbaLogin {
         }
     }
 }
-

@@ -54,7 +54,7 @@ function Get-DbaDbCompatibility {
 
         Displays database compatibility level for database Test on server localhost\sql2017
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [DbaInstanceParameter[]]$SqlInstance,
@@ -89,4 +89,3 @@ function Get-DbaDbCompatibility {
         }
     }
 }
-

@@ -76,7 +76,7 @@ function Get-DbaServerRoleMember {
 
         Returns all server-level role(s) for the MyFriendlyDeveloper login on localhost.
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Position = 0, Mandatory, ValueFromPipeline)]
@@ -158,4 +158,3 @@ function Get-DbaServerRoleMember {
         }
     }
 }
-

@@ -25,7 +25,7 @@ function Test-ComputerTarget {
         Will test, whether the names passed to it are legal targets.
         - The first two will pass, the last one will fail
         - Note that it will only return boolean values, so the order needs to be remembered (due to this, using it by pipeline on more than one object is not really recommended).
-#>
+    #>
     [CmdletBinding()]
     param (
         [Parameter(ValueFromPipeline, Mandatory)]
@@ -39,5 +39,3 @@ function Test-ComputerTarget {
         }
     }
 }
-
-

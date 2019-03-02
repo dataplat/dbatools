@@ -21,7 +21,7 @@ function Disable-DbaTraceFlag {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: TraceFlag
+        Tags: TraceFlag, DBCC
         Author: Garry Bargsley (@gbargsley), http://blog.garrybargsley.com
 
         Website: https://dbatools.io
@@ -36,7 +36,7 @@ function Disable-DbaTraceFlag {
 
         Disable the globally running trace flag 3226 on SQL Server instance sql2016
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Position = 0, Mandatory, ValueFromPipeline)]
@@ -93,4 +93,3 @@ function Disable-DbaTraceFlag {
         }
     }
 }
-

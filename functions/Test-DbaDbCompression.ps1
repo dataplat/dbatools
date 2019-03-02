@@ -136,7 +136,7 @@ function Test-DbaDbCompression {
 
         This produces a full analysis of all your servers listed and is pushed to a csv for you to analyze.
 
-#>
+    #>
     [CmdletBinding(DefaultParameterSetName = "Default")]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
@@ -637,4 +637,3 @@ IF OBJECT_ID('tempdb..##tmpEstimatePage', 'U') IS NOT NULL
         }
     }
 }
-

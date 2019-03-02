@@ -194,8 +194,8 @@ function Rename-DbaDatabase {
         Renames the HR database to "dbatools_HR" and then all filenames as "dbatools_HR_[Name of the FileGroup]_[original_filename]"
         The db is then set offline (watch out!). The function tries to do a simple rename and then sets the db online again to finish the rename process
 
-#>
-    [CmdletBinding(SupportsShouldProcess = $true)]
+    #>
+    [CmdletBinding(SupportsShouldProcess)]
     param (
         [parameter(Mandatory, ParameterSetName = "Server")]
         [Alias("ServerInstance", "SqlServer")]
@@ -848,4 +848,3 @@ function Rename-DbaDatabase {
         #endregion db loop
     }
 }
-

@@ -71,8 +71,8 @@ function Copy-DbaAgentAlert {
 
         Shows what would happen if the command were executed using force.
 
-#>
-    [cmdletbinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
+    #>
+    [cmdletbinding(DefaultParameterSetName = "Default", SupportsShouldProcess)]
     param (
         [parameter(Mandatory)]
         [DbaInstanceParameter]$Source,
@@ -150,11 +150,28 @@ function Copy-DbaAgentAlert {
                     continue
                 }
 
+                if ($serverAlert.HasNotification) {
+                    $alertOperators = $serverAlert.EnumNotifications()
+                    if ($destServerOperators.Name -notin $alertOperators.OperatorName) {
+                        $missingOperators = ($alertOperators | Where-Object OperatorName -NotIn $destServerOperators.Name).OperatorName
+                        if ($missingOperators.Count -gt 0 -or $missingOperators.Length -gt 0) {
+                            $operatorList = $missingOperators -join ','
+                            if ($PSCmdlet.ShouldProcess($destinstance, "Missing operator(s) at destination.")) {
+                                $copyAgentAlertStatus.Status = "Skipped"
+                                $copyAgentAlertStatus.Notes = "Operator(s) [$operatorList] do not exist on destination"
+                                $copyAgentAlertStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                                Write-Message -Message "One or more operators alerted by [$alertName] is not present at the destination. Alert will not be copied. Use Copy-DbaAgentOperator to copy the operator(s) to the destination. Missing operator(s): $operatorList" -Level Warning
+                                continue
+                            }
+                        }
+                    }
+                }
+
                 if ($destAlerts.name -contains $serverAlert.name) {
                     if ($force -eq $false) {
                         if ($PSCmdlet.ShouldProcess($destinstance, "Alert [$alertName] exists at destination. Use -Force to drop and migrate.")) {
                             $copyAgentAlertStatus.Status = "Skipped"
-                            $copyAgentAlertStatus.Notes = "Already exists"
+                            $copyAgentAlertStatus.Notes = "Already exists on destination"
                             $copyAgentAlertStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                             Write-Message -Message "Alert [$alertName] exists at destination. Use -Force to drop and migrate." -Level Verbose
                         }
@@ -307,4 +324,3 @@ function Copy-DbaAgentAlert {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-SqlAlert
     }
 }
-

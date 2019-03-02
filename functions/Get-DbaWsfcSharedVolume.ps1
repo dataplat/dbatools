@@ -36,7 +36,7 @@ function Get-DbaWsfcSharedVolume {
 
         Gets shared volume (CSV) information from the failover cluster cluster01
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(ValueFromPipeline)]
@@ -55,4 +55,3 @@ function Get-DbaWsfcSharedVolume {
         }
     }
 }
-

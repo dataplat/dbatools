@@ -57,7 +57,7 @@ function New-DbaDacOption {
 
         Uses DacOption object to set Deployment Options and publish the db.dacpac dacpac file as DB1 on sql2016
 
-#>
+    #>
     [CmdletBinding(SupportsShouldProcess)]
     Param (
         [ValidateSet('Dacpac', 'Bacpac')]
@@ -69,19 +69,22 @@ function New-DbaDacOption {
         [switch]$EnableException
     )
     if ($PScmdlet.ShouldProcess("$type", "Creating New DacOptions of $action")) {
-        $dacfxPath = "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Dac.dll"
-        if ((Test-Path $dacfxPath) -eq $false) {
-            Stop-Function -Message 'Dac Fx library not found.' -EnableException $EnableException
-            return
-        } else {
-            try {
-                Add-Type -Path $dacfxPath
-                Write-Message -Level Verbose -Message "Dac Fx loaded."
-            } catch {
-                Stop-Function -Message 'No usable version of Dac Fx found.' -ErrorRecord $_
+        if (-not $script:core) {
+            $dacfxPath = "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Dac.dll"
+            if ((Test-Path $dacfxPath) -eq $false) {
+                Stop-Function -Message 'Dac Fx library not found.' -EnableException $EnableException
                 return
+            } else {
+                try {
+                    Add-Type -Path $dacfxPath
+                    Write-Message -Level Verbose -Message "Dac Fx loaded."
+                } catch {
+                    Stop-Function -Message 'No usable version of Dac Fx found.' -ErrorRecord $_
+                    return
+                }
             }
         }
+        
         # Pick proper option object depending on type and action
         if ($Action -eq 'Export') {
             if ($Type -eq 'Dacpac') {
@@ -111,5 +114,3 @@ function New-DbaDacOption {
         }
     }
 }
-
-

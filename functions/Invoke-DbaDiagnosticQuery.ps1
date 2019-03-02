@@ -42,14 +42,14 @@ function Invoke-DbaDiagnosticQuery {
     .PARAMETER DatabaseSpecific
         Run only database level queries
 
-    .PARAMETER NoQueryTextColumn
+    .PARAMETER ExcludeQueryTextColumn
         Use this switch to exclude the [Complete Query Text] column from relevant queries
 
-    .PARAMETER NoPlanColumn
+    .PARAMETER ExcludePlanColumn
         Use this switch to exclude the [Query Plan] column from relevant queries
 
     .PARAMETER NoColumnParsing
-        Does not parse the [Complete Query Text] and [Query Plan] columns and disregards the NoQueryTextColumn and NoColumnParsing switches
+        Does not parse the [Complete Query Text] and [Query Plan] columns and disregards the ExcludeQueryTextColumn and NoColumnParsing switches
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -93,27 +93,27 @@ function Invoke-DbaDiagnosticQuery {
         Then it will export the results to Export-DbaDiagnosticQuery.
 
     .EXAMPLE
-        PS C:\> Invoke-DbaDiagnosticQuery -sqlinstance localhost -ExportQueries -outputpath "C:\temp\DiagnosticQueries"
+        PS C:\> Invoke-DbaDiagnosticQuery -SqlInstance localhost -ExportQueries -OutputPath "C:\temp\DiagnosticQueries"
 
         Export All Queries to Disk
 
     .EXAMPLE
-        PS C:\> Invoke-DbaDiagnosticQuery -sqlinstance localhost -DatabaseSpecific -DatabaseName 'tempdb' -ExportQueries -outputpath "C:\temp\DiagnosticQueries"
+        PS C:\> Invoke-DbaDiagnosticQuery -SqlInstance localhost -DatabaseSpecific -ExportQueries -OutputPath "C:\temp\DiagnosticQueries"
 
         Export Database Specific Queries for all User Dbs
 
     .EXAMPLE
-        PS C:\> Invoke-DbaDiagnosticQuery -sqlinstance localhost -DatabaseSpecific -DatabaseName 'tempdb' -ExportQueries -outputpath "C:\temp\DiagnosticQueries"
+        PS C:\> Invoke-DbaDiagnosticQuery -SqlInstance localhost -DatabaseSpecific -DatabaseName 'tempdb' -ExportQueries -OutputPath "C:\temp\DiagnosticQueries"
 
         Export Database Specific Queries For One Target Database
 
     .EXAMPLE
-        PS C:\> Invoke-DbaDiagnosticQuery -sqlinstance localhost -DatabaseSpecific -DatabaseName 'tempdb' -ExportQueries -outputpath "C:\temp\DiagnosticQueries" -queryname 'Database-scoped Configurations'
+        PS C:\> Invoke-DbaDiagnosticQuery -SqlInstance localhost -DatabaseSpecific -DatabaseName 'tempdb' -ExportQueries -OutputPath "C:\temp\DiagnosticQueries" -queryname 'Database-scoped Configurations'
 
         Export Database Specific Queries For One Target Database and One Specific Query
 
     .EXAMPLE
-        PS C:\> Invoke-DbaDiagnosticQuery -sqlinstance localhost -UseSelectionHelper
+        PS C:\> Invoke-DbaDiagnosticQuery -SqlInstance localhost -UseSelectionHelper
 
         Choose Queries To Export
 
@@ -127,7 +127,7 @@ function Invoke-DbaDiagnosticQuery {
 
         Run diagnostic queries targeted at specific database, and only run database level queries against this database.
 
-#>
+    #>
 
     [CmdletBinding(SupportsShouldProcess)]
     [outputtype([pscustomobject[]])]
@@ -150,8 +150,8 @@ function Invoke-DbaDiagnosticQuery {
         [switch]$UseSelectionHelper,
         [switch]$InstanceOnly,
         [switch]$DatabaseSpecific,
-        [Switch]$NoQueryTextColumn,
-        [Switch]$NoPlanColumn,
+        [Switch]$ExcludeQueryTextColumn,
+        [Switch]$ExcludePlanColumn,
         [Switch]$NoColumnParsing,
 
         [string]$OutputPath,
@@ -209,7 +209,7 @@ function Invoke-DbaDiagnosticQuery {
 
         foreach ($file in $scriptfiles) {
             if ($file.BaseName.Split("_")[2] -eq $currentdate) {
-                $parsedscript = Invoke-DbaDiagnosticQueryScriptParser -filename $file.fullname -NoQueryTextColumn:$NoQueryTextColumn -NoPlanColumn:$NoPlanColumn -NoColumnParsing:$NoColumnParsing
+                $parsedscript = Invoke-DbaDiagnosticQueryScriptParser -filename $file.fullname -ExcludeQueryTextColumn:$ExcludeQueryTextColumn -ExcludePlanColumn:$ExcludePlanColumn -NoColumnParsing:$NoColumnParsing
 
                 $newscript = [pscustomobject]@{
                     Version = $file.Basename.Split("_")[1]
@@ -256,9 +256,9 @@ function Invoke-DbaDiagnosticQuery {
 
             if (!$instanceOnly) {
                 if (-not $Database) {
-                    $databases = (Get-DbaDatabase -SqlInstance $server -ExcludeAllSystemDb -ExcludeDatabase $ExcludeDatabase).Name
+                    $databases = (Get-DbaDatabase -SqlInstance $server -ExcludeSystem -ExcludeDatabase $ExcludeDatabase).Name
                 } else {
-                    $databases = (Get-DbaDatabase -SqlInstance $server -ExcludeAllSystemDb -Database $Database -ExcludeDatabase $ExcludeDatabase).Name
+                    $databases = (Get-DbaDatabase -SqlInstance $server -ExcludeSystem -Database $Database -ExcludeDatabase $ExcludeDatabase).Name
                 }
             }
 
@@ -306,9 +306,10 @@ function Invoke-DbaDiagnosticQuery {
 
 
             }
-
+            
             foreach ($scriptpart in $parsedscript) {
-
+                # ensure results are null with each part, otherwise duplicated information may be returned
+                $result = $null
                 if (($QueryName.Count -ne 0) -and ($QueryName -notcontains $scriptpart.QueryName)) { continue }
                 if (!$scriptpart.DBSpecific -and !$DatabaseSpecific) {
                     if ($ExportQueries) {
@@ -330,7 +331,7 @@ function Invoke-DbaDiagnosticQuery {
                         try {
                             $result = $server.Query($scriptpart.Text)
                             Write-Message -Level Verbose -Message "Processed $($scriptpart.QueryName) on $instance"
-                            if (!$result) {
+                            if (-not $result) {
                                 [pscustomobject]@{
                                     ComputerName     = $server.ComputerName
                                     InstanceName     = $server.ServiceName
@@ -405,7 +406,7 @@ function Invoke-DbaDiagnosticQuery {
                             Write-Message -Level Verbose -Message "Collecting diagnostic query data from $($currentDb) for $($scriptpart.QueryName) on $instance"
                             try {
                                 $result = $server.Query($scriptpart.Text, $currentDb)
-                                if (!$result) {
+                                if (-not $result) {
                                     [pscustomobject]@{
                                         ComputerName     = $server.ComputerName
                                         InstanceName     = $server.ServiceName
@@ -465,4 +466,3 @@ function Invoke-DbaDiagnosticQuery {
         Write-Progress -Id $ProgressId -Activity 'Invoke-DbaDiagnosticQuery' -Completed
     }
 }
-

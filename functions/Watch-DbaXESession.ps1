@@ -55,7 +55,7 @@ function Watch-DbaXESession {
 
         Exports live events to CSV. Ctrl-C may not not cancel out of this. The fastest way to do so is to stop the session.
 
-#>
+    #>
     [CmdletBinding(DefaultParameterSetName = "Default")]
     param (
         [parameter(ValueFromPipeline, ParameterSetName = "instance", Mandatory)]
@@ -157,4 +157,3 @@ function Watch-DbaXESession {
         }
     }
 }
-

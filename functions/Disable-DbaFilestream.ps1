@@ -54,7 +54,7 @@ function Disable-DbaFilestream {
 
         Using this pipeline you can scan a range of SQL instances and disable filestream on only those on which it's enabled.
 
-    #>
+       #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "High")]
     param (
         [Parameter(Mandatory, ValueFromPipelineByPropertyName)]

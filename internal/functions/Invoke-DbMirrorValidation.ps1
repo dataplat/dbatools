@@ -3,12 +3,12 @@ function Invoke-DbMirrorValidation {
     <#
         .SYNOPSIS
             Validates if a mirror is ready
-    
+
         .DESCRIPTION
             Validates if a mirror is ready
 
             Thanks to https://github.com/mmessano/PowerShell/blob/master/SQL-ConfigureDatabaseMirroring.ps1
-    
+
         .PARAMETER Primary
             SQL Server name or SMO object representing the primary SQL Server.
 
@@ -26,16 +26,16 @@ function Invoke-DbMirrorValidation {
 
         .PARAMETER WitnessSqlCredential
             Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
-    
+
         .PARAMETER Database
                 The database or databases to mirror
-    
-        .PARAMETER NetworkShare
+
+        .PARAMETER SharedPath
                 The network share where the backups will be
-    
+
         .PARAMETER InputObject
                 Enables piping from Get-DbaDatabase
-    
+
         .PARAMETER EnableException
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
             This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -54,14 +54,14 @@ function Invoke-DbMirrorValidation {
                     MirrorSqlCredential = 'sqladmin'
                     Witness = 'sql2019'
                     Database = 'onthewall'
-                    NetworkShare = '\\nas\sql\share'
+                    SharedPath = '\\nas\sql\share'
                 }
-            
+
             PS C:\> Invoke-DbMirrorValidation @params
-    
+
             Do things
-        
-    #>
+
+       #>
     [CmdletBinding()]
     param (
         [DbaInstanceParameter]$Primary,
@@ -72,7 +72,7 @@ function Invoke-DbMirrorValidation {
         [DbaInstanceParameter]$Witness,
         [PSCredential]$WitnessSqlCredential,
         [string[]]$Database,
-        [string]$NetworkShare,
+        [string]$SharedPath,
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
         [switch]$EnableException
@@ -82,32 +82,32 @@ function Invoke-DbMirrorValidation {
             Stop-Function -Message "Database is required when SqlInstance is specified"
             return
         }
-        
+
         if ($Primary) {
             $InputObject += Get-DbaDatabase -SqlInstance $Primary -SqlCredential $SqlCredential -Database $Database
         }
-        
+
         foreach ($db in $InputObject) {
             $server = $db.Parent
             $dbname = $db.Name
             $canmirror = $true
             $dest = Connect-DbaInstance -SqlInstance $Mirror -Credential $MirrorSqlCredential
-            
+
             $endpoints = @()
             $endpoints += Get-DbaEndpoint -SqlInstance $server | Where-Object EndpointType -eq DatabaseMirroring
             $endpoints += Get-DbaEndpoint -SqlInstance $dest | Where-Object EndpointType -eq DatabaseMirroring
-            
+
             if (Test-Bound -ParameterName Witness) {
                 try {
                     $witserver = Connect-DbaInstance -SqlInstance $Witness -SqlCredential $WitnessSqlCredential
                     $endpoints += Get-DbaEndpoint -SqlInstance $witserver | Where-Object EndpointType -eq DatabaseMirroring
                     $witdb = Get-DbaDatabase -SqlInstance $witserver -Database $db.Name
                     $wexists = $true
-                    
+
                     if ($witdb.Status -ne 'Restoring') {
                         $canmirror = $false
                     }
-                    
+
                     if ($witdb) {
                         $witexists = $true
                     } else {
@@ -120,32 +120,32 @@ function Invoke-DbMirrorValidation {
                     $canmirror = $false
                 }
             }
-            
+
             if ($db.MirroringStatus -ne [Microsoft.SqlServer.Management.Smo.MirroringStatus]::None) {
                 Write-Message -Level Verbose -Message "Cannot setup mirroring on database ($dbname) due to its current mirroring state: $($db.MirroringStatus)"
                 $canmirror = $false
             }
-            
+
             if ($db.Status -ne [Microsoft.SqlServer.Management.Smo.DatabaseStatus]::Normal) {
                 Write-Message -Level Verbose -Message "Cannot setup mirroring on database ($dbname) due to its current Status: $($db.Status)"
                 $canmirror = $false
             }
-            
+
             if ($db.RecoveryModel -ne 'Full') {
                 Write-Message -Level Verbose -Message "Cannot setup mirroring on database ($dbname) due to its current recovery model: $($db.RecoveryModel)"
                 $canmirror = $false
             }
-            
+
             $destdb = Get-DbaDatabase -SqlInstance $dest -Database $db.Name
-            
+
             if ($destdb.RecoveryModel -ne 'Full') {
                 $canmirror = $false
             }
-            
+
             if ($destdb.Status -ne 'Restoring') {
                 $canmirror = $false
             }
-            
+
             if ($destdb) {
                 $destdbexists = $true
             } else {
@@ -153,15 +153,15 @@ function Invoke-DbMirrorValidation {
                 $canmirror = $false
                 $destdbexists = $false
             }
-            
-            if ((Test-Bound -ParameterName NetworkShare) -and -not (Test-DbaPath -SqlInstance $dest -Path $NetworkShare)) {
-                Write-Message -Level Verbose -Message "Cannot access $NetworkShare from $($destdb.Parent.Name)"
+
+            if ((Test-Bound -ParameterName SharedPath) -and -not (Test-DbaPath -SqlInstance $dest -Path $SharedPath)) {
+                Write-Message -Level Verbose -Message "Cannot access $SharedPath from $($destdb.Parent.Name)"
                 $canmirror = $false
                 $nexists = $false
             } else {
                 $nexists = $true
             }
-            
+
             if ($server.EngineEdition -ne $dest.EngineEdition) {
                 Write-Message -Level Verbose -Message "This mirroring configuration is not supported. Because the principal server instance, $server, is $($server.EngineEdition) Edition, the mirror server instance must also be $($server.EngineEdition) Edition."
                 $canmirror = $false
@@ -169,7 +169,7 @@ function Invoke-DbMirrorValidation {
             } else {
                 $edition = $true
             }
-            
+
             # There's a better way to do this but I'm sleepy
             if ((Test-Bound -ParameterName Witness)) {
                 if ($endpoints.Count -eq 3) {
@@ -184,7 +184,7 @@ function Invoke-DbMirrorValidation {
                     $endpointpass = $false
                 }
             }
-            
+
             $results = [pscustomobject]@{
                 Primary                 = $Primary
                 Mirror                  = $Mirror
@@ -203,7 +203,7 @@ function Invoke-DbMirrorValidation {
                 WitnessDbStatus         = $witdb.Status
                 ValidationPassed        = $canmirror
             }
-            
+
             if ((Test-Bound -ParameterName Witness)) {
                 $results | Select-DefaultView -Property Primary, Mirror, Witness, Database, RecoveryModel, MirroringStatus, State, EndPoints, DatabaseExistsOnMirror, OnlineWitness, DatabaseExistsOnWitness, EditionMatch, AccessibleShare, DestinationDbStatus, WitnessDbStatus, ValidationPassed
             } else {

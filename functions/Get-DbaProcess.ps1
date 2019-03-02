@@ -34,7 +34,7 @@ function Get-DbaProcess {
 
         This is the last filter to run, so even if a Spid matches another filter, it will be excluded by this filter.
 
-    .PARAMETER NoSystemSpid
+    .PARAMETER ExcludeSystemSpids
         If this switch is enabled, system Spids will be ignored.
 
     .PARAMETER EnableException
@@ -73,7 +73,7 @@ function Get-DbaProcess {
 
         Shows information about the processes that were initiated by hosts (computers/clients) workstationx and server 1000.
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
@@ -87,7 +87,7 @@ function Get-DbaProcess {
         [string[]]$Login,
         [string[]]$Hostname,
         [string[]]$Program,
-        [switch]$NoSystemSpid,
+        [switch]$ExcludeSystemSpids,
         [Alias('Silent')]
         [switch]$EnableException
     )
@@ -153,7 +153,7 @@ function Get-DbaProcess {
                 $allsessions = $processes
             }
 
-            if ($NoSystemSpid -eq $true) {
+            if ($ExcludeSystemSpids -eq $true) {
                 $allsessions = $allsessions | Where-Object { $_.Spid -gt 50 }
             }
 
@@ -201,4 +201,3 @@ function Get-DbaProcess {
         }
     }
 }
-

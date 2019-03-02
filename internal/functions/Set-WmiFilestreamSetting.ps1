@@ -49,7 +49,7 @@ function Set-FileSystemSetting {
                 }
             }
         }
-        
+
         function Get-WmiFilestreamSetting {
             # not available in SQL WMI
             [CmdletBinding()]
@@ -57,21 +57,21 @@ function Set-FileSystemSetting {
                 [DbaInstance]$Instance,
                 [PSCredential]$Credential
             )
-            
+
             $computer = $computerName = $Machine = $instance.ComputerName
             $instanceName = $instance.InstanceName
-            
+
             Write-Message -Level Verbose -Message "Attempting to connect to $computer's WMI"
             $ognamespace = Get-DbaCmObject -EnableException -ComputerName $computerName -Namespace root\Microsoft\SQLServer -Query "SELECT NAME FROM __NAMESPACE WHERE NAME LIKE 'ComputerManagement%'"
             $namespace = $ognamespace | Where-Object {
                 (Get-DbaCmObject -EnableException -ComputerName $computerName -Namespace $("root\Microsoft\SQLServer\" + $_.Name) -ClassName FilestreamSettings).Count -gt 0
             } |
                 Sort-Object Name -Descending | Select-Object -First 1
-            
+
             if (-not $namespace) {
                 $namespace = $ognamespace
             }
-            
+
             if ($namespace.Name) {
                 if ($Credential) {
                     $wmi = Get-WmiObject -Credential $Credential -ErrorAction Stop -ComputerName $computerName -Namespace $("root\Microsoft\SQLServer\" + $namespace.Name) -Class FilestreamSettings | Where-Object InstanceName -eq $instanceName | Select-Object -First 1

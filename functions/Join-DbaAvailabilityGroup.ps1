@@ -64,7 +64,7 @@ function Join-DbaAvailabilityGroup {
         PS C:\> Get-DbaAvailabilityGroup -SqlInstance sql01 -AvailabilityGroup SharePoint | Join-DbaAvailabilityGroup -SqlInstance sql02 -Confirm
 
         Prompts for confirmation then joins sql02 to the SharePoint availability group on sql01.
-#>
+    #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Low')]
     param (
         [DbaInstanceParameter[]]$SqlInstance,
@@ -104,7 +104,7 @@ function Join-DbaAvailabilityGroup {
                 if ($Pscmdlet.ShouldProcess($server.Name, "Joining $ag")) {
                     try {
                         if ($ClusterType -and $server.VersionMajor -ge 14) {
-                            $server.Query("ALTER AVAILABILITY GROUP $ag JOIN WITH (CLUSTER_TYPE = $ClusterType)")
+                            $server.Query("ALTER AVAILABILITY GROUP [$ag] JOIN WITH (CLUSTER_TYPE = $ClusterType)")
                         } else {
                             $server.JoinAvailabilityGroup($ag)
                         }
@@ -116,4 +116,3 @@ function Join-DbaAvailabilityGroup {
         }
     }
 }
-

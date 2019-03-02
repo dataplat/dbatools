@@ -57,7 +57,7 @@ function Test-DbaDbCompatibility {
 
         Returns db/server compatibility information for every database on every server listed in the Central Management Server on sql2016.
 
-#>
+    #>
     [CmdletBinding()]
     [OutputType("System.Collections.ArrayList")]
     param (
@@ -113,4 +113,3 @@ function Test-DbaDbCompatibility {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Test-DbaDatabaseCompatibility
     }
 }
-

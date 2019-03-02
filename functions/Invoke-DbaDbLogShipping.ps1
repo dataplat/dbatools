@@ -384,8 +384,8 @@ function Invoke-DbaDbLogShipping {
         Sets up log shipping with all defaults except that a backup file is generated.
         The script will show a message that the copy destination has not been supplied and asks if you want to use the default which would be the backup directory of the secondary server with the folder "logshipping" i.e. "D:\SQLBackup\Logshiping".
 
-#>
-    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
+    #>
+    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess)]
 
     param(
         [parameter(Mandatory)]
@@ -398,19 +398,15 @@ function Invoke-DbaDbLogShipping {
         [Alias("DestinationServerInstance", "DestinationSqlServer", "Destination")]
         [object[]]$DestinationSqlInstance,
 
-        [Parameter(Mandatory = $false)]
         [System.Management.Automation.PSCredential]
         $SourceSqlCredential,
 
-        [Parameter(Mandatory = $false)]
         [System.Management.Automation.PSCredential]
         $SourceCredential,
 
-        [Parameter(Mandatory = $false)]
         [System.Management.Automation.PSCredential]
         $DestinationSqlCredential,
 
-        [Parameter(Mandatory = $false)]
         [System.Management.Automation.PSCredential]
         $DestinationCredential,
 
@@ -420,230 +416,159 @@ function Invoke-DbaDbLogShipping {
         [parameter(Mandatory)]
         [string]$BackupNetworkPath,
 
-        [parameter(Mandatory = $false)]
         [string]$BackupLocalPath,
 
-        [parameter(Mandatory = $false)]
         [string]$BackupJob,
 
-        [parameter(Mandatory = $false)]
         [int]$BackupRetention,
 
-        [parameter(Mandatory = $false)]
         [string]$BackupSchedule,
 
-        [parameter(Mandatory = $false)]
         [switch]$BackupScheduleDisabled,
 
-        [parameter(Mandatory = $false)]
         [ValidateSet("Daily", "Weekly", "AgentStart", "IdleComputer")]
         [object]$BackupScheduleFrequencyType,
 
-        [parameter(Mandatory = $false)]
         [object[]]$BackupScheduleFrequencyInterval,
 
-        [parameter(Mandatory = $false)]
         [ValidateSet('Time', 'Seconds', 'Minutes', 'Hours')]
         [object]$BackupScheduleFrequencySubdayType,
 
-        [parameter(Mandatory = $false)]
         [int]$BackupScheduleFrequencySubdayInterval,
 
-        [Parameter(Mandatory = $false)]
         [ValidateSet('Unused', 'First', 'Second', 'Third', 'Fourth', 'Last')]
         [object]$BackupScheduleFrequencyRelativeInterval,
 
-        [Parameter(Mandatory = $false)]
         [int]$BackupScheduleFrequencyRecurrenceFactor,
 
-        [parameter(Mandatory = $false)]
         [string]$BackupScheduleStartDate,
 
-        [parameter(Mandatory = $false)]
         [string]$BackupScheduleEndDate,
 
-        [parameter(Mandatory = $false)]
         [string]$BackupScheduleStartTime,
 
-        [parameter(Mandatory = $false)]
         [string]$BackupScheduleEndTime,
 
-        [parameter(Mandatory = $false)]
         [int]$BackupThreshold,
 
-        [parameter(Mandatory = $false)]
         [switch]$CompressBackup,
 
-        [parameter(Mandatory = $false)]
         [string]$CopyDestinationFolder,
 
-        [parameter(Mandatory = $false)]
         [string]$CopyJob,
 
-        [parameter(Mandatory = $false)]
         [int]$CopyRetention,
 
-        [parameter(Mandatory = $false)]
         [string]$CopySchedule,
 
-        [parameter(Mandatory = $false)]
         [switch]$CopyScheduleDisabled,
 
-        [parameter(Mandatory = $false)]
         [ValidateSet("Daily", "Weekly", "AgentStart", "IdleComputer")]
         [object]$CopyScheduleFrequencyType,
 
-        [parameter(Mandatory = $false)]
         [object[]]$CopyScheduleFrequencyInterval,
 
-        [parameter(Mandatory = $false)]
         [ValidateSet('Time', 'Seconds', 'Minutes', 'Hours')]
         [object]$CopyScheduleFrequencySubdayType,
 
-        [parameter(Mandatory = $false)]
         [int]$CopyScheduleFrequencySubdayInterval,
 
-        [Parameter(Mandatory = $false)]
         [ValidateSet('Unused', 'First', 'Second', 'Third', 'Fourth', 'Last')]
         [object]$CopyScheduleFrequencyRelativeInterval,
 
-        [Parameter(Mandatory = $false)]
         [int]$CopyScheduleFrequencyRecurrenceFactor,
 
-        [parameter(Mandatory = $false)]
         [string]$CopyScheduleStartDate,
 
-        [parameter(Mandatory = $false)]
         [string]$CopyScheduleEndDate,
 
-        [parameter(Mandatory = $false)]
         [string]$CopyScheduleStartTime,
 
-        [parameter(Mandatory = $false)]
         [string]$CopyScheduleEndTime,
 
-        [parameter(Mandatory = $false)]
         [switch]$DisconnectUsers,
 
-        [parameter(Mandatory = $false)]
         [string]$FullBackupPath,
 
-        [parameter(Mandatory = $false)]
         [switch]$GenerateFullBackup,
 
-        [parameter(Mandatory = $false)]
         [int]$HistoryRetention,
 
-        [parameter(Mandatory = $false)]
         [switch]$NoRecovery,
 
-        [parameter(Mandatory = $false)]
         [switch]$NoInitialization,
 
-        [Parameter(Mandatory = $false)]
         [string]$PrimaryMonitorServer,
 
-        [Parameter(Mandatory = $false)]
         [System.Management.Automation.PSCredential]
         $PrimaryMonitorCredential,
 
-        [Parameter(Mandatory = $false)]
         [ValidateSet(0, "sqlserver", 1, "windows")]
         [object]$PrimaryMonitorServerSecurityMode,
 
-        [Parameter(Mandatory = $false)]
         [switch]$PrimaryThresholdAlertEnabled,
 
-        [parameter(Mandatory = $false)]
         [string]$RestoreDataFolder,
 
-        [parameter(Mandatory = $false)]
         [string]$RestoreLogFolder,
 
-        [parameter(Mandatory = $false)]
         [int]$RestoreDelay,
 
-        [parameter(Mandatory = $false)]
         [int]$RestoreAlertThreshold,
 
-        [parameter(Mandatory = $false)]
         [string]$RestoreJob,
 
-        [parameter(Mandatory = $false)]
         [int]$RestoreRetention,
 
-        [parameter(Mandatory = $false)]
         [string]$RestoreSchedule,
 
-        [parameter(Mandatory = $false)]
         [switch]$RestoreScheduleDisabled,
 
-        [parameter(Mandatory = $false)]
         [ValidateSet("Daily", "Weekly", "AgentStart", "IdleComputer")]
         [object]$RestoreScheduleFrequencyType,
 
-        [parameter(Mandatory = $false)]
         [object[]]$RestoreScheduleFrequencyInterval,
 
-        [parameter(Mandatory = $false)]
         [ValidateSet('Time', 'Seconds', 'Minutes', 'Hours')]
         [object]$RestoreScheduleFrequencySubdayType,
 
-        [parameter(Mandatory = $false)]
         [int]$RestoreScheduleFrequencySubdayInterval,
 
-        [Parameter(Mandatory = $false)]
         [ValidateSet('Unused', 'First', 'Second', 'Third', 'Fourth', 'Last')]
         [object]$RestoreScheduleFrequencyRelativeInterval,
 
-        [Parameter(Mandatory = $false)]
         [int]$RestoreScheduleFrequencyRecurrenceFactor,
 
-        [parameter(Mandatory = $false)]
         [string]$RestoreScheduleStartDate,
 
-        [parameter(Mandatory = $false)]
         [string]$RestoreScheduleEndDate,
 
-        [parameter(Mandatory = $false)]
         [string]$RestoreScheduleStartTime,
 
-        [parameter(Mandatory = $false)]
         [string]$RestoreScheduleEndTime,
 
-        [parameter(Mandatory = $false)]
         [int]$RestoreThreshold,
 
-        [parameter(Mandatory = $false)]
         [string]$SecondaryDatabasePrefix,
 
-        [parameter(Mandatory = $false)]
         [string]$SecondaryDatabaseSuffix,
 
-        [Parameter(Mandatory = $false)]
         [string]$SecondaryMonitorServer,
 
-        [Parameter(Mandatory = $false)]
         [System.Management.Automation.PSCredential]
         $SecondaryMonitorCredential,
 
-        [Parameter(Mandatory = $false)]
         [ValidateSet(0, "sqlserver", 1, "windows")]
         [object]$SecondaryMonitorServerSecurityMode,
 
-        [Parameter(Mandatory = $false)]
         [switch]$SecondaryThresholdAlertEnabled,
 
-        [parameter(Mandatory = $false)]
         [switch]$Standby,
 
-        [parameter(Mandatory = $false)]
         [string]$StandbyDirectory,
 
-        [parameter(Mandatory = $false)]
         [switch]$UseExistingFullBackup,
 
-        [parameter(Mandatory = $false)]
         [string]$UseBackupFolder,
 
         [switch]$Force,
@@ -1240,7 +1165,7 @@ function Invoke-DbaDbLogShipping {
 
                 # Check if the backup job name is set
                 if ($BackupJob) {
-                    $DatabaseBackupJob = "$BackupJob_$($db.Name)"
+                    $DatabaseBackupJob = "$($BackupJob)$($db.Name)"
                 } else {
                     $DatabaseBackupJob = "LSBackup_$($db.Name)"
                 }
@@ -1248,7 +1173,7 @@ function Invoke-DbaDbLogShipping {
 
                 # Check if the backup job schedule name is set
                 if ($BackupSchedule) {
-                    $DatabaseBackupSchedule = "$BackupSchedule_$($db.Name)"
+                    $DatabaseBackupSchedule = "$($BackupSchedule)$($db.Name)"
                 } else {
                     $DatabaseBackupSchedule = "LSBackupSchedule_$($db.Name)"
                 }
@@ -1262,11 +1187,11 @@ function Invoke-DbaDbLogShipping {
                     Stop-Function -Message "Secondary database already exists on instance $destInstance." -ErrorRecord $_ -Target $destInstance -Continue
                 }
 
-                # Check if the secondary database needs tobe initialized
+                # Check if the secondary database needs to be initialized
                 if ($setupResult -ne 'Failed') {
                     if (-not $NoInitialization) {
                         # Check if the secondary database exists on the secondary instance
-                        if ($DestiationServer.Databases.Name -notcontains $SecondaryDatabase) {
+                        if ($DestinationServer.Databases.Name -notcontains $SecondaryDatabase) {
                             # Check if force is being used and no option to generate the full backup is set
                             if ($Force -and -not ($GenerateFullBackup -or $UseExistingFullBackup)) {
                                 # Set the option to generate a full backup
@@ -1430,17 +1355,17 @@ function Invoke-DbaDbLogShipping {
 
                 # Check if the copy job name is set
                 if ($CopyJob) {
-                    $DatabaseCopyJob = "$CopyJob_$SourceServerName_$($db.Name)"
+                    $DatabaseCopyJob = "$($CopyJob)$($db.Name))"
                 } else {
-                    $DatabaseCopyJob = "LSCopy_$SourceServerName_$($db.Name)"
+                    $DatabaseCopyJob = "LSCopy_$($SourceServerName)_$($db.Name)"
                 }
                 Write-Message -Message "Copy job name set to $DatabaseCopyJob" -Level Verbose
 
                 # Check if the copy job schedule name is set
                 if ($CopySchedule) {
-                    $DatabaseCopySchedule = "$CopySchedule_$($db.Name)"
+                    $DatabaseCopySchedule = "$($CopySchedule)$($db.Name)"
                 } else {
-                    $DatabaseCopySchedule = "LSCopySchedule_$($db.Name)"
+                    $DatabaseCopySchedule = "LSCopySchedule_$($SourceServerName)_$($db.Name)"
                     Write-Message -Message "Copy job schedule name set to $DatabaseCopySchedule" -Level Verbose
                 }
 
@@ -1465,17 +1390,17 @@ function Invoke-DbaDbLogShipping {
 
                 # Check if the restore job name is set
                 if ($RestoreJob) {
-                    $DatabaseRestoreJob = "$RestoreJob_$SourceServerName_$($db.Name)"
+                    $DatabaseRestoreJob = "$($RestoreJob)$($db.Name)"
                 } else {
-                    $DatabaseRestoreJob = "LSRestore_$DestinationServerName_$($db.Name)"
+                    $DatabaseRestoreJob = "LSRestore_$($SourceServerName)_$($db.Name)"
                 }
                 Write-Message -Message "Restore job name set to $DatabaseRestoreJob" -Level Verbose
 
                 # Check if the restore job schedule name is set
                 if ($RestoreSchedule) {
-                    $DatabaseRestoreSchedule = "$RestoreSchedule_$($db.Name)"
+                    $DatabaseRestoreSchedule = "$($RestoreSchedule)$($db.Name)"
                 } else {
-                    $DatabaseRestoreSchedule = "LSRestoreSchedule_$($db.Name)"
+                    $DatabaseRestoreSchedule = "LSRestoreSchedule_$($SourceServerName)_$($db.Name)"
                 }
                 Write-Message -Message "Restore job schedule name set to $DatabaseRestoreSchedule" -Level Verbose
 
@@ -1784,7 +1709,10 @@ function Invoke-DbaDbLogShipping {
                                 -DisconnectUsers:$DisconnectUsers `
                                 -RestoreThreshold $RestoreThreshold `
                                 -ThresholdAlertEnabled:$SecondaryThresholdAlertEnabled `
-                                -HistoryRetention $HistoryRetention
+                                -HistoryRetention $HistoryRetention `
+                                -MonitorServer $PrimaryMonitorServer `
+                                -MonitorServerSecurityMode $PrimaryMonitorServerSecurityMode `
+                                -MonitorCredential $PrimaryMonitorCredential
 
                             # Check if the copy job needs to be enabled or disabled
                             if ($CopyScheduleDisabled) {
@@ -1828,4 +1756,3 @@ function Invoke-DbaDbLogShipping {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Invoke-DbaLogShipping
     }
 }
-

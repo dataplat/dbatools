@@ -72,7 +72,7 @@ function Get-DbaDbRestoreHistory {
 
         Returns database restore information for every database on every server listed in the Central Management Server on sql2016.
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
@@ -202,4 +202,3 @@ function Get-DbaDbRestoreHistory {
         }
     }
 }
-

@@ -4,15 +4,11 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        $paramCount = 16
-        $defaultParamCount = 11
-        [object[]]$params = (Get-ChildItem function:\Get-DbaBackupInformation).Parameters.Keys
-        $knownParameters = 'Path','SqlInstance','SqlCredential','DatabaseName','SourceInstance','NoXpDirTree','DirectoryRecurse','EnableException','MaintenanceSolution','IgnoreLogBackup','ExportPath','AzureCredential','Import','Anonymise','NoClobber','PassThru'
-        It "Should contain our specific parameters" {
-            ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
-        }
-        It "Should only contain $paramCount parameters" {
-            $params.Count - $defaultParamCount | Should Be $paramCount
+        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
+        [object[]]$knownParameters = 'Path','SqlInstance','SqlCredential','DatabaseName','SourceInstance','NoXpDirTree','DirectoryRecurse','EnableException','MaintenanceSolution','IgnoreLogBackup','ExportPath','AzureCredential','Import','Anonymise','NoClobber','PassThru'
+        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
+        It "Should only contain our specific parameters" {
+            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
         }
     }
 }
@@ -23,8 +19,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         $DestBackupDir = 'C:\Temp\GetBackups'
         if (-Not(Test-Path $DestBackupDir)) {
             New-Item -Type Container -Path $DestBackupDir
-        }
-        else {
+        } else {
             Remove-Item $DestBackupDir\*
         }
         $random = Get-Random
@@ -50,8 +45,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             New-Item -Type Container -Path $DestBackupDirOla\FULL
             New-Item -Type Container -Path $DestBackupDirOla\DIFF
             New-Item -Type Container -Path $DestBackupDirOla\LOG
-        }
-        else {
+        } else {
             Remove-Item $DestBackupDirOla\FULL\*
             Remove-Item $DestBackupDirOla\DIFF\*
             Remove-Item $DestBackupDirOla\LOG\*

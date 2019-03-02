@@ -5,14 +5,14 @@ function Invoke-DbaAdvancedRestore {
         For 90% of users Restore-DbaDatabase should be your point of access to this function. The other 10% use it at their own risk
 
     .DESCRIPTION
-        This is the final piece in the Restore-DbaDatabase Stack. Usually a BackupHistory object will arrive here from Restore-Dbadatabase via the following pipeline:
-        Get-DbaBackupInformation  | Select-DbaBackupInformation | Format-DbaBackupInformation | Test-DbaBackupInformation | Invoke-DbaAdvancedRestore
+        This is the final piece in the Restore-DbaDatabase Stack. Usually a BackupHistory object will arrive here from `Restore-Dbadatabase` via the following pipeline:
+        `Get-DbaBackupInformation  | Select-DbaBackupInformation | Format-DbaBackupInformation | Test-DbaBackupInformation | Invoke-DbaAdvancedRestore`
 
         We have exposed these functions publicly to allow advanced users to perform operations that we don't support, or won't add as they would make things too complex for the majority of our users
 
-        For example if you wanted to do some very complex redirection during a migration, then doing the rewrite of destinations may be better done with your own custom scripts rather than via Format-DbaBackupInformation
+        For example if you wanted to do some very complex redirection during a migration, then doing the rewrite of destinations may be better done with your own custom scripts rather than via `Format-DbaBackupInformation`
 
-        We would recommend ALWAYS pushing your input through Test-DbaBackupInformation just to make sure that it makes sense to us.
+        We would recommend ALWAYS pushing your input through `Test-DbaBackupInformation` just to make sure that it makes sense to us.
 
     .PARAMETER BackupHistory
         The BackupHistory object to be restored.
@@ -80,7 +80,7 @@ function Invoke-DbaAdvancedRestore {
 
     .NOTES
         Tags: Restore, Backup
-        Author: Chrissy LeMaire (@cl), netnerds.net
+        Author: Stuart Moore (@napalmgram - http://stuart-moore.com)
 
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
@@ -98,11 +98,12 @@ function Invoke-DbaAdvancedRestore {
         PS C:\> $BackupHistory | Invoke-DbaAdvancedRestore -SqlInstance MyInstance -OutputScriptOnly
         PS C:\> $BackupHistory | Invoke-DbaAdvancedRestore -SqlInstance MyInstance
 
-        First generates just the T-SQL restore scripts so they can be sanity checked, and then if they are good perform the full restore. By reusing the BackupHistory object there is no need to rescan all the backup files again
+        First generates just the T-SQL restore scripts so they can be sanity checked, and then if they are good perform the full restore.
+        By reusing the BackupHistory object there is no need to rescan all the backup files again
 
-#>
-    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "Low")]
-    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingPlainTextForPassword", "", Justification = "For Parameter AzureCredential")]
+    #>
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingPlainTextForPassword", "AzureCredential", Justification = "For Parameter AzureCredential")]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseOutputTypeCorrectly", "", Justification = "PSSA Rule Ignored by BOH")]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
@@ -171,8 +172,8 @@ function Invoke-DbaAdvancedRestore {
                         }
                     }
                 } elseif (-not $WithReplace -and (-not $VerifyOnly)) {
-                    Stop-Function -Message "$Database exists and WithReplace not specified, stopping" -EnableException $EnableException
-                    return
+                    Write-Message -Level verbose -Message "$Database exists and WithReplace not specified, stopping"
+                    continue
                 }
             }
             Write-Message -Message "WithReplace  = $WithReplace" -Level Debug
@@ -307,10 +308,16 @@ function Invoke-DbaAdvancedRestore {
                         return
                     } finally {
                         if ($OutputScriptOnly -eq $false) {
+                            $pathSep = Get-DbaPathSep -Server $server
+                            $RestoreDirectory = ((Split-Path $backup.FileList.PhysicalName -Parent) | Sort-Object -Unique).Replace('\', $pathSep) -Join ','
                             [PSCustomObject]@{
-                                SqlInstance            = $SqlInstance
+                                ComputerName           = $server.ComputerName
+                                InstanceName           = $server.ServiceName
+                                SqlInstance            = $server.DomainInstanceName
+                                Database               = $backup.Database
                                 DatabaseName           = $backup.Database
                                 DatabaseOwner          = $server.ConnectionContext.TrueLogin
+                                Owner                  = $server.ConnectionContext.TrueLogin
                                 NoRecovery             = $Restore.NoRecovery
                                 WithReplace            = $WithReplace
                                 RestoreComplete        = $RestoreComplete
@@ -321,15 +328,15 @@ function Invoke-DbaAdvancedRestore {
                                 BackupFile             = $backup.FullName -Join ','
                                 RestoredFile           = $((Split-Path $backup.FileList.PhysicalName -Leaf) | Sort-Object -Unique) -Join ','
                                 RestoredFileFull       = ($backup.Filelist.PhysicalName -Join ',')
-                                RestoreDirectory       = ((Split-Path $backup.FileList.PhysicalName) | Sort-Object -Unique) -Join ','
-                                BackupSize             = if ([bool]($backup.psobject.Properties.Name -contains 'TotalSize')) { ($backup | Measure-Object -Property TotalSize -Sum).Sum } else { $null }
-                                CompressedBackupSize   = if ([bool]($backup.psobject.Properties.Name -contains 'CompressedBackupSize')) { ($backup | Measure-Object -Property CompressedBackupSize -Sum).Sum } else { $null }
+                                RestoreDirectory       = $RestoreDirectory
+                                BackupSize             = if ([bool]($backup.psobject.Properties.Name -contains 'TotalSize')) { [dbasize](($backup | Measure-Object -Property TotalSize -Sum).Sum) } else { $null }
+                                CompressedBackupSize   = if ([bool]($backup.psobject.Properties.Name -contains 'CompressedBackupSize')) { [dbasize](($backup | Measure-Object -Property CompressedBackupSize -Sum).Sum) } else { $null }
                                 Script                 = $script
                                 BackupFileRaw          = ($backups.Fullname)
                                 FileRestoreTime        = New-TimeSpan -Seconds ((Get-Date) - $FileRestoreStartTime).TotalSeconds
                                 DatabaseRestoreTime    = New-TimeSpan -Seconds ((Get-Date) - $DatabaseRestoreStartTime).TotalSeconds
                                 ExitError              = $ExitError
-                            } | Select-DefaultView -ExcludeProperty BackupSize, CompressedBackupSize, ExitError, BackupFileRaw, RestoredFileFull
+                            } | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, BackupFile, BackupFilesCount, BackupSize, CompressedBackupSize, Database, Owner, DatabaseRestoreTime, FileRestoreTime, NoRecovery, RestoreComplete, RestoredFile, RestoredFilesCount, Script, RestoreDirectory, WithReplace
                         } else {
                             $script
                         }

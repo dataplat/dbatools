@@ -58,7 +58,7 @@ function Set-DbaErrorLogConfig {
 
         Sets the number of error log files to 25 and size before it will roll over to 500 KB on sql2012
 
-#>
+    #>
     [cmdletbinding(SupportsShouldProcess)]
     param(
         [Parameter(ValueFromPipelineByPropertyName, Mandatory)]
@@ -131,4 +131,3 @@ function Set-DbaErrorLogConfig {
         }
     }
 }
-

@@ -59,7 +59,7 @@ function Clear-DbaPlanCache {
         PS C:\> Find-DbaInstance -ComputerName localhost | Get-DbaPlanCache | Clear-DbaPlanCache -Threshold 200
 
         Scans localhost for instances using the browser service, traverses all instances and gets the plan cache for each, clears them out if they are above 200 MB.
-#>
+    #>
     [CmdletBinding(SupportsShouldProcess)]
     param (
         [Alias("ServerInstance", "SqlServer", "SqlServers")]
@@ -108,4 +108,3 @@ function Clear-DbaPlanCache {
         }
     }
 }
-

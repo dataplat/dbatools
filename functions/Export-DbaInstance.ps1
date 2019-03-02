@@ -46,7 +46,7 @@ function Export-DbaInstance {
     .PARAMETER Path
         The path to the export file
 
-    .PARAMETER NetworkShare
+    .PARAMETER SharedPath
         Specifies the network location for the backup files. The SQL Server service accounts on both Source and Destination must have read/write permission to access this location.
 
     .PARAMETER WithReplace
@@ -116,7 +116,7 @@ function Export-DbaInstance {
 
         Exports everything but logins and database restore scripts to C:\dr\sqlcluster
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
@@ -438,4 +438,3 @@ function Export-DbaInstance {
         Write-Message -Level Verbose -Message "Total Elapsed time: $totaltime"
     }
 }
-

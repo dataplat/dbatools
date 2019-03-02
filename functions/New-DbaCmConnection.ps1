@@ -103,7 +103,7 @@ function New-DbaCmConnection {
 
         Essentially, this configures all connections to those computers to prefer failure with the specified credentials over using alternative credentials.
 
-#>
+    #>
     [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = 'Credential')]
     param (
         [Parameter(ValueFromPipeline)]
@@ -178,4 +178,3 @@ function New-DbaCmConnection {
         Write-Message -Level InternalComment -Message "Stopping execution"
     }
 }
-

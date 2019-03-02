@@ -35,7 +35,7 @@ function Get-DbaRegistryRoot {
 
         Gets the registry root for all instances on server1
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(ValueFromPipeline)]
@@ -99,4 +99,3 @@ function Get-DbaRegistryRoot {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-DbaSqlRegistryRoot
     }
 }
-

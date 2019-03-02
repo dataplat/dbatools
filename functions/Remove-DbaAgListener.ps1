@@ -52,7 +52,7 @@ function Remove-DbaAgListener {
         PS C:\> Get-DbaAvailabilityGroup -SqlInstance sqlserver2012 -AvailabilityGroup availabilitygroup1 | Remove-DbaAgListener
 
         Removes the listeners returned from the Get-DbaAvailabilityGroup function. Prompts for confirmation.
-#>
+    #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
     param (
         [DbaInstanceParameter[]]$SqlInstance,

@@ -53,7 +53,7 @@ function Get-DbaAgReplica {
 
         Returns full object properties on all availability group replicas found on sql2017a
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [DbaInstanceParameter[]]$SqlInstance,
@@ -69,15 +69,14 @@ function Get-DbaAgReplica {
             $InputObject += Get-DbaAvailabilityGroup -SqlInstance $SqlInstance -SqlCredential $SqlCredential -AvailabilityGroup $AvailabilityGroup
         }
 
+        $availabilityReplicas = $InputObject.AvailabilityReplicas
         if ($Replica) {
-            $InputObject = $InputObject | Where-Object { $_.AvailabilityReplicas.Name -contains $Replica }
+            $availabilityReplicas = $InputObject.AvailabilityReplicas | Where-Object { $_.Name -in $Replica }
         }
 
         $defaults = 'ComputerName', 'InstanceName', 'SqlInstance', 'AvailabilityGroup', 'Name', 'Role', 'ConnectionState', 'RollupSynchronizationState', 'AvailabilityMode', 'BackupPriority', 'EndpointUrl', 'SessionTimeout', 'FailoverMode', 'ReadonlyRoutingList'
 
-        foreach ($agreplica in $InputObject.AvailabilityReplicas) {
-            #Variable marked as unused by PSScriptAnalyzer
-            #$server = $agreplica.Parent.Parent
+        foreach ($agreplica in $availabilityReplicas) {
             Add-Member -Force -InputObject $agreplica -MemberType NoteProperty -Name ComputerName -value $agreplica.Parent.ComputerName
             Add-Member -Force -InputObject $agreplica -MemberType NoteProperty -Name InstanceName -value $agreplica.Parent.InstanceName
             Add-Member -Force -InputObject $agreplica -MemberType NoteProperty -Name SqlInstance -value $agreplica.Parent.SqlInstance

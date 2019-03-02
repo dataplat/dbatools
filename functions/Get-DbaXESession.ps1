@@ -47,7 +47,7 @@ function Get-DbaXESession {
 
         Returns a custom object with ComputerName, SqlInstance, Session, StartTime, Status and other properties, from multiple SQL instances.
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
@@ -114,4 +114,3 @@ function Get-DbaXESession {
         }
     }
 }
-

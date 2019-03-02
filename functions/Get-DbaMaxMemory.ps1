@@ -6,7 +6,7 @@ function Get-DbaMaxMemory {
 
     .DESCRIPTION
         This command retrieves the SQL Server 'Max Server Memory' configuration setting as well as the total physical installed on the server.
-    
+
         Results are turned in megabytes (MB).
 
     .PARAMETER SqlInstance
@@ -45,7 +45,7 @@ function Get-DbaMaxMemory {
         PS C:\> Find-DbaInstance -ComputerName localhost | Get-DbaMaxMemory | Format-Table -AutoSize
 
         Scans localhost for instances using the browser service, traverses all instances and displays memory settings in a formatted table.
-    #>
+       #>
     [CmdletBinding()]
     param (
         [parameter(Position = 0, Mandatory, ValueFromPipeline)]

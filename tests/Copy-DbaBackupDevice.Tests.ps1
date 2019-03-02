@@ -4,15 +4,11 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        $paramCount = 7
-        $defaultParamCount = 13
-        [object[]]$params = (Get-ChildItem function:\Copy-DbaBackupDevice).Parameters.Keys
-        $knownParameters = 'Source','SourceSqlCredential','Destination','DestinationSqlCredential','BackupDevice','Force','EnableException'
-        It "Should contain our specific parameters" {
-            ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
-        }
-        It "Should only contain $paramCount parameters" {
-            $params.Count - $defaultParamCount | Should Be $paramCount
+        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
+        [object[]]$knownParameters = 'Source','SourceSqlCredential','Destination','DestinationSqlCredential','BackupDevice','Force','EnableException'
+        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
+        It "Should only contain our specific parameters" {
+            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
         }
     }
 }
@@ -33,8 +29,7 @@ if (-not $env:appveyor) {
                 $server1 = Connect-DbaInstance -SqlInstance $script:instance2
                 try {
                     $server1.Query("EXEC master.dbo.sp_dropdevice @logicalname = N'$devicename'")
-                }
-                catch {
+                } catch {
                     # don't care
                 }
             }
@@ -44,8 +39,7 @@ if (-not $env:appveyor) {
                 It "warns if it has a problem moving (issue for local to local)" {
                     $warn -match "backup device to destination" | Should Be $true
                 }
-            }
-            else {
+            } else {
                 It "should report success" {
                     $results.Status | Should Be "Successful"
                 }

@@ -41,7 +41,7 @@ function Get-DbaWsfcRole {
 
         Shows all role values, including the ones not shown in the default view
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(ValueFromPipeline)]
@@ -60,4 +60,3 @@ function Get-DbaWsfcRole {
         }
     }
 }
-

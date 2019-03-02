@@ -82,7 +82,7 @@ function Copy-DbaSsisCatalog {
 
         Deploy entire SSIS catalog to an instance without a destination catalog. User prompts for creating the catalog on Destination will be bypassed.
 
-    #>
+       #>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess)]
     param (
         [parameter(Mandatory)]
@@ -102,6 +102,7 @@ function Copy-DbaSsisCatalog {
     )
     <# Developer note: The throw calls must stay in this command #>
     begin {
+        $ISNamespace = "Microsoft.SqlServer.Management.IntegrationServices"
         function Get-RemoteIntegrationService {
             param (
                 [Object]$Computer
@@ -228,7 +229,7 @@ function Copy-DbaSsisCatalog {
         function New-SSISDBCatalog {
             [CmdletBinding(SupportsShouldProcess)]
             param (
-                [System.Security.SecureString]$Password
+                [System.Security.SecureString]$SecurePassword
             )
             if ($Pscmdlet.ShouldProcess("Creating New SSISDB Catalog")) {
                 if (!$Password) {
@@ -352,7 +353,7 @@ function Copy-DbaSsisCatalog {
                             }
                         }
                     } else {
-                        New-SSISDBCatalog -Password $CreateCatalogPassword
+                        New-SSISDBCatalog -SecurePassword $CreateCatalogPassword
                     }
 
                     $destinationSSIS.Refresh()

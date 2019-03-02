@@ -9,8 +9,7 @@ Set-DbatoolsConfig -FullName 'TabExpansion.Disable' -Value $false -Initialize -V
     # Disable Async TEPP runspace if not needed
     if ([Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::TeppAsyncDisabled -or [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::TeppDisabled) {
         [Sqlcollaborative.Dbatools.Runspace.RunspaceHost]::Runspaces["dbatools-teppasynccache"].Stop()
-    }
-    else {
+    } else {
         [Sqlcollaborative.Dbatools.Runspace.RunspaceHost]::Runspaces["dbatools-teppasynccache"].Start()
     }
 } -Description 'Globally disables all TEPP functionality by dbatools'
@@ -20,8 +19,7 @@ Set-DbatoolsConfig -FullName 'TabExpansion.Disable.Asynchronous' -Value $false -
     # Disable Async TEPP runspace if not needed
     if ([Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::TeppAsyncDisabled -or [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::TeppDisabled) {
         [Sqlcollaborative.Dbatools.Runspace.RunspaceHost]::Runspaces["dbatools-teppasynccache"].Stop()
-    }
-    else {
+    } else {
         [Sqlcollaborative.Dbatools.Runspace.RunspaceHost]::Runspaces["dbatools-teppasynccache"].Start()
     }
 } -Description 'Globally disables asynchronous TEPP updates in the background'

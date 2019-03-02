@@ -62,7 +62,7 @@ function Test-DbaCmConnection {
 
         The results will be reported and registered. Future calls from Get-DbaCmObject will recognize the results and optimize the query.
 
-#>
+    #>
     [CmdletBinding()]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingWMICmdlet", "", Justification = "Using Get-WmiObject is used as a fallback for testing connections")]
     param (
@@ -327,4 +327,3 @@ function Test-DbaCmConnection {
 
     }
 }
-

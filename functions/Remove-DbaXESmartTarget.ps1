@@ -44,7 +44,7 @@ function Remove-DbaXESmartTarget {
 
         Removes a specific XESmartTarget job.
 
-#>
+    #>
     [CmdletBinding(SupportsShouldProcess)]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
@@ -64,4 +64,3 @@ function Remove-DbaXESmartTarget {
         }
     }
 }
-

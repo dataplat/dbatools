@@ -20,12 +20,6 @@ function Get-DbaForceNetworkEncryption {
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-    .PARAMETER WhatIf
-        Shows what would happen if the command were to run. No actions are actually performed
-
-    .PARAMETER Confirm
-        Prompts you for confirmation before executing any changing operations within the command
-
     .NOTES
         Tags: Certificate
         Author: Chrissy LeMaire (@cl), netnerds.net
@@ -47,23 +41,16 @@ function Get-DbaForceNetworkEncryption {
 
         Gets Force Network Encryption for the SQL2008R2SP2 on sql01. Uses Windows Credentials to both login and view the registry.
 
-#>
-    [CmdletBinding(SupportsShouldProcess)]
+       #>
+    [CmdletBinding()]
     param (
         [Parameter(ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer", "ComputerName")]
-        [DbaInstanceParameter[]]
-        $SqlInstance = $env:COMPUTERNAME,
-
-        [PSCredential]
-
-        $Credential,
-
-        [switch]
-        [Alias('Silent')]$EnableException
+        [DbaInstanceParameter[]]$SqlInstance = $env:COMPUTERNAME,
+        [PSCredential]$Credential,
+        [switch]$EnableException
     )
     process {
-
         foreach ($instance in $SqlInstance) {
             Write-Message -Level VeryVerbose -Message "Processing $instance" -Target $instance
             $null = Test-ElevationRequirement -ComputerName $instance -Continue
@@ -77,7 +64,9 @@ function Get-DbaForceNetworkEncryption {
             }
 
             try {
-                $sqlwmi = Invoke-ManagedComputerCommand -ComputerName $resolved.FullComputerName -ScriptBlock { $wmi.Services } -Credential $Credential -ErrorAction Stop | Where-Object DisplayName -eq "SQL Server ($($instance.InstanceName))"
+                $sqlwmi = Invoke-ManagedComputerCommand -ComputerName $resolved.FullComputerName -ScriptBlock {
+                    $wmi.Services
+                } -Credential $Credential -ErrorAction Stop | Where-Object DisplayName -eq "SQL Server ($($instance.InstanceName))"
             } catch {
                 Stop-Function -Message "Failed to access $instance" -Target $instance -Continue -ErrorRecord $_
             }
@@ -94,8 +83,12 @@ function Get-DbaForceNetworkEncryption {
             $serviceaccount = $sqlwmi.ServiceAccount
 
             if ([System.String]::IsNullOrEmpty($regroot)) {
-                $regroot = $sqlwmi.AdvancedProperties | Where-Object { $_ -match 'REGROOT' }
-                $vsname = $sqlwmi.AdvancedProperties | Where-Object { $_ -match 'VSNAME' }
+                $regroot = $sqlwmi.AdvancedProperties | Where-Object {
+                    $_ -match 'REGROOT'
+                }
+                $vsname = $sqlwmi.AdvancedProperties | Where-Object {
+                    $_ -match 'VSNAME'
+                }
 
                 if (![System.String]::IsNullOrEmpty($regroot)) {
                     $regroot = ($regroot -Split 'Value\=')[1]
@@ -105,7 +98,9 @@ function Get-DbaForceNetworkEncryption {
                 }
             }
 
-            if ([System.String]::IsNullOrEmpty($vsname)) { $vsname = $instance }
+            if ([System.String]::IsNullOrEmpty($vsname)) {
+                $vsname = $instance
+            }
 
             Write-Message -Level Verbose -Message "Regroot: $regroot" -Target $instance
             Write-Message -Level Verbose -Message "ServiceAcct: $serviceaccount" -Target $instance
@@ -127,17 +122,14 @@ function Get-DbaForceNetworkEncryption {
                 }
             }
 
-            if ($PScmdlet.ShouldProcess("local", "Connecting to $instance")) {
-                try {
-                    $results = Invoke-Command2 -ComputerName $resolved.FullComputerName -Credential $Credential -ArgumentList $regroot, $vsname, $instancename -ScriptBlock $scriptblock -ErrorAction Stop -Raw
-                    foreach ($result in $results) {
-                        [pscustomobject]$result
-                    }
-                } catch {
-                    Stop-Function -Message "Failed to connect to $($resolved.FullComputerName) using PowerShell remoting!" -ErrorRecord $_ -Target $instance -Continue
+            try {
+                $results = Invoke-Command2 -ComputerName $resolved.FullComputerName -Credential $Credential -ArgumentList $regroot, $vsname, $instancename -ScriptBlock $scriptblock -ErrorAction Stop -Raw
+                foreach ($result in $results) {
+                    [pscustomobject]$result
                 }
+            } catch {
+                Stop-Function -Message "Failed to connect to $($resolved.FullComputerName) using PowerShell remoting!" -ErrorRecord $_ -Target $instance -Continue
             }
         }
     }
 }
-
