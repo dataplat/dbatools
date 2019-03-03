@@ -28,7 +28,6 @@ Write-Host -Object "$indent Starting $instance" -ForegroundColor DarkGreen
 #Restart-Service "SQLAgent`$$instance" -WarningAction SilentlyContinue -Force
 
 $null = Enable-DbaAgHadr -SqlInstance $sqlinstance -Confirm:$false -Force
-Restart-Service "SQLAgent`$$instance" -WarningAction SilentlyContinue -Force
 
 do {
     Start-Sleep 1
