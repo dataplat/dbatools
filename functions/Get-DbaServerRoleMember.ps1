@@ -81,7 +81,7 @@ function Get-DbaServerRoleMember {
     param (
         [parameter(Position = 0, Mandatory, ValueFromPipeline)]
         [Alias('ServerInstance', 'SqlServer')]
-        [DbaInstance[]]$SqlInstance,
+        [DbaInstanceParameter[]]$SqlInstance,
         [Alias('Credential')]
         [PSCredential]$SqlCredential,
         [string[]]$ServerRole,
@@ -105,9 +105,12 @@ function Get-DbaServerRoleMember {
             $roles = $server.Roles
 
             if (Test-Bound -ParameterName 'Login') {
-                $logins = Get-DbaLogin -SqlInstance $instance -Login $Login
+                try {
+                    $logins = Get-DbaLogin -SqlInstance $server -Login $Login -EnableException
+                } catch {
+                    Stop-Function -Message "Issue gathering login details" -ErrorRecord $_ -Target $instance
+                }
                 Write-Message -Level 'Verbose' -Message "Filtering by logins: $($logins -join ', ')"
-
                 foreach ($l in $logins) {
                     $loginRoles += $l.ListMembers()
                 }
