@@ -75,8 +75,7 @@ function Export-DbaDacPackage {
         Uses DacOption object to set the CommandTimeout to 0 then extracts the dacpac for DB1 on sql2016 to $home\Documents\DB1.dacpac including all table data.
 
     .EXAMPLE
-        PS C:\> Export-DbaDacPackage -SqlInstance sql2016 -AllUserDatabases -ExcludeDatabase "DBMaintenance","DBMonitoring" C:\temp
-
+        PS C:\> Export-DbaDacPackage -SqlInstance sql2016 -AllUserDatabases -ExcludeDatabase "DBMaintenance","DBMonitoring" -Path "C:\temp"
         Exports dacpac packages for all USER databases, excluding "DBMaintenance" & "DBMonitoring", on sql2016 and saves them to C:\temp
 
     .EXAMPLE
