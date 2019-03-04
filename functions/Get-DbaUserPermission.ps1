@@ -189,6 +189,7 @@ function Get-DbaUserPermission {
             }
 
             $dbs = $server.Databases
+            $tempdb = $server.Databases['tempdb']
 
             if ($Database) {
                 $dbs = $dbs | Where-Object { $Database -contains $_.Name }
@@ -291,7 +292,7 @@ function Get-DbaUserPermission {
                 #Delete objects
                 Write-Message -Level Verbose -Message "Deleting objects"
                 try {
-                    $db.ExecuteNonQuery($endSQL)
+                    $tempdb.ExecuteNonQuery($endSQL)
                 } catch {
                     # here to avoid an empty catch
                     $null = 1
