@@ -445,15 +445,23 @@
         'Invoke-DbaDbDbccUpdateUsage',
         'Get-DbaDbIdentity',
         'Set-DbaDbIdentity',
+        'Get-DbaCmsRegServerStore',
+        'Get-DbaCmsRegServer',
+        'Add-DbaCmsRegServer',
+        'Add-DbaCmsRegServerGroup',
+        'Export-DbaCmsRegServer',
+        'Import-DbaCmsRegServer',
+        'Move-DbaCmsRegServer',
+        'Move-DbaCmsRegServerGroup',
+        'Remove-DbaCmsRegServer',
+        'Remove-DbaCmsRegServerGroup',
         # noncoresmo
         # SMO issues
         'Export-DbaUser',
         'Get-DbaSsisExecutionHistory',
         'Get-DbaRepDistributor',
-        'Get-DbaCmsRegServerStore',
         'Copy-DbaPolicyManagement',
         'Copy-DbaDataCollector',
-        'Get-DbaCmsRegServer',
         'Copy-DbaSsisCatalog',
         'New-DbaSsisCatalog',
         'Get-DbaSsisEnvironmentVariable',
@@ -463,14 +471,6 @@
         'Get-DbaPbmObjectSet',
         'Get-DbaPbmPolicy',
         'Get-DbaPbmStore',
-        'Add-DbaCmsRegServer',
-        'Add-DbaCmsRegServerGroup',
-        'Export-DbaCmsRegServer',
-        'Import-DbaCmsRegServer',
-        'Move-DbaCmsRegServer',
-        'Move-DbaCmsRegServerGroup',
-        'Remove-DbaCmsRegServer',
-        'Remove-DbaCmsRegServerGroup',
         'Get-DbaRepPublication',
         'Test-DbaRepLatency',
         'Export-DbaRepServerSetting',
@@ -815,7 +815,8 @@
         'Test-SqlTempDbConfiguration',
         'Update-DbaSqlServiceAccount',
         'Watch-DbaXEventSession',
-        'Watch-SqlDbLogin')
+        'Watch-SqlDbLogin'
+    )
 
     # List of all modules packaged with this module
     ModuleList             = @()
