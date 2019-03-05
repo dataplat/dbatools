@@ -149,7 +149,8 @@ function Invoke-DbaDbDataMasking {
 
         if ($FilePath.ToString().StartsWith('http')) {
             $tables = Invoke-RestMethod -Uri $FilePath
-        } else {
+        }
+        else {
             # Check if the destination is accessible
             if (-not (Test-Path -Path $FilePath)) {
                 Stop-Function -Message "Could not find masking config file $FilePath" -Target $FilePath
@@ -159,7 +160,8 @@ function Invoke-DbaDbDataMasking {
             # Get all the items that should be processed
             try {
                 $tables = Get-Content -Path $FilePath -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
-            } catch {
+            }
+            catch {
                 Stop-Function -Message "Could not parse masking config file" -ErrorRecord $_ -Target $FilePath
                 return
             }
@@ -185,13 +187,15 @@ function Invoke-DbaDbDataMasking {
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
-            } catch {
+            }
+            catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             if ($Database) {
                 $dbs = Get-DbaDatabase -SqlInstance $server -SqlCredential $SqlCredential -Database $Database
-            } else {
+            }
+            else {
                 $dbs = Get-DbaDatabase -SqlInstance $server -SqlCredential $SqlCredential -Database $tables.Name
             }
 
@@ -223,7 +227,8 @@ function Invoke-DbaDbDataMasking {
                             $query = "SELECT $($columnString) FROM [$($tableobject.Schema)].[$($tableobject.Name)]"
                         }
                         $data = $server.Databases[$($db.Name)].Query($query) | ConvertTo-DbaDataTable
-                    } catch {
+                    }
+                    catch {
                         Stop-Function -Message "Failure retrieving the data from table $($tableobject.Name)" -Target $Database -ErrorRecord $_ -Continue
                     }
 
@@ -338,7 +343,8 @@ function Invoke-DbaDbDataMasking {
 
                                 if ($columnobject.Nullable -and (($nullmod++) % $ModulusFactor -eq 0)) {
                                     $newValue = $null
-                                } elseif ($tableobject.HasUniqueIndex -and $columnobject.Name -in $uniqueValueColumns) {
+                                }
+                                elseif ($tableobject.HasUniqueIndex -and $columnobject.Name -in $uniqueValueColumns) {
 
                                     if ($uniqueValues.Count -lt 1) {
                                         Stop-Function -Message "Could not find any unique values in dictionary" -Target $tableobject
@@ -347,16 +353,19 @@ function Invoke-DbaDbDataMasking {
 
                                     $newValue = $uniqueValues[$rowNumber].$($columnobject.Name)
 
-                                } else {
+                                }
+                                else {
 
                                     # make sure max is good
                                     if ($MaxValue) {
                                         if ($columnobject.MaxValue -le $MaxValue) {
                                             $max = $columnobject.MaxValue
-                                        } else {
+                                        }
+                                        else {
                                             $max = $MaxValue
                                         }
-                                    } else {
+                                    }
+                                    else {
                                         $max = $columnobject.MaxValue
                                     }
 
@@ -366,17 +375,20 @@ function Invoke-DbaDbDataMasking {
 
                                     if ($columnobject.CharacterString) {
                                         $charstring = $columnobject.CharacterString
-                                    } else {
+                                    }
+                                    else {
                                         $charstring = $CharacterString
                                     }
 
                                     # make sure min is good
                                     if ($columnobject.MinValue) {
                                         $min = $columnobject.MinValue
-                                    } else {
+                                    }
+                                    else {
                                         if ($columnobject.CharacterString) {
                                             $min = 1
-                                        } else {
+                                        }
+                                        else {
                                             $min = 0
                                         }
                                     }
@@ -411,7 +423,8 @@ function Invoke-DbaDbDataMasking {
                                                 } {
                                                     if ($columnobject.MinValue -or $columnobject.MaxValue) {
                                                         ($faker.Date.Between($nowmin, $nowmax)).ToString("yyyyMMdd")
-                                                    } else {
+                                                    }
+                                                    else {
                                                         ($faker.Date.Past()).ToString("yyyyMMdd")
                                                     }
                                                 }
@@ -420,14 +433,16 @@ function Invoke-DbaDbDataMasking {
                                                 } {
                                                     if ($columnobject.MinValue -or $columnobject.MaxValue) {
                                                         $faker.System.Random.Int($columnobject.MinValue, $columnobject.MaxValue)
-                                                    } else {
+                                                    }
+                                                    else {
                                                         $faker.System.Random.Int(0, $max)
                                                     }
                                                 }
                                                 'money' {
                                                     if ($columnobject.MinValue -or $columnobject.MaxValue) {
                                                         $faker.Finance.Amount($columnobject.MinValue, $columnobject.MaxValue)
-                                                    } else {
+                                                    }
+                                                    else {
                                                         $faker.Finance.Amount(0, $max)
                                                     }
                                                 }
@@ -440,7 +455,8 @@ function Invoke-DbaDbDataMasking {
                                                 'userdefineddatatype' {
                                                     if ($columnobject.MaxValue -eq 1) {
                                                         $faker.System.Random.Bool()
-                                                    } else {
+                                                    }
+                                                    else {
                                                         $null
                                                     }
                                                 }
@@ -465,7 +481,8 @@ function Invoke-DbaDbDataMasking {
                                                 } {
                                                     if ($columnobject.MinValue -or $columnobject.MaxValue) {
                                                         ($faker.Date.Between($nowmin, $nowmax)).ToString("yyyyMMdd")
-                                                    } else {
+                                                    }
+                                                    else {
                                                         ($faker.Date.Past()).ToString("yyyyMMdd")
                                                     }
                                                 }
@@ -485,7 +502,8 @@ function Invoke-DbaDbDataMasking {
 
                                                     if ($columnobject.ColumnType -eq 'xml') {
                                                         $null
-                                                    } else {
+                                                    }
+                                                    else {
                                                         $faker.$($columnobject.MaskingType).String2($max, $charstring)
                                                     }
                                                 }
@@ -507,7 +525,8 @@ function Invoke-DbaDbDataMasking {
                                                 } {
                                                     if ($columnobject.Format) {
                                                         $faker.$($columnobject.MaskingType).$($columnobject.SubType)("$($columnobject.Format)")
-                                                    } else {
+                                                    }
+                                                    else {
                                                         $faker.$($columnobject.MaskingType).$($columnobject.SubType)()
                                                     }
                                                 }
@@ -520,53 +539,66 @@ function Invoke-DbaDbDataMasking {
                                                     }
                                                     if ($max -eq 1) {
                                                         $faker.System.Random.Bool()
-                                                    } else {
+                                                    }
+                                                    else {
                                                         try {
                                                             if ($columnobject.Format) {
                                                                 $faker.$($columnobject.MaskingType).$($columnobject.SubType)("$($columnobject.Format)")
-                                                            } else {
+                                                            }
+                                                            else {
                                                                 $faker.$($columnobject.MaskingType).$($columnobject.SubType)()
                                                             }
-                                                        } catch {
+                                                        }
+                                                        catch {
                                                             $faker.Random.String2($max, $charstring)
                                                         }
                                                     }
                                                 }
                                             }
                                         }
-                                    } catch {
+                                    }
+                                    catch {
                                         Stop-Function -Message "Failure" -Target $faker -Continue -ErrorRecord $_
                                     }
                                 }
 
                                 if ($columnobject.ColumnType -eq 'xml') {
                                     # nothing, unsure how i'll handle this
-                                } elseif ($columnobject.ColumnType -in 'uniqueidentifier') {
+                                }
+                                elseif ($columnobject.ColumnType -in 'uniqueidentifier') {
                                     if ($null -eq $newValue -and $columnobject.Nullable) {
                                         $updates += "[$($columnobject.Name)] = NULL"
-                                    } else {
+                                    }
+                                    else {
                                         $updates += "[$($columnobject.Name)] = '$newValue'"
                                     }
-                                } elseif ($columnobject.ColumnType -match 'int') {
+                                }
+                                elseif ($columnobject.ColumnType -match 'int') {
                                     if ($null -eq $newValue -and $columnobject.Nullable) {
                                         $updates += "[$($columnobject.Name)] = NULL"
-                                    } else {
+                                    }
+                                    else {
                                         $updates += "[$($columnobject.Name)] = $newValue"
                                     }
-                                } elseif ($columnobject.ColumnType -in 'bit', 'bool') {
+                                }
+                                elseif ($columnobject.ColumnType -in 'bit', 'bool') {
                                     if ($null -eq $newValue -and $columnobject.Nullable) {
                                         $updates += "[$($columnobject.Name)] = NULL"
-                                    } else {
+                                    }
+                                    else {
                                         if ($newValue) {
                                             $updates += "[$($columnobject.Name)] = 1"
-                                        } else {
+                                        }
+                                        else {
                                             $updates += "[$($columnobject.Name)] = 0"
                                         }
                                     }
-                                } else {
+                                }
+                                else {
                                     if ($null -eq $newValue -and $columnobject.Nullable) {
                                         $updates += "[$($columnobject.Name)] = NULL"
-                                    } else {
+                                    }
+                                    else {
                                         $newValue = ($newValue).Tostring().Replace("'", "''")
                                         $updates += "[$($columnobject.Name)] = '$newValue'"
                                     }
@@ -579,21 +611,44 @@ function Invoke-DbaDbDataMasking {
 
                             $rowItems = $row | Get-Member -MemberType Properties | Select-Object Name -ExpandProperty Name
                             foreach ($item in $rowItems) {
+                                $itemColumnType = $dbTable.Columns[$item].DataType.SqlDataType.ToString().ToLower()
+
                                 if (($row.$($item)).GetType().Name -match 'DBNull') {
                                     $wheres += "[$item] IS NULL"
-                                } elseif ($dbTable.Columns[$item].DataType.SqlDataType.ToString().ToLower() -in 'text', 'ntext') {
+                                }
+                                elseif ($itemColumnType -in 'bit', 'bool') {
+                                    if($row.$item){
+                                        $wheres += "[$item] = 1"
+                                    }
+                                    else{
+                                        $wheres += "[$item] = 0"
+                                    }
+                                }
+                                elseif ($itemColumnType -like '*int*' -or $itemColumnType -in 'decimal') {
+                                    $oldValue = $row.$item
+                                    $wheres += "[$item] = $oldValue"
+                                }
+                                elseif ($itemColumnType -in 'text', 'ntext') {
                                     $oldValue = ($row.$item).Tostring().Replace("'", "''")
                                     $wheres += "CAST([$item] AS VARCHAR(MAX)) = '$oldValue'"
-                                } elseif ($dbTable.Columns[$item].DataType.SqlDataType.ToString().ToLower() -like 'datetime') {
+                                }
+                                elseif ($itemColumnType -like 'datetime') {
                                     $oldValue = ($row.$item).Tostring("yyyy-MM-dd HH:mm:ss.fff")
                                     $wheres += "[$item] = '$oldValue'"
-                                } elseif ($dbTable.Columns[$item].DataType.SqlDataType.ToString().ToLower() -like 'datetime2') {
-                                    $oldValue = ($row.$item).Tostring("yyyy-MM-dd HH:mm:ss.ffffff")
+                                }
+                                elseif ($itemColumnType -like 'datetime2') {
+                                    $oldValue = ($row.$item).Tostring("yyyy-MM-dd HH:mm:ss.fffffff")
                                     $wheres += "[$item] = '$oldValue'"
-                                } elseif ($dbTable.Columns[$item].DataType.SqlDataType.ToString().ToLower() -like '*date*') {
+                                }
+                                elseif ($itemColumnType -like 'date') {
+                                    $oldValue = ($row.$item).Tostring("yyyy-MM-dd")
+                                    $wheres += "[$item] = '$oldValue'"
+                                }
+                                elseif ($itemColumnType -like '*date*') {
                                     $oldValue = ($row.$item).Tostring("yyyy-MM-dd HH:mm:ss")
                                     $wheres += "[$item] = '$oldValue'"
-                                } else {
+                                }
+                                else {
                                     $oldValue = ($row.$item).Tostring().Replace("'", "''")
                                     $wheres += "[$item] = '$oldValue'"
                                 }
@@ -604,7 +659,8 @@ function Invoke-DbaDbDataMasking {
                             try {
                                 $sqlcmd = New-Object System.Data.SqlClient.SqlCommand($updatequery, $sqlconn, $transaction)
                                 $null = $sqlcmd.ExecuteNonQuery()
-                            } catch {
+                            }
+                            catch {
                                 Write-Message -Level VeryVerbose -Message "$updatequery"
                                 $errormessage = $_.Exception.Message.ToString()
                                 Stop-Function -Message "Error updating $($tableobject.Schema).$($tableobject.Name): $errormessage" -Target $updatequery -Continue -ErrorRecord $_
@@ -627,7 +683,8 @@ function Invoke-DbaDbDataMasking {
                                 Elapsed      = [prettytimespan]$elapsed.Elapsed
                                 Status       = "Masked"
                             }
-                        } catch {
+                        }
+                        catch {
                             Stop-Function -Message "Error updating $($tableobject.Schema).$($tableobject.Name)" -Target $updatequery -Continue -ErrorRecord $_
                         }
                     }
@@ -638,7 +695,8 @@ function Invoke-DbaDbDataMasking {
             }
             try {
                 $sqlconn.Close()
-            } catch {
+            }
+            catch {
                 Stop-Function -Message "Failure" -Continue -ErrorRecord $_
             }
         }
