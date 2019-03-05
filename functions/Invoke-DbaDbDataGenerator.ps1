@@ -84,7 +84,7 @@ function Invoke-DbaDbDataGenerator {
         Apply the data generation configuration from the file "sqldb1.db1.tables.json" to the db1 database on sqldb2. Do not prompt for confirmation.
 
     .EXAMPLE
-        New-DbaDbMaskingConfig -SqlInstance SQLDB1 -Database DB1 -Path C:\Temp\clone -OutVariable file
+        New-DbaDbMDataGeneratorConfig -SqlInstance SQLDB1 -Database DB1 -Path C:\Temp\clone -OutVariable file
         $file | Invoke-DbaDbDataGenerator -SqlInstance SQLDB2 -Database DB1 -Confirm:$false
 
         Create the data generation configuration file "sqldb1.db1.tables.json", then use it to mask the db1 database on sqldb2. Do not prompt for confirmation.
@@ -120,6 +120,8 @@ function Invoke-DbaDbDataGenerator {
         # Create the faker objects
         Add-Type -Path (Resolve-Path -Path "$script:PSModuleRoot\bin\datamasking\Bogus.dll")
         $faker = New-Object Bogus.Faker($Locale)
+
+        $foreignKeyQuery = Get-Content -Path "$script:PSModuleRoot\bin\datageneration\ForeignKeyHierarchy.sql"
     }
 
     process {
@@ -178,6 +180,9 @@ function Invoke-DbaDbDataGenerator {
 
             foreach ($db in $dbs) {
                 $stepcounter = $nullmod = 0
+
+                $foreignKeys = Invoke-DbaQuery -SqlInstance $instance -SqlCredential $SqlCredential -Database $db -Query $foreignKeyQuery
+
                 foreach ($tableobject in $tables.Tables) {
 
                     if ($tableobject.Name -in $ExcludeTable -or ($Table -and $tableobject.Name -notin $Table)) {
