@@ -1,66 +1,88 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <Types>
-    <!--Microsoft.SqlServer.Management.Smo.Database -->
-    <Type>
-        <Name>Microsoft.SqlServer.Management.Smo.Database</Name>
-        <Members>
-            <ScriptMethod>
-                <Name>Query</Name>
-                <Script>
-                    param (
-                        $Query,
+<!--Microsoft.SqlServer.Management.Smo.Database -->
+<Type>
+<Name>Microsoft.SqlServer.Management.Smo.Database</Name>
+<Members>
+<ScriptMethod>
+<Name>Query</Name>
+<Script>
+param (
+    $Query,
 
-                        $AllTables = $false
-                    )
+    $AllTables = $false
+)
 
-                    if ($AllTables) { ($this.ExecuteWithResults($Query)).Tables }
-                    else { ($this.ExecuteWithResults($Query)).Tables[0] }
-                </Script>
-            </ScriptMethod>
-            <ScriptMethod>
-                <Name>Invoke</Name>
-                <Script>
-                    param (
-                        $Command
-                    )
+if ($AllTables) { ($this.ExecuteWithResults($Query)).Tables }
+else { ($this.ExecuteWithResults($Query)).Tables[0] }
+</Script>
+</ScriptMethod>
+<ScriptMethod>
+<Name>Invoke</Name>
+<Script>
+param (
+    $Command
+)
 
-                    $this.ExecuteNonQuery($Command)
-                </Script>
-            </ScriptMethod>
-        </Members>
-    </Type>
-    
-    <!--Microsoft.SqlServer.Management.Smo.Server -->
-    <Type>
-        <Name>Microsoft.SqlServer.Management.Smo.Server</Name>
-        <Members>
-            <ScriptMethod>
-                <Name>Query</Name>
-                <Script>
-                    param (
-                        $Query,
+$this.ExecuteNonQuery($Command)
+</Script>
+</ScriptMethod>
+</Members>
+</Type>
 
-                        $Database = "master",
+<!--Microsoft.SqlServer.Management.Smo.Server -->
+<Type>
+<Name>Microsoft.SqlServer.Management.Smo.Server</Name>
+<Members>
+<ScriptMethod>
+<Name>Query</Name>
+<Script>
+param (
+    $Query,
 
-                        $AllTables = $false
-                    )
+    $Database,
 
-                    if ($AllTables) { ($this.Databases[$Database].ExecuteWithResults($Query)).Tables }
-                    else { ($this.Databases[$Database].ExecuteWithResults($Query)).Tables[0] }
-                </Script>
-            </ScriptMethod>
-            <ScriptMethod>
-                <Name>Invoke</Name>
-                <Script>
-                    param (
-                        $Command,
+    $AllTables = $false
+)
+if (-not $Database) {
+    if ($this.ConnectionContext.DatabaseEngineType -eq "SqlAzureDatabase") {
+        $Database = $this.ConnectionContext.CurrentDatabase
+        if (-not $Database) {
+            $Database = $this.ConnectionContext.SqlConnectionObject.Database
+        }
+    }
+    if (-not $Database) {
+        $Database = "master"
+    }
+}
+if ($AllTables) { ($this.Databases[$Database].ExecuteWithResults($Query)).Tables }
+else { ($this.Databases[$Database].ExecuteWithResults($Query)).Tables[0] }
+</Script>
+</ScriptMethod>
+<ScriptMethod>
+<Name>Invoke</Name>
+<Script>
+param (
+    $Command,
 
-                        $Database = "master"
-                    )
+    $Database
+)
 
-                    $this.Databases[$Database].ExecuteNonQuery($Command)
-                </Script>
-            </ScriptMethod>
-        </Members>
-    </Type>
+if (-not $Database) {
+    if ($this.ConnectionContext.DatabaseEngineType -eq "SqlAzureDatabase") {
+        $Database = $this.ConnectionContext.CurrentDatabase
+        if (-not $Database) {
+            $Database = $this.ConnectionContext.SqlConnectionObject.Database
+        }
+    }
+    if (-not $Database) {
+        $Database = "master"
+    }
+}
+
+$this.Databases[$Database].ExecuteNonQuery($Command)
+</Script>
+</ScriptMethod>
+</Members>
+</Type>
 </Types>
