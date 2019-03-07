@@ -304,7 +304,7 @@ function Install-DbaMaintenanceSolution {
 
             $db = $server.Databases[$Database]
 
-            if (-not $Solution -match 'All') {
+            if (-not ($Solution -match 'All')) {
                 $required = @('CommandExecute.sql')
             }
 
