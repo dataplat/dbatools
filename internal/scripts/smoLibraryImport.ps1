@@ -16,7 +16,7 @@ $scriptBlock = {
             [string]$Name
         )
         $DllRoot = (Resolve-Path -Path $DllRoot)
-        
+
         if (-not $DoCopy) {
             return
         }
@@ -30,7 +30,7 @@ $scriptBlock = {
 
         Copy-Item -Path (Resolve-Path -Path "$ModuleRoot\bin\smo\$Name.dll") -Destination $DllRoot
     }
-    
+
     #region Names
     if ($PSVersionTable.PSEdition -eq "Core") {
         $names = @(
@@ -53,7 +53,11 @@ $scriptBlock = {
             'Microsoft.SqlServer.Dac',
             'Microsoft.SqlServer.Dac.Extensions',
             'Microsoft.SqlServer.TransactSql.ScriptDom',
-            'Microsoft.SqlServer.Types'
+            'Microsoft.SqlServer.Types',
+            'Microsoft.SqlServer.Management.RegisteredServers',
+            'Microsoft.SqlTools.Hosting',
+            'Microsoft.SqlTools.ManagedBatchParser',
+            'System.Data.SqlClient'
         )
     } else {
         $names = @(
@@ -74,7 +78,7 @@ $scriptBlock = {
             'Microsoft.SqlServer.Management.UtilityEnum',
             'Microsoft.SqlServer.Management.HadrDMF',
             'Microsoft.SqlServer.VulnerabilityAssessment.Model',
-            
+
             'Microsoft.SqlServer.BatchParser',
             'Microsoft.SqlServer.BatchParserClient',
             'Microsoft.SqlServer.BulkInsertTaskConnections',
@@ -99,7 +103,7 @@ $scriptBlock = {
             'Microsoft.SqlServer.Rmo',
             'Microsoft.SqlServer.DTSPipelineWrap',
             'Microsoft.SqlServer.ScriptTask',
-            
+
             'Accessibility',
             'EnvDTE',
             'Microsoft.AnalysisServices.AppLocal.Core',
@@ -115,7 +119,7 @@ $scriptBlock = {
             'Microsoft.SqlServer.DataProfilingTask',
             'Microsoft.SqlServer.Diagnostics.STrace',
             'Microsoft.SqlServer.Dmf.Common',
-            
+
             'Microsoft.SqlServer.DMQueryTask',
             'Microsoft.SqlServer.DTEnum',
             'Microsoft.SqlServer.Dts.Design',

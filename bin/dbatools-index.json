@@ -403,7 +403,7 @@
         "Alias":  "Add-DbaRegisteredServer",
         "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "CommandName":  "Add-DbaCmsRegServer",
-        "Availability":  "Windows only",
+        "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Add-DbaCmsRegServer",
         "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eAdd-DbaCmsRegServer -SqlInstance sql2008 -ServerName sql01\nCreates a registered server on sql2008\u0027s CMS which points to the SQL Server, sql01. When scrolling in CMS, the name \"sql01\" will be visible.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eAdd-DbaCmsRegServer -SqlInstance sql2008 -ServerName sql01 -Name \"The 2008 Clustered Instance\" -Description \"HR\u0027s Dedicated SharePoint instance\"\nCreates a registered server on sql2008\u0027s CMS which points to the SQL Server, sql01. When scrolling in CMS, \"The 2008 Clustered Instance\" will be visible.\r\nClearly this is hard to explain ;)\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eAdd-DbaCmsRegServer -SqlInstance sql2008 -ServerName sql01 -Group hr\\Seattle\nCreates a registered server on sql2008\u0027s CMS which points to the SQL Server, sql01. When scrolling in CMS, the name \"sql01\" will be visible within the Seattle group which is in the hr group.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaCmsRegServerGroup -SqlInstance sql2008 -Group hr\\Seattle | Add-DbaCmsRegServer -ServerName sql01111\nCreates a registered server on sql2008\u0027s CMS which points to the SQL Server, sql01. When scrolling in CMS, the name \"sql01\" will be visible within the Seattle group which is in the hr group.",
         "Params":  [
@@ -501,7 +501,7 @@
         "Alias":  "Add-DbaRegisteredServerGroup",
         "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "CommandName":  "Add-DbaCmsRegServerGroup",
-        "Availability":  "Windows only",
+        "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Add-DbaCmsRegServerGroup",
         "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eAdd-DbaCmsRegServerGroup -SqlInstance sql2012 -Name HR\nCreates a registered server group called HR, in the root of sql2012\u0027s CMS\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eAdd-DbaCmsRegServerGroup -SqlInstance sql2012, sql2014 -Name sub-folder -Group HR\nCreates a registered server group on sql2012 and sql2014 called sub-folder within the HR group\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaCmsRegServerGroup -SqlInstance sql2012, sql2014 -Group HR | Add-DbaCmsRegServerGroup -Name sub-folder\nCreates a registered server group on sql2012 and sql2014 called sub-folder within the HR group of each server",
         "Params":  [
@@ -6025,7 +6025,7 @@
         "Alias":  "Export-DbaRegisteredServer",
         "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "CommandName":  "Export-DbaCmsRegServer",
-        "Availability":  "Windows only",
+        "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Export-DbaCmsRegServer",
         "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eExport-DbaCmsRegServer -SqlInstance sql2008\nExports all Registered Server and Registered Server Groups on sql2008 to an automatically generated file name in the current directory\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaCmsRegServer -SqlInstance sql2008, sql2012 | Export-DbaCmsRegServer\nExports all registered servers on sql2008 and sql2012. Warning - each one will have its own individual file. Consider piping groups.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaCmsRegServerGroup -SqlInstance sql2008, sql2012 | Export-DbaCmsRegServer\nExports all registered servers on sql2008 and sql2012, organized by group.",
         "Params":  [
@@ -6181,7 +6181,7 @@
         "CommandName":  "Export-DbaDacPackage",
         "Availability":  "Windows only",
         "Links":  "https://dbatools.io/Export-DbaDacPackage",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eExport-DbaDacPackage -SqlInstance sql2016 -Database SharePoint_Config\nExports the dacpac for SharePoint_Config on sql2016 to $home\\Documents\\SharePoint_Config.dacpac\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003e$options = New-DbaDacOption -Type Dacpac -Action Export\nPS C:\\\u003e $options.ExtractAllTableData = $true\r\nPS C:\\\u003e $options.CommandTimeout = 0\r\nPS C:\\\u003e Export-DbaDacPackage -SqlInstance sql2016 -Database DB1 -Options $options\nUses DacOption object to set the CommandTimeout to 0 then extracts the dacpac for DB1 on sql2016 to $home\\Documents\\DB1.dacpac including all table data.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eExport-DbaDacPackage -SqlInstance sql2016 -AllUserDatabases -ExcludeDatabase \"DBMaintenance\",\"DBMonitoring\" C:\\temp\nExports dacpac packages for all USER databases, excluding \"DBMaintenance\" \u0026 \"DBMonitoring\", on sql2016 and saves them to C:\\temp\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003e$moreparams = \"/OverwriteFiles:$true /Quiet:$true\"\nPS C:\\\u003e Export-DbaDacPackage -SqlInstance sql2016 -Database SharePoint_Config -Path C:\\temp -ExtendedParameters $moreparams\nUsing extended parameters to over-write the files and performs the extraction in quiet mode. Uses command line instead of SMO behind the scenes.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eExport-DbaDacPackage -SqlInstance sql2016 -Database SharePoint_Config\nExports the dacpac for SharePoint_Config on sql2016 to $home\\Documents\\SharePoint_Config.dacpac\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003e$options = New-DbaDacOption -Type Dacpac -Action Export\nPS C:\\\u003e $options.ExtractAllTableData = $true\r\nPS C:\\\u003e $options.CommandTimeout = 0\r\nPS C:\\\u003e Export-DbaDacPackage -SqlInstance sql2016 -Database DB1 -Options $options\nUses DacOption object to set the CommandTimeout to 0 then extracts the dacpac for DB1 on sql2016 to $home\\Documents\\DB1.dacpac including all table data.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eExport-DbaDacPackage -SqlInstance sql2016 -AllUserDatabases -ExcludeDatabase \"DBMaintenance\",\"DBMonitoring\" -Path \"C:\\temp\"\nExports dacpac packages for all USER databases, excluding \"DBMaintenance\" \u0026 \"DBMonitoring\", on sql2016 and saves them to C:\\temp\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003e$moreparams = \"/OverwriteFiles:$true /Quiet:$true\"\nPS C:\\\u003e Export-DbaDacPackage -SqlInstance sql2016 -Database SharePoint_Config -Path C:\\temp -ExtendedParameters $moreparams\nUsing extended parameters to over-write the files and performs the extraction in quiet mode. Uses command line instead of SMO behind the scenes.",
         "Params":  [
                        [
                            "SqlInstance",
@@ -10471,7 +10471,7 @@
         "Alias":  "Get-DbaCmsRegServerName,Get-DbaRegisteredServer,Get-SqlRegisteredServerName",
         "Author":  "Bryan Hamby (@galador)",
         "CommandName":  "Get-DbaCmsRegServer",
-        "Availability":  "Windows only",
+        "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Get-DbaCmsRegServer",
         "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaCmsRegServer -SqlInstance sqlserver2014a\nGets a list of servers from the CMS on sqlserver2014a, using Windows Credentials.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaCmsRegServer -SqlInstance sqlserver2014a -IncludeSelf\nGets a list of servers from the CMS on sqlserver2014a and includes sqlserver2014a in the output results.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaCmsRegServer -SqlInstance sqlserver2014a -SqlCredential $credential | Select-Object -Unique -ExpandProperty ServerName\nReturns only the server names from the CMS on sqlserver2014a, using SQL Authentication to authenticate to the server.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaCmsRegServer -SqlInstance sqlserver2014a -Group HR, Accounting\nGets a list of servers in the HR and Accounting groups from the CMS on sqlserver2014a.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eGet-DbaCmsRegServer -SqlInstance sqlserver2014a -Group HR\\Development\nReturns a list of servers in the HR and sub-group Development from the CMS on sqlserver2014a.",
         "Params":  [
@@ -10643,7 +10643,7 @@
         "Alias":  "Get-DbaRegisteredServerStore",
         "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "CommandName":  "Get-DbaCmsRegServerStore",
-        "Availability":  "Windows only",
+        "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Get-DbaCmsRegServerStore",
         "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaCmsRegServerStore -SqlInstance sqlserver2014a\nReturns a SQL Server Registered Server Store Object from sqlserver2014a\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaCmsRegServerStore -SqlInstance sqlserver2014a -SqlCredential sqladmin\nReturns a SQL Server Registered Server Store Object from sqlserver2014a  by logging in with the sqladmin login",
         "Params":  [
@@ -11545,8 +11545,8 @@
         "Author":  "Patrick Flynn (@sqllensman)",
         "CommandName":  "Get-DbaDbccUserOption",
         "Availability":  "Windows, Linux, macOS",
-        "Links":  "https://dbatools.io/Get-DbaDbccUserOptions",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaDbccUserOptions -SqlInstance Server1\nGet results of DBCC USEROPTIONS for Instance Server1\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003e\u0027Sql1\u0027,\u0027Sql2/sqlexpress\u0027 | Get-DbaDbccUserOptions\nGet results of DBCC USEROPTIONS for Instances Sql1 and Sql2/sqlexpress\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003e$cred = Get-Credential sqladmin\nPS C:\\\u003e Get-DbaDbccUserOptions -SqlInstance Server1 -SqlCredential $cred\nConnects using sqladmin credential and gets results of DBCC USEROPTIONS for Instance Server1\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaDbccUserOptions -SqlInstance Server1 -Option ansi_nulls, ansi_warnings, datefirst\nGets results of DBCC USEROPTIONS for Instance Server1. Only display results for the options ansi_nulls, ansi_warnings, datefirst",
+        "Links":  "https://dbatools.io/Get-DbaDbccUserOption",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaDbccUserOption -SqlInstance Server1\nGet results of DBCC USEROPTIONS for Instance Server1\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003e\u0027Sql1\u0027,\u0027Sql2/sqlexpress\u0027 | Get-DbaDbccUserOption\nGet results of DBCC USEROPTIONS for Instances Sql1 and Sql2/sqlexpress\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003e$cred = Get-Credential sqladmin\nPS C:\\\u003e Get-DbaDbccUserOption -SqlInstance Server1 -SqlCredential $cred\nConnects using sqladmin credential and gets results of DBCC USEROPTIONS for Instance Server1\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaDbccUserOption -SqlInstance Server1 -Option ansi_nulls, ansi_warnings, datefirst\nGets results of DBCC USEROPTIONS for Instance Server1. Only display results for the options ansi_nulls, ansi_warnings, datefirst",
         "Params":  [
                        [
                            "SqlInstance",
@@ -18708,7 +18708,7 @@
         "CommandName":  "Get-DbaSsisExecutionHistory",
         "Availability":  "Windows only",
         "Links":  "https://dbatools.io/Get-DbaSsisExecutionHistory",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaSsisExecutionHistory -SqlInstance SMTQ01 -Folder SMTQ_PRC\nGet all history items for SMTQ01 in folder SMTQ_PRC.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaSsisExecutionHistory -SqlInstance SMTQ01 -Status Failed,Cancelled\nGets all failed or canceled executions for SMTQ01.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaSsisExecutionHistory -SqlInstance SMTQ01,SMTQ02 -Status Failed,Cancelled -Whatif\nShows what would happen if the command were executed and would return the SQL statement that would be executed per instance.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaSsisExecutionHistory -SqlInstance SMTQ01 -Folder SMTQ_PRC\nGet all history items for SMTQ01 in folder SMTQ_PRC.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaSsisExecutionHistory -SqlInstance SMTQ01 -Status Failed,Cancelled\nGets all failed or canceled executions for SMTQ01.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaSsisExecutionHistory -SqlInstance SMTQ01,SMTQ02 -Status Failed,Cancelled\nShows what would happen if the command were executed and would return the SQL statement that would be executed per instance.",
         "Params":  [
                        [
                            "SqlInstance",
@@ -20576,7 +20576,7 @@
         "Alias":  "Import-DbaRegisteredServer",
         "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "CommandName":  "Import-DbaCmsRegServer",
-        "Availability":  "Windows only",
+        "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Import-DbaCmsRegServer",
         "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eImport-DbaCmsRegServer -SqlInstance sql2012 -Path C:\\temp\\corp-regservers.xml\nImports C:\\temp\\corp-regservers.xml to the CMS on sql2012\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eImport-DbaCmsRegServer -SqlInstance sql2008 -Group hr\\Seattle -Path C:\\temp\\Seattle.xml\nImports C:\\temp\\Seattle.xml to Seattle subgroup within the hr group on sql2008\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaCmsRegServer -SqlInstance sql2008, sql2012 | Import-DbaCmsRegServer -SqlInstance sql2017\nImports all registered servers from sql2008 and sql2012 to sql2017\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaCmsRegServerGroup -SqlInstance sql2008 -Group hr\\Seattle | Import-DbaCmsRegServer -SqlInstance sql2017 -Group Seattle\nImports all registered servers from the hr\\Seattle group on sql2008 to the Seattle group on sql2017",
         "Params":  [
@@ -22023,7 +22023,7 @@
         "CommandName":  "Invoke-DbaAdvancedUpdate",
         "Availability":  "Windows only",
         "Links":  null,
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eInvoke-DbaAdvancedUpdate -ComputerName SQL1 -Action $actions -RestartNeeded $true\nInvokes update actions on SQL1 after restarting it.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eInvoke-DbaAdvancedUpdate -ComputerName SQL1 -Action $actions\nInvokes update actions on SQL1 after restarting it.",
         "Params":  [
                        [
                            "ComputerName",
@@ -25609,7 +25609,7 @@
         "Alias":  "Move-DbaRegisteredServer",
         "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "CommandName":  "Move-DbaCmsRegServer",
-        "Availability":  "Windows only",
+        "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Move-DbaCmsRegServer",
         "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eMove-DbaCmsRegServer -SqlInstance sql2012 -Name \u0027Web SQL Cluster\u0027 -NewGroup HR\\Prod\nMoves the registered server on sql2012 titled \u0027Web SQL Cluster\u0027 to the Prod group within the HR group\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaCmsRegServer -SqlInstance sql2017 -Name \u0027Web SQL Cluster\u0027 | Move-DbaCmsRegServer -NewGroup Web\nMoves the registered server \u0027Web SQL Cluster\u0027 on sql2017 to the Web group, also on sql2017",
         "Params":  [
@@ -25699,7 +25699,7 @@
         "Alias":  "Move-DbaRegisteredServerGroup",
         "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "CommandName":  "Move-DbaCmsRegServerGroup",
-        "Availability":  "Windows only",
+        "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Move-DbaCmsRegServerGroup",
         "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eMove-DbaCmsRegServerGroup -SqlInstance sql2012 -Group HR\\Development -NewGroup AD\\Prod\nMoves the Development group within HR to the Prod group within AD\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaCmsRegServerGroup -SqlInstance sql2017 -Group HR\\Development| Move-DbaCmsRegServer -NewGroup Web\nMoves the Development group within HR to the Web group",
         "Params":  [
@@ -30043,7 +30043,7 @@
         "CommandName":  "Read-DbaBackupHeader",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Read-DbaBackupHeader",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eRead-DbaBackupHeader -SqlInstance sql2016 -Path S:\\backups\\mydb\\mydb.bak\nLogs into sql2016 using Windows authentication and reads the local file on sql2016, S:\\backups\\mydb\\mydb.bak.\nIf you are running this command on a workstation and connecting remotely, remember that sql2016 cannot access files on your own workstation.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eRead-DbaBackupHeader -SqlInstance sql2016 -Path \\\\nas\\sql\\backups\\mydb\\mydb.bak, \\\\nas\\sql\\backups\\otherdb\\otherdb.bak\nLogs into sql2016 and reads two backup files - mydb.bak and otherdb.bak. The SQL Server service account must have rights to read this file.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eRead-DbaBackupHeader -SqlInstance . -Path C:\\temp\\myfile.bak -Simple\nLogs into the local workstation (or computer) and shows simplified output about C:\\temp\\myfile.bak. The SQL Server service account must have rights to read this file.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003e$backupinfo = Read-DbaBackupHeader -SqlInstance . -Path C:\\temp\\myfile.bak\nPS C:\\\u003e $backupinfo.FileList\nDisplays detailed information about each of the datafiles contained in the backupset.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eRead-DbaBackupHeader -SqlInstance . -Path C:\\temp\\myfile.bak -FileList\nAlso returns detailed information about each of the datafiles contained in the backupset.\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003e\"C:\\temp\\myfile.bak\", \"\\backupserver\\backups\\myotherfile.bak\" | Read-DbaBackupHeader -SqlInstance sql2016  | Where-Object { $_.BackupSize.Megabyte -gt 100 }\nReads the two files and returns only backups larger than 100 MB\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003eGet-ChildItem \\\\nas\\sql\\*.bak | Read-DbaBackupHeader -SqlInstance sql2016\nGets a list of all .bak files on the \\\\nas\\sql share and reads the headers using the server named \"sql2016\". This means that the server, sql2016, must have read access to the \\\\nas\\sql share.\n-------------------------- EXAMPLE 8 --------------------------\nPS C:\\\u003eRead-DbaBackupHeader -Path https://dbatoolsaz.blob.core.windows.net/azbackups/restoretime/restoretime_201705131850.bak -AzureCredential AzureBackupUser\nGets the backup header information from the SQL Server backup file stored at https://dbatoolsaz.blob.core.windows.net/azbackups/restoretime/restoretime_201705131850.bak on Azure",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eRead-DbaBackupHeader -SqlInstance sql2016 -Path S:\\backups\\mydb\\mydb.bak\nLogs into sql2016 using Windows authentication and reads the local file on sql2016, S:\\backups\\mydb\\mydb.bak.\nIf you are running this command on a workstation and connecting remotely, remember that sql2016 cannot access files on your own workstation.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eRead-DbaBackupHeader -SqlInstance sql2016 -Path \\\\nas\\sql\\backups\\mydb\\mydb.bak, \\\\nas\\sql\\backups\\otherdb\\otherdb.bak\nLogs into sql2016 and reads two backup files - mydb.bak and otherdb.bak. The SQL Server service account must have rights to read this file.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eRead-DbaBackupHeader -SqlInstance . -Path C:\\temp\\myfile.bak -Simple\nLogs into the local workstation (or computer) and shows simplified output about C:\\temp\\myfile.bak. The SQL Server service account must have rights to read this file.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003e$backupinfo = Read-DbaBackupHeader -SqlInstance . -Path C:\\temp\\myfile.bak\nPS C:\\\u003e $backupinfo.FileList\nDisplays detailed information about each of the datafiles contained in the backupset.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eRead-DbaBackupHeader -SqlInstance . -Path C:\\temp\\myfile.bak -FileList\nAlso returns detailed information about each of the datafiles contained in the backupset.\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003e\"C:\\temp\\myfile.bak\", \"\\backupserver\\backups\\myotherfile.bak\" | Read-DbaBackupHeader -SqlInstance sql2016  | Where-Object { $_.BackupSize.Megabyte -gt 100 }\nReads the two files and returns only backups larger than 100 MB\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003eGet-ChildItem \\\\nas\\sql\\*.bak | Read-DbaBackupHeader -SqlInstance sql2016\nGets a list of all .bak files on the \\\\nas\\sql share and reads the headers using the server named \"sql2016\". This means that the server, sql2016, must have read access to the \\\\nas\\sql share.\n-------------------------- EXAMPLE 8 --------------------------\nPS C:\\\u003eRead-DbaBackupHeader -SqlInstance sql2016 -Path https://dbatoolsaz.blob.core.windows.net/azbackups/restoretime/restoretime_201705131850.bak -AzureCredential AzureBackupUser\nGets the backup header information from the SQL Server backup file stored at https://dbatoolsaz.blob.core.windows.net/azbackups/restoretime/restoretime_201705131850.bak on Azure",
         "Params":  [
                        [
                            "SqlInstance",
@@ -31300,7 +31300,7 @@
         "Alias":  "Remove-DbaRegisteredServer",
         "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "CommandName":  "Remove-DbaCmsRegServer",
-        "Availability":  "Windows only",
+        "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Remove-DbaCmsRegServer",
         "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eRemove-DbaCmsRegServer -SqlInstance sql2012 -Group HR, Accounting\nRemoves all servers from the HR and Accounting groups on sql2012\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eRemove-DbaCmsRegServer -SqlInstance sql2012 -Group HR\\Development\nRemoves all servers from the HR and sub-group Development from the CMS on sql2012.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eRemove-DbaCmsRegServer -SqlInstance sql2012 -Confirm:$false\nRemoves all registered servers on sql2012 and turns off all prompting",
         "Params":  [
@@ -31390,7 +31390,7 @@
         "Alias":  "Remove-DbaRegisteredServerGroup",
         "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "CommandName":  "Remove-DbaCmsRegServerGroup",
-        "Availability":  "Windows only",
+        "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Remove-DbaCmsRegServerGroup",
         "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eRemove-DbaCmsRegServerGroup -SqlInstance sql2012 -Group HR, Accounting\nRemoves the HR and Accounting groups on sql2012\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eRemove-DbaCmsRegServerGroup -SqlInstance sql2012 -Group HR\\Development -Confirm:$false\nRemoves the Development subgroup within the HR group on sql2012 and turns off all prompting",
         "Params":  [
@@ -33798,7 +33798,7 @@
         "CommandName":  "Restart-DbaService",
         "Availability":  "Windows only",
         "Links":  "https://dbatools.io/Restart-DbaService",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eRestart-DbaService -ComputerName sqlserver2014a\nRestarts the SQL Server related services on computer sqlserver2014a.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003e\u0027sql1\u0027,\u0027sql2\u0027,\u0027sql3\u0027| Get-DbaService | Restart-DbaService\nGets the SQL Server related services on computers sql1, sql2 and sql3 and restarts them.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eRestart-DbaService -ComputerName sql1,sql2 -Instance MSSQLSERVER\nRestarts the SQL Server services related to the default instance MSSQLSERVER on computers sql1 and sql2.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eRestart-DbaService -ComputerName $MyServers -Type SSRS\nRestarts the SQL Server related services of type \"SSRS\" (Reporting Services) on computers in the variable MyServers.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eRestart-DbaService -ComputerName sql1 -Type Engine -Force\nRestarts SQL Server database engine services on sql1 forcing dependent SQL Server Agent services to restart as well.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eRestart-DbaService -ComputerName sqlserver2014a\nRestarts the SQL Server related services on computer sqlserver2014a.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003e\u0027sql1\u0027,\u0027sql2\u0027,\u0027sql3\u0027| Get-DbaService | Restart-DbaService\nGets the SQL Server related services on computers sql1, sql2 and sql3 and restarts them.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eRestart-DbaService -ComputerName sql1,sql2 -InstanceName MSSQLSERVER\nRestarts the SQL Server services related to the default instance MSSQLSERVER on computers sql1 and sql2.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eRestart-DbaService -ComputerName $MyServers -Type SSRS\nRestarts the SQL Server related services of type \"SSRS\" (Reporting Services) on computers in the variable MyServers.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eRestart-DbaService -ComputerName sql1 -Type Engine -Force\nRestarts SQL Server database engine services on sql1 forcing dependent SQL Server Agent services to restart as well.",
         "Params":  [
                        [
                            "ComputerName",
