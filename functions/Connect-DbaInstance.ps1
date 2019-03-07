@@ -250,7 +250,7 @@ function Connect-DbaInstance {
                 if ($SqlCredential) {
                     $azureconnstring = "Server=tcp:$($instance.ComputerName),$($instance.Port);Initial Catalog=$Database;Persist Security Info=False;User ID=$($SqlCredential.UserName);Password=$($($SqlCredential.GetNetworkCredential()).Password);MultipleActiveResultSets=$MultipleActiveResultSets;Encrypt=True;TrustServerCertificate=$TrustServerCertificate;Connection Timeout=$ConnectTimeout;"
 
-                    if ($username -like "*\*" -or $username -like "*@*") {
+                    if ($SqlCredential.UserName -like "*\*" -or $SqlCredential.UserName -like "*@*") {
                         $azureconnstring = $azureconnstring + 'Authentication="Active Directory Password"'
                     }
                 }
