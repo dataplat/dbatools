@@ -247,12 +247,6 @@ function Connect-DbaInstance {
                     $ConnectTimeout = 30
                 }
                 $isAzure = $true
-                <#
-                DONE: detects: database.windows.net
-                DONE: detect: windows
-                DONE: detect: sql login
-                DONE: detect integrated if no credential is passed
-                #>
                 if ($SqlCredential) {
                     $azureconnstring = "Server=tcp:$($instance.ComputerName),$($instance.Port);Initial Catalog=$Database;Persist Security Info=False;User ID=$($SqlCredential.UserName);Password=$($($SqlCredential.GetNetworkCredential()).Password);MultipleActiveResultSets=$MultipleActiveResultSets;Encrypt=True;TrustServerCertificate=$TrustServerCertificate;Connection Timeout=$ConnectTimeout;"
 
