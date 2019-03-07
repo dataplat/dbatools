@@ -47,7 +47,11 @@
 					if (-not $Database) {
 						if ($this.ConnectionContext.DatabaseEngineType -eq "SqlAzureDatabase") {
 							$Database = $this.ConnectionContext.CurrentDatabase
-						} else {
+							if (-not $Database) {
+								$Database = $this.ConnectionContext.SqlConnectionObject.Database
+							}
+						}
+						if (-not $Database) {
 							$Database = "master"
 						}
 					}
@@ -67,7 +71,11 @@
 					if (-not $Database) {
 						if ($this.ConnectionContext.DatabaseEngineType -eq "SqlAzureDatabase") {
 							$Database = $this.ConnectionContext.CurrentDatabase
-						} else {
+							if (-not $Database) {
+								$Database = $this.ConnectionContext.SqlConnectionObject.Database
+							}
+						} 
+						if (-not $Database) {
 							$Database = "master"
 						}
 					}
