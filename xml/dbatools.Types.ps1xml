@@ -40,11 +40,17 @@
                     param (
                         $Query,
 
-                        $Database = "master",
+                        $Database,
 
                         $AllTables = $false
                     )
-
+					if (-not $Database) {
+						if ($this.ConnectionContext.DatabaseEngineType -eq "SqlAzureDatabase") {
+							$Database = $this.ConnectionContext.CurrentDatabase
+						} else {
+							$Database = "master"
+						}
+					}
                     if ($AllTables) { ($this.Databases[$Database].ExecuteWithResults($Query)).Tables }
                     else { ($this.Databases[$Database].ExecuteWithResults($Query)).Tables[0] }
                 </Script>
