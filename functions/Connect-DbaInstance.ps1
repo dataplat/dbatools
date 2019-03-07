@@ -253,8 +253,7 @@ function Connect-DbaInstance {
                     if ($SqlCredential.UserName -like "*\*" -or $SqlCredential.UserName -like "*@*") {
                         $azureconnstring = $azureconnstring + 'Authentication="Active Directory Password"'
                     }
-                }
-                else {
+                } else {
                     $azureconnstring = "Server=tcp:$($instance.ComputerName),$($instance.Port);Initial Catalog=$Database;Persist Security Info=False;User ID=$($SqlCredential.UserName);MultipleActiveResultSets=$MultipleActiveResultSets;Encrypt=True;TrustServerCertificate=$TrustServerCertificate;Connection Timeout=$ConnectTimeout;"
                     $azureconnstring = $azureconnstring + 'Authentication="Active Directory Integrated"'
                 }
@@ -262,8 +261,7 @@ function Connect-DbaInstance {
                     $sqlconn = New-Object System.Data.SqlClient.SqlConnection $azureconnstring
                     $serverconn = New-Object Microsoft.SqlServer.Management.Common.ServerConnection $sqlconn
                     $server = New-Object Microsoft.SqlServer.Management.Smo.Server $serverconn
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
                 }
             }
