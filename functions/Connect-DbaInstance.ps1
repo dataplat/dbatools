@@ -265,11 +265,9 @@ function Connect-DbaInstance {
                     $azureconnstring = $azureconnstring + 'Authentication="Active Directory Integrated"'
                 }
                 try {
-                    #$sqlconn = New-Object System.Data.SqlClient.SqlConnection $azureconnstring
-                    #$serverconn = New-Object Microsoft.SqlServer.Management.Common.ServerConnection $sqlconn
-                    #$instance = New-Object Microsoft.SqlServer.Management.Smo.Server $serverconn
-                    #return $azureconnstring
-                    $instance = [DbaInstanceParameter]$azureconnstring
+                    $sqlconn = New-Object System.Data.SqlClient.SqlConnection $azureconnstring
+                    $serverconn = New-Object Microsoft.SqlServer.Management.Common.ServerConnection $sqlconn
+                    $server = New-Object Microsoft.SqlServer.Management.Smo.Server $serverconn
                 }
                 catch {
                     Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
@@ -331,7 +329,7 @@ function Connect-DbaInstance {
                 $connstring = $server.ConnectionContext.ConnectionString
                 $server.ConnectionContext.ConnectionString = "$connstring;$appendconnectionstring"
                 $server.ConnectionContext.Connect()
-            } else {
+            } elseif (-not $isAzure) {
 
                 $server.ConnectionContext.ApplicationName = $ClientName
 
