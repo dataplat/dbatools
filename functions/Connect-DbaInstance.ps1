@@ -242,6 +242,39 @@ function Connect-DbaInstance {
     }
     process {
         foreach ($instance in $SqlInstance) {
+            if ($instance.ComputerName -match "database\.windows\.net" -and -not $instance.InputObject.ConnectionContext.IsOpen) {
+                if (-not (Test-Bound -ParameterName ConnectTimeout)) {
+                    $ConnectTimeout = 30
+                }
+                $isAzure = $true
+                <#
+                DONE: detects: database.windows.net
+                DONE: detect: windows
+                DONE: detect: sql login
+                DONE: detect integrated if no credential is passed
+                #>
+                if ($SqlCredential) {
+                    $azureconnstring = "Server=tcp:$($instance.ComputerName),$($instance.Port);Initial Catalog=$Database;Persist Security Info=False;User ID=$($SqlCredential.UserName);Password=$($($SqlCredential.GetNetworkCredential()).Password);MultipleActiveResultSets=$MultipleActiveResultSets;Encrypt=True;TrustServerCertificate=$TrustServerCertificate;Connection Timeout=$ConnectTimeout;"
+
+                    if ($username -like "*\*" -or $username -like "*@*") {
+                        $azureconnstring = $azureconnstring + 'Authentication="Active Directory Password"'
+                    }
+                }
+                else {
+                    $azureconnstring = "Server=tcp:$($instance.ComputerName),$($instance.Port);Initial Catalog=$Database;Persist Security Info=False;User ID=$($SqlCredential.UserName);MultipleActiveResultSets=$MultipleActiveResultSets;Encrypt=True;TrustServerCertificate=$TrustServerCertificate;Connection Timeout=$ConnectTimeout;"
+                    $azureconnstring = $azureconnstring + 'Authentication="Active Directory Integrated"'
+                }
+                try {
+                    #$sqlconn = New-Object System.Data.SqlClient.SqlConnection $azureconnstring
+                    #$serverconn = New-Object Microsoft.SqlServer.Management.Common.ServerConnection $sqlconn
+                    #$instance = New-Object Microsoft.SqlServer.Management.Smo.Server $serverconn
+                    #return $azureconnstring
+                    $instance = [DbaInstanceParameter]$azureconnstring
+                }
+                catch {
+                    Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
+                }
+            }
             #region Safely convert input into instance parameters
             if ($instance.GetType() -eq [Sqlcollaborative.Dbatools.Parameter.DbaInstanceParameter]) {
                 [DbaInstanceParameter]$ConvertedSqlInstance = $instance
@@ -288,8 +321,9 @@ function Connect-DbaInstance {
             }
 
             if ($instance.IsConnectionString) {
+                write-warning connstring
                 $server = New-Object Microsoft.SqlServer.Management.Smo.Server($instance.InputObject)
-            } else {
+            } elseif (-not $isAzure) {
                 $server = New-Object Microsoft.SqlServer.Management.Smo.Server $instance.FullSmoName
             }
 
@@ -369,7 +403,7 @@ function Connect-DbaInstance {
                 }
 
                 try {
-                    if ($null -ne $SqlCredential.UserName) {
+                    if ($null -ne $SqlCredential.UserName -and -not $isAzure) {
                         $username = ($SqlCredential.UserName).TrimStart("\")
 
                         # support both ad\username and username@ad
@@ -407,7 +441,9 @@ function Connect-DbaInstance {
                             $server.ConnectionContext.Connect()
                         }
                     } else {
-                        $server.ConnectionContext.SqlConnectionObject.Open()
+                        if (-not $isAzure) {
+                            $server.ConnectionContext.SqlConnectionObject.Open()
+                        }
                     }
                 } catch {
                     $originalException = $_.Exception
@@ -424,7 +460,7 @@ function Connect-DbaInstance {
                 }
             }
 
-            if ($loadedSmoVersion -ge 11) {
+            if ($loadedSmoVersion -ge 11 -and -not $isAzure) {
                 if ($server.VersionMajor -eq 8) {
                     # 2000
                     $initFieldsDb = New-Object System.Collections.Specialized.StringCollection
