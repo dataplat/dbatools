@@ -61,9 +61,17 @@
                     param (
                         $Command,
 
-                        $Database = "master"
+                        $Database
                     )
 
+					if (-not $Database) {
+						if ($this.ConnectionContext.DatabaseEngineType -eq "SqlAzureDatabase") {
+							$Database = $this.ConnectionContext.CurrentDatabase
+						} else {
+							$Database = "master"
+						}
+					}
+					
                     $this.Databases[$Database].ExecuteNonQuery($Command)
                 </Script>
             </ScriptMethod>
