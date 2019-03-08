@@ -300,7 +300,7 @@ function Invoke-DbaQuery {
                 $connDbaInstanceParams = @{
                     SqlInstance   = $instance
                     SqlCredential = $SqlCredential
-                    Database = $Database
+                    Database      = $Database
                 }
                 if ($ReadOnly) {
                     $connDbaInstanceParams.ApplicationIntent = "ReadOnly"
