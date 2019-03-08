@@ -180,7 +180,7 @@ function Connect-DbaInstance {
         [DbaInstanceParameter[]]$SqlInstance,
         [Alias("Credential")]
         [PSCredential]$SqlCredential,
-        [object[]]$Database,
+        [string]$Database,
         [string]$AccessToken,
         [ValidateSet('ReadOnly', 'ReadWrite')]
         [string]$ApplicationIntent,
@@ -243,10 +243,11 @@ function Connect-DbaInstance {
     process {
         foreach ($instance in $SqlInstance) {
             if ($instance.ComputerName -match "database\.windows\.net" -and -not $instance.InputObject.ConnectionContext.IsOpen) {
+                $isAzure = $true
                 if (-not (Test-Bound -ParameterName ConnectTimeout)) {
                     $ConnectTimeout = 30
                 }
-                $isAzure = $true
+
                 if ($SqlCredential) {
                     $azureconnstring = "Server=tcp:$($instance.ComputerName),$($instance.Port);Initial Catalog=$Database;Persist Security Info=False;User ID=$($SqlCredential.UserName);Password=$($($SqlCredential.GetNetworkCredential()).Password);MultipleActiveResultSets=$MultipleActiveResultSets;Encrypt=True;TrustServerCertificate=$TrustServerCertificate;Connection Timeout=$ConnectTimeout;"
 
@@ -275,11 +276,11 @@ function Connect-DbaInstance {
                 [DbaInstanceParameter]$ConvertedSqlInstance = [DbaInstanceParameter]($instance | Select-Object -First 1)
 
                 if ($instance.Count -gt 1) {
-                    Write-Message -Level Warning -EnableException $true -Message "More than on server was specified when calling Connect-SqlInstance from $((Get-PSCallStack)[1].Command)"
+                    Write-Message -Continue -Level Warning -EnableException:$EnableException -Message "More than on server was specified when calling Connect-SqlInstance from $((Get-PSCallStack)[1].Command)"
                 }
             }
             #endregion Safely convert input into instance parameters
-            if ($instance.Type -like "Server") {
+            if ($instance.Type -like "Server" -or ($isAzure -and $instance.InputObject.ConnectionContext.IsOpen)) {
                 if ($instance.InputObject.ConnectionContext.IsOpen -eq $false) {
                     $instance.InputObject.ConnectionContext.Connect()
                 }
