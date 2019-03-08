@@ -311,7 +311,6 @@ function Connect-DbaInstance {
             }
 
             if ($instance.IsConnectionString) {
-                write-warning connstring
                 $server = New-Object Microsoft.SqlServer.Management.Smo.Server($instance.InputObject)
             } elseif (-not $isAzure) {
                 $server = New-Object Microsoft.SqlServer.Management.Smo.Server $instance.FullSmoName
