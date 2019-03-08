@@ -243,8 +243,8 @@ function Connect-DbaInstance {
     process {
         foreach ($instance in $SqlInstance) {
             if ($instance.ComputerName -match "database\.windows\.net" -and -not $instance.InputObject.ConnectionContext.IsOpen) {
-                 $isAzure = $true
-                 if (-not (Test-Bound -ParameterName ConnectTimeout)) {
+                $isAzure = $true
+                if (-not (Test-Bound -ParameterName ConnectTimeout)) {
                     $ConnectTimeout = 30
                 }
 
