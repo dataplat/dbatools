@@ -71,9 +71,6 @@ function Write-DbaDataTable {
     .PARAMETER BulkCopyTimeOut
         Value in seconds for the BulkCopy operations timeout. The default is 30 seconds.
 
-    .PARAMETER RegularUser
-        Deprecated - now all connections are regular user (don't require admin)
-
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
@@ -190,7 +187,6 @@ function Write-DbaDataTable {
         [switch]$Truncate,
         [ValidateNotNull()]
         [int]$bulkCopyTimeOut = 5000,
-        [switch]$RegularUser,
         [Alias('Silent')]
         [switch]$EnableException,
         [switch]$UseDynamicStringLength
@@ -672,6 +668,5 @@ function Write-DbaDataTable {
             $bulkCopy.Close()
             $bulkCopy.Dispose()
         }
-        Test-DbaDeprecation -DeprecatedOn 1.0.0 -Parameter RegularUser
     }
 }
