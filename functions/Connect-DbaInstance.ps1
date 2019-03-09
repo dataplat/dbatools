@@ -117,6 +117,9 @@ function Connect-DbaInstance {
     .PARAMETER SqlConnectionOnly
         Instead of returning a rich SMO server object, this command will only return a SqlConnection object when setting this switch.
 
+    .PARAMETER AzureUnsupported
+        Throw if Azure is detected but not supported
+
     .PARAMETER DisableException
         By default in most of our commands, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
 
@@ -184,6 +187,7 @@ function Connect-DbaInstance {
         [string]$AccessToken,
         [ValidateSet('ReadOnly', 'ReadWrite')]
         [string]$ApplicationIntent,
+        [switch]$AzureUnsupported,
         [string]$BatchSeparator,
         [string]$ClientName = "dbatools PowerShell module - dbatools.io - custom connection",
         [int]$ConnectTimeout = ([Sqlcollaborative.Dbatools.Connection.ConnectionHost]::SqlConnectionTimeout),
@@ -192,6 +196,7 @@ function Connect-DbaInstance {
         [int]$LockTimeout,
         [int]$MaxPoolSize,
         [int]$MinPoolSize,
+        [int]$MinimumVersion,
         [switch]$MultipleActiveResultSets,
         [switch]$MultiSubnetFailover,
         [ValidateSet('TcpIp', 'NamedPipes', 'Multiprotocol', 'AppleTalk', 'BanyanVines', 'Via', 'SharedMemory', 'NWLinkIpxSpx')]
@@ -231,6 +236,17 @@ function Connect-DbaInstance {
                 }
             }
         }
+
+        if ($MinimumVersion -and $server.VersionMajor) {
+            if ($server.versionMajor -lt $MinimumVersion) {
+                throw "SQL Server version $MinimumVersion required - $server not supported."
+            }
+        }
+
+        if ($AzureUnsupported -and $server.DatabaseEngineType -eq "SqlAzureDatabase") {
+            throw "Azure SQL Database not supported"
+        }
+
         #'PrimaryFilePath' seems the culprit for slow SMO on databases
         $Fields2000_Db = 'Collation', 'CompatibilityLevel', 'CreateDate', 'ID', 'IsAccessible', 'IsFullTextEnabled', 'IsSystemObject', 'IsUpdateable', 'LastBackupDate', 'LastDifferentialBackupDate', 'LastLogBackupDate', 'Name', 'Owner', 'ReadOnly', 'RecoveryModel', 'ReplicationOptions', 'Status', 'Version'
         $Fields200x_Db = $Fields2000_Db + @('BrokerEnabled', 'DatabaseSnapshotBaseName', 'IsMirroringEnabled', 'Trustworthy')
