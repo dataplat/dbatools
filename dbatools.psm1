@@ -37,7 +37,7 @@ function Import-ModuleFile {
     if ($script:doDotSource) {
         . (Resolve-Path -Path $Path)
     } else {
-        $ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create([io.file]::ReadAllText((Resolve-Path -Path $Path)))), $null, $null)
+        $ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create([io.file]::ReadAllText((Resolve-Path -Path $Path).ProviderPath))), $null, $null)
     }
 }
 
@@ -149,7 +149,7 @@ if (($PSVersionTable.PSVersion.Major -le 5) -or $script:isWindows) {
 }
 
 
-$script:DllRoot = (Resolve-Path -Path "$script:PSModuleRoot\bin\")
+$script:DllRoot = (Resolve-Path -Path "$script:PSModuleRoot\bin\").ProviderPath
 
 <#
 # Removed this because it doesn't seem to work well xplat and on win7 and it doesn't provide enough value
