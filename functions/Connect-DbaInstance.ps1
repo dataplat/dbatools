@@ -120,6 +120,9 @@ function Connect-DbaInstance {
     .PARAMETER AzureUnsupported
         Throw if Azure is detected but not supported
 
+    .PARAMETER MinimumVersion
+        Throw if the target SQL Server instance version does not meet version requirements
+
     .PARAMETER DisableException
         By default in most of our commands, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
 
