@@ -180,7 +180,7 @@ function Connect-DbaInstance {
         [DbaInstanceParameter[]]$SqlInstance,
         [Alias("Credential")]
         [PSCredential]$SqlCredential,
-        [object[]]$Database,
+        [string]$Database,
         [string]$AccessToken,
         [ValidateSet('ReadOnly', 'ReadWrite')]
         [string]$ApplicationIntent,
@@ -242,6 +242,30 @@ function Connect-DbaInstance {
     }
     process {
         foreach ($instance in $SqlInstance) {
+            if ($instance.ComputerName -match "database\.windows\.net" -and -not $instance.InputObject.ConnectionContext.IsOpen) {
+                $isAzure = $true
+                if (-not (Test-Bound -ParameterName ConnectTimeout)) {
+                    $ConnectTimeout = 30
+                }
+
+                if ($SqlCredential) {
+                    $azureconnstring = "Server=tcp:$($instance.ComputerName),$($instance.Port);Initial Catalog=$Database;Persist Security Info=False;User ID=$($SqlCredential.UserName);Password=$($($SqlCredential.GetNetworkCredential()).Password);MultipleActiveResultSets=$MultipleActiveResultSets;Encrypt=True;TrustServerCertificate=$TrustServerCertificate;Connection Timeout=$ConnectTimeout;"
+
+                    if ($SqlCredential.UserName -like "*\*" -or $SqlCredential.UserName -like "*@*") {
+                        $azureconnstring = $azureconnstring + 'Authentication="Active Directory Password"'
+                    }
+                } else {
+                    $azureconnstring = "Server=tcp:$($instance.ComputerName),$($instance.Port);Initial Catalog=$Database;Persist Security Info=False;User ID=$($SqlCredential.UserName);MultipleActiveResultSets=$MultipleActiveResultSets;Encrypt=True;TrustServerCertificate=$TrustServerCertificate;Connection Timeout=$ConnectTimeout;"
+                    $azureconnstring = $azureconnstring + 'Authentication="Active Directory Integrated"'
+                }
+                try {
+                    $sqlconn = New-Object System.Data.SqlClient.SqlConnection $azureconnstring
+                    $serverconn = New-Object Microsoft.SqlServer.Management.Common.ServerConnection $sqlconn
+                    $server = New-Object Microsoft.SqlServer.Management.Smo.Server $serverconn
+                } catch {
+                    Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
+                }
+            }
             #region Safely convert input into instance parameters
             if ($instance.GetType() -eq [Sqlcollaborative.Dbatools.Parameter.DbaInstanceParameter]) {
                 [DbaInstanceParameter]$ConvertedSqlInstance = $instance
@@ -252,11 +276,11 @@ function Connect-DbaInstance {
                 [DbaInstanceParameter]$ConvertedSqlInstance = [DbaInstanceParameter]($instance | Select-Object -First 1)
 
                 if ($instance.Count -gt 1) {
-                    Write-Message -Level Warning -EnableException $true -Message "More than on server was specified when calling Connect-SqlInstance from $((Get-PSCallStack)[1].Command)"
+                    Write-Message -Continue -Level Warning -EnableException:$EnableException -Message "More than on server was specified when calling Connect-SqlInstance from $((Get-PSCallStack)[1].Command)"
                 }
             }
             #endregion Safely convert input into instance parameters
-            if ($instance.Type -like "Server") {
+            if ($instance.Type -like "Server" -or ($isAzure -and $instance.InputObject.ConnectionContext.IsOpen)) {
                 if ($instance.InputObject.ConnectionContext.IsOpen -eq $false) {
                     $instance.InputObject.ConnectionContext.Connect()
                 }
@@ -289,7 +313,7 @@ function Connect-DbaInstance {
 
             if ($instance.IsConnectionString) {
                 $server = New-Object Microsoft.SqlServer.Management.Smo.Server($instance.InputObject)
-            } else {
+            } elseif (-not $isAzure) {
                 $server = New-Object Microsoft.SqlServer.Management.Smo.Server $instance.FullSmoName
             }
 
@@ -297,7 +321,7 @@ function Connect-DbaInstance {
                 $connstring = $server.ConnectionContext.ConnectionString
                 $server.ConnectionContext.ConnectionString = "$connstring;$appendconnectionstring"
                 $server.ConnectionContext.Connect()
-            } else {
+            } elseif (-not $isAzure) {
 
                 $server.ConnectionContext.ApplicationName = $ClientName
 
@@ -369,7 +393,7 @@ function Connect-DbaInstance {
                 }
 
                 try {
-                    if ($null -ne $SqlCredential.UserName) {
+                    if ($null -ne $SqlCredential.UserName -and -not $isAzure) {
                         $username = ($SqlCredential.UserName).TrimStart("\")
 
                         # support both ad\username and username@ad
@@ -407,7 +431,9 @@ function Connect-DbaInstance {
                             $server.ConnectionContext.Connect()
                         }
                     } else {
-                        $server.ConnectionContext.SqlConnectionObject.Open()
+                        if (-not $isAzure) {
+                            $server.ConnectionContext.SqlConnectionObject.Open()
+                        }
                     }
                 } catch {
                     $originalException = $_.Exception
@@ -424,7 +450,7 @@ function Connect-DbaInstance {
                 }
             }
 
-            if ($loadedSmoVersion -ge 11) {
+            if ($loadedSmoVersion -ge 11 -and -not $isAzure) {
                 if ($server.VersionMajor -eq 8) {
                     # 2000
                     $initFieldsDb = New-Object System.Collections.Specialized.StringCollection
