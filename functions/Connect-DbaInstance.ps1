@@ -506,6 +506,9 @@ function Connect-DbaInstance {
                     Add-Member -InputObject $server -NotePropertyName ComputerName -NotePropertyValue $parsedcomputername -Force
                 }
             }
+            if ($isAzure -and $server.ServerType -ne 'SqlAzureDatabase') {
+                throw "Azure connection failed. The username or password may be incorrect."
+            }
             $server
         }
     }
