@@ -84,7 +84,11 @@ function Find-DbaStoredProcedure {
     )
 
     begin {
-        $sql = "SELECT OBJECT_SCHEMA_NAME(p.object_id) as ProcSchema, p.name, m.definition as TextBody FROM sys.sql_modules m, sys.procedures p WHERE m.object_id = p.object_id"
+        $sql = 
+         "SELECT OBJECT_SCHEMA_NAME(p.object_id) AS ProcSchema, p.name, m.definition AS TextBody 
+          FROM sys.sql_modules AS m 
+           INNER JOIN sys.procedures AS p
+            ON m.object_id = p.object_id;"
         if (!$IncludeSystemObjects) { $sql = "$sql AND p.is_ms_shipped = 0" }
         $everyserverspcount = 0
     }
