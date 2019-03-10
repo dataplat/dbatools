@@ -481,7 +481,7 @@ function Set-DbaDbState {
                     # we avoid reenumerating properties
                     $newstate = $db_status
                 } else {
-                    $newstate = Get-DbState -databaseName $db.Name -dbStatuses $stateCache[$server]
+                    $newstate = Get-DbState -databaseName $db.Name -dbStatuses $dbStatuses[$server]
                 }
 
                 [PSCustomObject]@{

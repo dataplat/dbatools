@@ -4,15 +4,11 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        $paramCount = 21
-        $defaultParamCount = 13
-        [object[]]$params = (Get-ChildItem function:\Set-DbaStartupParameter).Parameters.Keys
-        $knownParameters = 'SqlInstance', 'SqlCredential', 'Credential', 'MasterData', 'MasterLog', 'ErrorLog', 'TraceFlags', 'CommandPromptStart', 'MinimalStart', 'MemoryToReserve', 'SingleUser', 'SingleUserDetails', 'NoLoggingToWinEvents', 'StartAsNamedInstance', 'DisableMonitoring', 'IncreasedExtents', 'TraceFlagsOverride', 'StartUpConfig', 'Offline', 'Force', 'EnableException'
-        It "Should contain our specific parameters" {
-            ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
-        }
-        It "Should only contain $paramCount parameters" {
-            $params.Count - $defaultParamCount | Should Be $paramCount
+        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
+        [object[]]$knownParameters = 'SqlInstance','SqlCredential','Credential','MasterData','MasterLog','ErrorLog','TraceFlags','CommandPromptStart','MinimalStart','MemoryToReserve','SingleUser','SingleUserDetails','NoLoggingToWinEvents','StartAsNamedInstance','DisableMonitoring','IncreasedExtents','TraceFlagsOverride','StartUpConfig','Offline','Force','EnableException'
+        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
+        It "Should only contain our specific parameters" {
+            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
         }
     }
 }

@@ -3,26 +3,18 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 
 Describe "$commandname Unit Tests" -Tag 'UnitTests' {
-    InModuleScope dbatools {
-        Context "Empty TLog Backup Issues" {
-            $Header = ConvertFrom-Json -InputObject (Get-Content $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\EmptyTlogData.json -raw)
-            $header | Add-Member -Type NoteProperty -Name FullName -Value 1
-            $Output = Select-DbaBackupInformation -BackupHistory $header #-EnableException:$true
-
-            It "Should return an array of 3 items" {
-                $Output.count | Should be 2
-            }
-            It "Should return 1 Full backups" {
-                ($Output | Where-Object { $_.BackupTypeDescription -eq 'Database' } | Measure-Object).count | Should Be 1
-            }
-            It "Should return 0 Diff backups" {
-                ($Output | Where-Object { $_.BackupTypeDescription -eq 'Database Differential' } | Measure-Object).count | Should Be 0
-            }
-            It "Should return 2 log backups" {
-                ($Output | Where-Object { $_.BackupTypeDescription -eq 'Transaction Log' } | Measure-Object).count | Should Be 1
-            }
+    Context "Validate parameters" {
+        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
+        [object[]]$knownParameters = 'BackupHistory','RestoreTime','IgnoreLogs','IgnoreDiffs','DatabaseName','ServerName','ContinuePoints','LastRestoreType','EnableException'
+        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
+        It "Should only contain our specific parameters" {
+            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
         }
-        Context "General Diff Restore" {
+    }
+}
+Describe "$commandname Integration Tests" -Tag 'IntegrationTests' {
+    InModuleScope dbatools {
+    Context "General Diff Restore" {
             $Header = ConvertFrom-Json -InputObject (Get-Content $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\DiffRestore.json -raw)
             $header | Add-Member -Type NoteProperty -Name FullName -Value 1
             $Output = Select-DbaBackupInformation -BackupHistory $header -EnableException:$true

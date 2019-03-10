@@ -4,15 +4,11 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        $paramCount = 21
-        $defaultParamCount = 13
-        [object[]]$params = (Get-ChildItem function:\Set-DbaCmConnection).Parameters.Keys
-        $knownParameters = 'ComputerName', 'Credential', 'UseWindowsCredentials', 'OverrideExplicitCredential', 'OverrideConnectionPolicy', 'DisabledConnectionTypes', 'DisableBadCredentialCache', 'DisableCimPersistence', 'DisableCredentialAutoRegister', 'EnableCredentialFailover', 'WindowsCredentialsAreBad', 'CimWinRMOptions', 'CimDCOMOptions', 'AddBadCredential', 'RemoveBadCredential', 'ClearBadCredential', 'ClearCredential', 'ResetCredential', 'ResetConnectionStatus', 'ResetConfiguration', 'EnableException'
-        It "Should contain our specific parameters" {
-            ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
-        }
-        It "Should only contain $paramCount parameters" {
-            $params.Count - $defaultParamCount | Should Be $paramCount
+        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
+        [object[]]$knownParameters = 'ComputerName','Credential','UseWindowsCredentials','OverrideExplicitCredential','OverrideConnectionPolicy','DisabledConnectionTypes','DisableBadCredentialCache','DisableCimPersistence','DisableCredentialAutoRegister','EnableCredentialFailover','WindowsCredentialsAreBad','CimWinRMOptions','CimDCOMOptions','AddBadCredential','RemoveBadCredential','ClearBadCredential','ClearCredential','ResetCredential','ResetConnectionStatus','ResetConfiguration','EnableException'
+        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
+        It "Should only contain our specific parameters" {
+            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
         }
     }
 }

@@ -1165,7 +1165,7 @@ function Invoke-DbaDbLogShipping {
 
                 # Check if the backup job name is set
                 if ($BackupJob) {
-                    $DatabaseBackupJob = "$BackupJob_$($db.Name)"
+                    $DatabaseBackupJob = "$($BackupJob)$($db.Name)"
                 } else {
                     $DatabaseBackupJob = "LSBackup_$($db.Name)"
                 }
@@ -1173,7 +1173,7 @@ function Invoke-DbaDbLogShipping {
 
                 # Check if the backup job schedule name is set
                 if ($BackupSchedule) {
-                    $DatabaseBackupSchedule = "$BackupSchedule_$($db.Name)"
+                    $DatabaseBackupSchedule = "$($BackupSchedule)$($db.Name)"
                 } else {
                     $DatabaseBackupSchedule = "LSBackupSchedule_$($db.Name)"
                 }
@@ -1355,17 +1355,17 @@ function Invoke-DbaDbLogShipping {
 
                 # Check if the copy job name is set
                 if ($CopyJob) {
-                    $DatabaseCopyJob = "$CopyJob_$SourceServerName_$($db.Name)"
+                    $DatabaseCopyJob = "$($CopyJob)$($db.Name))"
                 } else {
-                    $DatabaseCopyJob = "LSCopy_$SourceServerName_$($db.Name)"
+                    $DatabaseCopyJob = "LSCopy_$($SourceServerName)_$($db.Name)"
                 }
                 Write-Message -Message "Copy job name set to $DatabaseCopyJob" -Level Verbose
 
                 # Check if the copy job schedule name is set
                 if ($CopySchedule) {
-                    $DatabaseCopySchedule = "$CopySchedule_$($db.Name)"
+                    $DatabaseCopySchedule = "$($CopySchedule)$($db.Name)"
                 } else {
-                    $DatabaseCopySchedule = "LSCopySchedule_$($db.Name)"
+                    $DatabaseCopySchedule = "LSCopySchedule_$($SourceServerName)_$($db.Name)"
                     Write-Message -Message "Copy job schedule name set to $DatabaseCopySchedule" -Level Verbose
                 }
 
@@ -1390,17 +1390,17 @@ function Invoke-DbaDbLogShipping {
 
                 # Check if the restore job name is set
                 if ($RestoreJob) {
-                    $DatabaseRestoreJob = "$RestoreJob_$SourceServerName_$($db.Name)"
+                    $DatabaseRestoreJob = "$($RestoreJob)$($db.Name)"
                 } else {
-                    $DatabaseRestoreJob = "LSRestore_$DestinationServerName_$($db.Name)"
+                    $DatabaseRestoreJob = "LSRestore_$($SourceServerName)_$($db.Name)"
                 }
                 Write-Message -Message "Restore job name set to $DatabaseRestoreJob" -Level Verbose
 
                 # Check if the restore job schedule name is set
                 if ($RestoreSchedule) {
-                    $DatabaseRestoreSchedule = "$RestoreSchedule_$($db.Name)"
+                    $DatabaseRestoreSchedule = "$($RestoreSchedule)$($db.Name)"
                 } else {
-                    $DatabaseRestoreSchedule = "LSRestoreSchedule_$($db.Name)"
+                    $DatabaseRestoreSchedule = "LSRestoreSchedule_$($SourceServerName)_$($db.Name)"
                 }
                 Write-Message -Message "Restore job schedule name set to $DatabaseRestoreSchedule" -Level Verbose
 

@@ -150,8 +150,8 @@ function Get-DbaDatabase {
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [Alias("Databases")]
-        [object[]]$Database,
-        [object[]]$ExcludeDatabase,
+        [string[]]$Database,
+        [string[]]$ExcludeDatabase,
         [Alias("SystemDbOnly", "NoUserDb", "ExcludeAllUserDb")]
         [switch]$ExcludeUser,
         [Alias("UserDbOnly", "NoSystemDb", "ExcludeAllSystemDb")]
@@ -276,7 +276,11 @@ function Get-DbaDatabase {
 
             $inputObject = @()
             foreach ($dt in $backed_info) {
-                $inputObject += $server.Databases | Where-Object Name -ceq $dt.name
+                if ($server.DatabaseEngineType -eq "SqlAzureDatabase") {
+                    $inputObject += $server.Databases[$dt.name]
+                } else {
+                    $inputObject += $server.Databases | Where-Object Name -ceq $dt.name
+                }
             }
             $inputobject = $inputObject |
                 Where-Object {

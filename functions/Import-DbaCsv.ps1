@@ -8,7 +8,7 @@ function Import-DbaCsv {
 
         The entire import is performed within a transaction, so if a failure occurs or the script is aborted, no changes will persist.
 
-        If the table or view specified does not exist and -AutoCreateTable, it will be automatically created using slow and efficient but accomodating data types.
+        If the table or view specified does not exist and -AutoCreateTable, it will be automatically created using slow and inefficient but accommodating data types.
 
         This importer supports fields spanning multiple lines. The only restriction is that they must be quoted, otherwise it would not be possible to distinguish between malformed data and multi-line values.
 
@@ -49,7 +49,7 @@ function Import-DbaCsv {
 
         If a table name is not specified, the table name will be automatically determined from the filename.
 
-        If the table specified does not exist and -AutoCreateTable, it will be automatically created using slow and efficient but accomodating data types.
+        If the table specified does not exist and -AutoCreateTable, it will be automatically created using slow and inefficient but accommodating data types.
 
         If the automatically generated table datatypes do not work for you, please create the table prior to import.
 
@@ -144,6 +144,9 @@ function Import-DbaCsv {
 
     .PARAMETER UseColumnDefault
         Use the column default values if the field is not in the record.
+
+    .PARAMETER NoTransaction
+        Do not use a transaction when performing the import.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
@@ -257,6 +260,7 @@ function Import-DbaCsv {
         [switch]$SkipEmptyLine,
         [switch]$SupportsMultiline,
         [switch]$UseColumnDefault,
+        [switch]$NoTransaction,
         [switch]$EnableException
     )
     begin {
@@ -406,10 +410,12 @@ function Import-DbaCsv {
                     Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
                 }
 
-                if ($PSCmdlet.ShouldProcess($instance, "Starting transaction in $Database")) {
-                    # Everything will be contained within 1 transaction, even creating a new table if required
-                    # and truncating the table, if specified.
-                    $transaction = $sqlconn.BeginTransaction()
+                if (-not $NoTransaction) {
+                    if ($PSCmdlet.ShouldProcess($instance, "Starting transaction in $Database")) {
+                        # Everything will be contained within 1 transaction, even creating a new table if required
+                        # and truncating the table, if specified.
+                        $transaction = $sqlconn.BeginTransaction()
+                    }
                 }
 
                 # Ensure database exists
@@ -485,23 +491,22 @@ function Import-DbaCsv {
                 Write-Message -Level Verbose -Message "Starting bulk copy for $(Split-Path $file -Leaf)"
 
                 # Setup bulk copy options
-                $bulkCopyOptions = @()
-                $options = "TableLock", "CheckConstraints", "FireTriggers", "KeepIdentity", "KeepNulls", "Default"
+                [int]$bulkCopyOptions = ([System.Data.SqlClient.SqlBulkCopyOptions]::Default)
+                $options = "TableLock", "CheckConstraints", "FireTriggers", "KeepIdentity", "KeepNulls"
                 foreach ($option in $options) {
                     $optionValue = Get-Variable $option -ValueOnly -ErrorAction SilentlyContinue
                     if ($optionValue -eq $true) {
-                        $bulkCopyOptions += "$option"
+                        $bulkCopyOptions = $bulkCopyOptions -bor (Invoke-Expression "[System.Data.SqlClient.SqlBulkCopyOptions]::$option")
                     }
                 }
-                $bulkCopyOptions = $bulkCopyOptions -join " & "
 
                 if ($PSCmdlet.ShouldProcess($instance, "Performing import from $file")) {
                     try {
                         # Create SqlBulkCopy using default options, or options specified in command line.
                         if ($bulkCopyOptions) {
-                            $bulkcopy = New-Object Data.SqlClient.SqlBulkCopy($oleconnstring, $bulkCopyOptions, $transaction)
+                            $bulkcopy = New-Object Data.SqlClient.SqlBulkCopy($sqlconn, $bulkCopyOptions, $transaction)
                         } else {
-                            $bulkcopy = New-Object Data.SqlClient.SqlBulkCopy($sqlconn, "Default", $transaction)
+                            $bulkcopy = New-Object Data.SqlClient.SqlBulkCopy($sqlconn, ([System.Data.SqlClient.SqlBulkCopyOptions]::Default), $transaction)
                         }
 
                         $bulkcopy.DestinationTableName = "[$schema].[$table]"
@@ -590,14 +595,18 @@ function Import-DbaCsv {
                         Stop-Function -Continue -Message "Failure" -ErrorRecord $_
                     }
                 }
-                if ($PSCmdlet.ShouldProcess($instance, "Committing transaction")) {
+                if ($PSCmdlet.ShouldProcess($instance, "Finalizing import")) {
                     if ($completed) {
                         # "Note: This count does not take into consideration the number of rows actually inserted when Ignore Duplicates is set to ON."
-                        $null = $transaction.Commit()
+                        if (-not $NoTransaction) {
+                            $null = $transaction.Commit()
+                        }
                         if ($script:core) {
                             $rowscopied = "Unsupported in Core"
+                            $rps = $null
                         } else {
                             $rowscopied = [System.Data.SqlClient.SqlBulkCopyExtension]::RowsCopiedCount($bulkcopy)
+                            $rps = [int]($rowscopied / $elapsed.Elapsed.TotalSeconds)
                         }
 
                         Write-Message -Level Verbose -Message "$rowscopied total rows copied"
@@ -611,7 +620,7 @@ function Import-DbaCsv {
                             Schema        = $schema
                             RowsCopied    = $rowscopied
                             Elapsed       = [prettytimespan]$elapsed.Elapsed
-                            RowsPerSecond = [int]($rowscopied / $elapsed.Elapsed.TotalSeconds)
+                            RowsPerSecond = $rps
                             Path          = $file
                         }
                     } else {

@@ -78,6 +78,22 @@ function Install-DbaMaintenanceSolution {
 
         This will create the Ola Hallengren's Solution objects. Existing objects are not affected in any way.
 
+
+    .EXAMPLE
+        PS C:\> $params = @{
+                >> SqlInstance = 'MyServer'
+                >> Database = 'maintenance'
+                >> ReplaceExisting = $true
+                >> InstallJobs = $true
+                >> LogToTable = $true
+                >> BackupLocation = 'C:\Data\Backup'
+                >> CleanupTime = 65
+                >> Verbose = $true
+                >> }
+                >> Install-DbaMaintenanceSolution @params
+
+        Installs Maintenance Solution to myserver in database. Adds Agent Jobs, and if any currently exist, they'll be replaced.
+
     .EXAMPLE
         PS C:\> Install-DbaMaintenanceSolution -SqlInstance RES14224 -Database DBA -BackupLocation "Z:\SQLBackup" -CleanupTime 72 -ReplaceExisting
 
@@ -234,7 +250,7 @@ function Install-DbaMaintenanceSolution {
                 }
 
                 # OutputFileDirectory
-                if (-not $OutputFileDirectory) {
+                if ($OutputFileDirectory) {
                     $findOutputFileDirectory = 'SET @OutputFileDirectory = NULL'
                     $replaceOutputFileDirectory = 'SET @OutputFileDirectory = N''' + $OutputFileDirectory + ''''
                     $fileContents[$file] = $fileContents[$file].Replace($findOutputFileDirectory, $replaceOutputFileDirectory)
@@ -288,7 +304,7 @@ function Install-DbaMaintenanceSolution {
 
             $db = $server.Databases[$Database]
 
-            if (-not $Solution -match 'All') {
+            if (-not ($Solution -match 'All')) {
                 $required = @('CommandExecute.sql')
             }
 
@@ -346,7 +362,7 @@ function Install-DbaMaintenanceSolution {
                     if ($jobs) {
                         $jobs | ForEach-Object {
                             if ($Pscmdlet.ShouldProcess($instance, "Dropping job $_.name")) {
-                                Remove-DbaAgentJob -SqlInstance $instance -Job $_.name
+                                Remove-DbaAgentJob -SqlInstance $server -Job $_.name
                             }
                         }
                     }

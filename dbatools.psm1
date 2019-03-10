@@ -37,7 +37,7 @@ function Import-ModuleFile {
     if ($script:doDotSource) {
         . (Resolve-Path -Path $Path)
     } else {
-        $ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create([io.file]::ReadAllText((Resolve-Path -Path $Path)))), $null, $null)
+        $ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create([io.file]::ReadAllText((Resolve-Path -Path $Path).ProviderPath))), $null, $null)
     }
 }
 
@@ -149,7 +149,7 @@ if (($PSVersionTable.PSVersion.Major -le 5) -or $script:isWindows) {
 }
 
 
-$script:DllRoot = (Resolve-Path -Path "$script:PSModuleRoot\bin\")
+$script:DllRoot = (Resolve-Path -Path "$script:PSModuleRoot\bin\").ProviderPath
 
 <#
 # Removed this because it doesn't seem to work well xplat and on win7 and it doesn't provide enough value
@@ -205,14 +205,7 @@ if ($script:multiFileImport) {
     Write-ImportTime -Text "Loading Public Commands"
 
 } else {
-    Add-Type -Assembly System.IO.Compression.FileSystem
-    $zip = [System.IO.Compression.ZipFile]::OpenRead((Resolve-Path -Path "$script:PSModuleRoot\allcommands.zip"))
-    $stream = $zip.Entries.Open()
-    $reader = New-Object IO.StreamReader($stream)
-    $ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create(($reader.ReadToEnd()))), $null, $null)
-    $reader.Close()
-    $stream.Close()
-    $zip.Dispose()
+    . (Resolve-Path -Path "$script:PSModuleRoot\allcommands.ps1")
     Write-ImportTime -Text "Loading Public and Private Commands"
 
     . Import-ModuleFile (Resolve-Path -Path "$script:PSModuleRoot\internal\scripts\cmdlets.ps1")
@@ -1010,6 +1003,10 @@ $script:renames = @(
     @{
         "AliasName"  = "Repair-DbaOrphanUser"
         "Definition" = "Repair-DbaDbOrphanUser"
+    },
+    @{
+        "AliasName"  = "Test-DbaJobOwner"
+        "Definition" = "Test-DbaAgentJobOwner"
     }
 )
 
@@ -1084,7 +1081,7 @@ $script:xplat = @(
     'Get-DbaDbSpace',
     'Test-DbaDbOwner',
     'Set-DbaDbOwner',
-    'Test-DbaJobOwner',
+    'Test-DbaAgentJobOwner',
     'Set-DbaAgentJobOwner',
     'Test-DbaDbVirtualLogFile',
     'Get-DbaDbRestoreHistory',
@@ -1334,6 +1331,9 @@ $script:xplat = @(
     'Get-DbaDbMailProfile',
     'Get-DbaDbMailConfig',
     'Get-DbaDbMailServer',
+    'New-DbaDbMailServer',
+    'New-DbaDbMailAccount',
+    'New-DbaDbMailProfile',
     'Get-DbaResourceGovernor',
     'Get-DbaRgResourcePool',
     'Get-DbaRgWorkloadGroup',
@@ -1413,7 +1413,24 @@ $script:xplat = @(
     'Invoke-DbaDbccDropCleanBuffer',
     'Invoke-DbaDbDbccCheckConstraint',
     'Invoke-DbaDbDbccCleanTable',
-    'Invoke-DbaDbDbccUpdateUsage'
+    'Invoke-DbaDbDbccUpdateUsage',
+    'Get-DbaDbIdentity',
+    'Set-DbaDbIdentity',
+    'Get-DbaCmsRegServer',
+    'Get-DbaCmsRegServerStore',
+    'Add-DbaCmsRegServer',
+    'Add-DbaCmsRegServerGroup',
+    'Export-DbaCmsRegServer',
+    'Import-DbaCmsRegServer',
+    'Move-DbaCmsRegServer',
+    'Move-DbaCmsRegServerGroup',
+    'Remove-DbaCmsRegServer',
+    'Remove-DbaCmsRegServerGroup',
+    # Config system
+    'Get-DbatoolsConfig',
+    'Get-DbatoolsConfigValue',
+    'Set-DbatoolsConfig',
+    'Register-DbatoolsConfig'
 )
 
 $script:noncoresmo = @(
@@ -1421,10 +1438,8 @@ $script:noncoresmo = @(
     'Export-DbaUser',
     'Get-DbaSsisExecutionHistory',
     'Get-DbaRepDistributor',
-    'Get-DbaCmsRegServerStore',
     'Copy-DbaPolicyManagement',
     'Copy-DbaDataCollector',
-    'Get-DbaCmsRegServer',
     'Copy-DbaSsisCatalog',
     'New-DbaSsisCatalog',
     'Get-DbaSsisEnvironmentVariable',
@@ -1434,14 +1449,6 @@ $script:noncoresmo = @(
     'Get-DbaPbmObjectSet',
     'Get-DbaPbmPolicy',
     'Get-DbaPbmStore',
-    'Add-DbaCmsRegServer',
-    'Add-DbaCmsRegServerGroup',
-    'Export-DbaCmsRegServer',
-    'Import-DbaCmsRegServer',
-    'Move-DbaCmsRegServer',
-    'Move-DbaCmsRegServerGroup',
-    'Remove-DbaCmsRegServer',
-    'Remove-DbaCmsRegServerGroup',
     'Get-DbaRepPublication',
     'Test-DbaRepLatency',
     'Export-DbaRepServerSetting',
@@ -1473,6 +1480,7 @@ $script:windowsonly = @(
     'Rename-DbaDatabase', # can maybebe fixed by not remoting when linux is detected
     # CM and Windows functions
     'Update-DbaInstance',
+    'Invoke-DbaAdvancedUpdate',
     'Invoke-DbaPfRelog',
     'Get-DbaPfDataCollectorCounter',
     'Get-DbaPfDataCollectorCounterSample',
@@ -1574,11 +1582,6 @@ $script:windowsonly = @(
     'Find-DbaLoginInGroup',
     # 3rd party non-core DLL or exe
     'Export-DbaDacPackage', # relies on sqlpackage.exe
-    # Config system
-    'Get-DbatoolsConfig',
-    'Get-DbatoolsConfigValue',
-    'Set-DbatoolsConfig',
-    'Register-DbatoolsConfig',
     # Unknown
     'Get-DbaErrorLog',
     'Get-DbaManagementObject',
@@ -1603,7 +1606,7 @@ if (-not $script:multiFileImport) {
 
     Export-ModuleMember -Alias $script:renames
     Export-ModuleMember -Alias $forever
-    
+
     Export-ModuleMember -Cmdlet Select-DbaObject, Set-DbatoolsConfig
 
     Write-ImportTime -Text "Exported module member"
