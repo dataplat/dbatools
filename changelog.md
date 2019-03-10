@@ -5,14 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
     and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.777] - 2019-03-03
+### Fixed
+* `Get-DbaServerRoleMember` now correctly calls `Get-DbaLogin`
+* `Get-DbaUserPermission` does not drop STIG schema[#5083](https://github.com/sqlcollaborative/dbatools/issues/5083)
+* `Backup-DbaDbCertificate` doesn't properly filter on parameter `-Certificate` [#5106](https://github.com/sqlcollaborative/dbatools/issues/5106)
+* `Copy-DbaAgentAlert` now verifies that the operator exists on the destination [#4920](https://github.com/sqlcollaborative/dbatools/issues/4920)
+
 ## [0.9.775] - 2019-02-26
 ### Fixed
 * Comparison error in `Test-DbaLastBackup` [#5125](https://github.com/sqlcollaborative/dbatools/issues/5125)
+
 ## [0.9.774] - 2019-02-26
 ### Fixed
 * Various issues with dynamic data masking [#4910](https://github.com/sqlcollaborative/dbatools/issues/4910), [#4970](https://github.com/sqlcollaborative/dbatools/issues/4970)
 * `Sync-DbaAvailabilityGroup` now passes login values to `Copy-DbaLogin` [#5119](https://github.com/sqlcollaborative/dbatools/issues/5119)
-* `Copy-DbaAgentAlert` now verifies that the operator exists on the destination [#4920](https://github.com/sqlcollaborative/dbatools/issues/4920)
 
 ## [0.9.773] - 2019-02-24
 ### Fixed
