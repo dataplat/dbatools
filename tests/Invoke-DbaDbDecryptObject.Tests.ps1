@@ -5,7 +5,7 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
         [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance','SqlCredential','Database','ObjectName','EncodingType','ExportDestination','EnableException'
+        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ObjectName', 'EncodingType', 'ExportDestination', 'EnableException'
         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         It "Should only contain our specific parameters" {
             (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
@@ -24,12 +24,8 @@ Describe "$CommandName Integration Tests" -Tags "UnitTests" {
         # Remove the database if it exists
         Remove-DbaDatabase -SqlInstance $script:instance1 -Database $dbname -Confirm:$false
 
-        # Get a server object
-        $server = Connect-DbaInstance -SqlInstance $script:instance1
-
         # Create the database
-        $server = Connect-DbaInstance -SqlInstance $script:instance1
-        $server.Query("CREATE DATABASE $dbname;")
+        $db = New-DbaDatabase -SqlInstance $script:instance1 -Name $dbname
 
         # Setup the code for the encrypted function
         $queryFunction = "
@@ -57,7 +53,7 @@ BEGIN
 END
         "
         # Create the encrypted function
-        $server.Databases[$dbname].Query($queryFunction)
+        $db.Query($queryFunction)
 
         # Setup the query for the encrypted stored procedure
         $queryStoredProcedure = "
@@ -80,7 +76,7 @@ END
         "
 
         # Create the encrypted stored procedure
-        $server.Databases[$dbname].Query($queryStoredProcedure)
+        $db.Query($queryStoredProcedure)
 
         # Check if DAC is enabled
         $config = Get-DbaSpConfigure -SqlInstance $script:instance1 -ConfigName RemoteDacConnectionsEnabled
