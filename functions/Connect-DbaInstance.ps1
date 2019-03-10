@@ -266,23 +266,21 @@ function Connect-DbaInstance {
                     Stop-Function -Message "You must specify -Database when connecting to a SQL Azure databse" -Continue
                 }
                 $isAzure = $true
-                if (-not (Test-Bound -ParameterName ConnectTimeout)) {
-                    $ConnectTimeout = 30
-                }
+                $boundparams = $PSBoundParameters
+                [object[]]$connstringcmd = (Get-Command New-DbaConnectionString).Parameters.Keys
+                [object[]]$connectcmd = (Get-Command Connect-DbaInstance).Parameters.Keys
 
-                if ($SqlCredential) {
-                    $azureconnstring = "Server=tcp:$($instance.ComputerName),$($instance.Port);Initial Catalog=$Database;Persist Security Info=False;User ID=$($SqlCredential.UserName);Password=$($($SqlCredential.GetNetworkCredential()).Password);MultipleActiveResultSets=$MultipleActiveResultSets;Encrypt=True;TrustServerCertificate=$TrustServerCertificate;Connection Timeout=$ConnectTimeout;"
-
-                    if ($SqlCredential.UserName -like "*\*" -or $SqlCredential.UserName -like "*@*") {
-                        $azureconnstring = $azureconnstring + 'Authentication="Active Directory Password"'
+                foreach ($key in $connectcmd) {
+                    if ($key -notin $connstringcmd -and $key -ne "SqlCredential") {
+                        $null = $boundparams.Remove($key)
                     }
-                } else {
-                    $azureconnstring = "Server=tcp:$($instance.ComputerName),$($instance.Port);Initial Catalog=$Database;Persist Security Info=False;User ID=$($SqlCredential.UserName);MultipleActiveResultSets=$MultipleActiveResultSets;Encrypt=True;TrustServerCertificate=$TrustServerCertificate;Connection Timeout=$ConnectTimeout;"
-                    $azureconnstring = $azureconnstring + 'Authentication="Active Directory Integrated"'
                 }
+                $azureconnstring = New-DbaConnectionString @boundparams
+
                 try {
                     $sqlconn = New-Object System.Data.SqlClient.SqlConnection $azureconnstring
                     $serverconn = New-Object Microsoft.SqlServer.Management.Common.ServerConnection $sqlconn
+                    $null = $serverconn.Connect()
                     $server = New-Object Microsoft.SqlServer.Management.Smo.Server $serverconn
                 } catch {
                     Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
