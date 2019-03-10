@@ -20,11 +20,11 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
                     [fname] [varchar](50) NULL,
                     [lname] [varchar](50) NULL,
                     [dob] [datetime] NULL
-                ) ON [PRIMARY]
-                GO
-                INSERT INTO people (fname, lname, dob) VALUES ('Joe','Schmoe','2/2/2000')
-                INSERT INTO people (fname, lname, dob) VALUES ('Jane','Schmee','2/2/1950')"
+                ) ON [PRIMARY]"
         $db = New-DbaDatabase -SqlInstance $script:instance1 -Name $dbname
+        $db.Query($sql)
+        $sql = "INSERT INTO people (fname, lname, dob) VALUES ('Joe','Schmoe','2/2/2000')
+                INSERT INTO people (fname, lname, dob) VALUES ('Jane','Schmee','2/2/1950')"
         $db.Query($sql)
     }
     AfterAll {
