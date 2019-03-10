@@ -1,4 +1,4 @@
-function New-DbaFirewallRule {
+﻿function New-DbaFirewallRule {
     <#
     .SYNOPSIS
         Adds new firewall rules to Windows Firewall with Advanced Security for SQL Server components.
@@ -125,7 +125,6 @@ function New-DbaFirewallRule {
         [Alias("ServerInstance", "SqlServer", "SqlInstance")]
         [string]$ComputerName = $env:COMPUTERNAME,
         [PSCredential]$Credential,
-        [securestring]$Password,
         [string]$NetworkProfile = "Domain",
         [string]$DisplayGroup = "SQL", # From New-NetFirewallRule Help: The DisplayGroup parameter cannot be specified upon object creation using the New-NetFirewallRule cmdlet, but can be modified using dot-notation and the Set-NetFirewallRule cmdlet.
         [int]$PortDbEngine = 1433,
