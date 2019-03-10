@@ -20,7 +20,6 @@ Describe "$commandname Integration Test" -Tag "IntegrationTests" {
 
         $dbname = "dbatoolsci_getdbUsage$random"
         $db = New-DbaDatabase -SqlInstance $script:instance1 -Name $dbname
-        $null = $db.Query("CREATE DATABASE $dbname")
         $null = $db.Query("CREATE TABLE $tableName (id int)", $dbname)
         $null = $db.Query("CREATE CLUSTERED INDEX [PK_Id] ON $tableName ([id] ASC)", $dbname)
         $null = $db.Query("INSERT $tableName(id) SELECT object_id FROM sys.objects", $dbname)
