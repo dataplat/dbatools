@@ -1,4 +1,4 @@
-﻿function New-DbaFirewallRule {
+function New-DbaFirewallRule {
     <#
     .SYNOPSIS
         Adds new firewall rules to Windows Firewall with Advanced Security for SQL Server components.
@@ -86,15 +86,14 @@
         Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
         License: MIT https://opensource.org/licenses/MIT
 
-        ###  References ###
-        # https://docs.microsoft.com/en-us/sql/sql-server/install/configure-the-windows-firewall-to-allow-sql-server-access
-        # https://docs.microsoft.com/en-us/sql/analysis-services/instances/configure-the-windows-firewall-to-allow-analysis-services-access
-        # https://docs.microsoft.com/en-us/sql/integration-services/service/integration-services-service-ssis-service#configure-the-firewall
-        # https://docs.microsoft.com/en-us/sql/reporting-services/report-server/configure-a-firewall-for-report-server-access
-        # https://technet.microsoft.com/en-us/library/jj554908(v=wps.630).aspx
-        # https://serverfault.com/questions/325544/how-to-create-a-windows-2008-advanced-firewall-rules-group-definition-through-th/789187#789187 # helped with setting DisplayGroup for firewall rule
-        # https://sid-500.com/2017/12/11/configuring-windows-firewall-with-powershell/
-        ### /References ###
+        References:
+        https://docs.microsoft.com/en-us/sql/sql-server/install/configure-the-windows-firewall-to-allow-sql-server-access
+        https://docs.microsoft.com/en-us/sql/analysis-services/instances/configure-the-windows-firewall-to-allow-analysis-services-access
+        https://docs.microsoft.com/en-us/sql/integration-services/service/integration-services-service-ssis-service#configure-the-firewall
+        https://docs.microsoft.com/en-us/sql/reporting-services/report-server/configure-a-firewall-for-report-server-access
+        https://technet.microsoft.com/en-us/library/jj554908(v=wps.630).aspx
+        https://serverfault.com/questions/325544/how-to-create-a-windows-2008-advanced-firewall-rules-group-definition-through-th/789187#789187 # helped with setting DisplayGroup for firewall rule
+        https://sid-500.com/2017/12/11/configuring-windows-firewall-with-powershell/
 
     .LINK
         https://dbatools.io/New-DbaFirewallRule
@@ -135,10 +134,7 @@
         [int]$PortServiceBroker = 4022,
         [int]$PortDebuggerRPC = 135,
         [int]$PortSSASDefaultInstance = 2383,
-        [int]$PortSSASNamedInstance = 2382, # also needed for "Power Pivot" named instance for SharePoint
-            # Named instances use dynamic port assignments.
-            # As the discovery service for Analysis Services, SQL Server Browser service listens
-            # on TCP port 2382 and redirects the connection request to the port currently used by Analysis Services. 
+        [int]$PortSSASNamedInstance = 2382,
         [Parameter(DontShow = $true)][int] $PortSSIS = 135, # "The Integration Services service uses port 135, and the port cannot be changed"
         [int]$PortSSRS = 80,
         [int]$PortSSRSSSL = 443,
@@ -147,169 +143,163 @@
         [switch]$EnableException
 
     )
-    
-    begin {
+    process {
         if (([Environment]::OSVersion).Version.Major -lt 6) {
             Write-Error "This New-DbaFirewallRule command only supports Windows 8 / Windows Server 2012 or higher, due to a dependency on NetSecurity module."
-            Break
         }
-    } # end begin
 
-    process {
-    Import-Module NetSecurity
-
-    # KNOWN ISSUE: currently does not handle multiple SSIS instances, as it will try to pass an array to New-NetFirewallRule which expects a string for -Program
-    #$ssispath = Get-DbaSqlService -ComputerName $Computername -Type SSIS | Select BinaryPath # provided by @sqllensman
-    $ssis = @(Get-DbaService -ComputerName $Computername -Type SSIS)
-    # $ssis # debug
-    # $ssis.GetType() # Debug
-    $ssispath = (Get-DbaSqlService -ComputerName $ComputerName -Type SSIS).BinaryPath # provided by @sqllensman.
-    $ssispath = @($ssis).BinaryPath # @ in case the server has multiple SSIS instances
-    $ssispath = $ssispath.Replace('"',"") # strip off double " marks around the BinaryPath, otherwise error "New-NetFirewallRule : The application contains invalid characters, or is an invalid length." is thrown.  
+        # KNOWN ISSUE: currently does not handle multiple SSIS instances, as it will try to pass an array to New-NetFirewallRule which expects a string for -Program
+        #$ssispath = Get-DbaSqlService -ComputerName $Computername -Type SSIS | Select BinaryPath # provided by @sqllensman
+        $ssis = @(Get-DbaService -ComputerName $Computername -Type SSIS)
+        # $ssis # debug
+        # $ssis.GetType() # Debug
+        $ssispath = (Get-DbaSqlService -ComputerName $ComputerName -Type SSIS).BinaryPath # provided by @sqllensman.
+        $ssispath = @($ssis).BinaryPath # @ in case the server has multiple SSIS instances
+        $ssispath = $ssispath.Replace('"', "") # strip off double " marks around the BinaryPath, otherwise error "New-NetFirewallRule : The application contains invalid characters, or is an invalid length." is thrown.
         # $ssispath # debug
         # $ssispath.GetType() # debug
 
-    $ssisversion = @($ssis).DisplayName
+        $ssisversion = @($ssis).DisplayName
 
-    $FirewallRules =
-    @{
-        'DatabaseEngine' =
+        $FirewallRules =
+        @{
+            'DatabaseEngine'    =
             @{
                 'DisplayName' = "SQL Server Database Engine (TCP-in)";
-                'Direction' = 'Inbound';
-                'Protocol' = 'TCP';
-                'LocalPort' = $portDbEngine
-                'Action' = 'Allow'
-                'Profile' = $networkProfile
-                'Enabled' = 'True';
+                'Direction'   = 'Inbound';
+                'Protocol'    = 'TCP';
+                'LocalPort'   = $portDbEngine
+                'Action'      = 'Allow'
+                'Profile'     = $networkProfile
+                'Enabled'     = 'True';
             };
 
-        'DAC' =
+            'DAC'               =
             @{
                 'DisplayName' = "SQL Dedicated Admin Connection (DAC) (TCP-in)";
-                'Direction' = 'Inbound';
-                'Protocol' = 'TCP';
-                'LocalPort' = $portDbEngineDAC
-                'Action' = 'Allow'
-                'Profile' = $networkProfile
-                'Enabled' = 'True'; 
+                'Direction'   = 'Inbound';
+                'Protocol'    = 'TCP';
+                'LocalPort'   = $portDbEngineDAC
+                'Action'      = 'Allow'
+                'Profile'     = $networkProfile
+                'Enabled'     = 'True';
             };
 
-        'BrowserService' = # aka 'BrowserServiceUDP'
+            'BrowserService'    = # aka 'BrowserServiceUDP'
             @{
                 'DisplayName' = "SQL Browser Service (UDP-in)";
-                'Direction' = 'Inbound';
-                'Protocol' = 'UDP';
-                'LocalPort' = $portBrowserService
-                'Action' = 'Allow'
-                'Profile' = $networkProfile
-                'Enabled' = 'True'; 
+                'Direction'   = 'Inbound';
+                'Protocol'    = 'UDP';
+                'LocalPort'   = $portBrowserService
+                'Action'      = 'Allow'
+                'Profile'     = $networkProfile
+                'Enabled'     = 'True';
             };
 
-        'ServiceBroker' =
+            'ServiceBroker'     =
             @{
                 'DisplayName' = "SQL Service Broker (TCP-in)";
-                'Direction' = 'Inbound';
-                'Protocol' = 'TCP';
-                'LocalPort' = $portServiceBroker
-                'Action' = 'Allow'
-                'Profile' = $networkProfile
-                'Enabled' = 'True'; 
+                'Direction'   = 'Inbound';
+                'Protocol'    = 'TCP';
+                'LocalPort'   = $portServiceBroker
+                'Action'      = 'Allow'
+                'Profile'     = $networkProfile
+                'Enabled'     = 'True';
             };
 
-        'Debugger/RPC' =
+            'Debugger/RPC'      =
             @{
                 'DisplayName' = "SQL Debugger/RPC (TCP-in)";
-                'Direction' = 'Inbound';
-                'Protocol' = 'TCP';
-                'LocalPort' = $portDebuggerRPC
-                'Action' = 'Allow'
-                'Profile' = $networkProfile
-                'Enabled' = 'True'; 
+                'Direction'   = 'Inbound';
+                'Protocol'    = 'TCP';
+                'LocalPort'   = $portDebuggerRPC
+                'Action'      = 'Allow'
+                'Profile'     = $networkProfile
+                'Enabled'     = 'True';
             };
 
-        'SSAS' =
+            'SSAS'              =
             @{
                 'DisplayName' = "SQL Analysis Services (TCP-in)";
-                'Direction' = 'Inbound';
-                'Protocol' = 'TCP';
-                'LocalPort' = $portSSASDefaultInstance
-                'Action' = 'Allow'
-                'Profile' = $networkProfile
-                'Enabled' = 'True'; 
+                'Direction'   = 'Inbound';
+                'Protocol'    = 'TCP';
+                'LocalPort'   = $portSSASDefaultInstance
+                'Action'      = 'Allow'
+                'Profile'     = $networkProfile
+                'Enabled'     = 'True';
             };
 
-        'SSASNamedInstance' = # aka 'BrowserServiceTCP' # also needed for "Power Pivot" named instance for SharePoint and any other named SSAS instances
+            'SSASNamedInstance' = # aka 'BrowserServiceTCP' # also needed for "Power Pivot" named instance for SharePoint and any other named SSAS instances
             @{
                 'DisplayName' = "SQL Browser Service (TCP-in)";
-                'Direction' = 'Inbound';
-                'Protocol' = 'TCP';
-                'LocalPort' = $portSSASNamedInstance
-                'Action' = 'Allow'
-                'Profile' = $networkProfile
-                'Enabled' = 'True'; 
+                'Direction'   = 'Inbound';
+                'Protocol'    = 'TCP';
+                'LocalPort'   = $portSSASNamedInstance
+                'Action'      = 'Allow'
+                'Profile'     = $networkProfile
+                'Enabled'     = 'True';
             };
 
-        'SSIS' =
+            'SSIS'              =
             @{
                 'DisplayName' = "SQL Integration Services (TCP-in)"; # technically a dupe of SQL Debugger/RPC (TCP-in)
-                'Direction' = 'Inbound';
-                'Protocol' = 'TCP';
-                'LocalPort' = $portSSIS
-                'Action' = 'Allow'
-                'Profile' = $networkProfile
-                'Enabled' = 'True'; 
+                'Direction'   = 'Inbound';
+                'Protocol'    = 'TCP';
+                'LocalPort'   = $portSSIS
+                'Action'      = 'Allow'
+                'Profile'     = $networkProfile
+                'Enabled'     = 'True';
             };
 
-        # KNOWN ISSUE: currently does not handle multiple SSIS instances, as it will try to pass an array to New-NetFirewallRule which expects a string for -Program
-        'SSISExe' = # this might need its own function since Program, LocalAddress, and RemoteAddress parameters don't exist in any other firewall rules
+            # KNOWN ISSUE: currently does not handle multiple SSIS instances, as it will try to pass an array to New-NetFirewallRule which expects a string for -Program
+            'SSISExe'           = # this might need its own function since Program, LocalAddress, and RemoteAddress parameters don't exist in any other firewall rules
             @{
                 'DisplayName' = "SQL Integration Services MsDtsSrvr.exe (TCP-in)";
-                'Program' = $ssispath;
+                'Program'     = $ssispath;
                 #'LocalAddress' = "LocalSubnet";
                 #'RemoteAddress' = "LocalSubnet"; # not sure if this is needed
-                'Direction' = 'Inbound';
-                'Protocol' = 'TCP';
-                'LocalPort' = $portSSIS
-                'Action' = 'Allow'
-                'Profile' = $networkProfile
-                'Enabled' = 'True'; 
+                'Direction'   = 'Inbound';
+                'Protocol'    = 'TCP';
+                'LocalPort'   = $portSSIS
+                'Action'      = 'Allow'
+                'Profile'     = $networkProfile
+                'Enabled'     = 'True';
             };
 
-        'SSRS' =
+            'SSRS'              =
             @{
                 'DisplayName' = "SQL Reporting Services (TCP-in)";
-                'Direction' = 'Inbound';
-                'Protocol' = 'TCP';
-                'LocalPort' = $portSSRS
-                'Action' = 'Allow'
-                'Profile' = $networkProfile
-                'Enabled' = 'True'; 
+                'Direction'   = 'Inbound';
+                'Protocol'    = 'TCP';
+                'LocalPort'   = $portSSRS
+                'Action'      = 'Allow'
+                'Profile'     = $networkProfile
+                'Enabled'     = 'True';
             };
 
-        'SSRSSSL' =
+            'SSRSSSL'           =
             @{
                 'DisplayName' = "SQL Reporting Services SSL (TCP-in)";
-                'Direction' = 'Inbound';
-                'Protocol' = 'TCP';
-                'LocalPort' = $portSSRSSSL
-                'Action' = 'Allow'
-                'Profile' = $networkProfile
-                'Enabled' = 'True'; 
+                'Direction'   = 'Inbound';
+                'Protocol'    = 'TCP';
+                'LocalPort'   = $portSSRSSSL
+                'Action'      = 'Allow'
+                'Profile'     = $networkProfile
+                'Enabled'     = 'True';
             };
 
-        'SSMSBrowse' =
+            'SSMSBrowse'        =
             @{
                 'DisplayName' = "SQL Server SSMS Browse Button (UDP-in)";
-                'Direction' = 'Inbound';
-                'Protocol' = 'UDP';
-                'LocalPort' = $portSSMSBrowse
-                'Action' = 'Allow'
-                'Profile' = $networkProfile
-                'Enabled' = 'True'; 
+                'Direction'   = 'Inbound';
+                'Protocol'    = 'UDP';
+                'LocalPort'   = $portSSMSBrowse
+                'Action'      = 'Allow'
+                'Profile'     = $networkProfile
+                'Enabled'     = 'True';
             };
 
-    }; # end $FirewallRules splat
+        }; # end $FirewallRules splat
 
         # debug
         <#
@@ -317,26 +307,26 @@
         $FirewallRules.Keys
         $FirewallRules.Values
         #>
-        
-$FirewallRulesByProgram =
-@{
-    'SSISExe' = # this might need its own function since Program, LocalAddress, and RemoteAddress parameters don't exist in any other firewall rules
-        @{
-            'DisplayName' = "SQL Integration Services MsDtsSrvr.exe (TCP-in)";
-            'Program' = $ssispath;
-            #'LocalAddress' = "LocalSubnet";
-            #'RemoteAddress' = "LocalSubnet";
-            'Direction' = 'Inbound';
-            'Protocol' = 'TCP';
-            'LocalPort' = $portSSIS
-            'Action' = 'Allow'
-            'Profile' = $networkProfile
-            'Enabled' = 'True'; 
-        };
-};
 
-    # debug
-    <#
+        $FirewallRulesByProgram =
+        @{
+            'SSISExe' = # this might need its own function since Program, LocalAddress, and RemoteAddress parameters don't exist in any other firewall rules
+            @{
+                'DisplayName' = "SQL Integration Services MsDtsSrvr.exe (TCP-in)";
+                'Program'     = $ssispath;
+                #'LocalAddress' = "LocalSubnet";
+                #'RemoteAddress' = "LocalSubnet";
+                'Direction'   = 'Inbound';
+                'Protocol'    = 'TCP';
+                'LocalPort'   = $portSSIS
+                'Action'      = 'Allow'
+                'Profile'     = $networkProfile
+                'Enabled'     = 'True';
+            };
+        };
+
+        # debug
+        <#
     $FirewallRulesByProgram
     $FirewallRulesByProgram.Keys
     $FirewallRulesByProgram.Values
@@ -358,98 +348,95 @@ $FirewallRulesByProgram =
 
         # debug. works!
         # Get-NetFirewallRule -DisplayName $debugrule | ForEach { $_.Group = $debugdisplaygroup ; Set-NetFirewallRule -InputObject $_ } # assign to DisplayGroup. works!
-    
+
         # debug. works!!
         #$FirewallRulesDisplayNames = ($FirewallRules.GetEnumerator() | ForEach-Object { $_.Value }).DisplayName # convert splat to regular array list to pass to Set-NetFirewallRule
-            # $FirewallRulesDisplayNames # debug
+        # $FirewallRulesDisplayNames # debug
 
         # debug. works!
         # Get-NetFirewallRule -DisplayName $FirewallRulesDisplayNames | ForEach { $_.Group = $displaygroup ; Set-NetFirewallRule -InputObject $_ } # assign to DisplayGroup. works!
 
-    # the new way
-    function Invoke-NewFirewallRules
-    {
-        param ($FirewallObject, $displayGroup)
+        # the new way
+        function Invoke-NewFirewallRules {
+            param ($FirewallObject, $displayGroup)
 
-        New-NetFirewallRule @FirewallObject
-        # Get-NetFirewallRule -DisplayName $debugrule | ForEach { $_.Group = $debugdisplaygroup ; Set-NetFirewallRule -InputObject $_ } # assign to DisplayGroup. works!
+            New-NetFirewallRule @FirewallObject
+            # Get-NetFirewallRule -DisplayName $debugrule | ForEach { $_.Group = $debugdisplaygroup ; Set-NetFirewallRule -InputObject $_ } # assign to DisplayGroup. works!
 
-        <# moved to own function #>
-        #$FirewallRulesDisplayNames = ($FirewallRules.GetEnumerator() | ForEach-Object { $_.Value }).DisplayName # convert splat to regular array list to pass to Set-NetFirewallRule 
-        #$FirewallRulesDisplayNames = ($FirewallObject.GetEnumerator() | ForEach-Object { $_.Value }).DisplayName # convert splat to regular array list to pass to Set-NetFirewallRule # not this one
+            <# moved to own function #>
+            #$FirewallRulesDisplayNames = ($FirewallRules.GetEnumerator() | ForEach-Object { $_.Value }).DisplayName # convert splat to regular array list to pass to Set-NetFirewallRule
+            #$FirewallRulesDisplayNames = ($FirewallObject.GetEnumerator() | ForEach-Object { $_.Value }).DisplayName # convert splat to regular array list to pass to Set-NetFirewallRule # not this one
             #Write-Host "debug FirewallRulesDisplayNames: $FirewallRulesDisplayNames" # debug
-        #Get-NetFirewallRule -DisplayName $FirewallRulesDisplayNames | ForEach { $_.Group = $displaygroup ; Set-NetFirewallRule -InputObject $_ }
-    }
+            #Get-NetFirewallRule -DisplayName $FirewallRulesDisplayNames | ForEach { $_.Group = $displaygroup ; Set-NetFirewallRule -InputObject $_ }
+        }
 
-    # the new way
-    function Invoke-SetFirewallRulesDisplayGroup
-    {
-        param ($FirewallDisplayGroup)
-        $FirewallRulesDisplayNames = ($FirewallRules.GetEnumerator() | ForEach-Object { $_.Value }).DisplayName # convert splat to regular array list to pass to Set-NetFirewallRule 
-        #Get-NetFirewallRule -DisplayName $debugrule | ForEach-Object { $_.Group = $debugdisplaygroup ; Set-NetFirewallRule -InputObject $_ } # assign to DisplayGroup
-        Get-NetFirewallRule -DisplayName $FirewallRulesDisplayNames | ForEach-Object { $_.Group = $displayGroup ; Set-NetFirewallRule -InputObject $_ } # assign to DisplayGroup
-    }
+        # the new way
+        function Invoke-SetFirewallRulesDisplayGroup {
+            param ($FirewallDisplayGroup)
+            $FirewallRulesDisplayNames = ($FirewallRules.GetEnumerator() | ForEach-Object { $_.Value }).DisplayName # convert splat to regular array list to pass to Set-NetFirewallRule
+            #Get-NetFirewallRule -DisplayName $debugrule | ForEach-Object { $_.Group = $debugdisplaygroup ; Set-NetFirewallRule -InputObject $_ } # assign to DisplayGroup
+            Get-NetFirewallRule -DisplayName $FirewallRulesDisplayNames | ForEach-Object { $_.Group = $displayGroup ; Set-NetFirewallRule -InputObject $_ } # assign to DisplayGroup
+        }
 
-    # the new way BY PROGRAM
-    function Invoke-FirewallRulesByProgram
-    {
-        param ($FirewallObjectByProgram, $displayGroup)
+        # the new way BY PROGRAM
+        function Invoke-FirewallRulesByProgram {
+            param ($FirewallObjectByProgram, $displayGroup)
 
-        New-NetFirewallRule @FirewallObjectByProgram
-        Get-NetFirewallRule -DisplayName $FirewallObjectByProgram.DisplayName |
-        ForEach-Object
+            New-NetFirewallRule @FirewallObjectByProgram
+            Get-NetFirewallRule -DisplayName $FirewallObjectByProgram.DisplayName |
+                ForEach-Object
             {
                 $_.Group = $displayGroup # Dont know what this is yet, might need to pass it in - @ck
                 Set-NetFirewallRule -InputObject $_ # assign to DisplayGroup
             }
-    }
+        }
 
-    # the new way. add new firewall rules.
-    foreach ( $rule in $FirewallRules.GetEnumerator() ) {
-        $parameters = $rule.Value
-        Write-Verbose "$($rule.Name) rule has these settings:"
-        Write-Verbose "Rule Display Name: $($parameters.DisplayName)"
-        Write-Verbose "Program: $($parameters.Program)"
-        #Write-Verbose "Local Address: $($parameters.LocalAddress)"
-        #Write-Verbose "Remote Address: $($parameters.RemoteAddress)" # not sure if this is needed
-        Write-Verbose "Direction: $($parameters.Direction)"
-        Write-Verbose "Protocol: $($parameters.Protocol)"
-        Write-Verbose "Port: $($parameters.LocalPort)"
-        Write-Verbose "Action: $($parameters.Action)"
-        Write-Verbose "Profile: $($parameters.Profile)"
-        Write-Verbose "Enabled: $($parameters.Enabled)"
-        Write-Verbose ""
-        Invoke-NewFirewallRule -FirewallObject $parameters #-DisplayGroup $displayGroup
-        #Invoke-NewFirewallRule -FirewallObject @parameters -DisplayGroup $displayGroup # not this one
-        #Invoke-FirewallRule @rule # splatting, by passing a hash table with a @ prefix and not a $, which means "unwrap my key value pairs to parameters and their values if they are named the same" - @ck
-        Write-Host "Added firewall rule: $($rule.Name)"
-    }
+        # the new way. add new firewall rules.
+        foreach ( $rule in $FirewallRules.GetEnumerator() ) {
+            $parameters = $rule.Value
+            Write-Verbose "$($rule.Name) rule has these settings:"
+            Write-Verbose "Rule Display Name: $($parameters.DisplayName)"
+            Write-Verbose "Program: $($parameters.Program)"
+            #Write-Verbose "Local Address: $($parameters.LocalAddress)"
+            #Write-Verbose "Remote Address: $($parameters.RemoteAddress)" # not sure if this is needed
+            Write-Verbose "Direction: $($parameters.Direction)"
+            Write-Verbose "Protocol: $($parameters.Protocol)"
+            Write-Verbose "Port: $($parameters.LocalPort)"
+            Write-Verbose "Action: $($parameters.Action)"
+            Write-Verbose "Profile: $($parameters.Profile)"
+            Write-Verbose "Enabled: $($parameters.Enabled)"
+            Write-Verbose ""
+            Invoke-NewFirewallRule -FirewallObject $parameters #-DisplayGroup $displayGroup
+            #Invoke-NewFirewallRule -FirewallObject @parameters -DisplayGroup $displayGroup # not this one
+            #Invoke-FirewallRule @rule # splatting, by passing a hash table with a @ prefix and not a $, which means "unwrap my key value pairs to parameters and their values if they are named the same" - @ck
+            Write-Host "Added firewall rule: $($rule.Name)"
+        }
 
-    Invoke-SetFirewallRulesDisplayGroup -FirewallDisplayGroup $displayGroup
+        Invoke-SetFirewallRulesDisplayGroup -FirewallDisplayGroup $displayGroup
 
-    # the new way BY PROGRAM
-    foreach ( $rule in $FirewallRulesByProgram.GetEnumerator() ) {
-        $parametersByProgram = $rule.Value
-        Write-Host "$($rule.Name) rule has these settings:"
-        Write-Host "DisplayName: $($parametersByProgram.DisplayName)"
-        Write-Host "Program: $($parametersByProgram.Program)"
-        #Write-Host "Local Address: $($parametersByProgram.LocalAddress)"
-        #Write-Host "Remote Address: $($parametersByProgram.RemoteAddress)"
-        Write-Host "Direction: $($parametersByProgram.Direction)"
-        Write-Host "Protocol: $($parametersByProgram.Protocol)"
-        Write-Host "Action: $($parametersByProgram.Action)"
-        Write-Host "Profile: $($parametersByProgram.Profile)"
-        Write-Host "Enabled: $($parametersByProgram.Enabled)"
-        Invoke-FirewallRulesByProgram -FirewallObjectByProgram $parametersByProgram -DisplayGroup $displayGroup
-        #Invoke-FirewallRules @rule # splatting, by passing a hash table with a @ prefix and not a $, which means "unwrap my key value pairs to parameters and their values if they are named the same" - @ck
-    }
+        # the new way BY PROGRAM
+        foreach ( $rule in $FirewallRulesByProgram.GetEnumerator() ) {
+            $parametersByProgram = $rule.Value
+            Write-Host "$($rule.Name) rule has these settings:"
+            Write-Host "DisplayName: $($parametersByProgram.DisplayName)"
+            Write-Host "Program: $($parametersByProgram.Program)"
+            #Write-Host "Local Address: $($parametersByProgram.LocalAddress)"
+            #Write-Host "Remote Address: $($parametersByProgram.RemoteAddress)"
+            Write-Host "Direction: $($parametersByProgram.Direction)"
+            Write-Host "Protocol: $($parametersByProgram.Protocol)"
+            Write-Host "Action: $($parametersByProgram.Action)"
+            Write-Host "Profile: $($parametersByProgram.Profile)"
+            Write-Host "Enabled: $($parametersByProgram.Enabled)"
+            Invoke-FirewallRulesByProgram -FirewallObjectByProgram $parametersByProgram -DisplayGroup $displayGroup
+            #Invoke-FirewallRules @rule # splatting, by passing a hash table with a @ prefix and not a $, which means "unwrap my key value pairs to parameters and their values if they are named the same" - @ck
+        }
 
-    # the new way. assign Display Group, outside the foreach loop and outside the Invoke-NewFirewallRule function so that it doesn't try to assign display group to rules that haven't been created yet.
-    $FirewallRulesDisplayNames = ($FirewallRules.GetEnumerator() | ForEach-Object { $_.Value }).DisplayName # convert splat to regular array list to pass to Set-NetFirewallRule
-    Write-Host "Setting Display Group to ""$displaygroup"" for the added rules. Please wait a moment..."
-    Get-NetFirewallRule -DisplayName $FirewallRulesDisplayNames | ForEach { $_.Group = $displaygroup ; Set-NetFirewallRule -InputObject $_ }
+        # the new way. assign Display Group, outside the foreach loop and outside the Invoke-NewFirewallRule function so that it doesn't try to assign display group to rules that haven't been created yet.
+        $FirewallRulesDisplayNames = ($FirewallRules.GetEnumerator() | ForEach-Object { $_.Value }).DisplayName # convert splat to regular array list to pass to Set-NetFirewallRule
+        Write-Host "Setting Display Group to ""$displaygroup"" for the added rules. Please wait a moment..."
+        Get-NetFirewallRule -DisplayName $FirewallRulesDisplayNames | ForEach { $_.Group = $displaygroup ; Set-NetFirewallRule -InputObject $_ }
 
-            <# the old way, from https://ryanmangansitblog.com/2013/05/01/powershell-script-for-sql-firewall-rules/
+        <# the old way, from https://ryanmangansitblog.com/2013/05/01/powershell-script-for-sql-firewall-rules/
             # Enable SQL Server (Database Engine) Ports
             New-NetFirewallRule -DisplayName "SQL Server Database Engine (TCP-in)" -Direction Inbound –Protocol TCP –LocalPort $portDbEngine -Action allow -Profile $networkProfile -Enabled True
             Get-NetFirewallRule -DisplayName "SQL Server Database Engine (TCP-in)" | ForEach { $_.Group = $displayGroup ; Set-NetFirewallRule -InputObject $_ } # assign to DisplayGroup
