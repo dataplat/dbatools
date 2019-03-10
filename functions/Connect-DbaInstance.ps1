@@ -217,6 +217,43 @@ function Connect-DbaInstance {
         [switch]$DisableException
     )
     begin {
+        #region Utility functions
+        function Invoke-TEPPCacheUpdate {
+            [CmdletBinding()]
+            param (
+                [System.Management.Automation.ScriptBlock]$ScriptBlock
+            )
+
+            try {
+                [ScriptBlock]::Create($scriptBlock).Invoke()
+            } catch {
+                # If the SQL Server version doesn't support the feature, we ignore it and silently continue
+                if ($_.Exception.InnerException.InnerException.GetType().FullName -eq "Microsoft.SqlServer.Management.Sdk.Sfc.InvalidVersionEnumeratorException") {
+                    return
+                }
+
+                if ($ENV:APPVEYOR_BUILD_FOLDER -or ([Sqlcollaborative.Dbatools.Message.MEssageHost]::DeveloperMode)) { throw }
+                else {
+                    Write-Message -Level Warning -Message "Failed TEPP Caching: $($scriptBlock.ToString() | Select-String '"(.*?)"' | ForEach-Object { $_.Matches[0].Groups[1].Value })" -ErrorRecord $_ 3>$null
+                }
+            }
+        }
+        #endregion Utility functions
+
+        #region Ensure Credential integrity
+        <#
+        Usually, the parameter type should have been not object but off the PSCredential type.
+        When binding null to a PSCredential type parameter on PS3-4, it'd then show a prompt, asking for username and password.
+
+        In order to avoid that and having to refactor lots of functions (and to avoid making regular scripts harder to read), we created this workaround.
+        #>
+        if ($SqlCredential) {
+            if ($SqlCredential.GetType() -ne [System.Management.Automation.PSCredential]) {
+                throw "The credential parameter was of a non-supported type. Only specify PSCredentials such as generated from Get-Credential. Input was of type $($SqlCredential.GetType().FullName)"
+            }
+        }
+        #endregion Ensure Credential integrity
+
         if ($DisableException) {
             $EnableException = $false
         } else {
@@ -261,6 +298,10 @@ function Connect-DbaInstance {
     }
     process {
         foreach ($instance in $SqlInstance) {
+            #region Safely convert input into instance parameters
+            # removed for now
+            #endregion Safely convert input into instance parameters
+
             if ($instance.ComputerName -match "database\.windows\.net" -and -not $instance.InputObject.ConnectionContext.IsOpen) {
                 if (-not $Database) {
                     Stop-Function -Message "You must specify -Database when connecting to a SQL Azure databse" -Continue
@@ -287,19 +328,28 @@ function Connect-DbaInstance {
                 }
             }
             #region Safely convert input into instance parameters
+            <#
+            This is a bit ugly, but:
+            In some cases functions would directly pass their own input through when the parameter on the calling function was typed as [object[]].
+            This would break the base parameter class, as it'd automatically be an array and the parameterclass is not designed to handle arrays (Shouldn't have to).
+
+            Note: Multiple servers in one call were never supported, those old functions were liable to break anyway and should be fixed soonest.
+            #>
             if ($instance.GetType() -eq [Sqlcollaborative.Dbatools.Parameter.DbaInstanceParameter]) {
-                [DbaInstanceParameter]$ConvertedSqlInstance = $instance
-                if ($ConvertedSqlInstance.Type -like "SqlConnection") {
-                    [DbaInstanceParameter]$ConvertedSqlInstance = New-Object Microsoft.SqlServer.Management.Smo.Server($ConvertedSqlInstance.InputObject)
+                [DbaInstanceParameter]$instance = $instance
+                if ($instance.Type -like "SqlConnection") {
+                    [DbaInstanceParameter]$instance = New-Object Microsoft.SqlServer.Management.Smo.Server($instance.InputObject)
                 }
             } else {
-                [DbaInstanceParameter]$ConvertedSqlInstance = [DbaInstanceParameter]($instance | Select-Object -First 1)
+                [DbaInstanceParameter]$instance = [DbaInstanceParameter]($instance | Select-Object -First 1)
 
                 if ($instance.Count -gt 1) {
                     Write-Message -Continue -Level Warning -EnableException:$EnableException -Message "More than on server was specified when calling Connect-SqlInstance from $((Get-PSCallStack)[1].Command)"
                 }
             }
             #endregion Safely convert input into instance parameters
+
+            #region Input Object was a server object
             if ($instance.Type -like "Server" -or ($isAzure -and $instance.InputObject.ConnectionContext.IsOpen)) {
                 if ($instance.InputObject.ConnectionContext.IsOpen -eq $false) {
                     $instance.InputObject.ConnectionContext.Connect()
@@ -321,7 +371,7 @@ function Connect-DbaInstance {
                 } else {
                     if (-not $server.ComputerName) {
                         if (-not $server.NetName -or $SqlInstance -match '\.') {
-                            $parsedcomputername = $ConvertedSqlInstance.ComputerName
+                            $parsedcomputername = $instance.ComputerName
                         } else {
                             $parsedcomputername = $server.NetName
                         }
@@ -443,15 +493,24 @@ function Connect-DbaInstance {
                     }
 
                     if ($NonPooled) {
+                        # When the Connect method is called, the connection is not automatically released.
+                        # The Disconnect method must be called explicitly to release the connection to the connection pool.
+                        # https://docs.microsoft.com/en-us/sql/relational-databases/server-management-objects-smo/create-program/disconnecting-from-an-instance-of-sql-server
                         $server.ConnectionContext.Connect()
                     } elseif ($authtype -eq "Windows Authentication with Credential") {
                         # Make it connect in a natural way, hard to explain.
+                        # See https://docs.microsoft.com/en-us/sql/relational-databases/server-management-objects-smo/create-program/connecting-to-an-instance-of-sql-server
                         $null = $server.Information.Version
                         if ($server.ConnectionContext.IsOpen -eq $false) {
+                            # Sometimes, however, the above may not connect as promised. Force it.
+                            # See https://github.com/sqlcollaborative/dbatools/pull/4426
                             $server.ConnectionContext.Connect()
                         }
                     } else {
                         if (-not $isAzure) {
+                            # SqlConnectionObject.Open() enables connection pooling does not support
+                            # alternative Windows Credentials and passes default credentials
+                            # See https://github.com/sqlcollaborative/dbatools/pull/3809
                             $server.ConnectionContext.SqlConnectionObject.Open()
                         }
                     }
@@ -467,6 +526,22 @@ function Connect-DbaInstance {
                     $message = ($message -Split 'at System.Data.ProviderBase')[0]
 
                     Stop-Function -Message "Can't connect to $instance" -ErrorRecord $_ -Continue
+                }
+            }
+
+            # Register the connected instance, so that the TEPP updater knows it's been connected to and starts building the cache
+            [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::SetInstance($instance.FullSmoName.ToLower(), $server.ConnectionContext.Copy(), ($server.ConnectionContext.FixedServerRoles -match "SysAdmin"))
+
+            # Update cache for instance names
+            if ([Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache["sqlinstance"] -notcontains $instance.FullSmoName.ToLower()) {
+                [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache["sqlinstance"] += $instance.FullSmoName.ToLower()
+            }
+
+            # Update lots of registered stuff
+            if (-not [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::TeppSyncDisabled) {
+                $FullSmoName = $instance.FullSmoName.ToLower()
+                foreach ($scriptBlock in ([Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::TeppGatherScriptsFast)) {
+                    Invoke-TEPPCacheUpdate -ScriptBlock $scriptBlock
                 }
             }
 
@@ -503,7 +578,7 @@ function Connect-DbaInstance {
             } else {
                 if (-not $server.ComputerName) {
                     if (-not $server.NetName -or $SqlInstance -match '\.') {
-                        $parsedcomputername = $ConvertedSqlInstance.ComputerName
+                        $parsedcomputername = $instance.ComputerName
                     } else {
                         $parsedcomputername = $server.NetName
                     }
