@@ -16,7 +16,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
         $dbname = "dbatoolsci_publishprofile"
-        $db = New-DbaDatabase -SqlInstance $script:instance1 -Database $dbname
+        $db = New-DbaDatabase -SqlInstance $script:instance1 -Name $dbname
         $null = $db.Query("CREATE TABLE dbo.example (id int);
             INSERT dbo.example
             SELECT top 100 1
