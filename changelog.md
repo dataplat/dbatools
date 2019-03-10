@@ -5,6 +5,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
     and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.778] - 2019-03-05
+### Fixed
+* `GetDbaDbFile` incorrectly accounts for pages when calculating `NextGrowthEventSize` [#5147](https://github.com/sqlcollaborative/dbatools/issues/5147)
+
 ## [0.9.777] - 2019-03-03
 ### Fixed
 * `Get-DbaServerRoleMember` now correctly calls `Get-DbaLogin`
