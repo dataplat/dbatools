@@ -1425,7 +1425,12 @@ $script:xplat = @(
     'Move-DbaCmsRegServer',
     'Move-DbaCmsRegServerGroup',
     'Remove-DbaCmsRegServer',
-    'Remove-DbaCmsRegServerGroup'
+    'Remove-DbaCmsRegServerGroup',
+    # Config system
+    'Get-DbatoolsConfig',
+    'Get-DbatoolsConfigValue',
+    'Set-DbatoolsConfig',
+    'Register-DbatoolsConfig'
 )
 
 $script:noncoresmo = @(
@@ -1577,11 +1582,6 @@ $script:windowsonly = @(
     'Find-DbaLoginInGroup',
     # 3rd party non-core DLL or exe
     'Export-DbaDacPackage', # relies on sqlpackage.exe
-    # Config system
-    'Get-DbatoolsConfig',
-    'Get-DbatoolsConfigValue',
-    'Set-DbatoolsConfig',
-    'Register-DbatoolsConfig',
     # Unknown
     'Get-DbaErrorLog',
     'Get-DbaManagementObject',
