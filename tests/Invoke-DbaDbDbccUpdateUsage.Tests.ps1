@@ -5,7 +5,7 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
         [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance','SqlCredential','Database','Table','Index','NoInformationalMessages','CountRows','EnableException'
+        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'Table', 'Index', 'NoInformationalMessages', 'CountRows', 'EnableException'
         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         It "Should only contain our specific parameters" {
             (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
@@ -14,15 +14,15 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 }
 Describe "$commandname Integration Test" -Tag "IntegrationTests" {
     BeforeAll {
-        $server = Connect-SqlInstance -SqlInstance $script:instance1
+        $server = Connect-DbaInstance -SqlInstance $script:instance1
         $random = Get-Random
         $tableName = "dbatools_getdbtbl1"
 
         $dbname = "dbatoolsci_getdbUsage$random"
-        $null = $server.Query("CREATE DATABASE $dbname")
-        $null = $server.Query("CREATE TABLE $tableName (id int)", $dbname)
-        $null = $server.Query("CREATE CLUSTERED INDEX [PK_Id] ON $tableName ([id] ASC)", $dbname)
-        $null = $server.Query("INSERT $tableName(id) SELECT object_id FROM sys.objects", $dbname)
+        $db = New-DbaDatabase -SqlInstance $script:instance1 -Name $dbname
+        $null = $db.Query("CREATE TABLE $tableName (id int)", $dbname)
+        $null = $db.Query("CREATE CLUSTERED INDEX [PK_Id] ON $tableName ([id] ASC)", $dbname)
+        $null = $db.Query("INSERT $tableName(id) SELECT object_id FROM sys.objects", $dbname)
     }
     AfterAll {
         $null = Get-DbaDatabase -SqlInstance $script:instance1 -Database $dbname | Remove-DbaDatabase -Confirm:$false
