@@ -5,7 +5,7 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
         [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance','SqlCredential','Session','AllSessions','InputObject','EnableException'
+        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Session', 'AllSessions', 'InputObject', 'EnableException'
         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         It "Should only contain our specific parameters" {
             (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
@@ -16,15 +16,14 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
         $server = Connect-DbaInstance -SqlInstance $script:instance2
-        $conn = $server.ConnectionContext
         # Get the systemhealth session
-        $systemhealth = Get-DbaXESession -SqlInstance $server -Session system_health
+        $systemhealth = Get-DbaXESession -SqlInstance $script:instance2 -Session system_health
         # Create a valid session and start it
-        $conn.ExecuteNonQuery("CREATE EVENT SESSION [dbatoolsci_session_valid] ON SERVER ADD EVENT sqlserver.lock_acquired;")
-        $dbatoolsciValid = Get-DbaXESession -SqlInstance $server -Session dbatoolsci_session_valid
+        $server.Query("CREATE EVENT SESSION [dbatoolsci_session_valid] ON SERVER ADD EVENT sqlserver.lock_acquired;")
+        $dbatoolsciValid = Get-DbaXESession -SqlInstance $script:instance2 -Session dbatoolsci_session_valid
         $dbatoolsciValid.Start()
         # Record the Status of all sessions
-        $allSessions = Get-DbaXESession -SqlInstance $server
+        $allSessions = Get-DbaXESession -SqlInstance $script:instance2
     }
     BeforeEach {
         $systemhealth.Refresh()
@@ -48,10 +47,12 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
 
         # Drop created objects
-        $conn.ExecuteNonQuery("IF EXISTS(SELECT * FROM sys.server_event_sessions WHERE name = 'dbatoolsci_session_valid') DROP EVENT SESSION [dbatoolsci_session_valid] ON SERVER;")
+        $server = Connect-DbaInstance -SqlInstance $script:instance2
+        $server.Query("IF EXISTS(SELECT * FROM sys.server_event_sessions WHERE name = 'dbatoolsci_session_valid') DROP EVENT SESSION [dbatoolsci_session_valid] ON SERVER;")
     }
 
     Context "Verifying command works" {
+        $server = Connect-DbaInstance -SqlInstance $script:instance2
         It "stops the system_health session" {
             $systemhealth | Stop-DbaXESession
             $systemhealth.Refresh()
@@ -62,7 +63,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             if ($systemhealth.IsRunning) {
                 $systemhealth.Stop()
             }
-            Stop-DbaXESession $server -Session $systemhealth.Name -WarningAction SilentlyContinue
+            Stop-DbaXESession -SqlInstance $server -Session $systemhealth.Name -WarningAction SilentlyContinue
             $systemhealth.Refresh()
             $systemhealth.IsRunning | Should Be $false
         }
