@@ -276,7 +276,11 @@ function Get-DbaDatabase {
 
             $inputObject = @()
             foreach ($dt in $backed_info) {
-                $inputObject += $server.Databases[$($dt.name)]
+                if ($server.DatabaseEngineType -eq "SqlAzureDatabase") {
+                    $inputObject += $server.Databases[$dt.name]
+                } else {
+                    $inputObject += $server.Databases | Where-Object Name -ceq $dt.name
+                }
             }
             $inputobject = $inputObject |
                 Where-Object {

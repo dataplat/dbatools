@@ -112,18 +112,18 @@ function Connect-SqlInstance {
 
         if ($SqlCredential) {
             $azureconnstring = "Server=tcp:$($instance.ComputerName),$($instance.Port);Initial Catalog=$Database;Persist Security Info=False;User ID=$($SqlCredential.UserName);Password=$($($SqlCredential.GetNetworkCredential()).Password);MultipleActiveResultSets=$MultipleActiveResultSets;Encrypt=True;TrustServerCertificate=$TrustServerCertificate;Connection Timeout=$ConnectTimeout;"
+            $azureconnstring = $azureconnstring + 'Application Name = "dbatools PowerShell module - dbatools.io"'
         }
         if ($SqlCredential.UserName -like "*\*" -or $SqlCredential.UserName -like "*@*") {
-            $azureconnstring = $azureconnstring + 'Authentication="Active Directory Password"'
+            $azureconnstring = $azureconnstring + 'Authentication="Active Directory Password";Application Name = "dbatools PowerShell module - dbatools.io"'
         } else {
-            $azureconnstring = "Server=tcp:$($instance.ComputerName),$($instance.Port);Initial Catalog=$Database;Persist Security Info=False;User ID=$($SqlCredential.UserName);MultipleActiveResultSets=$MultipleActiveResultSets;Encrypt=True;TrustServerCertificate=$TrustServerCertificate;Connection Timeout=$ConnectTimeout;"
-            $azureconnstring = $azureconnstring + 'Authentication="Active Directory Integrated"'
+            $azureconnstring = "Server=tcp:$($instance.ComputerName),$($instance.Port);Initial Catalog=$Database;Persist Security Info=False;MultipleActiveResultSets=$MultipleActiveResultSets;Encrypt=True;TrustServerCertificate=$TrustServerCertificate;Connection Timeout=$ConnectTimeout;"
+            $azureconnstring = $azureconnstring + 'Authentication="Active Directory Integrated"; Application Name = "dbatools PowerShell module - dbatools.io"'
         }
         try {
             $sqlconn = New-Object System.Data.SqlClient.SqlConnection $azureconnstring
             $serverconn = New-Object Microsoft.SqlServer.Management.Common.ServerConnection $sqlconn
             $server = New-Object Microsoft.SqlServer.Management.Smo.Server $serverconn
-            $server.ConnectionContext.ApplicationName = "dbatools PowerShell module - dbatools.io"
         } catch {
             Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
         }
