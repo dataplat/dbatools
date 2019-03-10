@@ -66,5 +66,5 @@ function Connect-SqlInstance {
         [switch]$AzureUnsupported,
         [switch]$NonPooled
     )
-    Connect-DbaInstance @PSBoundParameters
+    Connect-DbaInstance @PSBoundParameters -ClientName "dbatools PowerShell module - dbatools.io"
 }
