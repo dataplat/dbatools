@@ -143,7 +143,7 @@ function Remove-DbaDatabaseSafely {
             return
         }
 
-        $sourceserver = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $sqlCredential -ParameterConnection
+        $sourceserver = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $sqlCredential
 
         if (-not $destination) {
             $destination = $sqlinstance

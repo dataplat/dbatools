@@ -43,10 +43,6 @@ function Connect-SqlInstance {
     .PARAMETER AzureUnsupported
         Throw if Azure is detected but not supported
 
-    .PARAMETER RegularUser
-        The connection doesn't require SA privileges.
-        By default, the assumption is that SA is no longer required.
-
     .PARAMETER MinimumVersion
        The minimum version that the calling command will support
 
@@ -65,8 +61,6 @@ function Connect-SqlInstance {
         [Parameter(Mandatory)]
         [object]$SqlInstance,
         [object]$SqlCredential,
-        [switch]$ParameterConnection,
-        [switch]$RegularUser = $true,
         [int]$StatementTimeout,
         [int]$MinimumVersion,
         [switch]$AzureUnsupported,
@@ -110,6 +104,31 @@ function Connect-SqlInstance {
     }
     #endregion Ensure Credential integrity
 
+    if ($instance.ComputerName -match "database\.windows\.net" -and -not $instance.InputObject.ConnectionContext.IsOpen) {
+        $isAzure = $true
+        if (-not (Test-Bound -ParameterName ConnectTimeout)) {
+            $ConnectTimeout = 30
+        }
+
+        if ($SqlCredential) {
+            $azureconnstring = "Server=tcp:$($instance.ComputerName),$($instance.Port);Initial Catalog=$Database;Persist Security Info=False;User ID=$($SqlCredential.UserName);Password=$($($SqlCredential.GetNetworkCredential()).Password);MultipleActiveResultSets=$MultipleActiveResultSets;Encrypt=True;TrustServerCertificate=$TrustServerCertificate;Connection Timeout=$ConnectTimeout;"
+            $azureconnstring = $azureconnstring + 'Application Name = "dbatools PowerShell module - dbatools.io"'
+        }
+        if ($SqlCredential.UserName -like "*\*" -or $SqlCredential.UserName -like "*@*") {
+            $azureconnstring = $azureconnstring + 'Authentication="Active Directory Password";Application Name = "dbatools PowerShell module - dbatools.io"'
+        } else {
+            $azureconnstring = "Server=tcp:$($instance.ComputerName),$($instance.Port);Initial Catalog=$Database;Persist Security Info=False;MultipleActiveResultSets=$MultipleActiveResultSets;Encrypt=True;TrustServerCertificate=$TrustServerCertificate;Connection Timeout=$ConnectTimeout;"
+            $azureconnstring = $azureconnstring + 'Authentication="Active Directory Integrated"; Application Name = "dbatools PowerShell module - dbatools.io"'
+        }
+        try {
+            $sqlconn = New-Object System.Data.SqlClient.SqlConnection $azureconnstring
+            $serverconn = New-Object Microsoft.SqlServer.Management.Common.ServerConnection $sqlconn
+            $server = New-Object Microsoft.SqlServer.Management.Smo.Server $serverconn
+        } catch {
+            Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
+        }
+    }
+
     #region Safely convert input into instance parameters
     <#
     This is a bit ugly, but:
@@ -133,7 +152,7 @@ function Connect-SqlInstance {
     #endregion Safely convert input into instance parameters
 
     #region Input Object was a server object
-    if ($ConvertedSqlInstance.InputObject.GetType() -eq [Microsoft.SqlServer.Management.Smo.Server]) {
+    if ($ConvertedSqlInstance.InputObject.GetType() -eq [Microsoft.SqlServer.Management.Smo.Server] -or ($isAzure -and $instance.InputObject.ConnectionContext.IsOpen)) {
         $server = $ConvertedSqlInstance.InputObject
         $authtypeSMO = $SqlCredential.UserName -like '*\*'
         if ($server.ConnectionContext.IsOpen -eq $false) {
@@ -190,18 +209,21 @@ function Connect-SqlInstance {
     #endregion Input Object was a server object
 
     #region Input Object was anything else
+    if (-not $isAzure) {
+        $server = New-Object Microsoft.SqlServer.Management.Smo.Server $ConvertedSqlInstance.FullSmoName
+        $server.ConnectionContext.ApplicationName = "dbatools PowerShell module - dbatools.io"
+    }
 
-    $server = New-Object Microsoft.SqlServer.Management.Smo.Server $ConvertedSqlInstance.FullSmoName
-    $server.ConnectionContext.ApplicationName = "dbatools PowerShell module - dbatools.io"
     if ($ConvertedSqlInstance.IsConnectionString) { $server.ConnectionContext.ConnectionString = $ConvertedSqlInstance.InputObject }
 
     try {
         if (Test-Bound -ParameterName 'StatementTimeout') {
             $server.ConnectionContext.StatementTimeout = $StatementTimeout
         }
-        $server.ConnectionContext.ConnectTimeout = [Sqlcollaborative.Dbatools.Connection.ConnectionHost]::SqlConnectionTimeout
-
-        if ($null -ne $SqlCredential.UserName) {
+        if (-not $isAzure) {
+            $server.ConnectionContext.ConnectTimeout = [Sqlcollaborative.Dbatools.Connection.ConnectionHost]::SqlConnectionTimeout
+        }
+        if ($null -ne $SqlCredential.UserName -and -not $isAzure) {
             $username = ($SqlCredential.UserName).TrimStart("\")
 
             # support both ad\username and username@ad
@@ -282,11 +304,6 @@ function Connect-SqlInstance {
         throw "Azure SQL Database not supported"
     }
 
-    if (-not $RegularUser) {
-        if ($server.ConnectionContext.FixedServerRoles -notmatch "SysAdmin") {
-            throw "Not a sysadmin on $ConvertedSqlInstance. Quitting."
-        }
-    }
     #'PrimaryFilePath' seems the culprit for slow SMO on databases
     $Fields2000_Db = 'Collation', 'CompatibilityLevel', 'CreateDate', 'ID', 'IsAccessible', 'IsFullTextEnabled', 'IsSystemObject', 'IsUpdateable', 'LastBackupDate', 'LastDifferentialBackupDate', 'LastLogBackupDate', 'Name', 'Owner', 'ReadOnly', 'RecoveryModel', 'ReplicationOptions', 'Status', 'Version'
     $Fields200x_Db = $Fields2000_Db + @('BrokerEnabled', 'DatabaseSnapshotBaseName', 'IsMirroringEnabled', 'Trustworthy')
