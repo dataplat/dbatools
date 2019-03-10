@@ -403,7 +403,7 @@
         "Alias":  "Add-DbaRegisteredServer",
         "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "CommandName":  "Add-DbaCmsRegServer",
-        "Availability":  "Windows only",
+        "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Add-DbaCmsRegServer",
         "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eAdd-DbaCmsRegServer -SqlInstance sql2008 -ServerName sql01\nCreates a registered server on sql2008\u0027s CMS which points to the SQL Server, sql01. When scrolling in CMS, the name \"sql01\" will be visible.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eAdd-DbaCmsRegServer -SqlInstance sql2008 -ServerName sql01 -Name \"The 2008 Clustered Instance\" -Description \"HR\u0027s Dedicated SharePoint instance\"\nCreates a registered server on sql2008\u0027s CMS which points to the SQL Server, sql01. When scrolling in CMS, \"The 2008 Clustered Instance\" will be visible.\r\nClearly this is hard to explain ;)\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eAdd-DbaCmsRegServer -SqlInstance sql2008 -ServerName sql01 -Group hr\\Seattle\nCreates a registered server on sql2008\u0027s CMS which points to the SQL Server, sql01. When scrolling in CMS, the name \"sql01\" will be visible within the Seattle group which is in the hr group.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaCmsRegServerGroup -SqlInstance sql2008 -Group hr\\Seattle | Add-DbaCmsRegServer -ServerName sql01111\nCreates a registered server on sql2008\u0027s CMS which points to the SQL Server, sql01. When scrolling in CMS, the name \"sql01\" will be visible within the Seattle group which is in the hr group.",
         "Params":  [
@@ -501,7 +501,7 @@
         "Alias":  "Add-DbaRegisteredServerGroup",
         "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "CommandName":  "Add-DbaCmsRegServerGroup",
-        "Availability":  "Windows only",
+        "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Add-DbaCmsRegServerGroup",
         "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eAdd-DbaCmsRegServerGroup -SqlInstance sql2012 -Name HR\nCreates a registered server group called HR, in the root of sql2012\u0027s CMS\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eAdd-DbaCmsRegServerGroup -SqlInstance sql2012, sql2014 -Name sub-folder -Group HR\nCreates a registered server group on sql2012 and sql2014 called sub-folder within the HR group\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaCmsRegServerGroup -SqlInstance sql2012, sql2014 -Group HR | Add-DbaCmsRegServerGroup -Name sub-folder\nCreates a registered server group on sql2012 and sql2014 called sub-folder within the HR group of each server",
         "Params":  [
@@ -1765,7 +1765,7 @@
                            "False"
                        ]
                    ],
-        "Syntax":  "Connect-DbaInstance [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cObject[]\u003e] [[-AccessToken] \u003cString\u003e] [[-ApplicationIntent] \u003cString\u003e] [[-BatchSeparator] \u003cString\u003e] [[-ClientName] \u003cString\u003e] [[-ConnectTimeout] \u003cInt32\u003e] [-EncryptConnection] [[-FailoverPartner] \u003cString\u003e] [[-LockTimeout] \u003cInt32\u003e] [[-MaxPoolSize] \u003cInt32\u003e] [[-MinPoolSize] \u003cInt32\u003e] [-MultipleActiveResultSets] [-MultiSubnetFailover] [[-NetworkProtocol] \u003cString\u003e] [-NonPooledConnection] [[-PacketSize] \u003cInt32\u003e] [[-PooledConnectionLifetime] \u003cInt32\u003e] [[-SqlExecutionModes] \u003cString\u003e] \r\n[[-StatementTimeout] \u003cInt32\u003e] [-TrustServerCertificate] [[-WorkstationId] \u003cString\u003e] [[-AppendConnectionString] \u003cString\u003e] [-SqlConnectionOnly] [-DisableException] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Connect-DbaInstance [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString\u003e] [[-AccessToken] \u003cString\u003e] [[-ApplicationIntent] \u003cString\u003e] [[-BatchSeparator] \u003cString\u003e] [[-ClientName] \u003cString\u003e] [[-ConnectTimeout] \u003cInt32\u003e] [-EncryptConnection] [[-FailoverPartner] \u003cString\u003e] [[-LockTimeout] \u003cInt32\u003e] [[-MaxPoolSize] \u003cInt32\u003e] [[-MinPoolSize] \u003cInt32\u003e] [-MultipleActiveResultSets] [-MultiSubnetFailover] [[-NetworkProtocol] \u003cString\u003e] [-NonPooledConnection] [[-PacketSize] \u003cInt32\u003e] [[-PooledConnectionLifetime] \u003cInt32\u003e] [[-SqlExecutionModes] \u003cString\u003e] \r\n[[-StatementTimeout] \u003cInt32\u003e] [-TrustServerCertificate] [[-WorkstationId] \u003cString\u003e] [[-AppendConnectionString] \u003cString\u003e] [-SqlConnectionOnly] [-DisableException] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "ConvertTo-DbaDataTable",
@@ -3251,7 +3251,7 @@
                        ],
                        [
                            "Force",
-                           "If this switch is enabled, existing databases on Destination with matching names from Source will be dropped. If using -DetachReattach, mirrors will be broken and the database(s) dropped from \r\nAvailability Groups.",
+                           "If this switch is enabled, existing databases on Destination with matching names from Source will be dropped.\r\nIf using -DetachReattach, mirrors will be broken and the database(s) dropped from Availability Groups.\r\nIf using -SetSourceReadonly, this will instantly roll back any open transactions that may be stopping the process.",
                            "",
                            false,
                            "false",
@@ -6025,7 +6025,7 @@
         "Alias":  "Export-DbaRegisteredServer",
         "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "CommandName":  "Export-DbaCmsRegServer",
-        "Availability":  "Windows only",
+        "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Export-DbaCmsRegServer",
         "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eExport-DbaCmsRegServer -SqlInstance sql2008\nExports all Registered Server and Registered Server Groups on sql2008 to an automatically generated file name in the current directory\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaCmsRegServer -SqlInstance sql2008, sql2012 | Export-DbaCmsRegServer\nExports all registered servers on sql2008 and sql2012. Warning - each one will have its own individual file. Consider piping groups.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaCmsRegServerGroup -SqlInstance sql2008, sql2012 | Export-DbaCmsRegServer\nExports all registered servers on sql2008 and sql2012, organized by group.",
         "Params":  [
@@ -6181,7 +6181,7 @@
         "CommandName":  "Export-DbaDacPackage",
         "Availability":  "Windows only",
         "Links":  "https://dbatools.io/Export-DbaDacPackage",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eExport-DbaDacPackage -SqlInstance sql2016 -Database SharePoint_Config\nExports the dacpac for SharePoint_Config on sql2016 to $home\\Documents\\SharePoint_Config.dacpac\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003e$options = New-DbaDacOption -Type Dacpac -Action Export\nPS C:\\\u003e $options.ExtractAllTableData = $true\r\nPS C:\\\u003e $options.CommandTimeout = 0\r\nPS C:\\\u003e Export-DbaDacPackage -SqlInstance sql2016 -Database DB1 -Options $options\nUses DacOption object to set the CommandTimeout to 0 then extracts the dacpac for DB1 on sql2016 to $home\\Documents\\DB1.dacpac including all table data.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eExport-DbaDacPackage -SqlInstance sql2016 -AllUserDatabases -ExcludeDatabase \"DBMaintenance\",\"DBMonitoring\" C:\\temp\nExports dacpac packages for all USER databases, excluding \"DBMaintenance\" \u0026 \"DBMonitoring\", on sql2016 and saves them to C:\\temp\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003e$moreparams = \"/OverwriteFiles:$true /Quiet:$true\"\nPS C:\\\u003e Export-DbaDacPackage -SqlInstance sql2016 -Database SharePoint_Config -Path C:\\temp -ExtendedParameters $moreparams\nUsing extended parameters to over-write the files and performs the extraction in quiet mode. Uses command line instead of SMO behind the scenes.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eExport-DbaDacPackage -SqlInstance sql2016 -Database SharePoint_Config\nExports the dacpac for SharePoint_Config on sql2016 to $home\\Documents\\SharePoint_Config.dacpac\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003e$options = New-DbaDacOption -Type Dacpac -Action Export\nPS C:\\\u003e $options.ExtractAllTableData = $true\r\nPS C:\\\u003e $options.CommandTimeout = 0\r\nPS C:\\\u003e Export-DbaDacPackage -SqlInstance sql2016 -Database DB1 -Options $options\nUses DacOption object to set the CommandTimeout to 0 then extracts the dacpac for DB1 on sql2016 to $home\\Documents\\DB1.dacpac including all table data.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eExport-DbaDacPackage -SqlInstance sql2016 -AllUserDatabases -ExcludeDatabase \"DBMaintenance\",\"DBMonitoring\" -Path \"C:\\temp\"\nExports dacpac packages for all USER databases, excluding \"DBMaintenance\" \u0026 \"DBMonitoring\", on sql2016 and saves them to C:\\temp\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003e$moreparams = \"/OverwriteFiles:$true /Quiet:$true\"\nPS C:\\\u003e Export-DbaDacPackage -SqlInstance sql2016 -Database SharePoint_Config -Path C:\\temp -ExtendedParameters $moreparams\nUsing extended parameters to over-write the files and performs the extraction in quiet mode. Uses command line instead of SMO behind the scenes.",
         "Params":  [
                        [
                            "SqlInstance",
@@ -10471,7 +10471,7 @@
         "Alias":  "Get-DbaCmsRegServerName,Get-DbaRegisteredServer,Get-SqlRegisteredServerName",
         "Author":  "Bryan Hamby (@galador)",
         "CommandName":  "Get-DbaCmsRegServer",
-        "Availability":  "Windows only",
+        "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Get-DbaCmsRegServer",
         "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaCmsRegServer -SqlInstance sqlserver2014a\nGets a list of servers from the CMS on sqlserver2014a, using Windows Credentials.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaCmsRegServer -SqlInstance sqlserver2014a -IncludeSelf\nGets a list of servers from the CMS on sqlserver2014a and includes sqlserver2014a in the output results.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaCmsRegServer -SqlInstance sqlserver2014a -SqlCredential $credential | Select-Object -Unique -ExpandProperty ServerName\nReturns only the server names from the CMS on sqlserver2014a, using SQL Authentication to authenticate to the server.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaCmsRegServer -SqlInstance sqlserver2014a -Group HR, Accounting\nGets a list of servers in the HR and Accounting groups from the CMS on sqlserver2014a.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eGet-DbaCmsRegServer -SqlInstance sqlserver2014a -Group HR\\Development\nReturns a list of servers in the HR and sub-group Development from the CMS on sqlserver2014a.",
         "Params":  [
@@ -10643,7 +10643,7 @@
         "Alias":  "Get-DbaRegisteredServerStore",
         "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "CommandName":  "Get-DbaCmsRegServerStore",
-        "Availability":  "Windows only",
+        "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Get-DbaCmsRegServerStore",
         "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaCmsRegServerStore -SqlInstance sqlserver2014a\nReturns a SQL Server Registered Server Store Object from sqlserver2014a\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaCmsRegServerStore -SqlInstance sqlserver2014a -SqlCredential sqladmin\nReturns a SQL Server Registered Server Store Object from sqlserver2014a  by logging in with the sqladmin login",
         "Params":  [
@@ -11545,8 +11545,8 @@
         "Author":  "Patrick Flynn (@sqllensman)",
         "CommandName":  "Get-DbaDbccUserOption",
         "Availability":  "Windows, Linux, macOS",
-        "Links":  "https://dbatools.io/Get-DbaDbccUserOptions",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaDbccUserOptions -SqlInstance Server1\nGet results of DBCC USEROPTIONS for Instance Server1\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003e\u0027Sql1\u0027,\u0027Sql2/sqlexpress\u0027 | Get-DbaDbccUserOptions\nGet results of DBCC USEROPTIONS for Instances Sql1 and Sql2/sqlexpress\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003e$cred = Get-Credential sqladmin\nPS C:\\\u003e Get-DbaDbccUserOptions -SqlInstance Server1 -SqlCredential $cred\nConnects using sqladmin credential and gets results of DBCC USEROPTIONS for Instance Server1\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaDbccUserOptions -SqlInstance Server1 -Option ansi_nulls, ansi_warnings, datefirst\nGets results of DBCC USEROPTIONS for Instance Server1. Only display results for the options ansi_nulls, ansi_warnings, datefirst",
+        "Links":  "https://dbatools.io/Get-DbaDbccUserOption",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaDbccUserOption -SqlInstance Server1\nGet results of DBCC USEROPTIONS for Instance Server1\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003e\u0027Sql1\u0027,\u0027Sql2/sqlexpress\u0027 | Get-DbaDbccUserOption\nGet results of DBCC USEROPTIONS for Instances Sql1 and Sql2/sqlexpress\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003e$cred = Get-Credential sqladmin\nPS C:\\\u003e Get-DbaDbccUserOption -SqlInstance Server1 -SqlCredential $cred\nConnects using sqladmin credential and gets results of DBCC USEROPTIONS for Instance Server1\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaDbccUserOption -SqlInstance Server1 -Option ansi_nulls, ansi_warnings, datefirst\nGets results of DBCC USEROPTIONS for Instance Server1. Only display results for the options ansi_nulls, ansi_warnings, datefirst",
         "Params":  [
                        [
                            "SqlInstance",
@@ -18708,7 +18708,7 @@
         "CommandName":  "Get-DbaSsisExecutionHistory",
         "Availability":  "Windows only",
         "Links":  "https://dbatools.io/Get-DbaSsisExecutionHistory",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaSsisExecutionHistory -SqlInstance SMTQ01 -Folder SMTQ_PRC\nGet all history items for SMTQ01 in folder SMTQ_PRC.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaSsisExecutionHistory -SqlInstance SMTQ01 -Status Failed,Cancelled\nGets all failed or canceled executions for SMTQ01.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaSsisExecutionHistory -SqlInstance SMTQ01,SMTQ02 -Status Failed,Cancelled -Whatif\nShows what would happen if the command were executed and would return the SQL statement that would be executed per instance.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaSsisExecutionHistory -SqlInstance SMTQ01 -Folder SMTQ_PRC\nGet all history items for SMTQ01 in folder SMTQ_PRC.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaSsisExecutionHistory -SqlInstance SMTQ01 -Status Failed,Cancelled\nGets all failed or canceled executions for SMTQ01.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaSsisExecutionHistory -SqlInstance SMTQ01,SMTQ02 -Status Failed,Cancelled\nShows what would happen if the command were executed and would return the SQL statement that would be executed per instance.",
         "Params":  [
                        [
                            "SqlInstance",
@@ -20576,7 +20576,7 @@
         "Alias":  "Import-DbaRegisteredServer",
         "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "CommandName":  "Import-DbaCmsRegServer",
-        "Availability":  "Windows only",
+        "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Import-DbaCmsRegServer",
         "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eImport-DbaCmsRegServer -SqlInstance sql2012 -Path C:\\temp\\corp-regservers.xml\nImports C:\\temp\\corp-regservers.xml to the CMS on sql2012\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eImport-DbaCmsRegServer -SqlInstance sql2008 -Group hr\\Seattle -Path C:\\temp\\Seattle.xml\nImports C:\\temp\\Seattle.xml to Seattle subgroup within the hr group on sql2008\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaCmsRegServer -SqlInstance sql2008, sql2012 | Import-DbaCmsRegServer -SqlInstance sql2017\nImports all registered servers from sql2008 and sql2012 to sql2017\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaCmsRegServerGroup -SqlInstance sql2008 -Group hr\\Seattle | Import-DbaCmsRegServer -SqlInstance sql2017 -Group Seattle\nImports all registered servers from the hr\\Seattle group on sql2008 to the Seattle group on sql2017",
         "Params":  [
@@ -22014,6 +22014,83 @@
                        ]
                    ],
         "Syntax":  "Invoke-DbaAdvancedRestore [-BackupHistory] \u003cObject[]\u003e [[-SqlInstance] \u003cDbaInstanceParameter\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [-OutputScriptOnly] [-VerifyOnly] [[-RestoreTime] \u003cDateTime\u003e] [[-StandbyDirectory] \u003cString\u003e] [-NoRecovery] [[-MaxTransferSize] \u003cInt32\u003e] [[-BlockSize] \u003cInt32\u003e] [[-BufferCount] \u003cInt32\u003e] [-Continue] [[-AzureCredential] \u003cString\u003e] [-WithReplace] [-KeepCDC] [[-PageRestore] \u003cObject[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+    },
+    {
+        "Name":  "Invoke-DbaAdvancedUpdate",
+        "Description":  "Invokes an update process for a single computer and restarts it if needed",
+        "Synopsis":  "Designed for internal use, implements parallel execution for Update-DbaInstance.",
+        "Alias":  "",
+        "CommandName":  "Invoke-DbaAdvancedUpdate",
+        "Availability":  "Windows only",
+        "Links":  null,
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eInvoke-DbaAdvancedUpdate -ComputerName SQL1 -Action $actions\nInvokes update actions on SQL1 after restarting it.",
+        "Params":  [
+                       [
+                           "ComputerName",
+                           "Target computer with SQL instance or instances.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Action",
+                           "An object containing the action plan",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Restart",
+                           "Restart computer automatically after a successful installation of a patch and wait until it comes back online.\r\nUsing this parameter is the only way to chain-install more than 1 patch on a computer, since every single patch will require a restart of said computer.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "Authentication",
+                           "Chooses an authentication protocol for remote connections.\r\nIf the protocol fails to establish a connection\nDefaults:\r\n* CredSSP when -Credential is specified - due to the fact that repository Path is usually a network share and credentials need to be passed to the remote host\r\n  to avoid the double-hop issue.\r\n* Default when -Credential is not specified. Will likely fail if a network path is specified.",
+                           "",
+                           false,
+                           "false",
+                           "Credssp"
+                       ],
+                       [
+                           "Credential",
+                           "Windows Credential with permission to log on to the remote server.\r\nMust be specified for any remote connection if update Repository is located on a network folder.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "WhatIf",
+                           "Shows what would happen if the command were to run. No actions are actually performed.",
+                           "wi",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Confirm",
+                           "Prompts you for confirmation before executing any changing operations within the command.",
+                           "cf",
+                           false,
+                           "false",
+                           ""
+                       ]
+                   ],
+        "Syntax":  "Invoke-DbaAdvancedUpdate [[-ComputerName] \u003cString\u003e] [[-Action] \u003cObject[]\u003e] [[-Restart] \u003cBoolean\u003e] [[-Authentication] \u003cString\u003e] [[-Credential] \u003cPSCredential\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Invoke-DbaAgFailover",
@@ -24018,7 +24095,7 @@
         "CommandName":  "Invoke-DbaDbShrink",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Invoke-DbaDbShrink",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eInvoke-DbaDbShrink -SqlInstance sql2016 -Database Northwind,pubs,Adventureworks2014\nShrinks Northwind, pubs and Adventureworks2014 to have as little free space as possible.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eInvoke-DbaDbShrink -SqlInstance sql2014 -Database AdventureWorks2014 -PercentFreeSpace 50\nShrinks AdventureWorks2014 to have 50% free space. So let\u0027s say AdventureWorks2014 was 1GB and it\u0027s using 100MB space. The database free space would be reduced to 50MB.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eInvoke-DbaDbShrink -SqlInstance sql2014 -Database AdventureWorks2014 -PercentFreeSpace 50 -FileType Data -StepSize 25MB\nShrinks AdventureWorks2014 to have 50% free space, runs shrinks in 25MB chunks for improved performance.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eInvoke-DbaDbShrink -SqlInstance sql2012 -AllUserDatabases\nShrinks all databases on SQL2012 (not ideal for production)",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eInvoke-DbaDbShrink -SqlInstance sql2016 -Database Northwind,pubs,Adventureworks2014\nShrinks Northwind, pubs and Adventureworks2014 to have as little free space as possible.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eInvoke-DbaDbShrink -SqlInstance sql2014 -Database AdventureWorks2014 -PercentFreeSpace 50\nShrinks AdventureWorks2014 to have 50% free space. So let\u0027s say AdventureWorks2014 was 1GB and it\u0027s using 100MB space. The database free space would be reduced to 50MB.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eInvoke-DbaDbShrink -SqlInstance sql2014 -Database AdventureWorks2014 -PercentFreeSpace 50 -FileType Data -StepSize 25MB\nShrinks AdventureWorks2014 to have 50% free space, runs shrinks in 25MB chunks for improved performance.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eInvoke-DbaDbShrink -SqlInstance sql2012 -AllUserDatabases\nShrinks all user databases on SQL2012 (not ideal for production)",
         "Params":  [
                        [
                            "SqlInstance",
@@ -25532,7 +25609,7 @@
         "Alias":  "Move-DbaRegisteredServer",
         "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "CommandName":  "Move-DbaCmsRegServer",
-        "Availability":  "Windows only",
+        "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Move-DbaCmsRegServer",
         "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eMove-DbaCmsRegServer -SqlInstance sql2012 -Name \u0027Web SQL Cluster\u0027 -NewGroup HR\\Prod\nMoves the registered server on sql2012 titled \u0027Web SQL Cluster\u0027 to the Prod group within the HR group\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaCmsRegServer -SqlInstance sql2017 -Name \u0027Web SQL Cluster\u0027 | Move-DbaCmsRegServer -NewGroup Web\nMoves the registered server \u0027Web SQL Cluster\u0027 on sql2017 to the Web group, also on sql2017",
         "Params":  [
@@ -25622,7 +25699,7 @@
         "Alias":  "Move-DbaRegisteredServerGroup",
         "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "CommandName":  "Move-DbaCmsRegServerGroup",
-        "Availability":  "Windows only",
+        "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Move-DbaCmsRegServerGroup",
         "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eMove-DbaCmsRegServerGroup -SqlInstance sql2012 -Group HR\\Development -NewGroup AD\\Prod\nMoves the Development group within HR to the Prod group within AD\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaCmsRegServerGroup -SqlInstance sql2017 -Group HR\\Development| Move-DbaCmsRegServer -NewGroup Web\nMoves the Development group within HR to the Web group",
         "Params":  [
@@ -28015,6 +28092,93 @@
         "Syntax":  "New-DbaDbCertificate [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Name] \u003cString[]\u003e] [[-Database] \u003cString[]\u003e] [[-Subject] \u003cString[]\u003e] [[-StartDate] \u003cDateTime\u003e] [[-ExpirationDate] \u003cDateTime\u003e] [-ActiveForServiceBrokerDialog] [[-SecurePassword] \u003cSecureString\u003e] [[-InputObject] \u003cDatabase[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
+        "Name":  "New-DbaDbMailProfile",
+        "Description":  "Creates a new database mail profile, and optionally associates it to a database mail account",
+        "Tags":  "DbMail",
+        "Synopsis":  "Creates a new database mail profile",
+        "Alias":  "",
+        "Author":  "Ian Lanham (@ilanham)",
+        "CommandName":  "New-DbaDbMailProfile",
+        "Availability":  "Windows, Linux, macOS",
+        "Links":  "https://dbatools.io/New-DbaDbMailProfile",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003e$profile = New-DbaDbMailProfile -SqlInstance sql2017 -Name \u0027The DBA Team\u0027\nCreates a new db mail profile",
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "The target SQL Server instance or instances. You must have sysadmin access and server version must be SQL Server version 2008 or higher.",
+                           "ServerInstance,SqlServer",
+                           true,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
+                           "SqlCredential",
+                           "Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Name",
+                           "The Name of the profile to be created.",
+                           "",
+                           true,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Description",
+                           "Sets the description of the purpose of the mail profile.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "MailAccountName",
+                           "Associates a db mail account to link to this db mail profile.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "MailAccountPriority",
+                           "Sets the priority of the linked db mail account when linking to this db mail profile.",
+                           "",
+                           false,
+                           "false",
+                           "0"
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "WhatIf",
+                           "If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.",
+                           "wi",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Confirm",
+                           "If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.",
+                           "cf",
+                           false,
+                           "false",
+                           ""
+                       ]
+                   ],
+        "Syntax":  "New-DbaDbMailProfile [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [-Name] \u003cString\u003e [[-Description] \u003cString\u003e] [[-MailAccountName] \u003cString\u003e] [[-MailAccountPriority] \u003cInt32\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+    },
+    {
         "Name":  "New-DbaDbMaskingConfig",
         "Description":  "Generates a new data masking configuration file. This file is important to apply any data masking to the data in a database.\n\nNote that the following column and data types are not currently supported:\nIdentity\nForeignKey\nComputed\nHierarchyid\nGeography\nGeometry\nXml\n\nRead more here:\nhttps://sachabarbs.wordpress.com/2018/06/11/bogus-simple-fake-data-tool/\nhttps://github.com/bchavez/Bogus",
         "Tags":  [
@@ -29118,7 +29282,8 @@
         "Tags":  [
                      "ExtendedEvent",
                      "XE",
-                     "XEvent"
+                     "XEvent",
+                     "SmartTarget"
                  ],
         "Synopsis":  "This response type is used to write Extended Events to a CSV file.",
         "Alias":  "",
@@ -29201,7 +29366,8 @@
         "Tags":  [
                      "ExtendedEvent",
                      "XE",
-                     "XEvent"
+                     "XEvent",
+                     "SmartTarget"
                  ],
         "Synopsis":  "This response type can be used to send an email each time an event is captured.",
         "Alias":  "",
@@ -29348,7 +29514,8 @@
         "Tags":  [
                      "ExtendedEvent",
                      "XE",
-                     "XEvent"
+                     "XEvent",
+                     "SmartTarget"
                  ],
         "Synopsis":  "This response type executes a T-SQL command against a target database whenever an event is recorded.",
         "Alias":  "",
@@ -29439,7 +29606,8 @@
         "Tags":  [
                      "ExtendedEvent",
                      "XE",
-                     "XEvent"
+                     "XEvent",
+                     "SmartTarget"
                  ],
         "Synopsis":  "This response type can be used to replay execution related events to a target SQL Server instance.",
         "Alias":  "",
@@ -29546,7 +29714,8 @@
         "Tags":  [
                      "ExtendedEvent",
                      "XE",
-                     "XEvent"
+                     "XEvent",
+                     "SmartTarget"
                  ],
         "Synopsis":  "This response type is used to write Extended Events to a database table.",
         "Alias":  "",
@@ -29874,7 +30043,7 @@
         "CommandName":  "Read-DbaBackupHeader",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Read-DbaBackupHeader",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eRead-DbaBackupHeader -SqlInstance sql2016 -Path S:\\backups\\mydb\\mydb.bak\nLogs into sql2016 using Windows authentication and reads the local file on sql2016, S:\\backups\\mydb\\mydb.bak.\nIf you are running this command on a workstation and connecting remotely, remember that sql2016 cannot access files on your own workstation.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eRead-DbaBackupHeader -SqlInstance sql2016 -Path \\\\nas\\sql\\backups\\mydb\\mydb.bak, \\\\nas\\sql\\backups\\otherdb\\otherdb.bak\nLogs into sql2016 and reads two backup files - mydb.bak and otherdb.bak. The SQL Server service account must have rights to read this file.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eRead-DbaBackupHeader -SqlInstance . -Path C:\\temp\\myfile.bak -Simple\nLogs into the local workstation (or computer) and shows simplified output about C:\\temp\\myfile.bak. The SQL Server service account must have rights to read this file.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003e$backupinfo = Read-DbaBackupHeader -SqlInstance . -Path C:\\temp\\myfile.bak\nPS C:\\\u003e $backupinfo.FileList\nDisplays detailed information about each of the datafiles contained in the backupset.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eRead-DbaBackupHeader -SqlInstance . -Path C:\\temp\\myfile.bak -FileList\nAlso returns detailed information about each of the datafiles contained in the backupset.\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003e\"C:\\temp\\myfile.bak\", \"\\backupserver\\backups\\myotherfile.bak\" | Read-DbaBackupHeader -SqlInstance sql2016  | Where-Object { $_.BackupSize.Megabyte -gt 100 }\nReads the two files and returns only backups larger than 100 MB\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003eGet-ChildItem \\\\nas\\sql\\*.bak | Read-DbaBackupHeader -SqlInstance sql2016\nGets a list of all .bak files on the \\\\nas\\sql share and reads the headers using the server named \"sql2016\". This means that the server, sql2016, must have read access to the \\\\nas\\sql share.\n-------------------------- EXAMPLE 8 --------------------------\nPS C:\\\u003eRead-DbaBackupHeader -Path https://dbatoolsaz.blob.core.windows.net/azbackups/restoretime/restoretime_201705131850.bak -AzureCredential AzureBackupUser\nGets the backup header information from the SQL Server backup file stored at https://dbatoolsaz.blob.core.windows.net/azbackups/restoretime/restoretime_201705131850.bak on Azure",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eRead-DbaBackupHeader -SqlInstance sql2016 -Path S:\\backups\\mydb\\mydb.bak\nLogs into sql2016 using Windows authentication and reads the local file on sql2016, S:\\backups\\mydb\\mydb.bak.\nIf you are running this command on a workstation and connecting remotely, remember that sql2016 cannot access files on your own workstation.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eRead-DbaBackupHeader -SqlInstance sql2016 -Path \\\\nas\\sql\\backups\\mydb\\mydb.bak, \\\\nas\\sql\\backups\\otherdb\\otherdb.bak\nLogs into sql2016 and reads two backup files - mydb.bak and otherdb.bak. The SQL Server service account must have rights to read this file.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eRead-DbaBackupHeader -SqlInstance . -Path C:\\temp\\myfile.bak -Simple\nLogs into the local workstation (or computer) and shows simplified output about C:\\temp\\myfile.bak. The SQL Server service account must have rights to read this file.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003e$backupinfo = Read-DbaBackupHeader -SqlInstance . -Path C:\\temp\\myfile.bak\nPS C:\\\u003e $backupinfo.FileList\nDisplays detailed information about each of the datafiles contained in the backupset.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eRead-DbaBackupHeader -SqlInstance . -Path C:\\temp\\myfile.bak -FileList\nAlso returns detailed information about each of the datafiles contained in the backupset.\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003e\"C:\\temp\\myfile.bak\", \"\\backupserver\\backups\\myotherfile.bak\" | Read-DbaBackupHeader -SqlInstance sql2016  | Where-Object { $_.BackupSize.Megabyte -gt 100 }\nReads the two files and returns only backups larger than 100 MB\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003eGet-ChildItem \\\\nas\\sql\\*.bak | Read-DbaBackupHeader -SqlInstance sql2016\nGets a list of all .bak files on the \\\\nas\\sql share and reads the headers using the server named \"sql2016\". This means that the server, sql2016, must have read access to the \\\\nas\\sql share.\n-------------------------- EXAMPLE 8 --------------------------\nPS C:\\\u003eRead-DbaBackupHeader -SqlInstance sql2016 -Path https://dbatoolsaz.blob.core.windows.net/azbackups/restoretime/restoretime_201705131850.bak -AzureCredential AzureBackupUser\nGets the backup header information from the SQL Server backup file stored at https://dbatoolsaz.blob.core.windows.net/azbackups/restoretime/restoretime_201705131850.bak on Azure",
         "Params":  [
                        [
                            "SqlInstance",
@@ -31131,7 +31300,7 @@
         "Alias":  "Remove-DbaRegisteredServer",
         "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "CommandName":  "Remove-DbaCmsRegServer",
-        "Availability":  "Windows only",
+        "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Remove-DbaCmsRegServer",
         "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eRemove-DbaCmsRegServer -SqlInstance sql2012 -Group HR, Accounting\nRemoves all servers from the HR and Accounting groups on sql2012\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eRemove-DbaCmsRegServer -SqlInstance sql2012 -Group HR\\Development\nRemoves all servers from the HR and sub-group Development from the CMS on sql2012.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eRemove-DbaCmsRegServer -SqlInstance sql2012 -Confirm:$false\nRemoves all registered servers on sql2012 and turns off all prompting",
         "Params":  [
@@ -31221,7 +31390,7 @@
         "Alias":  "Remove-DbaRegisteredServerGroup",
         "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "CommandName":  "Remove-DbaCmsRegServerGroup",
-        "Availability":  "Windows only",
+        "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Remove-DbaCmsRegServerGroup",
         "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eRemove-DbaCmsRegServerGroup -SqlInstance sql2012 -Group HR, Accounting\nRemoves the HR and Accounting groups on sql2012\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eRemove-DbaCmsRegServerGroup -SqlInstance sql2012 -Group HR\\Development -Confirm:$false\nRemoves the Development subgroup within the HR group on sql2012 and turns off all prompting",
         "Params":  [
@@ -33629,7 +33798,7 @@
         "CommandName":  "Restart-DbaService",
         "Availability":  "Windows only",
         "Links":  "https://dbatools.io/Restart-DbaService",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eRestart-DbaService -ComputerName sqlserver2014a\nRestarts the SQL Server related services on computer sqlserver2014a.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003e\u0027sql1\u0027,\u0027sql2\u0027,\u0027sql3\u0027| Get-DbaService | Restart-DbaService\nGets the SQL Server related services on computers sql1, sql2 and sql3 and restarts them.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eRestart-DbaService -ComputerName sql1,sql2 -Instance MSSQLSERVER\nRestarts the SQL Server services related to the default instance MSSQLSERVER on computers sql1 and sql2.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eRestart-DbaService -ComputerName $MyServers -Type SSRS\nRestarts the SQL Server related services of type \"SSRS\" (Reporting Services) on computers in the variable MyServers.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eRestart-DbaService -ComputerName sql1 -Type Engine -Force\nRestarts SQL Server database engine services on sql1 forcing dependent SQL Server Agent services to restart as well.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eRestart-DbaService -ComputerName sqlserver2014a\nRestarts the SQL Server related services on computer sqlserver2014a.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003e\u0027sql1\u0027,\u0027sql2\u0027,\u0027sql3\u0027| Get-DbaService | Restart-DbaService\nGets the SQL Server related services on computers sql1, sql2 and sql3 and restarts them.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eRestart-DbaService -ComputerName sql1,sql2 -InstanceName MSSQLSERVER\nRestarts the SQL Server services related to the default instance MSSQLSERVER on computers sql1 and sql2.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eRestart-DbaService -ComputerName $MyServers -Type SSRS\nRestarts the SQL Server related services of type \"SSRS\" (Reporting Services) on computers in the variable MyServers.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eRestart-DbaService -ComputerName sql1 -Type Engine -Force\nRestarts SQL Server database engine services on sql1 forcing dependent SQL Server Agent services to restart as well.",
         "Params":  [
                        [
                            "ComputerName",
@@ -33795,7 +33964,7 @@
         "CommandName":  "Restore-DbaDatabase",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Restore-DbaDatabase",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eRestore-DbaDatabase -SqlInstance server1\\instance1 -Path \\\\server2\\backups\nScans all the backup files in \\\\server2\\backups, filters them and restores the database to server1\\instance1\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eRestore-DbaDatabase -SqlInstance server1\\instance1 -Path \\\\server2\\backups -MaintenanceSolutionBackup -DestinationDataDirectory c:\\restores\nScans all the backup files in \\\\server2\\backups$ stored in an Ola Hallengren style folder structure,\r\nfilters them and restores the database to the c:\\restores folder on server1\\instance1\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-ChildItem c:\\SQLbackups1\\, \\\\server\\sqlbackups2 | Restore-DbaDatabase -SqlInstance server1\\instance1\nTakes the provided files from multiple directories and restores them on  server1\\instance1\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003e$RestoreTime = Get-Date(\u002711:19 23/12/2016\u0027)\nPS C:\\\u003e Restore-DbaDatabase -SqlInstance server1\\instance1 -Path \\\\server2\\backups -MaintenanceSolutionBackup -DestinationDataDirectory c:\\restores -RestoreTime $RestoreTime\nScans all the backup files in \\\\server2\\backups stored in an Ola Hallengren style folder structure,\r\nfilters them and restores the database to the c:\\restores folder on server1\\instance1 up to 11:19 23/12/2016\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003e$result = Restore-DbaDatabase -SqlInstance server1\\instance1 -Path \\\\server2\\backups -DestinationDataDirectory c:\\restores -OutputScriptOnly\nPS C:\\\u003e $result | Select-Object -ExpandProperty Tsql | Out-File -Filepath c:\\scripts\\restore.sql\nScans all the backup files in \\\\server2\\backups stored in an Ola Hallengren style folder structure,\r\nfilters them and generate the T-SQL Scripts to restore the database to the latest point in time,\r\nand then stores the output in a file for later retrieval\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eRestore-DbaDatabase -SqlInstance server1\\instance1 -Path c:\\backups -DestinationDataDirectory c:\\DataFiles -DestinationLogDirectory c:\\LogFile\nScans all the files in c:\\backups and then restores them onto the SQL Server Instance server1\\instance1, placing data files\r\nc:\\DataFiles and all the log files into c:\\LogFiles\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003eRestore-DbaDatabase -SqlInstance server1\\instance1 -Path http://demo.blob.core.windows.net/backups/dbbackup.bak -AzureCredential MyAzureCredential\nWill restore the backup held at  http://demo.blob.core.windows.net/backups/dbbackup.bak to server1\\instance1. The connection to Azure will be made using the\r\ncredential MyAzureCredential held on instance Server1\\instance1\n-------------------------- EXAMPLE 8 --------------------------\nPS C:\\\u003eRestore-DbaDatabase -SqlInstance server1\\instance1 -Path http://demo.blob.core.windows.net/backups/dbbackup.bak\nWill attempt to restore the backups from http://demo.blob.core.windows.net/backups/dbbackup.bak if a SAS credential with the name http://demo.blob.core.windows.net/backups exists on server1\\instance1\n-------------------------- EXAMPLE 9 --------------------------\nPS C:\\\u003e$File = Get-ChildItem c:\\backups, \\\\server1\\backups -recurse\nPS C:\\\u003e $File | Restore-DbaDatabase -SqlInstance Server1\\Instance -UseDestinationDefaultDirectories\nThis will take all of the files found under the folders c:\\backups and \\\\server1\\backups, and pipeline them into\r\nRestore-DbaDatabase. Restore-DbaDatabase will then scan all of the files, and restore all of the databases included\r\nto the latest point in time covered by their backups. All data and log files will be moved to the default SQL Server\r\nfolder for those file types as defined on the target instance.\n-------------------------- EXAMPLE 10 --------------------------\nPS C:\\\u003e$files = Get-ChildItem C:\\dbatools\\db1\nPS C:\\\u003e $params = @{\r\n\u003e\u003e SqlInstance = \u0027server\\instance1\u0027\r\n\u003e\u003e DestinationFilePrefix = \u0027prefix\u0027\r\n\u003e\u003e DatabaseName =\u0027Restored\u0027\r\n\u003e\u003e RestoreTime = (get-date \"14:58:30 22/05/2017\")\r\n\u003e\u003e NoRecovery = $true\r\n\u003e\u003e WithReplace = $true\r\n\u003e\u003e StandbyDirectory = \u0027C:\\dbatools\\standby\u0027\r\n\u003e\u003e }\r\n\u003e\u003e\r\nPS C:\\\u003e $files | Restore-DbaDatabase @params\r\nPS C:\\\u003e Invoke-DbaQuery -SQLInstance server\\instance1 -Query \"select top 1 * from Restored.dbo.steps order by dt desc\"\r\nPS C:\\\u003e $params.RestoredTime = (get-date \"15:09:30 22/05/2017\")\r\nPS C:\\\u003e $params.NoRecovery = $false\r\nPS C:\\\u003e $params.Add(\"Continue\",$true)\r\nPS C:\\\u003e $files | Restore-DbaDatabase @params\r\nPS C:\\\u003e Invoke-DbaQuery -SQLInstance server\\instance1 -Query \"select top 1 * from restored.dbo.steps order by dt desc\"\r\nPS C:\\\u003e Restore-DbaDatabase -SqlInstance server\\instance1 -DestinationFilePrefix prefix -DatabaseName Restored -Continue -WithReplace\nIn this example we step through the backup files held in c:\\dbatools\\db1 folder.\r\nFirst we restore the database to a point in time in standby mode. This means we can check some details in the databases\r\nWe then roll it on a further 9 minutes to perform some more checks\r\nAnd finally we continue by rolling it all the way forward to the latest point in the backup.\r\nAt each step, only the log files needed to roll the database forward are restored.\n-------------------------- EXAMPLE 11 --------------------------\nPS C:\\\u003eRestore-DbaDatabase -SqlInstance server\\instance1 -Path c:\\backups -DatabaseName example1 -NoRecovery\nPS C:\\\u003e Restore-DbaDatabase -SqlInstance server\\instance1 -Recover -DatabaseName example1\nIn this example we restore example1 database with no recovery, and then the second call is to set the database to recovery.\n-------------------------- EXAMPLE 12 --------------------------\nPS C:\\\u003eGet-DbaBackupHistory - SqlInstance server\\instance1 -Database ProdFinance -Last | Restore-DbaDatabase -PageRestore\nPS C:\\\u003e $SuspectPage -PageRestoreTailFolder c:\\temp -TrustDbBackupHistory -AllowContinues\nGets a list of Suspect Pages using Get-DbaSuspectPage. The uses Get-DbaBackupHistory and Restore-DbaDatabase to perform a restore of the suspect pages and bring them up to date\r\nIf server\\instance1 is Enterprise edition this will be done online, if not it will be performed offline\r\nAllowContinue is required to make sure we cope with existing files\n-------------------------- EXAMPLE 13 --------------------------\nPS C:\\\u003e$BackupHistory = Get-DbaBackupInformation -SqlInstance sql2005 -Path \\\\backups\\sql2000\\ProdDb\nPS C:\\\u003e $BackupHistory | Restore-DbaDatabase -SqlInstance sql2000 -TrustDbBackupHistory\nDue to SQL Server 2000 not returning all the backup headers we cannot restore directly. As this is an issues with the SQL engine all we can offer is the following workaround\r\nThis will use a SQL Server instance \u003e 2000 to read the headers, and then pass them in to Restore-DbaDatabase as a BackupHistory object.\n-------------------------- EXAMPLE 14 --------------------------\nPS C:\\\u003eRestore-DbaDatabase -SqlInstance server1\\instance1 -Path \"C:\\Temp\\devops_prod_full.bak\" -DatabaseName \"DevOps_DEV\" -ReplaceDbNameInFile\nPS C:\\\u003e Rename-DbaDatabase -SqlInstance server1\\instance1 -Database \"DevOps_DEV\" -LogicalName \"\u003cDBN\u003e_\u003cFT\u003e\"\nThis will restore the database from the \"C:\\Temp\\devops_prod_full.bak\" file, with the new name \"DevOps_DEV\" and store the different physical files with the new name. It will use the system default \r\nconfigured data and log locations.\r\nAfter the restore the logical names of the database files will be renamed with the \"DevOps_DEV_ROWS\" for MDF/NDF and \"DevOps_DEV_LOG\" for LDF\n-------------------------- EXAMPLE 15 --------------------------\nPS C:\\\u003e$FileStructure = @{\n\u003e\u003e \u0027database_data\u0027 = \u0027C:\\Data\\database_data.mdf\u0027\r\n\u003e\u003e \u0027database_log\u0027 = \u0027C:\\Log\\database_log.ldf\u0027\r\n\u003e\u003e }\r\n\u003e\u003e\r\nPS C:\\\u003e Restore-DbaDatabase -SqlInstance server1 -Path \\\\ServerName\\ShareName\\File -DatabaseName database -FileMapping $FileStructure\nRestores \u0027database\u0027 to \u0027server1\u0027 and moves the files to new locations. The format for the $FileStructure HashTable is the file logical name as the Key, and the new location as the Value.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eRestore-DbaDatabase -SqlInstance server1\\instance1 -Path \\\\server2\\backups\nScans all the backup files in \\\\server2\\backups, filters them and restores the database to server1\\instance1\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eRestore-DbaDatabase -SqlInstance server1\\instance1 -Path \\\\server2\\backups -MaintenanceSolutionBackup -DestinationDataDirectory c:\\restores\nScans all the backup files in \\\\server2\\backups$ stored in an Ola Hallengren style folder structure,\r\nfilters them and restores the database to the c:\\restores folder on server1\\instance1\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-ChildItem c:\\SQLbackups1\\, \\\\server\\sqlbackups2 | Restore-DbaDatabase -SqlInstance server1\\instance1\nTakes the provided files from multiple directories and restores them on  server1\\instance1\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003e$RestoreTime = Get-Date(\u002711:19 23/12/2016\u0027)\nPS C:\\\u003e Restore-DbaDatabase -SqlInstance server1\\instance1 -Path \\\\server2\\backups -MaintenanceSolutionBackup -DestinationDataDirectory c:\\restores -RestoreTime $RestoreTime\nScans all the backup files in \\\\server2\\backups stored in an Ola Hallengren style folder structure,\r\nfilters them and restores the database to the c:\\restores folder on server1\\instance1 up to 11:19 23/12/2016\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003e$result = Restore-DbaDatabase -SqlInstance server1\\instance1 -Path \\\\server2\\backups -DestinationDataDirectory c:\\restores -OutputScriptOnly\nPS C:\\\u003e $result | Select-Object -ExpandProperty Tsql | Out-File -Filepath c:\\scripts\\restore.sql\nScans all the backup files in \\\\server2\\backups stored in an Ola Hallengren style folder structure,\r\nfilters them and generate the T-SQL Scripts to restore the database to the latest point in time,\r\nand then stores the output in a file for later retrieval\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eRestore-DbaDatabase -SqlInstance server1\\instance1 -Path c:\\backups -DestinationDataDirectory c:\\DataFiles -DestinationLogDirectory c:\\LogFile\nScans all the files in c:\\backups and then restores them onto the SQL Server Instance server1\\instance1, placing data files\r\nc:\\DataFiles and all the log files into c:\\LogFiles\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003eRestore-DbaDatabase -SqlInstance server1\\instance1 -Path http://demo.blob.core.windows.net/backups/dbbackup.bak -AzureCredential MyAzureCredential\nWill restore the backup held at  http://demo.blob.core.windows.net/backups/dbbackup.bak to server1\\instance1. The connection to Azure will be made using the\r\ncredential MyAzureCredential held on instance Server1\\instance1\n-------------------------- EXAMPLE 8 --------------------------\nPS C:\\\u003eRestore-DbaDatabase -SqlInstance server1\\instance1 -Path http://demo.blob.core.windows.net/backups/dbbackup.bak\nWill attempt to restore the backups from http://demo.blob.core.windows.net/backups/dbbackup.bak if a SAS credential with the name http://demo.blob.core.windows.net/backups exists on server1\\instance1\n-------------------------- EXAMPLE 9 --------------------------\nPS C:\\\u003e$File = Get-ChildItem c:\\backups, \\\\server1\\backups -recurse\nPS C:\\\u003e $File | Restore-DbaDatabase -SqlInstance Server1\\Instance -UseDestinationDefaultDirectories\nThis will take all of the files found under the folders c:\\backups and \\\\server1\\backups, and pipeline them into\r\nRestore-DbaDatabase. Restore-DbaDatabase will then scan all of the files, and restore all of the databases included\r\nto the latest point in time covered by their backups. All data and log files will be moved to the default SQL Server\r\nfolder for those file types as defined on the target instance.\n-------------------------- EXAMPLE 10 --------------------------\nPS C:\\\u003e$files = Get-ChildItem C:\\dbatools\\db1\nPS C:\\\u003e $params = @{\r\n\u003e\u003e SqlInstance = \u0027server\\instance1\u0027\r\n\u003e\u003e DestinationFilePrefix = \u0027prefix\u0027\r\n\u003e\u003e DatabaseName =\u0027Restored\u0027\r\n\u003e\u003e RestoreTime = (get-date \"14:58:30 22/05/2017\")\r\n\u003e\u003e NoRecovery = $true\r\n\u003e\u003e WithReplace = $true\r\n\u003e\u003e StandbyDirectory = \u0027C:\\dbatools\\standby\u0027\r\n\u003e\u003e }\r\n\u003e\u003e\r\nPS C:\\\u003e $files | Restore-DbaDatabase @params\r\nPS C:\\\u003e Invoke-DbaQuery -SQLInstance server\\instance1 -Query \"select top 1 * from Restored.dbo.steps order by dt desc\"\r\nPS C:\\\u003e $params.RestoredTime = (get-date \"15:09:30 22/05/2017\")\r\nPS C:\\\u003e $params.NoRecovery = $false\r\nPS C:\\\u003e $params.Add(\"Continue\",$true)\r\nPS C:\\\u003e $files | Restore-DbaDatabase @params\r\nPS C:\\\u003e Invoke-DbaQuery -SQLInstance server\\instance1 -Query \"select top 1 * from restored.dbo.steps order by dt desc\"\r\nPS C:\\\u003e Restore-DbaDatabase -SqlInstance server\\instance1 -DestinationFilePrefix prefix -DatabaseName Restored -Continue -WithReplace\nIn this example we step through the backup files held in c:\\dbatools\\db1 folder.\r\nFirst we restore the database to a point in time in standby mode. This means we can check some details in the databases\r\nWe then roll it on a further 9 minutes to perform some more checks\r\nAnd finally we continue by rolling it all the way forward to the latest point in the backup.\r\nAt each step, only the log files needed to roll the database forward are restored.\n-------------------------- EXAMPLE 11 --------------------------\nPS C:\\\u003eRestore-DbaDatabase -SqlInstance server\\instance1 -Path c:\\backups -DatabaseName example1 -NoRecovery\nPS C:\\\u003e Restore-DbaDatabase -SqlInstance server\\instance1 -Recover -DatabaseName example1\nIn this example we restore example1 database with no recovery, and then the second call is to set the database to recovery.\n-------------------------- EXAMPLE 12 --------------------------\nPS C:\\\u003eGet-DbaBackupHistory - SqlInstance server\\instance1 -Database ProdFinance -Last | Restore-DbaDatabase -PageRestore\nPS C:\\\u003e $SuspectPage -PageRestoreTailFolder c:\\temp -TrustDbBackupHistory\nGets a list of Suspect Pages using Get-DbaSuspectPage. The uses Get-DbaBackupHistory and Restore-DbaDatabase to perform a restore of the suspect pages and bring them up to date\r\nIf server\\instance1 is Enterprise edition this will be done online, if not it will be performed offline\n-------------------------- EXAMPLE 13 --------------------------\nPS C:\\\u003e$BackupHistory = Get-DbaBackupInformation -SqlInstance sql2005 -Path \\\\backups\\sql2000\\ProdDb\nPS C:\\\u003e $BackupHistory | Restore-DbaDatabase -SqlInstance sql2000 -TrustDbBackupHistory\nDue to SQL Server 2000 not returning all the backup headers we cannot restore directly. As this is an issues with the SQL engine all we can offer is the following workaround\r\nThis will use a SQL Server instance \u003e 2000 to read the headers, and then pass them in to Restore-DbaDatabase as a BackupHistory object.\n-------------------------- EXAMPLE 14 --------------------------\nPS C:\\\u003eRestore-DbaDatabase -SqlInstance server1\\instance1 -Path \"C:\\Temp\\devops_prod_full.bak\" -DatabaseName \"DevOps_DEV\" -ReplaceDbNameInFile\nPS C:\\\u003e Rename-DbaDatabase -SqlInstance server1\\instance1 -Database \"DevOps_DEV\" -LogicalName \"\u003cDBN\u003e_\u003cFT\u003e\"\nThis will restore the database from the \"C:\\Temp\\devops_prod_full.bak\" file, with the new name \"DevOps_DEV\" and store the different physical files with the new name. It will use the system default \r\nconfigured data and log locations.\r\nAfter the restore the logical names of the database files will be renamed with the \"DevOps_DEV_ROWS\" for MDF/NDF and \"DevOps_DEV_LOG\" for LDF\n-------------------------- EXAMPLE 15 --------------------------\nPS C:\\\u003e$FileStructure = @{\n\u003e\u003e \u0027database_data\u0027 = \u0027C:\\Data\\database_data.mdf\u0027\r\n\u003e\u003e \u0027database_log\u0027 = \u0027C:\\Log\\database_log.ldf\u0027\r\n\u003e\u003e }\r\n\u003e\u003e\r\nPS C:\\\u003e Restore-DbaDatabase -SqlInstance server1 -Path \\\\ServerName\\ShareName\\File -DatabaseName database -FileMapping $FileStructure\nRestores \u0027database\u0027 to \u0027server1\u0027 and moves the files to new locations. The format for the $FileStructure HashTable is the file logical name as the Key, and the new location as the Value.",
         "Params":  [
                        [
                            "SqlInstance",
@@ -34062,14 +34231,6 @@
                            "False"
                        ],
                        [
-                           "AllowContinue",
-                           "By default, Restore-DbaDatabase will stop restoring any databases if it comes across an error.\r\nUse this switch to enable it to restore all databases without issues.",
-                           "",
-                           false,
-                           "false",
-                           "False"
-                       ],
-                       [
                            "GetBackupInformation",
                            "Passing a string value into this parameter will cause a global variable to be created holding the output of Get-DbaBackupInformation",
                            "",
@@ -34158,6 +34319,14 @@
                            "0"
                        ],
                        [
+                           "AllowContinue",
+                           "This parameter has been deprecated and will be removed in v1.0",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
                            "WhatIf",
                            "Shows what would happen if the command would execute, but does not actually perform the command",
                            "wi",
@@ -34174,7 +34343,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Restore-DbaDatabase -SqlInstance \u003cDbaInstanceParameter\u003e [-SqlCredential \u003cPSCredential\u003e] -Path \u003cObject[]\u003e [-DatabaseName \u003cObject[]\u003e] [-DestinationDataDirectory \u003cString\u003e] [-DestinationLogDirectory \u003cString\u003e] [-DestinationFileStreamDirectory \u003cString\u003e] [-RestoreTime \u003cDateTime\u003e] [-NoRecovery] [-WithReplace] [-XpDirTree] [-OutputScriptOnly] [-VerifyOnly] [-MaintenanceSolutionBackup] [-FileMapping \u003cHashtable\u003e] [-IgnoreLogBackup] [-UseDestinationDefaultDirectories] [-ReuseSourceFolderStructure] [-DestinationFilePrefix \u003cString\u003e] [-RestoredDatabaseNamePrefix \u003cString\u003e] [-TrustDbBackupHistory] \r\n[-MaxTransferSize \u003cInt32\u003e] [-BlockSize \u003cInt32\u003e] [-BufferCount \u003cInt32\u003e] [-DirectoryRecurse] [-EnableException] [-StandbyDirectory \u003cString\u003e] [-Continue] [-AzureCredential \u003cString\u003e] [-ReplaceDbNameInFile] [-DestinationFileSuffix \u003cString\u003e] [-KeepCDC] [-AllowContinue] [-GetBackupInformation \u003cString\u003e] [-StopAfterGetBackupInformation] [-SelectBackupInformation \u003cString\u003e] [-StopAfterSelectBackupInformation] [-FormatBackupInformation \u003cString\u003e] [-StopAfterFormatBackupInformation] [-TestBackupInformation \u003cString\u003e] [-StopAfterTestBackupInformation] [-StatementTimeout \u003cInt32\u003e] [-WhatIf] [-Confirm] \r\n[\u003cCommonParameters\u003e]\nRestore-DbaDatabase -SqlInstance \u003cDbaInstanceParameter\u003e [-SqlCredential \u003cPSCredential\u003e] -Path \u003cObject[]\u003e [-DatabaseName \u003cObject[]\u003e] [-OutputScriptOnly] [-TrustDbBackupHistory] [-MaxTransferSize \u003cInt32\u003e] [-BlockSize \u003cInt32\u003e] [-BufferCount \u003cInt32\u003e] [-EnableException] [-AzureCredential \u003cString\u003e] [-AllowContinue] [-GetBackupInformation \u003cString\u003e] [-StopAfterGetBackupInformation] [-SelectBackupInformation \u003cString\u003e] [-StopAfterSelectBackupInformation] [-FormatBackupInformation \u003cString\u003e] [-StopAfterFormatBackupInformation] [-TestBackupInformation \u003cString\u003e] [-StopAfterTestBackupInformation] \r\n-PageRestore \u003cObject\u003e -PageRestoreTailFolder \u003cString\u003e [-StatementTimeout \u003cInt32\u003e] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nRestore-DbaDatabase -SqlInstance \u003cDbaInstanceParameter\u003e [-SqlCredential \u003cPSCredential\u003e] [-DatabaseName \u003cObject[]\u003e] [-OutputScriptOnly] [-EnableException] [-AzureCredential \u003cString\u003e] [-Recover] [-AllowContinue] [-GetBackupInformation \u003cString\u003e] [-StopAfterGetBackupInformation] [-SelectBackupInformation \u003cString\u003e] [-StopAfterSelectBackupInformation] [-FormatBackupInformation \u003cString\u003e] [-StopAfterFormatBackupInformation] [-TestBackupInformation \u003cString\u003e] [-StopAfterTestBackupInformation] [-StatementTimeout \u003cInt32\u003e] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Restore-DbaDatabase -SqlInstance \u003cDbaInstanceParameter\u003e [-SqlCredential \u003cPSCredential\u003e] -Path \u003cObject[]\u003e [-DatabaseName \u003cObject[]\u003e] [-DestinationDataDirectory \u003cString\u003e] [-DestinationLogDirectory \u003cString\u003e] [-DestinationFileStreamDirectory \u003cString\u003e] [-RestoreTime \u003cDateTime\u003e] [-NoRecovery] [-WithReplace] [-XpDirTree] [-OutputScriptOnly] [-VerifyOnly] [-MaintenanceSolutionBackup] [-FileMapping \u003cHashtable\u003e] [-IgnoreLogBackup] [-UseDestinationDefaultDirectories] [-ReuseSourceFolderStructure] [-DestinationFilePrefix \u003cString\u003e] [-RestoredDatabaseNamePrefix \u003cString\u003e] [-TrustDbBackupHistory] \r\n[-MaxTransferSize \u003cInt32\u003e] [-BlockSize \u003cInt32\u003e] [-BufferCount \u003cInt32\u003e] [-DirectoryRecurse] [-EnableException] [-StandbyDirectory \u003cString\u003e] [-Continue] [-AzureCredential \u003cString\u003e] [-ReplaceDbNameInFile] [-DestinationFileSuffix \u003cString\u003e] [-KeepCDC] [-GetBackupInformation \u003cString\u003e] [-StopAfterGetBackupInformation] [-SelectBackupInformation \u003cString\u003e] [-StopAfterSelectBackupInformation] [-FormatBackupInformation \u003cString\u003e] [-StopAfterFormatBackupInformation] [-TestBackupInformation \u003cString\u003e] [-StopAfterTestBackupInformation] [-StatementTimeout \u003cInt32\u003e] [-AllowContinue] [-WhatIf] [-Confirm] \r\n[\u003cCommonParameters\u003e]\nRestore-DbaDatabase -SqlInstance \u003cDbaInstanceParameter\u003e [-SqlCredential \u003cPSCredential\u003e] -Path \u003cObject[]\u003e [-DatabaseName \u003cObject[]\u003e] [-OutputScriptOnly] [-TrustDbBackupHistory] [-MaxTransferSize \u003cInt32\u003e] [-BlockSize \u003cInt32\u003e] [-BufferCount \u003cInt32\u003e] [-EnableException] [-AzureCredential \u003cString\u003e] [-GetBackupInformation \u003cString\u003e] [-StopAfterGetBackupInformation] [-SelectBackupInformation \u003cString\u003e] [-StopAfterSelectBackupInformation] [-FormatBackupInformation \u003cString\u003e] [-StopAfterFormatBackupInformation] [-TestBackupInformation \u003cString\u003e] [-StopAfterTestBackupInformation] -PageRestore \u003cObject\u003e \r\n-PageRestoreTailFolder \u003cString\u003e [-StatementTimeout \u003cInt32\u003e] [-AllowContinue] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nRestore-DbaDatabase -SqlInstance \u003cDbaInstanceParameter\u003e [-SqlCredential \u003cPSCredential\u003e] [-DatabaseName \u003cObject[]\u003e] [-OutputScriptOnly] [-EnableException] [-AzureCredential \u003cString\u003e] [-Recover] [-GetBackupInformation \u003cString\u003e] [-StopAfterGetBackupInformation] [-SelectBackupInformation \u003cString\u003e] [-StopAfterSelectBackupInformation] [-FormatBackupInformation \u003cString\u003e] [-StopAfterFormatBackupInformation] [-TestBackupInformation \u003cString\u003e] [-StopAfterTestBackupInformation] [-StatementTimeout \u003cInt32\u003e] [-AllowContinue] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Restore-DbaDbCertificate",
@@ -39460,7 +39629,8 @@
         "Tags":  [
                      "ExtendedEvent",
                      "XE",
-                     "XEvent"
+                     "XEvent",
+                     "SmartTarget"
                  ],
         "Synopsis":  "XESmartTarget runs as a client application for an Extended Events session running on a SQL Server instance.",
         "Alias":  "",
@@ -43137,7 +43307,7 @@
                            "",
                            false,
                            "false",
-                           ""
+                           "(Get-DbatoolsConfigValue -Name \u0027Path.SQLServerUpdates\u0027)"
                        ],
                        [
                            "Restart",

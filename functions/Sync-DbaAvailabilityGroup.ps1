@@ -232,7 +232,7 @@ function Sync-DbaAvailabilityGroup {
             if ($Exclude -notcontains "Logins") {
                 if ($PSCmdlet.ShouldProcess("Syncing logins from $primaryserver to $secondaryservers")) {
                     Write-ProgressHelper -Activity $activity -StepNumber ($stepCounter++) -Message "Syncing logins"
-                    Copy-DbaLogin -Source $server -Destination $secondaries -ExcludeLogin $ExcludeLogin -Force:$Force
+                    Copy-DbaLogin -Source $server -Destination $secondaries -Login $Login -ExcludeLogin $ExcludeLogin -Force:$Force
                 }
             }
 

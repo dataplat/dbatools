@@ -183,7 +183,7 @@ function Get-DbaLogin {
             }
 
             if ($Type -eq 'Windows') {
-                $serverLogins = $serverLogins | Where-Object LoginType -eq 'WindowsUser'
+                $serverLogins = $serverLogins | Where-Object LoginType -in @('WindowsUser', 'WindowsGroup')
             }
 
             if ($Type -eq 'SQL') {
