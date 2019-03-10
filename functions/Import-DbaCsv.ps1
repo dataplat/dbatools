@@ -603,8 +603,10 @@ function Import-DbaCsv {
                         }
                         if ($script:core) {
                             $rowscopied = "Unsupported in Core"
+                            $rps = $null
                         } else {
                             $rowscopied = [System.Data.SqlClient.SqlBulkCopyExtension]::RowsCopiedCount($bulkcopy)
+                            $rps = [int]($rowscopied / $elapsed.Elapsed.TotalSeconds)
                         }
 
                         Write-Message -Level Verbose -Message "$rowscopied total rows copied"
@@ -618,7 +620,7 @@ function Import-DbaCsv {
                             Schema        = $schema
                             RowsCopied    = $rowscopied
                             Elapsed       = [prettytimespan]$elapsed.Elapsed
-                            RowsPerSecond = [int]($rowscopied / $elapsed.Elapsed.TotalSeconds)
+                            RowsPerSecond = $rps
                             Path          = $file
                         }
                     } else {
