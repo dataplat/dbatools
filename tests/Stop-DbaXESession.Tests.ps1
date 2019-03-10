@@ -16,8 +16,6 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
         $server = Connect-DbaInstance -SqlInstance $script:instance2
-        # Get the systemhealth session
-        $dbatoolsciValid = Get-DbaXESession -SqlInstance $script:instance2 -Session system_health
         # Create a valid session and start it
         $server.Query("CREATE EVENT SESSION [dbatoolsci_session_valid] ON SERVER ADD EVENT sqlserver.lock_acquired;")
         $dbatoolsciValid = Get-DbaXESession -SqlInstance $script:instance2 -Session dbatoolsci_session_valid
@@ -37,11 +35,11 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $session.Refresh()
             if ($session.Status -eq "Stopped") {
                 if ($session.IsRunning) {
-                    $session.Stop()
+                    $session | Stop-DbaXESession
                 }
             } else {
                 if (-Not $session.IsRunning) {
-                    $session.Start()
+                    $session | Start-DbaXESession
                 }
             }
         }
