@@ -17,7 +17,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
         $server = Connect-DbaInstance -SqlInstance $script:instance2
         # Get the systemhealth session
-        $systemhealth = Get-DbaXESession -SqlInstance $script:instance2 -Session system_health
+        $dbatoolsciValid = Get-DbaXESession -SqlInstance $script:instance2 -Session system_health
         # Create a valid session and start it
         $server.Query("CREATE EVENT SESSION [dbatoolsci_session_valid] ON SERVER ADD EVENT sqlserver.lock_acquired;")
         $dbatoolsciValid = Get-DbaXESession -SqlInstance $script:instance2 -Session dbatoolsci_session_valid
@@ -26,9 +26,9 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         $allSessions = Get-DbaXESession -SqlInstance $script:instance2
     }
     BeforeEach {
-        $systemhealth.Refresh()
-        if (-Not $systemhealth.IsRunning) {
-            $systemhealth.Start()
+        $dbatoolsciValid.Refresh()
+        if (-Not $dbatoolsciValid.IsRunning) {
+            $dbatoolsciValid.Start()
         }
     }
     AfterAll {
@@ -54,25 +54,23 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Verifying command works" {
         $server = Connect-DbaInstance -SqlInstance $script:instance2
         It "stops the system_health session" {
-            $systemhealth | Stop-DbaXESession
-            $systemhealth.Refresh()
-            $systemhealth.IsRunning | Should Be $false
+            $dbatoolsciValid | Stop-DbaXESession
+            $dbatoolsciValid.Refresh()
+            $dbatoolsciValid.IsRunning | Should Be $false
         }
 
         It "does not change state if XE session is already stopped" {
-            if ($systemhealth.IsRunning) {
-                $systemhealth.Stop()
+            if ($dbatoolsciValid.IsRunning) {
+                $dbatoolsciValid.Stop()
             }
-            Stop-DbaXESession -SqlInstance $server -Session $systemhealth.Name -WarningAction SilentlyContinue
-            $systemhealth.Refresh()
-            $systemhealth.IsRunning | Should Be $false
+            Stop-DbaXESession -SqlInstance $server -Session $dbatoolsciValid.Name -WarningAction SilentlyContinue
+            $dbatoolsciValid.Refresh()
+            $dbatoolsciValid.IsRunning | Should Be $false
         }
 
         It "stops all XE Sessions except the system ones if -AllSessions is used" {
             Stop-DbaXESession $server -AllSessions -WarningAction SilentlyContinue
-            $systemhealth.Refresh()
             $dbatoolsciValid.Refresh()
-            $systemhealth.IsRunning | Should Be $true
             $dbatoolsciValid.IsRunning | Should Be $false
         }
     }
