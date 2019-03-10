@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
     and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.780] - 2019-03-06
+### Fixed
+* `Install-DbaMaintenanceSolution` does not run CommandExecute if the Solution is not "All"
+### Added
+* Azure support for `Connect-DbaInstance`
+
 ## [0.9.779] - 2019-03-05
 ### Added
 * Registered server support for PowerShell Core
