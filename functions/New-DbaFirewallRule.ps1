@@ -1,4 +1,4 @@
-﻿function New-DbaFirewallRule {
+function New-DbaFirewallRule {
     <#
     .SYNOPSIS
         Adds new firewall rules to Windows Firewall with Advanced Security for SQL Server components.
