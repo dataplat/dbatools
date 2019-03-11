@@ -642,7 +642,9 @@ function New-DbaDbMaskingConfig {
         # Write the data to the Path
         if ($results) {
             try {
-                $temppath = "$Path\$($server.Name.Replace('\', '$')).$($db.Name).tables.json"
+                $filenamepart = $server.Name.Replace('\', '$').Replace('TCP:', '').Replace(',', '.')
+                $temppath = "$Path\$($filenamepart).$($db.Name).tables.json"
+
                 if (-not $script:isWindows) {
                     $temppath = $temppath.Replace("\", "/")
                 }

@@ -1597,6 +1597,14 @@
                            ""
                        ],
                        [
+                           "AzureUnsupported",
+                           "Terminate if Azure is detected but not supported",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
                            "BatchSeparator",
                            "A string to separate groups of SQL statements being executed. By default, this is \"GO\".",
                            "",
@@ -1655,6 +1663,14 @@
                        [
                            "MinPoolSize",
                            "Sets the minimum number of connections allowed in the connection pool for this specific connection string.",
+                           "",
+                           false,
+                           "false",
+                           "0"
+                       ],
+                       [
+                           "MinimumVersion",
+                           "Terminate if the target SQL Server instance version does not meet version requirements",
                            "",
                            false,
                            "false",
@@ -1765,7 +1781,7 @@
                            "False"
                        ]
                    ],
-        "Syntax":  "Connect-DbaInstance [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString\u003e] [[-AccessToken] \u003cString\u003e] [[-ApplicationIntent] \u003cString\u003e] [[-BatchSeparator] \u003cString\u003e] [[-ClientName] \u003cString\u003e] [[-ConnectTimeout] \u003cInt32\u003e] [-EncryptConnection] [[-FailoverPartner] \u003cString\u003e] [[-LockTimeout] \u003cInt32\u003e] [[-MaxPoolSize] \u003cInt32\u003e] [[-MinPoolSize] \u003cInt32\u003e] [-MultipleActiveResultSets] [-MultiSubnetFailover] [[-NetworkProtocol] \u003cString\u003e] [-NonPooledConnection] [[-PacketSize] \u003cInt32\u003e] [[-PooledConnectionLifetime] \u003cInt32\u003e] [[-SqlExecutionModes] \u003cString\u003e] \r\n[[-StatementTimeout] \u003cInt32\u003e] [-TrustServerCertificate] [[-WorkstationId] \u003cString\u003e] [[-AppendConnectionString] \u003cString\u003e] [-SqlConnectionOnly] [-DisableException] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Connect-DbaInstance [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString\u003e] [[-AccessToken] \u003cString\u003e] [[-ApplicationIntent] \u003cString\u003e] [-AzureUnsupported] [[-BatchSeparator] \u003cString\u003e] [[-ClientName] \u003cString\u003e] [[-ConnectTimeout] \u003cInt32\u003e] [-EncryptConnection] [[-FailoverPartner] \u003cString\u003e] [[-LockTimeout] \u003cInt32\u003e] [[-MaxPoolSize] \u003cInt32\u003e] [[-MinPoolSize] \u003cInt32\u003e] [[-MinimumVersion] \u003cInt32\u003e] [-MultipleActiveResultSets] [-MultiSubnetFailover] [[-NetworkProtocol] \u003cString\u003e] [-NonPooledConnection] [[-PacketSize] \u003cInt32\u003e] [[-PooledConnectionLifetime] \u003cInt32\u003e] \r\n[[-SqlExecutionModes] \u003cString\u003e] [[-StatementTimeout] \u003cInt32\u003e] [-TrustServerCertificate] [[-WorkstationId] \u003cString\u003e] [[-AppendConnectionString] \u003cString\u003e] [-SqlConnectionOnly] [-DisableException] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "ConvertTo-DbaDataTable",
@@ -11060,7 +11076,7 @@
         "Params":  [
                        [
                            "SqlInstance",
-                           "The target SQL Server instance or instances. Defaults to localhost.",
+                           "The target SQL Server instance or instances.",
                            "ServerInstance,SqlServer",
                            true,
                            "true (ByValue)",
@@ -11203,7 +11219,7 @@
                            "False"
                        ]
                    ],
-        "Syntax":  "Get-DbaDatabase [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Database \u003cObject[]\u003e] [-ExcludeDatabase \u003cObject[]\u003e] [-ExcludeUser] [-ExcludeSystem] [-Owner \u003cString[]\u003e] [-Encrypted] [-Status \u003cString[]\u003e] [-Access \u003cString\u003e] [-RecoveryModel \u003cString[]\u003e] [-NoFullBackup] [-NoFullBackupSince \u003cDateTime\u003e] [-NoLogBackup] [-NoLogBackupSince \u003cDateTime\u003e] [-EnableException] [-IncludeLastUsed] [-OnlyAccessible] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Get-DbaDatabase [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Database \u003cString[]\u003e] [-ExcludeDatabase \u003cString[]\u003e] [-ExcludeUser] [-ExcludeSystem] [-Owner \u003cString[]\u003e] [-Encrypted] [-Status \u003cString[]\u003e] [-Access \u003cString\u003e] [-RecoveryModel \u003cString[]\u003e] [-NoFullBackup] [-NoFullBackupSince \u003cDateTime\u003e] [-NoLogBackup] [-NoLogBackupSince \u003cDateTime\u003e] [-EnableException] [-IncludeLastUsed] [-OnlyAccessible] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Get-DbaDbAssembly",
@@ -18997,7 +19013,7 @@
         "Alias":  "Get-DbaConfig",
         "Author":  "Friedrich Weinmann (@FredWeinmann)",
         "CommandName":  "Get-DbatoolsConfig",
-        "Availability":  "Windows only",
+        "Availability":  "Windows, Linux, macOS",
         "Links":  null,
         "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbatoolsConfig \u0027Mail.To\u0027\nRetrieves the configuration element for the key \"Mail.To\"\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbatoolsConfig -Force\nRetrieve all configuration elements from all modules, even hidden ones.",
         "Params":  [
@@ -19047,7 +19063,7 @@
         "Alias":  "Get-DbaConfigValue",
         "Author":  "Friedrich Weinmann (@FredWeinmann)",
         "CommandName":  "Get-DbatoolsConfigValue",
-        "Availability":  "Windows only",
+        "Availability":  "Windows, Linux, macOS",
         "Links":  null,
         "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbatoolsConfigValue -Name \u0027System.MailServer\u0027\nReturns the configured value that was assigned to the key \u0027System.MailServer\u0027\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbatoolsConfigValue -Name \u0027Default.CoffeeMilk\u0027 -Fallback 0\nReturns the configured value for \u0027Default.CoffeeMilk\u0027. If no such value is configured, it returns \u00270\u0027 instead.",
         "Params":  [
@@ -20919,6 +20935,14 @@
                            "False"
                        ],
                        [
+                           "NoTransaction",
+                           "Do not use a transaction when performing the import.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
                            "EnableException",
                            "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
                            "",
@@ -20943,7 +20967,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Import-DbaCsv [[-Path] \u003cObject[]\u003e] [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [-Database] \u003cString\u003e [[-Table] \u003cString\u003e] [[-Schema] \u003cString\u003e] [-Truncate] [[-Delimiter] \u003cChar\u003e] [-SingleColumn] [[-BatchSize] \u003cInt32\u003e] [[-NotifyAfter] \u003cInt32\u003e] [-TableLock] [-CheckConstraints] [-FireTriggers] [-KeepIdentity] [-KeepNulls] [[-Column] \u003cString[]\u003e] [[-ColumnMap] \u003cHashtable[]\u003e] [-AutoCreateTable] [-NoProgress] [-NoHeaderRow] [[-Quote] \u003cChar\u003e] [[-Escape] \u003cChar\u003e] [[-Comment] \u003cChar\u003e] [[-TrimmingOption] \u003cString\u003e] [[-BufferSize] \u003cInt32\u003e] [[-ParseErrorAction] \u003cString\u003e] \r\n[[-Encoding] \u003cEncoding\u003e] [[-NullValue] \u003cString\u003e] [[-Threshold] \u003cInt32\u003e] [[-MaxQuotedFieldLength] \u003cInt32\u003e] [-SkipEmptyLine] [-SupportsMultiline] [-UseColumnDefault] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Import-DbaCsv [[-Path] \u003cObject[]\u003e] [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [-Database] \u003cString\u003e [[-Table] \u003cString\u003e] [[-Schema] \u003cString\u003e] [-Truncate] [[-Delimiter] \u003cChar\u003e] [-SingleColumn] [[-BatchSize] \u003cInt32\u003e] [[-NotifyAfter] \u003cInt32\u003e] [-TableLock] [-CheckConstraints] [-FireTriggers] [-KeepIdentity] [-KeepNulls] [[-Column] \u003cString[]\u003e] [[-ColumnMap] \u003cHashtable[]\u003e] [-AutoCreateTable] [-NoProgress] [-NoHeaderRow] [[-Quote] \u003cChar\u003e] [[-Escape] \u003cChar\u003e] [[-Comment] \u003cChar\u003e] [[-TrimmingOption] \u003cString\u003e] [[-BufferSize] \u003cInt32\u003e] [[-ParseErrorAction] \u003cString\u003e] \r\n[[-Encoding] \u003cEncoding\u003e] [[-NullValue] \u003cString\u003e] [[-Threshold] \u003cInt32\u003e] [[-MaxQuotedFieldLength] \u003cInt32\u003e] [-SkipEmptyLine] [-SupportsMultiline] [-UseColumnDefault] [-NoTransaction] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Import-DbaPfDataCollectorSetTemplate",
@@ -27263,6 +27287,14 @@
                            "0"
                        ],
                        [
+                           "Database",
+                           "Database name",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
                            "EncryptConnection",
                            "When true, SQL Server uses SSL encryption for all data sent between the client and server if the server has a certificate installed. Recognized values are true, false, yes, and no. For more \r\ninformation, see Connection String Syntax.\nBeginning in .NET Framework 4.5, when TrustServerCertificate is false and Encrypt is true, the server name (or IP address) in a SQL Server SSL certificate must exactly match the server name (or IP \r\naddress) specified in the connection string. Otherwise, the connection attempt will fail. For information about support for certificates whose subject starts with a wildcard character (*), see \r\nAccepted wildcards used by server certificates for server authentication.",
                            "",
@@ -27415,7 +27447,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "New-DbaConnectionString [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-Credential] \u003cPSCredential\u003e] [[-AccessToken] \u003cString\u003e] [[-ApplicationIntent] \u003cString\u003e] [[-BatchSeparator] \u003cString\u003e] [[-ClientName] \u003cString\u003e] [[-ConnectTimeout] \u003cInt32\u003e] [-EncryptConnection] [[-FailoverPartner] \u003cString\u003e] [-IsActiveDirectoryUniversalAuth] [[-LockTimeout] \u003cInt32\u003e] [[-MaxPoolSize] \u003cInt32\u003e] [[-MinPoolSize] \u003cInt32\u003e] [-MultipleActiveResultSets] [-MultiSubnetFailover] [[-NetworkProtocol] \u003cString\u003e] [-NonPooledConnection] [[-PacketSize] \u003cInt32\u003e] [[-PooledConnectionLifetime] \u003cInt32\u003e] [[-SqlExecutionModes] \u003cString\u003e] \r\n[[-StatementTimeout] \u003cInt32\u003e] [-TrustServerCertificate] [[-WorkstationId] \u003cString\u003e] [[-AppendConnectionString] \u003cString\u003e] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "New-DbaConnectionString [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-Credential] \u003cPSCredential\u003e] [[-AccessToken] \u003cString\u003e] [[-ApplicationIntent] \u003cString\u003e] [[-BatchSeparator] \u003cString\u003e] [[-ClientName] \u003cString\u003e] [[-ConnectTimeout] \u003cInt32\u003e] [[-Database] \u003cString\u003e] [-EncryptConnection] [[-FailoverPartner] \u003cString\u003e] [-IsActiveDirectoryUniversalAuth] [[-LockTimeout] \u003cInt32\u003e] [[-MaxPoolSize] \u003cInt32\u003e] [[-MinPoolSize] \u003cInt32\u003e] [-MultipleActiveResultSets] [-MultiSubnetFailover] [[-NetworkProtocol] \u003cString\u003e] [-NonPooledConnection] [[-PacketSize] \u003cInt32\u003e] [[-PooledConnectionLifetime] \u003cInt32\u003e] \r\n[[-SqlExecutionModes] \u003cString\u003e] [[-StatementTimeout] \u003cInt32\u003e] [-TrustServerCertificate] [[-WorkstationId] \u003cString\u003e] [[-AppendConnectionString] \u003cString\u003e] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "New-DbaConnectionStringBuilder",
@@ -27820,7 +27852,7 @@
                        [
                            "Name",
                            "The name of the new database or databases to be created.",
-                           "",
+                           "Database",
                            false,
                            "false",
                            ""
@@ -30366,7 +30398,7 @@
         "Synopsis":  "Registers an existing configuration object in registry.",
         "Alias":  "Register-DbaConfig",
         "CommandName":  "Register-DbatoolsConfig",
-        "Availability":  "Windows only",
+        "Availability":  "Windows, Linux, macOS",
         "Links":  null,
         "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbatoolsConfig message.style.* | Register-DbatoolsConfig\nRetrieves all configuration items that that start with message.style. and registers them in registry for the current user.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eRegister-DbatoolsConfig -FullName \"message.consoleoutput.disable\" -Scope SystemDefault\nRetrieves the configuration item \"message.consoleoutput.disable\" and registers it in registry as the default setting for all users on this machine.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eRegister-DbatoolsConfig -Module Message -Scope SystemMandatory\nRetrieves all configuration items of the module Message, then registers them in registry to enforce them for all users on the current system.",
         "Params":  [
@@ -43824,14 +43856,6 @@
                            "5000"
                        ],
                        [
-                           "RegularUser",
-                           "Deprecated - now all connections are regular user (don\u0027t require admin)",
-                           "",
-                           false,
-                           "false",
-                           "False"
-                       ],
-                       [
                            "EnableException",
                            "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
                            "Silent",
@@ -43864,6 +43888,6 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Write-DbaDataTable [-SqlInstance] \u003cDbaInstanceParameter\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cObject\u003e] -InputObject \u003cObject\u003e [-Table] \u003cString\u003e [[-Schema] \u003cString\u003e] [-BatchSize \u003cInt32\u003e] [-NotifyAfter \u003cInt32\u003e] [-AutoCreateTable] [-NoTableLock] [-CheckConstraints] [-FireTriggers] [-KeepIdentity] [-KeepNulls] [-Truncate] [-bulkCopyTimeOut \u003cInt32\u003e] [-RegularUser] [-EnableException] [-UseDynamicStringLength] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Write-DbaDataTable [-SqlInstance] \u003cDbaInstanceParameter\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cObject\u003e] -InputObject \u003cObject\u003e [-Table] \u003cString\u003e [[-Schema] \u003cString\u003e] [-BatchSize \u003cInt32\u003e] [-NotifyAfter \u003cInt32\u003e] [-AutoCreateTable] [-NoTableLock] [-CheckConstraints] [-FireTriggers] [-KeepIdentity] [-KeepNulls] [-Truncate] [-bulkCopyTimeOut \u003cInt32\u003e] [-EnableException] [-UseDynamicStringLength] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     }
 ]

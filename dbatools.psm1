@@ -136,8 +136,8 @@ $script:multiFileImport = $false
 if ($dbatools_multiFileImport) { $script:multiFileImport = $true }
 if ($dbatoolsSystemSystemNode.MultiFileImport) { $script:multiFileImport = $true }
 if ($dbatoolsSystemUserNode.MultiFileImport) { $script:multiFileImport = $true }
-if (Test-Path -Path "$script:PSModuleRoot\.git") { $script:multiFileImport = $true }
-if (Test-Path -Path "$script:PSModuleRoot/.git") { $script:multiFileImport = $true }
+if ((Test-Path -Path "$script:PSModuleRoot\.git") -or $dbatools_enabledebug) { $script:multiFileImport = $true; $script:serialImport = $true }
+if ((Test-Path -Path "$script:PSModuleRoot/.git") -or $dbatools_enabledebug) { $script:multiFileImport = $true; $script:serialImport = $true }
 #endregion Multi File Import
 
 Write-ImportTime -Text "Validated defines"
@@ -1425,7 +1425,12 @@ $script:xplat = @(
     'Move-DbaCmsRegServer',
     'Move-DbaCmsRegServerGroup',
     'Remove-DbaCmsRegServer',
-    'Remove-DbaCmsRegServerGroup'
+    'Remove-DbaCmsRegServerGroup',
+    # Config system
+    'Get-DbatoolsConfig',
+    'Get-DbatoolsConfigValue',
+    'Set-DbatoolsConfig',
+    'Register-DbatoolsConfig'
 )
 
 $script:noncoresmo = @(
@@ -1577,11 +1582,6 @@ $script:windowsonly = @(
     'Find-DbaLoginInGroup',
     # 3rd party non-core DLL or exe
     'Export-DbaDacPackage', # relies on sqlpackage.exe
-    # Config system
-    'Get-DbatoolsConfig',
-    'Get-DbatoolsConfigValue',
-    'Set-DbatoolsConfig',
-    'Register-DbatoolsConfig',
     # Unknown
     'Get-DbaErrorLog',
     'Get-DbaManagementObject',

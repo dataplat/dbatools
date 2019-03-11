@@ -1,3 +1,4 @@
+cd C:\github\dbatools\bin\smo
 $phase1 = @()
 $leftover = @()
 dir | %{
