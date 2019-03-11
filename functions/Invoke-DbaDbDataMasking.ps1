@@ -242,14 +242,15 @@ function Invoke-DbaDbDataMasking {
                                     # Get the column mask info
                                     $columnMaskInfo = $tableobject.Columns | Where-Object Name -eq $indexColumn.Name
 
-                                    # Generate a new value
-                                    $newValue = $faker.$($columnMaskInfo.MaskingType).$($columnMaskInfo.SubType)()
+                                    if ($columnMaskInfo) {
+                                        # Generate a new value
+                                        $newValue = $faker.$($columnMaskInfo.MaskingType).$($columnMaskInfo.SubType)()
 
-                                    # Check if the value is already present as a property
-                                    if (($rowValue | Get-Member -MemberType NoteProperty).Name -notcontains $indexColumn.Name) {
-                                        $rowValue | Add-Member -Name $indexColumn.Name -Type NoteProperty -Value $newValue
+                                        # Check if the value is already present as a property
+                                        if (($rowValue | Get-Member -MemberType NoteProperty).Name -notcontains $indexColumn.Name) {
+                                            $rowValue | Add-Member -Name $indexColumn.Name -Type NoteProperty -Value $newValue
+                                        }
                                     }
-
                                 }
 
                                 # To be sure the values are unique, loop as long as long as needed to generate a unique value
