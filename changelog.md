@@ -5,6 +5,44 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
     and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.781] - 2019-03-08
+### Fixed
+* `Get-DbaAgentJobHistory` adds an hour to the `enddate` and duration [#4345](https://github.com/sqlcollaborative/dbatools/issues/4345)
+* `Find-DbaLoginInGroup` returns incorrect domain [#3608](https://github.com/sqlcollaborative/dbatools/issues/3608)
+* `Get-DbaLogin -WindowsLogins` doesn't include groups [#5165](https://github.com/sqlcollaborative/dbatools/issues/5165)
+### Added
+* More Azure support
+
+## [0.9.780] - 2019-03-06
+### Fixed
+* `Install-DbaMaintenanceSolution` does not run CommandExecute if the Solution is not "All"
+### Added
+* Azure support for `Connect-DbaInstance`
+
+## [0.9.779] - 2019-03-05
+### Added
+* Registered server support for PowerShell Core
+
+## [0.9.778] - 2019-03-05
+### Fixed
+* `GetDbaDbFile` incorrectly accounts for pages when calculating `NextGrowthEventSize` [#5147](https://github.com/sqlcollaborative/dbatools/issues/5147)
+
+## [0.9.777] - 2019-03-03
+### Fixed
+* `Get-DbaServerRoleMember` now correctly calls `Get-DbaLogin`
+* `Get-DbaUserPermission` does not drop STIG schema[#5083](https://github.com/sqlcollaborative/dbatools/issues/5083)
+* `Backup-DbaDbCertificate` doesn't properly filter on parameter `-Certificate` [#5106](https://github.com/sqlcollaborative/dbatools/issues/5106)
+* `Copy-DbaAgentAlert` now verifies that the operator exists on the destination [#4920](https://github.com/sqlcollaborative/dbatools/issues/4920)
+
+## [0.9.775] - 2019-02-26
+### Fixed
+* Comparison error in `Test-DbaLastBackup` [#5125](https://github.com/sqlcollaborative/dbatools/issues/5125)
+
+## [0.9.774] - 2019-02-26
+### Fixed
+* Various issues with dynamic data masking [#4910](https://github.com/sqlcollaborative/dbatools/issues/4910), [#4970](https://github.com/sqlcollaborative/dbatools/issues/4970)
+* `Sync-DbaAvailabilityGroup` now passes login values to `Copy-DbaLogin` [#5119](https://github.com/sqlcollaborative/dbatools/issues/5119)
+
 ## [0.9.773] - 2019-02-24
 ### Fixed
 * `Install-DbaMaintenanceSolution` now removes jobs when `-SqlCredential` is used [#5096](https://github.com/sqlcollaborative/dbatools/issues/5096)
