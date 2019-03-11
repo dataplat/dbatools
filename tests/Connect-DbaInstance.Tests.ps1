@@ -24,7 +24,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
                 $s.Name | Should -match $script:azureserver
             }
             It "Should return some results from Invoke-DbaQuery" {
-                $results = Invoke-DbaQuery -SqlInstance (Connect-DbaInstance -SqlInstance $script:azureserver -SqlCredential $cred -Database test) -Query "select 1 as test"
+                $results = Invoke-DbaQuery -SqlInstance $s -Query "select @@servername as name"
                 $results.test | Should -Be 1
             }
         }

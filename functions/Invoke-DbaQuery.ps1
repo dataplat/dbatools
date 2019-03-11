@@ -311,10 +311,6 @@ function Invoke-DbaQuery {
             }
             $conncontext = $server.ConnectionContext
             try {
-                if ($Database -and $conncontext.DatabaseName -ne $Database) {
-                    $conncontext = $server.ConnectionContext.Copy()
-                    $conncontext.DatabaseName = $Database
-                }
                 if ($File -or $SqlObject) {
                     foreach ($item in $files) {
                         if ($null -eq $item) {continue}
