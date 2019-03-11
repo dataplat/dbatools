@@ -171,12 +171,42 @@ function Export-DbaLogin {
             }
         }
 
-        foreach ($sourceLogin in $server.Logins) {
-            $userName = $sourceLogin.name
+        $sourceLogins = $server.Logins
+        if ($Login) {
+            Write-Message -Level Verbose -Message "Including specific logins"
 
-            if ($Login -and $Login -notcontains $userName -or $ExcludeLogin -contains $userName) {
-                continue
+            if ($Login -is [array]) {
+                if ($Login[0].GetType().Name -eq 'Login') {
+                    $Login = $Login.Name
+                }
+            } else {
+                if ($Login.GetType().Name -eq 'Login') {
+                    $Login = $Login.Name
+                }
             }
+
+            $sourceLogins = $sourceLogins | Where-Object { $_.Name -in $Login }
+        }
+
+        if ($ExcludeLogin) {
+            Write-Message -Level Verbose -Message "Excluding logins"
+
+            if ($ExcludeLogin -is [array]) {
+                if ($ExcludeLogin[0].GetType().Name -eq 'Login') {
+                    $ExcludeLogin = $ExcludeLogin.Name
+                }
+            } else {
+                if ($ExcludeLogin.GetType().Name -eq 'Login') {
+                    $ExcludeLogin = $ExcludeLogin.Name
+                }
+            }
+
+            $sourceLogins = $sourceLogins | Where-Object { $_.Name -notin $ExcludeLogin }
+        }
+
+        foreach ($sourceLogin in $sourceLogins) {
+            $userName = $sourceLogin.Name
+            Write-Message -Level Verbose -Message "Processing login $userName"
 
             if ($userName.StartsWith("##") -or $userName -eq 'sa') {
                 Write-Message -Level Warning -Message "Skipping $userName"
