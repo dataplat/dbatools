@@ -145,6 +145,9 @@ function Import-DbaCsv {
     .PARAMETER UseColumnDefault
         Use the column default values if the field is not in the record.
 
+    .PARAMETER NoTransaction
+        Do not use a transaction when performing the import.
+
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
 
@@ -257,6 +260,7 @@ function Import-DbaCsv {
         [switch]$SkipEmptyLine,
         [switch]$SupportsMultiline,
         [switch]$UseColumnDefault,
+        [switch]$NoTransaction,
         [switch]$EnableException
     )
     begin {
@@ -406,10 +410,12 @@ function Import-DbaCsv {
                     Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
                 }
 
-                if ($PSCmdlet.ShouldProcess($instance, "Starting transaction in $Database")) {
-                    # Everything will be contained within 1 transaction, even creating a new table if required
-                    # and truncating the table, if specified.
-                    $transaction = $sqlconn.BeginTransaction()
+                if (-not $NoTransaction) {
+                    if ($PSCmdlet.ShouldProcess($instance, "Starting transaction in $Database")) {
+                        # Everything will be contained within 1 transaction, even creating a new table if required
+                        # and truncating the table, if specified.
+                        $transaction = $sqlconn.BeginTransaction()
+                    }
                 }
 
                 # Ensure database exists
@@ -486,7 +492,7 @@ function Import-DbaCsv {
 
                 # Setup bulk copy options
                 [int]$bulkCopyOptions = ([System.Data.SqlClient.SqlBulkCopyOptions]::Default)
-                $options = "TableLock", "CheckConstraints", "FireTriggers", "KeepIdentity", "KeepNulls", "Default"
+                $options = "TableLock", "CheckConstraints", "FireTriggers", "KeepIdentity", "KeepNulls"
                 foreach ($option in $options) {
                     $optionValue = Get-Variable $option -ValueOnly -ErrorAction SilentlyContinue
                     if ($optionValue -eq $true) {
@@ -589,14 +595,18 @@ function Import-DbaCsv {
                         Stop-Function -Continue -Message "Failure" -ErrorRecord $_
                     }
                 }
-                if ($PSCmdlet.ShouldProcess($instance, "Committing transaction")) {
+                if ($PSCmdlet.ShouldProcess($instance, "Finalizing import")) {
                     if ($completed) {
                         # "Note: This count does not take into consideration the number of rows actually inserted when Ignore Duplicates is set to ON."
-                        $null = $transaction.Commit()
+                        if (-not $NoTransaction) {
+                            $null = $transaction.Commit()
+                        }
                         if ($script:core) {
                             $rowscopied = "Unsupported in Core"
+                            $rps = $null
                         } else {
                             $rowscopied = [System.Data.SqlClient.SqlBulkCopyExtension]::RowsCopiedCount($bulkcopy)
+                            $rps = [int]($rowscopied / $elapsed.Elapsed.TotalSeconds)
                         }
 
                         Write-Message -Level Verbose -Message "$rowscopied total rows copied"
@@ -610,7 +620,7 @@ function Import-DbaCsv {
                             Schema        = $schema
                             RowsCopied    = $rowscopied
                             Elapsed       = [prettytimespan]$elapsed.Elapsed
-                            RowsPerSecond = [int]($rowscopied / $elapsed.Elapsed.TotalSeconds)
+                            RowsPerSecond = $rps
                             Path          = $file
                         }
                     } else {
