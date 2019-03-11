@@ -95,6 +95,6 @@ Function Install-ADAuthenticationLibraryforSQLServer {
     }
 }
 
-Install-ADAuthenticationLibraryforSQLServer
+$null = Install-ADAuthenticationLibraryforSQLServer
 
 Import-Module C:\github\dbatools\dbatools.psm1 -Force
