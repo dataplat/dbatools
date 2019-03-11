@@ -99,6 +99,12 @@ $scriptBlock = {
             'Microsoft.SqlServer.ConnectionInfoExtended',
             'Microsoft.SqlServer.Diagnostics.STrace',
             'Microsoft.SqlServer.Dmf.Common',
+            'Microsoft.Build.Utilities.Core',
+            'Microsoft.Build.Framework',
+            'System.Collections.Immutable',
+            'Microsoft.Data.Tools.Schema.Tasks.Sql',
+            'Microsoft.SqlServer.TransactSql',
+            'Microsoft.Data.Tools.Schema.Sql',
             'Microsoft.SqlServer.IntegrationServices.ClusterManagement',
             'Microsoft.SqlServer.IntegrationServices.ISServerDBUpgrade',
             'Microsoft.SqlServer.IntegrationServices.Server.Common',
@@ -119,7 +125,9 @@ $scriptBlock = {
             'Microsoft.SqlServer.SqlClrProvider',
             'Microsoft.SqlServer.SqlTDiagm',
             'Microsoft.SqlServer.SString',
-            'Microsoft.SqlServer.DmfSqlClrWrapper'
+            'Microsoft.SqlServer.DmfSqlClrWrapper',
+            'Microsoft.SqlServer.Dac',
+            'Microsoft.SqlServer.Dac.Extensions'
         )
     }
     #endregion Names
