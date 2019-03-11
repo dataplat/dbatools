@@ -109,7 +109,6 @@ $scriptBlock = {
             'Microsoft.SqlServer.Management.IntegrationServices',
             'Microsoft.SqlServer.Management.IntegrationServicesEnum',
             'Microsoft.SqlServer.Management.Sdk.Scripting',
-            'Microsoft.SqlServer.Management.Sdk.SqlStudio',
             'Microsoft.SqlServer.Management.SmartAdminPolicies',
             'Microsoft.SqlServer.Management.XEvent',
             'Microsoft.SqlServer.Management.XEventDbScoped',
