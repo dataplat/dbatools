@@ -127,7 +127,8 @@ $scriptBlock = {
             'Microsoft.SqlServer.SString',
             'Microsoft.SqlServer.DmfSqlClrWrapper',
             'Microsoft.SqlServer.Dac',
-            'Microsoft.SqlServer.Dac.Extensions'
+            'Microsoft.SqlServer.Dac.Extensions',
+            'adalsqlrda'
         )
     }
     #endregion Names
