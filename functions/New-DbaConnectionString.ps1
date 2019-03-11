@@ -202,9 +202,6 @@ function New-DbaConnectionString {
         foreach ($instance in $sqlinstance) {
             if ($Pscmdlet.ShouldProcess($instance, "Making a new Connection String")) {
                 if ($instance.ComputerName -match "database\.windows\.net" -and -not $instance.InputObject.ConnectionContext.IsOpen) {
-                    if (-not $Database) {
-                        Stop-Function -Message "You must specify -Database when connecting to a SQL Azure databse" -Continue
-                    }
                     $isAzure = $true
 
                     if (-not (Test-Bound -ParameterName ConnectTimeout)) {
