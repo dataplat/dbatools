@@ -56,8 +56,7 @@ $scriptBlock = {
             'Microsoft.SqlServer.Types',
             'Microsoft.SqlServer.Management.RegisteredServers',
             'Microsoft.SqlTools.Hosting',
-            'Microsoft.SqlTools.ManagedBatchParser',
-            'System.Data.SqlClient'
+            'Microsoft.SqlTools.ManagedBatchParser'
         )
     } else {
         $names = @(
