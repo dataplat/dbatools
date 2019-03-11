@@ -311,7 +311,6 @@ function Copy-DbaPolicyManagement {
                         $destStore.Conditions.Refresh()
                         $destStore.Policies.Refresh()
                         $sql = $policy.ScriptCreate().GetScript() | Out-String
-                        #$sql = $policy.ScriptCreateWithDependencies().GetScript() | Out-String
                         Write-Message -Level Debug -Message $sql
                         Write-Message -Level Verbose -Message "Copying policy $policyName"
                         $null = $destServer.Query($sql)
