@@ -299,9 +299,6 @@ function Connect-DbaInstance {
 
             # Gracefully handle Azure connections
             if ($instance.ComputerName -match "database\.windows\.net" -and -not $instance.InputObject.ConnectionContext.IsOpen) {
-                if (-not $Database) {
-                    Stop-Function -Message "You must specify -Database when connecting to a SQL Azure databse" -Continue
-                }
                 $isAzure = $true
 
                 # Use available command to build the proper connection string
