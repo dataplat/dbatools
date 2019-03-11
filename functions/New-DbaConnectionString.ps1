@@ -201,22 +201,30 @@ function New-DbaConnectionString {
     process {
         foreach ($instance in $sqlinstance) {
             if ($Pscmdlet.ShouldProcess($instance, "Making a new Connection String")) {
-                if ($instance.ComputerName -match "database\.windows\.net" -and -not $instance.InputObject.ConnectionContext.IsOpen) {
-                    if (-not $Database) {
-                        Stop-Function -Message "You must specify -Database when connecting to a SQL Azure databse" -Continue
-                    }
-                    $isAzure = $true
+                if ($instance.ComputerName -match "database\.windows\.net") {
+                    if ($instance.InputObject.GetType() -eq [Microsoft.SqlServer.Management.Smo.Server]) {
+                        $connstring = $instance.InputObject.ConnectionContext.ConnectionString
+                        if ($Database) {
+                            $olddb = $connstring -split ';' | Where { $_.StartsWith("Initial Catalog")}
+                            $newdb = "Initial Catalog=$Database"
+                            $connstring = $connstring.Replace($olddb, $newdb)
+                        }
+                        $connstring
+                        continue
+                    } else {
+                        $isAzure = $true
 
-                    if (-not (Test-Bound -ParameterName ConnectTimeout)) {
-                        $ConnectTimeout = 30
-                    }
+                        if (-not (Test-Bound -ParameterName ConnectTimeout)) {
+                            $ConnectTimeout = 30
+                        }
 
-                    if (-not (Test-Bound -ParameterName ClientName)) {
-                        $ClientName = "dbatools PowerShell module - dbatools.io"
+                        if (-not (Test-Bound -ParameterName ClientName)) {
+                            $ClientName = "dbatools PowerShell module - dbatools.io"
 
+                        }
+                        $EncryptConnection = $true
+                        $instance = [DbaInstanceParameter]"tcp:$($instance.ComputerName),$($instance.Port)"
                     }
-                    $EncryptConnection = $true
-                    $instance = [DbaInstanceParameter]"tcp:$($instance.ComputerName),$($instance.Port)"
                 }
 
                 if ($instance.GetType() -eq [Microsoft.SqlServer.Management.Smo.Server]) {
