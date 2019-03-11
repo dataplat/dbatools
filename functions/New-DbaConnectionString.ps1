@@ -202,8 +202,15 @@ function New-DbaConnectionString {
         foreach ($instance in $sqlinstance) {
             if ($Pscmdlet.ShouldProcess($instance, "Making a new Connection String")) {
                 if ($instance.ComputerName -match "database\.windows\.net" -and -not $instance.InputObject.ConnectionContext.IsOpen) {
-                    if ($instance.GetType() -eq [Microsoft.SqlServer.Management.Smo.Server]) {
-                        return $instance.ConnectionContext.ConnectionString
+                    if ($instance.InputObject.GetType() -eq [Microsoft.SqlServer.Management.Smo.Server]) {
+                        $connstring = $instance.InputObject.ConnectionContext.ConnectionString
+                        if ($Database) {
+                            $olddb = $connstring -split ';' | Where { $_.StartsWith("Initial Catalog")}
+                            $newdb = "Initial Catalog=$Database"
+                            $connstring = $connstring.Replace($olddb, $newdb)
+                        }
+                        $connstring
+                        continue
                     } else {
                         $isAzure = $true
 
