@@ -22,10 +22,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             It "Should login to Azure" {
                 $s = Connect-DbaInstance -SqlInstance $script:azureserver -SqlCredential $cred -Database test
                 $s.Name | Should -match $script:azureserver
-            }
-            It "Should return some results from Invoke-DbaQuery" {
-                $results = Invoke-DbaQuery -SqlInstance (Connect-DbaInstance -SqlInstance $script:azureserver -SqlCredential $cred -Database test) -Query "select 1 as test"
-                $results.test | Should -Be 1
+                $s.DatabaseEngineType | Should -Be 'SqlAzureDatabase'
             }
         }
     }
