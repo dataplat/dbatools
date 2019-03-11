@@ -23,7 +23,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
                 $s = Connect-DbaInstance -SqlInstance $script:azureserver -SqlCredential $cred -Database test
                 $s.Name | Should -match $script:azureserver
             }
-            It "Should return existing process running under the new login and kill it" {
+            It "Should return some results from Invoke-DbaQuery" {
                 $results = Invoke-DbaQuery -SqlInstance $s -Query "select 1 as test"
                 $results.test | Should -Be 1
             }
