@@ -455,6 +455,7 @@
         'Move-DbaCmsRegServerGroup',
         'Remove-DbaCmsRegServer',
         'Remove-DbaCmsRegServerGroup',
+        'New-DbaDbMailAccount',
         # noncoresmo
         # SMO issues
         'Export-DbaUser',
