@@ -126,7 +126,8 @@ $scriptBlock = {
             'Microsoft.SqlServer.SString',
             'Microsoft.SqlServer.DmfSqlClrWrapper',
             'Microsoft.SqlServer.Dac',
-            'Microsoft.SqlServer.Dac.Extensions'
+            'Microsoft.SqlServer.Dac.Extensions',
+            'adalsqlrda'
         )
     }
     #endregion Names
@@ -141,15 +142,6 @@ $scriptBlock = {
     } else {
         foreach ($name in $names) {
             Add-Type -Path (Resolve-Path -Path "$DllRoot\$name.dll")
-        }
-        try {
-            if ($env:PROCESSOR_ARCHITECTURE -eq 'AMD64') {
-                Add-Type -Path (Resolve-Path -Path "$DllRoot\dbatoolsadalsql.dll") -ErrorAction Ignore
-            } else {
-                Add-Type -Path (Resolve-Path -Path "$DllRoot\dbatoolsadalsql32.dll") -ErrorAction Ignore
-            }
-        } catch {
-            # no problem
         }
     }
 }
