@@ -103,7 +103,7 @@ function New-DbaDbMailAccount {
                 }
 
                 try {
-                    $account.MailServers.Item($instance).Rename($MailServer)
+                    $account.MailServers.Item($($server.DomainInstanceName)).Rename($MailServer)
                     $account.Alter()
                     $account.Refresh()
                     Add-Member -Force -InputObject $account -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
