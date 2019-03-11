@@ -202,18 +202,22 @@ function New-DbaConnectionString {
         foreach ($instance in $sqlinstance) {
             if ($Pscmdlet.ShouldProcess($instance, "Making a new Connection String")) {
                 if ($instance.ComputerName -match "database\.windows\.net" -and -not $instance.InputObject.ConnectionContext.IsOpen) {
-                    $isAzure = $true
+                    if ($instance.GetType() -eq [Microsoft.SqlServer.Management.Smo.Server]) {
+                        return $instance.ConnectionContext.ConnectionString
+                    } else {
+                        $isAzure = $true
 
-                    if (-not (Test-Bound -ParameterName ConnectTimeout)) {
-                        $ConnectTimeout = 30
+                        if (-not (Test-Bound -ParameterName ConnectTimeout)) {
+                            $ConnectTimeout = 30
+                        }
+
+                        if (-not (Test-Bound -ParameterName ClientName)) {
+                            $ClientName = "dbatools PowerShell module - dbatools.io"
+
+                        }
+                        $EncryptConnection = $true
+                        $instance = [DbaInstanceParameter]"tcp:$($instance.ComputerName),$($instance.Port)"
                     }
-
-                    if (-not (Test-Bound -ParameterName ClientName)) {
-                        $ClientName = "dbatools PowerShell module - dbatools.io"
-
-                    }
-                    $EncryptConnection = $true
-                    $instance = [DbaInstanceParameter]"tcp:$($instance.ComputerName),$($instance.Port)"
                 }
 
                 if ($instance.GetType() -eq [Microsoft.SqlServer.Management.Smo.Server]) {
