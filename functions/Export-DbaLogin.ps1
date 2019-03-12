@@ -47,6 +47,9 @@ function Export-DbaLogin {
     .PARAMETER DestinationVersion
         To say to which version the script should be generated. If not specified will use instance major version.
 
+    .PARAMETER InputObject
+        Enables piping from Get-DbaDatabase, Get-DbaLogin and more.
+
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
@@ -85,6 +88,11 @@ function Export-DbaLogin {
         Exports ONLY logins netnerds and realcajun FROM sqlserver2014a with the permissions on databases HR and Accounting
 
     .EXAMPLE
+        PS C:\> Get-DbaDatabase -SqlInstance sqlserver2014a -Database HR, Accounting | Export-DbaLogin
+
+        Exports ONLY logins FROM sqlserver2014a with permissions on databases HR and Accounting
+
+    .EXAMPLE
         PS C:\> Export-DbaLogin -SqlInstance sqlserver2008 -Login realcajun, netnerds -Path C:\temp\login.sql -ExcludeGoBatchSeparator
 
         Exports ONLY logins netnerds and realcajun FROM sqlserver2008 server, to the C:\temp\login.sql file without the 'GO' batch separator.
@@ -94,10 +102,20 @@ function Export-DbaLogin {
 
         Exports login realcajun from sqlserver2008 to the file C:\temp\users.sql with syntax to run on SQL Server 2016
 
+    .EXAMPLE
+        PS C:\> Get-DbaDatabase -SqlInstance sqlserver2008 -Login realcajun | Export-DbaLogin
+
+        Exports login realcajun from sqlserver2008
+
+    .EXAMPLE
+        PS C:\> Get-DbaLogin -SqlInstance sqlserver2008 | Where-Object { $_.IsDisabled -eq $false } | Export-DbaLogin
+
+        Exports all enabled logins from sqlserver2008
+
     #>
     [CmdletBinding(SupportsShouldProcess)]
     param (
-        [parameter(ParameterSetName = 'NoPipe', Mandatory)]
+        [parameter()]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter]$SqlInstance,
         [Alias("Credential")]
@@ -119,7 +137,7 @@ function Export-DbaLogin {
         [switch]$ExcludeGoBatchSeparator,
         [ValidateSet('SQLServer2000', 'SQLServer2005', 'SQLServer2008/2008R2', 'SQLServer2012', 'SQLServer2014', 'SQLServer2016', 'SQLServer2017')]
         [string]$DestinationVersion,
-        [Parameter(ParameterSetName = 'Pipe', Mandatory, ValueFromPipeline)]
+        [Parameter(ValueFromPipeline)]
         [object[]]$InputObject
     )
 
@@ -143,7 +161,12 @@ function Export-DbaLogin {
             return
         }
 
-        if ($PSCmdlet.ParameterSetName -eq 'NoPipe') {
+        if (-not $InputObject -and -not $SqlInstance) {
+            Stop-Function -Message "You must pipe in a login, database, or server or specify a SqlInstance"
+            return
+        }
+
+        if ($SqlInstance) {
             $InputObject = $SqlInstance
         }
 
@@ -183,7 +206,7 @@ function Export-DbaLogin {
                 $DbMapping = @()
                 $DbsToMap = $server.Databases
                 if ($Database) {
-                    if ($PSCmdlet.ParameterSetName -eq 'Pipe') {
+                    if ($Database[0].GetType().FullName -eq 'Microsoft.SqlServer.Management.Smo.Database') {
                         $DbsToMap = $DbsToMap | Where-Object Name -in $Database.Name
                     } else {
                         $DbsToMap = $DbsToMap | Where-Object Name -in $Database
@@ -204,57 +227,14 @@ function Export-DbaLogin {
                 }
             }
 
-<<<<<<< Updated upstream
-        $sourceLogins = $server.Logins
-        if ($Login) {
-            Write-Message -Level Verbose -Message "Including specific logins"
-
-            if ($Login -is [array]) {
-                if ($Login[0].GetType().Name -eq 'Login') {
-                    $Login = $Login.Name
-                }
-            } else {
-                if ($Login.GetType().Name -eq 'Login') {
-                    $Login = $Login.Name
-                }
-            }
-
-            $sourceLogins = $sourceLogins | Where-Object { $_.Name -in $Login }
-        }
-
-        if ($ExcludeLogin) {
-            Write-Message -Level Verbose -Message "Excluding logins"
-
-            if ($ExcludeLogin -is [array]) {
-                if ($ExcludeLogin[0].GetType().Name -eq 'Login') {
-                    $ExcludeLogin = $ExcludeLogin.Name
-                }
-            } else {
-                if ($ExcludeLogin.GetType().Name -eq 'Login') {
-                    $ExcludeLogin = $ExcludeLogin.Name
-                }
-            }
-
-            $sourceLogins = $sourceLogins | Where-Object { $_.Name -notin $ExcludeLogin }
-        }
-
-        foreach ($sourceLogin in $sourceLogins) {
-            $userName = $sourceLogin.Name
-            Write-Message -Level Verbose -Message "Processing login $userName"
-
-            if ($userName.StartsWith("##") -or $userName -eq 'sa') {
-                Write-Message -Level Warning -Message "Skipping $userName"
-                continue
-=======
             $serverLogins = $server.Logins
 
             if ($Login) {
-                if ($PSCmdlet.ParameterSetName -eq 'Pipe') {
+                if ($Login[0].GetType().FullName -eq 'Microsoft.SqlServer.Management.Smo.Login') {
                     $serverLogins = $serverLogins | Where-Object { $_ -in $Login }
                 } else {
                     $serverLogins = $serverLogins | Where-Object { $_.Name -in $Login }
                 }
->>>>>>> Stashed changes
             }
 
             foreach ($sourceLogin in $serverLogins) {
@@ -422,7 +402,7 @@ function Export-DbaLogin {
                     $dbs = $sourceLogin.EnumDatabaseMappings()
 
                     if ($Database) {
-                        if ($PSCmdlet.ParameterSetName -eq 'Pipe') {
+                        if ($Database[0].GetType().FullName -eq 'Microsoft.SqlServer.Management.Smo.Database') {
                             $dbs = $dbs | Where-Object { $_.DBName -in $Database.Name }
                         } else {
                             $dbs = $dbs | Where-Object { $_.DBName -in $Database }
