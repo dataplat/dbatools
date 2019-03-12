@@ -278,10 +278,7 @@ function Invoke-DbaQuery {
             }
             $server = $db.Parent
             $conncontext = $server.ConnectionContext
-            if ($conncontext.DatabaseName -ne $db.Name) {
-                $conncontext = $server.ConnectionContext.Copy()
-                $conncontext.DatabaseName = $db.Name
-            }
+
             try {
                 if ($File -or $SqlObject) {
                     foreach ($item in $files) {
@@ -298,7 +295,7 @@ function Invoke-DbaQuery {
         foreach ($instance in $SqlInstance) {
             try {
                 $connDbaInstanceParams = @{
-                    SqlInstance   = $instance
+                    SqlInstance   = $instance.InputObject
                     SqlCredential = $SqlCredential
                     Database      = $Database
                 }
@@ -306,15 +303,14 @@ function Invoke-DbaQuery {
                     $connDbaInstanceParams.ApplicationIntent = "ReadOnly"
                 }
                 $server = Connect-DbaInstance @connDbaInstanceParams
+                return $server.ConnectionContext.ExecuteScalar("select db_name()")
             } catch {
                 Stop-Function -Message "Failure" -ErrorRecord $_ -Target $instance -Continue
             }
             $conncontext = $server.ConnectionContext
+            $currentdb = "$($conncontext.ConnectionString -split ';' | Where-Object { $_ -match 'Initial Catalog' })".Replace('Initial Catalog=', "")
+
             try {
-                if ($Database -and $conncontext.DatabaseName -ne $Database) {
-                    $conncontext = $server.ConnectionContext.Copy()
-                    $conncontext.DatabaseName = $Database
-                }
                 if ($File -or $SqlObject) {
                     foreach ($item in $files) {
                         if ($null -eq $item) {continue}
@@ -326,7 +322,7 @@ function Invoke-DbaQuery {
                     Invoke-DbaAsync -SQLConnection $conncontext @splatInvokeDbaSqlAsync
                 }
             } catch {
-                Stop-Function -Message "[$instance] Failed during execution" -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "[$($instance.InputObject)] Failed during execution" -ErrorRecord $_ -Target $instance -Continue
             }
         }
     }
