@@ -84,7 +84,7 @@ function Invoke-DbaDbDataGenerator {
         Apply the data generation configuration from the file "sqldb1.db1.tables.json" to the db1 database on sqldb2. Do not prompt for confirmation.
 
     .EXAMPLE
-        New-DbaDbMDataGeneratorConfig -SqlInstance SQLDB1 -Database DB1 -Path C:\Temp\clone -OutVariable file
+        New-DbaDbDataGeneratorConfig -SqlInstance SQLDB1 -Database DB1 -Path C:\Temp\clone -OutVariable file
         $file | Invoke-DbaDbDataGenerator -SqlInstance SQLDB2 -Database DB1 -Confirm:$false
 
         Create the data generation configuration file "sqldb1.db1.tables.json", then use it to mask the db1 database on sqldb2. Do not prompt for confirmation.
