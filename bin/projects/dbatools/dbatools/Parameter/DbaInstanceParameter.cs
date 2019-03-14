@@ -544,23 +544,25 @@ namespace Sqlcollaborative.Dbatools.Parameter
             switch (typeName)
             {
                 case "microsoft.sqlserver.management.smo.server":
-                    // the extra checks break azure by enumerating, causing a new
-                    // connection and sometimes altering the connection string
-                    // so let's try to avoid that
-                    try
-                    {
-                        if (tempInput.Properties["ComputerName"] != null)
-                                _ComputerName = (string)tempInput.Properties["ComputerName"].Value;
+                // the extra checks break azure by enumerating, causing a new
+                // connection and sometimes altering the connection string
+                // so let's try to avoid that
+                try
+                {
+                    if (tempInput.Properties["ComputerName"] != null)
+                            _ComputerName = (string)tempInput.Properties["ComputerName"].Value;
 
-                        //if (tempInput.Properties["NetPort"] != null)
-                        //        _Port = (Int32)tempInput.Properties["NetPort"].Value;
+                    //if (tempInput.Properties["NetPort"] != null)
+                    //        _Port = (Int32)tempInput.Properties["NetPort"].Value;
 
-                    }
-                    catch (Exception e)
-                    {
-                        throw new PSArgumentException("Failed to interpret input as Instance: " + Input + " : " + e.Message, e);
-                    }
-                    break;
+                }
+                catch (Exception e)
+                {
+                    throw new PSArgumentException("Failed to interpret input as Instance: " + Input + " : " + e.Message, e);
+                }
+                if (String.IsNullOrEmpty(_ComputerName))
+                    throw new PSArgumentException("Failed to interpret input as Instance: " + Input);
+                break;
                 case "microsoft.sqlserver.management.smo.linkedserver":
                     try
                     {
