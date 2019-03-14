@@ -552,8 +552,8 @@ namespace Sqlcollaborative.Dbatools.Parameter
                         if (tempInput.Properties["ComputerName"] != null)
                                 _ComputerName = (string)tempInput.Properties["ComputerName"].Value;
 
-                        //if (tempInput.Properties["NetPort"] != null)
-                        //        _Port = (Int32)tempInput.Properties["NetPort"].Value;
+                        if (tempInput.Properties["NetPort"] != null)
+                                _Port = (Int32)tempInput.Properties["NetPort"].Value;
 
                     }
                     catch (Exception e)
