@@ -32,6 +32,12 @@ function Get-DbaRandomizedValue {
     .PARAMETER CharacterString
         The characters to use in string data. 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789' by default
 
+    .PARAMETER Format
+        Use specilized formatting with certain randomizer types like phone number.
+
+    .PARAMETER Symbol
+        Use a symbol in front of the value i.e. $100,12
+
     .PARAMETER Locale
         Set the local to enable certain settings in the masking. The default is 'en'
 
@@ -71,13 +77,19 @@ function Get-DbaRandomizedValue {
         Will generate a number between -2147483648 and 2147483647
 
     .EXAMPLE
-        Get-DbaRandomizedValue
+        Get-DbaRandomizedValue -RandomizerSubType Zipcode
+
+        Generates a random zipcode
 
     .EXAMPLE
-        Get-DbaRandomizedValue
+        Get-DbaRandomizedValue -RandomizerSubType Zipcode -Format "#### ##"
+
+        Generates a random zipcode like "1234 56"
 
     .EXAMPLE
-        Get-DbaRandomizedValue
+        Get-DbaRandomizedValue -RandomizerSubType PhoneNumber -Format "(###) #######"
+
+        Generates a random phonenumber like "(123) 4567890"
 
     #>
     [CmdLetBinding()]
@@ -89,6 +101,8 @@ function Get-DbaRandomizedValue {
         [int64]$Max = 255,
         [int]$Precision = 2,
         [string]$CharacterString = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789',
+        [string]$Format,
+        [string]$Symbol,
         [string]$Locale = 'en',
         [switch]$DisplayLegend,
         [switch]$EnableException
@@ -97,7 +111,7 @@ function Get-DbaRandomizedValue {
 
     begin {
         # Get all the random possibilities
-        $randomizerTypes = Import-Csv (Resolve-Path -Path "$script:PSModuleRoot\bin\randomizer\en.bogustypes.csv") | Group-Object {$_.Type}
+        $randomizerTypes = Import-Csv (Resolve-Path -Path "$script:PSModuleRoot\bin\randomizer\en.randomizertypes.csv") | Group-Object {$_.Type}
 
         if ($DisplayLegend) {
             $randomizerTypes.Group
@@ -109,13 +123,11 @@ function Get-DbaRandomizedValue {
         Add-Type -Path (Resolve-Path -Path "$script:PSModuleRoot\bin\randomizer\Bogus.dll")
         $faker = New-Object Bogus.Faker($Locale)
 
-
-
         $supportedDataTypes = 'bigint', 'bit', 'bool', 'char', 'date', 'datetime', 'datetime2', 'decimal', 'int', 'float', 'guid', 'money', 'numeric', 'nchar', 'ntext', 'nvarchar', 'real', 'smalldatetime', 'smallint', 'text', 'time', 'tinyint', 'uniqueidentifier', 'userdefineddatatype', 'varchar'
 
         # Check the variables
         if (-not $DataType -and -not $RandomizerType -and -not $RandomizerSubType) {
-            Stop-Function -Message "Please use one of the variables" -Continue
+            Stop-Function -Message "Please use one of the variables i.e. -DataType, -RandomizerType or -RandomizerSubType" -Continue
         } elseif ($DataType -and ($RandomizerType -or $RandomizerSubType)) {
             Stop-Function -Message "You cannot use -DataType with -RandomizerType or -RandomizerSubType" -Continue
         } elseif (-not $RandomizerSubType -and $RandomizerType) {
@@ -131,20 +143,20 @@ function Get-DbaRandomizedValue {
         # Check the bogus type
         if ($RandomizerType) {
             if ($RandomizerType -notin ($randomizerTypes.Group.Type | Select-Object -Unique)) {
-                Stop-Function -Message "Invalid bogus type" -Continue -Target $RandomizerType
+                Stop-Function -Message "Invalid randomizer type" -Continue -Target $RandomizerType
             }
         }
 
         # Check the sub type
         if ($RandomizerSubType) {
-            if ($RandomizerSubType -notin ($randomizerTypes.Group.RandomizerSubType | Select-Object -Unique)) {
-                Stop-Function -Message "Invalid sub type" -Continue -Target $RandomizerSubType
+            if ($RandomizerSubType -notin ($randomizerTypes.Group.SubType | Select-Object -Unique)) {
+                Stop-Function -Message "Invalid randomizer sub type" -Continue -Target $RandomizerSubType
             }
 
-            $bogusRandomizerSubTypes = $randomizerTypes.Group | Where-Object Type -eq 'Name' | Select-Object RandomizerSubType -ExpandProperty RandomizerSubType
+            $randomizerSubTypes = $randomizerTypes.Group | Where-Object Type -eq $RandomizerType | Select-Object SubType -ExpandProperty SubType
 
-            if ($RandomizerSubType -notin $bogusRandomizerSubTypes) {
-                Stop-Function -Message "Invalid bogus type with sub type combination" -Continue -Target $RandomizerSubType
+            if ($RandomizerSubType -notin $randomizerSubTypes) {
+                Stop-Function -Message "Invalid randomizer type with sub type combination" -Continue -Target $RandomizerSubType
             }
         }
 
@@ -254,13 +266,155 @@ function Get-DbaRandomizedValue {
 
         } else {
 
+            $randSubType = $randSubType
+
+            switch ($RandomizerType.ToLower()) {
+                'address' {
+
+                    if ($randSubType -in 'latitude', 'longitude') {
+                        $faker.Address.Latitude($Min, $Max)
+                    } elseif ($randSubType -eq 'zipcode') {
+                        if ($Format) {
+                            $faker.Address.ZipCode("$($Format)")
+                        } else {
+                            $faker.Address.ZipCode()
+                        }
+                    } else {
+                        $faker.Address.$RandomizerSubType
+                    }
+
+                }
+                'commerce' {
+                    if ($randSubType -eq 'categories') {
+                        $faker.Commerce.Categories($Max)
+                    } elseif ($randSubType -eq 'departments') {
+                        $faker.Commerce.Department($Max)
+                    } elseif ($randSubType -eq 'price') {
+                        $faker.Commerce.Price($min, $Max, $Precision, $Symbol)
+                    } else {
+                        $faker.Commerce.$RandomizerSubType()
+                    }
+
+                }
+                'company' {
+                    $faker.Company.$RandomizerSubType()
+                }
+                'database' {
+                    $faker.Database.$RandomizerSubType()
+                }
+                'date' {
+                    if ($randSubType -eq 'past') {
+                        $faker.Date.Past().ToString("yyyy-MM-dd HH:mm:ss.fffffff")
+                    } elseif ($randSubType -eq 'future') {
+                        $faker.Future.Past().ToString("yyyy-MM-dd HH:mm:ss.fffffff")
+                    } elseif ($randSubType -eq 'recent') {
+                        $faker.Recent.Past().ToString("yyyy-MM-dd HH:mm:ss.fffffff")
+                    } else {
+                        $faker.Date.$RandomizerSubType()
+                    }
 
 
+                }
+                'finance' {
+                    if ($randSubType -eq 'account') {
+                        $faker.Finance.Account($Max)
+                    } elseif ($randSubType -eq 'amount') {
+                        $faker.Finance.Amount($Min, $Max, $Precision)
+                    } else {
+                        $faker.Finance.$RandomizerSubType()
+                    }
+                }
+                'hacker' {
+                    $faker.Hacker.$RandomizerSubType()
+                }
+                'image' {
+                    $faker.Image.$RandomizerSubType()
+                }
+                'internet' {
+                    if ($randSubType -eq 'password') {
+                        $faker.Internet.Password($Max)
+                    } else {
+                        $faker.Internet.$RandomizerSubType()
+                    }
+                }
+                'lorem' {
+                    if ($randSubType -eq 'paragraph') {
+                        if ($Min -lt 1) {
+                            $Min = 1
+                            Write-Message -Level Verbose -Message "Min value for sub type is too small. Reset to $Min"
+                        }
+
+                        $faker.Lorem.Paragraph($Min)
+
+                    } elseif ($randSubType -eq 'paragraphs') {
+                        if ($Min -lt 1) {
+                            $Min = 1
+                            Write-Message -Level Verbose -Message "Min value for sub type is too small. Reset to $Min"
+                        }
+
+                        $faker.Lorem.Paragraphs($Min)
+
+                    } elseif ($randSubType -eq 'letter') {
+                        $faker.Lorem.Letter($Max)
+                    } elseif ($randSubType -eq 'lines') {
+                        $faker.Lorem.Lines($Max)
+                    } elseif ($randSubType -eq 'sentence') {
+                        if ($Min -lt 1) {
+                            $Min = 1
+                            Write-Message -Level Verbose -Message "Min value for sub type is too small. Reset to $Min"
+                        }
+
+                        $faker.Lorem.Sentence($Min, $Max)
+
+                    } elseif ($randSubType -eq 'sentences') {
+                        if ($Min -lt 1) {
+                            $Min = 1
+                            Write-Message -Level Verbose -Message "Min value for sub type is too small. Reset to $Min"
+                        }
+
+                        $faker.Lorem.Sentences($Min, $Max)
+
+                    } elseif ($randSubType -eq 'slug') {
+                        $faker.Lorem.Slug($Max)
+                    } elseif ($randSubType -eq 'words') {
+                        $faker.Lorem.Words($Max)
+                    } else {
+                        $faker.Lorem.$RandomizerSubType()
+                    }
+                }
+                'name' {
+                    $faker.Name.$RandomizerSubType()
+                }
+                'person' {
+                    $faker.Person.$RandomizerSubType()
+                }
+                'phone' {
+                    if ($Format) {
+                        $faker.Phone.PhoneNumber($Format)
+                    } else {
+                        $faker.Phone.PhoneNumber()
+                    }
+                }
+                'random' {
+                    if ($randSubType -in 'byte', 'char', 'decimal', 'double', 'even', 'float', 'int', 'long', 'number', 'odd', 'sbyte', 'short', 'uint', 'ulong', 'ushort') {
+                        $faker.Random.$RandomizerSubType($Min, $Max)
+                    } elseif ($randSubType -eq 'string2') {
+                        $faker.Random.$RandomizerSubType($Min, $Max, $CharacterString)
+                    } else {
+                        $faker.Random.$RandomizerSubType()
+                    }
+                }
+                'rant' {
+                    if ($randSubType -eq 'reviews') {
+                        $faker.Rant.Review($faker.Commerce.Product())
+                    } elseif ($randSubType -eq 'reviews') {
+                        $faker.Rant.Reviews($faker.Commerce.Product(), $Max)
+                    }
+                }
+                'system' {
+                    $faker.System.$RandomizerSubType()
+                }
+            }
         }
-
     }
-
-
-
-
 }
