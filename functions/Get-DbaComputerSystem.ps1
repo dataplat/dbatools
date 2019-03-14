@@ -16,6 +16,9 @@ function Get-DbaComputerSystem {
     .PARAMETER IncludeAws
         If computer is hosted in AWS Infrastructure as a Service (IaaS), additional information will be included.
 
+    .PARAMETER TimeoutSec
+        Default: 5 sec
+        Timeout in seconds for AWS related metaquery.
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -55,6 +58,7 @@ function Get-DbaComputerSystem {
         [DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,
         [PSCredential]$Credential,
         [switch]$IncludeAws,
+        [int]$TimeoutSec = 5,
         [switch][Alias('Silent')]
         $EnableException
     )
@@ -71,8 +75,10 @@ function Get-DbaComputerSystem {
 
                 if (Test-Bound "Credential") {
                     $computerSystem = Get-DbaCmObject -ClassName Win32_ComputerSystem -ComputerName $computerResolved -Credential $Credential
+                    $computerProcessor = Get-DbaCmObject -ClassName Win32_Processor -ComputerName $computerResolved -Credential $Credential
                 } else {
                     $computerSystem = Get-DbaCmObject -ClassName Win32_ComputerSystem -ComputerName $computerResolved
+                    $computerProcessor = Get-DbaCmObject -ClassName Win32_Processor -ComputerName $computerResolved
                 }
 
                 $adminPasswordStatus =
@@ -100,22 +106,25 @@ function Get-DbaComputerSystem {
                 }
 
                 if ($IncludeAws) {
-                    $isAws = Invoke-Command2 -ComputerName $computerResolved -Credential $Credential -ScriptBlock { ((Invoke-TlsWebRequest -TimeoutSec 15 -Uri 'http://169.254.169.254').StatusCode) -eq 200 } -Raw
+                    try {
+                        $isAws = Invoke-Command2 -ComputerName $computerResolved -Credential $Credential -ScriptBlock { ((Invoke-TlsRestMethod -TimeoutSec $TimeoutSec -Uri 'http://169.254.169.254').StatusCode) -eq 200 } -Raw
+                    } catch [System.Net.WebException] {
+                        $isAws = $false
+                        Write-Message -Level Warning -Message "$computerResolved was not found to be an EC2 instance. Verify http://169.254.169.254 is accessible on the computer."
+                    }
 
                     if ($isAws) {
                         $scriptBlock = {
                             [PSCustomObject]@{
-                                AmiId            = (Invoke-TlsWebRequest -Uri 'http://169.254.169.254/latest/meta-data/ami-id').Content
-                                IamRoleArn       = ((Invoke-TlsWebRequest -Uri 'http://169.254.169.254/latest/meta-data/iam/info').Content | ConvertFrom-Json).InstanceProfileArn
-                                InstanceId       = (Invoke-TlsWebRequest -Uri 'http://169.254.169.254/latest/meta-data/instance-id').Content
-                                InstanceType     = (Invoke-TlsWebRequest -Uri 'http://169.254.169.254/latest/meta-data/instance-type').Content
-                                AvailabilityZone = (Invoke-TlsWebRequest -Uri 'http://169.254.169.254/latest/meta-data/placement/availability-zone').Content
-                                PublicHostname   = (Invoke-TlsWebRequest -Uri 'http://169.254.169.254/latest/meta-data/public-hostname').Content
+                                AmiId            = (Invoke-TlsRestMethod -Uri 'http://169.254.169.254/latest/meta-data/ami-id')
+                                IamRoleArn       = ((Invoke-TlsRestMethod -Uri 'http://169.254.169.254/latest/meta-data/iam/info').InstanceProfileArn)
+                                InstanceId       = (Invoke-TlsRestMethod -Uri 'http://169.254.169.254/latest/meta-data/instance-id')
+                                InstanceType     = (Invoke-TlsRestMethod -Uri 'http://169.254.169.254/latest/meta-data/instance-type')
+                                AvailabilityZone = (Invoke-TlsRestMethod -Uri 'http://169.254.169.254/latest/meta-data/placement/availability-zone')
+                                PublicHostname   = (Invoke-TlsRestMethod -Uri 'http://169.254.169.254/latest/meta-data/public-hostname')
                             }
                         }
                         $awsProps = Invoke-Command2 -ComputerName $computerResolved -Credential $Credential -ScriptBlock $scriptBlock
-                    } else {
-                        Write-Message -Level Warning -Message "$computerResolved was not found to be an EC2 instance. Verify http://169.254.169.254 is accessible on the computer."
                     }
                 }
                 $inputObject = [PSCustomObject]@{
@@ -127,6 +136,9 @@ function Get-DbaComputerSystem {
                     SystemFamily            = $computerSystem.SystemFamily
                     SystemSkuNumber         = $computerSystem.SystemSKUNumber
                     SystemType              = $computerSystem.SystemType
+                    ProcessorName           = $computerProcessor.Name
+                    ProcessorCaption        = $computerProcessor.Caption
+                    ProcessorMaxClockSpeed  = $computerProcessor.MaxClockSpeed
                     NumberLogicalProcessors = $computerSystem.NumberOfLogicalProcessors
                     NumberProcessors        = $computerSystem.NumberOfProcessors
                     IsHyperThreading        = $isHyperThreading
