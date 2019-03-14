@@ -553,7 +553,7 @@ namespace Sqlcollaborative.Dbatools.Parameter
                                 _ComputerName = (string)tempInput.Properties["ComputerName"].Value;
 
                         if (tempInput.Properties["NetPort"] != null)
-                                _Port = (int)tempInput.Properties["NetPort"].Value;
+                                _Port = (Int32)tempInput.Properties["NetPort"].Value;
 
                     }
                     catch (Exception e)
