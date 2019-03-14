@@ -546,28 +546,38 @@ namespace Sqlcollaborative.Dbatools.Parameter
                 case "microsoft.sqlserver.management.smo.server":
                     // the extra checks break azure by enumerating, causing a new
                     // connection and sometimes altering the connection string
-                    // so let's just accept computername
+                    // so let's try to avoid that
                     try
                     {
-                        _ComputerName = (string)tempInput.Properties["ComputerName"].Value;
+                        if (tempInput.Properties["ServerType"] != null && (string)tempInput.Properties["ServerType"].Value.ToString() == "SqlAzureDatabase")
+                            _ComputerName = (new DbaInstanceParameter((string)tempInput.Properties["Name"].Value)).ComputerName;
+                        else
+                        {
+                            if (tempInput.Properties["NetName"] != null)
+                                _ComputerName = (string)tempInput.Properties["NetName"].Value;
+                            else
+                                _ComputerName = (new DbaInstanceParameter((string)tempInput.Properties["DomainInstanceName"].Value)).ComputerName;
+                        }
+                        _InstanceName = (string)tempInput.Properties["InstanceName"].Value;
+                        PSObject tempObject = new PSObject(tempInput.Properties["ConnectionContext"].Value);
 
+                        string tempConnectionString = (string)tempObject.Properties["ConnectionString"].Value;
+                        tempConnectionString = tempConnectionString.Split(';')[0].Split('=')[1].Trim().Replace(" ", "");
+
+                        if (Regex.IsMatch(tempConnectionString, @",\d{1,5}$") && (tempConnectionString.Split(',').Length == 2))
+                        {
+                            try { Int32.TryParse(tempConnectionString.Split(',')[1], out _Port); }
+                            catch (Exception e)
+                            {
+                                throw new PSArgumentException("Failed to parse port number on connection string: " + tempConnectionString, e);
+                            }
+                            if (_Port > 65535) { throw new PSArgumentException("Failed to parse port number on connection string: " + tempConnectionString); }
+                        }
                     }
                     catch (Exception e)
                     {
-                        throw new PSArgumentException("Failed to interpret input as Instance: " + Input, e);
+                        throw new PSArgumentException("Failed to interpret input as Instance: " + Input + " : " + e.Message, e);
                     }
-
-                    string tempName = (string)tempInput.Properties["Name"].Value;
-                    if (tempName.Split(',').Length == 2)
-                    {
-                        try { Int32.TryParse(tempName.Split(',')[1], out _Port); }
-                        catch (Exception e)
-                        {
-                            throw new PSArgumentException("Failed to parse port number", e);
-                        }
-                        if (_Port > 65535) { throw new PSArgumentException("Failed to parse port number"); }
-                    }
-
                     break;
                 case "microsoft.sqlserver.management.smo.linkedserver":
                     try
