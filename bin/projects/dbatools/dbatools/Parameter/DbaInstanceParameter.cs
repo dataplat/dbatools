@@ -550,11 +550,24 @@ namespace Sqlcollaborative.Dbatools.Parameter
                     try
                     {
                         _ComputerName = (string)tempInput.Properties["ComputerName"].Value;
+
                     }
                     catch (Exception e)
                     {
                         throw new PSArgumentException("Failed to interpret input as Instance: " + Input, e);
                     }
+
+                    string tempName = (string)tempInput.Properties["Name"].Value;
+                    if (tempName.Split(',').Length == 2)
+                    {
+                        try { Int32.TryParse(tempName.Split(',')[1], out _Port); }
+                        catch (Exception e)
+                        {
+                            throw new PSArgumentException("Failed to parse port number", e);
+                        }
+                        if (_Port > 65535) { throw new PSArgumentException("Failed to parse port number"); }
+                    }
+
                     break;
                 case "microsoft.sqlserver.management.smo.linkedserver":
                     try
