@@ -390,8 +390,6 @@ function Connect-DbaInstance {
                             $parsedcomputername = $server.NetName
                         }
                         Add-Member -InputObject $server -NotePropertyName ComputerName -NotePropertyValue $parsedcomputername -Force
-                        Add-Member -InputObject $server -NotePropertyName NetPort -NotePropertyValue $instance.Port -Force -Passthru
-
                     }
                     if ($MinimumVersion -and $server.VersionMajor) {
                         if ($server.versionMajor -lt $MinimumVersion) {
@@ -619,7 +617,6 @@ function Connect-DbaInstance {
                         $parsedcomputername = $server.NetName
                     }
                     Add-Member -InputObject $server -NotePropertyName ComputerName -NotePropertyValue $parsedcomputername -Force
-                    Add-Member -InputObject $server -NotePropertyName NetPort -NotePropertyValue $instance.Port -Force -Passthru
                 }
             }
 
