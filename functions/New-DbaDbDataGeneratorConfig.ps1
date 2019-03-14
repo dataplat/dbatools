@@ -133,12 +133,6 @@ function New-DbaDbDataGeneratorConfig {
             foreach ($tableobject in $tablecollection) {
                 Write-Message -Message "Processing table $($tableobject.Name)" -Level Verbose
 
-                $hasUniqueIndex = $false
-
-                if ($tableobject.Indexes.IsUnique) {
-                    $hasUniqueIndex = $true
-                }
-
                 $columns = @()
 
                 # Get the columns
@@ -358,13 +352,12 @@ function New-DbaDbDataGeneratorConfig {
                 # Check if something needs to be generated
                 if ($columns) {
                     $tables += [PSCustomObject]@{
-                        Name           = $tableobject.Name
-                        Schema         = $tableobject.Schema
-                        Columns        = $columns
-                        ResetIdentity  = [bool]$ResetIdentity
-                        TruncateTable  = [bool]$TruncateTable
-                        HasUniqueIndex = [bool]$hasUniqueIndex
-                        Rows           = [int]$Rows
+                        Name          = $tableobject.Name
+                        Schema        = $tableobject.Schema
+                        Columns       = $columns
+                        ResetIdentity = [bool]$ResetIdentity
+                        TruncateTable = [bool]$TruncateTable
+                        Rows          = $Rows
                     }
                 } else {
                     Write-Message -Message "No columns match for data generation in table $($tableobject.Name)" -Level Verbose
