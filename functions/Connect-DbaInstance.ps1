@@ -332,7 +332,8 @@ function Connect-DbaInstance {
                     $null = $serverconn.Connect()
                     $server = New-Object Microsoft.SqlServer.Management.Smo.Server $serverconn
                     # Make ComputerName easily available in the server object
-                    Add-Member -InputObject $server -NotePropertyName ComputerName -NotePropertyValue $instance.ComputerName -Force -Passthru
+                    Add-Member -InputObject $server -NotePropertyName ComputerName -NotePropertyValue $instance.ComputerName -Force
+                    Add-Member -InputObject $server -NotePropertyName NetPort -NotePropertyValue $instance.Port -Force -Passthru
                     continue
                 } catch {
                     Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
@@ -401,7 +402,8 @@ function Connect-DbaInstance {
                         } else {
                             $parsedcomputername = $server.NetName
                         }
-                        Add-Member -InputObject $server -NotePropertyName ComputerName -NotePropertyValue $parsedcomputername -Force
+                        Add-Member -InputObject $server -NotePropertyName ComputerName -NotePropertyValue $instance.ComputerName -Force
+                        Add-Member -InputObject $server -NotePropertyName NetPort -NotePropertyValue $instance.Port -Force
                     }
                     if ($MinimumVersion -and $server.VersionMajor) {
                         if ($server.versionMajor -lt $MinimumVersion) {
@@ -628,7 +630,8 @@ function Connect-DbaInstance {
                     } else {
                         $parsedcomputername = $server.NetName
                     }
-                    Add-Member -InputObject $server -NotePropertyName ComputerName -NotePropertyValue $parsedcomputername -Force
+                    Add-Member -InputObject $server -NotePropertyName ComputerName -NotePropertyValue $instance.ComputerName -Force
+                    Add-Member -InputObject $server -NotePropertyName NetPort -NotePropertyValue $instance.Port -Force
                 }
             }
 

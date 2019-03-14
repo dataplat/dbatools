@@ -549,30 +549,12 @@ namespace Sqlcollaborative.Dbatools.Parameter
                     // so let's try to avoid that
                     try
                     {
-                        if (tempInput.Properties["ServerType"] != null && (string)tempInput.Properties["ServerType"].Value.ToString() == "SqlAzureDatabase")
-                            _ComputerName = (new DbaInstanceParameter((string)tempInput.Properties["Name"].Value)).ComputerName;
-                        else
-                        {
-                            if (tempInput.Properties["NetName"] != null)
-                                _ComputerName = (string)tempInput.Properties["NetName"].Value;
-                            else
-                                _ComputerName = (new DbaInstanceParameter((string)tempInput.Properties["DomainInstanceName"].Value)).ComputerName;
-                        }
-                        _InstanceName = (string)tempInput.Properties["InstanceName"].Value;
-                        PSObject tempObject = new PSObject(tempInput.Properties["ConnectionContext"].Value);
+                        if (tempInput.Properties["ComputerName"] != null)
+                                _ComputerName = (string)tempInput.Properties["ComputerName"].Value;
 
-                        string tempConnectionString = (string)tempObject.Properties["ConnectionString"].Value;
-                        tempConnectionString = tempConnectionString.Split(';')[0].Split('=')[1].Trim().Replace(" ", "");
+                        if (tempInput.Properties["NetPort"] != null)
+                                _Port = (Int32)tempInput.Properties["NetPort"].Value;
 
-                        if (Regex.IsMatch(tempConnectionString, @",\d{1,5}$") && (tempConnectionString.Split(',').Length == 2))
-                        {
-                            try { Int32.TryParse(tempConnectionString.Split(',')[1], out _Port); }
-                            catch (Exception e)
-                            {
-                                throw new PSArgumentException("Failed to parse port number on connection string: " + tempConnectionString, e);
-                            }
-                            if (_Port > 65535) { throw new PSArgumentException("Failed to parse port number on connection string: " + tempConnectionString); }
-                        }
                     }
                     catch (Exception e)
                     {

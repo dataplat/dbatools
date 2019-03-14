@@ -4042,4 +4042,914 @@
         </member>
         <member name="F:Sqlcollaborative.Dbatools.Parameter.ParameterContractBehavior.Arbiter">
             <summary>
-            The content of the thus marked fiel
+            The content of the thus marked field determines the dependent's state. Generally, only if the arbiter is true, will the dependent elements be mandatory. This behavior may only be assigned to boolean fields.
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Parameter.ParameterContractBehavior.Conditional">
+            <summary>
+            This behavior can be assigned together with the 'Mandatory' behavior. It means the field is only mandatory if an arbiter field is present and set to true.
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Parameter.ParameterContractBehavior.Conversion">
+            <summary>
+            Converts content. Generally applied only to operators, but some methods may also convert information.
+            </summary>
+        </member>
+        <member name="T:Sqlcollaborative.Dbatools.Parameter.ParameterContractType">
+            <summary>
+            Defines what kind of element is granted the contract
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Parameter.ParameterContractType.Field">
+            <summary>
+            The contracted element is a field containing a value
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Parameter.ParameterContractType.Method">
+            <summary>
+            The contracted element is a method, performing an action
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Parameter.ParameterContractType.Operator">
+            <summary>
+            The contracted element is an operator, facilitating type conversion. Generally into a dedicated object type this parameterclass abstracts.
+            </summary>
+        </member>
+        <member name="T:Sqlcollaborative.Dbatools.Runspace.DbaRunspaceState">
+            <summary>
+            Contains the state a managed, unique runspace can be in.
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Runspace.DbaRunspaceState.Running">
+            <summary>
+            The runspace is up and running
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Runspace.DbaRunspaceState.Stopping">
+            <summary>
+            The runspace has received the stop order, but has not yet obeyed it
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Runspace.DbaRunspaceState.Stopped">
+            <summary>
+            The runspace has followed its order to stop and is currently disabled
+            </summary>
+        </member>
+        <member name="T:Sqlcollaborative.Dbatools.Runspace.RunspaceContainer">
+            <summary>
+            Class that contains the logic necessary to manage a unique runspace
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Runspace.RunspaceContainer.Name">
+            <summary>
+            The name of the runspace.
+            </summary>
+        </member>
+        <member name="P:Sqlcollaborative.Dbatools.Runspace.RunspaceContainer.RunspaceGuid">
+            <summary>
+            The Guid of the running Runspace
+            </summary>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Runspace.RunspaceContainer.SetScript(System.Management.Automation.ScriptBlock)">
+            <summary>
+            Sets the script to execute in the runspace. Will NOT take immediate effect. Only after restarting the runspace will it be used.
+            </summary>
+            <param name="Script">The scriptblock to execute</param>
+        </member>
+        <member name="P:Sqlcollaborative.Dbatools.Runspace.RunspaceContainer.State">
+            <summary>
+            The state the runspace currently is in.
+            </summary>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Runspace.RunspaceContainer.Start">
+            <summary>
+            Starts the Runspace.
+            </summary>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Runspace.RunspaceContainer.SetName(System.Management.Automation.Runspaces.Runspace)">
+            <summary>
+            Sets the name on a runspace. This WILL FAIL for PowerShell v3!
+            </summary>
+            <param name="Runspace">The runspace to be named</param>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Runspace.RunspaceContainer.Stop">
+            <summary>
+            Gracefully stops the Runspace
+            </summary>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Runspace.RunspaceContainer.Kill">
+            <summary>
+            Very ungracefully kills the runspace. Use only in the most dire emergency.
+            </summary>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Runspace.RunspaceContainer.SignalStopped">
+            <summary>
+            Signals the registered runspace has stopped execution
+            </summary>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Runspace.RunspaceContainer.#ctor(System.String,System.Management.Automation.ScriptBlock)">
+            <summary>
+            Creates a new runspace container with the basic information needed
+            </summary>
+            <param name="Name">The name of the Runspace</param>
+            <param name="Script">The code using the runspace logic</param>
+        </member>
+        <member name="T:Sqlcollaborative.Dbatools.Runspace.RunspaceHost">
+            <summary>
+            Provides hosting for all registered runspaces
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Runspace.RunspaceHost.StopTimeoutSeconds">
+            <summary>
+            The number of seconds before a Stop command is interrupted and instead the runspace is gracelessly shut down.
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Runspace.RunspaceHost.Runspaces">
+            <summary>
+            The dictionary containing the definitive list of unique Runspace
+            </summary>
+        </member>
+        <member name="T:Sqlcollaborative.Dbatools.TabExpansion.InstanceAccess">
+            <summary>
+            Contains information on access to an instance
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.TabExpansion.InstanceAccess.InstanceName">
+            <summary>
+            The name of the instance to access
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.TabExpansion.InstanceAccess.IsSysAdmin">
+            <summary>
+            Whether the account had sysadmin privileges. On multiple user usage, the cache will prefer sysadmin accounts.
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.TabExpansion.InstanceAccess.ConnectionObject">
+            <summary>
+            The actual connection object to connect with to the server
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.TabExpansion.InstanceAccess.LastAccess">
+            <summary>
+            When was the instance last accessed using dbatools
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.TabExpansion.InstanceAccess.LastUpdate">
+            <summary>
+            When was the instance's TEPP cache last updated
+            </summary>
+        </member>
+        <member name="T:Sqlcollaborative.Dbatools.TabExpansion.ScriptContainer">
+            <summary>
+            Regular container to store scripts in, that are used in TEPP
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.TabExpansion.ScriptContainer.Name">
+            <summary>
+            The name of the scriptblock
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.TabExpansion.ScriptContainer.ScriptBlock">
+            <summary>
+            The scriptblock doing the logic
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.TabExpansion.ScriptContainer.LastExecution">
+            <summary>
+            The last time the scriptblock was called. Must be updated by the scriptblock itself
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.TabExpansion.ScriptContainer.LastDuration">
+            <summary>
+            The time it took to run the last time
+            </summary>
+        </member>
+        <member name="T:Sqlcollaborative.Dbatools.TabExpansion.TabCompletionSet">
+            <summary>
+            Contains information used to transmit Tepp Assignment
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.TabExpansion.TabCompletionSet.Command">
+            <summary>
+            The name of the command to complete. "*" if all commands that have the parameter should be selected instead
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.TabExpansion.TabCompletionSet.Parameter">
+            <summary>
+            The parameter to complete
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.TabExpansion.TabCompletionSet.Script">
+            <summary>
+            The name of the script to complete with
+            </summary>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.TabExpansion.TabCompletionSet.#ctor(System.String,System.String,System.String)">
+            <summary>
+            Creates a new tab completion set object with all information prefilled
+            </summary>
+            <param name="Command">The name of the command to complete. "*" if all commands that have the parameter should be selected instead</param>
+            <param name="Parameter">The parameter to complete</param>
+            <param name="Script">The name of the script to complete with</param>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.TabExpansion.TabCompletionSet.Applies(System.String,System.String)">
+            <summary>
+            Tests, whether the completion set applies to the specified parameter / command combination
+            </summary>
+            <param name="Command">The command to test</param>
+            <param name="Parameter">The parameter of the command to test</param>
+            <returns>Whether this completion set applies to the specified combination of parameter / command</returns>
+        </member>
+        <member name="T:Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost">
+            <summary>
+            Class that handles the static fields supporting the dbatools TabExpansion implementation
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost.Scripts">
+            <summary>
+            Field containing the scripts that were registered.
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost.Cache">
+            <summary>
+            The cache used by scripts utilizing TabExpansionPlusPlus in dbatools
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost.InstanceAccess">
+            <summary>
+            List of instances and when they were last accessed
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost.TeppGatherScriptsFast">
+            <summary>
+            Scripts that build the cache and are suitable for synchronous execution
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost.TeppGatherScriptsSlow">
+            <summary>
+            Scripts that build the cache and are not suitable for synchronous execution
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost.DbatoolsCommands">
+            <summary>
+            A list of all commands imported into dbatools
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost.TabCompletionSets">
+            <summary>
+            List of completion sets that should be processed into Tepp Assignments. Only populate this list on first import.
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost.TeppAssignment">
+            <summary>
+            Maps a TEPP scriptblock to a command and parameter
+            </summary>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost.SetInstance(System.String,System.Object,System.Boolean)">
+            <summary>
+            Registers a new instance or updates an already existing one. Should only be called from Connect-SqlInstance and Connect-DbaSqlServer
+            </summary>
+            <param name="InstanceName">Name of the instance connected to</param>
+            <param name="Connection">To connection object containing the relevant information for accessing the instance</param>
+            <param name="IsSysAdmin">Whether the account connecting to the instnace has SA privileges</param>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost.GetTeppScript(System.String,System.String)">
+            <summary>
+            Returns the assigned scriptblock for a given parameter
+            </summary>
+            <param name="Command">The command that should be completed</param>
+            <param name="Parameter">The parameter completion is provided for</param>
+            <returns>Either the relevant script container or null</returns>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost.SetTeppScript(System.String,System.String,System.String)">
+            <summary>
+            Assigns a registered script to the parameter of a command
+            </summary>
+            <param name="Command">The command for which to complete</param>
+            <param name="Parameter">The parameter for which to complete</param>
+            <param name="Script">To name of the script with which to complete</param>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost.AddTabCompletionSet(System.String,System.String,System.String)">
+            <summary>
+            Adds a completion set to the list of items to process
+            </summary>
+            <param name="Command">The command to complete for (accepts wildcard matching)</param>
+            <param name="Parameter">The parameter to complete for (accepts wildcard matching)</param>
+            <param name="Script">The script to register</param>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost.CalculateTabExpansion">
+            <summary>
+            Processes the content of TabCompletionSets and Scripts into TappAssignments based on the DbatoolsCommands list.
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost.TeppDisabled">
+            <summary>
+            Whether TEPP in its entirety is disabled
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost.TeppAsyncDisabled">
+            <summary>
+            Whether asynchronous TEPP updating should be disabled
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost.TeppSyncDisabled">
+            <summary>
+            Whether synchronous TEPP updating should be disabled
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost.TeppUpdateInterval">
+            <summary>
+            The interval in which asynchronous TEPP cache updates are performed
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost.TeppUpdateTimeout">
+            <summary>
+            After this timespan of no requests to a server, the updates to its cache are disabled.
+            </summary>
+        </member>
+        <member name="T:Sqlcollaborative.Dbatools.TypeConversion.DbaCredentialParameterConverter">
+            <summary>
+            Converts to and from DbaCredentialparameter
+            </summary>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.TypeConversion.DbaCredentialParameterConverter.CanConvertTo(System.Object,System.Type)">
+            <summary>
+            Verifies, whether a conversion for the object to the target type is possible
+            </summary>
+            <param name="SourceValue">The object to convert</param>
+            <param name="DestinationType">The type to convert to</param>
+            <returns>Whether it's possible, duh!</returns>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.TypeConversion.DbaCredentialParameterConverter.ConvertTo(System.Object,System.Type,System.IFormatProvider,System.Boolean)">
+            <summary>
+            Converts from DbaCredentialparameter to whatever destination type is attempted
+            </summary>
+            <param name="sourceValue">The source object. Better be a DbaCredentialparameter!</param>
+            <param name="destinationType">Should be a supported destination type</param>
+            <param name="formatProvider">Irrelevant</param>
+            <param name="ignoreCase">Irrelevant</param>
+            <returns>The target content type</returns>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.TypeConversion.DbaCredentialParameterConverter.CanConvertFrom(System.Object,System.Type)">
+            <summary>
+            Verifies, whether a conversion for the object from the source type to DbaCredentialParameter is possible
+            </summary>
+            <param name="SourceValue">The object to convert</param>
+            <param name="DestinationType">The source type to convert to</param>
+            <returns>Whether it's possible, duh!</returns>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.TypeConversion.DbaCredentialParameterConverter.ConvertFrom(System.Object,System.Type,System.IFormatProvider,System.Boolean)">
+            <summary>
+            Converts a source object to DbaCredentialparameter
+            </summary>
+            <param name="sourceValue">The source object</param>
+            <param name="destinationType">The destination type. Must be DbaCredentialParameter, or red stuff happens</param>
+            <param name="formatProvider">Irrelevant</param>
+            <param name="ignoreCase">Irrelevant</param>
+            <returns></returns>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.TypeConversion.DbaCredentialParameterConverter.IsSupportedType(System.Type)">
+            <summary>
+            Returns, whether a given type is supported for conversion
+            </summary>
+            <param name="type">The type to validate</param>
+            <returns>Whether it's a supported conversion</returns>
+        </member>
+        <member name="T:Sqlcollaborative.Dbatools.Utility.DateTimeExtension">
+            <summary>
+            Extends DateTime
+            </summary>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Utility.DateTimeExtension.CompareTo(System.DateTime,Sqlcollaborative.Dbatools.Utility.DbaDateTimeBase)">
+            <summary>
+            Adds a compareTo method to DateTime to compare with DbaDateTimeBase
+            </summary>
+            <param name="Base">The extended DateTime object</param>
+            <param name="comparedTo">The DbaDateTimeBase to compare with</param>
+            <returns></returns>
+        </member>
+        <member name="T:Sqlcollaborative.Dbatools.Utility.DbaDate">
+            <summary>
+            A dbatools-internal datetime wrapper for neater display
+            </summary>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Utility.DbaDate.#ctor(System.DateTime)">
+            <summary>
+            Constructs a generic timestamp object wrapper from an input timestamp object.
+            </summary>
+            <param name="Timestamp">The timestamp to wrap</param>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Utility.DbaDate.#ctor(System.String)">
+            <summary>
+            Parses a string into a datetime object.
+            </summary>
+            <param name="Time">The time-string to parse</param>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Utility.DbaDate.#ctor(System.Int64)">
+            <summary>
+            
+            </summary>
+            <param name="ticks"></param>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Utility.DbaDate.#ctor(System.Int64,System.DateTimeKind)">
+            <summary>
+            
+            </summary>
+            <param name="ticks"></param>
+            <param name="kind"></param>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Utility.DbaDate.#ctor(System.Int32,System.Int32,System.Int32)">
+            <summary>
+            
+            </summary>
+            <param name="year"></param>
+            <param name="month"></param>
+            <param name="day"></param>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Utility.DbaDate.#ctor(System.Int32,System.Int32,System.Int32,System.Globalization.Calendar)">
+            <summary>
+            
+            </summary>
+            <param name="year"></param>
+            <param name="month"></param>
+            <param name="day"></param>
+            <param name="calendar"></param>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Utility.DbaDate.#ctor(System.Int32,System.Int32,System.Int32,System.Int32,System.Int32,System.Int32)">
+            <summary>
+            
+            </summary>
+            <param name="year"></param>
+            <param name="month"></param>
+            <param name="day"></param>
+            <param name="hour"></param>
+            <param name="minute"></param>
+            <param name="second"></param>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Utility.DbaDate.#ctor(System.Int32,System.Int32,System.Int32,System.Int32,System.Int32,System.Int32,System.DateTimeKind)">
+            <summary>
+            
+            </summary>
+            <param name="year"></param>
+            <param name="month"></param>
+            <param name="day"></param>
+            <param name="hour"></param>
+            <param name="minute"></param>
+            <param name="second"></param>
+            <param name="kind"></param>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Utility.DbaDate.#ctor(System.Int32,System.Int32,System.Int32,System.Int32,System.Int32,System.Int32,System.Globalization.Calendar)">
+            <summary>
+            
+            </summary>
+            <param name="year"></param>
+            <param name="month"></param>
+            <param name="day"></param>
+            <param name="hour"></param>
+            <param name="minute"></param>
+            <param name="second"></param>
+            <param name="calendar"></param>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Utility.DbaDate.#ctor(System.Int32,System.Int32,System.Int32,System.Int32,System.Int32,System.Int32,System.Int32)">
+            <summary>
+            
+            </summary>
+            <param name="year"></param>
+            <param name="month"></param>
+            <param name="day"></param>
+            <param name="hour"></param>
+            <param name="minute"></param>
+            <param name="second"></param>
+            <param name="millisecond"></param>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Utility.DbaDate.#ctor(System.Int32,System.Int32,System.Int32,System.Int32,System.Int32,System.Int32,System.Int32,System.DateTimeKind)">
+            <summary>
+            
+            </summary>
+            <param name="year"></param>
+            <param name="month"></param>
+            <param name="day"></param>
+            <param name="hour"></param>
+            <param name="minute"></param>
+            <param name="second"></param>
+            <param name="millisecond"></param>
+            <param name="kind"></param>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Utility.DbaDate.#ctor(System.Int32,System.Int32,System.Int32,System.Int32,System.Int32,System.Int32,System.Int32,System.Globalization.Calendar)">
+            <summary>
+            
+            </summary>
+            <param name="year"></param>
+            <param name="month"></param>
+            <param name="day"></param>
+            <param name="hour"></param>
+            <param name="minute"></param>
+            <param name="second"></param>
+            <param name="millisecond"></param>
+            <param name="calendar"></param>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Utility.DbaDate.#ctor(System.Int32,System.Int32,System.Int32,System.Int32,System.Int32,System.Int32,System.Int32,System.Globalization.Calendar,System.DateTimeKind)">
+            <summary>
+            
+            </summary>
+            <param name="year"></param>
+            <param name="month"></param>
+            <param name="day"></param>
+            <param name="hour"></param>
+            <param name="minute"></param>
+            <param name="second"></param>
+            <param name="millisecond"></param>
+            <param name="calendar"></param>
+            <param name="kind"></param>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Utility.DbaDate.ToString">
+            <summary>
+            Provids the default-formated string, using the defined default formatting.
+            </summary>
+            <returns>Formatted datetime-string</returns>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Utility.DbaDate.op_Implicit(Sqlcollaborative.Dbatools.Utility.DbaDate)~System.DateTime">
+            <summary>
+            Implicitly convert to DateTime
+            </summary>
+            <param name="Base">The source object to convert</param>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Utility.DbaDate.op_Implicit(System.DateTime)~Sqlcollaborative.Dbatools.Utility.DbaDate">
+            <summary>
+            Implicitly convert from DateTime
+            </summary>
+            <param name="Base">The object to convert</param>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Utility.DbaDate.op_Implicit(Sqlcollaborative.Dbatools.Utility.DbaDate)~Sqlcollaborative.Dbatools.Utility.DbaDateTime">
+            <summary>
+            Implicitly convert to DbaDate
+            </summary>
+            <param name="Base">The source object to convert</param>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Utility.DbaDate.op_Implicit(Sqlcollaborative.Dbatools.Utility.DbaDate)~Sqlcollaborative.Dbatools.Utility.DbaTime">
+            <summary>
+            Implicitly convert to DbaTime
+            </summary>
+            <param name="Base">The source object to convert</param>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Utility.DbaDate.Generate(System.DateTime)">
+            <summary>
+            Generates a DbaDate object based off DateTime object. Will be null if Base is the start value (Tickes == 0).
+            </summary>
+            <param name="Base">The Datetime to base it off</param>
+            <returns>The object to generate (or null)</returns>
+        </member>
+        <member name="T:Sqlcollaborative.Dbatools.Utility.DbaDateTime">
+            <summary>
+            A dbatools-internal datetime wrapper for neater display
+            </summary>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Utility.DbaDateTime.#ctor(System.DateTime)">
+            <summary>
+            Constructs a generic timestamp object wrapper from an input timestamp object.
+            </summary>
+            <param name="Timestamp">The timestamp to wrap</param>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Utility.DbaDateTime.#ctor(System.String)">
+            <summary>
+            Parses a string into a datetime object.
+            </summary>
+            <param name="Time">The time-string to parse</param>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Utility.DbaDateTime.#ctor(System.Int64)">
+            <summary>
+            
+            </summary>
+            <param name="ticks"></param>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Utility.DbaDateTime.#ctor(System.Int64,System.DateTimeKind)">
+            <summary>
+            
+            </summary>
+            <param name="ticks"></param>
+            <param name="kind"></param>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Utility.DbaDateTime.#ctor(System.Int32,System.Int32,System.Int32)">
+            <summary>
+            
+            </summary>
+            <param name="year"></param>
+            <param name="month"></param>
+            <param name="day"></param>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Utility.DbaDateTime.#ctor(System.Int32,System.Int32,System.Int32,System.Globalization.Calendar)">
+            <summary>
+            
+            </summary>
+            <param name="year"></param>
+            <param name="month"></param>
+            <param name="day"></param>
+            <param name="calendar"></param>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Utility.DbaDateTime.#ctor(System.Int32,System.Int32,System.Int32,System.Int32,System.Int32,System.Int32)">
+            <summary>
+            
+            </summary>
+            <param name="year"></param>
+            <param name="month"></param>
+            <param name="day"></param>
+            <param name="hour"></param>
+            <param name="minute"></param>
+            <param name="second"></param>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Utility.DbaDateTime.#ctor(System.Int32,System.Int32,System.Int32,System.Int32,System.Int32,System.Int32,System.DateTimeKind)">
+            <summary>
+            
+            </summary>
+            <param name="year"></param>
+            <param name="month"></param>
+            <param name="day"></param>
+            <param name="hour"></param>
+            <param name="minute"></param>
+            <param name="second"></param>
+            <param name="kind"></param>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Utility.DbaDateTime.#ctor(System.Int32,System.Int32,System.Int32,System.Int32,System.Int32,System.Int32,System.Globalization.Calendar)">
+            <summary>
+            
+            </summary>
+            <param name="year"></param>
+            <param name="month"></param>
+            <param name="day"></param>
+            <param name="hour"></param>
+            <param name="minute"></param>
+            <param name="second"></param>
+            <param name="calendar"></param>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Utility.DbaDateTime.#ctor(System.Int32,System.Int32,System.Int32,System.Int32,System.Int32,System.Int32,System.Int32)">
+            <summary>
+            
+            </summary>
+            <param name="year"></param>
+            <param name="month"></param>
+            <param name="day"></param>
+            <param name="hour"></param>
+            <param name="minute"></param>
+            <param name="second"></param>
+            <param name="millisecond"></param>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Utility.DbaDateTime.#ctor(System.Int32,System.Int32,System.Int32,System.Int32,System.Int32,System.Int32,System.Int32,System.DateTimeKind)">
+            <summary>
+            
+            </summary>
+            <param name="year"></param>
+            <param name="month"></param>
+            <param name="day"></param>
+            <param name="hour"></param>
+            <param name="minute"></param>
+            <param name="second"></param>
+            <param name="millisecond"></param>
+            <param name="kind"></param>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Utility.DbaDateTime.#ctor(System.Int32,System.Int32,System.Int32,System.Int32,System.Int32,System.Int32,System.Int32,System.Globalization.Calendar)">
+            <summary>
+            
+            </summary>
+            <param name="year"></param>
+            <param name="month"></param>
+            <param name="day"></param>
+            <param name="hour"></param>
+            <param name="minute"></param>
+            <param name="second"></param>
+            <param name="millisecond"></param>
+            <param name="calendar"></param>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Utility.DbaDateTime.#ctor(System.Int32,System.Int32,System.Int32,System.Int32,System.Int32,System.Int32,System.Int32,System.Globalization.Calendar,System.DateTimeKind)">
+            <summary>
+            
+            </summary>
+            <param name="year"></param>
+            <param name="month"></param>
+            <param name="day"></param>
+            <param name="hour"></param>
+            <param name="minute"></param>
+            <param name="second"></param>
+            <param name="millisecond"></param>
+            <param name="calendar"></param>
+            <param name="kind"></param>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Utility.DbaDateTime.ToString">
+            <summary>
+            Provids the default-formated string, using the defined default formatting.
+            </summary>
+            <returns>Formatted datetime-string</returns>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Utility.DbaDateTime.op_Implicit(Sqlcollaborative.Dbatools.Utility.DbaDateTime)~System.DateTime">
+            <summary>
+            Implicitly convert to DateTime
+            </summary>
+            <param name="Base">The source object to convert</param>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Utility.DbaDateTime.op_Implicit(System.DateTime)~Sqlcollaborative.Dbatools.Utility.DbaDateTime">
+            <summary>
+            Implicitly convert from DateTime
+            </summary>
+            <param name="Base">The object to convert</param>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Utility.DbaDateTime.op_Implicit(Sqlcollaborative.Dbatools.Utility.DbaDateTime)~Sqlcollaborative.Dbatools.Utility.DbaDate">
+            <summary>
+            Implicitly convert to DbaDate
+            </summary>
+            <param name="Base">The source object to convert</param>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Utility.DbaDateTime.op_Implicit(Sqlcollaborative.Dbatools.Utility.DbaDateTime)~Sqlcollaborative.Dbatools.Utility.DbaTime">
+            <summary>
+            Implicitly convert to DbaTime
+            </summary>
+            <param name="Base">The source object to convert</param>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Utility.DbaDateTime.Generate(System.DateTime)">
+            <summary>
+            Generates a DbaDateTime object based off DateTime object. Will be null if Base is the start value (Tickes == 0).
+            </summary>
+            <param name="Base">The Datetime to base it off</param>
+            <returns>The object to generate (or null)</returns>
+        </member>
+        <member name="T:Sqlcollaborative.Dbatools.Utility.DbaDateTimeBase">
+            <summary>
+            Base class for wrapping around a DateTime object
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Utility.DbaDateTimeBase._timestamp">
+            <summary>
+            The core resource, containing the actual timestamp
+            </summary>
+        </member>
+        <member name="P:Sqlcollaborative.Dbatools.Utility.DbaDateTimeBase.Date">
+            <summary>
+            Gets the date component of this instance.
+            </summary>
+        </member>
+        <member name="P:Sqlcollaborative.Dbatools.Utility.DbaDateTimeBase.Day">
+            <summary>
+            Gets the day of the month represented by this instance.
+            </summary>
+        </member>
+        <member name="P:Sqlcollaborative.Dbatools.Utility.DbaDateTimeBase.DayOfWeek">
+            <summary>
+            Gets the day of the week represented by this instance.
+            </summary>
+        </member>
+        <member name="P:Sqlcollaborative.Dbatools.Utility.DbaDateTimeBase.DayOfYear">
+            <summary>
+            Gets the day of the year represented by this instance.
+            </summary>
+        </member>
+        <member name="P:Sqlcollaborative.Dbatools.Utility.DbaDateTimeBase.Hour">
+            <summary>
+            Gets the hour component of the date represented by this instance.
+            </summary>
+        </member>
+        <member name="P:Sqlcollaborative.Dbatools.Utility.DbaDateTimeBase.Kind">
+            <summary>
+            Gets a value that indicates whether the time represented by this instance is based on local time, Coordinated Universal Time (UTC), or neither.
+            </summary>
+        </member>
+        <member name="P:Sqlcollaborative.Dbatools.Utility.DbaDateTimeBase.Millisecond">
+            <summary>
+            Gets the milliseconds component of the date represented by this instance.
+            </summary>
+        </member>
+        <member name="P:Sqlcollaborative.Dbatools.Utility.DbaDateTimeBase.Minute">
+            <summary>
+            Gets the minute component of the date represented by this instance.
+            </summary>
+        </member>
+        <member name="P:Sqlcollaborative.Dbatools.Utility.DbaDateTimeBase.Month">
+            <summary>
+            Gets the month component of the date represented by this instance.
+            </summary>
+        </member>
+        <member name="P:Sqlcollaborative.Dbatools.Utility.DbaDateTimeBase.Second">
+            <summary>
+            Gets the seconds component of the date represented by this instance.
+            </summary>
+        </member>
+        <member name="P:Sqlcollaborative.Dbatools.Utility.DbaDateTimeBase.Ticks">
+            <summary>
+            Gets the number of ticks that represent the date and time of this instance.
+            </summary>
+        </member>
+        <member name="P:Sqlcollaborative.Dbatools.Utility.DbaDateTimeBase.TimeOfDay">
+            <summary>
+            Gets the time of day for this instance.
+            </summary>
+        </member>
+        <member name="P:Sqlcollaborative.Dbatools.Utility.DbaDateTimeBase.Year">
+            <summary>
+            Gets the year component of the date represented by this instance.
+            </summary>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Utility.DbaDateTimeBase.#ctor">
+            <summary>
+            Constructor that should never be called, since this class should never be instantiated. It's there for implicit calls on child classes.
+            </summary>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Utility.DbaDateTimeBase.#ctor(System.DateTime)">
+            <summary>
+            Constructs a generic timestamp object wrapper from an input timestamp object.
+            </summary>
+            <param name="Timestamp">The timestamp to wrap</param>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Utility.DbaDateTimeBase.#ctor(System.String)">
+            <summary>
+            Parses a string into a datetime object.
+            </summary>
+            <param name="Time">The time-string to parse</param>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Utility.DbaDateTimeBase.#ctor(System.Int64)">
+            <summary>
+            
+            </summary>
+            <param name="ticks"></param>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Utility.DbaDateTimeBase.#ctor(System.Int64,System.DateTimeKind)">
+            <summary>
+            
+            </summary>
+            <param name="ticks"></param>
+            <param name="kind"></param>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Utility.DbaDateTimeBase.#ctor(System.Int32,System.Int32,System.Int32)">
+            <summary>
+            
+            </summary>
+            <param name="year"></param>
+            <param name="month"></param>
+            <param name="day"></param>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Utility.DbaDateTimeBase.#ctor(System.Int32,System.Int32,System.Int32,System.Globalization.Calendar)">
+            <summary>
+            
+            </summary>
+            <param name="year"></param>
+            <param name="month"></param>
+            <param name="day"></param>
+            <param name="calendar"></param>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Utility.DbaDateTimeBase.#ctor(System.Int32,System.Int32,System.Int32,System.Int32,System.Int32,System.Int32)">
+            <summary>
+            
+            </summary>
+            <param name="year"></param>
+            <param name="month"></param>
+            <param name="day"></param>
+            <param name="hour"></param>
+            <param name="minute"></param>
+            <param name="second"></param>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Utility.DbaDateTimeBase.#ctor(System.Int32,System.Int32,System.Int32,System.Int32,System.Int32,System.Int32,System.DateTimeKind)">
+            <summary>
+            
+            </summary>
+            <param name="year"></param>
+            <param name="month"></param>
+            <param name="day"></param>
+            <param name="hour"></param>
+            <param name="minute"></param>
+            <param name="second"></param>
+            <param name="kind"></param>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Utility.DbaDateTimeBase.#ctor(System.Int32,System.Int32,System.Int32,System.Int32,System.Int32,System.Int32,System.Globalization.Calendar)">
+            <summary>
+            
+            </summary>
+            <param name="year"></param>
+            <param name="month"></param>
+            <param name="day"></param>
+            <param name="hour"></param>
+            <param name="minute"></param>
+            <param name="second"></param>
+            <param name="calendar"></param>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Utility.DbaDateTimeBase.#ctor(System.Int32,System.Int32,System.Int32,System.Int32,System.Int32,System.Int32,System.Int32)">
+            <summary>
+            
+            </summary>
+            <param name="year"></param>
+            <param name="month"></param>
+            <param name="day"></param>
+            <param name="hour"></param>
+            <param name="minute"></param>
+            <param name="second"></param>
+            <param name="millisecond"></param>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Utility.DbaDateTimeBase.#ctor(System.Int32,System.Int32,System.Int32,System.Int32,System.Int32,System.Int32,System.Int32,System.DateTimeKind)">
+            <summary>
+            
+            </summary>
+            <param name="year"></param>
+            <param name="month"></param>
+            <param name="day"></param>
+            <param name="hour"></param>
+            <param name="minute"></param>
+            <param name="second"></param>
+            <param name="millisecond"></param>
+            <param name="kind"></param>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Utility.DbaDateTimeBase.#ctor(System.Int32,System.Int32,System.Int32,System.Int32,System.I
