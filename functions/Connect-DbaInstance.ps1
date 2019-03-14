@@ -330,7 +330,9 @@ function Connect-DbaInstance {
                     $sqlconn = New-Object System.Data.SqlClient.SqlConnection $azureconnstring
                     $serverconn = New-Object Microsoft.SqlServer.Management.Common.ServerConnection $sqlconn
                     $null = $serverconn.Connect()
-                    New-Object Microsoft.SqlServer.Management.Smo.Server $serverconn
+                    $server = New-Object Microsoft.SqlServer.Management.Smo.Server $serverconn
+                    # Make ComputerName easily available in the server object
+                    Add-Member -InputObject $server -NotePropertyName ComputerName -NotePropertyValue $instance.ComputerName -Force -Passthru
                     continue
                 } catch {
                     Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
