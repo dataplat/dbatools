@@ -782,7 +782,7 @@
     "Microsoft.Management.Infrastructure/1.0.0": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-EhQ4sbjNu4rL39YVhRSKMzCaMNBSwSJi17t8LtAOW94WQTkhQCEhlMukFU2AtWOBW3zGIrvg85XRS+w0nuGxKw==",
+      "sha512": "sha512-NhaDvIaNRZIDZYbEGWZ+TJujRRiYfWRFwAOMMiKshw/oldvxWXPyjPaeRz+dqxg3RKXacPNhovTzmLXjI0TY1A==",
       "path": "microsoft.management.infrastructure/1.0.0",
       "hashPath": "microsoft.management.infrastructure.1.0.0.nupkg.sha512"
     },
@@ -978,7 +978,7 @@
     "System.Runtime.CompilerServices.VisualC/4.3.0": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-/dcn1oXqK/p/VnTYWNSf4OXlFIfzCRE/kqWz4+/r5B2S4zlKifB1FqklEEYs5zmE1JE3syvrJ5U4syOwsDQZbA==",
+      "sha512": "sha512-Wi1MPwneonOT11JvxZLvlvHSqQOuSci50KwWZ5JHMujjIrpyYH/ZELCqGB3fAXRvyFj61UE9PcE8rt+C40Vg9A==",
       "path": "system.runtime.compilerservices.visualc/4.3.0",
       "hashPath": "system.runtime.compilerservices.visualc.4.3.0.nupkg.sha512"
     },
@@ -1041,7 +1041,7 @@
     "System.Security.SecureString/4.3.0": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-PnXp38O9q/2Oe4iZHMH60kinScv6QiiL2XH54Pj2t0Y6c2zKPEiAZsM/M3wBOHLNTBDFP0zfy13WN2M0qFz5jg==",
+      "sha512": "sha512-VQRz+JB9J9NVIKT7ZpIvDUIhq6nNhKfoo1sWLwBvbat+A78FIUS54XXn9a+xu2VFXfWpR8vn6LenYqNKAuq0Eg==",
       "path": "system.security.securestring/4.3.0",
       "hashPath": "system.security.securestring.4.3.0.nupkg.sha512"
     },
