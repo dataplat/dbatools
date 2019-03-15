@@ -162,6 +162,7 @@ function Get-DbaCmsRegServer {
             Add-Member -Force -InputObject $server -MemberType NoteProperty -Name Group -value $groupname
             Add-Member -Force -InputObject $server -MemberType NoteProperty -Name FQDN -Value $null
             Add-Member -Force -InputObject $server -MemberType NoteProperty -Name IPAddress -Value $null
+            Add-Member -Force -InputObject $server -MemberType NoteProperty -Name ParentServer -Value $serverstore.ParentServer
 
             if ($ResolveNetworkName) {
                 try {

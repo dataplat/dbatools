@@ -131,7 +131,7 @@ function Get-DbaCmsRegServerGroup {
             }
 
             if ($ExcludeGroup) {
-                $excluded = Get-DbaCmsRegServer -SqlInstance $serverstore.ServerConnection.SqlConnectionObject -Group $ExcludeGroup
+                $excluded = Get-DbaCmsRegServer -SqlInstance $serverstore.ParentServer -Group $ExcludeGroup
                 Write-Message -Level Verbose -Message "Excluding $ExcludeGroup"
                 $groups = $groups | Where-Object { $_.Urn.Value -notin $excluded.Urn.Value }
             }
@@ -149,6 +149,7 @@ function Get-DbaCmsRegServerGroup {
                 Add-Member -Force -InputObject $groupobject -MemberType NoteProperty -Name ComputerName -value $serverstore.ComputerName
                 Add-Member -Force -InputObject $groupobject -MemberType NoteProperty -Name InstanceName -value $serverstore.InstanceName
                 Add-Member -Force -InputObject $groupobject -MemberType NoteProperty -Name SqlInstance -value $serverstore.SqlInstance
+                Add-Member -Force -InputObject $groupobject -MemberType NoteProperty -Name ParentServer -value $serverstore.ParentServer
 
                 Select-DefaultView -InputObject $groupobject -Property ComputerName, InstanceName, SqlInstance, Name, DisplayName, Description, ServerGroups, RegisteredServers
             }
