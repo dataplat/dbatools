@@ -61,6 +61,11 @@ function Get-DbaRandomizedDataset {
 
         Generates data set based on a template file in another directory
 
+    .EXAMPLE
+        Get-DbaRandomizedDataset -Template Personaldata, FinancialData
+
+        Generates multiple data sets
+
     #>
     [CmdLetBinding()]
     param(
@@ -68,6 +73,8 @@ function Get-DbaRandomizedDataset {
         [string[]]$TemplateFile,
         [int]$Rows = 100,
         [string]$Locale = 'en',
+        [parameter(ValueFromPipeline)]
+        [object]$InputObject,
         [switch]$EnableException
     )
 
