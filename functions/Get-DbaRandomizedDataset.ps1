@@ -66,6 +66,10 @@ function Get-DbaRandomizedDataset {
 
         Generates multiple data sets
 
+    .EXAMPLE
+        Get-DbaRandomizedDatasetTemplate -Template PersonalData | Get-DbaRandomizedDataset
+
+        Pipe the templates from Get-DbaRandomizedDatasetTemplate to Get-DbaRandomizedDataset and generate the data set
     #>
     [CmdLetBinding()]
     param(
@@ -104,9 +108,9 @@ function Get-DbaRandomizedDataset {
             if ($templates.Count -lt 1) {
                 Stop-Function -Message "Could not find any templates" -Continue
             }
-        }
 
-        $InputObject += $templates
+            $InputObject += $templates
+        }
 
         foreach ($file in $InputObject) {
 
