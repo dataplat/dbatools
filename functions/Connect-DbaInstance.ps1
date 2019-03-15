@@ -300,7 +300,7 @@ function Connect-DbaInstance {
 
             # Gracefully handle Azure connections
             if ($instance.ComputerName -match "database\.windows\.net" -or $instance.InputObject.ComputerName -match "database\.windows\.net") {
-# so far, this is not evaluating
+                # so far, this is not evaluating
                 if ($instance.InputObject.ConnectionContext.IsOpen) {
                     $currentdb = $instance.InputObject.ConnectionContext.ExecuteScalar("select db_name()")
                     if (($Database -and ($Database -eq $currentdb))) {
