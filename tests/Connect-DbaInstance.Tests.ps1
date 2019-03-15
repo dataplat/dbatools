@@ -20,8 +20,8 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $cred = New-Object System.Management.Automation.PSCredential ($script:azuresqldblogin, $securePassword)
 
             It "Should login to Azure" {
-                $s = Connect-DbaInstance -SqlInstance $script:azureserver -SqlCredential $cred -Database test
-                $s.Name | Should -match $script:azureserver
+                $s = Connect-DbaInstance -SqlInstance psdbatools.database.windows.net -SqlCredential $cred -Database test
+                $s.Name | Should -match 'psdbatools.database.windows.net'
                 $s.DatabaseEngineType | Should -Be 'SqlAzureDatabase'
             }
 
