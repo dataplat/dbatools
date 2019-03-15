@@ -25,14 +25,19 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
                 $s.DatabaseEngineType | Should -Be 'SqlAzureDatabase'
             }
 
-            It -Skip "Should keep the same database context" {
+            It "Should keep the same database context" {
                 $results = Invoke-DbaQuery -SqlInstance $s -Query "select db_name()"
                 $results | Should -Be 'test'
             }
 
-            It -Skip "Should keep the same database context" {
+            It "Should keep the same database context again" {
+                $results = Invoke-DbaQuery -SqlInstance $s -Query "select db_name()"
+                $results | Should -Be 'test'
+            }
+
+            It "Should keep the same database context" {
                 $server = Connect-DbaInstance -SqlInstance $s
-                $server.Query("select db_name()") | Should -Be 'test'
+                $server.Query("select db_name() as dbname").dbname | Should -Be 'test'
             }
         }
     }
