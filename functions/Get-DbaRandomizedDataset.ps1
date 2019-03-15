@@ -24,6 +24,9 @@ function Get-DbaRandomizedDataset {
     .PARAMETER Locale
         Set the local to enable certain settings in the masking. The default is 'en'
 
+    .PARAMETER InputObject
+        Accepts piped input from Get-DbaRandomizedDatasetTemplate
+
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
