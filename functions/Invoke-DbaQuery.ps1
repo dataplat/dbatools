@@ -303,7 +303,6 @@ function Invoke-DbaQuery {
                     $connDbaInstanceParams.ApplicationIntent = "ReadOnly"
                 }
                 $server = Connect-DbaInstance @connDbaInstanceParams
-                return $server.ConnectionContext.ExecuteScalar("select db_name()")
             } catch {
                 Stop-Function -Message "Failure" -ErrorRecord $_ -Target $instance -Continue
             }
