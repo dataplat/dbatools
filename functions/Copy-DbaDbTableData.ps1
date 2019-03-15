@@ -136,8 +136,8 @@ function Copy-DbaDbTableData {
 
     .EXAMPLE
         PS C:\> $params = @{
-        >> SourceSqlInstance = 'sql1'
-        >> DestinationSqlInstance = 'sql2'
+        >> SqlInstance = 'sql1'
+        >> Destination = 'sql2'
         >> Database = 'dbatools_from'
         >> DestinationDatabase = 'dbatools_dest'
         >> Table = '[Schema].[Table]'
