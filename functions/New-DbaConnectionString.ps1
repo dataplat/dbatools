@@ -199,15 +199,19 @@ function New-DbaConnectionString {
     )
 
     process {
-        foreach ($instance in $sqlinstance) {
+        foreach ($instance in $SqlInstance) {
             if ($Pscmdlet.ShouldProcess($instance, "Making a new Connection String")) {
-                if ($instance.ComputerName -match "database\.windows\.net") {
+                if ($instance.ComputerName -match "database\.windows\.net" -or $instance.InputObject.ComputerName -match "database\.windows\.net") {
                     if ($instance.InputObject.GetType() -eq [Microsoft.SqlServer.Management.Smo.Server]) {
                         $connstring = $instance.InputObject.ConnectionContext.ConnectionString
                         if ($Database) {
-                            $olddb = $connstring -split ';' | Where { $_.StartsWith("Initial Catalog")}
+                            $olddb = $connstring -split ';' | Where-Object { $_.StartsWith("Initial Catalog")}
                             $newdb = "Initial Catalog=$Database"
-                            $connstring = $connstring.Replace($olddb, $newdb)
+                            if ($olddb) {
+                                $connstring = $connstring.Replace("$olddb", "$newdb")
+                            } else {
+                                $connstring = "$connstring;$newdb;"
+                            }
                         }
                         $connstring
                         continue
