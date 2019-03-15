@@ -26,11 +26,13 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             }
 
             It "Should keep the same database context" {
+                $s = Connect-DbaInstance -SqlInstance psdbatools.database.windows.net -SqlCredential $cred -Database test
                 $results = Invoke-DbaQuery -SqlInstance $s -Query "select db_name()"
                 $results | Should -Be 'test'
             }
 
             It "Should keep the same database context again" {
+                $s = Connect-DbaInstance -SqlInstance psdbatools.database.windows.net -SqlCredential $cred -Database test
                 $results = Invoke-DbaQuery -SqlInstance $s -Query "select db_name()"
                 $results | Should -Be 'test'
             }
