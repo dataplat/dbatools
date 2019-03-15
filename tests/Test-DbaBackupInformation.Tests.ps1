@@ -3,6 +3,17 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 
 Describe "$commandname Unit Tests" -Tag 'UnitTests' {
+    Context "Validate parameters" {
+        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
+        [object[]]$knownParameters = 'BackupHistory', 'SqlInstance', 'SqlCredential', 'WithReplace', 'Continue', 'VerifyOnly', 'OutputScriptOnly', 'EnableException'
+        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
+        It "Should only contain our specific parameters" {
+            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        }
+    }
+}
+
+Describe "$commandname Integration Tests" -Tag 'IntegrationTests' {
     InModuleScope dbatools {
         Context "Everything as it should" {
             $BackupHistory = Import-CliXml $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\CleanFormatDbaInformation.xml
@@ -11,6 +22,7 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
                 $obj = [PSCustomObject]@{
                     Name                 = 'BASEName'
                     NetName              = 'BASENetName'
+                    ComputerName         = 'BASEComputerName'
                     InstanceName         = 'BASEInstanceName'
                     DomainInstanceName   = 'BASEDomainInstanceName'
                     InstallDataDirectory = 'BASEInstallDataDirectory'
@@ -57,6 +69,7 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
                 $obj = [PSCustomObject]@{
                     Name                 = 'BASEName'
                     NetName              = 'BASENetName'
+                    ComputerName         = 'BASEComputerName'
                     InstanceName         = 'BASEInstanceName'
                     DomainInstanceName   = 'BASEDomainInstanceName'
                     InstallDataDirectory = 'BASEInstallDataDirectory'
@@ -103,6 +116,7 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
                 $obj = [PSCustomObject]@{
                     Name                 = 'BASEName'
                     NetName              = 'BASENetName'
+                    ComputerName         = 'BASEComputerName'
                     InstanceName         = 'BASEInstanceName'
                     DomainInstanceName   = 'BASEDomainInstanceName'
                     InstallDataDirectory = 'BASEInstallDataDirectory'
@@ -149,6 +163,7 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
                 $obj = [PSCustomObject]@{
                     Name                 = 'BASEName'
                     NetName              = 'BASENetName'
+                    ComputerName         = 'BASEComputerName'
                     InstanceName         = 'BASEInstanceName'
                     DomainInstanceName   = 'BASEDomainInstanceName'
                     InstallDataDirectory = 'BASEInstallDataDirectory'
@@ -195,6 +210,7 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
                 $obj = [PSCustomObject]@{
                     Name                 = 'BASEName'
                     NetName              = 'BASENetName'
+                    ComputerName         = 'BASEComputerName'
                     InstanceName         = 'BASEInstanceName'
                     DomainInstanceName   = 'BASEDomainInstanceName'
                     InstallDataDirectory = 'BASEInstallDataDirectory'

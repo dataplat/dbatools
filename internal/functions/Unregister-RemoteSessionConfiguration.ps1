@@ -5,7 +5,7 @@ function Unregister-RemoteSessionConfiguration {
     .DESCRIPTION
         Unregisters a session previously created with Register-RemoteSessionConfiguration through WinRM.
     #>
-    [CmdletBinding()]
+    [CmdletBinding(SupportsShouldProcess)]
     Param (
         [parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
@@ -28,18 +28,19 @@ function Unregister-RemoteSessionConfiguration {
                 return [pscustomobject]@{ 'Name' = $Name ; 'Status' = 'Not found'; Successful = $true }
             } else {
                 try {
-                    Unregister-PSSessionConfiguration -Name $Name -Force -ErrorAction Stop -NoServiceRestart 3>$null
+                    Unregister-PSSessionConfiguration -Name $Name -ErrorAction Stop -NoServiceRestart -Confirm:$false 3>$null
                     [pscustomobject]@{ 'Name' = $Name; 'Status' = 'Unregistered' ; Successful = $true }
                 } catch {
                     return [pscustomobject]@{ 'Name' = $Name ; 'Status' = $_  ; Successful = $false}
                 }
             }
         }
-
-        try {
-            $unregisterIt = Invoke-Command2 -ComputerName $ComputerName -Credential $Credential -ScriptBlock $removeRunasSession -ArgumentList @($Name) -Raw
-        } catch {
-            Stop-Function -Message "Failure during remote session configuration execution" -ErrorRecord $_ -EnableException $true
+        if ($PSCmdlet.ShouldProcess($ComputerName, "Unregistering session configuration $Name")) {
+            try {
+                $unregisterIt = Invoke-Command2 -ComputerName $ComputerName -Credential $Credential -ScriptBlock $removeRunasSession -ArgumentList @($Name) -Raw -RequiredPSVersion 3.0
+            } catch {
+                Stop-Function -Message "Failure during remote session configuration execution" -ErrorRecord $_ -EnableException $true
+            }
         }
         if ($unregisterIt) {
             Write-Message -Level Debug -Message "Configuration attempt returned the following status`: $($unregisterIt.Status)"

@@ -112,7 +112,7 @@ function Test-DbaBackupInformation {
             Write-Message -Level Verbose -Message "VerifyOnly = $VerifyOnly"
             If ($VerifyOnly -ne $true) {
                 if ($null -ne $DbCheck -and ($WithReplace -ne $true -and $Continue -ne $true)) {
-                    Stop-Function -Message "Database $Database exists, so WithReplace must be specified" -Target $database
+                    Write-Message  -Level Warning -Message "Database $Database exists, so WithReplace must be specified" -Target $database
                     $VerificationErrors++
                 }
 
@@ -164,6 +164,13 @@ function Test-DbaBackupInformation {
                         }
                     }
                 }
+                #Test for LSN chain
+                if ($true -ne $Continue) {
+                    if (!($DbHistory | Test-DbaLsnChain)) {
+                        Write-Message -Message "LSN Check failed" -Level Verbose
+                        $VerificationErrors++
+                    }
+                }
             }
 
             #Test all backups readable
@@ -175,13 +182,7 @@ function Test-DbaBackupInformation {
                     $VerificationErrors++
                 }
             }
-            #Test for LSN chain
-            if ($true -ne $Continue) {
-                if (!($DbHistory | Test-DbaLsnChain)) {
-                    Write-Message -Message "LSN Check failed" -Level Verbose
-                    $VerificationErrors++
-                }
-            }
+
             if ($VerificationErrors -eq 0) {
                 Write-Message -Message "Marking $Database as verified" -Level Verbose
                 $InternalHistory | Where-Object {$_.Database -eq $Database} | Foreach-Object {$_.IsVerified = $True}

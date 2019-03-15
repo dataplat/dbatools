@@ -4,21 +4,17 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        $paramCount = 6
-        $defaultParamCount = 11
-        [object[]]$params = (Get-ChildItem function:\Get-DbaDbMailAccount).Parameters.Keys
-        $knownParameters = 'SqlInstance', 'SqlCredential', 'Account', 'ExcludeAccount', 'InputObject', 'EnableException'
-        It "Should contain our specific parameters" {
-            ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
-        }
-        It "Should only contain $paramCount parameters" {
-            $params.Count - $defaultParamCount | Should Be $paramCount
+        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
+        [object[]]$knownParameters = 'SqlInstance','SqlCredential','Account','ExcludeAccount','InputObject','EnableException'
+        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
+        It "Should only contain our specific parameters" {
+            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
         }
     }
 }
 
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
-    BeforeAll{
+    BeforeAll {
         $accountname = "dbatoolsci_test_$(get-random)"
         $server = Connect-DbaInstance -SqlInstance $script:instance2
         $mailAccountSettings = "EXEC msdb.dbo.sysmail_add_account_sp
@@ -30,7 +26,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             @replyto_address='no-reply@dbatools.io';"
         $server.query($mailAccountSettings)
     }
-    AfterAll{
+    AfterAll {
         $server = Connect-DbaInstance -SqlInstance $script:instance2
         $mailAccountSettings = "EXEC msdb.dbo.sysmail_delete_account_sp
             @account_name = '$accountname';"

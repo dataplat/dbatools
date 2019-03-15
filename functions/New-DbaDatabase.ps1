@@ -114,6 +114,7 @@ function New-DbaDatabase {
         [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
+        [Alias('Database')]
         [string[]]$Name,
         [string]$Collation,
         [string]$Recoverymodel,

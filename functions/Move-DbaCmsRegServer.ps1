@@ -94,7 +94,7 @@ function Move-DbaCmsRegServer {
                 Stop-Function -Message "Something went wrong and it's hard to explain, sorry. This basically shouldn't happen." -Continue
             }
 
-            $server = $parentserver.ServerConnection.SqlConnectionObject
+            $server = $regserver.ParentServer
 
             if ((Test-Bound -ParameterName NewGroup)) {
                 $group = Get-DbaCmsRegServerGroup -SqlInstance $server -Group $NewGroup

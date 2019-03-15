@@ -75,7 +75,7 @@ function Get-DbaCmsRegServerGroup {
     process {
         foreach ($instance in $SqlInstance) {
             try {
-                $server = Get-DbaCmsRegServerStore -SqlInstance $instance -SqlCredential $SqlCredential -EnableException
+                $serverstore = Get-DbaCmsRegServerStore -SqlInstance $instance -SqlCredential $SqlCredential -EnableException
             } catch {
                 Stop-Function -Message "Cannot access Central Management Server '$instance'" -ErrorRecord $_ -Continue
             }
@@ -96,7 +96,7 @@ function Get-DbaCmsRegServerGroup {
                     if ($currentgroup -match '\\') {
                         $split = $currentgroup.Split('\\')
                         $i = 0
-                        $groupobject = $server.DatabaseEngineServerGroup
+                        $groupobject = $serverstore.DatabaseEngineServerGroup
                         do {
                             if ($groupobject) {
                                 $groupobject = $groupobject.ServerGroups[$split[$i]]
@@ -109,7 +109,7 @@ function Get-DbaCmsRegServerGroup {
                         }
                     } else {
                         try {
-                            $thisgroup = $server.DatabaseEngineServerGroup.ServerGroups[$currentgroup]
+                            $thisgroup = $serverstore.DatabaseEngineServerGroup.ServerGroups[$currentgroup]
                             if ($thisgroup) {
                                 Write-Message -Level Verbose -Message "Added $($thisgroup.Name)"
                                 $groups += $thisgroup
@@ -122,16 +122,16 @@ function Get-DbaCmsRegServerGroup {
                 }
             } else {
                 Write-Message -Level Verbose -Message "Added all root server groups"
-                $groups = $server.DatabaseEngineServerGroup.ServerGroups
+                $groups = $serverstore.DatabaseEngineServerGroup.ServerGroups
             }
 
             if ($Group -eq 'DatabaseEngineServerGroup') {
                 Write-Message -Level Verbose -Message "Added root group"
-                $groups = $server.DatabaseEngineServerGroup
+                $groups = $serverstore.DatabaseEngineServerGroup
             }
 
             if ($ExcludeGroup) {
-                $excluded = Get-DbaCmsRegServer $server -Group $ExcludeGroup
+                $excluded = Get-DbaCmsRegServer -SqlInstance $serverstore.ParentServer -Group $ExcludeGroup
                 Write-Message -Level Verbose -Message "Excluding $ExcludeGroup"
                 $groups = $groups | Where-Object { $_.Urn.Value -notin $excluded.Urn.Value }
             }
@@ -139,16 +139,17 @@ function Get-DbaCmsRegServerGroup {
             if ($Id) {
                 Write-Message -Level Verbose -Message "Filtering for id $Id. Id 1 = default."
                 if ($Id -eq 1) {
-                    $groups = $server.DatabaseEngineServerGroup | Where-Object Id -in $Id
+                    $groups = $serverstore.DatabaseEngineServerGroup | Where-Object Id -in $Id
                 } else {
-                    $groups = $server.DatabaseEngineServerGroup.GetDescendantRegisteredServers().Parent | Where-Object Id -in $Id
+                    $groups = $serverstore.DatabaseEngineServerGroup.GetDescendantRegisteredServers().Parent | Where-Object Id -in $Id
                 }
             }
-            $server.ServerConnection.Disconnect()
+            $serverstore.ServerConnection.Disconnect()
             foreach ($groupobject in $groups) {
-                Add-Member -Force -InputObject $groupobject -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
-                Add-Member -Force -InputObject $groupobject -MemberType NoteProperty -Name InstanceName -value $server.InstanceName
-                Add-Member -Force -InputObject $groupobject -MemberType NoteProperty -Name SqlInstance -value $server.SqlInstance
+                Add-Member -Force -InputObject $groupobject -MemberType NoteProperty -Name ComputerName -value $serverstore.ComputerName
+                Add-Member -Force -InputObject $groupobject -MemberType NoteProperty -Name InstanceName -value $serverstore.InstanceName
+                Add-Member -Force -InputObject $groupobject -MemberType NoteProperty -Name SqlInstance -value $serverstore.SqlInstance
+                Add-Member -Force -InputObject $groupobject -MemberType NoteProperty -Name ParentServer -value $serverstore.ParentServer
 
                 Select-DefaultView -InputObject $groupobject -Property ComputerName, InstanceName, SqlInstance, Name, DisplayName, Description, ServerGroups, RegisteredServers
             }

@@ -7,7 +7,7 @@ $exeDir = "C:\Temp\dbatools_$CommandName"
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     BeforeAll {
         # Prevent the functions from executing dangerous stuff and getting right responses where needed
-        Mock -CommandName Invoke-Program -MockWith { [pscustomobject]@{ Successful = $true } } -ModuleName dbatools
+        Mock -CommandName Invoke-Program -MockWith { [pscustomobject]@{ Successful = $true; ExitCode = [uint32[]]3010 } } -ModuleName dbatools
         Mock -CommandName Test-PendingReboot -MockWith { $false } -ModuleName dbatools
         Mock -CommandName Test-ElevationRequirement -MockWith { $null } -ModuleName dbatools
         Mock -CommandName Restart-Computer -MockWith { $null } -ModuleName dbatools
@@ -20,15 +20,11 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         Mock -CommandName Get-DbaDiskSpace -MockWith { [pscustomobject]@{ Name = 'C:\'; Free = 1 } } -ModuleName dbatools
     }
     Context "Validate parameters" {
-        $defaultParamCount = 13
-        [object[]]$params = (Get-ChildItem function:\$CommandName).Parameters.Keys
-        $knownParameters = 'ComputerName', 'Credential', 'Version', 'Type', 'Path', 'Restart', 'EnableException', 'Kb', 'InstanceName', 'Continue', 'Throttle'
-        $paramCount = $knownParameters.Count
-        It "Should contain our specific parameters" {
-            ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
-        }
-        It "Should only contain $paramCount parameters" {
-            $params.Count - $defaultParamCount | Should Be $paramCount
+        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
+        [object[]]$knownParameters = 'ComputerName','Credential','Version','Type','KB','InstanceName','Path','Restart','Continue','Throttle','Authentication','EnableException'
+        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
+        It "Should only contain our specific parameters" {
+            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
         }
     }
     Context "Validate upgrades to a latest version" {
@@ -128,9 +124,6 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
             Assert-MockCalled -CommandName Get-SQLInstanceComponent -Exactly 1 -Scope It -ModuleName dbatools
             Assert-MockCalled -CommandName Invoke-Program -Exactly 2 -Scope It -ModuleName dbatools
             Assert-MockCalled -CommandName Restart-Computer -Exactly 1 -Scope It -ModuleName dbatools
-            #no remote execution in tests
-            #Assert-MockCalled -CommandName Register-RemoteSessionConfiguration -Exactly 0 -Scope It -ModuleName dbatools
-            #Assert-MockCalled -CommandName Unregister-RemoteSessionConfiguration -Exactly 1 -Scope It -ModuleName dbatools
 
             $result | Should -Not -BeNullOrEmpty
             $result.MajorVersion | Should -Be 2008
@@ -149,9 +142,6 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
             Assert-MockCalled -CommandName Get-SQLInstanceComponent -Exactly 1 -Scope It -ModuleName dbatools
             Assert-MockCalled -CommandName Invoke-Program -Exactly 4 -Scope It -ModuleName dbatools
             Assert-MockCalled -CommandName Restart-Computer -Exactly 2 -Scope It -ModuleName dbatools
-            #no remote execution in tests
-            #Assert-MockCalled -CommandName Register-RemoteSessionConfiguration -Exactly 0 -Scope It -ModuleName dbatools
-            #Assert-MockCalled -CommandName Unregister-RemoteSessionConfiguration -Exactly 1 -Scope It -ModuleName dbatools
 
             ($results | Measure-Object).Count | Should -Be 2
 
@@ -235,9 +225,6 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
             Assert-MockCalled -CommandName Get-SQLInstanceComponent -Exactly 1 -Scope It -ModuleName dbatools
             Assert-MockCalled -CommandName Invoke-Program -Exactly 2 -Scope It -ModuleName dbatools
             Assert-MockCalled -CommandName Restart-Computer -Exactly 1 -Scope It -ModuleName dbatools
-            #no remote execution in tests
-            #Assert-MockCalled -CommandName Register-RemoteSessionConfiguration -Exactly 0 -Scope It -ModuleName dbatools
-            #Assert-MockCalled -CommandName Unregister-RemoteSessionConfiguration -Exactly 1 -Scope It -ModuleName dbatools
 
             $result | Should -Not -BeNullOrEmpty
             $result.MajorVersion | Should -Be 2008
@@ -254,9 +241,6 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
             Assert-MockCalled -CommandName Get-SQLInstanceComponent -Exactly 1 -Scope It -ModuleName dbatools
             Assert-MockCalled -CommandName Invoke-Program -Exactly 2 -Scope It -ModuleName dbatools
             Assert-MockCalled -CommandName Restart-Computer -Exactly 1 -Scope It -ModuleName dbatools
-            #no remote execution in tests
-            #Assert-MockCalled -CommandName Register-RemoteSessionConfiguration -Exactly 0 -Scope It -ModuleName dbatools
-            #Assert-MockCalled -CommandName Unregister-RemoteSessionConfiguration -Exactly 1 -Scope It -ModuleName dbatools
 
             $result | Should -Not -BeNullOrEmpty
             $result.MajorVersion | Should -Be 2016
@@ -273,9 +257,6 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
             Assert-MockCalled -CommandName Get-SQLInstanceComponent -Exactly 1 -Scope It -ModuleName dbatools
             Assert-MockCalled -CommandName Invoke-Program -Exactly 6 -Scope It -ModuleName dbatools
             Assert-MockCalled -CommandName Restart-Computer -Exactly 3 -Scope It -ModuleName dbatools
-            #no remote execution in tests
-            #Assert-MockCalled -CommandName Register-RemoteSessionConfiguration -Exactly 0 -Scope It -ModuleName dbatools
-            #Assert-MockCalled -CommandName Unregister-RemoteSessionConfiguration -Exactly 1 -Scope It -ModuleName dbatools
 
             ($results | Measure-Object).Count | Should -Be 3
 
@@ -345,9 +326,6 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
             Assert-MockCalled -CommandName Get-SQLInstanceComponent -Exactly 1 -Scope It -ModuleName dbatools
             Assert-MockCalled -CommandName Invoke-Program -Exactly 2 -Scope It -ModuleName dbatools
             Assert-MockCalled -CommandName Restart-Computer -Exactly 1 -Scope It -ModuleName dbatools
-            #no remote execution in tests
-            #Assert-MockCalled -CommandName Register-RemoteSessionConfiguration -Exactly 0 -Scope It -ModuleName dbatools
-            #Assert-MockCalled -CommandName Unregister-RemoteSessionConfiguration -Exactly 1 -Scope It -ModuleName dbatools
 
             $result | Should -Not -BeNullOrEmpty
             $result.MajorVersion | Should -Be 2012
@@ -639,17 +617,24 @@ Describe "$CommandName Integration Tests" -Tag 'IntegrationTests' {
         Mock -CommandName Test-ElevationRequirement -MockWith { $null } -ModuleName dbatools
         #no restarts
         Mock -CommandName Restart-Computer -MockWith { $null } -ModuleName dbatools
-        #Mock Get-Item and Get-ChildItem with a dummy file
-        Mock -CommandName Get-ChildItem -ModuleName dbatools -MockWith {
+        # mock whole Find-SqlServerUpdate because it's executed remotely
+        Mock -CommandName Find-SqlServerUpdate -ModuleName dbatools -MockWith {
             [pscustomobject]@{
                 FullName = 'c:\mocked\filename.exe'
             }
         }
-        Mock -CommandName Get-Item -ModuleName dbatools -MockWith { 'c:\mocked' }
     }
-    Context "WhatIf upgrade all local versions to latest SPCU" {
+    Context "WhatIf upgrade target instance to latest SPCU" {
         It "Should whatif-upgrade to latest SPCU" {
-            { Update-DbaInstance -ComputerName $script:instance1 -Path $exeDir -Restart -EnableException -WhatIf 3>$null } | Should Not Throw
+            $server = Connect-DbaInstance -SqlInstance $script:instance1
+            $instance = $server.ServiceName
+            $null = Update-DbaInstance -ComputerName $script:instance1 -Path $exeDir -Restart -EnableException -WhatIf -InstanceName $instance 3>$null
+            $testBuild = Test-DbaBuild -SqlInstance $server -MaxBehind 0CU
+            Assert-MockCalled -CommandName Test-PendingReboot -Scope It -ModuleName dbatools
+            Assert-MockCalled -CommandName Test-ElevationRequirement -Scope It -ModuleName dbatools
+            if ($testBuild.Compliant -eq $false) {
+                Assert-MockCalled -CommandName Find-SqlServerUpdate -Scope It -ModuleName dbatools
+            }
         }
     }
 }

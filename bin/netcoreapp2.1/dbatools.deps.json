@@ -782,7 +782,7 @@
     "Microsoft.Management.Infrastructure/1.0.0": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-farHXHRCm0ZaioRlsQtHjb18sZ+X2jluOv3L/aOucXW83BmfHfXC7t+GtKZSK7Gd1y2lFh6R/pr31IpvRvZbOg==",
+      "sha512": "sha512-NhaDvIaNRZIDZYbEGWZ+TJujRRiYfWRFwAOMMiKshw/oldvxWXPyjPaeRz+dqxg3RKXacPNhovTzmLXjI0TY1A==",
       "path": "microsoft.management.infrastructure/1.0.0",
       "hashPath": "microsoft.management.infrastructure.1.0.0.nupkg.sha512"
     },
@@ -838,7 +838,7 @@
     "System.Data.SqlClient/4.5.1": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-qXTvTFkBds7bnN+ntBMHGvmH3pCAkfT4TE1z2Xvfqo4wKMQC77O4aXsYCc7dzCESC+/Gom6l0GLuebpFx7MDvg==",
+      "sha512": "sha512-cTPUCClr34EGBnyazUeciMD6sNm9aiE/li3uGvJ7z5dGup9QxKwysUeKXIrCO0E5KtQQAzGORFEYmowyEpcL2A==",
       "path": "system.data.sqlclient/4.5.1",
       "hashPath": "system.data.sqlclient.4.5.1.nupkg.sha512"
     },
@@ -978,7 +978,7 @@
     "System.Runtime.CompilerServices.VisualC/4.3.0": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-/dcn1oXqK/p/VnTYWNSf4OXlFIfzCRE/kqWz4+/r5B2S4zlKifB1FqklEEYs5zmE1JE3syvrJ5U4syOwsDQZbA==",
+      "sha512": "sha512-Wi1MPwneonOT11JvxZLvlvHSqQOuSci50KwWZ5JHMujjIrpyYH/ZELCqGB3fAXRvyFj61UE9PcE8rt+C40Vg9A==",
       "path": "system.runtime.compilerservices.visualc/4.3.0",
       "hashPath": "system.runtime.compilerservices.visualc.4.3.0.nupkg.sha512"
     },
@@ -1041,7 +1041,7 @@
     "System.Security.SecureString/4.3.0": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-PnXp38O9q/2Oe4iZHMH60kinScv6QiiL2XH54Pj2t0Y6c2zKPEiAZsM/M3wBOHLNTBDFP0zfy13WN2M0qFz5jg==",
+      "sha512": "sha512-VQRz+JB9J9NVIKT7ZpIvDUIhq6nNhKfoo1sWLwBvbat+A78FIUS54XXn9a+xu2VFXfWpR8vn6LenYqNKAuq0Eg==",
       "path": "system.security.securestring/4.3.0",
       "hashPath": "system.security.securestring.4.3.0.nupkg.sha512"
     },

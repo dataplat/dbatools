@@ -69,8 +69,7 @@ function Get-SQLInstanceComponent {
         [DbaInstanceParameter[]]$ComputerName = $Env:COMPUTERNAME,
         [ValidateSet('SSDS', 'SSAS', 'SSRS')]
         [string[]]$Component = @('SSDS', 'SSAS', 'SSRS'),
-        [pscredential]$Credential,
-        [bool]$EnableException = $EnableException
+        [pscredential]$Credential
     )
 
     begin {
@@ -207,12 +206,7 @@ function Get-SQLInstanceComponent {
                             # attempt to recover a real version of a sqlservr.exe by getting file properties from a remote machine
                             # not sure how to support SSRS/SSAS, as SSDS is the only one that has binary path in the Setup node
                             if ($binRoot = $instanceRegSetup.GetValue("SQLBinRoot")) {
-                                $fileVersion = Invoke-Command2 -ArgumentList $binRoot -Raw -Credential $Credential -ComputerName $computer -ScriptBlock {
-                                    Param (
-                                        $Path
-                                    )
-                                    (Get-Item -Path (Join-Path $Path "sqlservr.exe") -ErrorAction Stop).VersionInfo.ProductVersion
-                                }
+                                $fileVersion = (Get-Item -Path (Join-Path $binRoot "sqlservr.exe") -ErrorAction Stop).VersionInfo.ProductVersion
                                 if ($fileVersion) {
                                     $version = $fileVersion
                                     $log += "New version from the binary file: $version"
@@ -302,11 +296,8 @@ function Get-SQLInstanceComponent {
     }
     process {
         foreach ($computer in $ComputerName) {
-            try {
-                $results = Invoke-Command2 -ComputerName $computer -ScriptBlock $regScript -Credential $Credential -ErrorAction Stop -Raw -ArgumentList @($Component)
-            } catch {
-                Stop-Function -Message "Failed to get instance components from $computer" -ErrorRecord $_ -Continue
-            }
+            $results = Invoke-Command2 -ComputerName $computer -ScriptBlock $regScript -Credential $Credential -ErrorAction Stop -Raw -ArgumentList @($Component) -RequiredPSVersion 3.0
+
             # Log is stored in the log property, pile it all into the debug log
             foreach ($logEntry in $results.Log) {
                 Write-Message -Level Debug -Message $logEntry
@@ -319,7 +310,7 @@ function Get-SQLInstanceComponent {
                 $newVersion = New-Object -TypeName System.Version -ArgumentList ($newVersion.Major , ($newVersion.Minor - $newVersion.Minor % 10), $newVersion.Build)
                 Write-Message -Level Debug -Message "Converted version $($result.Version) to $newVersion"
                 #Find a proper build reference and replace Version property
-                $result.Version = Get-DbaBuildReference -Build $newVersion
+                $result.Version = Get-DbaBuildReference -Build $newVersion -EnableException
                 $result | Select-Object -ExcludeProperty Log
             }
         }
