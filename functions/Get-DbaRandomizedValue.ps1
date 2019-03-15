@@ -393,11 +393,7 @@ function Get-DbaRandomizedValue {
                     $faker.Name.$RandomizerSubType()
                 }
                 'person' {
-                    if ($randSubType -eq 'dateofbirth') {
-                        $faker.Person.DateOfBirth().ToString("yyyy-MM-dd")
-                    } else {
-                        $faker.Person.$RandomizerSubType()
-                    }
+                        $faker.Person.$RandomizerSubType
                 }
                 'phone' {
                     if ($Format) {
