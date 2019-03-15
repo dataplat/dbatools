@@ -561,7 +561,7 @@ namespace Sqlcollaborative.Dbatools.Parameter
                     throw new PSArgumentException("Failed to interpret input as Instance: " + Input + " : " + e.Message, e);
                 }
                 if (String.IsNullOrEmpty(_ComputerName))
-                    throw new PSArgumentException("Failed to interpret input as Instance: " + Input);
+                    throw new PSArgumentException("Failed to interpret input as Instance, ComputerName empty: " + Input);
                 break;
                 case "microsoft.sqlserver.management.smo.linkedserver":
                     try

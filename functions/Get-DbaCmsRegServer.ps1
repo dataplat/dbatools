@@ -140,7 +140,7 @@ function Get-DbaCmsRegServer {
         }
 
         if ($ExcludeGroup) {
-            $excluded = Get-DbaCmsRegServer $serverstore.ServerConnection.SqlConnectionObject -Group $ExcludeGroup
+            $excluded = Get-DbaCmsRegServer -SqlInstance $serverstore.ParentServer -Group $ExcludeGroup
             Write-Message -Level Verbose -Message "Excluding $ExcludeGroup"
             $servers = $servers | Where-Object { $_.Urn.Value -notin $excluded.Urn.Value }
         }
