@@ -16,9 +16,6 @@ function Get-DbaComputerSystem {
     .PARAMETER IncludeAws
         If computer is hosted in AWS Infrastructure as a Service (IaaS), additional information will be included.
 
-    .PARAMETER TimeoutSec
-        Default: 5 sec
-        Timeout in seconds for AWS related metaquery.
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -58,7 +55,6 @@ function Get-DbaComputerSystem {
         [DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,
         [PSCredential]$Credential,
         [switch]$IncludeAws,
-        [int]$TimeoutSec = 5,
         [switch][Alias('Silent')]
         $EnableException
     )
@@ -107,7 +103,7 @@ function Get-DbaComputerSystem {
 
                 if ($IncludeAws) {
                     try {
-                        $isAws = Invoke-Command2 -ComputerName $computerResolved -Credential $Credential -ScriptBlock { ((Invoke-TlsRestMethod -TimeoutSec $TimeoutSec -Uri 'http://169.254.169.254').StatusCode) -eq 200 } -Raw
+                        $isAws = Invoke-Command2 -ComputerName $computerResolved -Credential $Credential -ScriptBlock { ((Invoke-TlsRestMethod -TimeoutSec 15 -Uri 'http://169.254.169.254').StatusCode) -eq 200 } -Raw
                     } catch [System.Net.WebException] {
                         $isAws = $false
                         Write-Message -Level Warning -Message "$computerResolved was not found to be an EC2 instance. Verify http://169.254.169.254 is accessible on the computer."
