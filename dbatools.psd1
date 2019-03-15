@@ -456,6 +456,12 @@
         'Remove-DbaCmsRegServer',
         'Remove-DbaCmsRegServerGroup',
         'New-DbaDbMailAccount',
+        'New-DbaDbDataGeneratorConfig',
+        'Invoke-DbaDbDataGenerator',
+        'Get-DbaRandomizedValue',
+        'Get-DbaRandomizedDatasetTemplate',
+        'Get-DbaRandomizedDataset',
+        'Get-DbaRandomizedType',
         # noncoresmo
         # SMO issues
         'Export-DbaUser',
