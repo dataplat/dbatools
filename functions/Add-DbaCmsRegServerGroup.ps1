@@ -105,7 +105,7 @@ function Add-DbaCmsRegServerGroup {
                     $newgroup.Description = $Description
                     $newgroup.Create()
 
-                    Get-DbaCmsRegServerGroup -SqlInstance $parentserver.ServerConnection.SqlConnectionObject -Group (Get-RegServerGroupReverseParse -object $newgroup)
+                    Get-DbaCmsRegServerGroup -SqlInstance $server -Group (Get-RegServerGroupReverseParse -object $newgroup)
                     $parentserver.ServerConnection.Disconnect()
                 } catch {
                     Stop-Function -Message "Failed to add $reggroup on $server" -ErrorRecord $_ -Continue
