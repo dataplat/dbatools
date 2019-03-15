@@ -133,7 +133,7 @@ function Get-DbaRandomizedValue {
         } elseif (-not $RandomizerSubType -and $RandomizerType) {
             Stop-Function -Message "Please enter a sub type" -Continue
         } elseif (-not $RandomizerType -and $RandomizerSubType) {
-            $RandomizerType = $randomizerTypes.Group | Where-Object Subtype -eq $RandomizerSubType | Select-Object Type -ExpandProperty Type
+            $RandomizerType = $randomizerTypes.Group | Where-Object Subtype -eq $RandomizerSubType | Select-Object Type -ExpandProperty Type -First 1
         }
 
         if ($DataType -and $DataType.ToLower() -notin $supportedDataTypes) {
@@ -191,11 +191,18 @@ function Get-DbaRandomizedValue {
                         0
                     }
                 }
-                { $psitem -match 'date' } {
-                    if ($columnobject.MinValue -or $columnobject.MaxValue) {
-                        ($faker.Date.Between($nowmin, $nowmax)).ToString("yyyyMMdd")
+                'date' {
+                    if ($Min -or $Max) {
+                        ($faker.Date.Between($Min, $Max)).ToString("yyyyMMdd")
                     } else {
                         ($faker.Date.Past()).ToString("yyyyMMdd")
+                    }
+                }
+                { $psitem -in 'datetime', 'datetime2', 'smalldatetime'} {
+                    if ($Min -or $Max) {
+                        ($faker.Date.Between($Min, $Max)).ToString("yyyy-MM-dd HH:mm:ss.fffffff")
+                    } else {
+                        ($faker.Date.Past()).ToString("yyyy-MM-dd HH:mm:ss.fffffff")
                     }
                 }
                 { $psitem -in 'decimal', 'float', 'money', 'numeric', 'real'} {
@@ -229,7 +236,7 @@ function Get-DbaRandomizedValue {
                     $faker.System.Random.Int($Min, $Max)
                 }
                 'time' {
-                    ($faker.Date.Past()).ToString("h:mm tt zzz")
+                    ($faker.Date.Past()).ToString("HH:mm:ss.fffffff")
                 }
                 'tinyint' {
                     if ($Min -lt 0) {
