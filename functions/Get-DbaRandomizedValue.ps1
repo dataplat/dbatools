@@ -287,7 +287,7 @@ function Get-DbaRandomizedValue {
                             $faker.Address.ZipCode()
                         }
                     } else {
-                        $faker.Address.$RandomizerSubType
+                        $faker.Address.$RandomizerSubType()
                     }
 
                 }
@@ -393,10 +393,9 @@ function Get-DbaRandomizedValue {
                     $faker.Name.$RandomizerSubType()
                 }
                 'person' {
-                    if($randSubType -eq 'dateofbirth'){
+                    if ($randSubType -eq 'dateofbirth') {
                         $faker.Person.DateOfBirth().ToString("yyyy-MM-dd")
-                    }
-                    else{
+                    } else {
                         $faker.Person.$RandomizerSubType()
                     }
                 }
