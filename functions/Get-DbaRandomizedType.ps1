@@ -99,7 +99,7 @@ function Get-DbaRandomizedType {
             $types = $types | Where-Object SubType -in $RandomizedSubType
         }
 
-        $types | Select-Object -Unique | Sort-Object Type, SubType
+        $types | Select-Object Type, SubType -Unique | Sort-Object Type, SubType
 
     }
 
