@@ -35,6 +35,8 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
                 $s = Connect-DbaInstance -SqlInstance psdbatools.database.windows.net -SqlCredential $cred -Database test
                 $results = Invoke-DbaQuery -SqlInstance $s -Query "select db_name()"
                 $results | Should -Be 'test'
+                $results = Invoke-DbaQuery -SqlInstance $s -Query "select db_name()"
+                $results | Should -Be 'test'
             }
 
             It "Should keep the same database context" {
