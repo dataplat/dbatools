@@ -6,7 +6,7 @@ function Get-DbaRandomizedDataset {
     .DESCRIPTION
         Generates a random value based on a template.
         The templates standardized in the templates folder and can be used to generate a data set.
-        There is also an optiion to point to a specific template
+        There is also an option to point to a specific template
 
     .PARAMETER Template
         The name of the template to use.
