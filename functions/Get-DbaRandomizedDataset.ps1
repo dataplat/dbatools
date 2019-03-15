@@ -64,8 +64,8 @@ function Get-DbaRandomizedDataset {
     #>
     [CmdLetBinding()]
     param(
-        [string]$Template,
-        [string]$TemplateFile,
+        [string[]]$Template,
+        [string[]]$TemplateFile,
         [int]$Rows = 100,
         [string]$Locale = 'en',
         [switch]$EnableException
@@ -83,12 +83,10 @@ function Get-DbaRandomizedDataset {
 
         # Get all thee templates
         if ($Template) {
-            $templates = Get-ChildItem (Resolve-Path -Path "$script:PSModuleRoot\bin\randomizer\templates\*.json")
+            $templates = Get-DbaRandomizedDatasetTemplate -Template $Template
 
-            if ($Template -in $templates.BaseName) {
-                $TemplateFile = $templates | Where-Object BaseName -eq $Template | Select-Object FullName -ExpandProperty FullName
-            } else {
-                Stop-Function -Message "Could not find template with name $Template" -Continue
+            if ($templates.Count -lt 1) {
+                Stop-Function -Message "Could not find any templates" -Continue
             }
         }
     }
@@ -96,27 +94,29 @@ function Get-DbaRandomizedDataset {
     process {
         if (Test-FunctionInterrupt) { return }
 
-        # Get all the items that should be processed
-        try {
-            $dataset = Get-Content -Path $TemplateFile -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
-        } catch {
-            Stop-Function -Message "Could not parse template file" -ErrorRecord $_ -Target $TemplateFile
-            return
-        }
+        foreach ($file in $templates) {
 
-        # Generate the rows
-        for ($i = 1; $i -le $Rows; $i++) {
-            $row = New-Object PSCustomObject
-
-            foreach ($column in $dataset.Columns) {
-                $value = Get-DbaRandomizedValue -RandomizerType $column.Type -RandomizerSubType $column.SubType
-
-                $row | Add-Member -Name $column.Name -Type NoteProperty -Value $value
-
+            # Get all the items that should be processed
+            try {
+                $templateSet = Get-Content -Path $file.FullName -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
+            } catch {
+                Stop-Function -Message "Could not parse template file" -ErrorRecord $_ -Target $TemplateFile
+                return
             }
 
-            $row
+            # Generate the rows
+            for ($i = 1; $i -le $Rows; $i++) {
+                $row = New-Object PSCustomObject
 
+                foreach ($column in $templateSet.Columns) {
+                    $value = Get-DbaRandomizedValue -RandomizerType $column.Type -RandomizerSubType $column.SubType
+
+                    $row | Add-Member -Name $column.Name -Type NoteProperty -Value $value
+                }
+
+                $row
+
+            }
         }
 
     }
