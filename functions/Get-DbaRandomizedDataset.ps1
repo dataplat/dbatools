@@ -74,17 +74,26 @@ function Get-DbaRandomizedDataset {
         [int]$Rows = 100,
         [string]$Locale = 'en',
         [parameter(ValueFromPipeline)]
-        [object]$InputObject,
+        [object[]]$InputObject,
         [switch]$EnableException
     )
 
     begin {
         # Create the faker objects
-        Add-Type -Path (Resolve-Path -Path "$script:PSModuleRoot\bin\randomizer\Bogus.dll")
-        $faker = New-Object Bogus.Faker($Locale)
+        try {
+            Add-Type -Path (Resolve-Path -Path "$script:PSModuleRoot\bin\randomizer\Bogus.dll")
+            $faker = New-Object Bogus.Faker($Locale)
+        } catch {
+            Stop-Function -Message "Could not load randomizer dll" -Continue
+        }
+
+    }
+
+    process {
+        if (Test-FunctionInterrupt) { return }
 
         # Check variables
-        if (-not $Template -and -not $TemplateFile) {
+        if (-not $InputObject -and -not $Template -and -not $TemplateFile) {
             Stop-Function -Message "Please enter a template or assign a template file" -Continue
         }
 
@@ -96,12 +105,10 @@ function Get-DbaRandomizedDataset {
                 Stop-Function -Message "Could not find any templates" -Continue
             }
         }
-    }
 
-    process {
-        if (Test-FunctionInterrupt) { return }
+        $InputObject += $templates
 
-        foreach ($file in $templates) {
+        foreach ($file in $InputObject) {
 
             # Get all the items that should be processed
             try {
