@@ -266,7 +266,7 @@ function Get-DbaRandomizedValue {
 
         } else {
 
-            $randSubType = $randSubType
+            $randSubType = $RandomizerSubType.ToLower()
 
             switch ($RandomizerType.ToLower()) {
                 'address' {
@@ -398,6 +398,8 @@ function Get-DbaRandomizedValue {
                 'random' {
                     if ($randSubType -in 'byte', 'char', 'decimal', 'double', 'even', 'float', 'int', 'long', 'number', 'odd', 'sbyte', 'short', 'uint', 'ulong', 'ushort') {
                         $faker.Random.$RandomizerSubType($Min, $Max)
+                    } elseif ($randSubType -eq 'bytes') {
+                        $faker.Random.Bytes($Max)
                     } elseif ($randSubType -eq 'string2') {
                         $faker.Random.$RandomizerSubType($Min, $Max, $CharacterString)
                     } else {
