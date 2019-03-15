@@ -118,8 +118,12 @@ function Invoke-DbaDbDataGenerator {
 
     begin {
         # Create the faker objects
-        Add-Type -Path (Resolve-Path -Path "$script:PSModuleRoot\bin\datamasking\Bogus.dll")
-        $faker = New-Object Bogus.Faker($Locale)
+        try {
+            Add-Type -Path (Resolve-Path -Path "$script:PSModuleRoot\bin\randomizer\Bogus.dll")
+            $faker = New-Object Bogus.Faker($Locale)
+        } catch {
+            Stop-Function -Message "Could not load randomizer dll" -Continue
+        }
 
         $supportedDataTypes = 'bit', 'bool', 'char', 'date', 'datetime', 'datetime2', 'decimal', 'int', 'money', 'nchar', 'ntext', 'nvarchar', 'smalldatetime', 'text', 'time', 'uniqueidentifier', 'userdefineddatatype', 'varchar'
 
