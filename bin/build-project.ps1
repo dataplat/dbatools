@@ -30,8 +30,8 @@ function Get-DotNetPath {
     [OutputType([string])]
     param ()
     process {
-        if (Get-Command dotnet.exe -CommandType Application -ErrorAction SilentlyContinue) { return (Get-Command dotnet.exe -CommandType Application).Source }
-        "$($env:ProgramFiles)\dotnet\dotnet.exe"
+        if (Get-Command dotnet.exe -CommandType Application -ErrorAction SilentlyContinue) { return (Get-Command dotnet.exe -CommandType Application | Select-Object -First 1).Source }
+        "$($env:ProgramFiles)\dotnet\dotnet.exe" | Select-Object -First 1
     }
 }
 
@@ -53,12 +53,10 @@ if (-not (Test-Path $ProjectPath)) {
 Write-Verbose -Message "Building the library with command $dotnet build $ProjectPath -c $_MsbuildConfiguration"
 & $dotnet build $ProjectPath -c $_MsbuildConfiguration
 
-if ($MsbuildTarget -eq 'Build')
-{
+if ($MsbuildTarget -eq 'Build') {
     if ($PSVersionTable.PSVersion.Major -ge 6) {
         $dll = (Resolve-Path -Path "$libraryBase\netcoreapp2.1\dbatools.dll" -ErrorAction Ignore)
-    }
-    else {
+    } else {
         $dll = (Resolve-Path -Path "$libraryBase\net452\dbatools.dll" -ErrorAction Ignore)
     }
     try {
