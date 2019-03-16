@@ -20,9 +20,29 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $cred = New-Object System.Management.Automation.PSCredential ($script:azuresqldblogin, $securePassword)
 
             It "Should login to Azure" {
-                $s = Connect-DbaInstance -SqlInstance $script:azureserver -SqlCredential $cred -Database test
-                $s.Name | Should -match $script:azureserver
+                $s = Connect-DbaInstance -SqlInstance psdbatools.database.windows.net -SqlCredential $cred -Database test
+                $s.Name | Should -match 'psdbatools.database.windows.net'
                 $s.DatabaseEngineType | Should -Be 'SqlAzureDatabase'
+            }
+
+            It "Should keep the same database context" {
+                $s = Connect-DbaInstance -SqlInstance psdbatools.database.windows.net -SqlCredential $cred -Database test
+                $results = Invoke-DbaQuery -SqlInstance $s -Query "select db_name() as dbname"
+                $results.dbname | Should -Be 'test'
+            }
+
+            It "Should keep the same database context again" {
+                $s = Connect-DbaInstance -SqlInstance psdbatools.database.windows.net -SqlCredential $cred -Database test
+                $results = Invoke-DbaQuery -SqlInstance $s -Query "select db_name() as dbname"
+                $results.dbname | Should -Be 'test'
+                $results = Invoke-DbaQuery -SqlInstance $s -Query "select db_name() as dbname"
+                $results.dbname | Should -Be 'test'
+            }
+
+            It "Should keep the same database context" {
+                $s = Connect-DbaInstance -SqlInstance psdbatools.database.windows.net -SqlCredential $cred -Database test
+                $server = Connect-DbaInstance -SqlInstance $s
+                $server.Query("select db_name() as dbname").dbname | Should -Be 'test'
             }
         }
     }

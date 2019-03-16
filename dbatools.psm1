@@ -1430,7 +1430,14 @@ $script:xplat = @(
     'Get-DbatoolsConfig',
     'Get-DbatoolsConfigValue',
     'Set-DbatoolsConfig',
-    'Register-DbatoolsConfig'
+    'Register-DbatoolsConfig',
+    # Data generator
+    'New-DbaDbDataGeneratorConfig',
+    'Invoke-DbaDbDataGenerator',
+    'Get-DbaRandomizedValue',
+    'Get-DbaRandomizedDatasetTemplate',
+    'Get-DbaRandomizedDataset',
+    'Get-DbaRandomizedType'
 )
 
 $script:noncoresmo = @(
