@@ -123,7 +123,7 @@ function Add-DbaCmsRegServer {
                 Stop-Function -Message "Something went wrong and it's hard to explain, sorry. This basically shouldn't happen." -Continue
             }
 
-            $server = $parentserver.ServerConnection.SqlConnectionObject
+            $server = $reggroup.ParentServer
 
             if ($Pscmdlet.ShouldProcess($parentserver.SqlInstance, "Adding $ServerName")) {
                 try {

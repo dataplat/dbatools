@@ -31,6 +31,9 @@ function New-DbaConnectionString {
     .PARAMETER ClientName
         By default, this command sets the client to "dbatools PowerShell module - dbatools.io - custom connection" if you're doing anything that requires profiling, you can look for this client name. Using -ClientName allows you to set your own custom client.
 
+    .PARAMETER Database
+        Database name
+
     .PARAMETER ConnectTimeout
         The length of time (in seconds) to wait for a connection to the server before terminating the attempt and generating an error.
 
@@ -173,6 +176,7 @@ function New-DbaConnectionString {
         [string]$BatchSeparator,
         [string]$ClientName = "custom connection",
         [int]$ConnectTimeout,
+        [string]$Database,
         [switch]$EncryptConnection,
         [string]$FailoverPartner,
         [switch]$IsActiveDirectoryUniversalAuth,
@@ -195,8 +199,38 @@ function New-DbaConnectionString {
     )
 
     process {
-        foreach ($instance in $sqlinstance) {
+        foreach ($instance in $SqlInstance) {
             if ($Pscmdlet.ShouldProcess($instance, "Making a new Connection String")) {
+                if ($instance.ComputerName -match "database\.windows\.net" -or $instance.InputObject.ComputerName -match "database\.windows\.net") {
+                    if ($instance.InputObject.GetType() -eq [Microsoft.SqlServer.Management.Smo.Server]) {
+                        $connstring = $instance.InputObject.ConnectionContext.ConnectionString
+                        if ($Database) {
+                            $olddb = $connstring -split ';' | Where-Object { $_.StartsWith("Initial Catalog")}
+                            $newdb = "Initial Catalog=$Database"
+                            if ($olddb) {
+                                $connstring = $connstring.Replace("$olddb", "$newdb")
+                            } else {
+                                $connstring = "$connstring;$newdb;"
+                            }
+                        }
+                        $connstring
+                        continue
+                    } else {
+                        $isAzure = $true
+
+                        if (-not (Test-Bound -ParameterName ConnectTimeout)) {
+                            $ConnectTimeout = 30
+                        }
+
+                        if (-not (Test-Bound -ParameterName ClientName)) {
+                            $ClientName = "dbatools PowerShell module - dbatools.io"
+
+                        }
+                        $EncryptConnection = $true
+                        $instance = [DbaInstanceParameter]"tcp:$($instance.ComputerName),$($instance.Port)"
+                    }
+                }
+
                 if ($instance.GetType() -eq [Microsoft.SqlServer.Management.Smo.Server]) {
                     return $instance.ConnectionContext.ConnectionString
                 } else {
@@ -230,14 +264,6 @@ function New-DbaConnectionString {
                         if ($TrustServerCertificate) { $server.ConnectionContext.TrustServerCertificate = $true }
                         if ($WorkstationId) { $server.ConnectionContext.WorkstationId = $WorkstationId }
 
-                        $connstring = $server.ConnectionContext.ConnectionString
-                        if ($MultiSubnetFailover) { $connstring = "$connstring;MultiSubnetFailover=True" }
-                        if ($FailoverPartner) { $connstring = "$connstring;Failover Partner=$FailoverPartner" }
-                        if ($ApplicationIntent) { $connstring = "$connstring;ApplicationIntent=$ApplicationIntent;" }
-
-                        if ($connstring -ne $server.ConnectionContext.ConnectionString) {
-                            $server.ConnectionContext.ConnectionString = $connstring
-                        }
                         if ($null -ne $Credential.username) {
                             $username = ($Credential.username).TrimStart("\")
 
@@ -258,7 +284,32 @@ function New-DbaConnectionString {
                             }
                         }
 
-                        ($server.ConnectionContext.ConnectionString).Replace($guid, $SqlInstance)
+                        $connstring = $server.ConnectionContext.ConnectionString
+                        if ($MultiSubnetFailover) { $connstring = "$connstring;MultiSubnetFailover=True" }
+                        if ($FailoverPartner) { $connstring = "$connstring;Failover Partner=$FailoverPartner" }
+                        if ($ApplicationIntent) { $connstring = "$connstring;ApplicationIntent=$ApplicationIntent;" }
+
+                        if ($isAzure) {
+                            if ($Credential) {
+                                if ($Credential.UserName -like "*\*" -or $Credential.UserName -like "*@*") {
+                                    $connstring = "$connstring;Authentication=`"Active Directory Password`""
+                                } else {
+                                    $username = ($Credential.username).TrimStart("\")
+                                    $server.ConnectionContext.LoginSecure = $false
+                                    $server.ConnectionContext.set_Login($username)
+                                    $server.ConnectionContext.set_SecurePassword($Credential.Password)
+                                }
+                            } else {
+                                $connstring = $connstring.Replace("Integrated Security=True;", "")
+                                $connstring = "$connstring;Authentication=`"Active Directory Integrated`""
+                            }
+                        }
+
+                        if ($connstring -ne $server.ConnectionContext.ConnectionString) {
+                            $server.ConnectionContext.ConnectionString = $connstring
+                        }
+
+                        ($server.ConnectionContext.ConnectionString).Replace($guid, $instance)
                     }
                 }
             }

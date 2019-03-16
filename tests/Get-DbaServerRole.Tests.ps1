@@ -11,28 +11,10 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
         [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance','SqlCredential','ServerRole','ExcludeServerRole','ExcludeFixedRole','EnableException'
+        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'ServerRole', 'ExcludeServerRole', 'ExcludeFixedRole', 'EnableException'
         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         It "Should only contain our specific parameters" {
             (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
-        }
-    }
-    Context "Input validation" {
-        BeforeAll {
-            Mock Stop-Function { } -ModuleName dbatools
-        }
-        It "Should Call Stop-Function if instance does not exist or connection failure" {
-            Set-DbatoolsConfig -FullName sql.connection.timeout -Value 1
-            Get-DbaServerRole -SqlInstance Dummy | Should Be
-        }
-        It "Validates that Stop Function Mock has been called" {
-            $assertMockParams = @{
-                'CommandName' = 'Stop-Function'
-                'Times'       = 1
-                'Exactly'     = $true
-                'Module'      = 'dbatools'
-            }
-            Assert-MockCalled @assertMockParams
         }
     }
 }
