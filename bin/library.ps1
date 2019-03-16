@@ -1,5 +1,5 @@
 # Current library Version the module expects
-$currentLibraryVersion = New-Object System.Version(0, 10, 0, 70)
+$currentLibraryVersion = New-Object System.Version(0, 10, 0, 71)
 
 <#
 Library Versioning 101:
@@ -48,9 +48,9 @@ if (([System.Management.Automation.PSTypeName]'Sqlcollaborative.Dbatools.Configu
 $libraryBase = (Resolve-Path -Path ($ExecutionContext.SessionState.Module.ModuleBase + "\bin"))
 
 if ($PSVersionTable.PSVersion.Major -ge 6) {
-    $dll = (Resolve-Path -Path "$libraryBase\netcoreapp2.1\dbatools.dll" -ErrorAction Ignore)
+    $dll = (Resolve-Path -Path "$libraryBase\netcoreapp2.1\dbatools.dll" -ErrorAction Ignore).ProviderPath
 } else {
-    $dll = (Resolve-Path -Path "$libraryBase\net452\dbatools.dll" -ErrorAction Ignore)
+    $dll = (Resolve-Path -Path "$libraryBase\net452\dbatools.dll" -ErrorAction Ignore).ProviderPath
 }
 
 if ($ImportLibrary) {
