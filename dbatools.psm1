@@ -37,7 +37,7 @@ function Import-ModuleFile {
     if ($script:doDotSource) {
         . (Resolve-Path -Path $Path)
     } else {
-        $ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create([io.file]::ReadAllText((Resolve-Path -Path $Path)))), $null, $null)
+        $ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create([io.file]::ReadAllText((Resolve-Path -Path $Path).ProviderPath))), $null, $null)
     }
 }
 
@@ -136,8 +136,8 @@ $script:multiFileImport = $false
 if ($dbatools_multiFileImport) { $script:multiFileImport = $true }
 if ($dbatoolsSystemSystemNode.MultiFileImport) { $script:multiFileImport = $true }
 if ($dbatoolsSystemUserNode.MultiFileImport) { $script:multiFileImport = $true }
-if (Test-Path -Path "$script:PSModuleRoot\.git") { $script:multiFileImport = $true }
-if (Test-Path -Path "$script:PSModuleRoot/.git") { $script:multiFileImport = $true }
+if ((Test-Path -Path "$script:PSModuleRoot\.git") -or $dbatools_enabledebug) { $script:multiFileImport = $true; $script:serialImport = $true }
+if ((Test-Path -Path "$script:PSModuleRoot/.git") -or $dbatools_enabledebug) { $script:multiFileImport = $true; $script:serialImport = $true }
 #endregion Multi File Import
 
 Write-ImportTime -Text "Validated defines"
@@ -149,7 +149,7 @@ if (($PSVersionTable.PSVersion.Major -le 5) -or $script:isWindows) {
 }
 
 
-$script:DllRoot = (Resolve-Path -Path "$script:PSModuleRoot\bin\")
+$script:DllRoot = (Resolve-Path -Path "$script:PSModuleRoot\bin\").ProviderPath
 
 <#
 # Removed this because it doesn't seem to work well xplat and on win7 and it doesn't provide enough value
@@ -1415,7 +1415,29 @@ $script:xplat = @(
     'Invoke-DbaDbDbccCleanTable',
     'Invoke-DbaDbDbccUpdateUsage',
     'Get-DbaDbIdentity',
-    'Set-DbaDbIdentity'
+    'Set-DbaDbIdentity',
+    'Get-DbaCmsRegServer',
+    'Get-DbaCmsRegServerStore',
+    'Add-DbaCmsRegServer',
+    'Add-DbaCmsRegServerGroup',
+    'Export-DbaCmsRegServer',
+    'Import-DbaCmsRegServer',
+    'Move-DbaCmsRegServer',
+    'Move-DbaCmsRegServerGroup',
+    'Remove-DbaCmsRegServer',
+    'Remove-DbaCmsRegServerGroup',
+    # Config system
+    'Get-DbatoolsConfig',
+    'Get-DbatoolsConfigValue',
+    'Set-DbatoolsConfig',
+    'Register-DbatoolsConfig',
+    # Data generator
+    'New-DbaDbDataGeneratorConfig',
+    'Invoke-DbaDbDataGenerator',
+    'Get-DbaRandomizedValue',
+    'Get-DbaRandomizedDatasetTemplate',
+    'Get-DbaRandomizedDataset',
+    'Get-DbaRandomizedType'
 )
 
 $script:noncoresmo = @(
@@ -1423,10 +1445,8 @@ $script:noncoresmo = @(
     'Export-DbaUser',
     'Get-DbaSsisExecutionHistory',
     'Get-DbaRepDistributor',
-    'Get-DbaCmsRegServerStore',
     'Copy-DbaPolicyManagement',
     'Copy-DbaDataCollector',
-    'Get-DbaCmsRegServer',
     'Copy-DbaSsisCatalog',
     'New-DbaSsisCatalog',
     'Get-DbaSsisEnvironmentVariable',
@@ -1436,14 +1456,6 @@ $script:noncoresmo = @(
     'Get-DbaPbmObjectSet',
     'Get-DbaPbmPolicy',
     'Get-DbaPbmStore',
-    'Add-DbaCmsRegServer',
-    'Add-DbaCmsRegServerGroup',
-    'Export-DbaCmsRegServer',
-    'Import-DbaCmsRegServer',
-    'Move-DbaCmsRegServer',
-    'Move-DbaCmsRegServerGroup',
-    'Remove-DbaCmsRegServer',
-    'Remove-DbaCmsRegServerGroup',
     'Get-DbaRepPublication',
     'Test-DbaRepLatency',
     'Export-DbaRepServerSetting',
@@ -1577,11 +1589,6 @@ $script:windowsonly = @(
     'Find-DbaLoginInGroup',
     # 3rd party non-core DLL or exe
     'Export-DbaDacPackage', # relies on sqlpackage.exe
-    # Config system
-    'Get-DbatoolsConfig',
-    'Get-DbatoolsConfigValue',
-    'Set-DbatoolsConfig',
-    'Register-DbatoolsConfig',
     # Unknown
     'Get-DbaErrorLog',
     'Get-DbaManagementObject',

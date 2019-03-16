@@ -171,35 +171,33 @@ function Invoke-DbaDbDataMasking {
             }
             foreach ($columntest in $tabletest.Columns) {
                 if ($columntest.ColumnType -in 'hierarchyid', 'geography', 'xml', 'geometry' -and $columntest.Name -notin $Column) {
-                    Stop-Function -Message "$($columntest.ColumnType) is not supported, please remove the column $($columntest.Name) from the $($tabletest.Name) table" -Target $tables
+                    Stop-Function -Message "$($columntest.ColumnType) is not supported, please remove the column $($columntest.Name) from the $($tabletest.Name) table" -Target $tables -Continue
                 }
             }
-        }
-
-        if (Test-FunctionInterrupt) {
-            return
         }
 
         $dictionary = @{}
 
         foreach ($instance in $SqlInstance) {
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential -MinimumVersion 9
             } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
-            if ($Database) {
-                $dbs = Get-DbaDatabase -SqlInstance $server -SqlCredential $SqlCredential -Database $Database
-            } else {
-                $dbs = Get-DbaDatabase -SqlInstance $server -SqlCredential $SqlCredential -Database $tables.Name
+            if (-not $Database) {
+                $Database = $tables.Name
             }
 
-            $sqlconn = $server.ConnectionContext.SqlConnectionObject.PsObject.Copy()
-            $sqlconn.Open()
+            foreach ($dbname in $Database) {
+                if ($server.VersionMajor -lt 9) {
+                    Stop-Function -Message "SQL Server version must be 2005 or greater" -Continue
+                }
+                $db = $server.Databases[$($dbName)]
 
-            foreach ($db in $dbs) {
-
+                $connstring = New-DbaConnectionString -SqlInstance $instance -SqlCredential $SqlCredential -Database $dbName
+                $sqlconn = New-Object System.Data.SqlClient.SqlConnection $connstring
+                $sqlconn.Open()
                 $stepcounter = $nullmod = 0
 
                 foreach ($tableobject in $tables.Tables) {
@@ -222,7 +220,7 @@ function Invoke-DbaDbDataMasking {
                             $columnString = "[" + (($dbTable.Columns | Where-Object DataType -in $supportedDataTypes | Select-Object Name -ExpandProperty Name) -join "],[") + "]"
                             $query = "SELECT $($columnString) FROM [$($tableobject.Schema)].[$($tableobject.Name)]"
                         }
-                        $data = $server.Databases[$($db.Name)].Query($query) | ConvertTo-DbaDataTable
+                        $data = $db.Query($query) | ConvertTo-DbaDataTable
                     } catch {
                         Stop-Function -Message "Failure retrieving the data from table $($tableobject.Name)" -Target $Database -ErrorRecord $_ -Continue
                     }
@@ -244,14 +242,15 @@ function Invoke-DbaDbDataMasking {
                                     # Get the column mask info
                                     $columnMaskInfo = $tableobject.Columns | Where-Object Name -eq $indexColumn.Name
 
-                                    # Generate a new value
-                                    $newValue = $faker.$($columnMaskInfo.MaskingType).$($columnMaskInfo.SubType)()
+                                    if ($columnMaskInfo) {
+                                        # Generate a new value
+                                        $newValue = $faker.$($columnMaskInfo.MaskingType).$($columnMaskInfo.SubType)()
 
-                                    # Check if the value is already present as a property
-                                    if (($rowValue | Get-Member -MemberType NoteProperty).Name -notcontains $indexColumn.Name) {
-                                        $rowValue | Add-Member -Name $indexColumn.Name -Type NoteProperty -Value $newValue
+                                        # Check if the value is already present as a property
+                                        if (($rowValue | Get-Member -MemberType NoteProperty).Name -notcontains $indexColumn.Name) {
+                                            $rowValue | Add-Member -Name $indexColumn.Name -Type NoteProperty -Value $newValue
+                                        }
                                     }
-
                                 }
 
                                 # To be sure the values are unique, loop as long as long as needed to generate a unique value
@@ -287,8 +286,6 @@ function Invoke-DbaDbDataMasking {
 
                     $uniqueValueColumns = $uniqueValueColumns | Select-Object -Unique
 
-                    $sqlconn.ChangeDatabase($db.Name)
-
                     $deterministicColumns = $tables.Tables.Columns | Where-Object Deterministic -eq $true
                     $tablecolumns = $tableobject.Columns
 
@@ -305,15 +302,15 @@ function Invoke-DbaDbDataMasking {
                     }
 
                     if (-not $tablecolumns) {
-                        Write-Message -Level Verbose "No columns to process in $($db.Name).$($tableobject.Schema).$($tableobject.Name), moving on"
+                        Write-Message -Level Verbose "No columns to process in $($dbName).$($tableobject.Schema).$($tableobject.Name), moving on"
                         continue
                     }
 
-                    if ($Pscmdlet.ShouldProcess($instance, "Masking $($tablecolumns.Name -join ', ') in $($data.Rows.Count) rows in $($db.Name).$($tableobject.Schema).$($tableobject.Name)")) {
+                    if ($Pscmdlet.ShouldProcess($instance, "Masking $($tablecolumns.Name -join ', ') in $($data.Rows.Count) rows in $($dbName).$($tableobject.Schema).$($tableobject.Name)")) {
 
                         $transaction = $sqlconn.BeginTransaction()
                         $elapsed = [System.Diagnostics.Stopwatch]::StartNew()
-                        Write-ProgressHelper -StepNumber ($stepcounter++) -TotalSteps $tables.Tables.Count -Activity "Masking data" -Message "Updating $($data.Rows.Count) rows in $($tableobject.Schema).$($tableobject.Name) in $($db.Name) on $instance"
+                        Write-ProgressHelper -StepNumber ($stepcounter++) -TotalSteps $tables.Tables.Count -Activity "Masking data" -Message "Updating $($data.Rows.Count) rows in $($tableobject.Schema).$($tableobject.Name) in $($dbName) on $instance"
 
                         # Loop through each of the rows and change them
                         $rowNumber = 0
@@ -579,18 +576,32 @@ function Invoke-DbaDbDataMasking {
 
                             $rowItems = $row | Get-Member -MemberType Properties | Select-Object Name -ExpandProperty Name
                             foreach ($item in $rowItems) {
+                                $itemColumnType = $dbTable.Columns[$item].DataType.SqlDataType.ToString().ToLower()
+
                                 if (($row.$($item)).GetType().Name -match 'DBNull') {
                                     $wheres += "[$item] IS NULL"
-                                } elseif ($dbTable.Columns[$item].DataType.SqlDataType.ToString().ToLower() -in 'text', 'ntext') {
+                                } elseif ($itemColumnType -in 'bit', 'bool') {
+                                    if ($row.$item) {
+                                        $wheres += "[$item] = 1"
+                                    } else {
+                                        $wheres += "[$item] = 0"
+                                    }
+                                } elseif ($itemColumnType -like '*int*' -or $itemColumnType -in 'decimal') {
+                                    $oldValue = $row.$item
+                                    $wheres += "[$item] = $oldValue"
+                                } elseif ($itemColumnType -in 'text', 'ntext') {
                                     $oldValue = ($row.$item).Tostring().Replace("'", "''")
                                     $wheres += "CAST([$item] AS VARCHAR(MAX)) = '$oldValue'"
-                                } elseif ($dbTable.Columns[$item].DataType.SqlDataType.ToString().ToLower() -like 'datetime') {
+                                } elseif ($itemColumnType -like 'datetime') {
                                     $oldValue = ($row.$item).Tostring("yyyy-MM-dd HH:mm:ss.fff")
                                     $wheres += "[$item] = '$oldValue'"
-                                } elseif ($dbTable.Columns[$item].DataType.SqlDataType.ToString().ToLower() -like 'datetime2') {
-                                    $oldValue = ($row.$item).Tostring("yyyy-MM-dd HH:mm:ss.ffffff")
+                                } elseif ($itemColumnType -like 'datetime2') {
+                                    $oldValue = ($row.$item).Tostring("yyyy-MM-dd HH:mm:ss.fffffff")
                                     $wheres += "[$item] = '$oldValue'"
-                                } elseif ($dbTable.Columns[$item].DataType.SqlDataType.ToString().ToLower() -like '*date*') {
+                                } elseif ($itemColumnType -like 'date') {
+                                    $oldValue = ($row.$item).Tostring("yyyy-MM-dd")
+                                    $wheres += "[$item] = '$oldValue'"
+                                } elseif ($itemColumnType -like '*date*') {
                                     $oldValue = ($row.$item).Tostring("yyyy-MM-dd HH:mm:ss")
                                     $wheres += "[$item] = '$oldValue'"
                                 } else {
@@ -619,7 +630,7 @@ function Invoke-DbaDbDataMasking {
                                 ComputerName = $db.Parent.ComputerName
                                 InstanceName = $db.Parent.ServiceName
                                 SqlInstance  = $db.Parent.DomainInstanceName
-                                Database     = $db.Name
+                                Database     = $dbName
                                 Schema       = $tableobject.Schema
                                 Table        = $tableobject.Name
                                 Columns      = $tableobject.Columns.Name
@@ -635,11 +646,11 @@ function Invoke-DbaDbDataMasking {
                     # Empty the unique values array
                     $uniqueValues = $null
                 }
-            }
-            try {
-                $sqlconn.Close()
-            } catch {
-                Stop-Function -Message "Failure" -Continue -ErrorRecord $_
+                try {
+                    $sqlconn.Close()
+                } catch {
+                    Stop-Function -Message "Failure" -Continue -ErrorRecord $_
+                }
             }
         }
     }
