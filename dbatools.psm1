@@ -136,8 +136,8 @@ $script:multiFileImport = $false
 if ($dbatools_multiFileImport) { $script:multiFileImport = $true }
 if ($dbatoolsSystemSystemNode.MultiFileImport) { $script:multiFileImport = $true }
 if ($dbatoolsSystemUserNode.MultiFileImport) { $script:multiFileImport = $true }
-if (Test-Path -Path "$script:PSModuleRoot\.git") { $script:multiFileImport = $true }
-if (Test-Path -Path "$script:PSModuleRoot/.git") { $script:multiFileImport = $true }
+if ((Test-Path -Path "$script:PSModuleRoot\.git") -or $dbatools_enabledebug) { $script:multiFileImport = $true; $script:serialImport = $true }
+if ((Test-Path -Path "$script:PSModuleRoot/.git") -or $dbatools_enabledebug) { $script:multiFileImport = $true; $script:serialImport = $true }
 #endregion Multi File Import
 
 Write-ImportTime -Text "Validated defines"
@@ -1430,7 +1430,14 @@ $script:xplat = @(
     'Get-DbatoolsConfig',
     'Get-DbatoolsConfigValue',
     'Set-DbatoolsConfig',
-    'Register-DbatoolsConfig'
+    'Register-DbatoolsConfig',
+    # Data generator
+    'New-DbaDbDataGeneratorConfig',
+    'Invoke-DbaDbDataGenerator',
+    'Get-DbaRandomizedValue',
+    'Get-DbaRandomizedDatasetTemplate',
+    'Get-DbaRandomizedDataset',
+    'Get-DbaRandomizedType'
 )
 
 $script:noncoresmo = @(
