@@ -232,6 +232,12 @@ function Write-DbaDataTable {
             }
 
             if ($Pscmdlet.ShouldProcess($SqlInstance, "Writing $rowCount rows to $Fqtn")) {
+                $properties = $DataTable | Get-Member -MemberType Property
+
+                foreach ($prop in $properties) {
+                    $bulkCopy.ColumnMappings.Add($prop.Name, $prop.Name)
+                }
+
                 $bulkCopy.WriteToServer($DataTable)
                 if ($rowCount -is [int]) {
                     Write-Progress -id 1 -activity "Inserting $rowCount rows" -status "Complete" -Completed
