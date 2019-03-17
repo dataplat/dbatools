@@ -544,25 +544,48 @@ namespace Sqlcollaborative.Dbatools.Parameter
             switch (typeName)
             {
                 case "microsoft.sqlserver.management.smo.server":
-                // the extra checks break azure by enumerating, causing a new
-                // connection and sometimes altering the connection string
-                // so let's try to avoid that
-                try
-                {
-                    if (tempInput.Properties["ComputerName"] != null)
-                            _ComputerName = (string)tempInput.Properties["ComputerName"].Value;
+                    // the extra checks break azure by enumerating, causing a new
+                    // connection and sometimes altering the connection string
+                    // so let's try to avoid that
+                    try
+                    {
+                        if (tempInput.Properties["ComputerName"] != null)
+                                _ComputerName = (string)tempInput.Properties["ComputerName"].Value;
 
-                    //if (tempInput.Properties["NetPort"] != null)
-                    //        _Port = (Int32)tempInput.Properties["NetPort"].Value;
+                        if ((tempInput.Properties["NetPort"] != null) && ((Int32)tempInput.Properties["NetPort"].Value != 1433))
+                                _Port = (Int32)tempInput.Properties["NetPort"].Value;
 
-                }
-                catch (Exception e)
-                {
-                    throw new PSArgumentException("Failed to interpret input as Instance: " + Input + " : " + e.Message, e);
-                }
-                if (String.IsNullOrEmpty(_ComputerName))
-                    throw new PSArgumentException("Failed to interpret input as Instance, ComputerName empty: " + Input);
-                break;
+                        if ((tempInput.Properties["DbaInstanceName"] != null) && ((string)tempInput.Properties["DbaInstanceName"].Value != "MSSQLSERVER"))
+                            _InstanceName = (string)tempInput.Properties["DbaInstanceName"].Value;
+
+                        if (String.IsNullOrEmpty(_ComputerName))
+                        {
+                            if (tempInput.Properties["NetName"] != null)
+                                _ComputerName = (string)tempInput.Properties["NetName"].Value;	
+                            else	
+                                _ComputerName = (new DbaInstanceParameter((string)tempInput.Properties["DomainInstanceName"].Value)).ComputerName;
+                            _InstanceName = (string)tempInput.Properties["InstanceName"].Value;
+                            PSObject tempObject = new PSObject(tempInput.Properties["ConnectionContext"].Value);
+                            string tempConnectionString = (string)tempObject.Properties["ConnectionString"].Value;
+                            tempConnectionString = tempConnectionString.Split(';')[0].Split('=')[1].Trim().Replace(" ", "");
+                            if (Regex.IsMatch(tempConnectionString, @",\d{1,5}$") && (tempConnectionString.Split(',').Length == 2))
+                            {
+                                try { Int32.TryParse(tempConnectionString.Split(',')[1], out _Port); }
+                                catch (Exception e)
+                                {
+                                    throw new PSArgumentException("Failed to parse port number on connection string: " + tempConnectionString, e);
+                                }
+                                if (_Port > 65535) { throw new PSArgumentException("Failed to parse port number on connection string: " + tempConnectionString); }
+                            }
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        throw new PSArgumentException("Failed to interpret input as Instance: " + Input + " : " + e.Message, e);
+                    }
+                    if (String.IsNullOrEmpty(_ComputerName))
+                        throw new PSArgumentException("Failed to interpret input as Instance, ComputerName empty: " + Input);
+                    break;
                 case "microsoft.sqlserver.management.smo.linkedserver":
                     try
                     {
@@ -595,8 +618,7 @@ namespace Sqlcollaborative.Dbatools.Parameter
                     {
                         //Pass the ServerName property of the SMO object to the string constrtuctor,
                         //so we don't have to re-invent the wheel on instance name / port parsing
-                        DbaInstanceParameter parm =
-                            new DbaInstanceParameter((string) tempInput.Properties["ServerName"].Value);
+                        DbaInstanceParameter parm = new DbaInstanceParameter((string) tempInput.Properties["ServerName"].Value);
                         _ComputerName = parm.ComputerName;
 
                         if (parm.InstanceName != "MSSQLSERVER")
