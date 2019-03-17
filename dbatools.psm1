@@ -1017,6 +1017,10 @@ $script:renames | ForEach-Object {
 # Leave forever
 $forever = @(
     @{
+        "AliasName"  = "Write-DbaDataTable"
+        "Definition" = "Write-DbaDbTableData"
+    },
+    @{
         "AliasName"  = "Attach-DbaDatabase"
         "Definition" = "Mount-DbaDatabase"
     },

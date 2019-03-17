@@ -153,7 +153,7 @@ function Copy-DbaDbTableData {
         Copies all the data from table [Schema].[Table] in database dbatools_from on sql1 to table [dbo].[Table.Copy] in database dbatools_dest on sql2
         Keeps identity columns and Nulls, truncates the destination and processes in BatchSize of 10000.
 
-       #>
+    #>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess)]
     param (
         [Alias("ServerInstance", "SqlServer", "Source")]
