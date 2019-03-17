@@ -8,7 +8,7 @@ function Copy-DbaDbTableData {
         Copies data between SQL Server tables using SQL Bulk Copy.
         The same can be achieved also doing
         $sourcetable = Invoke-DbaQuery -SqlInstance instance1 ... -As DataTable
-        Write-DbaDataTable -SqlInstance ... -InputObject $sourcetable
+        Write-DbaDbTableData -SqlInstance ... -InputObject $sourcetable
         but it will force buffering the contents on the table in memory (high RAM usage for large tables).
         With this function, a streaming copy will be done in the most speedy and least resource-intensive way.
 

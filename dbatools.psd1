@@ -145,7 +145,7 @@
         'Get-DbaServerRoleMember',
         'Resolve-DbaNetworkName',
         'Export-DbaAvailabilityGroup',
-        'Write-DbaDataTable',
+        'Write-DbaDbTableData',
         'New-DbaDbSnapshot',
         'Restore-DbaDbSnapshot',
         'Get-DbaServerTrigger',
