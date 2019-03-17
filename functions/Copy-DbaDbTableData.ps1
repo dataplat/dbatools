@@ -397,6 +397,7 @@ function Copy-DbaDbTableData {
                             Write-Progress -id 1 -activity "Inserting rows" -status "Complete" -Completed
                         }
 
+                        $server.ConnectionContext.SqlConnectionObject.Close()
                         $bulkCopy.Close()
                         $bulkCopy.Dispose()
                         $reader.Close()
