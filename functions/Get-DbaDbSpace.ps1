@@ -25,7 +25,7 @@ function Get-DbaDbSpace {
         A piped collection of database objects from Get-DbaDatabase
 
     .PARAMETER IncludeSystemDBs
-        If this switch is enabled, system databases will be processed. By default, only user databases are processed.
+        Deprecated - if filtering is needed, please pipe filtered results from Get-DbaDatabase
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -212,5 +212,6 @@ function Get-DbaDbSpace {
     end {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Get-DbaDatabaseFreeSpace
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Get-DbaDatabaseSpace
+        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Parameter IncludeSystemDBs
     }
 }
