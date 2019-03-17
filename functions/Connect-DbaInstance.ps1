@@ -332,8 +332,10 @@ function Connect-DbaInstance {
                     $null = $serverconn.Connect()
                     $server = New-Object Microsoft.SqlServer.Management.Smo.Server $serverconn
                     # Make ComputerName easily available in the server object
-                    Add-Member -InputObject $server -NotePropertyName ComputerName -NotePropertyValue $instance.ComputerName -Force
-                    Add-Member -InputObject $server -NotePropertyName NetPort -NotePropertyValue $instance.Port -Force -Passthru
+					Add-Member -InputObject $server -NotePropertyName IsAzure -NotePropertyValue $true -Force
+					Add-Member -InputObject $server -NotePropertyName ComputerName -NotePropertyValue $instance.ComputerName -Force
+					Add-Member -InputObject $server -NotePropertyName DbaInstanceName -NotePropertyValue $instance.InstanceName -Force
+					Add-Member -InputObject $server -NotePropertyName NetPort -NotePropertyValue $instance.Port -Force -Passthru
                     continue
                 } catch {
                     Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
@@ -370,8 +372,15 @@ function Connect-DbaInstance {
                     $instance.InputObject.ConnectionContext.SqlConnectionObject
                     continue
                 } else {
-                    $instance.InputObject
-                    continue
+					$instance.InputObject
+					[Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::SetInstance($instance.FullSmoName.ToLower(), $server.ConnectionContext.Copy(), ($server.ConnectionContext.FixedServerRoles -match "SysAdmin"))
+					
+					# Update cache for instance names
+					if ([Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache["sqlinstance"] -notcontains $instance.FullSmoName.ToLower())
+					{
+						[Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache["sqlinstance"] += $instance.FullSmoName.ToLower()
+					}
+					continue
                 }
             }
             #endregion Input Object was a server object
@@ -402,8 +411,10 @@ function Connect-DbaInstance {
                         } else {
                             $parsedcomputername = $server.NetName
                         }
-                        Add-Member -InputObject $server -NotePropertyName ComputerName -NotePropertyValue $instance.ComputerName -Force
-                        Add-Member -InputObject $server -NotePropertyName NetPort -NotePropertyValue $instance.Port -Force
+						Add-Member -InputObject $server -NotePropertyName IsAzure -NotePropertyValue $false -Force
+						Add-Member -InputObject $server -NotePropertyName ComputerName -NotePropertyValue $instance.ComputerName -Force
+						Add-Member -InputObject $server -NotePropertyName DbaInstanceName -NotePropertyValue $instance.InstanceName -Force
+						Add-Member -InputObject $server -NotePropertyName NetPort -NotePropertyValue $instance.Port -Force
                     }
                     if ($MinimumVersion -and $server.VersionMajor) {
                         if ($server.versionMajor -lt $MinimumVersion) {
@@ -413,8 +424,15 @@ function Connect-DbaInstance {
 
                     if ($AzureUnsupported -and $server.DatabaseEngineType -eq "SqlAzureDatabase") {
                         Stop-Function -Message "Azure SQL Database not supported" -Continue
-                    }
-                    $server
+					}
+					
+					[Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::SetInstance($instance.FullSmoName.ToLower(), $server.ConnectionContext.Copy(), ($server.ConnectionContext.FixedServerRoles -match "SysAdmin"))
+					# Update cache for instance names
+					if ([Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache["sqlinstance"] -notcontains $instance.FullSmoName.ToLower())
+					{
+						[Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache["sqlinstance"] += $instance.FullSmoName.ToLower()
+					}
+					$server
                     continue
                 }
             }
@@ -422,7 +440,7 @@ function Connect-DbaInstance {
             if ($instance.IsConnectionString) {
                 $server = New-Object Microsoft.SqlServer.Management.Smo.Server($instance.InputObject)
             } elseif (-not $isAzure) {
-                $server = New-Object Microsoft.SqlServer.Management.Smo.Server $instance.FullSmoName
+                $server = New-Object Microsoft.SqlServer.Management.Smo.Server($instance.FullSmoName)
             }
 
             if ($AppendConnectionString) {
@@ -630,8 +648,10 @@ function Connect-DbaInstance {
                     } else {
                         $parsedcomputername = $server.NetName
                     }
-                    Add-Member -InputObject $server -NotePropertyName ComputerName -NotePropertyValue $instance.ComputerName -Force
-                    Add-Member -InputObject $server -NotePropertyName NetPort -NotePropertyValue $instance.Port -Force
+					Add-Member -InputObject $server -NotePropertyName IsAzure -NotePropertyValue $false -Force
+					Add-Member -InputObject $server -NotePropertyName ComputerName -NotePropertyValue $instance.ComputerName -Force
+					Add-Member -InputObject $server -NotePropertyName DbaInstanceName -NotePropertyValue $instance.InstanceName -Force
+					Add-Member -InputObject $server -NotePropertyName NetPort -NotePropertyValue $instance.Port -Force
                 }
             }
 
