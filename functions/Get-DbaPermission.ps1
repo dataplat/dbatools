@@ -244,7 +244,11 @@ function Get-DbaPermission {
                 }
 
                 Write-Message -Level Debug -Message "T-SQL: $DBPermsql"
-                $db.ExecuteWithResults($DBPermsql).Tables.Rows
+                try {
+                    $db.ExecuteWithResults($DBPermsql).Tables.Rows
+                } catch {
+                    Stop-Function -Message "Failure executing against $($db.Name) on $instance" -ErrorRecord $_ -Continue
+                }
             }
         }
     }
