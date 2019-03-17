@@ -156,7 +156,7 @@ function Get-DbaUserPermission {
                         UNION
                         SELECT DISTINCT
                                 'DB SECURABLES' AS Type ,
-                                ISNULL(drm.member, 'None') AS [Role/Securable/Class ,
+                                ISNULL(drm.member, 'None') AS [Role/Securable/Class] ,
                                 dp.[Securable Type or Class] COLLATE SQL_Latin1_General_CP1_CI_AS ,
                                 dp.[Schema/Owner] ,
                                 dp.Securable ,
