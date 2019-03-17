@@ -83,6 +83,9 @@ SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version In
 -- SQL Server 2016 build versions 
 -- https://bit.ly/2epkTDT
 
+-- Recommended updates and configuration options for SQL Server 2017 and 2016 with high-performance workloads
+-- https://bit.ly/2JsReue
+
 -- Where to find information about the latest SQL Server builds
 -- https://bit.ly/2IGHbfY
 

@@ -252,7 +252,6 @@ Write-ImportTime -Text "Script: Logging"
 . Import-ModuleFile -Path (Resolve-Path -Path "$script:PSModuleRoot\internal\scripts\updateTeppAsync.ps1")
 Write-ImportTime -Text "Script: Asynchronous TEPP Cache"
 
-
 # Start the maintenance system (requires pretty much everything else already up and running)
 . Import-ModuleFile -Path (Resolve-Path -Path "$script:PSModuleRoot\internal\scripts\dbatools-maintenance.ps1")
 Write-ImportTime -Text "Script: Maintenance"

@@ -18,5 +18,6 @@ issues:
     - Discussion
     - Documentation
     - Question
+    - Confirmed
 # Label to use when marking an issue as stale
 staleLabel: stale
