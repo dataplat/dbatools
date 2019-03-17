@@ -53,9 +53,7 @@ $TestsRunGroups = @{
         'Get-DbaDbMasterKey',
         'Test-DbaAgentJobOwner',
         'Stop-DbaXESession',
-        'Get-DbaPrivilege',
-        'Get-DbaDbOrphanUser',
-        'Repair-DbaDbOrphanUser'
+        'Get-DbaPrivilege'
     )
     # do not run everywhere
     "disabled"          = @()
