@@ -235,7 +235,7 @@ function Write-DbaDataTable {
                 $properties = $DataTable | Get-Member -MemberType Property
 
                 foreach ($prop in $properties) {
-                   $bulkCopy.ColumnMappings.Add($prop.Name, $prop.Name)
+                    $bulkCopy.ColumnMappings.Add($prop.Name, $prop.Name)
                 }
 
                 $bulkCopy.WriteToServer($DataTable)
