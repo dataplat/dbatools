@@ -1,11 +1,11 @@
 $scriptBlock = {
-	$script:___ScriptName = 'dbatools-teppasynccache'
-	
-	# Defer module import to avoid collisions and reduce CPU impact
-	Start-Sleep -Seconds 15
-	$dbatoolsPath = Join-Path -Path ([Sqlcollaborative.Dbatools.dbaSystem.SystemHost]::ModuleBase) -ChildPath "dbatools.psd1"
-	Import-Module $dbatoolsPath
-	$script:dbatools = Get-Module dbatools
+    $script:___ScriptName = 'dbatools-teppasynccache'
+
+    # Defer module import to avoid collisions and reduce CPU impact
+    Start-Sleep -Seconds 15
+    $dbatoolsPath = Join-Path -Path ([Sqlcollaborative.Dbatools.dbaSystem.SystemHost]::ModuleBase) -ChildPath "dbatools.psd1"
+    Import-Module $dbatoolsPath
+    $script:dbatools = Get-Module dbatools
 
     #region Utility Functions
     function Get-PriorityServer {
@@ -34,29 +34,27 @@ $scriptBlock = {
                 $server = New-Object Microsoft.SqlServer.Management.Smo.Server($instance.ConnectionObject)
                 try {
                     $server.ConnectionContext.Connect()
-				}
-				catch
-				{
-					& $script:dbatools { Write-Message "Failed to connect to $instance" -ErrorRecord $_ -Level Debug }
+                } catch {
+                    & $script:dbatools { Write-Message "Failed to connect to $instance" -ErrorRecord $_ -Level Debug }
                     continue
                 }
 
                 $FullSmoName = ([Sqlcollaborative.Dbatools.Parameter.DbaInstanceParameter]$instance.ConnectionObject.ConnectionString).FullSmoName.ToLower()
 
                 foreach ($scriptBlock in ([Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::TeppGatherScriptsFast)) {
-					$scriptName = ([Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Scripts.Values | Where-Object ScriptBlock -EQ $scriptBlock).Name
-					# Workaround to avoid stupid issue with scriptblock from different runspace
-					try { [ScriptBlock]::Create($scriptBlock).Invoke() }
-					catch { & $script:dbatools { Write-Message "Failed to execute TEPP $scriptName against $FullSmoName" -ErrorRecord $_ -Level Debug } }
-				}
-				
-				foreach ($scriptBlock in ([Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::TeppGatherScriptsSlow)) {
-					$scriptName = ([Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Scripts.Values | Where-Object ScriptBlock -EQ $scriptBlock).Name
-					# Workaround to avoid stupid issue with scriptblock from different runspace
-					try { [ScriptBlock]::Create($scriptBlock).Invoke() }
-					catch { & $script:dbatools { Write-Message "Failed to execute TEPP $scriptName against $FullSmoName" -ErrorRecord $_ -Level Debug } }
-				}
-				
+                    $scriptName = ([Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Scripts.Values | Where-Object ScriptBlock -EQ $scriptBlock).Name
+                    # Workaround to avoid stupid issue with scriptblock from different runspace
+                    try { [ScriptBlock]::Create($scriptBlock).Invoke() }
+                    catch { & $script:dbatools { Write-Message "Failed to execute TEPP $scriptName against $FullSmoName" -ErrorRecord $_ -Level Debug } }
+                }
+
+                foreach ($scriptBlock in ([Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::TeppGatherScriptsSlow)) {
+                    $scriptName = ([Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Scripts.Values | Where-Object ScriptBlock -EQ $scriptBlock).Name
+                    # Workaround to avoid stupid issue with scriptblock from different runspace
+                    try { [ScriptBlock]::Create($scriptBlock).Invoke() }
+                    catch { & $script:dbatools { Write-Message "Failed to execute TEPP $scriptName against $FullSmoName" -ErrorRecord $_ -Level Debug } }
+                }
+
                 $server.ConnectionContext.Disconnect()
 
                 $instance.LastUpdate = Get-Date
@@ -83,15 +81,11 @@ $scriptBlock = {
             Start-Sleep -Seconds 5
         }
         #endregion Main Execution
-	}
-	catch
-	{
-		& $script:dbatools { Write-Message "General Failure" -ErrorRecord $_ -Level Debug }
-	}
-	finally
-	{
-		[Sqlcollaborative.Dbatools.Runspace.RunspaceHost]::Runspaces[$___ScriptName.ToLower()].SignalStopped()
-	}
+    } catch {
+        & $script:dbatools { Write-Message "General Failure" -ErrorRecord $_ -Level Debug }
+    } finally {
+        [Sqlcollaborative.Dbatools.Runspace.RunspaceHost]::Runspaces[$___ScriptName.ToLower()].SignalStopped()
+    }
 }
 
 Register-DbaRunspace -ScriptBlock $scriptBlock -Name "dbatools-teppasynccache"
