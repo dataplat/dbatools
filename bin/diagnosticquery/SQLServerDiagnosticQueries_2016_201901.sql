@@ -1,7 +1,7 @@
 
 -- SQL Server 2016 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: March 3, 2019
+-- Last Modified: March 17, 2019
 -- https://www.sqlskills.com/blogs/glenn/
 -- http://sqlserverperformance.wordpress.com/
 -- Twitter: GlennAlanBerry
@@ -102,8 +102,8 @@ SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version In
 -- SQL Server 2016 build versions 
 -- https://bit.ly/2epkTDT
 
--- Where to find information about the latest SQL Server builds
--- https://bit.ly/2IGHbfY
+-- Recommended updates and configuration options for SQL Server 2017 and 2016 with high-performance workloads
+-- https://bit.ly/2JsReue
 
 -- Performance and Stability Related Fixes in Post-SQL Server 2016 SP1 Builds
 -- https://bit.ly/2gr7k9L
