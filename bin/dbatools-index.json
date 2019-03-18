@@ -6299,6 +6299,113 @@
         "Syntax":  "Export-DbaDacPackage -SqlInstance \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Database \u003cObject[]\u003e] [-ExcludeDatabase \u003cObject[]\u003e] [-AllUserDatabases] [-Path \u003cString\u003e] [-DacOption \u003cObject\u003e] [-Type \u003cString\u003e] [-Table \u003cString[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]\nExport-DbaDacPackage -SqlInstance \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Database \u003cObject[]\u003e] [-ExcludeDatabase \u003cObject[]\u003e] [-AllUserDatabases] [-Path \u003cString\u003e] [-ExtendedParameters \u003cString\u003e] [-ExtendedProperties \u003cString\u003e] [-Type \u003cString\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
+        "Name":  "Export-DbaDbTableData",
+        "Description":  "Exports data from tables",
+        "Tags":  [
+                     "Migration",
+                     "Backup",
+                     "Export"
+                 ],
+        "Synopsis":  "Exports data from tables",
+        "Alias":  "",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
+        "CommandName":  "Export-DbaDbTableData",
+        "Availability":  "Windows, Linux, macOS",
+        "Links":  "https://dbatools.io/Export-DbaDbTableData",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaDbTable -SqlInstance sql2017 -Database AdventureWorks2014 -Table EmployeePayHistory | Export-DbaDbTableData\nExports data from EmployeePayHistory in AdventureWorks2014 in sql2017\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaDbTable -SqlInstance sql2017 -Database AdventureWorks2014 -Table EmployeePayHistory | Export-DbaDbTableData -Path C:\\temp\\export.sql -Append\nExports data from EmployeePayHistory in AdventureWorks2014 in sql2017 using a trusted connection - Will append the output to the file C:\\temp\\export.sql if it already exists\r\nScript does not include Batch Separator and will not compile\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaDbTable -SqlInstance sql2016 -Database MyDatabase -Table \u0027dbo.Table1\u0027, \u0027dbo.Table2\u0027 -SqlCredential sqladmin | Export-DbaDbTableData -Path C:\\temp\\export.sql\nExports only data from \u0027dbo.Table1\u0027 and \u0027dbo.Table2\u0027 in MyDatabase to C:temp\\export.sql and uses the SQL login \"sqladmin\" to login to sql2016",
+        "Params":  [
+                       [
+                           "InputObject",
+                           "Pipeline input from Get-DbaDbTable",
+                           "",
+                           true,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
+                           "Path",
+                           "The output filename and location. If no path is specified, one will be created. If the file already exists, the output will be appended.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Encoding",
+                           "Specifies the file encoding. The default is UTF8.\nValid values are:\r\n-- ASCII: Uses the encoding for the ASCII (7-bit) character set.\r\n-- BigEndianUnicode: Encodes in UTF-16 format using the big-endian byte order.\r\n-- Byte: Encodes a set of characters into a sequence of bytes.\r\n-- String: Uses the encoding type for a string.\r\n-- Unicode: Encodes in UTF-16 format using the little-endian byte order.\r\n-- UTF7: Encodes in UTF-7 format.\r\n-- UTF8: Encodes in UTF-8 format.\r\n-- Unknown: The encoding type is unknown or invalid. The data can be treated as binary.",
+                           "",
+                           false,
+                           "false",
+                           "UTF8"
+                       ],
+                       [
+                           "BatchSeparator",
+                           "Specifies the Batch Separator to use. Default is None",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "NoPrefix",
+                           "Do not include a Prefix",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "Passthru",
+                           "Output script to console",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "NoClobber",
+                           "Do not overwrite file",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "Append",
+                           "Append to file",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "WhatIf",
+                           "Shows what would happen if the command were to run. No actions are actually performed",
+                           "wi",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Confirm",
+                           "Prompts you for confirmation before executing any changing operations within the command",
+                           "cf",
+                           false,
+                           "false",
+                           ""
+                       ]
+                   ],
+        "Syntax":  "Export-DbaDbTableData [-InputObject] \u003cTable[]\u003e [[-Path] \u003cString\u003e] [[-Encoding] \u003cString\u003e] [[-BatchSeparator] \u003cString\u003e] [-NoPrefix] [-Passthru] [-NoClobber] [-Append] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+    },
+    {
         "Name":  "Export-DbaDiagnosticQuery",
         "Description":  "The default output format of Invoke-DbaDiagnosticQuery is a custom object. It can also output to CSV and Excel.\nHowever, CSV output can generate a lot of files and Excel output depends on the ImportExcel module by Doug Finke (https://github.com/dfinke/ImportExcel)\nExport-DbaDiagnosticQuery can be used to convert from the default export type to the other available export types.",
         "Tags":  "Query",
