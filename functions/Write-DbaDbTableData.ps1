@@ -232,10 +232,8 @@ function Write-DbaDbTableData {
             }
 
             if ($Pscmdlet.ShouldProcess($SqlInstance, "Writing $rowCount rows to $Fqtn")) {
-                $properties = $DataTable | Get-Member -MemberType Property
-
-                foreach ($prop in $properties) {
-                    $bulkCopy.ColumnMappings.Add($prop.Name, $prop.Name)
+                foreach ($prop in $DataTable.Columns.ColumnName) {
+                    $bulkCopy.ColumnMappings.Add($prop, $prop)
                 }
 
                 $bulkCopy.WriteToServer($DataTable)
