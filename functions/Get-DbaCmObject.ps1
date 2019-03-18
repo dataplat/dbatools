@@ -179,7 +179,7 @@ function Get-DbaCmObject {
                                 #region 1 = Generic runtime error
                                 1 {
                                     # 0x8007052e, 0x80070005 : Authentication error, bad credential
-                                    if (($errorItem.Exception.InnerException -eq 0x8007052e) -or ($errorItem.Exception.InnerException -eq 0x80070005)) {
+                                    if (($errorItem.Exception.InnerException.MessageId -eq "HRESULT 0x8007052e") -or ($errorItem.Exception.InnerException.MessageId -eq "HRESULT 0x80070005")) {
                                         # Ignore the global setting for bad credential cache disabling, since the connection object is aware of that state and will ignore input if it should.
                                         # This is due to the ability to locally override the global setting, thus it must be done on the object and can then be done in code
                                         $connection.AddBadCredential($cred)
@@ -291,7 +291,7 @@ function Get-DbaCmObject {
                                 #region 1 = Generic runtime error
                                 1 {
                                     # 0x8007052e, 0x80070005 : Authentication error, bad credential
-                                    if (($errorItem.Exception.InnerException -eq 0x8007052e) -or ($errorItem.Exception.InnerException -eq 0x80070005)) {
+									if (($errorItem.Exception.InnerException.MessageId -eq "HRESULT 0x8007052e") -or ($errorItem.Exception.InnerException.MessageId -eq "HRESULT 0x80070005")) {
                                         # Ignore the global setting for bad credential cache disabling, since the connection object is aware of that state and will ignore input if it should.
                                         # This is due to the ability to locally override the global setting, thus it must be done on the object and can then be done in code
                                         $connection.AddBadCredential($cred)
