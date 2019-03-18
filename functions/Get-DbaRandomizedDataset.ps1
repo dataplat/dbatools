@@ -85,17 +85,6 @@ function Get-DbaRandomizedDataset {
         [switch]$EnableException
     )
 
-    begin {
-        # Create the faker objects
-        try {
-            Add-Type -Path (Resolve-Path -Path "$script:PSModuleRoot\bin\randomizer\Bogus.dll")
-            $faker = New-Object Bogus.Faker($Locale)
-        } catch {
-            Stop-Function -Message "Could not load randomizer dll" -Continue
-        }
-
-    }
-
     process {
         if (Test-FunctionInterrupt) { return }
 
@@ -104,9 +93,11 @@ function Get-DbaRandomizedDataset {
             Stop-Function -Message "Please enter a template or assign a template file" -Continue
         }
 
+        $templates = @()
+
         # Get all thee templates
         if ($Template) {
-            $templates = Get-DbaRandomizedDatasetTemplate -Template $Template
+            $templates += Get-DbaRandomizedDatasetTemplate -Template $Template
 
             if ($templates.Count -lt 1) {
                 Stop-Function -Message "Could not find any templates" -Continue
@@ -116,7 +107,6 @@ function Get-DbaRandomizedDataset {
         }
 
         foreach ($file in $InputObject) {
-
             # Get all the items that should be processed
             try {
                 $templateSet = Get-Content -Path $file.FullName -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
@@ -130,7 +120,7 @@ function Get-DbaRandomizedDataset {
                 $row = New-Object PSCustomObject
 
                 foreach ($column in $templateSet.Columns) {
-                    $value = Get-DbaRandomizedValue -RandomizerType $column.Type -RandomizerSubType $column.SubType
+                    $value = Get-DbaRandomizedValue -RandomizerType $column.Type -RandomizerSubType $column.SubType -Locale $Locale
 
                     $row | Add-Member -Name $column.Name -Type NoteProperty -Value $value
                 }
