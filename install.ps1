@@ -15,9 +15,11 @@ function Write-LocalMessage {
 }
 
 try {
-    Update-Module dbatools -Erroraction Stop
-    Write-LocalMessage -Message "Updated using the PowerShell Gallery"
-    return
+    if (Get-InstalledModule dbatools -Erroraction Stop) {
+        Update-Module dbatools -Erroraction Stop
+        Write-LocalMessage -Message "Updated using the PowerShell Gallery"
+        return
+    }
 } catch {
     Write-LocalMessage -Message "dbatools was not installed by the PowerShell Gallery, continuing with web install."
 }
@@ -32,8 +34,14 @@ $availableTls | ForEach-Object {
 }
 
 $dbatools_copydllmode = $true
-$module = Import-Module -Name dbatools -ErrorAction SilentlyContinue
-$localpath = $module.ModuleBase
+
+foreach ($modpath in $env:PSModulePath) {
+    try {
+        $localpath = (Get-ChildItem "$modpath\dbatools" -ErrorAction Stop).FullName
+    } catch {
+        $localpath = $null
+    }
+}
 
 if ($null -eq $localpath) {
     $localpath = "$HOME\Documents\WindowsPowerShell\Modules\dbatools"
