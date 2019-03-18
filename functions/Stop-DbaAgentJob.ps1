@@ -117,7 +117,7 @@ function Stop-DbaAgentJob {
 
                 if ($wait) {
                     while ($currentjob.CurrentRunStatus -ne 'Idle') {
-                        Write-Message -Level Output -Message "$currentjob is $($currentjob.CurrentRunStatus)"
+                        Write-Message -Level Verbose -Message "$currentjob is $($currentjob.CurrentRunStatus)"
                         Start-Sleep -Seconds 3
                         $currentjob.Refresh()
                     }
