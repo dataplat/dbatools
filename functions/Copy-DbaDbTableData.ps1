@@ -8,7 +8,7 @@ function Copy-DbaDbTableData {
         Copies data between SQL Server tables using SQL Bulk Copy.
         The same can be achieved also doing
         $sourcetable = Invoke-DbaQuery -SqlInstance instance1 ... -As DataTable
-        Write-DbaDataTable -SqlInstance ... -InputObject $sourcetable
+        Write-DbaDbTableData -SqlInstance ... -InputObject $sourcetable
         but it will force buffering the contents on the table in memory (high RAM usage for large tables).
         With this function, a streaming copy will be done in the most speedy and least resource-intensive way.
 
@@ -153,7 +153,7 @@ function Copy-DbaDbTableData {
         Copies all the data from table [Schema].[Table] in database dbatools_from on sql1 to table [dbo].[Table.Copy] in database dbatools_dest on sql2
         Keeps identity columns and Nulls, truncates the destination and processes in BatchSize of 10000.
 
-       #>
+    #>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess)]
     param (
         [Alias("ServerInstance", "SqlServer", "Source")]
@@ -244,7 +244,7 @@ function Copy-DbaDbTableData {
             try {
                 $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
             } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $SqlInstance
+                Stop-Function -Message "Error occured while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $SqlInstance
                 return
             }
 
@@ -292,7 +292,7 @@ function Copy-DbaDbTableData {
                 try {
                     $destServer = Connect-SqlInstance -SqlInstance $destinationserver -SqlCredential $DestinationSqlCredential
                 } catch {
-                    Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $destinationserver
+                    Stop-Function -Message "Error occured while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $destinationserver
                     return
                 }
 
@@ -397,6 +397,7 @@ function Copy-DbaDbTableData {
                             Write-Progress -id 1 -activity "Inserting rows" -status "Complete" -Completed
                         }
 
+                        $server.ConnectionContext.SqlConnectionObject.Close()
                         $bulkCopy.Close()
                         $bulkCopy.Dispose()
                         $reader.Close()
