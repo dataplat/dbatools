@@ -224,11 +224,11 @@ function Get-DbaBackupInformation {
                             Write-Message -Level Verbose -Message "Skipping Log Backups as requested"
                         } else {
                             Write-Message -Level Verbose -Message "OLA - Getting folder contents"
-                            $Files += (Get-XpDirTreeRestoreFile -Path $f -SqlInstance $server).FileName
+                            $Files += (Get-XpDirTreeRestoreFile -Path $f -SqlInstance $server).FullName
                         }
                     } else {
                         Write-Message -Message "Testing a folder $f" -Level Verbose
-                        $Files += $Check = (Get-XpDirTreeRestoreFile -Path $f -SqlInstance $server).FileName
+                        $Files += $Check = (Get-XpDirTreeRestoreFile -Path $f -SqlInstance $server).FullName
                         if ($null -eq $check) {
                             Write-Message -Message "Nothing returned from $f" -Level Verbose
                         }
@@ -255,9 +255,9 @@ function Get-DbaBackupInformation {
                         }
                     } else {
                         if ($true -eq $MaintenanceSolution) {
-                            $Files += (Get-XpDirTreeRestoreFile -Path $f\FULL -SqlInstance $server -NoRecurse).FileName
-                            $Files += (Get-XpDirTreeRestoreFile -Path $f\DIFF -SqlInstance $server -NoRecurse).FileName
-                            $Files += (Get-XpDirTreeRestoreFile -Path $f\LOG -SqlInstance $server -NoRecurse).FileName
+                            $Files += (Get-XpDirTreeRestoreFile -Path $f\FULL -SqlInstance $server -NoRecurse).FullName
+                            $Files += (Get-XpDirTreeRestoreFile -Path $f\DIFF -SqlInstance $server -NoRecurse).FullName
+                            $Files += (Get-XpDirTreeRestoreFile -Path $f\LOG -SqlInstance $server -NoRecurse).FullName
                         } else {
                             Write-Message -Level VeryVerbose -Message "File"
                             $Files += $f
