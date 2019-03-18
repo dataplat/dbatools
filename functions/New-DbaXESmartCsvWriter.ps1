@@ -72,6 +72,11 @@ function New-DbaXESmartCsvWriter {
     begin {
         try {
             Add-Type -Path "$script:PSModuleRoot\bin\XESmartTarget\XESmartTarget.Core.dll" -ErrorAction Stop
+            $appConfigPath = "$script:PSModuleRoot\bin\XESmartTarget\app.config"
+            [AppDomain]::CurrentDomain.SetData('APP_CONFIG_FILE', $appConfigPath)
+            [Configuration.ConfigurationManager].GetField("s_initState", "NonPublic, Static").SetValue($null, 0)
+            [Configuration.ConfigurationManager].GetField("s_configSystem", "NonPublic, Static").SetValue($null, $null)
+            ([Configuration.ConfigurationManager].Assembly.GetTypes() | where {$_.FullName -eq "System.Configuration.ClientConfigPaths"})[0].GetField("s_current", "NonPublic, Static").SetValue($null, $null)
         } catch {
             Stop-Function -Message "Could not load XESmartTarget.Core.dll" -ErrorRecord $_ -Target "XESmartTarget"
             return
