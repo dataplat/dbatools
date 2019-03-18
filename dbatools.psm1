@@ -1440,7 +1440,8 @@ $script:xplat = @(
     'Get-DbaRandomizedValue',
     'Get-DbaRandomizedDatasetTemplate',
     'Get-DbaRandomizedDataset',
-    'Get-DbaRandomizedType'
+    'Get-DbaRandomizedType',
+    'Export-DbaDbTableData'
 )
 
 $script:noncoresmo = @(
