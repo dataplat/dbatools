@@ -145,7 +145,7 @@
         'Get-DbaServerRoleMember',
         'Resolve-DbaNetworkName',
         'Export-DbaAvailabilityGroup',
-        'Write-DbaDataTable',
+        'Write-DbaDbTableData',
         'New-DbaDbSnapshot',
         'Restore-DbaDbSnapshot',
         'Get-DbaServerTrigger',
@@ -632,6 +632,7 @@
     # Aliases to export from this module
     # Aliases are stored in dbatools.psm1
     # KEEP Detach-DbaDatabase, Dismount-DbaDatabase and Start-SqlMigration FOREVER
+    # Also keep Get-DbaRegisteredServer and Write-DbaDataTable, prolly
     AliasesToExport        = @(
         'Add-DbaRegisteredServer',
         'Add-DbaRegisteredServerGroup',
@@ -822,7 +823,8 @@
         'Test-SqlTempDbConfiguration',
         'Update-DbaSqlServiceAccount',
         'Watch-DbaXEventSession',
-        'Watch-SqlDbLogin'
+        'Watch-SqlDbLogin',
+        'Write-DbaDbTableData'
     )
 
     # List of all modules packaged with this module

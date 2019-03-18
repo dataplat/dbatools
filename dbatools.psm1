@@ -1017,6 +1017,10 @@ $script:renames | ForEach-Object {
 # Leave forever
 $forever = @(
     @{
+        "AliasName"  = "Write-DbaDataTable"
+        "Definition" = "Write-DbaDbTableData"
+    },
+    @{
         "AliasName"  = "Attach-DbaDatabase"
         "Definition" = "Mount-DbaDatabase"
     },
@@ -1114,7 +1118,7 @@ $script:xplat = @(
     'Get-DbaServerRoleMember',
     'Resolve-DbaNetworkName',
     'Export-DbaAvailabilityGroup',
-    'Write-DbaDataTable',
+    'Write-DbaDbTableData',
     'New-DbaDbSnapshot',
     'Restore-DbaDbSnapshot',
     'Get-DbaServerTrigger',
