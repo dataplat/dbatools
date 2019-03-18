@@ -11,7 +11,7 @@
     RootModule             = 'dbatools.psm1'
 
     # Version number of this module.
-    ModuleVersion          = '0.9.790'
+    ModuleVersion          = '0.9.791'
 
     # ID used to uniquely identify this module
     GUID                   = '9d139310-ce45-41ce-8e8b-d76335aa1789'
@@ -506,6 +506,8 @@
         'Test-DbaMaxMemory', # can be fixed by not testing remote when linux is detected
         'Rename-DbaDatabase', # can maybebe fixed by not remoting when linux is detected
         # CM and Windows functions
+        'Install-DbaInstance',
+        'Invoke-DbaAdvancedInstall',
         'Update-DbaInstance',
         'Invoke-DbaAdvancedUpdate',
         'Invoke-DbaPfRelog',
