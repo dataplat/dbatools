@@ -23,6 +23,7 @@ $TestsRunGroups = @{
         # takes too long
         'Install-DbaSqlWatch',
         'Uninstall-DbaSqlWatch',
+        'Get-DbaExecutionPlan',
         # weird too often
         'Add-DbaComputerCertificate',
         'Get-DbaComputerCertificate',
