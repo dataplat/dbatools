@@ -1490,6 +1490,8 @@ $script:windowsonly = @(
     'Test-DbaMaxMemory', # can be fixed by not testing remote when linux is detected
     'Rename-DbaDatabase', # can maybebe fixed by not remoting when linux is detected
     # CM and Windows functions
+    'Install-DbaInstance',
+    'Invoke-DbaAdvancedInstall',
     'Update-DbaInstance',
     'Invoke-DbaAdvancedUpdate',
     'Invoke-DbaPfRelog',
