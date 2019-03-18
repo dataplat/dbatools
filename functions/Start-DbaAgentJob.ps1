@@ -165,7 +165,7 @@ function Start-DbaAgentJob {
                 # Wait for the job
                 if (Test-Bound -ParameterName Wait) {
                     while ($currentjob.CurrentRunStatus -ne 'Idle') {
-                        Write-Message -Level Output -Message "$currentjob is $($currentjob.CurrentRunStatus)"
+                        Write-Message -Level Verbose -Message "$currentjob is $($currentjob.CurrentRunStatus)"
                         Start-Sleep -Seconds $WaitPeriod
                         $currentjob.Refresh()
                     }
