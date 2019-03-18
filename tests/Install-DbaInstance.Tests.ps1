@@ -69,6 +69,14 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
             $cred = [pscredential]::new('foo', (ConvertTo-SecureString 'bar' -Force -AsPlainText))
         }
         foreach ($version in '2008', '2008R2', '2012', '2014', '2016', '2017') {
+            [version]$canonicVersion = switch ($version) {
+                2008 { '10.0' }
+                2008R2 { '10.50' }
+                2012 { '11.0' }
+                2014 { '12.0' }
+                2016 { '13.0' }
+                2017 { '14.0' }
+            }
             $mainNode = if ($version -notlike '2008*') { "OPTIONS" } else { "SQLSERVER2008" }
             # Create a dummy Configuration.ini
             @(
@@ -80,11 +88,11 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
                 $result = Install-DbaInstance -Version $version -Path TestDrive: -EnableException -Confirm:$false -Feature All
                 Assert-MockCalled -CommandName Invoke-Program -Exactly 1 -Scope It -ModuleName dbatools
                 Assert-MockCalled -CommandName Find-SqlServerSetup -Exactly 1 -Scope It -ModuleName dbatools
-                Assert-MockCalled -CommandName Test-PendingReboot -Exactly 2 -Scope It -ModuleName dbatools
+                Assert-MockCalled -CommandName Test-PendingReboot -Exactly 3 -Scope It -ModuleName dbatools
 
                 $result | Should -Not -BeNullOrEmpty
                 $result.ComputerName | Should -BeLike $env:COMPUTERNAME*
-                $result.Version | Should -Be $version
+                $result.Version | Should -Be $canonicVersion
                 $result.Port | Should -Be $null
                 $result.Successful | Should -Be $true
                 $result.Restarted | Should -Be $false
@@ -111,14 +119,14 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
                 $result = Install-DbaInstance @splat -EnableException -Confirm:$false
                 Assert-MockCalled -CommandName Invoke-Program -Exactly 1 -Scope It -ModuleName dbatools
                 Assert-MockCalled -CommandName Find-SqlServerSetup -Exactly 1 -Scope It -ModuleName dbatools
-                Assert-MockCalled -CommandName Test-PendingReboot -Exactly 2 -Scope It -ModuleName dbatools
+                Assert-MockCalled -CommandName Test-PendingReboot -Exactly 3 -Scope It -ModuleName dbatools
                 Assert-MockCalled -CommandName Set-DbaPrivilege -Exactly 1 -Scope It -ModuleName dbatools
                 Assert-MockCalled -CommandName Set-DbaTcpPort -Exactly 1 -Scope It -ModuleName dbatools
 
                 $result | Should -Not -BeNullOrEmpty
                 $result.ComputerName | Should -BeLike $env:COMPUTERNAME*
                 $result.InstanceName | Should -Be NewInstance
-                $result.Version | Should -Be $version
+                $result.Version | Should -Be $canonicVersion
                 $result.SACredential.GetNetworkCredential().Password | Should -Be $cred.GetNetworkCredential().Password
                 $result.Port | Should -Be 1337
                 $result.Successful | Should -Be $true
@@ -141,12 +149,12 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
                 $result = Install-DbaInstance @splat -EnableException -Confirm:$false
                 Assert-MockCalled -CommandName Invoke-Program -Exactly 1 -Scope It -ModuleName dbatools
                 Assert-MockCalled -CommandName Find-SqlServerSetup -Exactly 1 -Scope It -ModuleName dbatools
-                Assert-MockCalled -CommandName Test-PendingReboot -Exactly 2 -Scope It -ModuleName dbatools
+                Assert-MockCalled -CommandName Test-PendingReboot -Exactly 3 -Scope It -ModuleName dbatools
 
                 $result | Should -Not -BeNullOrEmpty
                 $result.ComputerName | Should -BeLike $env:COMPUTERNAME*
                 $result.InstanceName | Should -Be NewInstance
-                $result.Version | Should -Be $version
+                $result.Version | Should -Be $canonicVersion
                 $result.Port | Should -Be 13337
                 $result.Successful | Should -Be $true
                 $result.Restarted | Should -Be $false
@@ -169,12 +177,12 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
                 $result = Install-DbaInstance @splat -EnableException -Confirm:$false
                 Assert-MockCalled -CommandName Invoke-Program -Exactly 1 -Scope It -ModuleName dbatools
                 Assert-MockCalled -CommandName Find-SqlServerSetup -Exactly 1 -Scope It -ModuleName dbatools
-                Assert-MockCalled -CommandName Test-PendingReboot -Exactly 2 -Scope It -ModuleName dbatools
+                Assert-MockCalled -CommandName Test-PendingReboot -Exactly 3 -Scope It -ModuleName dbatools
                 Assert-MockCalled -CommandName Restart-Computer -Exactly 1 -Scope It -ModuleName dbatools
 
                 $result | Should -Not -BeNullOrEmpty
                 $result.ComputerName | Should -BeLike $env:COMPUTERNAME*
-                $result.Version | Should -Be $version
+                $result.Version | Should -Be $canonicVersion
                 $result.Successful | Should -Be $true
                 $result.Restarted | Should -Be $true
                 $result.Installer | Should -Be "$TestDrive\dummy.exe"
@@ -211,7 +219,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
             { Install-DbaInstance -Version 2008 -EnableException -Path 'TestDrive:' -Confirm:$false } | Should throw 'Installation failed with exit code 12345'
             $result = Install-DbaInstance -Version 2008 -Path 'TestDrive:' -Confirm:$false -WarningVariable warVar 3>$null
             $result | Should -Not -BeNullOrEmpty
-            $result.Version | Should -Be 2008
+            $result.Version | Should -Be ([version]'10.0')
             $result.Successful | Should -Be $false
             $result.Restarted | Should -Be $false
             $result.Installer | Should -Be "$TestDrive\dummy.exe"

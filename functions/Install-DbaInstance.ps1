@@ -35,6 +35,7 @@ function Install-DbaInstance {
         "ServerName\NewInstanceName,1534"
 
         You can also define instance name and port using -InstanceName and -Port parameters.
+
     .PARAMETER SaCredential
         Securely provide the password for the sa account when using mixed mode authentication.
 
@@ -71,7 +72,7 @@ function Install-DbaInstance {
         Features to install. Templates like "Default" and "All" can be used to setup a predefined set of components.
 
     .PARAMETER InstancePath
-        Specifies a nondefault installation directory for instance-specific components.
+        Root folder for instance components. Includes SQL Server logs, system databases, etc.
 
     .PARAMETER DataPath
         Path to the Data folder.
@@ -311,48 +312,6 @@ function Install-DbaInstance {
                 }
             }
         }
-        Function Get-SqlInstallSummary {
-            # Reads Summary.txt from the SQL Server Installation Log folder
-            Param (
-                [DbaInstanceParameter]$ComputerName,
-                [pscredential]$Credential,
-                [parameter(Mandatory)]
-                [version]$Version
-            )
-            $getSummary = {
-                Param (
-                    [parameter(Mandatory)]
-                    [version]$Version
-                )
-                $versionNumber = "$($Version.Major)$($Version.Minor)".Substring(0, 3)
-                $rootPath = "$env:ProgramFiles\Microsoft SQL Server\$versionNumber\Setup Bootstrap\Log"
-                $summaryPath = "$rootPath\Summary.txt"
-                $output = [PSCustomObject]@{
-                    Path              = $null
-                    Content           = $null
-                    ConfigurationFile = $null
-                }
-                if (Test-Path $summaryPath) {
-                    $output.Path = $summaryPath
-                    $output.Content = Get-Content -Path $summaryPath
-                    # get last folder created - that's our setup
-                    $lastLogFolder = Get-ChildItem -Path $rootPath -Directory | Sort-Object -Property Name -Descending | Select-Object -First 1 -ExpandProperty FullName
-                    if (Test-Path $lastLogFolder\ConfigurationFile.ini) {
-                        $output.ConfigurationFile = "$lastLogFolder\ConfigurationFile.ini"
-                    }
-                    return $output
-                }
-            }
-            $params = @{
-                ComputerName = $ComputerName.ComputerName
-                Credential   = $Credential
-                ScriptBlock  = $getSummary
-                ArgumentList = @($Version.ToString())
-                ErrorAction  = 'Stop'
-                Raw          = $true
-            }
-            return Invoke-Command2 @params
-        }
         # defining local vars
         $notifiedCredentials = $false
         $notifiedUnsecure = $false
@@ -497,7 +456,11 @@ function Install-DbaInstance {
                     ErrorAction    = 'Stop'
                     Raw            = $true
                 }
-                $setupFileIsAccessible = Invoke-CommandWithFallback @testSetupPathParams
+                try {
+                    $setupFileIsAccessible = Invoke-CommandWithFallback @testSetupPathParams
+                } catch {
+                    $setupFileIsAccessible = $false
+                }
             }
             if ($setupFileIsAccessible) {
                 Write-Message -Level Verbose -Message "Setup file $localSetupFile is reachable from remote machine $fullComputerName"
@@ -670,186 +633,39 @@ function Install-DbaInstance {
             } catch {
                 Stop-Function -Message "Failed to write config file to $configFile" -ErrorRecord $_
             }
-            $execParams += "/CONFIGURATIONFILE=`"$configFile`""
             if ($PSCmdlet.ShouldProcess($fullComputerName, "Install $Version from $setupFile")) {
-                $actionPlan += [pscustomobject]@{
-                    ComputerName      = $fullComputerName
-                    InstanceName      = $instance
-                    Port              = $portNumber
-                    InstallationPath  = $setupFile
-                    ConfigurationPath = $configFile
-                    ArgumentList      = $execParams
-                    RestartNeeded     = $restartNeeded
+                $actionPlan += @{
+                    ComputerName                  = $fullComputerName
+                    InstanceName                  = $instance
+                    Port                          = $portNumber
+                    InstallationPath              = $setupFile
+                    ConfigurationPath             = $configFile
+                    ArgumentList                  = $execParams
+                    Restart                       = $Restart
+                    Version                       = $canonicVersion
+                    Configuration                 = $config
+                    SaveConfiguration             = $SaveConfiguration
+                    SaCredential                  = $SaCredential
+                    PerformVolumeMaintenanceTasks = $PerformVolumeMaintenanceTasks
+                    Credential                    = $Credential
+                    EnableException               = $EnableException
                 }
             }
             Write-Progress -Activity $activity -Complete
         }
-
+        # we need to know if authentication was explicitly defined
+        $authBound = Test-Bound Authentication
+        # wrapper for parallel advanced install
         $installAction = {
-            $output = [pscustomobject]@{
-                ComputerName      = $_.ComputerName
-                Version           = $Version
-                SACredential      = $null
-                Successful        = $false
-                Restarted         = $false
-                Configuration     = $config
-                InstanceName      = $_.InstanceName
-                Installer         = $_.InstallationPath
-                Port              = $_.Port
-                Notes             = @()
-                ExitCode          = $null
-                Log               = $null
-                LogFile           = $null
-                ConfigurationFile = $null
-
+            $installSplat = $_
+            if ($authBound) {
+                $installSplat.Authentication = $Authentication
             }
-            $restartParams = @{
-                ComputerName = $_.ComputerName
-                ErrorAction  = 'Stop'
-                For          = 'WinRM'
-                Wait         = $true
-                Force        = $true
-            }
-            if ($Credential) {
-                $restartParams.Credential = $Credential
-            }
-            if ($_.RestartNeeded -and $Restart) {
-                # Restart the computer prior to doing anything
-                #Write-ProgressHelper -ExcludePercent -Activity $activity -Message "Restarting computer $($computer) due to pending restart"
-                Write-Message -Level Verbose "Restarting computer $($_.ComputerName) due to pending restart" -FunctionName Update-DbaInstance
-                try {
-                    $null = Restart-Computer @restartParams
-                    $output.Restarted = $true
-                } catch {
-                    Stop-Function -Message "Failed to restart computer" -ErrorRecord $_ -FunctionName Update-DbaInstance
-                }
-            }
-            # save config if needed
-            if ($SaveConfiguration) {
-                try {
-                    $null = Copy-Item $_.ConfigurationPath -Destination $SaveConfiguration -ErrorAction Stop
-                } catch {
-                    $msg = "Could not save configuration file to $SaveConfiguration"
-                    Write-Message -Level Warning -Message $msg
-                    $output.Notes += $msg
-                }
-            }
-            $connectionParams = @{
-                ComputerName = $_.ComputerName
-                ErrorAction  = "Stop"
-            }
-            if ($Credential) { $connectionParams.Credential = $Credential }
-            # need to figure out where to store the config file
-            if (([DbaInstanceParameter]$_.ComputerName).IsLocalHost) {
-                $remoteConfig = $_.ConfigurationPath
-            } else {
-                try {
-                    $session = New-PSSession @connectionParams
-                    $chosenPath = Invoke-Command -Session $session -ScriptBlock { (Get-Item ([System.IO.Path]::GetTempPath())).FullName } -ErrorAction Stop
-                    $remoteConfig = Join-DbaPath $chosenPath (Split-Path $_.ConfigurationPath -Leaf)
-                    Write-Message -Level Verbose -Message "Copying $($_.ConfigurationPath) to remote machine into $chosenPath"
-                    Copy-Item -Path $_.ConfigurationPath -Destination $remoteConfig -ToSession $session -Force -ErrorAction Stop
-                    $session | Remove-PSSession
-                } catch {
-                    $msg = "Failed to copy file $($_.ConfigurationPath) to the remote session with $($_.ComputerName)"
-                    Stop-Function -Message $msg -ErrorRecord $_ -FunctionName Update-DbaInstance
-                    $output.Notes += $msg
-                }
-            }
-            Write-Message -Level Verbose -Message "Setup starting from $($_.InstallationPath)"
-            $execParams = @{
-                ComputerName   = $_.ComputerName
-                ErrorAction    = 'Stop'
-                Authentication = $Authentication
-            }
-            if ($Credential) {
-                $execParams.Credential = $Credential
-            } else {
-                if (Test-Bound -Not Authentication) {
-                    # Use Default authentication instead of CredSSP when Authentication is not specified and Credential is null
-                    $execParams.Authentication = "Default"
-                }
-            }
-            try {
-                $installResult = Invoke-Program @execParams -Path $_.InstallationPath -ArgumentList $_.ArgumentList -Fallback
-                $output.ExitCode = $installResult.ExitCode
-                $output.SACredential = $SaCredential
-                # Get setup log summary contents
-                try {
-                    $summary = Get-SqlInstallSummary -ComputerName $_.ComputerName -Credential $Credential -Version $canonicVersion
-                    $output.Log = $summary.Content
-                    $output.LogFile = $summary.Path
-                    $output.ConfigurationFile = $summary.ConfigurationFile
-                } catch {
-                    $msg = "Could not get the contents of the summary file from $($_.ComputerName). 'Log' property will be empty | $($_.Exception.Message)"
-                    $output.Notes += $msg
-                }
-                if ($installResult.Successful) {
-                    $output.Successful = $true
-                } else {
-                    $msg = "Installation failed with exit code $($installResult.ExitCode). Expand 'Log' property to find more details."
-                    $output.Notes += $msg
-                    Stop-Function -Message $msg -FunctionName Update-DbaInstance
-                    return $output
-                }
-            } catch {
-                Stop-Function -Message "Installation failed" -ErrorRecord $_ -FunctionName Update-DbaInstance
-                $output.Notes += $_.Exception.Message
-                return $output
-            } finally {
-                ## Cleanup temp
-                if (([DbaInstanceParameter]$_.ComputerName).IsLocalHost) {
-                    $null = Invoke-Command2 @connectionParams -ScriptBlock {
-                        if ($args[0] -like '*\Configuration_*.ini' -and (Test-Path $args[0])) {
-                            Remove-Item -LiteralPath $args[0] -ErrorAction Stop
-                        }
-                    } -Raw -ArgumentList $setupFile
-                }
-                # cleanup config file
-                Remove-Item $_.ConfigurationPath
-            }
-            # perform volume maintenance tasks if requested
-            if ($PerformVolumeMaintenanceTasks) {
-                $null = Set-DbaPrivilege -ComputerName $_.ComputerName -Credential $Credential -Type IFI -EnableException:$EnableException
-            }
-            # change port after the installation
-            if ($_.Port) {
-                $null = Set-DbaTcpPort -SqlInstance "$($_.ComputerName)\$($_.InstanceName)" -Credential $Credential -Port $_.Port -EnableException:$EnableException -Confirm:$false
-            }
-            # restart if necessary
-            try {
-                $restartNeeded = Test-PendingReboot -ComputerName $_.ComputerName -Credential $Credential
-            } catch {
-                $restartNeeded = $false
-                Stop-Function -Message "Failed to get reboot status from $($_.ComputerName)" -Continue -ErrorRecord $_
-            }
-            if ($installResult.ExitCode -eq 3010 -or $restartNeeded) {
-                if ($Restart) {
-                    # Restart the computer
-                    #Write-ProgressHelper -ExcludePercent -Activity $activity -Message "Restarting computer $($computer) and waiting for it to come back online"
-                    Write-Message -Level Verbose -Message "Restarting computer $($_.ComputerName) and waiting for it to come back online" -FunctionName Install-DbaInstance
-                    try {
-                        $null = Restart-Computer @restartParams
-                        $output.Restarted = $true
-                    } catch {
-                        Stop-Function -Message "Failed to restart computer $($_.ComputerName)" -ErrorRecord $_ -FunctionName Install-DbaInstance
-                        return $output
-                    }
-                } else {
-                    $output.Notes += "Restart is required for computer $($_.ComputerName) to finish the installation of SQL$Version"
-                }
-            }
-            return $output
-        }
-        $outputHandler = {
-            $_ | Select-DefaultView -Property ComputerName, InstanceName, Version, Port, Successful, Restarted, Installer, ExitCode, Notes
-            if ($_.Successful -eq $false) {
-                Write-Message -Level Warning -Message "Installation failed: $($_.Notes -join ' | ')"
-            }
+            Invoke-DbaAdvancedInstall @installSplat
         }
         # check how many computers we are looking at and decide upon parallelism
         if ($actionPlan.Count -eq 1) {
-            $actionPlan | ForEach-Object -Process $installAction | ForEach-Object -Process $outputHandler
+            $actionPlan | ForEach-Object -Process $installAction
         } elseif ($actionPlan.Count -ge 2) {
             $invokeParallelSplat = @{
                 ScriptBlock = $installAction
@@ -858,7 +674,7 @@ function Install-DbaInstance {
                 Status      = "Running the installation"
                 ObjectName  = 'computers'
             }
-            $actionPlan | Invoke-Parallel -ImportModules -ImportFunctions -ImportVariables @invokeParallelSplat | ForEach-Object -Process $outputHandler
+            $actionPlan | Invoke-Parallel -ImportModules -ImportVariables @invokeParallelSplat
         }
     }
 }
