@@ -108,7 +108,7 @@ function New-DbaDbUser {
 
             # Does user exist with same login?
             if ( $existingUser = ( $Database.Users | Where-Object Login -eq $smoLogin ) ) {
-                if (Test-Bound 'Force') {
+                if ($Force) {
                     if ($Pscmdlet.ShouldProcess($existingUser, "Dropping existing user $($existingUser.Name) because -Force was used")) {
                         try {
                             $existingUser.Drop()
@@ -130,7 +130,7 @@ function New-DbaDbUser {
 
             # Does user exist with same login?
             if ( $existingUser = ( $Database.Users | Where-Object Name -eq $Username ) ) {
-                if (Test-Bound 'Force') {
+                if ($Force) {
                     if ($Pscmdlet.ShouldProcess($existingUser, "Dropping existing user $($existingUser.Name) because -Force was used")) {
                         try {
                             $existingUser.Drop()
