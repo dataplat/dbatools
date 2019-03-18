@@ -113,6 +113,24 @@ function Resolve-DbaNetworkName {
         }
     }
     process {
+        if ((Get-DbatoolsConfigValue -FullName commands.resolve-dbanetworkname.bypass)) {
+            foreach ($computer in $ComputerName) {
+                [pscustomobject]@{
+                    InputName        = $computer
+                    ComputerName     = $computer
+                    IPAddress        = $computer
+                    DNSHostname      = $computer
+                    DNSDomain        = $computer # (Get-ComputerDomainName -ComputerName $computer)
+                    Domain           = $computer # (Get-ComputerDomainName -ComputerName $computer)
+                    DNSHostEntry     = $computer
+                    FQDN             = $computer
+                    FullComputerName = $computer
+                }
+                continue
+            }
+            return
+        }
+        
         if (-not (Test-Windows -NoWarn)) {
             Write-Message -Level Verbose -Message "Non-Windows client detected. Turbo (DNS resolution only) set to $true"
             $Turbo = $true
@@ -252,7 +270,7 @@ function Resolve-DbaNetworkName {
             }
 
             # returning the final result
-            return $result
+            $result
         }
     }
 }

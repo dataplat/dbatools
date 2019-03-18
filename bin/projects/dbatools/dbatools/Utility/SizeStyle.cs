@@ -27,9 +27,19 @@ namespace Sqlcollaborative.Dbatools.Utility
         Byte = 4,
 
         /// <summary>
+        /// The size object is styled as a byte number
+        /// </summary>
+        B = 4,
+
+        /// <summary>
         /// The size object is styled as a kilobyte number
         /// </summary>
         Kilobyte = 8,
+
+        /// <summary>
+        /// The size object is styled as a kilobyte number
+        /// </summary>
+        KB = 8,
 
         /// <summary>
         /// The size object is styled as a megabyte number
@@ -37,13 +47,28 @@ namespace Sqlcollaborative.Dbatools.Utility
         Megabyte = 16,
 
         /// <summary>
+        /// The size object is styled as a megabyte number
+        /// </summary>
+        MB = 16,
+
+        /// <summary>
         /// The size object is styled as a Gigabyte number
         /// </summary>
         Gigabyte = 32,
 
         /// <summary>
+        /// The size object is styled as a Gigabyte number
+        /// </summary>
+        GB = 32,
+
+        /// <summary>
         /// The size object is styled as a Terabyte number
         /// </summary>
-        Terabyte = 64
+        Terabyte = 64,
+
+        /// <summary>
+        /// The size object is styled as a Terabyte number
+        /// </summary>
+        TB = 64
     }
 }
