@@ -455,7 +455,6 @@
         'Move-DbaCmsRegServerGroup',
         'Remove-DbaCmsRegServer',
         'Remove-DbaCmsRegServerGroup',
-        'New-DbaDbMailAccount',
         'New-DbaDbDataGeneratorConfig',
         'Invoke-DbaDbDataGenerator',
         'Get-DbaRandomizedValue',
