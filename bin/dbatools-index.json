@@ -2051,13 +2051,13 @@
         "CommandName":  "Copy-DbaAgentJob",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Copy-DbaAgentJob",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eCopy-DbaAgentJob -Source sqlserver2014a -Destination sqlcluster\nCopies all jobs from sqlserver2014a to sqlcluster, using Windows credentials. If jobs with the same name exist on sqlcluster, they will be skipped.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eCopy-DbaAgentJob -Source sqlserver2014a -Destination sqlcluster -Job PSJob -SourceSqlCredential $cred -Force\nCopies a single job, the PSJob job from sqlserver2014a to sqlcluster, using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster. If a job with the same name exists on \r\nsqlcluster, it will be dropped and recreated because -Force was used.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eCopy-DbaAgentJob -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force\nShows what would happen if the command were executed using force.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaAgentJob -SqlInstance sqlserver2014a | Where-Object Category -eq \"Report Server\" | ForEach-Object {Copy-DbaAgentJob -Source $_.SqlInstance -Job $_.Name -Destination sqlserver2014b}\nCopies all SSRS jobs (subscriptions) from AlwaysOn Primary SQL instance sqlserver2014a to AlwaysOn Secondary SQL instance sqlserver2014b",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eCopy-DbaAgentJob -Source sqlserver2014a -Destination sqlcluster\nCopies all jobs from sqlserver2014a to sqlcluster, using Windows credentials. If jobs with the same name exist on sqlcluster, they will be skipped.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eCopy-DbaAgentJob -Source sqlserver2014a -Destination sqlcluster -Job PSJob -SourceSqlCredential $cred -Force\nCopies a single job, the PSJob job from sqlserver2014a to sqlcluster, using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster. If a job with the same name exists on \r\nsqlcluster, it will be dropped and recreated because -Force was used.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eCopy-DbaAgentJob -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force\nShows what would happen if the command were executed using force.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaAgentJob -SqlInstance sqlserver2014a | Where-Object Category -eq \"Report Server\" | Copy-DbaAgentJob -Destination sqlserver2014b\nCopies all SSRS jobs (subscriptions) from AlwaysOn Primary SQL instance sqlserver2014a to AlwaysOn Secondary SQL instance sqlserver2014b",
         "Params":  [
                        [
                            "Source",
                            "Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or higher.",
                            "",
-                           true,
+                           false,
                            "false",
                            ""
                        ],
@@ -2126,9 +2126,17 @@
                            "False"
                        ],
                        [
+                           "InputObject",
+                           "Piped in jobs from Get-DbaAgentJob",
+                           "",
+                           false,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
                            "EnableException",
                            "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
-                           "Silent",
+                           "",
                            false,
                            "false",
                            "False"
@@ -2150,7 +2158,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Copy-DbaAgentJob [-Source] \u003cDbaInstanceParameter\u003e [[-SourceSqlCredential] \u003cPSCredential\u003e] [-Destination] \u003cDbaInstanceParameter[]\u003e [[-DestinationSqlCredential] \u003cPSCredential\u003e] [[-Job] \u003cObject[]\u003e] [[-ExcludeJob] \u003cObject[]\u003e] [-DisableOnSource] [-DisableOnDestination] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Copy-DbaAgentJob [[-Source] \u003cDbaInstanceParameter\u003e] [[-SourceSqlCredential] \u003cPSCredential\u003e] [-Destination] \u003cDbaInstanceParameter[]\u003e [[-DestinationSqlCredential] \u003cPSCredential\u003e] [[-Job] \u003cObject[]\u003e] [[-ExcludeJob] \u003cObject[]\u003e] [-DisableOnSource] [-DisableOnDestination] [-Force] [[-InputObject] \u003cJob[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Copy-DbaAgentJobCategory",
@@ -21638,6 +21646,285 @@
         "Syntax":  "Install-DbaFirstResponderKit [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Branch] \u003cString\u003e] [[-Database] \u003cObject\u003e] [[-LocalFile] \u003cString\u003e] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
+        "Name":  "Install-DbaInstance",
+        "Description":  "This function will help you to quickly install a SQL Server instance on one or many computers.\nSome of the things this function will do for you:\n* Add your login as an admin to the new instance\n* Search for SQL Server installations in the specified file repository\n* Generate SA password if needed\n* Install specific features using \u0027Default\u0027 and \u0027All\u0027 templates or cherry-pick the ones you need\n* Set number of tempdb files based on number of cores (SQL2016+)\n* Activate .Net 3.5 feature for SQL2012/2014\n* Restart the machine if needed after the installation is done\n\nFully customizable installation parameters allow you to:\n* Use existing Configuration.ini files for the installation\n* Define service account credentials using native Powershell syntax\n* Override any configurations by using -Configuration switch\n* Change the TCP port after the installation is done\n* Enable \u0027Perform volume maintenance tasks\u0027 for the SQL Server account\n\nNote that the dowloaded installation media must be extracted and available to the server where the installation runs.\nNOTE: If no ProductID (PID) is found in the configuration files/parameters, Evaluation version is going to be installed.",
+        "Tags":  "Install",
+        "Synopsis":  "This function will help you to quickly install a SQL Server instance.",
+        "Alias":  "",
+        "Author":  "Reitse Eskens (@2meterDBA), Kirill Kravtsov (@nvarscar)",
+        "CommandName":  "Install-DbaInstance",
+        "Availability":  "Windows only",
+        "Links":  null,
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nC:\\PS\u003eInstall-DbaInstance -Version 2017 -Feature All\nInstall a default SQL Server instance and run the installation enabling all features with default settings. Automatically generates configuration.ini\n-------------------------- EXAMPLE 2 --------------------------\nC:\\PS\u003eInstall-DbaInstance -SqlInstance sql2017\\sqlexpress, server01 -Version 2017 -Feature Default\nInstall a named SQL Server instance named sqlexpress on sql2017, and a default instance on server01. Automatically generates configuration.ini.\r\nDefault features will be installed.\n-------------------------- EXAMPLE 3 --------------------------\nC:\\PS\u003eInstall-DbaInstance -Version 2008R2 -SqlInstance sql2017 -ConfigurationFile C:\\temp\\configuration.ini\nInstall a default named SQL Server instance on the remote machine, sql2017 and use the local configuration.ini\n-------------------------- EXAMPLE 4 --------------------------\nC:\\PS\u003eInstall-DbaInstance -Version 2017 -InstancePath G:\\SQLServer\nRun the installation locally with default settings apart from the application volume, this will be redirected to G:\\SQLServer.\n-------------------------- EXAMPLE 5 --------------------------\nC:\\PS\u003e$svcAcc = Get-Credential MyDomain\\SvcSqlServer\nC:\\PS\u003e Install-DbaInstance -Version 2016 -InstancePath D:\\Root -DataPath E: -LogPath L: -PerformVolumeMaintenanceTasks -EngineCredential $svcAcc\nInstall SQL Server 2016 instance into D:\\Root drive, set default data folder as E: and default logs folder as L:.\r\nPerform volume maintenance tasks permission is granted. MyDomain\\SvcSqlServer is used as a service account for SqlServer.\n-------------------------- EXAMPLE 6 --------------------------\nC:\\PS\u003e$config = @{\nAGTSVCSTARTUPTYPE     = \"Manual\"\r\n    SQLCOLLATION          = \"Latin1_General_CI_AS\"\r\n    BROWSERSVCSTARTUPTYPE = \"Manual\"\r\n    FILESTREAMLEVEL       = 1\r\n}\r\nC:\\PS\u003e Install-DbaInstance -SqlInstance localhost\\v2017:1337 -Version 2017 -Configuration $config\nRun the installation locally with default settings overriding the value of specific configuration items.\r\nInstance name will be defined as \u0027v2017\u0027; TCP port will be changed to 1337 after installation.",
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "The target computer and, optionally, a new instance name and a port number.\r\nUse one of the following generic formats:\r\nServer1\r\nServer2\\Instance1\r\nServer1\\Alpha:1533, Server2\\Omega:1566\r\n\"ServerName\\NewInstanceName,1534\"\nYou can also define instance name and port using -InstanceName and -Port parameters.",
+                           "ComputerName",
+                           false,
+                           "false",
+                           "$env:COMPUTERNAME"
+                       ],
+                       [
+                           "Version",
+                           "SQL Server version you wish to install.",
+                           "",
+                           true,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "InstanceName",
+                           "Name of the SQL Server instance to install. Overrides the instance name specified in -SqlInstance.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "SaCredential",
+                           "Securely provide the password for the sa account when using mixed mode authentication.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Credential",
+                           "Used when executing installs against remote servers",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Authentication",
+                           "Chooses an authentication protocol for remote connections.\r\nIf the protocol fails to establish a connection\nDefaults:\r\n* CredSSP when -Credential is specified - due to the fact that repository Path is usually a network share and credentials need to be passed to the remote host\r\n  to avoid the double-hop issue.\r\n* Default when -Credential is not specified. Will likely fail if a network path is specified.",
+                           "",
+                           false,
+                           "false",
+                           "Credssp"
+                       ],
+                       [
+                           "ConfigurationFile",
+                           "The path to the custom Configuration.ini file.",
+                           "FilePath",
+                           false,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
+                           "Configuration",
+                           "A hashtable with custom configuration items that you want to use during the installation.\r\nOverrides all other parameters.\r\nFor example, to define a custom server collation you can use the following parameter:\r\nPS\u003e Install-DbaInstance -Version 2017 -Configuration @{ SQLCOLLATION = \u0027Latin1_General_BIN\u0027 }\nFull list of parameters can be found here: https://docs.microsoft.com/en-us/sql/database-engine/install-windows/install-sql-server-from-the-command-prompt#Install",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Path",
+                           "Path to the folder(s) with SQL Server installation media downloaded. It will be scanned recursively for a corresponding setup.exe.\r\nPath should be available from the remote server.\r\nIf a setup.exe file is missing in the repository, the installation will fail.\r\nConsider setting the following configuration if you want to omit this parameter: `Set-DbatoolsConfig -Name Path.SQLServerSetup -Value \u0027\\\\path\\to\\installations\u0027`",
+                           "",
+                           false,
+                           "false",
+                           "(Get-DbatoolsConfigValue -Name \u0027Path.SQLServerSetup\u0027)"
+                       ],
+                       [
+                           "Feature",
+                           "Features to install. Templates like \"Default\" and \"All\" can be used to setup a predefined set of components.",
+                           "",
+                           false,
+                           "false",
+                           "Default"
+                       ],
+                       [
+                           "AuthenticationMode",
+                           "Chooses between Mixed and Windows authentication.",
+                           "",
+                           false,
+                           "false",
+                           "Windows"
+                       ],
+                       [
+                           "InstancePath",
+                           "Root folder for instance components. Includes SQL Server logs, system databases, etc.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "DataPath",
+                           "Path to the Data folder.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "LogPath",
+                           "Path to the Log folder.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "TempPath",
+                           "Path to the TempDB folder.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "BackupPath",
+                           "Path to the Backup folder.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "AdminAccount",
+                           "One or more members of the sysadmin group. Uses UserName from the -Credential parameter if specified, or current Windows user by default.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Port",
+                           "After successful installation, changes SQL Server TCP port to this value. Overrides the port specified in -SqlInstance.",
+                           "",
+                           false,
+                           "false",
+                           "0"
+                       ],
+                       [
+                           "Throttle",
+                           "Maximum number of computers updated in parallel. Once reached, the update operations will queue up.\r\nDefault: 50",
+                           "",
+                           false,
+                           "false",
+                           "50"
+                       ],
+                       [
+                           "ProductID",
+                           "Product ID, or simply, serial number of your SQL Server installation, which will determine which version to install.\r\nIf the PID is already built into the installation media, can be ignored.",
+                           "PID",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "EngineCredential",
+                           "Service account of the SQL Server Database Engine",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "AgentCredential",
+                           "Service account of the SQL Server Agent",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "ASCredential",
+                           "Service account of the Analysis Services",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "ISCredential",
+                           "Service account of the Integration Services",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "RSCredential",
+                           "Service account of the Reporting Services",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "FTCredential",
+                           "Service account of the Full-Text catalog service",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "PBEngineCredential",
+                           "Service account of the PolyBase service",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "SaveConfiguration",
+                           "Save installation configuration file in a custom location. Will not be preserved otherwise.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "PerformVolumeMaintenanceTasks",
+                           "Allow SQL Server service account to perform Volume Maintenance tasks.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "Restart",
+                           "Restart computer automatically if a restart is required before or after the installation.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "WhatIf",
+                           "Shows what would happen if the command were to run. No actions are actually performed.",
+                           "wi",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Confirm",
+                           "Prompts you for confirmation before executing any changing operations within the command.",
+                           "cf",
+                           false,
+                           "false",
+                           ""
+                       ]
+                   ],
+        "Syntax":  "Install-DbaInstance [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [-Version] \u003cString\u003e [[-InstanceName] \u003cString\u003e] [[-SaCredential] \u003cPSCredential\u003e] [[-Credential] \u003cPSCredential\u003e] [[-Authentication] \u003cString\u003e] [[-ConfigurationFile] \u003cObject\u003e] [[-Configuration] \u003cHashtable\u003e] [[-Path] \u003cString[]\u003e] [[-Feature] \u003cString\u003e] [[-AuthenticationMode] \u003cString\u003e] [[-InstancePath] \u003cString\u003e] [[-DataPath] \u003cString\u003e] [[-LogPath] \u003cString\u003e] [[-TempPath] \u003cString\u003e] [[-BackupPath] \u003cString\u003e] [[-AdminAccount] \u003cString[]\u003e] [[-Port] \u003cInt32\u003e] [[-Throttle] \u003cInt32\u003e] [[-ProductID] \u003cString\u003e] [[-EngineCredential] \u003cPSCredential\u003e] \r\n[[-AgentCredential] \u003cPSCredential\u003e] [[-ASCredential] \u003cPSCredential\u003e] [[-ISCredential] \u003cPSCredential\u003e] [[-RSCredential] \u003cPSCredential\u003e] [[-FTCredential] \u003cPSCredential\u003e] [[-PBEngineCredential] \u003cPSCredential\u003e] [[-SaveConfiguration] \u003cString\u003e] [-PerformVolumeMaintenanceTasks] [-Restart] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+    },
+    {
         "Name":  "Install-DbaMaintenanceSolution",
         "Description":  "This script will download and install the latest version of SQL Server Maintenance Solution created by Ola Hallengren",
         "Tags":  [
@@ -21983,6 +22270,139 @@
                        ]
                    ],
         "Syntax":  "Install-DbaWhoIsActive [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-LocalFile \u003cString\u003e] [-Database \u003cObject\u003e] [-EnableException] [-Force] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+    },
+    {
+        "Name":  "Invoke-DbaAdvancedInstall",
+        "Description":  "Invokes an install process for a single computer and restarts it if needed",
+        "Synopsis":  "Designed for internal use, implements parallel execution for Install-DbaInstance.",
+        "Alias":  "",
+        "CommandName":  "Invoke-DbaAdvancedInstall",
+        "Availability":  "Windows only",
+        "Links":  null,
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eInvoke-DbaAdvancedUpdate -ComputerName SQL1 -Action $actions\nInvokes update actions on SQL1 after restarting it.",
+        "Params":  [
+                       [
+                           "ComputerName",
+                           "Target computer with SQL instance or instances.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "InstanceName",
+                           "Instance name to be used for the installation",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Port",
+                           "After successful installation, changes SQL Server TCP port to this value. Overrides the port specified in -SqlInstance.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "InstallationPath",
+                           "Path to setup.exe",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "ConfigurationPath",
+                           "Path to Configuration.ini on a local machine",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "ArgumentList",
+                           "Array of command line arguments for setup.exe",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Version",
+                           "Canonic version of SQL Server, e.g. 10.50, 11.0",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Configuration",
+                           "A hashtable with custom configuration items that you want to use during the installation.\r\nOverrides all other parameters.\r\nFor example, to define a custom server collation you can use the following parameter:\r\nPS\u003e Install-DbaInstance -Version 2017 -Configuration @{ SQLCOLLATION = \u0027Latin1_General_BIN\u0027 }\nFull list of parameters can be found here: https://docs.microsoft.com/en-us/sql/database-engine/install-windows/install-sql-server-from-the-command-prompt#Install",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Restart",
+                           "Restart computer automatically after a successful installation of Sql Server and wait until it comes back online.\r\nUsing this parameter is the only way to chain-install more than 1 instance, since every single patch will require a restart of said computer.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "PerformVolumeMaintenanceTasks",
+                           "Allow SQL Server service account to perform Volume Maintenance tasks.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "SaveConfiguration",
+                           "Save installation configuration file in a custom location. Will not be preserved otherwise.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Authentication",
+                           "Chooses an authentication protocol for remote connections.\r\nIf the protocol fails to establish a connection\nDefaults:\r\n* CredSSP when -Credential is specified - due to the fact that repository Path is usually a network share and credentials need to be passed to the remote host\r\n  to avoid the double-hop issue.\r\n* Default when -Credential is not specified. Will likely fail if a network path is specified.",
+                           "",
+                           false,
+                           "false",
+                           "Credssp"
+                       ],
+                       [
+                           "Credential",
+                           "Windows Credential with permission to log on to the remote server.\r\nMust be specified for any remote connection if installation media is located on a network folder.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "SaCredential",
+                           "Securely provide the password for the sa account when using mixed mode authentication.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ]
+                   ],
+        "Syntax":  "Invoke-DbaAdvancedInstall [[-ComputerName] \u003cString\u003e] [[-InstanceName] \u003cString\u003e] [[-Port] \u003cNullable`1\u003e] [[-InstallationPath] \u003cString\u003e] [[-ConfigurationPath] \u003cString\u003e] [[-ArgumentList] \u003cString[]\u003e] [[-Version] \u003cVersion\u003e] [[-Configuration] \u003cHashtable\u003e] [[-Restart] \u003cBoolean\u003e] [[-PerformVolumeMaintenanceTasks] \u003cBoolean\u003e] [[-SaveConfiguration] \u003cString\u003e] [[-Authentication] \u003cString\u003e] [[-Credential] \u003cPSCredential\u003e] [[-SaCredential] \u003cPSCredential\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Invoke-DbaAdvancedRestore",
