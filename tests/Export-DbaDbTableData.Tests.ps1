@@ -5,7 +5,7 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
         [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'InputObject', 'ScriptingOptionsObject', 'Path', 'Encoding', 'BatchSeparator', 'NoPrefix', 'Passthru', 'NoClobber', 'Append', 'EnableException'
+        [object[]]$knownParameters = 'InputObject', 'Path', 'Encoding', 'BatchSeparator', 'NoPrefix', 'Passthru', 'NoClobber', 'Append', 'EnableException'
         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         It "Should only contain our specific parameters" {
             (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
@@ -33,14 +33,18 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 
     It "exports the table data" {
         $escaped = [regex]::escape('INSERT [dbo].[dbatoolsci_example] ([id]) VALUES (1)')
+        $secondescaped =  [regex]::escape('INSERT [dbo].[dbatoolsci_temp] ([name], [database_id],')
         $results = Get-DbaDbTable -SqlInstance $script:instance1 -Database tempdb -Table dbatoolsci_example | Export-DbaDbTableData -Passthru
         "$results" | Should -match $escaped
-        $results = Get-DbaDbTable -SqlInstance $script:instance1 -Database tempdb -Table dbatoolsci_example | Export-DbaDbTableData -Passthru
-        $results | Should -Match 'INSERT [dbo].[dbatoolsci_example] ([id]) VALUES (1)'
+        $results = Get-DbaDbTable -SqlInstance $script:instance1 -Database tempdb -Table dbatoolsci_temp | Export-DbaDbTableData -Passthru
+        "$results" | Should -Match $secondescaped
     }
 
     It "supports piping more than one table" {
-        $results = Get-DbaDbTable -SqlInstance $script:instance1 -Database tempdb -Table dbatoolsci_example2, dbatoolsci_example | Export-DbaDbTableData -DestinationTable dbatoolsci_example3
-        $results.Count | Should -Be 2
+        $escaped = [regex]::escape('INSERT [dbo].[dbatoolsci_example] ([id]) VALUES (1)')
+        $secondescaped =  [regex]::escape('INSERT [dbo].[dbatoolsci_temp] ([name], [database_id],')
+        $results = Get-DbaDbTable -SqlInstance $script:instance1 -Database tempdb -Table dbatoolsci_example, dbatoolsci_temp | Export-DbaDbTableData -Passthru
+        "$results" | Should -match $escaped
+        "$results" | Should -match $secondescaped
     }
 }
