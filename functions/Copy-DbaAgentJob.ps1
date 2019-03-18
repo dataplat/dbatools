@@ -97,7 +97,7 @@ function Copy-DbaAgentJob {
         [switch]$EnableException
     )
     begin {
-        if ($SqlInstance) {
+        if ($Source) {
             try {
                 $InputObject = Get-DbaAgentJob -SqlInstance $Source -SqlCredential $SourceSqlCredential -Job $Job -ExcludeJob $ExcludeJob
             } catch {
