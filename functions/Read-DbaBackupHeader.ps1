@@ -111,7 +111,7 @@ function Read-DbaBackupHeader {
         try {
             $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
         } catch {
-            Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+            Stop-Function -Message "Error occured while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             return
         }
         $getHeaderScript = {
@@ -138,21 +138,23 @@ function Read-DbaBackupHeader {
 
             foreach ($row in $dataTable) {
                 $row.BackupPath = $Path
-                
+
                 $backupsize = $row.BackupSize
                 $null = $dataTable.Columns.Remove("BackupSize")
                 $null = $dataTable.Columns.Add("BackupSize", [dbasize])
                 if ($backupsize -isnot [dbnull]) {
                     $row.BackupSize = [dbasize]$backupsize
                 }
-                
+
                 $cbackupsize = $row.CompressedBackupSize
-                $null = $dataTable.Columns.Remove("CompressedBackupSize")
+                if ($dataTable.Columns['CompressedBackupSize']) {
+                    $null = $dataTable.Columns.Remove("CompressedBackupSize")
+                }
                 $null = $dataTable.Columns.Add("CompressedBackupSize", [dbasize])
                 if ($cbackupsize -isnot [dbnull]) {
                     $row.CompressedBackupSize = [dbasize]$cbackupsize
                 }
-                
+
                 $restore.FileNumber = $row.Position
                 <# Select-Object does a quick and dirty conversion from datatable to PS object #>
                 $row.FileList = $restore.ReadFileList($server) | Select-Object *

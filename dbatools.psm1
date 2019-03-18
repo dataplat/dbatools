@@ -252,7 +252,6 @@ Write-ImportTime -Text "Script: Logging"
 . Import-ModuleFile -Path (Resolve-Path -Path "$script:PSModuleRoot\internal\scripts\updateTeppAsync.ps1")
 Write-ImportTime -Text "Script: Asynchronous TEPP Cache"
 
-
 # Start the maintenance system (requires pretty much everything else already up and running)
 . Import-ModuleFile -Path (Resolve-Path -Path "$script:PSModuleRoot\internal\scripts\dbatools-maintenance.ps1")
 Write-ImportTime -Text "Script: Maintenance"
@@ -1018,6 +1017,10 @@ $script:renames | ForEach-Object {
 # Leave forever
 $forever = @(
     @{
+        "AliasName"  = "Write-DbaDataTable"
+        "Definition" = "Write-DbaDbTableData"
+    },
+    @{
         "AliasName"  = "Attach-DbaDatabase"
         "Definition" = "Mount-DbaDatabase"
     },
@@ -1115,7 +1118,7 @@ $script:xplat = @(
     'Get-DbaServerRoleMember',
     'Resolve-DbaNetworkName',
     'Export-DbaAvailabilityGroup',
-    'Write-DbaDataTable',
+    'Write-DbaDbTableData',
     'New-DbaDbSnapshot',
     'Restore-DbaDbSnapshot',
     'Get-DbaServerTrigger',
@@ -1437,7 +1440,8 @@ $script:xplat = @(
     'Get-DbaRandomizedValue',
     'Get-DbaRandomizedDatasetTemplate',
     'Get-DbaRandomizedDataset',
-    'Get-DbaRandomizedType'
+    'Get-DbaRandomizedType',
+    'Export-DbaDbTableData'
 )
 
 $script:noncoresmo = @(
