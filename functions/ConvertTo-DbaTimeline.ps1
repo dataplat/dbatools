@@ -140,21 +140,19 @@ function ConvertTo-DbaTimeline {
         #and will be increasing as the process goes through the pipe, or it will stop t 1 if there's only 1 server passed.
         #The $InputObject[0].* is also not available in the begin block. All this means that we will alway show server name next to job name now.
         #I am not 100% happy with this but not sure how to solve it for now.
- 
+
         # This is where do column mapping.
-    
+
         # Check for types - this will help support if someone assigns a variable then pipes
         # AgentJobHistory is a forced type while backuphistory is a legit type
         if ($InputObject[0].TypeName -eq 'AgentJobHistory') {
             $CallerName = "Get-DbaAgentJobHistory"
-            $data = $InputObject | Select-Object @{ Name = "SqlInstance"; Expression = { $_.SqlInstance } }, @{ Name = "InstanceName"; Expression = { $_.InstanceName } }, @{ Name = "vLabel"; Expression = { "[" + $_.SqlInstance + "] " + $_.Job -replace "\'",''} }, @{ Name = "hLabel"; Expression = { $_.Status } }, @{ Name = "Style"; Expression = { $(Convert-DbaTimelineStatusColor($_.Status)) } }, @{ Name = "StartDate"; Expression = { $(ConvertTo-JsDate($_.StartDate)) } }, @{ Name = "EndDate"; Expression = { $(ConvertTo-JsDate($_.EndDate)) } }
+            $data = $InputObject | Select-Object @{ Name = "SqlInstance"; Expression = { $_.SqlInstance } }, @{ Name = "InstanceName"; Expression = { $_.InstanceName } }, @{ Name = "vLabel"; Expression = { "[" + $_.SqlInstance + "] " + $_.Job -replace "\'", ''} }, @{ Name = "hLabel"; Expression = { $_.Status } }, @{ Name = "Style"; Expression = { $(Convert-DbaTimelineStatusColor($_.Status)) } }, @{ Name = "StartDate"; Expression = { $(ConvertTo-JsDate($_.StartDate)) } }, @{ Name = "EndDate"; Expression = { $(ConvertTo-JsDate($_.EndDate)) } }
 
-        }
-        elseif ($InputObject[0] -is [Sqlcollaborative.Dbatools.Database.BackupHistory]) {
+        } elseif ($InputObject[0] -is [Sqlcollaborative.Dbatools.Database.BackupHistory]) {
             $CallerName = "Get-DbaBackupHistory"
             $data = $InputObject | Select-Object @{ Name = "SqlInstance"; Expression = { $_.SqlInstance } }, @{ Name = "InstanceName"; Expression = { $_.InstanceName } }, @{ Name = "vLabel"; Expression = { "[" + $_.SqlInstance + "] " + $_.Database } }, @{ Name = "hLabel"; Expression = { $_.Type } }, @{ Name = "StartDate"; Expression = { $(ConvertTo-JsDate($_.Start)) } }, @{ Name = "EndDate"; Expression = { $(ConvertTo-JsDate($_.End)) } }
-        }
-        else {
+        } else {
             # sorry to be so formal, can't help it ;)
             Stop-Function -Message "Unsupported input data. To request support for additional commands, please file an issue at dbatools.io/issues and we'll take a look"
             return
@@ -163,7 +161,7 @@ function ConvertTo-DbaTimeline {
     }
     end {
         if (Test-FunctionInterrupt) { return }
-$end = @"
+        $end = @"
 ]);
         var paddingHeight = 20;
         var rowHeight = dataTable.getNumberOfRows() * 41;
