@@ -69,7 +69,7 @@ function Restore-DbaDbCertificate {
         [object[]]$Path,
         [Security.SecureString]$EncryptionPassword,
         [string]$Database = "master",
-        [Alias("Password","DecryptionPassword")]
+        [Alias("Password", "DecryptionPassword")]
         [Security.SecureString]$SecurePassword = (Read-Host "Password" -AsSecureString),
         [switch]$EnableException
     )
