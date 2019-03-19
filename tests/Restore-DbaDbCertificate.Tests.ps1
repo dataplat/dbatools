@@ -28,7 +28,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
 
         It "restores the db cert" {
-            $results = Restore-DbaDbCertificate -SqlInstance $script:instance1 -Path $backup.ExportPath -Password $password -Database tempdb -EncryptionPassword $password -Confirm:$false -EnableException  | Should -Not -Throw
+            $results = Restore-DbaDbCertificate -SqlInstance $script:instance1 -Path $backup.ExportPath -Password $password -Database tempdb -EncryptionPassword $password -Confirm:$false
             $results.Parent.Name | Should Be 'tempdb'
             $results.Name | Should Not BeNullOrEmpty
             $results.PrivateKeyEncryptionType | Should Be "Password"
