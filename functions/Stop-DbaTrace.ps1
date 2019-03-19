@@ -1,52 +1,61 @@
-﻿function Stop-DbaTrace {
-     <#
-        .SYNOPSIS
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+function Stop-DbaTrace {
+    <#
+    .SYNOPSIS
         Stops SQL Server traces
 
-        .DESCRIPTION
+    .DESCRIPTION
         Stops SQL Server traces
 
-        .PARAMETER SqlInstance
+    .PARAMETER SqlInstance
         The target SQL Server instance
 
-        .PARAMETER SqlCredential
+    .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-        .PARAMETER Id
+    .PARAMETER Id
         A list of trace ids
 
-        .PARAMETER InputObject
+    .PARAMETER InputObject
         Internal parameter for piping
 
-        .PARAMETER EnableException
+    .PARAMETER WhatIf
+        If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
+
+    .PARAMETER Confirm
+        If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
+
+    .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-        .NOTES
+    .NOTES
         Tags: Security, Trace
+        Author: Chrissy LeMaire (@cl), netnerds.net
+
         Website: https://dbatools.io
-        Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+        Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
-       .EXAMPLE
-        Stop-DbaTrace -SqlInstance sql2008
+    .EXAMPLE
+        PS C:\> Stop-DbaTrace -SqlInstance sql2008
 
         Stops all traces on sql2008
 
-        .EXAMPLE
-        Stop-DbaTrace -SqlInstance sql2008 -Id 1
+    .EXAMPLE
+        PS C:\> Stop-DbaTrace -SqlInstance sql2008 -Id 1
 
         Stops all trace with ID 1 on sql2008
 
-        .EXAMPLE
-        Get-DbaTrace -SqlInstance sql2008 | Out-GridView -PassThru | Stop-DbaTrace
+    .EXAMPLE
+        PS C:\> Get-DbaTrace -SqlInstance sql2008 | Out-GridView -PassThru | Stop-DbaTrace
 
         Stops selected traces on sql2008
 
-#>
-    [CmdletBinding()]
-    Param (
+    #>
+    [CmdletBinding(SupportsShouldProcess)]
+    param (
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
@@ -76,41 +85,42 @@
 
             $sql = "sp_trace_setstatus $traceid, 0"
 
-            try {
-                $server.Query($sql)
-                $output = Get-DbaTrace -SqlInstance $server -Id $traceid
-                if (-not $output) {
-                    $output = [PSCustomObject]@{
-                        ComputerName            = $server.ComputerName
-                        InstanceName            = $server.ServiceName
-                        SqlInstance             = $server.DomainInstanceName
-                        Id                      = $traceid
-                        Status                  = $null
-                        IsRunning               = $false
-                        Path                    = $null
-                        MaxSize                 = $null
-                        StopTime                = $null
-                        MaxFiles                = $null
-                        IsRowset                = $null
-                        IsRollover              = $null
-                        IsShutdown              = $null
-                        IsDefault               = $null
-                        BufferCount             = $null
-                        BufferSize              = $null
-                        FilePosition            = $null
-                        ReaderSpid              = $null
-                        StartTime               = $null
-                        LastEventTime           = $null
-                        EventCount              = $null
-                        DroppedEventCount       = $null
-                        Parent                  = $server
-                    } | Select-DefaultView -Property 'ComputerName', 'InstanceName', 'SqlInstance', 'Id', 'IsRunning'
+            if ($Pscmdlet.ShouldProcess($traceid, "Stopping the TraceID on $server")) {
+                try {
+                    $server.Query($sql)
+                    $output = Get-DbaTrace -SqlInstance $server -Id $traceid
+                    if (-not $output) {
+                        $output = [PSCustomObject]@{
+                            ComputerName      = $server.ComputerName
+                            InstanceName      = $server.ServiceName
+                            SqlInstance       = $server.DomainInstanceName
+                            Id                = $traceid
+                            Status            = $null
+                            IsRunning         = $false
+                            Path              = $null
+                            MaxSize           = $null
+                            StopTime          = $null
+                            MaxFiles          = $null
+                            IsRowset          = $null
+                            IsRollover        = $null
+                            IsShutdown        = $null
+                            IsDefault         = $null
+                            BufferCount       = $null
+                            BufferSize        = $null
+                            FilePosition      = $null
+                            ReaderSpid        = $null
+                            StartTime         = $null
+                            LastEventTime     = $null
+                            EventCount        = $null
+                            DroppedEventCount = $null
+                            Parent            = $server
+                        } | Select-DefaultView -Property 'ComputerName', 'InstanceName', 'SqlInstance', 'Id', 'IsRunning'
+                    }
+                    $output
+                } catch {
+                    Stop-Function -Message "Failure" -ErrorRecord $_ -Target $server -Continue
+                    return
                 }
-                $output
-            }
-            catch {
-                Stop-Function -Message "Failure" -ErrorRecord $_ -Target $server -Continue
-                return
             }
         }
     }

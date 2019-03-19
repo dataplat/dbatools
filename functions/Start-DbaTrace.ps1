@@ -1,52 +1,61 @@
-﻿function Start-DbaTrace {
-     <#
-        .SYNOPSIS
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+function Start-DbaTrace {
+    <#
+    .SYNOPSIS
         Starts SQL Server traces
 
-        .DESCRIPTION
+    .DESCRIPTION
         Starts SQL Server traces
 
-        .PARAMETER SqlInstance
+    .PARAMETER SqlInstance
         The target SQL Server instance
 
-        .PARAMETER SqlCredential
+    .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-        .PARAMETER Id
+    .PARAMETER Id
         A list of trace ids
 
-        .PARAMETER InputObject
+    .PARAMETER InputObject
         Internal parameter for piping
 
-        .PARAMETER EnableException
+    .PARAMETER WhatIf
+        If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
+
+    .PARAMETER Confirm
+        If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
+
+    .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-        .NOTES
+    .NOTES
         Tags: Security, Trace
+        Author: Chrissy LeMaire (@cl), netnerds.net
+
         Website: https://dbatools.io
-        Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+        Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
-       .EXAMPLE
-        Start-DbaTrace -SqlInstance sql2008
+    .EXAMPLE
+        PS C:\> Start-DbaTrace -SqlInstance sql2008
 
         Starts all traces on sql2008
 
-        .EXAMPLE
-        Start-DbaTrace -SqlInstance sql2008 -Id 1
+    .EXAMPLE
+        PS C:\> Start-DbaTrace -SqlInstance sql2008 -Id 1
 
         Starts all trace with ID 1 on sql2008
 
-        .EXAMPLE
-        Get-DbaTrace -SqlInstance sql2008 | Out-GridView -PassThru | Start-DbaTrace
+    .EXAMPLE
+        PS C:\> Get-DbaTrace -SqlInstance sql2008 | Out-GridView -PassThru | Start-DbaTrace
 
         Starts selected traces on sql2008
 
-#>
-    [CmdletBinding()]
-    Param (
+    #>
+    [CmdletBinding(SupportsShouldProcess)]
+    param (
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
@@ -75,14 +84,14 @@
             }
 
             $sql = "sp_trace_setstatus $traceid, 1"
-
-            try {
-                $server.Query($sql)
-                Get-DbaTrace -SqlInstance $server -Id $traceid
-            }
-            catch {
-                Stop-Function -Message "Failure" -ErrorRecord $_ -Target $server -Continue
-                return
+            if ($Pscmdlet.ShouldProcess($traceid, "Starting the TraceID on $server")) {
+                try {
+                    $server.Query($sql)
+                    Get-DbaTrace -SqlInstance $server -Id $traceid
+                } catch {
+                    Stop-Function -Message "Failure" -ErrorRecord $_ -Target $server -Continue
+                    return
+                }
             }
         }
     }

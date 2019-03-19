@@ -1,78 +1,80 @@
 function Copy-DbaLinkedServer {
     <#
-        .SYNOPSIS
-            Copy-DbaLinkedServer migrates Linked Servers from one SQL Server to another. Linked Server logins and passwords are migrated as well.
+    .SYNOPSIS
+        Copy-DbaLinkedServer migrates Linked Servers from one SQL Server to another. Linked Server logins and passwords are migrated as well.
 
-        .DESCRIPTION
-            By using password decryption techniques provided by Antti Rantasaari (NetSPI, 2014), this script migrates SQL Server Linked Servers from one server to another, while maintaining username and password.
+    .DESCRIPTION
+        By using password decryption techniques provided by Antti Rantasaari (NetSPI, 2014), this script migrates SQL Server Linked Servers from one server to another, while maintaining username and password.
 
-            Credit: https://blog.netspi.com/decrypting-mssql-database-link-server-passwords/
-            License: BSD 3-Clause http://opensource.org/licenses/BSD-3-Clause
+        Credit: https://blog.netspi.com/decrypting-mssql-database-link-server-passwords/
 
-        .PARAMETER Source
-            Source SQL Server (2005 and above). You must have sysadmin access to both SQL Server and Windows.
+    .PARAMETER Source
+        Source SQL Server (2005 and above). You must have sysadmin access to both SQL Server and Windows.
 
-        .PARAMETER SourceSqlCredential
-            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+    .PARAMETER SourceSqlCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-        .PARAMETER Destination
-            Destination SQL Server (2005 and above). You must have sysadmin access to both SQL Server and Windows.
+    .PARAMETER Destination
+        Destination SQL Server (2005 and above). You must have sysadmin access to both SQL Server and Windows.
 
-        .PARAMETER DestinationSqlCredential
-            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+    .PARAMETER DestinationSqlCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-        .PARAMETER LinkedServer
-            The linked server(s) to process - this list is auto-populated from the server. If unspecified, all linked servers will be processed.
+    .PARAMETER LinkedServer
+        The linked server(s) to process - this list is auto-populated from the server. If unspecified, all linked servers will be processed.
 
-        .PARAMETER ExcludeLinkedServer
-            The linked server(s) to exclude - this list is auto-populated from the server
+    .PARAMETER ExcludeLinkedServer
+        The linked server(s) to exclude - this list is auto-populated from the server
 
-        .PARAMETER UpgradeSqlClient
-            Upgrade any SqlClient Linked Server to the current Version
+    .PARAMETER UpgradeSqlClient
+        Upgrade any SqlClient Linked Server to the current Version
 
-        .PARAMETER WhatIf
-            Shows what would happen if the command were to run. No actions are actually performed.
+    .PARAMETER WhatIf
+        Shows what would happen if the command were to run. No actions are actually performed.
 
-        .PARAMETER Confirm
-            Prompts you for confirmation before executing any changing operations within the command.
+    .PARAMETER Confirm
+        Prompts you for confirmation before executing any changing operations within the command.
 
-        .PARAMETER Force
-            By default, if a Linked Server exists on the source and destination, the Linked Server is not copied over. Specifying -force will drop and recreate the Linked Server on the Destination server.
+    .PARAMETER Force
+        By default, if a Linked Server exists on the source and destination, the Linked Server is not copied over. Specifying -force will drop and recreate the Linked Server on the Destination server.
 
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-        .NOTES
-            Tags: WSMan, Migration, LinkedServer
-            Author: Chrissy LeMaire (@cl), netnerds.net
-            Requires: sysadmin access on SQL Servers, Remote Registry & Remote Administration enabled and accessible on source server.
+    .NOTES
+        Tags: WSMan, Migration, LinkedServer
+        Author: Chrissy LeMaire (@cl), netnerds.net
 
-            Limitations: Hasn't been tested thoroughly. Works on Win8.1 and SQL Server 2012 & 2014 so far.
-            This just copies the SQL portion. It does not copy files (ie. a local SQLite database, or Microsoft Access DB), nor does it configure ODBC entries.
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-        .LINK
-            https://dbatools.io/Copy-DbaLinkedServer
+        Requires: sysadmin access on SQL Servers
+        Limitations: This just copies the SQL portion. It does not copy files (i.e. a local SQLite database, or Microsoft Access DB), nor does it configure ODBC entries.
 
-        .EXAMPLE
-            Copy-DbaLinkedServer -Source sqlserver2014a -Destination sqlcluster
+    .LINK
+        https://dbatools.io/Copy-DbaLinkedServer
 
-            Description
-            Copies all SQL Server Linked Servers on sqlserver2014a to sqlcluster. If Linked Server exists on destination, it will be skipped.
+    .EXAMPLE
+        PS C:\> Copy-DbaLinkedServer -Source sqlserver2014a -Destination sqlcluster
 
-        .EXAMPLE
-            Copy-DbaLinkedServer -Source sqlserver2014a -Destination sqlcluster -LinkedServer SQL2K5,SQL2k -Force
+        Copies all SQL Server Linked Servers on sqlserver2014a to sqlcluster. If Linked Server exists on destination, it will be skipped.
 
-            Description
-            Copies over two SQL Server Linked Servers (SQL2K and SQL2K2) from sqlserver to sqlcluster. If the credential already exists on the destination, it will be dropped.
+    .EXAMPLE
+        PS C:\> Copy-DbaLinkedServer -Source sqlserver2014a -Destination sqlcluster -LinkedServer SQL2K5,SQL2k -Force
+
+        Copies over two SQL Server Linked Servers (SQL2K and SQL2K2) from sqlserver to sqlcluster. If the credential already exists on the destination, it will be dropped.
+
     #>
-    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
-    Param (
-        [parameter(Mandatory = $true)]
+    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess)]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseSingularNouns", "", Justification = "Internal functions are ignored")]
+    param (
+        [parameter(Mandatory)]
         [DbaInstanceParameter]$Source,
         [PSCredential]$SourceSqlCredential,
-        [parameter(Mandatory = $true)]
+        [parameter(Mandatory)]
         [DbaInstanceParameter[]]$Destination,
         [PSCredential]$DestinationSqlCredential,
         [object[]]$LinkedServer,
@@ -83,6 +85,10 @@ function Copy-DbaLinkedServer {
         [switch]$EnableException
     )
     begin {
+        if (-not $script:isWindows) {
+            Stop-Function -Message "Copy-DbaCredential is only supported on Windows"
+            return
+        }
         $null = Test-ElevationRequirement -ComputerName $Source.ComputerName
         function Copy-DbaLinkedServers {
             param (
@@ -107,15 +113,21 @@ function Copy-DbaLinkedServer {
                 try {
                     $destServer.LinkedServers.Refresh()
                     $destServer.LinkedServers.LinkedServerLogins.Refresh()
+                } catch {
+                    #here to avoid an empty catch
+                    $null = 1
                 }
-                catch { }
 
                 $linkedServerName = $currentLinkedServer.Name
+                $linkedServerProductName = $currentLinkedServer.ProductName
+                $linkedServerDataSource = $currentLinkedServer.DataSource
 
                 $copyLinkedServer = [pscustomobject]@{
                     SourceServer      = $sourceServer.Name
                     DestinationServer = $destServer.Name
                     Name              = $linkedServerName
+                    ProductName       = $linkedServerProductName
+                    DataSource        = $linkedServerDataSource
                     Type              = "Linked Server"
                     Status            = $null
                     Notes             = $provider
@@ -138,13 +150,13 @@ function Copy-DbaLinkedServer {
                     if (!$force) {
                         if ($Pscmdlet.ShouldProcess($destinstance, "$linkedServerName exists $($destServer.Name). Skipping.")) {
                             $copyLinkedServer.Status = "Skipped"
+                            $copyLinkedServer.Notes = "Already exists on destination"
                             $copyLinkedServer | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                            
+
                             Write-Message -Level Verbose -Message "$linkedServerName exists $($destServer.Name). Skipping."
                         }
                         continue
-                    }
-                    else {
+                    } else {
                         if ($Pscmdlet.ShouldProcess($destinstance, "Dropping $linkedServerName")) {
                             if ($currentLinkedServer.Name -eq 'repl_distributor') {
                                 Write-Message -Level Verbose -Message "repl_distributor cannot be dropped. Not going to try."
@@ -172,13 +184,18 @@ function Copy-DbaLinkedServer {
                         }
 
                         $destServer.Query($sql)
+
+                        if ($copyLinkedServer.ProductName -eq 'SQL Server' -and $copyLinkedServer.Name -ne $copyLinkedServer.DataSource) {
+                            $sql2 = "EXEC sp_setnetname '$($copyLinkedServer.Name)', '$($copyLinkedServer.DataSource)'; "
+                            $destServer.Query($sql2)
+                        }
+
                         $destServer.LinkedServers.Refresh()
                         Write-Message -Level Verbose -Message "$linkedServerName successfully copied."
 
                         $copyLinkedServer.Status = "Successful"
                         $copyLinkedServer | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                    }
-                    catch {
+                    } catch {
                         $copyLinkedServer.Status = "Failed"
                         $copyLinkedServer | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
@@ -204,8 +221,7 @@ function Copy-DbaLinkedServer {
 
                                     $copyLinkedServer.Status = "Successful"
                                     $copyLinkedServer | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                                }
-                                catch {
+                                } catch {
                                     $copyLinkedServer.Status = "Failed"
                                     $copyLinkedServer | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
@@ -217,17 +233,15 @@ function Copy-DbaLinkedServer {
                 }
             }
         }
-        
+
         if ($null -ne $SourceSqlCredential.Username) {
             Write-Message -Level Verbose -Message "You are using a SQL Credential. Note that this script requires Windows Administrator access on the source server. Attempting with $($SourceSqlCredential.Username)."
         }
         try {
-            Write-Message -Level Verbose -Message "Connecting to $Source"
             $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
             return
-        }
-        catch {
-            Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Source
+        } catch {
+            Stop-Function -Message "Error occured while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $Source
             return
         }
         if (!(Test-SqlSa -SqlInstance $sourceServer -SqlCredential $SourceSqlCredential)) {
@@ -236,31 +250,28 @@ function Copy-DbaLinkedServer {
         }
         Write-Message -Level Verbose -Message "Getting NetBios name for $source."
         $sourceNetBios = Resolve-NetBiosName $sourceserver
-        
+
         Write-Message -Level Verbose -Message "Checking if Remote Registry is enabled on $source."
         try {
             Invoke-Command2 -Raw -Credential $Credential -ComputerName $sourceNetBios -ScriptBlock { Get-ItemProperty -Path "HKLM:\SOFTWARE\" } -ErrorAction Stop
-        }
-        catch {
+        } catch {
             Stop-Function -Message "Can't connect to registry on $source." -Target $sourceNetBios -ErrorRecord $_
             return
         }
     }
     process {
         if (Test-FunctionInterrupt) { return }
-        
+
         foreach ($destinstance in $Destination) {
             try {
-                Write-Message -Level Verbose -Message "Connecting to $destinstance"
                 $destServer = Connect-SqlInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential
-            }
-            catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
+            } catch {
+                Stop-Function -Message "Error occured while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
             }
             if (!(Test-SqlSa -SqlInstance $destServer -SqlCredential $DestinationSqlCredential)) {
                 Stop-Function -Message "Not a sysadmin on $destinstance" -Target $destServer -Continue
             }
-            
+
             # Magic happens here
             Copy-DbaLinkedServers $LinkedServer -Force:$force
         }

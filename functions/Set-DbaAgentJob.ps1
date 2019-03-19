@@ -1,148 +1,157 @@
 #ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Set-DbaAgentJob {
     <#
-.SYNOPSIS
-Set-DbaAgentJob updates a job.
+    .SYNOPSIS
+        Set-DbaAgentJob updates a job.
 
-.DESCRIPTION
-Set-DbaAgentJob updates a job in the SQL Server Agent with parameters supplied.
+    .DESCRIPTION
+        Set-DbaAgentJob updates a job in the SQL Server Agent with parameters supplied.
 
-.PARAMETER SqlInstance
-SQL Server instance. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
+    .PARAMETER SqlInstance
+        The target SQL Server instance or instances. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
 
-.PARAMETER SqlCredential
-Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+    .PARAMETER SqlCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-.PARAMETER Job
-The name of the job.
+    .PARAMETER Job
+        The name of the job.
 
-.PARAMETER Schedule
-Schedule to attach to job. This can be more than one schedule.
+    .PARAMETER Schedule
+        Schedule to attach to job. This can be more than one schedule.
 
-.PARAMETER ScheduleId
-Schedule ID to attach to job. This can be more than one schedule ID.
+    .PARAMETER ScheduleId
+        Schedule ID to attach to job. This can be more than one schedule ID.
 
-.PARAMETER NewName
-The new name for the job.
+    .PARAMETER NewName
+        The new name for the job.
 
-.PARAMETER Enabled
-Enabled the job.
+    .PARAMETER Enabled
+        Enabled the job.
 
-.PARAMETER Disabled
-Disabled the job
+    .PARAMETER Disabled
+        Disabled the job
 
-.PARAMETER Description
-The description of the job.
+    .PARAMETER Description
+        The description of the job.
 
-.PARAMETER StartStepId
-The identification number of the first step to execute for the job.
+    .PARAMETER StartStepId
+        The identification number of the first step to execute for the job.
 
-.PARAMETER Category
-The category of the job.
+    .PARAMETER Category
+        The category of the job.
 
-.PARAMETER OwnerLogin
-The name of the login that owns the job.
+    .PARAMETER OwnerLogin
+        The name of the login that owns the job.
 
-.PARAMETER EventlogLevel
-Specifies when to place an entry in the Microsoft Windows application log for this job.
-Allowed values 0, "Never", 1, "OnSuccess", 2, "OnFailure", 3, "Always"
-The text value van either be lowercase, uppercase or something in between as long as the text is correct.
+    .PARAMETER EventLogLevel
+        Specifies when to place an entry in the Microsoft Windows application log for this job.
+        Allowed values 0, "Never", 1, "OnSuccess", 2, "OnFailure", 3, "Always"
+        The text value van either be lowercase, uppercase or something in between as long as the text is correct.
 
-.PARAMETER EmailLevel
-Specifies when to send an e-mail upon the completion of this job.
-Allowed values 0, "Never", 1, "OnSuccess", 2, "OnFailure", 3, "Always"
-The text value van either be lowercase, uppercase or something in between as long as the text is correct.
+    .PARAMETER EmailLevel
+        Specifies when to send an e-mail upon the completion of this job.
+        Allowed values 0, "Never", 1, "OnSuccess", 2, "OnFailure", 3, "Always"
+        The text value van either be lowercase, uppercase or something in between as long as the text is correct.
 
-.PARAMETER NetsendLevel
-Specifies when to send a network message upon the completion of this job.
-Allowed values 0, "Never", 1, "OnSuccess", 2, "OnFailure", 3, "Always"
-The text value van either be lowercase, uppercase or something in between as long as the text is correct.
+    .PARAMETER NetsendLevel
+        Specifies when to send a network message upon the completion of this job.
+        Allowed values 0, "Never", 1, "OnSuccess", 2, "OnFailure", 3, "Always"
+        The text value van either be lowercase, uppercase or something in between as long as the text is correct.
 
-.PARAMETER PageLevel
-Specifies when to send a page upon the completion of this job.
-Allowed values 0, "Never", 1, "OnSuccess", 2, "OnFailure", 3, "Always"
-The text value van either be lowercase, uppercase or something in between as long as the text is correct.
+    .PARAMETER PageLevel
+        Specifies when to send a page upon the completion of this job.
+        Allowed values 0, "Never", 1, "OnSuccess", 2, "OnFailure", 3, "Always"
+        The text value van either be lowercase, uppercase or something in between as long as the text is correct.
 
-.PARAMETER EmailOperator
-The e-mail name of the operator to whom the e-mail is sent when EmailLevel is reached.
+    .PARAMETER EmailOperator
+        The e-mail name of the operator to whom the e-mail is sent when EmailLevel is reached.
 
-.PARAMETER NetsendOperator
-The name of the operator to whom the network message is sent.
+    .PARAMETER NetsendOperator
+        The name of the operator to whom the network message is sent.
 
-.PARAMETER PageOperator
-The name of the operator to whom a page is sent.
+    .PARAMETER PageOperator
+        The name of the operator to whom a page is sent.
 
-.PARAMETER DeleteLevel
-Specifies when to delete the job.
-Allowed values 0, "Never", 1, "OnSuccess", 2, "OnFailure", 3, "Always"
-The text value van either be lowercase, uppercase or something in between as long as the text is correct.
+    .PARAMETER DeleteLevel
+        Specifies when to delete the job.
+        Allowed values 0, "Never", 1, "OnSuccess", 2, "OnFailure", 3, "Always"
+        The text value van either be lowercase, uppercase or something in between as long as the text is correct.
 
-.PARAMETER Force
-The force parameter will ignore some errors in the parameters and assume defaults.
+    .PARAMETER Force
+        The force parameter will ignore some errors in the parameters and assume defaults.
 
-.PARAMETER InputObject
-Enables piping job objects
+    .PARAMETER InputObject
+        Enables piping job objects
 
-.PARAMETER WhatIf
-Shows what would happen if the command were to run. No actions are actually performed.
+    .PARAMETER WhatIf
+        Shows what would happen if the command were to run. No actions are actually performed.
 
-.PARAMETER Confirm
-Prompts you for confirmation before executing any changing operations within the command.
+    .PARAMETER Confirm
+        Prompts you for confirmation before executing any changing operations within the command.
 
-.PARAMETER EnableException
+    .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-.NOTES
-Author: Sander Stad (@sqlstad, sqlstad.nl)
-Tags: Agent, Job
+    .NOTES
+        Tags: Agent, Job
+        Author: Sander Stad (@sqlstad), sqlstad.nl
 
-Website: https://dbatools.io
-Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-License: MIT https://opensource.org/licenses/MIT
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-.LINK
-https://dbatools.io/Set-DbaAgentJob
+    .LINK
+        https://dbatools.io/Set-DbaAgentJob
 
-.EXAMPLE
-Set-DbaAgentJob sql1 -Job Job1 -Disabled
-Changes the job to disabled
+    .EXAMPLE
+        PS C:\> Set-DbaAgentJob sql1 -Job Job1 -Disabled
 
-.EXAMPLE
-Set-DbaAgentJob sql1 -Job Job1 -OwnerLogin user1
-Changes the owner of the job
+        Changes the job to disabled
 
-.EXAMPLE
-Set-DbaAgentJob -SqlInstance sql1 -Job Job1 -EventLogLevel OnSuccess
-Changes the job and sets the notification to write to the Windows Application event log on success
+    .EXAMPLE
+        PS C:\> Set-DbaAgentJob sql1 -Job Job1 -OwnerLogin user1
 
-.EXAMPLE
-Set-DbaAgentJob -SqlInstance sql1 -Job Job1 -EmailLevel OnFailure -EmailOperator dba
-Changes the job and sets the notification to send an e-mail to the e-mail operator
+        Changes the owner of the job
 
-.EXAMPLE
-Set-DbaAgentJob -SqlInstance sql1 -Job Job1, Job2, Job3 -Enabled
-Changes multiple jobs to enabled
+    .EXAMPLE
+        PS C:\> Set-DbaAgentJob -SqlInstance sql1 -Job Job1 -EventLogLevel OnSuccess
 
-.EXAMPLE
-Set-DbaAgentJob -SqlInstance sql1, sql2, sql3 -Job Job1, Job2, Job3 -Enabled
-Changes multiple jobs to enabled on multiple servers
+        Changes the job and sets the notification to write to the Windows Application event log on success
 
-.EXAMPLE
-Set-DbaAgentJob -SqlInstance sql1 -Job Job1 -Description 'Just another job' -Whatif
-Doesn't Change the job but shows what would happen.
+    .EXAMPLE
+        PS C:\> Set-DbaAgentJob -SqlInstance sql1 -Job Job1 -EmailLevel OnFailure -EmailOperator dba
 
-.EXAMPLE
-Set-DbaAgentJob -SqlInstance sql1, sql2, sql3 -Job 'Job One' -Description 'Job One'
-Changes a job with the name "Job1" on multiple servers to have another description
+        Changes the job and sets the notification to send an e-mail to the e-mail operator
 
-.EXAMPLE
-sql1, sql2, sql3 | Set-DbaAgentJob -Job Job1 -Description 'Job One'
-Changes a job with the name "Job1" on multiple servers to have another description using pipe line
+    .EXAMPLE
+        PS C:\> Set-DbaAgentJob -SqlInstance sql1 -Job Job1, Job2, Job3 -Enabled
 
-#>
-    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "Low")]
+        Changes multiple jobs to enabled
+
+    .EXAMPLE
+        PS C:\> Set-DbaAgentJob -SqlInstance sql1, sql2, sql3 -Job Job1, Job2, Job3 -Enabled
+
+        Changes multiple jobs to enabled on multiple servers
+
+    .EXAMPLE
+        PS C:\> Set-DbaAgentJob -SqlInstance sql1 -Job Job1 -Description 'Just another job' -Whatif
+
+        Doesn't Change the job but shows what would happen.
+
+    .EXAMPLE
+        PS C:\> Set-DbaAgentJob -SqlInstance sql1, sql2, sql3 -Job 'Job One' -Description 'Job One'
+
+        Changes a job with the name "Job1" on multiple servers to have another description
+
+    .EXAMPLE
+        PS C:\> sql1, sql2, sql3 | Set-DbaAgentJob -Job Job1 -Description 'Job One'
+
+        Changes a job with the name "Job1" on multiple servers to have another description using pipe line
+
+    #>
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
     param (
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
@@ -171,7 +180,7 @@ Changes a job with the name "Job1" on multiple servers to have another descripti
         [ValidateSet(0, "Never", 1, "OnSuccess", 2, "OnFailure", 3, "Always")]
         [object]$DeleteLevel,
         [switch]$Force,
-        [parameter(ValueFromPipeline = $true)]
+        [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Agent.Job[]]$InputObject,
         [switch][Alias('Silent')]
         $EnableException
@@ -233,12 +242,10 @@ Changes a job with the name "Job1" on multiple servers to have another descripti
 
         foreach ($instance in $sqlinstance) {
             # Try connecting to the instance
-            Write-Message -Message "Connecting to $instance" -Level Verbose
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-            }
-            catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+            } catch {
+                Stop-Function -Message "Error occured while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             foreach ($j in $Job) {
@@ -246,16 +253,14 @@ Changes a job with the name "Job1" on multiple servers to have another descripti
                 # Check if the job exists
                 if ($server.JobServer.Jobs.Name -notcontains $j) {
                     Stop-Function -Message "Job $j doesn't exists on $instance" -Target $instance
-                }
-                else {
+                } else {
                     # Get the job
                     try {
                         $InputObject += $server.JobServer.Jobs[$j]
 
                         # Refresh the object
                         $InputObject.Refresh()
-                    }
-                    catch {
+                    } catch {
                         Stop-Function -Message "Something went wrong retrieving the job" -Target $j -ErrorRecord $_ -Continue
                     }
                 }
@@ -282,8 +287,7 @@ Changes a job with the name "Job1" on multiple servers to have another descripti
                         # Add schedule to job
                         Write-Message -Message "Adding schedule id $sID to job" -Level Verbose
                         $currentjob.AddSharedSchedule($sID)
-                    }
-                    else {
+                    } else {
                         Stop-Function -Message "Schedule $s cannot be found on instance $instance" -Target $s -Continue
                     }
 
@@ -299,8 +303,7 @@ Changes a job with the name "Job1" on multiple servers to have another descripti
                         Write-Message -Message "Adding schedule id $sID to job" -Level Verbose
                         $currentjob.AddSharedSchedule($sID)
 
-                    }
-                    else {
+                    } else {
                         Stop-Function -Message "Schedule ID $sID cannot be found on instance $instance" -Target $sID -Continue
                     }
                 }
@@ -332,18 +335,15 @@ Changes a job with the name "Job1" on multiple servers to have another descripti
 
                                 Write-Message -Message "Setting job category to $Category" -Level Verbose
                                 $currentjob.Category = $Category
-                            }
-                            catch {
+                            } catch {
                                 Stop-Function -Message "Couldn't create job category $Category from $instance" -Target $instance -ErrorRecord $_
                             }
                         }
-                    }
-                    else {
+                    } else {
                         Stop-Function -Message "Job category $Category doesn't exist on $instance. Use -Force to create it." -Target $instance
                         return
                     }
-                }
-                else {
+                } else {
                     Write-Message -Message "Setting job category to $Category" -Level Verbose
                     $currentjob.Category = $Category
                 }
@@ -359,13 +359,11 @@ Changes a job with the name "Job1" on multiple servers to have another descripti
                     if ($currentjobSteps.ID -contains $StartStepId) {
                         Write-Message -Message "Setting job start step id to $StartStepId" -Level Verbose
                         $currentjob.StartStepID = $StartStepId
-                    }
-                    else {
+                    } else {
                         Write-Message -Message "The step id is not present in job $j on instance $instance" -Warning
                     }
 
-                }
-                else {
+                } else {
                     Stop-Function -Message "There are no job steps present for job $j on instance $instance" -Target $instance -Continue
                 }
 
@@ -376,18 +374,17 @@ Changes a job with the name "Job1" on multiple servers to have another descripti
                 if ($server.Logins.Name -contains $OwnerLogin) {
                     Write-Message -Message "Setting job owner login name to $OwnerLogin" -Level Verbose
                     $currentjob.OwnerLoginName = $OwnerLogin
-                }
-                else {
+                } else {
                     Stop-Function -Message "The given owner log in name $OwnerLogin does not exist on instance $instance" -Target $instance -Continue
                 }
             }
 
-            if ($EventLogLevel) {
+            if (Test-Bound -ParameterName EventLogLevel) {
                 Write-Message -Message "Setting job event log level to $EventlogLevel" -Level Verbose
                 $currentjob.EventLogLevel = $EventLogLevel
             }
 
-            if ($EmailLevel) {
+            if (Test-Bound -ParameterName EmailLevel) {
                 # Check if the notifiction needs to be removed
                 if ($EmailLevel -eq 0) {
                     # Remove the operator
@@ -395,20 +392,18 @@ Changes a job with the name "Job1" on multiple servers to have another descripti
 
                     # Remove the notification
                     $currentjob.EmailLevel = $EmailLevel
-                }
-                else {
+                } else {
                     # Check if either the operator e-mail parameter is set or the operator is set in the job
                     if ($EmailOperator -or $currentjob.OperatorToEmail) {
                         Write-Message -Message "Setting job e-mail level to $EmailLevel" -Level Verbose
                         $currentjob.EmailLevel = $EmailLevel
-                    }
-                    else {
+                    } else {
                         Stop-Function -Message "Cannot set e-mail level $EmailLevel without a valid e-mail operator name" -Target $instance -Continue
                     }
                 }
             }
 
-            if ($NetsendLevel) {
+            if (Test-Bound -ParameterName NetsendLevel) {
                 # Check if the notifiction needs to be removed
                 if ($NetsendLevel -eq 0) {
                     # Remove the operator
@@ -416,20 +411,18 @@ Changes a job with the name "Job1" on multiple servers to have another descripti
 
                     # Remove the notification
                     $currentjob.NetSendLevel = $NetsendLevel
-                }
-                else {
+                } else {
                     # Check if either the operator netsend parameter is set or the operator is set in the job
                     if ($NetsendOperator -or $currentjob.OperatorToNetSend) {
                         Write-Message -Message "Setting job netsend level to $NetsendLevel" -Level Verbose
                         $currentjob.NetSendLevel = $NetsendLevel
-                    }
-                    else {
+                    } else {
                         Stop-Function -Message "Cannot set netsend level $NetsendLevel without a valid netsend operator name" -Target $instance -Continue
                     }
                 }
             }
 
-            if ($PageLevel) {
+            if (Test-Bound -ParameterName PageLevel) {
                 # Check if the notifiction needs to be removed
                 if ($PageLevel -eq 0) {
                     # Remove the operator
@@ -437,14 +430,12 @@ Changes a job with the name "Job1" on multiple servers to have another descripti
 
                     # Remove the notification
                     $currentjob.PageLevel = $PageLevel
-                }
-                else {
+                } else {
                     # Check if either the operator pager parameter is set or the operator is set in the job
                     if ($PageOperator -or $currentjob.OperatorToPage) {
                         Write-Message -Message "Setting job pager level to $PageLevel" -Level Verbose
                         $currentjob.PageLevel = $PageLevel
-                    }
-                    else {
+                    } else {
                         Stop-Function -Message "Cannot set page level $PageLevel without a valid netsend operator name" -Target $instance -Continue
                     }
                 }
@@ -456,8 +447,7 @@ Changes a job with the name "Job1" on multiple servers to have another descripti
                 if ($server.JobServer.Operators.Name -contains $EmailOperator) {
                     Write-Message -Message "Setting job e-mail operator to $EmailOperator" -Level Verbose
                     $currentjob.OperatorToEmail = $EmailOperator
-                }
-                else {
+                } else {
                     Stop-Function -Message "The e-mail operator name $EmailOperator does not exist on instance $instance. Exiting.." -Target $j -Continue
                 }
             }
@@ -467,8 +457,7 @@ Changes a job with the name "Job1" on multiple servers to have another descripti
                 if ($server.JobServer.Operators.Name -contains $NetsendOperator) {
                     Write-Message -Message "Setting job netsend operator to $NetsendOperator" -Level Verbose
                     $currentjob.OperatorToNetSend = $NetsendOperator
-                }
-                else {
+                } else {
                     Stop-Function -Message "The netsend operator name $NetsendOperator does not exist on instance $instance. Exiting.." -Target $j -Continue
                 }
             }
@@ -478,13 +467,12 @@ Changes a job with the name "Job1" on multiple servers to have another descripti
                 if ($server.JobServer.Operators.Name -contains $PageOperator) {
                     Write-Message -Message "Setting job pager operator to $PageOperator" -Level Verbose
                     $currentjob.OperatorToPage = $PageOperator
-                }
-                else {
+                } else {
                     Stop-Function -Message "The page operator name $PageOperator does not exist on instance $instance. Exiting.." -Target $instance -Continue
                 }
             }
 
-            if ($DeleteLevel) {
+            if (Test-Bound -ParameterName DeleteLevel) {
                 Write-Message -Message "Setting job delete level to $DeleteLevel" -Level Verbose
                 $currentjob.DeleteLevel = $DeleteLevel
             }
@@ -497,8 +485,7 @@ Changes a job with the name "Job1" on multiple servers to have another descripti
 
                     # Change the job
                     $currentjob.Alter()
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Something went wrong changing the job" -ErrorRecord $_ -Target $instance -Continue
                 }
                 Get-DbaAgentJob -SqlInstance $server | Where-Object Name -eq $currentjob.name

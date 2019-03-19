@@ -1,112 +1,115 @@
 #ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function New-DbaComputerCertificate {
     <#
-        .SYNOPSIS
-            Creates a new computer certificate useful for Forcing Encryption
+    .SYNOPSIS
+        Creates a new computer certificate useful for Forcing Encryption
 
-        .DESCRIPTION
-            Creates a new computer certificate - self-signed or signed by an Active Directory CA, using the Web Server certificate.
+    .DESCRIPTION
+        Creates a new computer certificate - self-signed or signed by an Active Directory CA, using the Web Server certificate.
 
-            By default, a key with a length of 1024 and a friendly name of the machines FQDN is generated.
+        By default, a key with a length of 1024 and a friendly name of the machines FQDN is generated.
 
-            This command was originally intended to help automate the process so that SSL certificates can be available for enforcing encryption on connections.
+        This command was originally intended to help automate the process so that SSL certificates can be available for enforcing encryption on connections.
 
-            It makes a lot of assumptions - namely, that your account is allowed to auto-enroll and that you have permission to do everything it needs to do ;)
+        It makes a lot of assumptions - namely, that your account is allowed to auto-enroll and that you have permission to do everything it needs to do ;)
 
-            References:
-            http://sqlmag.com/sql-server/7-steps-ssl-encryption
-            https://azurebi.jppp.org/2016/01/23/using-lets-encrypt-certificates-for-secure-sql-server-connections/
-            https://blogs.msdn.microsoft.com/sqlserverfaq/2016/09/26/creating-and-registering-ssl-certificates/
+        References:
+        http://sqlmag.com/sql-server/7-steps-ssl-encryption
+        https://azurebi.jppp.org/2016/01/23/using-lets-encrypt-certificates-for-secure-sql-server-connections/
+        https://blogs.msdn.microsoft.com/sqlserverfaq/2016/09/26/creating-and-registering-ssl-certificates/
 
-            The certificate is generated using AD's webserver SSL template on the client machine and pushed to the remote machine.
+        The certificate is generated using AD's webserver SSL template on the client machine and pushed to the remote machine.
 
-        .PARAMETER ComputerName
-            The target SQL Server - defaults to localhost. If target is a cluster, you must also specify ClusterInstanceName (see below)
+    .PARAMETER ComputerName
+       The target SQL Server instance or instances. Defaults to localhost. If target is a cluster, you must also specify ClusterInstanceName (see below)
 
-        .PARAMETER Credential
-            Allows you to login to $ComputerName using alternative credentials.
+    .PARAMETER Credential
+        Allows you to login to $ComputerName using alternative credentials.
 
-        .PARAMETER CaServer
-            Optional - the CA Server where the request will be sent to
+    .PARAMETER CaServer
+        Optional - the CA Server where the request will be sent to
 
-        .PARAMETER CaName
-            The properly formatted CA name of the corresponding CaServer
+    .PARAMETER CaName
+        The properly formatted CA name of the corresponding CaServer
 
-        .PARAMETER ClusterInstanceName
-            When creating certs for a cluster, use this parameter to create the certificate for the cluster node name. Use ComputerName for each of the nodes.
+    .PARAMETER ClusterInstanceName
+        When creating certs for a cluster, use this parameter to create the certificate for the cluster node name. Use ComputerName for each of the nodes.
 
-        .PARAMETER Password
-            Password to encrypt/decrypt private key for export to remote machine
+    .PARAMETER SecurePassword
+        Password to encrypt/decrypt private key for export to remote machine
 
-        .PARAMETER FriendlyName
-            The FriendlyName listed in the certificate. This defaults to the FQDN of the $ComputerName
+    .PARAMETER FriendlyName
+        The FriendlyName listed in the certificate. This defaults to the FQDN of the $ComputerName
 
-        .PARAMETER CertificateTemplate
-            The domain's Certificate Template - WebServer by default.
+    .PARAMETER CertificateTemplate
+        The domain's Certificate Template - WebServer by default.
 
-        .PARAMETER KeyLength
-            The length of the key - defaults to 1024
+    .PARAMETER KeyLength
+        The length of the key - defaults to 1024
 
-        .PARAMETER Store
-            Certificate store - defaults to LocalMachine
+    .PARAMETER Store
+        Certificate store - defaults to LocalMachine
 
-        .PARAMETER Folder
-            Certificate folder - defaults to My (Personal)
+    .PARAMETER Folder
+        Certificate folder - defaults to My (Personal)
 
-        .PARAMETER Dns
-            Specify the Dns entries listed in SAN. By default, it will be ComputerName + FQDN, or in the case of clusters, clustername + cluster FQDN.
+    .PARAMETER Dns
+        Specify the Dns entries listed in SAN. By default, it will be ComputerName + FQDN, or in the case of clusters, clustername + cluster FQDN.
 
-        .PARAMETER SelfSigned
-            Creates a self-signed certificate. All other parameters can still apply except CaServer and CaName because the command does not go and get the certificate signed.
+    .PARAMETER SelfSigned
+        Creates a self-signed certificate. All other parameters can still apply except CaServer and CaName because the command does not go and get the certificate signed.
 
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-        .PARAMETER WhatIf
-            Shows what would happen if the command were to run. No actions are actually performed.
+    .PARAMETER WhatIf
+        Shows what would happen if the command were to run. No actions are actually performed.
 
-        .PARAMETER Confirm
-            Prompts you for confirmation before executing any changing operations within the command.
+    .PARAMETER Confirm
+        Prompts you for confirmation before executing any changing operations within the command.
 
-        .NOTES
-            Tags: Certificate
+    .NOTES
+        Tags: Certificate
+        Author: Chrissy LeMaire (@cl), netnerds.net
 
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: MIT https://opensource.org/licenses/MIT
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-        .EXAMPLE
-            New-DbaComputerCertificate
+    .EXAMPLE
+        PS C:\> New-DbaComputerCertificate
 
-            Creates a computer certificate signed by the local domain CA for the local machine with the keylength of 1024.
+        Creates a computer certificate signed by the local domain CA for the local machine with the keylength of 1024.
 
-        .EXAMPLE
-            New-DbaComputerCertificate -ComputerName Server1
+    .EXAMPLE
+        PS C:\> New-DbaComputerCertificate -ComputerName Server1
 
-            Creates a computer certificate signed by the local domain CA _on the local machine_ for server1 with the keylength of 1024.
+        Creates a computer certificate signed by the local domain CA _on the local machine_ for server1 with the keylength of 1024.
 
-            The certificate is then copied to the new machine over WinRM and imported.
+        The certificate is then copied to the new machine over WinRM and imported.
 
-        .EXAMPLE
-            New-DbaComputerCertificate -ComputerName sqla, sqlb -ClusterInstanceName sqlcluster -KeyLength 4096
+    .EXAMPLE
+        PS C:\> New-DbaComputerCertificate -ComputerName sqla, sqlb -ClusterInstanceName sqlcluster -KeyLength 4096
 
-            Creates a computer certificate for sqlcluster, signed by the local domain CA, with the keylength of 4096.
+        Creates a computer certificate for sqlcluster, signed by the local domain CA, with the keylength of 4096.
 
-            The certificate is then copied to sqla _and_ sqlb over WinRM and imported.
+        The certificate is then copied to sqla _and_ sqlb over WinRM and imported.
 
-        .EXAMPLE
-            New-DbaComputerCertificate -ComputerName Server1 -WhatIf
+    .EXAMPLE
+        PS C:\> New-DbaComputerCertificate -ComputerName Server1 -WhatIf
 
-            Shows what would happen if the command were run
+        Shows what would happen if the command were run
 
-        .EXAMPLE
-            New-DbaComputerCertificate -SelfSigned
+    .EXAMPLE
+        PS C:\> New-DbaComputerCertificate -SelfSigned
 
-            Creates a self-signed certificate
+        Creates a self-signed certificate
+
     #>
-    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "Low")]
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseOutputTypeCorrectly", "", Justification = "PSSA Rule Ignored by BOH")]
     param (
         [parameter(ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer", "SqlInstance")]
@@ -115,7 +118,8 @@ function New-DbaComputerCertificate {
         [string]$CaServer,
         [string]$CaName,
         [string]$ClusterInstanceName,
-        [securestring]$Password,
+        [Alias("Password")]
+        [securestring]$SecurePassword,
         [string]$FriendlyName = "SQL Server",
         [string]$CertificateTemplate = "WebServer",
         [int]$KeyLength = 1024,
@@ -203,8 +207,7 @@ function New-DbaComputerCertificate {
                         Computer = $ca | ForEach-Object { $_.DNSHostName }
                     }
                 }
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Cannot access Active Directory or find the Certificate Authority" -ErrorRecord $_
                 return
             }
@@ -227,6 +230,9 @@ function New-DbaComputerCertificate {
     process {
         if (Test-FunctionInterrupt) { return }
 
+        # uses dos command locally
+        
+
         foreach ($computer in $ComputerName) {
 
             if (!$secondaryNode) {
@@ -234,19 +240,16 @@ function New-DbaComputerCertificate {
                 if ($ClusterInstanceName) {
                     if ($ClusterInstanceName -notmatch "\.") {
                         $fqdn = "$ClusterInstanceName.$env:USERDNSDOMAIN"
-                    }
-                    else {
+                    } else {
                         $fqdn = $ClusterInstanceName
                     }
-                }
-                else {
+                } else {
                     $resolved = Resolve-DbaNetworkName -ComputerName $computer.ComputerName -WarningAction SilentlyContinue
 
                     if (!$resolved) {
                         $fqdn = "$ComputerName.$env:USERDNSDOMAIN"
                         Write-Message -Level Warning -Message "Server name cannot be resolved. Guessing it's $fqdn"
-                    }
-                    else {
+                    } else {
                         $fqdn = $resolved.fqdn
                     }
                 }
@@ -261,8 +264,7 @@ function New-DbaComputerCertificate {
                 if (Test-Path($certDir)) {
                     Write-Message -Level Output -Message "Deleting files from $certDir"
                     $null = Remove-Item "$certDir\*.*"
-                }
-                else {
+                } else {
                     Write-Message -Level Output -Message "Creating $certDir"
                     $null = New-Item -Path $certDir -ItemType Directory -Force
                 }
@@ -293,8 +295,7 @@ function New-DbaComputerCertificate {
                 Add-Content $certCfg "ProviderType = 12"
                 if ($SelfSigned) {
                     Add-Content $certCfg "RequestType = Cert"
-                }
-                else {
+                } else {
                     Add-Content $certCfg "RequestType = PKCS10"
                 }
                 Add-Content $certCfg "KeyUsage = 0xa0"
@@ -317,8 +318,7 @@ function New-DbaComputerCertificate {
                     if ($computer.IsLocalHost) {
                         $storedCert | Select-Object * | Select-DefaultView -Property FriendlyName, DnsNameList, Thumbprint, NotBefore, NotAfter, Subject, Issuer
                     }
-                }
-                else {
+                } else {
                     if ($PScmdlet.ShouldProcess("local", "Submitting certificate request for $computer to $CaServer\$CaName")) {
                         Write-Message -Level Output -Message "certreq -submit -config `"$CaServer\$CaName`" -attrib $certTemplate $certCsr $certCrt $certPfx"
                         $submit = certreq -submit -config ""$CaServer\$CaName"" -attrib $certTemplate $certCsr $certCrt $certPfx
@@ -330,8 +330,7 @@ function New-DbaComputerCertificate {
                         $cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2
                         $cert.Import($certCrt, $null, [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::DefaultKeySet)
                         $storedCert = Get-ChildItem "Cert:\$store\$folder" -Recurse | Where-Object { $_.Thumbprint -eq $cert.Thumbprint }
-                    }
-                    elseif ($submit) {
+                    } elseif ($submit) {
                         Write-Message -Level Warning -Message "Something went wrong"
                         Write-Message -Level Warning -Message "$create"
                         Write-Message -Level Warning -Message "$submit"
@@ -349,7 +348,7 @@ function New-DbaComputerCertificate {
                 if (!$secondaryNode) {
                     if ($PScmdlet.ShouldProcess("local", "Generating pfx and reading from disk")) {
                         Write-Message -Level Output -Message "Exporting PFX with password to $tempPfx"
-                        $certdata = $storedCert.Export([System.Security.Cryptography.X509Certificates.X509ContentType]::PFX, $password)
+                        $certdata = $storedCert.Export([System.Security.Cryptography.X509Certificates.X509ContentType]::PFX, $SecurePassword)
                     }
 
                     if ($PScmdlet.ShouldProcess("local", "Removing cert from disk but keeping it in memory")) {
@@ -372,11 +371,9 @@ function New-DbaComputerCertificate {
 
                 if ($PScmdlet.ShouldProcess("local", "Connecting to $computer to import new cert")) {
                     try {
-                        Write-Message -Level Output -Message "Connecting to $computer"
-                        Invoke-Command2 -ComputerName $computer -Credential $Credential -ArgumentList $certdata, $Password, $Store, $Folder -ScriptBlock $scriptblock -ErrorAction Stop |
+                        Invoke-Command2 -ComputerName $computer -Credential $Credential -ArgumentList $certdata, $SecurePassword, $Store, $Folder -ScriptBlock $scriptblock -ErrorAction Stop |
                             Select-DefaultView -Property DnsNameList, Thumbprint, NotBefore, NotAfter, Subject, Issuer
-                    }
-                    catch {
+                    } catch {
                         Stop-Function -Message "Issue importing new cert on $computer" -ErrorRecord $_ -Target $computer -Continue
                     }
                 }
@@ -384,8 +381,7 @@ function New-DbaComputerCertificate {
             if ($PScmdlet.ShouldProcess("local", "Removing all files from $certDir")) {
                 try {
                     Remove-Item -Force -Recurse $certDir -ErrorAction SilentlyContinue
-                }
-                catch {
+                } catch {
                     Stop-Function "Isue removing files from $certDir" -Target $certDir -ErrorRecord $_
                 }
             }

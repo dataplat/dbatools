@@ -1,6 +1,17 @@
-﻿$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
+$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
+
+Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+    Context "Validate parameters" {
+        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
+        [object[]]$knownParameters = 'SqlInstance','SqlCredential','Login','ExcludeLogin','Database','Path','NoClobber','Append','ExcludeDatabases','ExcludeJobs','EnableException','ExcludeGoBatchSeparator','DestinationVersion','InputObject'
+        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
+        It "Should only contain our specific parameters" {
+            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        }
+    }
+}
 
 $outputFile = "dbatoolsci_exportdbalogin.sql"
 
@@ -32,8 +43,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             }
             $null = $server.Query("GRANT SELECT ON sys.databases TO [$login2] WITH GRANT OPTION")
             $server.Databases[$dbname2].ExecuteNonQuery("CREATE USER [$user2] FOR LOGIN [$login2]")
-        }
-        catch { } # No idea why appveyor can't handle this
+        } catch { } # No idea why appveyor can't handle this
     }
     AfterAll {
         Remove-DbaDatabase -SqlInstance $script:instance1 -Database $dbname1 -Confirm:$false
@@ -52,7 +62,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     }
 
     It "Doesn't include database details when using NoDatabase" {
-        $output = Export-DbaLogin -SqlInstance $script:instance1 -NoDatabases -WarningAction SilentlyContinue
+        $output = Export-DbaLogin -SqlInstance $script:instance1 -ExcludeDatabases -WarningAction SilentlyContinue
 
         ([regex]::matches($output, 'USE \[.*?\]')).Count | Should Be 0
     }

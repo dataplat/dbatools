@@ -1,6 +1,17 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
+Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
+
+Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+    Context "Validate parameters" {
+        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
+        [object[]]$knownParameters = 'SqlInstance','SqlCredential','Database','ExcludeDatabase','Snapshot','InputObject','Force','EnableException'
+        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
+        It "Should only contain our specific parameters" {
+            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        }
+    }
+}
 
 # Targets only instance2 because it's the only one where Snapshots can happen
 Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
@@ -58,7 +69,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
             $result.Count | Should Be 1
 
             # the query doesn't return records inserted before the restore
-            $result = Invoke-SqlCmd2 -ServerInstance $script:instance2 -Query "SELECT * FROM [$db1].[dbo].[Example]" -QueryTimeout 10 -ConnectionTimeout 10
+            $result = Invoke-DbaQuery -SqlInstance $script:instance2 -Query "SELECT * FROM [$db1].[dbo].[Example]" -QueryTimeout 10
             $result.id | Should Be 1
         }
 

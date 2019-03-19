@@ -9,7 +9,7 @@ function Remove-DbaNetworkCertificate {
         Removes the network certificate for SQL Server instance. This setting is found in Configuration Manager.
 
     .PARAMETER SqlInstance
-        The target SQL Server - defaults to localhost. If target is a cluster, you must also specify InstanceClusterName (see below)
+       The target SQL Server instance or instances. Defaults to localhost. If target is a cluster, you must also specify InstanceClusterName (see below)
 
     .PARAMETER Credential
         Allows you to login to the computer (not sql instance) using alternative credentials.
@@ -25,43 +25,44 @@ function Remove-DbaNetworkCertificate {
     .PARAMETER Confirm
         Prompts you for confirmation before executing any changing operations within the command.
 
+    .NOTES
+        Tags: Certificate
+        Author: Chrissy LeMaire (@cl), netnerds.net
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
+
+    .LINK
+        https://dbatools.io/Remove-DbaNetworkCertificate
+
     .EXAMPLE
-        Remove-DbaNetworkCertificate
+        PS C:\> Remove-DbaNetworkCertificate
 
         Removes the Network Certificate for the default instance (MSSQLSERVER) on localhost
 
     .EXAMPLE
-        Remove-DbaNetworkCertificate -SqlInstance sql1\SQL2008R2SP2
+        PS C:\> Remove-DbaNetworkCertificate -SqlInstance sql1\SQL2008R2SP2
 
         Removes the Network Certificate for the SQL2008R2SP2 instance on sql1
 
     .EXAMPLE
-        Remove-DbaNetworkCertificate -SqlInstance localhost\SQL2008R2SP2 -WhatIf
+        PS C:\> Remove-DbaNetworkCertificate -SqlInstance localhost\SQL2008R2SP2 -WhatIf
 
         Shows what would happen if the command were run
 
-    .NOTES
-        Tags: Certificate
-
-        Website: https://dbatools.io
-        Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-        License: MIT https://opensource.org/licenses/MIT
-#>
+    #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low", DefaultParameterSetName = 'Default')]
     param (
-        [Parameter(ValueFromPipeline = $true)]
+        [Parameter(ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer", "ComputerName")]
-        [DbaInstanceParameter[]]
-        $SqlInstance = $env:COMPUTERNAME,
-
-        [PSCredential]
-
-        $Credential,
-
-        [switch]
-        [Alias('Silent')]$EnableException
+        [DbaInstanceParameter[]]$SqlInstance = $env:COMPUTERNAME,
+        [PSCredential]$Credential,
+        [switch]$EnableException
     )
     process {
+        # Registry access
+        
+        
         foreach ($instance in $sqlinstance) {
             Write-Message -Level VeryVerbose -Message "Processing $instance" -Target $instance
             $null = Test-ElevationRequirement -ComputerName $instance -Continue
@@ -74,11 +75,9 @@ function Remove-DbaNetworkCertificate {
                 Stop-Function -Message "Can't resolve $instance" -Target $instance -Continue -Category InvalidArgument
             }
 
-            Write-Message -Level Output -Message "Connecting to SQL WMI on $($instance.ComputerName)"
             try {
                 $sqlwmi = Invoke-ManagedComputerCommand -ComputerName $resolved.FQDN -ScriptBlock { $wmi.Services } -Credential $Credential -ErrorAction Stop | Where-Object DisplayName -eq "SQL Server ($($instance.InstanceName))"
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failed to access $instance" -Target $instance -Continue -ErrorRecord $_
             }
 
@@ -94,8 +93,7 @@ function Remove-DbaNetworkCertificate {
                 if (![System.String]::IsNullOrEmpty($regroot)) {
                     $regroot = ($regroot -Split 'Value\=')[1]
                     $vsname = ($vsname -Split 'Value\=')[1]
-                }
-                else {
+                } else {
                     Stop-Function -Message "Can't find instance $vsname on $instance" -Continue -Category ObjectNotFound -Target $instance
                 }
             }
@@ -113,7 +111,7 @@ function Remove-DbaNetworkCertificate {
                 $instancename = $args[2]
                 $vsname = $args[3]
 
-                $regpath = "Registry::HKEY_LOCAL_MACHINE\$($args[0])\MSSQLServer\SuperSocketNetLib"
+                $regpath = "Registry::HKEY_LOCAL_MACHINE\$($regroot)\MSSQLServer\SuperSocketNetLib"
                 $cert = (Get-ItemProperty -Path $regpath -Name Certificate).Certificate
                 Set-ItemProperty -Path $regpath -Name Certificate -Value $null
 
@@ -129,8 +127,7 @@ function Remove-DbaNetworkCertificate {
             if ($PScmdlet.ShouldProcess("local", "Connecting to $ComputerName to remove the cert")) {
                 try {
                     Invoke-Command2 -ComputerName $resolved.fqdn -Credential $Credential -ArgumentList $regroot, $serviceaccount, $instancename, $vsname -ScriptBlock $scriptblock -ErrorAction Stop
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Failed to connect to $($resolved.fqdn) using PowerShell remoting!" -ErrorRecord $_ -Target $instance -Continue
                 }
             }

@@ -1,24 +1,24 @@
 function New-DbaAgentProxy {
     <#
-        .SYNOPSIS
+    .SYNOPSIS
         Adds one or more proxies to SQL Server Agent
 
-        .DESCRIPTION
+    .DESCRIPTION
         Adds one or more proxies to SQL Server Agent
 
-        .PARAMETER SqlInstance
-        The SQL Server instance holding the databases to be removed.You must have sysadmin access and server version must be SQL Server version 2000 or higher.
+    .PARAMETER SqlInstance
+        The target SQL Server instance or instances.You must have sysadmin access and server version must be SQL Server version 2000 or higher.
 
-        .PARAMETER SqlCredential
+    .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-        .PARAMETER Name
+    .PARAMETER Name
         The name of the proxy or proxies you want to create
 
-        .PARAMETER Credential
+    .PARAMETER ProxyCredential
         The associated SQL Server Credential. The credential must be created prior to creating the Proxy.
 
-        .PARAMETER SubSystem
+    .PARAMETER SubSystem
         The associated subsystem or subsystems. Defaults to CmdExec.
 
         Valid options include:
@@ -35,52 +35,54 @@ function New-DbaAgentProxy {
         Ssis
         TransactSql
 
-        .PARAMETER Description
+    .PARAMETER Description
         A description of the proxy
 
-        .PARAMETER Login
+    .PARAMETER Login
         The SQL Server login or logins (known as proxy principals) to assign to the proxy
 
-        .PARAMETER ServerRole
+    .PARAMETER ServerRole
         The SQL Server role or roles (known as proxy principals) to assign to the proxy
 
-        .PARAMETER MsdbRole
+    .PARAMETER MsdbRole
         The msdb role or roles (known as proxy principals) to assign to the proxy
 
-        .PARAMETER Disabled
+    .PARAMETER Disabled
         Create the proxy as disabled
 
-        .PARAMETER Force
+    .PARAMETER Force
         Drop and recreate the proxy if it already exists
 
-        .PARAMETER WhatIf
+    .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
-        .PARAMETER Confirm
+    .PARAMETER Confirm
         If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
-        .PARAMETER EnableException
+    .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-        .NOTES
+    .NOTES
         Tags: Agent, Proxy
+        Author: Chrissy LeMaire (@cl), netnerds.net
+
         Website: https://dbatools.io
-        Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+        Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
-        .LINK
+    .LINK
         https://dbatools.io/New-DbaAgentProxy
 
-        .EXAMPLE
-        New-DbaAgentProxy -SqlInstance sql2016 -Name STIG -Credential 'PowerShell Proxy'
+    .EXAMPLE
+        PS C:\> New-DbaAgentProxy -SqlInstance sql2016 -Name STIG -ProxyCredential 'PowerShell Proxy'
 
         Creates an Agent Proxy on sql2016 with the name STIG with the 'PowerShell Proxy' credential.
         The proxy is automatically added to the CmdExec subsystem.
 
-        .EXAMPLE
-        New-DbaAgentProxy -SqlInstance localhost\sql2016 -Name STIG -Credential 'PowerShell Proxy' -Description "Used for auditing purposes" -Login ad\sqlstig -SubSystem CmdExec, PowerShell -ServerRole securtyadmin -MsdbRole ServerGroupAdministratorRole
+    .EXAMPLE
+        PS C:\> New-DbaAgentProxy -SqlInstance localhost\sql2016 -Name STIG -ProxyCredential 'PowerShell Proxy' -Description "Used for auditing purposes" -Login ad\sqlstig -SubSystem CmdExec, PowerShell -ServerRole securtyadmin -MsdbRole ServerGroupAdministratorRole
 
         Creates an Agent Proxy on sql2016 with the name STIG with the 'PowerShell Proxy' credential and the following principals:
 
@@ -93,15 +95,16 @@ function New-DbaAgentProxy {
 
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Low')]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingPlainTextForPassword", "", Justification = "For Parameter ProxyCredential")]
     param (
-        [parameter(Mandatory, ValueFromPipeline = $true)]
+        [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [parameter(Mandatory)]
         [string[]]$Name,
         [parameter(Mandatory)]
-        [string[]]$Credential,
+        [string[]]$ProxyCredential,
         [ValidateSet("ActiveScripting", "AnalysisCommand", "AnalysisQuery", "CmdExec", "Distribution", "LogReader", "Merge", "PowerShell", "QueueReader", "Snapshot", "Ssis", "TransactSql")]
         [string[]]$SubSystem = "CmdExec",
         [string]$Description,
@@ -116,18 +119,15 @@ function New-DbaAgentProxy {
 
     process {
         foreach ($instance in $SqlInstance) {
-            Write-Message -Level Verbose -Message "Connecting to $instance"
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
-            }
-            catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+            } catch {
+                Stop-Function -Message "Error occured while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             try {
                 $jobServer = $server.JobServer
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure. Is SQL Agent started?" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -139,33 +139,31 @@ function New-DbaAgentProxy {
                             $jobServer.ProxyAccounts[$proxyName].Drop()
                             $jobServer.ProxyAccounts.Refresh()
                         }
-                    }
-                    else {
+                    } else {
                         Write-Message -Level Warning -Message "Proxy account $proxy already exists on $instance. Use -Force to drop and recreate."
                         continue
                     }
                 }
 
-                if (-not $server.Credentials[$Credential]) {
-                    Write-Message -Level Warning -Message "Credential '$Credential' does not exist on $instance"
+                if (-not $server.Credentials[$ProxyCredential]) {
+                    Write-Message -Level Warning -Message "Credential '$ProxyCredential' does not exist on $instance"
                     continue
                 }
 
-                if ($Pscmdlet.ShouldProcess($instance, "Adding $proxyname with the $Credential credential")) {
+                if ($Pscmdlet.ShouldProcess($instance, "Adding $proxyname with the $ProxyCredential credential")) {
                     # the new-object is stubborn and $true/$false has to be forced in
-                    $enabled = switch ($disabled) {
+                    switch (Test-Bound -ParameterName Disabled) {
                         $false {
-                            $proxy = New-Object Microsoft.SqlServer.Management.Smo.Agent.ProxyAccount -ArgumentList $jobServer, $ProxyName, $Credential, $true, $Description
+                            $proxy = New-Object Microsoft.SqlServer.Management.Smo.Agent.ProxyAccount -ArgumentList $jobServer, $ProxyName, $ProxyCredential, $true, $Description
                         }
                         $true {
-                            $proxy = New-Object Microsoft.SqlServer.Management.Smo.Agent.ProxyAccount -ArgumentList $jobServer, $ProxyName, $Credential, $false, $Description
+                            $proxy = New-Object Microsoft.SqlServer.Management.Smo.Agent.ProxyAccount -ArgumentList $jobServer, $ProxyName, $ProxyCredential, $false, $Description
                         }
                     }
 
                     try {
                         $proxy.Create()
-                    }
-                    catch {
+                    } catch {
                         Stop-Function -Message "Could not create proxy account" -ErrorRecord $_ -Target $instance -Continue
                     }
                 }
@@ -175,8 +173,7 @@ function New-DbaAgentProxy {
                         if ($Pscmdlet.ShouldProcess($instance, "Adding login $loginname to proxy")) {
                             $proxy.AddLogin($loginname)
                         }
-                    }
-                    else {
+                    } else {
                         Write-Message -Level Warning -Message "Login '$loginname' does not exist on $instance"
                     }
                 }
@@ -186,8 +183,7 @@ function New-DbaAgentProxy {
                         if ($Pscmdlet.ShouldProcess($instance, "Adding server role $role to proxy")) {
                             $proxy.AddServerRole($role)
                         }
-                    }
-                    else {
+                    } else {
                         Write-Message -Level Warning -Message "Server Role '$role' does not exist on $instance"
                     }
                 }
@@ -197,8 +193,7 @@ function New-DbaAgentProxy {
                         if ($Pscmdlet.ShouldProcess($instance, "Adding msdb role $role to proxy")) {
                             $proxy.AddMsdbRole($role)
                         }
-                    }
-                    else {
+                    } else {
                         Write-Message -Level Warning -Message "msdb role '$role' does not exist on $instance"
                     }
                 }

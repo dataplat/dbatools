@@ -12,6 +12,22 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
     To test help for the commands in a module, place this file in the module folder.
     To test any module from any path, use https://github.com/juneb/PesterTDD/Module.Help.Tests.ps1
 #>
+# quit failing appveyor
+if ($env:appveyor) {
+    $names = @('Microsoft.SqlServer.XE.Core',
+        'Microsoft.SqlServer.XEvent.Configuration',
+        'Microsoft.SqlServer.XEvent',
+        'Microsoft.SqlServer.XEvent.Linq',
+        'Microsoft.SqlServer.Management.XEvent',
+        'Microsoft.SqlServer.Management.XEventDbScoped',
+        'Microsoft.SqlServer.Management.XEventDbScopedEnum',
+        'Microsoft.SqlServer.Management.XEventEnum')
+    
+    foreach ($name in $names) {
+        Add-Type -Path "C:\github\dbatools\bin\smo\$name.dll" -ErrorAction SilentlyContinue
+    }
+}
+
 if ($SkipHelpTest) { return }
 . "$PSScriptRoot\InModule.Help.Exceptions.ps1"
 
@@ -124,8 +140,7 @@ foreach ($command in $commands) {
                         }
                         $testparamserrors += 1
                     }
-                }
-                elseif ($parameter.ParameterType.FullName -in $HelpTestEnumeratedArrays) {
+                } elseif ($parameter.ParameterType.FullName -in $HelpTestEnumeratedArrays) {
                     # Enumerations often have issues with the typename not being reliably available
                     $names = [Enum]::GetNames($parameter.ParameterType.DeclaredMembers[0].ReturnType)
                     if ($parameterHelp.parameterValueGroup.parameterValue -ne $names) {
@@ -135,8 +150,7 @@ foreach ($command in $commands) {
                         }
                         $testparamserrors += 1
                     }
-                }
-                else {
+                } else {
                     # To avoid calling Trim method on a null object.
                     $helpType = if ($parameterHelp.parameterValue) { $parameterHelp.parameterValue.Trim() }
                     if ($helpType -ne $codeType ) {

@@ -1,0 +1,24 @@
+﻿<event_sessions xmlns="http://schemas.microsoft.com/sqlserver/2008/07/extendedeventsconfig">
+   <event_session name="Failing Queries" maxMemory="4" eventRetentionMode="allowSingleEventLoss" trackCausality="false" dispatchLatency="30" maxEventSize="0" memoryPartitionMode="none">
+    <templateCategory>
+      <!-- _locID_text="templateCategory" _locComment = "" -->Query Execution</templateCategory>
+    <templateName>
+      <!-- _locID_text = "templateName" _locComment = "" -->Failing Queries</templateName>
+    <templateDescription>
+      <!-- _locID_text = "templateDescription" _locComment = "" -->Tracks failed queries.</templateDescription>   
+	  <event package="sqlserver" name="error_reported">
+         <action package="sqlserver" name="client_hostname" />
+         <action package="sqlserver" name="database_id" />
+         <action package="sqlserver" name="sql_text" />
+         <action package="sqlserver" name="tsql_stack" />
+         <action package="sqlserver" name="username" />
+         <predicate>
+            <leaf>
+               <comparator name="greater_than_int64" package="package0" />
+               <event name="error_reported" package="sqlserver" field="severity" />
+               <value>10</value>
+            </leaf>
+         </predicate>
+      </event>
+   </event_session>
+</event_sessions>

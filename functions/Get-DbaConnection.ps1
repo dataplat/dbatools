@@ -1,48 +1,51 @@
-﻿#ValidationTags#CodeStyle,Messaging,FlowControl,Pipeline#
+#ValidationTags#CodeStyle,Messaging,FlowControl,Pipeline#
 function Get-DbaConnection {
     <#
-        .SYNOPSIS
-            Returns a bunch of information from dm_exec_connections.
+    .SYNOPSIS
+        Returns a bunch of information from dm_exec_connections.
 
-        .DESCRIPTION
-            Returns a bunch of information from dm_exec_connections which, according to Microsoft:
-            "Returns information about the connections established to this instance of SQL Server and the details of each connection. Returns server wide connection information for SQL Server. Returns current database connection information for SQL Database."
-    
-        .PARAMETER SqlInstance
-            The target SQL Server instance. Server(s) must be SQL Server 2005 or higher.
+    .DESCRIPTION
+        Returns a bunch of information from dm_exec_connections which, according to Microsoft:
+        "Returns information about the connections established to this instance of SQL Server and the details of each connection. Returns server wide connection information for SQL Server. Returns current database connection information for SQL Database."
 
-        .PARAMETER SqlCredential
-            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+    .PARAMETER SqlInstance
+        The target SQL Server instance or instances. Server(s) must be SQL Server 2005 or higher.
 
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+    .PARAMETER SqlCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-        .NOTES
-            Tags: Connection
-            dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-            Copyright (C) 2016 Chrissy LeMaire
-            License: MIT https://opensource.org/licenses/MIT
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-        .LINK
-            https://dbatools.io/Get-DbaConnection
+    .NOTES
+        Tags: Connection
+        Author: Chrissy LeMaire (@cl), netnerds.net
 
-        .EXAMPLE
-            Get-DbaConnection -SqlInstance sql2016, sql2017
-            
-            Returns client connection information from sql2016 and sql2017
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
+
+    .LINK
+        https://dbatools.io/Get-DbaConnection
+
+    .EXAMPLE
+        PS C:\> Get-DbaConnection -SqlInstance sql2016, sql2017
+
+        Returns client connection information from sql2016 and sql2017
+
     #>
     [CmdletBinding()]
-    Param (
-        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
+    param (
+        [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [Alias("Credential", "Cred")]
         [PSCredential]$SqlCredential,
         [switch]$EnableException
     )
-    
+
     begin {
         $sql = "SELECT  SERVERPROPERTY('MachineName') AS ComputerName,
                             ISNULL(SERVERPROPERTY('InstanceName'), 'MSSQLSERVER') AS InstanceName,
@@ -56,22 +59,20 @@ function Get-DbaConnection {
                             parent_connection_id as ParentConnectionId, most_recent_sql_handle as MostRecentSqlHandle
                             FROM sys.dm_exec_connections"
     }
-    
+
     process {
         foreach ($instance in $SqlInstance) {
-            
+
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
+            } catch {
+                Stop-Function -Message "Error occured while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-            catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
-            }
-            
+
             Write-Message -Level Debug -Message "Getting results for the following query: $sql."
             try {
                 $server.Query($sql)
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Target $server -Exception $_ -Continue
             }
         }

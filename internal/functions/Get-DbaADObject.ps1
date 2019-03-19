@@ -39,7 +39,7 @@ function Get-DbaADObject {
     Author: Niphlod, https://github.com/niphlod
     Tags:
     dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-    Copyright (C) 2016 Chrissy LeMaire
+   Copyright: (c) 2018 by dbatools, licensed under MIT
     License: MIT https://opensource.org/licenses/MIT
 
     .EXAMPLE
@@ -78,7 +78,7 @@ function Get-DbaADObject {
 
     Searches in the contoso domain for a ctrlb user, suppressing all error messages and throw exceptions that can be caught instead
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [string[]]$ADObject,
@@ -96,8 +96,7 @@ function Get-DbaADObject {
     begin {
         try {
             Add-Type -AssemblyName System.DirectoryServices.AccountManagement
-        }
-        catch {
+        } catch {
             Stop-Function -Message "Failed to load the required module $($_.Exception.Message)" -EnableException $EnableException -InnerErrorRecord $_
             return
         }
@@ -123,14 +122,12 @@ function Get-DbaADObject {
                 $null = [System.DirectoryServices.ActiveDirectory.Domain]::GetDomain($Context)
                 if ($Credential) {
                     $ctx = New-Object System.DirectoryServices.AccountManagement.PrincipalContext('Domain', $Domain, $Credential.UserName, $Credential.GetNetworkCredential().Password)
-                }
-                else {
+                } else {
                     $ctx = New-Object System.DirectoryServices.AccountManagement.PrincipalContext('Domain', $Domain)
                 }
                 $found = $searchClass::FindByIdentity($ctx, $IdentityType, $obj)
                 $found
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Errors trying to connect to the domain $Domain $($_.Exception.Message)" -EnableException $EnableException -InnerErrorRecord $_ -Target $ADObj
             }
         }
@@ -145,19 +142,16 @@ function Get-DbaADObject {
                 $Splitted = $ADObj.Split("@")
                 if ($Splitted.Length -ne 2) {
                     Stop-Function -Message "You need to pass ADObject either DOMAIN\object or object@domain format" -Continue -EnableException $EnableException
-                }
-                else {
+                } else {
                     if ($IdentityType -ne 'UserPrincipalName') {
                         $obj, $Domain = $Splitted
-                    }
-                    else {
+                    } else {
                         # if searching for a UserPrincipalName format without a specific domain passed in before the slash,
                         # we can assume there are no custom UPN suffixes in place
                         $obj, $Domain = $AdObj, $Splitted[1]
                     }
                 }
-            }
-            else {
+            } else {
                 $Domain, $obj = $Splitted
             }
             if ($SearchAllDomains) {
@@ -165,8 +159,7 @@ function Get-DbaADObject {
                 # if we're lucky, we can resolve the domain right away
                 try {
                     Get-DbaADObjectInternal -Domain $Domain -IdentityType $IdentityType -obj $obj -EnableException $true
-                }
-                catch {
+                } catch {
                     # if not, let's build up all domains
                     $ForestObject = [System.DirectoryServices.ActiveDirectory.Forest]::GetCurrentForest()
                     $AllDomains = $ForestObject.Domains.Name
@@ -189,12 +182,10 @@ function Get-DbaADObject {
                         }
                     }
                 }
-            }
-            else {
+            } else {
                 Write-Message -Message "Searching for $obj under domain $domain in $IdentityType format" -Level VeryVerbose
                 Get-DbaADObjectInternal -Domain $Domain -IdentityType $IdentityType -obj $obj
             }
         }
     }
 }
-

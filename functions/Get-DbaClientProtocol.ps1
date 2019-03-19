@@ -1,57 +1,58 @@
 function Get-DbaClientProtocol {
     <#
-        .SYNOPSIS
-            Gets the SQL Server related client protocols on a computer.
+    .SYNOPSIS
+        Gets the SQL Server related client protocols on a computer.
 
-        .DESCRIPTION
-            Gets the SQL Server related client protocols on one or more computers.
+    .DESCRIPTION
+        Gets the SQL Server related client protocols on one or more computers.
 
-            Requires Local Admin rights on destination computer(s).
-            The client protocols can be enabled and disabled when retrieved via WSMan.
+        Requires Local Admin rights on destination computer(s).
+        The client protocols can be enabled and disabled when retrieved via WSMan.
 
-        .PARAMETER ComputerName
-            The SQL Server (or server in general) that you're connecting to. This command handles named instances.
+    .PARAMETER ComputerName
+        The target SQL Server instance or instances.
 
-        .PARAMETER Credential
-            Credential object used to connect to the computer as a different user.
+    .PARAMETER Credential
+        Credential object used to connect to the computer as a different user.
 
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-        .NOTES
-            Tags: Protocol
-            Author: Klaas Vandenberghe ( @PowerDBAKlaas )
+    .NOTES
+        Tags: Protocol
+        Author: Klaas Vandenberghe (@PowerDBAKlaas)
 
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: MIT https://opensource.org/licenses/MIT
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-        .LINK
-            https://dbatools.io/Get-DbaClientProtocol
+    .LINK
+        https://dbatools.io/Get-DbaClientProtocol
 
-        .EXAMPLE
-            Get-DbaClientProtocol -ComputerName sqlserver2014a
+    .EXAMPLE
+        PS C:\> Get-DbaClientProtocol -ComputerName sqlserver2014a
 
-            Gets the SQL Server related client protocols on computer sqlserver2014a.
+        Gets the SQL Server related client protocols on computer sqlserver2014a.
 
-        .EXAMPLE
-            'sql1','sql2','sql3' | Get-DbaClientProtocol
+    .EXAMPLE
+        PS C:\> 'sql1','sql2','sql3' | Get-DbaClientProtocol
 
-            Gets the SQL Server related client protocols on computers sql1, sql2 and sql3.
+        Gets the SQL Server related client protocols on computers sql1, sql2 and sql3.
 
-        .EXAMPLE
-            Get-DbaClientProtocol -ComputerName sql1,sql2 | Out-Gridview
+    .EXAMPLE
+        PS C:\> Get-DbaClientProtocol -ComputerName sql1,sql2 | Out-GridView
 
-            Gets the SQL Server related client protocols on computers sql1 and sql2, and shows them in a grid view.
+        Gets the SQL Server related client protocols on computers sql1 and sql2, and shows them in a grid view.
 
-        .EXAMPLE
-            (Get-DbaClientProtocol -ComputerName sql2 | Where { $_.DisplayName = 'via' }).Disable()
+    .EXAMPLE
+        PS C:\> (Get-DbaClientProtocol -ComputerName sql2 | Where { $_.DisplayName = 'via' }).Disable()
 
-            Disables the VIA ClientNetworkProtocol on computer sql2.
-            If succesfull, returncode 0 is shown.
-#>
+        Disables the VIA ClientNetworkProtocol on computer sql2.
+        If successful, return code 0 is shown.
+
+    #>
     [CmdletBinding()]
     param (
         [parameter(ValueFromPipeline)]
@@ -84,8 +85,7 @@ function Get-DbaClientProtocol {
                         foreach ( $protocol in $prot ) {
                             Select-DefaultView -InputObject $protocol -Property 'PSComputerName as ComputerName', 'ProtocolDisplayName as DisplayName', 'ProtocolDll as DLL', 'ProtocolOrder as Order', 'IsEnabled'
                         }
-                    }
-                    catch {
+                    } catch {
                         Write-Message -Level Warning -Message "No Sql ClientNetworkProtocol found on $computer"
                     }
                 } #if namespace

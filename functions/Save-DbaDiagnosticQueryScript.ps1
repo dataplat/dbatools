@@ -1,40 +1,40 @@
 function Save-DbaDiagnosticQueryScript {
     <#
-.SYNOPSIS
-Save-DbaDiagnosticQueryScript downloads the most recent version of all Glenn Berry DMV scripts
+    .SYNOPSIS
+        Save-DbaDiagnosticQueryScript downloads the most recent version of all Glenn Berry DMV scripts
 
-.DESCRIPTION
-The dbatools module will have the diagnostic queries pre-installed. Use this only to update to a more recent version or specific versions.
+    .DESCRIPTION
+        The dbatools module will have the diagnostic queries pre-installed. Use this only to update to a more recent version or specific versions.
 
-This function is mainly used by Invoke-DbaDiagnosticQuery, but can also be used independently to download the Glenn Berry DMV scripts.
+        This function is mainly used by Invoke-DbaDiagnosticQuery, but can also be used independently to download the Glenn Berry DMV scripts.
 
-Use this function to pre-download the scripts from a device with an Internet connection.
+        Use this function to pre-download the scripts from a device with an Internet connection.
 
-The function Invoke-DbaDiagnosticQuery will try to download these scripts automatically, but it obviously needs an internet connection to do that.
+        The function Invoke-DbaDiagnosticQuery will try to download these scripts automatically, but it obviously needs an internet connection to do that.
 
-.PARAMETER Path
-Specifies the path to the output
+    .PARAMETER Path
+        Specifies the path to the output
 
-.PARAMETER EnableException
+    .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-.NOTES
-Author: André Kamman (@AndreKamman), http://clouddba.io
-Tags: Diagnostic, DMV, Troubleshooting
+    .NOTES
+        Tags: Diagnostic, DMV, Troubleshooting
+        Author: Andre Kamman (@AndreKamman), http://clouddba.io
 
-Website: https://dbatools.io
-Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-License: MIT https://opensource.org/licenses/MIT
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-.EXAMPLE
-Save-DbaDiagnosticQueryScript -Path c:\temp
+    .EXAMPLE
+        PS C:\> Save-DbaDiagnosticQueryScript -Path c:\temp
 
-Downloads the most recent version of all Glenn Berry DMV scripts to the specified location.
-If Path is not specified, the "My Documents" location will be used.
+        Downloads the most recent version of all Glenn Berry DMV scripts to the specified location.
+        If Path is not specified, the "My Documents" location will be used.
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [System.IO.FileInfo]$Path = [Environment]::GetFolderPath("mydocuments"),
@@ -44,11 +44,15 @@ If Path is not specified, the "My Documents" location will be used.
     function Get-WebData {
         param ($uri)
         try {
-            $data = (Invoke-WebRequest -uri $uri -ErrorAction Stop)
+            try {
+                $data = (Invoke-TlsWebRequest -uri $uri -ErrorAction Stop)
+            } catch {
+                (New-Object System.Net.WebClient).Proxy.Credentials = [System.Net.CredentialCache]::DefaultNetworkCredentials
+                $data = (Invoke-TlsWebRequest -uri $uri -ErrorAction Stop)
+            }
             return $data
-        }
-        catch {
-            Stop-Function -Message "Invoke-WebRequest failed: $_" -Target $data -ErrorRecord $_
+        } catch {
+            Stop-Function -Message "Invoke-TlsWebRequest failed: $_" -Target $data -ErrorRecord $_
             return
         }
     }
@@ -62,7 +66,7 @@ If Path is not specified, the "My Documents" location will be used.
     $glenberryrss = "http://www.sqlskills.com/blogs/glenn/feed/"
     $glenberrysql = @()
 
-    Write-Message -Level Output -Message "Downloading RSS Feed"
+    Write-Message -Level Verbose -Message "Downloading RSS Feed"
     $rss = [xml](get-webdata -uri $glenberryrss)
     $Feed = $rss.rss.Channel
 
@@ -86,14 +90,16 @@ If Path is not specified, the "My Documents" location will be used.
             break
         }
     }
-    Write-Message -Level Output -Message "Found $($glenberrysql.Count) documents to download"
+    Write-Message -Level Verbose -Message "Found $($glenberrysql.Count) documents to download"
     foreach ($doc in $glenberrysql) {
         try {
-            Write-Message -Level Output -Message "Downloading $($doc.URL)"
+            $link = $doc.URL.ToString().Replace('dl=0', 'dl=1')
+            Write-Message -Level Verbose -Message "Downloading $link)"
+            Write-ProgressHelper -Activity "Downloading Glenn Berry's most recent DMVs" -ExcludePercent -Message "Downloading $link" -StepNumber 1
             $filename = "{0}\SQLServerDiagnosticQueries_{1}_{2}.sql" -f $Path, $doc.SQLVersion, "$($doc.FileYear)$($doc.FileMonth)"
-            Invoke-WebRequest -Uri $doc.URL -OutFile $filename -ErrorAction Stop
-        }
-        catch {
+            Invoke-TlsWebRequest -Uri $link -OutFile $filename -ErrorAction Stop
+            Get-ChildItem -Path $filename
+        } catch {
             Stop-Function -Message "Requesting and writing file failed: $_" -Target $filename -ErrorRecord $_
             return
         }

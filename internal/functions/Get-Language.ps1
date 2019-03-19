@@ -1,4 +1,4 @@
-﻿function Get-Language {
+function Get-Language {
     <#
         .SYNOPSIS
             Converts Microsoft's language ID to human readable format
@@ -13,7 +13,7 @@
             Get-Language 1033
 
             Returns a pscustomobject with id, alias and name
-    #>
+       #>
     [CmdletBinding()]
     param (
         [int]$id

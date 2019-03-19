@@ -22,7 +22,7 @@ function Invoke-TagCommand ([string]$Tag, [string]$Keyword) {
     Tag-Command -Tag SQLWMI -Keyword Invoke-ManagedComputerCommand
     Tag-Command -Tag WSMan -Keyword Invoke-Command
 
-#>
+    #>
 
     $tagsRex = ([regex]'(?m)^[\s]{0,15}Tags:(.*)$')
     $modulepath = (Get-Module -Name dbatools).Path
@@ -55,24 +55,21 @@ function Invoke-TagCommand ([string]$Tag, [string]$Keyword) {
                 foreach ($line in $content) {
                     if ($line.trim().startsWith('Tags:')) {
                         $out += "$line, $tag"
-                    }
-                    else {
+                    } else {
                         $out += $line
                     }
                 }
                 Write-Message -Level Warning -Message "replacing content into $($f.fullname)"
                 $out -join "`r`n" | Set-Content $f.fullname -Encoding UTF8
 
-            }
-            else {
+            } else {
                 Write-Message -Level Warning -Message "need to add tags"
                 $out = @()
                 foreach ($line in $content) {
                     if ($line.startsWith('.NOTES')) {
                         $out += '.NOTES'
                         $out += "Tags: $tag"
-                    }
-                    else {
+                    } else {
                         $out += $line
                     }
                 }

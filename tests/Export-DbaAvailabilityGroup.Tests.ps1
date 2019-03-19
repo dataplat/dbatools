@@ -1,6 +1,17 @@
-﻿$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
+$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
+
+Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+    Context "Validate parameters" {
+        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
+        [object[]]$knownParameters = 'SqlInstance','SqlCredential','AvailabilityGroup','ExcludeAvailabilityGroup','Path','NoClobber','EnableException'
+        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
+        It "Should only contain our specific parameters" {
+            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        }
+    }
+}
 
 Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     $dbname = "dbatoolsci_agroupdb"
@@ -13,8 +24,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
             $servicename = $server.ServiceName
             if ($servicename -eq 'MSSQLSERVER') {
                 $instancename = "$computername"
-            }
-            else {
+            } else {
                 $instancename = "$computername\$servicename"
             }
             $server.Query("create database $dbname")
@@ -38,9 +48,8 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
                 Get-DbaDatabase -SqlInstance $script:instance3 -Database $dbname | Remove-DbaDatabase -Confirm:$false
                 $server.Query("DROP ENDPOINT dbatoolsci_AGEndpoint")
                 $server.Query("DROP CERTIFICATE dbatoolsci_AGCert")
-            }
-            catch {
-                # dont care
+            } catch {
+                # don't care
             }
         }
     }

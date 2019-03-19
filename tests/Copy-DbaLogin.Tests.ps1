@@ -1,6 +1,17 @@
-﻿$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
+$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
+
+Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+    Context "Validate parameters" {
+        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
+        [object[]]$knownParameters = 'Source','SourceSqlCredential','Destination','DestinationSqlCredential','Login','ExcludeLogin','ExcludeSystemLogins','SyncOnly','SyncSaName','OutFile','InputObject','LoginRenameHashtable','KillActiveConnection','Force','ExcludePermissionSync','EnableException'
+        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
+        It "Should only contain our specific parameters" {
+            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        }
+    }
+}
 
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     $logins = "claudio", "port", "tester"
@@ -14,7 +25,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
     }
 
-    $null = Invoke-Sqlcmd2 -ServerInstance $script:instance1 -InputFile $script:appveyorlabrepo\sql2008-scripts\logins.sql
+    $null = Invoke-DbaQuery -SqlInstance $script:instance1 -InputFile $script:appveyorlabrepo\sql2008-scripts\logins.sql
 
     Context "Copy login with the same properties." {
         It "Should copy successfully" {
@@ -55,18 +66,18 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         $results = Copy-DbaLogin -Source $script:instance1 -Destination $script:instance2 -Login tester
         It "Should say skipped" {
             $results.Status | Should be "Skipped"
-            $results.Notes | Should be "Already exists"
+            $results.Notes | Should be "Already exists on destination"
         }
     }
 
-    Context "ExcludeSystemLogin Parameter" {
-        $results = Copy-DbaLogin -Source $script:instance1 -Destination $script:instance2 -ExcludeSystemLogin
+    Context "ExcludeSystemLogins Parameter" {
+        $results = Copy-DbaLogin -Source $script:instance1 -Destination $script:instance2 -ExcludeSystemLogins
         It "Should say skipped" {
             $results.Status.Contains('Skipped') | Should Be $true
             $results.Notes.Contains('System login') | Should Be $true
         }
     }
-    
+
     Context "Supports pipe" {
         $results = Get-DbaLogin -SqlInstance $script:instance1 -Login tester | Copy-DbaLogin -Destination $script:instance2 -Force
         It "migrates the one tester login" {

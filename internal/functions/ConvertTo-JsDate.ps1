@@ -1,4 +1,4 @@
-﻿function ConvertTo-JsDate {
+function ConvertTo-JsDate {
     <#
         .SYNOPSIS
             Converts Datetime input to a Java Script date format
@@ -22,7 +22,7 @@
             Requirements: None
 
             Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+            Copyright: (c) 2018 by dbatools, licensed under MIT
 -           License: MIT https://opensource.org/licenses/MIT
 
         .LINK
@@ -32,11 +32,11 @@
             ConvertTo-JsDate (Get-Date)
 
             Returned output: new Date(2018, 7, 14, 07, 40, 42)
-    #>
+       #>
 
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory)]
         [datetime]
         $InputDate
     )

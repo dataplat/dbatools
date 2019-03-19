@@ -1,89 +1,91 @@
 #ValidationTags#CodeStyle,Messaging,FlowControl,Pipeline#
 function Install-DbaFirstResponderKit {
     <#
-        .SYNOPSIS
-            Installs or updates the First Responder Kit stored procedures.
+    .SYNOPSIS
+        Installs or updates the First Responder Kit stored procedures.
 
-        .DESCRIPTION
-            Downloads, extracts and installs the First Responder Kit stored procedures:
-            sp_Blitz, sp_BlitzWho, sp_BlitzFirst, sp_BlitzIndex, sp_BlitzCache and sp_BlitzTrace, etc.
+    .DESCRIPTION
+        Downloads, extracts and installs the First Responder Kit stored procedures:
+        sp_Blitz, sp_BlitzWho, sp_BlitzFirst, sp_BlitzIndex, sp_BlitzCache and sp_BlitzTrace, etc.
 
-            First Responder Kit links:
-            http://FirstResponderKit.org
-            https://github.com/BrentOzarULTD/SQL-Server-First-Responder-Kit
+        First Responder Kit links:
+        http://FirstResponderKit.org
+        https://github.com/BrentOzarULTD/SQL-Server-First-Responder-Kit
 
-        .PARAMETER SqlInstance
-            SQL Server name or SMO object representing the SQL Server to connect to.
+    .PARAMETER SqlInstance
+        The target SQL Server instance or instances.
 
-        .PARAMETER SqlCredential
-            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+    .PARAMETER SqlCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-        .PARAMETER Database
-            Specifies the database to instal the First Responder Kit stored procedures into
+    .PARAMETER Database
+        Specifies the database to instal the First Responder Kit stored procedures into
 
-        .PARAMETER Branch
-            Specifies an alternate branch of the First Responder Kit to install. (master or dev)
+    .PARAMETER Branch
+        Specifies an alternate branch of the First Responder Kit to install. (master or dev)
 
-        .PARAMETER LocalFile
-            Specifies the path to a local file to install FRK from. This *should* be the zipfile as distributed by the maintainers.
-            If this parameter is not specified, the latest version will be downloaded and installed from https://github.com/BrentOzarULTD/SQL-Server-First-Responder-Kit
+    .PARAMETER LocalFile
+        Specifies the path to a local file to install FRK from. This *should* be the zipfile as distributed by the maintainers.
+        If this parameter is not specified, the latest version will be downloaded and installed from https://github.com/BrentOzarULTD/SQL-Server-First-Responder-Kit
 
-        .PARAMETER Force
-            If this switch is enabled, the FRK will be downloaded from the internet even if previously cached.
+    .PARAMETER Force
+        If this switch is enabled, the FRK will be downloaded from the internet even if previously cached.
 
-        .PARAMETER Confirm
-            Prompts to confirm actions
+    .PARAMETER Confirm
+        Prompts to confirm actions
 
-        .PARAMETER WhatIf
-            Shows what would happen if the command were to run. No actions are actually performed.
+    .PARAMETER WhatIf
+        Shows what would happen if the command were to run. No actions are actually performed.
 
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-        .NOTES
-            Tags: BrentOzar, FRK, FirstResponderKit
-            Author: Tara Kizer, Brent Ozar Unlimited (https://www.brentozar.com/)
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: MIT https://opensource.org/licenses/MIT
+    .NOTES
+        Tags: BrentOzar, FRK, FirstResponderKit
+        Author: Tara Kizer, Brent Ozar Unlimited (https://www.brentozar.com/)
 
-        .LINK
-            https://dbatools.io/Install-DbaFirstResponderKit
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-        .EXAMPLE
-            Install-DbaFirstResponderKit -SqlInstance server1 -Database master
+    .LINK
+        https://dbatools.io/Install-DbaFirstResponderKit
 
-            Logs into server1 with Windows authentication and then installs the FRK in the master database.
+    .EXAMPLE
+        PS C:\> Install-DbaFirstResponderKit -SqlInstance server1 -Database master
 
-        .EXAMPLE
-            Install-DbaFirstResponderKit -SqlInstance server1\instance1 -Database DBA
+        Logs into server1 with Windows authentication and then installs the FRK in the master database.
 
-            Logs into server1\instance1 with Windows authentication and then installs the FRK in the DBA database.
+    .EXAMPLE
+        PS C:\> Install-DbaFirstResponderKit -SqlInstance server1\instance1 -Database DBA
 
-        .EXAMPLE
-            Install-DbaFirstResponderKit -SqlInstance server1\instance1 -Database master -SqlCredential $cred
+        Logs into server1\instance1 with Windows authentication and then installs the FRK in the DBA database.
 
-            Logs into server1\instance1 with SQL authentication and then installs the FRK in the master database.
+    .EXAMPLE
+        PS C:\> Install-DbaFirstResponderKit -SqlInstance server1\instance1 -Database master -SqlCredential $cred
 
-        .EXAMPLE
-            Install-DbaFirstResponderKit -SqlInstance sql2016\standardrtm, sql2016\sqlexpress, sql2014
+        Logs into server1\instance1 with SQL authentication and then installs the FRK in the master database.
 
-            Logs into sql2016\standardrtm, sql2016\sqlexpress and sql2014 with Windows authentication and then installs the FRK in the master database.
+    .EXAMPLE
+        PS C:\> Install-DbaFirstResponderKit -SqlInstance sql2016\standardrtm, sql2016\sqlexpress, sql2014
 
-        .EXAMPLE
-            $servers = "sql2016\standardrtm", "sql2016\sqlexpress", "sql2014"
-            $servers | Install-DbaFirstResponderKit
+        Logs into sql2016\standardrtm, sql2016\sqlexpress and sql2014 with Windows authentication and then installs the FRK in the master database.
 
-            Logs into sql2016\standardrtm, sql2016\sqlexpress and sql2014 with Windows authentication and then installs the FRK in the master database.
+    .EXAMPLE
+        PS C:\> $servers = "sql2016\standardrtm", "sql2016\sqlexpress", "sql2014"
+        PS C:\> $servers | Install-DbaFirstResponderKit
 
-        .EXAMPLE
-            Install-DbaFirstResponderKit -SqlInstance sql2016 -Branch dev
+        Logs into sql2016\standardrtm, sql2016\sqlexpress and sql2014 with Windows authentication and then installs the FRK in the master database.
 
-            Installs the dev branch version of the FRK in the master database on sql2016 instance.
+    .EXAMPLE
+        PS C:\> Install-DbaFirstResponderKit -SqlInstance sql2016 -Branch dev
+
+        Installs the dev branch version of the FRK in the master database on sql2016 instance.
+
     #>
-    [CmdletBinding(SupportsShouldProcess = $true)]
+    [CmdletBinding(SupportsShouldProcess)]
     param (
         [Parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
@@ -99,7 +101,11 @@ function Install-DbaFirstResponderKit {
     )
 
     begin {
-        $DbatoolsData = Get-DbaConfigValue -FullName "Path.DbatoolsData"
+        $DbatoolsData = Get-DbatoolsConfigValue -FullName "Path.DbatoolsData"
+
+        if (-not $DbatoolsData) {
+            $DbatoolsData = ([System.IO.Path]::GetTempPath()).TrimEnd("\")
+        }
 
         $url = "https://github.com/BrentOzarULTD/SQL-Server-First-Responder-Kit/archive/$Branch.zip"
 
@@ -132,24 +138,19 @@ function Install-DbaFirstResponderKit {
             if ($LocalFile) {
                 Unblock-File $LocalFile -ErrorAction SilentlyContinue
                 Expand-Archive -Path $LocalFile -DestinationPath $zipfolder -Force
-            }
-            else {
+            } else {
                 Write-Message -Level Verbose -Message "Downloading and unzipping the First Responder Kit zip file."
 
                 try {
-                    $oldSslSettings = [System.Net.ServicePointManager]::SecurityProtocol
-                    [System.Net.ServicePointManager]::SecurityProtocol = "Tls12"
+
                     try {
-                        $wc = New-Object System.Net.WebClient
-                        $wc.DownloadFile($url, $zipfile)
-                    }
-                    catch {
+                        Invoke-TlsWebRequest $url -OutFile $zipfile -ErrorAction Stop -UseBasicParsing
+                    } catch {
                         # Try with default proxy and usersettings
-                        $wc = New-Object System.Net.WebClient
-                        $wc.Proxy.Credentials = [System.Net.CredentialCache]::DefaultNetworkCredentials
-                        $wc.DownloadFile($url, $zipfile)
+                        (New-Object System.Net.WebClient).Proxy.Credentials = [System.Net.CredentialCache]::DefaultNetworkCredentials
+                        Invoke-TlsWebRequest $url -OutFile $zipfile -ErrorAction Stop -UseBasicParsing
                     }
-                    [System.Net.ServicePointManager]::SecurityProtocol = $oldSslSettings
+
 
                     # Unblock if there's a block
                     Unblock-File $zipfile -ErrorAction SilentlyContinue
@@ -157,8 +158,7 @@ function Install-DbaFirstResponderKit {
                     Expand-Archive -Path $zipfile -DestinationPath $zipfolder -Force
 
                     Remove-Item -Path $zipfile
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Couldn't download the First Responder Kit. Download and install manually from https://github.com/BrentOzarULTD/SQL-Server-First-Responder-Kit/archive/$Branch.zip." -ErrorRecord $_
                     return
                 }
@@ -167,8 +167,7 @@ function Install-DbaFirstResponderKit {
             ## Copy it into local area
             if (Test-Path -Path $LocalCachedCopy -PathType Container) {
                 Remove-Item -Path (Join-Path $LocalCachedCopy '*') -Recurse -ErrorAction SilentlyContinue
-            }
-            else {
+            } else {
                 $null = New-Item -Path $LocalCachedCopy -ItemType Container
             }
             Copy-Item -Path $zipfolder -Destination $LocalCachedCopy -Recurse
@@ -183,10 +182,8 @@ function Install-DbaFirstResponderKit {
 
         foreach ($instance in $SqlInstance) {
             try {
-                Write-Message -Level Verbose -Message "Connecting to $instance."
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure." -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -204,9 +201,8 @@ function Install-DbaFirstResponderKit {
                     }
                     if ($Pscmdlet.ShouldProcess($instance, "installing/updating $scriptname in $database.")) {
                         try {
-                            Invoke-DbaSqlQuery -SqlInstance $server -Database $Database -File $script.FullName -EnableException -Verbose:$false
-                        }
-                        catch {
+                            Invoke-DbaQuery -SqlInstance $server -Database $Database -File $script.FullName -EnableException -Verbose:$false
+                        } catch {
                             Write-Message -Level Warning -Message "Could not execute at least one portion of $scriptname in $Database on $instance." -ErrorRecord $_
                             $scriptError = $true
                         }
@@ -219,11 +215,9 @@ function Install-DbaFirstResponderKit {
                         }
                         if ($scriptError) {
                             $baseres['Status'] = 'Error'
-                        }
-                        elseif ($script.BaseName -in $allprocedures) {
+                        } elseif ($script.BaseName -in $allprocedures) {
                             $baseres['Status'] = 'Updated'
-                        }
-                        else {
+                        } else {
                             $baseres['Status'] = 'Installed'
                         }
                         [PSCustomObject]$baseres

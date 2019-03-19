@@ -4,15 +4,11 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        $paramCount = 5
-        $defaultParamCount = 11
-        [object[]]$params = (Get-ChildItem function:\Get-DbaDbCompression).Parameters.Keys
-        $knownParameters = 'SqlInstance', 'SqlCredential','Database','ExcludeDatabase','EnableException'
-        It "Should contain our specific parameters" {
-            ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
-        }
-        It "Should only contain $paramCount parameters" {
-            $params.Count - $defaultParamCount | Should Be $paramCount
+        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
+        [object[]]$knownParameters = 'SqlInstance','SqlCredential','Database','ExcludeDatabase','EnableException'
+        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
+        It "Should only contain our specific parameters" {
+            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
         }
     }
 }
@@ -25,8 +21,8 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         $null = $server.Query("select * into syscols from sys.all_columns
                                 select * into sysallparams from sys.all_parameters
                                 create clustered index CL_sysallparams on sysallparams (object_id)
-                                create nonclustered index NC_syscols on syscols (precision) include (collation_name)",$dbname)
-       }
+                                create nonclustered index NC_syscols on syscols (precision) include (collation_name)", $dbname)
+    }
     AfterAll {
         Get-DbaProcess -SqlInstance $script:instance2 -Database $dbname | Stop-DbaProcess -WarningAction SilentlyContinue
         Remove-DbaDatabase -SqlInstance $script:instance2 -Database $dbname -Confirm:$false
@@ -39,7 +35,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
         Foreach ($row in $results | Where-Object {$_.IndexId -le 1}) {
             It "Should return compression level for object $($row.TableName)" {
-                $row.DataCompression | Should BeIn ('None','Row','Page')
+                $row.DataCompression | Should BeIn ('None', 'Row', 'Page')
             }
         }
     }
@@ -49,7 +45,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
         Foreach ($row in $results | Where-Object {$_.IndexId -gt 1}) {
             It "Should return compression level for nonclustered index $($row.IndexName)" {
-                $row.DataCompression | Should BeIn ('None','Row','Page')
+                $row.DataCompression | Should BeIn ('None', 'Row', 'Page')
             }
         }
     }

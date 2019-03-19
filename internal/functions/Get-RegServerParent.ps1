@@ -1,4 +1,4 @@
-﻿function Get-RegServerParent {
+function Get-RegServerParent {
     [cmdletbinding()]
     param (
         [object]$InputObject
@@ -11,8 +11,8 @@
             }
         }
         until ($null -ne $InputObject.ServerConnection -or $parentcount++ -gt 10)
-        
-        
+
+
         if ($parentcount -lt 10) {
             $InputObject
         }

@@ -51,7 +51,7 @@ Write-Host -Object "$indent Executing startup scripts for SQL Server 2016" -Fore
 $sql2016Startup = 0
 foreach ($file in (Get-ChildItem C:\github\appveyor-lab\sql2016-startup\*.sql -Recurse -ErrorAction SilentlyContinue)) {
     try {
-        Invoke-Sqlcmd2 -ServerInstance $sqlinstance -InputFile $file -ErrorAction Stop
+        Invoke-DbaQuery -SqlInstance $sqlinstance -InputFile $file -ErrorAction Stop
     } catch {
         $sql2016Startup = 1
     }

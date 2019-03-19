@@ -1,4 +1,4 @@
-﻿function Convert-DbaTimelineStatusColor {
+function Convert-DbaTimelineStatusColor {
     <#
         .SYNOPSIS
             Converts literal string status to a html color
@@ -25,7 +25,7 @@
             Requirements: None
 
             Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+            Copyright: (c) 2018 by dbatools, licensed under MIT
 -           License: MIT https://opensource.org/licenses/MIT
 
         .LINK
@@ -39,11 +39,11 @@
 
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory)]
         [string]
         $Status
     )
-   $out = switch($Status){
+    $out = switch ($Status) {
         "Failed" {"#FF3D3D"}
         "Succeeded" {"#36B300"}
         "Retry" {"#FFFF00"}

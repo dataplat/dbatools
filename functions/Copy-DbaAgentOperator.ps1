@@ -1,79 +1,81 @@
 function Copy-DbaAgentOperator {
     <#
-        .SYNOPSIS
-            Copy-DbaAgentOperator migrates operators from one SQL Server to another.
+    .SYNOPSIS
+        Copy-DbaAgentOperator migrates operators from one SQL Server to another.
 
-        .DESCRIPTION
-            By default, all operators are copied. The -Operators parameter is auto-populated for command-line completion and can be used to copy only specific operators.
+    .DESCRIPTION
+        By default, all operators are copied. The -Operators parameter is auto-populated for command-line completion and can be used to copy only specific operators.
 
-            If the associated credentials for the operator do not exist on the destination, it will be skipped. If the operator already exists on the destination, it will be skipped unless -Force is used.
+        If the associated credentials for the operator do not exist on the destination, it will be skipped. If the operator already exists on the destination, it will be skipped unless -Force is used.
 
-        .PARAMETER Source
-            Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
+    .PARAMETER Source
+        Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
 
-        .PARAMETER SourceSqlCredential
-            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+    .PARAMETER SourceSqlCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-        .PARAMETER Destination
-            Destination SQL Server. You must have sysadmin access and the server must be SQL Server 2000 or higher.
+    .PARAMETER Destination
+        Destination SQL Server. You must have sysadmin access and the server must be SQL Server 2000 or higher.
 
-        .PARAMETER DestinationSqlCredential
-            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+    .PARAMETER DestinationSqlCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-        .PARAMETER Operator
-            The operator(s) to process. This list is auto-populated from the server. If unspecified, all operators will be processed.
+    .PARAMETER Operator
+        The operator(s) to process. This list is auto-populated from the server. If unspecified, all operators will be processed.
 
-        .PARAMETER ExcludeOperator
-            The operators(s) to exclude. This list is auto-populated from the server.
+    .PARAMETER ExcludeOperator
+        The operators(s) to exclude. This list is auto-populated from the server.
 
-        .PARAMETER WhatIf
-            If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
+    .PARAMETER WhatIf
+        If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
-        .PARAMETER Confirm
-            If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
+    .PARAMETER Confirm
+        If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
-        .PARAMETER Force
-            If this switch is enabled, the Operator will be dropped and recreated on Destination.
+    .PARAMETER Force
+        If this switch is enabled, the Operator will be dropped and recreated on Destination.
 
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-        .NOTES
-            Tags: Migration, Agent, Operator
-            Author: Chrissy LeMaire (@cl), netnerds.net
-            Requires: sysadmin access on SQL Servers
+    .NOTES
+        Tags: Migration, Agent, Operator
+        Author: Chrissy LeMaire (@cl), netnerds.net
 
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: MIT https://opensource.org/licenses/MIT
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-        .LINK
-            https://dbatools.io/Copy-DbaAgentOperator
+        Requires: sysadmin access on SQL Servers
 
-        .EXAMPLE
-            Copy-DbaAgentOperator -Source sqlserver2014a -Destination sqlcluster
+    .LINK
+        https://dbatools.io/Copy-DbaAgentOperator
 
-            Copies all operators from sqlserver2014a to sqlcluster using Windows credentials. If operators with the same name exist on sqlcluster, they will be skipped.
+    .EXAMPLE
+        PS C:\> Copy-DbaAgentOperator -Source sqlserver2014a -Destination sqlcluster
 
-        .EXAMPLE
-            Copy-DbaAgentOperator -Source sqlserver2014a -Destination sqlcluster -Operator PSOperator -SourceSqlCredential $cred -Force
+        Copies all operators from sqlserver2014a to sqlcluster using Windows credentials. If operators with the same name exist on sqlcluster, they will be skipped.
 
-            Copies only the PSOperator operator from sqlserver2014a to sqlcluster using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster. If an operator with the same name exists on sqlcluster, it will be dropped and recreated because -Force was used.
+    .EXAMPLE
+        PS C:\> Copy-DbaAgentOperator -Source sqlserver2014a -Destination sqlcluster -Operator PSOperator -SourceSqlCredential $cred -Force
 
-        .EXAMPLE
-            Copy-DbaAgentOperator -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force
+        Copies only the PSOperator operator from sqlserver2014a to sqlcluster using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster. If an operator with the same name exists on sqlcluster, it will be dropped and recreated because -Force was used.
 
-            Shows what would happen if the command were executed using force.
+    .EXAMPLE
+        PS C:\> Copy-DbaAgentOperator -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force
+
+        Shows what would happen if the command were executed using force.
+
     #>
-    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
+    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess)]
     param (
-        [parameter(Mandatory = $true)]
+        [parameter(Mandatory)]
         [DbaInstanceParameter]$Source,
         [PSCredential]
         $SourceSqlCredential,
-        [parameter(Mandatory = $true)]
+        [parameter(Mandatory)]
         [DbaInstanceParameter[]]$Destination,
         [PSCredential]
         $DestinationSqlCredential,
@@ -86,11 +88,9 @@ function Copy-DbaAgentOperator {
 
     begin {
         try {
-            Write-Message -Level Verbose -Message "Connecting to $Source"
             $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
-        }
-        catch {
-            Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Source
+        } catch {
+            Stop-Function -Message "Error occured while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $Source
             return
         }
         $serverOperator = $sourceServer.JobServer.Operators
@@ -99,74 +99,69 @@ function Copy-DbaAgentOperator {
         if (Test-FunctionInterrupt) { return }
         foreach ($destinstance in $Destination) {
             try {
-                Write-Message -Level Verbose -Message "Connecting to $destinstance"
                 $destServer = Connect-SqlInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential
+            } catch {
+                Stop-Function -Message "Error occured while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
             }
-            catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
-            }
-            
+
             $destOperator = $destServer.JobServer.Operators
             $failsafe = $destServer.JobServer.AlertSystem | Select-Object FailSafeOperator
             foreach ($sOperator in $serverOperator) {
                 $operatorName = $sOperator.Name
-                
+
                 $copyOperatorStatus = [pscustomobject]@{
-                    SourceServer = $sourceServer.Name
+                    SourceServer      = $sourceServer.Name
                     DestinationServer = $destServer.Name
-                    Name         = $operatorName
-                    Type         = "Agent Operator"
-                    Status       = $null
-                    Notes        = $null
-                    DateTime     = [DbaDateTime](Get-Date)
+                    Name              = $operatorName
+                    Type              = "Agent Operator"
+                    Status            = $null
+                    Notes             = $null
+                    DateTime          = [DbaDateTime](Get-Date)
                 }
-                
+
                 if ($Operator -and $Operator -notcontains $operatorName -or $ExcludeOperator -in $operatorName) {
                     continue
                 }
-                
+
                 if ($destOperator.Name -contains $sOperator.Name) {
                     if ($force -eq $false) {
                         if ($Pscmdlet.ShouldProcess($destinstance, "Operator $operatorName exists at destination. Use -Force to drop and migrate.")) {
                             $copyOperatorStatus.Status = "Skipped"
-                            $copyOperatorStatus.Notes = "Already exists"
+                            $copyOperatorStatus.Notes = "Already exists on destination"
                             $copyOperatorStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                             Write-Message -Level Verbose -Message "Operator $operatorName exists at destination. Use -Force to drop and migrate."
                         }
                         continue
-                    }
-                    else {
+                    } else {
                         if ($failsafe.FailSafeOperator -eq $operatorName) {
                             Write-Message -Level Verbose -Message "$operatorName is the failsafe operator. Skipping drop."
                             continue
                         }
-                        
+
                         if ($Pscmdlet.ShouldProcess($destinstance, "Dropping operator $operatorName and recreating")) {
                             try {
                                 Write-Message -Level Verbose -Message "Dropping Operator $operatorName"
                                 $destServer.JobServer.Operators[$operatorName].Drop()
-                            }
-                            catch {
+                            } catch {
                                 $copyOperatorStatus.Status = "Failed"
                                 $copyOperatorStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                                
+
                                 Stop-Function -Message "Issue dropping operator" -Category InvalidOperation -ErrorRecord $_ -Target $destServer -Continue
                             }
                         }
                     }
                 }
-                
+
                 if ($Pscmdlet.ShouldProcess($destinstance, "Creating Operator $operatorName")) {
                     try {
                         Write-Message -Level Verbose -Message "Copying Operator $operatorName"
                         $sql = $sOperator.Script() | Out-String
                         Write-Message -Level Debug -Message $sql
                         $destServer.Query($sql)
-                        
+
                         $copyOperatorStatus.Status = "Successful"
                         $copyOperatorStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                    }
-                    catch {
+                    } catch {
                         $copyOperatorStatus.Status = "Failed"
                         $copyOperatorStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                         Stop-Function -Message "Issue creating operator." -Category InvalidOperation -ErrorRecord $_ -Target $destServer

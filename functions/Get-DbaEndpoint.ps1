@@ -1,70 +1,115 @@
-#ValidationTags#Messaging,FlowControl,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaEndpoint {
     <#
-        .SYNOPSIS
-            Gets SQL Endpoint(s) information for each instance(s) of SQL Server.
+    .SYNOPSIS
+        Returns endpoint objects from a SQL Server instance.
 
-        .DESCRIPTION
-            The Get-DbaEndpoint command gets SQL Endpoint(s) information for each instance(s) of SQL Server.
+    .DESCRIPTION
+        Returns endpoint objects from a SQL Server instance.
 
-        .PARAMETER SqlInstance
-            SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input to allow the function
-            to be executed against multiple SQL Server instances.
+    .PARAMETER SqlInstance
+        The target SQL Server instance or instances.
 
-        .PARAMETER SqlCredential
-            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+    .PARAMETER SqlCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+    .PARAMETER Endpoint
+        Return only specific endpoints.
 
-        .NOTES
-            Tags: Endpoint
-            Author: Garry Bargsley (@gbargsley), http://blog.garrybargsley.com
+    .PARAMETER Type
+        Return only specific types of endpoints. Options include: DatabaseMirroring, ServiceBroker, Soap, and TSql.
 
-            dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-            Copyright (C) 2016 Chrissy LeMaire
-            License: MIT https://opensource.org/licenses/MIT
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-        .LINK
-            https://dbatools.io/Get-DbaEndpoint
+    .NOTES
+        Tags: Endpoint
+        Author: Garry Bargsley (@gbargsley), http://blog.garrybargsley.com
 
-        .EXAMPLE
-            Get-DbaEndpoint -SqlInstance localhost
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-            Returns all Endpoint(s) on the local default SQL Server instance
+    .LINK
+        https://dbatools.io/Get-DbaEndpoint
 
-        .EXAMPLE
-            Get-DbaEndpoint -SqlInstance localhost, sql2016
+    .EXAMPLE
+        PS C:\> Get-DbaEndpoint -SqlInstance localhost
 
-            Returns all Endpoint(s) for the local and sql2016 SQL Server instances
+        Returns all endpoints on the local default SQL Server instance
+
+    .EXAMPLE
+        PS C:\> Get-DbaEndpoint -SqlInstance localhost, sql2016
+
+        Returns all endpoints for the local and sql2016 SQL Server instances
+
     #>
     [CmdletBinding()]
     param (
-        [parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
-        [DbaInstanceParameter]$SqlInstance,
+        [parameter(Position = 0, Mandatory, ValueFromPipeline)]
+        [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [Alias('Silent')]
+        [string[]]$Endpoint,
+        [ValidateSet('DatabaseMirroring', 'ServiceBroker', 'Soap', 'TSql')]
+        [string[]]$Type,
         [switch]$EnableException
     )
-
     process {
         foreach ($instance in $SqlInstance) {
-            Write-Message -Level Verbose -Message "Connecting to $instance"
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-            }
-            catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
+            } catch {
+                Stop-Function -Message "Error occured while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
-            foreach ($endpoint in $server.Endpoints) {
-                Add-Member -Force -InputObject $endpoint -MemberType NoteProperty -Name ComputerName -value $endpoint.Parent.ComputerName
-                Add-Member -Force -InputObject $endpoint -MemberType NoteProperty -Name InstanceName -value $endpoint.Parent.ServiceName
-                Add-Member -Force -InputObject $endpoint -MemberType NoteProperty -Name SqlInstance -value $endpoint.Parent.DomainInstanceName
+            # Not sure why minimumversion isnt working
+            if ($server.VersionMajor -lt 9) {
+                Stop-Function -Message "SQL Server version 9 required - $instance not supported." -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+            }
 
-                Select-DefaultView -InputObject $endpoint -Property ComputerName, InstanceName, SqlInstance, ID, Name, EndpointType, Owner, IsAdminEndpoint, IsSystemObject
+            $endpoints = $server.Endpoints
+
+            if ($endpoint) {
+                $endpoints = $endpoints | Where-Object Name -in $endpoint
+            }
+            if ($Type) {
+                $endpoints = $endpoints | Where-Object EndpointType -in $Type
+            }
+
+            foreach ($end in $endpoints) {
+                Write-Message -Level Verbose -Message "Getting endpoint $($end.Name) on $($server.Name)"
+                if ($end.Protocol.Tcp.ListenerPort) {
+                    if ($instance.ComputerName -match '\.') {
+                        $dns = $instance.ComputerName
+                    } else {
+                        try {
+                            $dns = [System.Net.Dns]::GetHostEntry($instance.ComputerName).HostName
+                        } catch {
+                            try {
+                                $dns = [System.Net.Dns]::GetHostAddresses($instance.ComputerName)
+                            } catch {
+                                $dns = $instance.ComputerName
+                            }
+                        }
+                    }
+
+                    $fqdn = "TCP://" + $dns + ":" + $end.Protocol.Tcp.ListenerPort
+                } else {
+                    $fqdn = $null
+                }
+
+                Add-Member -Force -InputObject $end -MemberType NoteProperty -Name ComputerName -Value $server.ComputerName
+                Add-Member -Force -InputObject $end -MemberType NoteProperty -Name InstanceName -Value $server.ServiceName
+                Add-Member -Force -InputObject $end -MemberType NoteProperty -Name SqlInstance -Value $server.DomainInstanceName
+                Add-Member -Force -InputObject $end -MemberType NoteProperty -Name Fqdn -Value $fqdn
+                Add-Member -Force -InputObject $end -MemberType NoteProperty -Name Port -Value $end.Protocol.Tcp.ListenerPort
+                if ($end.Protocol.Tcp.ListenerPort) {
+                    Select-DefaultView -InputObject $end -Property ComputerName, InstanceName, SqlInstance, ID, Name, Port, EndpointState, EndpointType, Owner, IsAdminEndpoint, Fqdn, IsSystemObject
+                } else {
+                    Select-DefaultView -InputObject $end -Property ComputerName, InstanceName, SqlInstance, ID, Name, EndpointState, EndpointType, Owner, IsAdminEndpoint, Fqdn, IsSystemObject
+                }
             }
         }
     }

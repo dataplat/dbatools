@@ -29,7 +29,6 @@ $TypeAliasTable = @{
 foreach ($TypeAlias in $TypeAliasTable.Keys) {
     try {
         $TAType::Add($TypeAlias, $TypeAliasTable[$TypeAlias])
-    }
-    catch {
+    } catch {
     }
 }

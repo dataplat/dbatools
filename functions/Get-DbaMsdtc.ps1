@@ -1,54 +1,55 @@
 #ValidationTags#Messaging#
 function Get-DbaMsdtc {
     <#
-        .SYNOPSIS
-            Displays information about the Distributed Transaction Coordinator (MSDTC) on a server
+    .SYNOPSIS
+        Displays information about the Distributed Transaction Coordinator (MSDTC) on a server
 
-        .DESCRIPTION
-            Returns a custom object with Computer name, state of the MSDTC Service, security settings of MSDTC and CID's
+    .DESCRIPTION
+        Returns a custom object with Computer name, state of the MSDTC Service, security settings of MSDTC and CID's
 
-            Requires: Windows administrator access on Servers
+        Requires: Windows administrator access on Servers
 
-        .PARAMETER ComputerName
-            The SQL Server (or server in general) that you're connecting to.
+    .PARAMETER ComputerName
+        The target computer.
 
-        .NOTES
-            Tags: Msdtc, dtc
-            Author: Klaas Vandenberghe ( powerdbaklaas )
+    .NOTES
+        Tags: Msdtc, dtc
+        Author: Klaas Vandenberghe (@powerdbaklaas)
 
-            dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-            Copyright (C) 2016 Chrissy LeMaire
-            License: MIT https://opensource.org/licenses/MIT
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-        .LINK
-            https://dbatools.io/Get-DbaMsdtc
+    .LINK
+        https://dbatools.io/Get-DbaMsdtc
 
-        .EXAMPLE
-            Get-DbaMsdtc -ComputerName srv0042
+    .EXAMPLE
+        PS C:\> Get-DbaMsdtc -ComputerName srv0042
 
-            Get DTC status for the server srv0042
+        Get DTC status for the server srv0042
 
-        .EXAMPLE
-            $Computers = (Get-Content D:\configfiles\SQL\MySQLInstances.txt | % {$_.split('\')[0]})
-            $Computers | Get-DbaMsdtc
+    .EXAMPLE
+        PS C:\> $Computers = (Get-Content D:\configfiles\SQL\MySQLInstances.txt | % {$_.split('\')[0]})
+        PS C:\> $Computers | Get-DbaMsdtc
 
-            Get DTC status for all the computers in a .txt file
+        Get DTC status for all the computers in a .txt file
 
-        .EXAMPLE
-            Get-DbaMsdtc -Computername $Computers | where { $_.dtcservicestate -ne 'running' }
+    .EXAMPLE
+        PS C:\> Get-DbaMsdtc -Computername $Computers | where { $_.dtcservicestate -ne 'running' }
 
-            Get DTC status for all the computers where the MSDTC Service is not running
+        Get DTC status for all the computers where the MSDTC Service is not running
 
-        .EXAMPLE
-            Get-DbaMsdtc -ComputerName srv0042 | Out-Gridview
+    .EXAMPLE
+        PS C:\> Get-DbaMsdtc -ComputerName srv0042 | Out-Gridview
 
-            Get DTC status for the computer srv0042 and show in a grid view
+        Get DTC status for the computer srv0042 and show in a grid view
+
     #>
     [CmdletBinding()]
     param (
-        [Parameter(ValueFromPipeline = $true)]
+        [Parameter(ValueFromPipeline)]
         [Alias('cn', 'host', 'Server')]
-        [DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME
+        [string[]]$ComputerName = $env:COMPUTERNAME
     )
 
     begin {
@@ -76,7 +77,7 @@ function Get-DbaMsdtc {
                 Write-Message -Level Verbose -Message "Getting DTC on $computer via WSMan"
                 $dtcservice = Get-Ciminstance -ComputerName $computer -Query $query
                 if ( $null -eq $dtcservice ) {
-                    Write-Warning "Can't connect to CIM on $computer via WSMan"
+                    Write-Message -Level Warning -Message "Can't connect to CIM on $computer via WSMan"
                 }
 
                 Write-Message -Level Verbose -Message "Getting MSDTC Security Registry Values on $computer"
@@ -90,12 +91,10 @@ function Get-DbaMsdtc {
                     foreach ($key in $cids) {
                         $cidHash.Add($key.Data, $key.CID)
                     }
-                }
-                else {
+                } else {
                     Write-Message -Level Warning -Message "Can't connect to MSDTC CID registry on $computer"
                 }
-            }
-            else {
+            } else {
                 Write-Message -Level Verbose -Message "PSRemoting is not enabled on $computer"
                 try {
                     Write-Message -Level Verbose -Message "Failed To get DTC via WinRM. Getting DTC on $computer via DCom"
@@ -104,8 +103,7 @@ function Get-DbaMsdtc {
                     $SessionParams.SessionOption = (New-CimSessionOption -Protocol Dcom)
                     $Session = New-CimSession @SessionParams
                     $dtcservice = Get-Ciminstance -CimSession $Session -Query $query
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Can't connect to CIM on $computer via DCom" -Target $computer -ErrorRecord $_ -Continue
                 }
             }

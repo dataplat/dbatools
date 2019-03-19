@@ -1,15 +1,14 @@
-﻿function Get-RegServerGroupReverseParse ($object) {
+function Get-RegServerGroupReverseParse ($object) {
     if ($object.Name -eq 'DatabaseEngineServerGroup') {
         $object.Name
-    }
-    else {
+    } else {
         $name = @()
         do {
             $name += $object.Name.Split("\")[0]
             $object = $object.Parent
         }
         until ($object.Name -eq 'DatabaseEngineServerGroup')
-        
+
         [array]::Reverse($name)
         $name -join '\'
     }

@@ -1,6 +1,17 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
+Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
+
+Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+    Context "Validate parameters" {
+        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
+        [object[]]$knownParameters = 'SqlInstance','SqlCredential','Job','StepId','StepName','Subsystem','SubsystemServer','Command','CmdExecSuccessCode','OnSuccessAction','OnSuccessStepId','OnFailAction','OnFailStepId','Database','DatabaseUser','RetryAttempts','RetryInterval','OutputFileName','Flag','ProxyName','Force','EnableException'
+        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
+        It "Should only contain our specific parameters" {
+            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        }
+    }
+}
 
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "New Agent Job Step is added properly" {
@@ -26,7 +37,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $newresults = Get-DbaAgentJob -SqlInstance $script:instance2 -Job "dbatoolsci Job One"
             $newresults.JobSteps.Name | Should -Be "Step One"
         }
-        
+
         It "Force should add jobstep to job and the older job step should be second" {
             $results = New-DbaAgentJobStep -SqlInstance $script:instance2 -Job "dbatoolsci Job One" -StepName "New Step One" -StepId 1 -Force
             $results.Name | Should -Be "New Step One"

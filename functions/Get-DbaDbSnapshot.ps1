@@ -3,45 +3,63 @@ function Get-DbaDbSnapshot {
     <#
     .SYNOPSIS
         Get database snapshots with details
+
     .DESCRIPTION
         Retrieves the list of database snapshot available, along with their base (the db they are the snapshot of) and creation time
+
     .PARAMETER SqlInstance
-        The SQL Server that you're connecting to.
+        The target SQL Server instance or instances.
+
     .PARAMETER SqlCredential
         Credential object used to connect to the SQL Server as a different user
+
     .PARAMETER Database
         Return information for only specific databases
+
     .PARAMETER ExcludeDatabase
         The database(s) to exclude - this list is auto-populated from the server
+
     .PARAMETER Snapshot
         Return information for only specific snapshots
+
     .PARAMETER ExcludeSnapshot
         The snapshot(s) to exclude - this list is auto-populated from the server
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+
     .NOTES
         Tags: Snapshot
-        Author: niphlod
+        Author: Simone Bizzotto (@niphlod)
+
         Website: https://dbatools.io
-        Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+        Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
+
     .LINK
-         https://dbatools.io/Get-DbaDbSnapshot
+        https://dbatools.io/Get-DbaDbSnapshot
+
     .EXAMPLE
-        Get-DbaDbSnapshot -SqlInstance sqlserver2014a
+        PS C:\> Get-DbaDbSnapshot -SqlInstance sqlserver2014a
+
         Returns a custom object displaying Server, Database, DatabaseCreated, SnapshotOf, SizeMB, DatabaseCreated
+
     .EXAMPLE
-        Get-DbaDbSnapshot -SqlInstance sqlserver2014a -Database HR, Accounting
+        PS C:\> Get-DbaDbSnapshot -SqlInstance sqlserver2014a -Database HR, Accounting
+
         Returns information for database snapshots having HR and Accounting as base dbs
+
     .EXAMPLE
-        Get-DbaDbSnapshot -SqlInstance sqlserver2014a -Snapshot HR_snapshot, Accounting_snapshot
+        PS C:\> Get-DbaDbSnapshot -SqlInstance sqlserver2014a -Snapshot HR_snapshot, Accounting_snapshot
+
         Returns information for database snapshots HR_snapshot and Accounting_snapshot
-#>
+
+    #>
     [CmdletBinding()]
     param (
-        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [Alias("Credential")]
@@ -56,12 +74,10 @@ function Get-DbaDbSnapshot {
     )
     process {
         foreach ($instance in $SqlInstance) {
-            Write-Message -Level Verbose -Message "Connecting to $instance"
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
-            }
-            catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+            } catch {
+                Stop-Function -Message "Error occured while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
             $dbs = $server.Databases | Where-Object DatabaseSnapshotBaseName
             if ($Database) {
@@ -87,8 +103,7 @@ function Get-DbaDbSnapshot {
                     Add-Member -Force -InputObject $db -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
                     Add-Member -Force -InputObject $db -MemberType NoteProperty -Name DiskUsage -value ([dbasize]($BytesOnDisk.BytesOnDisk))
                     Select-DefaultView -InputObject $db -Property ComputerName, InstanceName, SqlInstance, Name, 'DatabaseSnapshotBaseName as SnapshotOf', CreateDate, DiskUsage
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Failure" -ErrorRecord $_ -Target $db -Continue
                 }
             }

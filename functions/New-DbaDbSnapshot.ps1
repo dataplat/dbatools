@@ -8,7 +8,7 @@ function New-DbaDbSnapshot {
         Creates database snapshots without hassles
 
     .PARAMETER SqlInstance
-        The SQL Server that you're connecting to.
+        The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
         Credential object used to connect to the SQL Server as a different user
@@ -40,7 +40,7 @@ function New-DbaDbSnapshot {
         Snapshot files will be created here (by default the filestructure will be created in the same folder as the base db)
 
     .PARAMETER InputObject
-       Allows Piping from Get-DbaDatabase
+        Allows Piping from Get-DbaDatabase
 
     .PARAMETER Force
         Databases with Filestream FG can be snapshotted, but the Filestream FG is marked offline
@@ -50,46 +50,47 @@ function New-DbaDbSnapshot {
         For details, check https://msdn.microsoft.com/en-us/library/bb895334.aspx
 
     .PARAMETER EnableException
-                By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-                This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-                Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
         Tags: Snapshot, Restore, Database
-        Author: niphlod
+        Author: Simone Bizzotto (@niphold)
 
         Website: https://dbatools.io
-        Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+        Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-         https://dbatools.io/New-DbaDbSnapshot
+        https://dbatools.io/New-DbaDbSnapshot
 
     .EXAMPLE
-        New-DbaDbSnapshot -SqlInstance sqlserver2014a -Database HR, Accounting
+        PS C:\> New-DbaDbSnapshot -SqlInstance sqlserver2014a -Database HR, Accounting
 
         Creates snapshot for HR and Accounting, returning a custom object displaying Server, Database, DatabaseCreated, SnapshotOf, SizeMB, DatabaseCreated, PrimaryFilePath, Status, Notes
 
     .EXAMPLE
-        New-DbaDbSnapshot -SqlInstance sqlserver2014a -Database HR -Name HR_snap
+        PS C:\> New-DbaDbSnapshot -SqlInstance sqlserver2014a -Database HR -Name HR_snap
 
         Creates snapshot named "HR_snap" for HR
 
     .EXAMPLE
-        New-DbaDbSnapshot -SqlInstance sqlserver2014a -Database HR -NameSuffix 'fool_{0}_snap'
+        PS C:\> New-DbaDbSnapshot -SqlInstance sqlserver2014a -Database HR -NameSuffix 'fool_{0}_snap'
 
         Creates snapshot named "fool_HR_snap" for HR
 
     .EXAMPLE
-        New-DbaDbSnapshot -SqlInstance sqlserver2014a -Database HR, Accounting -Path F:\snapshotpath
+        PS C:\> New-DbaDbSnapshot -SqlInstance sqlserver2014a -Database HR, Accounting -Path F:\snapshotpath
 
         Creates snapshots for HR and Accounting databases, storing files under the F:\snapshotpath\ dir
 
     .EXAMPLE
-        Get-DbaDatabase -SqlInstance sql2016 -Database df | New-DbaDbSnapshot
+        PS C:\> Get-DbaDatabase -SqlInstance sql2016 -Database df | New-DbaDbSnapshot
 
         Creates a snapshot for the database df on sql2016
-#>
+
+    #>
 
     [CmdletBinding(SupportsShouldProcess)]
     param (
@@ -120,8 +121,7 @@ function New-DbaDbSnapshot {
             #Validate if Name can be interpolated
             try {
                 $null = $NameSuffix -f 'some_string'
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "NameSuffix parameter must be a template only containing one parameter {0}" -ErrorRecord $_
             }
         }
@@ -141,8 +141,7 @@ function New-DbaDbSnapshot {
             $message = ""
             if ($errhelp.Length -gt 0) {
                 $message += "Please make sure your version supports snapshots : ($errhelp)"
-            }
-            else {
+            } else {
                 $message += "This module can't tell you why the snapshot creation failed. Feel free to report back to dbatools what happened"
             }
             Write-Message -Level Warning -Message $message
@@ -155,16 +154,14 @@ function New-DbaDbSnapshot {
         }
 
         foreach ($instance in $SqlInstance) {
-            Write-Message -Level Verbose -Message "Connecting to $instance"
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
-            }
-            catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+            } catch {
+                Stop-Function -Message "Error occured while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
             #Checks for path existence, left the length test because test-bound wasn't working for some reason
             if ($Path.Length -gt 0) {
-                if (!(Test-DbaSqlPath -SqlInstance $instance -Path $Path)) {
+                if (!(Test-DbaPath -SqlInstance $instance -Path $Path)) {
                     Stop-Function -Message "$instance cannot access the directory $Path" -ErrorRecord $_ -Target $instance -Continue -EnableException $EnableException
                 }
             }
@@ -185,14 +182,11 @@ function New-DbaDbSnapshot {
             foreach ($db in $dbs) {
                 if ($db.IsDatabaseSnapshot) {
                     Write-Message -Level Warning -Message "$($db.name) is a snapshot, skipping"
-                }
-                elseif ($db.name -in $NoSupportForSnap) {
+                } elseif ($db.name -in $NoSupportForSnap) {
                     Write-Message -Level Warning -Message "$($db.name) snapshots are prohibited"
-                }
-                elseif ($db.IsAccessible -ne $true) {
+                } elseif ($db.IsAccessible -ne $true) {
                     Write-Message -Level Verbose -Message "$($db.name) is not accessible, skipping"
-                }
-                else {
+                } else {
                     $InputObject += $db
                 }
             }
@@ -216,11 +210,9 @@ function New-DbaDbSnapshot {
                     #no interpolation, just append
                     $SnapName = '{0}{1}' -f $db.Name, $NameSuffix
                 }
-            }
-            elseif ($Name.Length -gt 0) {
+            } elseif ($Name.Length -gt 0) {
                 $SnapName = $Name
-            }
-            else {
+            } else {
                 $SnapName = "{0}_{1}" -f $db.Name, $DefaultSuffix
             }
             if ($SnapName -in $server.Databases.Name) {
@@ -289,8 +281,7 @@ function New-DbaDbSnapshot {
                     $SnapDB.Create()
                     $server.Databases.Refresh()
                     Get-DbaDbSnapshot -SqlInstance $server -Snapshot $Snapname
-                }
-                catch {
+                } catch {
                     try {
                         $server.Databases.Refresh()
                         if ($SnapName -notin $server.Databases.Name) {
@@ -298,8 +289,7 @@ function New-DbaDbSnapshot {
                             $null = $server.Query($sql[0])
                             $server.Databases.Refresh()
                             $SnapDB = Get-DbaDbSnapshot -SqlInstance $server -Snapshot $Snapname
-                        }
-                        else {
+                        } else {
                             $SnapDB = Get-DbaDbSnapshot -SqlInstance $server -Snapshot $Snapname
                         }
 
@@ -308,7 +298,8 @@ function New-DbaDbSnapshot {
                             $Notes += 'SMO is probably trying to set a property on a read-only snapshot, run with -Debug to find out and report back'
                         }
                         if ($has_FSD) {
-                            $Status = 'Partial'
+                            #Variable marked as unused by PSScriptAnalyzer
+                            #$Status = 'Partial'
                             $Notes += 'Filestream groups are not viable for snapshot'
                         }
                         $Notes = $Notes -Join ';'
@@ -321,8 +312,7 @@ function New-DbaDbSnapshot {
                         Write-Message -Level Debug -Message ($hints -Join "`n")
 
                         $SnapDB
-                    }
-                    catch {
+                    } catch {
                         # Resolve-SnapshotError $server
                         $hints = @("Executing these commands led to a failure")
                         foreach ($stmt in $sql) {

@@ -3,6 +3,17 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 
 Describe "$commandname Unit Tests" -Tag 'UnitTests' {
+    Context "Validate parameters" {
+        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
+        [object[]]$knownParameters = 'BackupHistory', 'SqlInstance', 'SqlCredential', 'WithReplace', 'Continue', 'VerifyOnly', 'OutputScriptOnly', 'EnableException'
+        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
+        It "Should only contain our specific parameters" {
+            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        }
+    }
+}
+
+Describe "$commandname Integration Tests" -Tag 'IntegrationTests' {
     InModuleScope dbatools {
         Context "Everything as it should" {
             $BackupHistory = Import-CliXml $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\CleanFormatDbaInformation.xml
@@ -11,6 +22,7 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
                 $obj = [PSCustomObject]@{
                     Name                 = 'BASEName'
                     NetName              = 'BASENetName'
+                    ComputerName         = 'BASEComputerName'
                     InstanceName         = 'BASEInstanceName'
                     DomainInstanceName   = 'BASEDomainInstanceName'
                     InstallDataDirectory = 'BASEInstallDataDirectory'
@@ -24,9 +36,9 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
                     param($query)
                     if ($query -eq "SELECT DB_NAME(database_id) AS Name, physical_name AS PhysicalName FROM sys.master_files") {
                         return @(
-                        @{ "Name"         = "master"
-                           "PhysicalName" = "C:\temp\master.mdf"
-                        }
+                            @{ "Name"          = "master"
+                                "PhysicalName" = "C:\temp\master.mdf"
+                            }
                         )
                     }
                 }
@@ -36,13 +48,13 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
             }
             Mock Get-DbaDatabase { $null }
 
-            Mock New-DbaSqlDirectory {$true}
-            Mock Test-DbaSqlPath { [pscustomobject]@{
+            Mock New-DbaDirectory {$true}
+            Mock Test-DbaPath { [pscustomobject]@{
                     FilePath   = 'does\exists'
                     FileExists = $true
                 }
             }
-            Mock New-DbaSqlDirectory {$True}
+            Mock New-DbaDirectory {$True}
             It "Should pass as all systems Green" {
                 $output = $BackupHistory | Test-DbaBackupInformation -SqlServer NotExist -WarningVariable warnvar -WarningAction SilentlyContinue
                 ($output.Count) -gt 0 | Should be $true
@@ -57,6 +69,7 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
                 $obj = [PSCustomObject]@{
                     Name                 = 'BASEName'
                     NetName              = 'BASENetName'
+                    ComputerName         = 'BASEComputerName'
                     InstanceName         = 'BASEInstanceName'
                     DomainInstanceName   = 'BASEDomainInstanceName'
                     InstallDataDirectory = 'BASEInstallDataDirectory'
@@ -70,9 +83,9 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
                     param($query)
                     if ($query -eq "SELECT DB_NAME(database_id) AS Name, physical_name AS PhysicalName FROM sys.master_files") {
                         return @(
-                        @{ "Name"         = "master"
-                           "PhysicalName" = "C:\temp\master.mdf"
-                        }
+                            @{ "Name"          = "master"
+                                "PhysicalName" = "C:\temp\master.mdf"
+                            }
                         )
                     }
                 }
@@ -81,13 +94,13 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
                 return $obj
             }
             Mock Get-DbaDatabase { $null }
-            Mock New-DbaSqlDirectory {$true}
-            Mock Test-DbaSqlPath { [pscustomobject]@{
+            Mock New-DbaDirectory {$true}
+            Mock Test-DbaPath { [pscustomobject]@{
                     FilePath   = 'does\not\exists'
                     FileExists = $false
                 }
             }
-            Mock New-DbaSqlDirectory {$True}
+            Mock New-DbaDirectory {$True}
             It "Should return fail as backup files don't exist" {
                 $output = $BackupHistory | Test-DbaBackupInformation -SqlServer NotExist -WarningVariable warnvar -WarningAction SilentlyContinue
                 ($output.Count) -gt 0 | Should be $true
@@ -103,6 +116,7 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
                 $obj = [PSCustomObject]@{
                     Name                 = 'BASEName'
                     NetName              = 'BASENetName'
+                    ComputerName         = 'BASEComputerName'
                     InstanceName         = 'BASEInstanceName'
                     DomainInstanceName   = 'BASEDomainInstanceName'
                     InstallDataDirectory = 'BASEInstallDataDirectory'
@@ -116,9 +130,9 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
                     param($query)
                     if ($query -eq "SELECT DB_NAME(database_id) AS Name, physical_name AS PhysicalName FROM sys.master_files") {
                         return @(
-                        @{ "Name"         = "master"
-                           "PhysicalName" = "C:\temp\master.mdf"
-                        }
+                            @{ "Name"          = "master"
+                                "PhysicalName" = "C:\temp\master.mdf"
+                            }
                         )
                     }
                 }
@@ -127,13 +141,13 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
                 return $obj
             }
             Mock Get-DbaDatabase { $null }
-            Mock New-DbaSqlDirectory {$true}
-            Mock Test-DbaSqlPath { [pscustomobject]@{
+            Mock New-DbaDirectory {$true}
+            Mock Test-DbaPath { [pscustomobject]@{
                     FilePath   = 'does\exists'
                     FileExists = $true
                 }
             }
-            Mock New-DbaSqlDirectory {$True}
+            Mock New-DbaDirectory {$True}
             It "Should return fail as 2 origin dbs" {
                 $output = $BackupHistory | Test-DbaBackupInformation -SqlServer NotExist -WarningVariable warnvar -WarningAction SilentlyContinue
                 ($output.Count) -gt 0 | Should be $true
@@ -149,6 +163,7 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
                 $obj = [PSCustomObject]@{
                     Name                 = 'BASEName'
                     NetName              = 'BASENetName'
+                    ComputerName         = 'BASEComputerName'
                     InstanceName         = 'BASEInstanceName'
                     DomainInstanceName   = 'BASEDomainInstanceName'
                     InstallDataDirectory = 'BASEInstallDataDirectory'
@@ -162,9 +177,9 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
                     param($query)
                     if ($query -eq "SELECT DB_NAME(database_id) AS Name, physical_name AS PhysicalName FROM sys.master_files") {
                         return @(
-                        @{ "Name"         = "master"
-                           "PhysicalName" = "C:\temp\master.mdf"
-                        }
+                            @{ "Name"          = "master"
+                                "PhysicalName" = "C:\temp\master.mdf"
+                            }
                         )
                     }
                 }
@@ -173,13 +188,13 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
                 return $obj
             }
             Mock Get-DbaDatabase { '1' }
-            Mock New-DbaSqlDirectory {$true}
-            Mock Test-DbaSqlPath { [pscustomobject]@{
+            Mock New-DbaDirectory {$true}
+            Mock Test-DbaPath { [pscustomobject]@{
                     FilePath   = 'does\exists'
                     FileExists = $true
                 }
             }
-            Mock New-DbaSqlDirectory {$True}
+            Mock New-DbaDirectory {$True}
             It "Should return fail if dest db exists" {
                 $output = $BackupHistory | Test-DbaBackupInformation -SqlServer NotExist -WarningVariable warnvar -WarningAction SilentlyContinue
                 ($output.Count) -gt 0 | Should be $true
@@ -195,6 +210,7 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
                 $obj = [PSCustomObject]@{
                     Name                 = 'BASEName'
                     NetName              = 'BASENetName'
+                    ComputerName         = 'BASEComputerName'
                     InstanceName         = 'BASEInstanceName'
                     DomainInstanceName   = 'BASEDomainInstanceName'
                     InstallDataDirectory = 'BASEInstallDataDirectory'
@@ -208,9 +224,9 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
                     param($query)
                     if ($query -eq "SELECT DB_NAME(database_id) AS Name, physical_name AS PhysicalName FROM sys.master_files") {
                         return @(
-                        @{ "Name"         = "master"
-                           "PhysicalName" = "C:\temp\master.mdf"
-                        }
+                            @{ "Name"          = "master"
+                                "PhysicalName" = "C:\temp\master.mdf"
+                            }
                         )
                     }
                 }
@@ -219,13 +235,13 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
                 return $obj
             }
             Mock Get-DbaDatabase { '1' }
-            Mock New-DbaSqlDirectory {$true}
-            Mock Test-DbaSqlPath { [pscustomobject]@{
+            Mock New-DbaDirectory {$true}
+            Mock Test-DbaPath { [pscustomobject]@{
                     FilePath   = 'does\exists'
                     FileExists = $true
                 }
             }
-            Mock New-DbaSqlDirectory {$True}
+            Mock New-DbaDirectory {$True}
             It "Should pass if destdb exists and WithReplace specified" {
                 $output = $BackupHistory | Test-DbaBackupInformation -SqlServer NotExist -WarningVariable warnvar -WarningAction SilentlyContinue -WithReplace
                 ($output.Count) -gt 0 | Should be $true

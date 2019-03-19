@@ -7,7 +7,7 @@ function Get-DbaDefaultPath {
         Gets the default SQL Server paths for data, logs and backups
 
     .PARAMETER SqlInstance
-        The SQL Server instance, or instances.
+        TThe target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
         Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted.
@@ -19,29 +19,31 @@ function Get-DbaDefaultPath {
 
     .NOTES
         Tags: Config
+        Author: Chrissy LeMaire (@cl), netnerds.net
+
         Website: https://dbatools.io
-        Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+        Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
         https://dbatools.io/Get-DbaDefaultPath
 
     .EXAMPLE
-        Get-DbaDefaultPath -SqlInstance sql01\sharepoint
+        PS C:\> Get-DbaDefaultPath -SqlInstance sql01\sharepoint
 
         Returns the default file paths for sql01\sharepoint
 
     .EXAMPLE
-        $servers = "sql2014","sql2016", "sqlcluster\sharepoint"
-        $servers | Get-DbaDefaultPath
+        PS C:\> $servers = "sql2014","sql2016", "sqlcluster\sharepoint"
+        PS C:\> $servers | Get-DbaDefaultPath
 
         Returns the default file paths for "sql2014","sql2016" and "sqlcluster\sharepoint"
 
-#>
+    #>
     [CmdletBinding()]
     param (
-        [Parameter(ValueFromPipeline = $true)]
-        [Alias("ServerInstance", "SqlServer")]
+        [parameter(Position = 0, Mandatory, ValueFromPipeline)]
+        [Alias("ServerInstance", "Instance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [Alias("Credential")]
         [PSCredential]
@@ -51,18 +53,16 @@ function Get-DbaDefaultPath {
     )
     process {
         foreach ($instance in $SqlInstance) {
-            Write-Message -Level Verbose -Message "Connecting to $instance"
 
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -AzureUnsupported
-            }
-            catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+            } catch {
+                Stop-Function -Message "Error occured while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             $dataPath = $server.DefaultFile
             if ($dataPath.Length -eq 0) {
-                $dataPath = $server.ConnectionContext.ExecuteScalar("SELECT SERVERPROPERTY('InstanceDefaultdataPath')")
+                $dataPath = $server.Query("SELECT SERVERPROPERTY('InstanceDefaultdataPath') as Data").Data
             }
 
             if ($dataPath -eq [System.DBNull]::Value -or $dataPath.Length -eq 0) {
@@ -76,7 +76,7 @@ function Get-DbaDefaultPath {
             $logPath = $server.DefaultLog
 
             if ($logPath.Length -eq 0) {
-                $logPath = $server.ConnectionContext.ExecuteScalar("SELECT SERVERPROPERTY('InstanceDefaultLogPath')")
+                $logPath = $server.Query("SELECT SERVERPROPERTY('InstanceDefaultLogPath') as Log").Log
             }
 
             if ($logPath -eq [System.DBNull]::Value -or $logPath.Length -eq 0) {

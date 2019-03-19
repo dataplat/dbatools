@@ -1,57 +1,59 @@
 function Get-DbaNetworkCertificate {
     <#
-.SYNOPSIS
-Simplifies finding computer certificates that are candidates for using with SQL Server's network encryption
+    .SYNOPSIS
+        Simplifies finding computer certificates that are candidates for using with SQL Server's network encryption
 
-.DESCRIPTION
-Gets computer certificates on localhost that are candidates for using with SQL Server's network encryption
+    .DESCRIPTION
+        Gets computer certificates on localhost that are candidates for using with SQL Server's network encryption
 
-.PARAMETER ComputerName
-The target SQL Server - defaults to localhost. If target is a cluster, you must specify the distinct nodes.
+    .PARAMETER ComputerName
+       The target SQL Server instance or instances. Defaults to localhost. If target is a cluster, you must specify the distinct nodes.
 
-.PARAMETER Credential
-Allows you to login to $ComputerName using alternative credentials.
+    .PARAMETER Credential
+        Allows you to login to $ComputerName using alternative credentials.
 
-.PARAMETER EnableException
+    .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-.NOTES
-Tags: Certificate
+    .NOTES
+        Tags: Certificate
+        Author: Chrissy LeMaire (@cl), netnerds.net
 
-Website: https://dbatools.io
-Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-License: MIT https://opensource.org/licenses/MIT
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-.EXAMPLE
-Get-DbaNetworkCertificate
-Gets computer certificates on localhost that are candidates for using with SQL Server's network encryption
+    .EXAMPLE
+        PS C:\> Get-DbaNetworkCertificate
 
-.EXAMPLE
-Get-DbaNetworkCertificate -ComputerName sql2016
+        Gets computer certificates on localhost that are candidates for using with SQL Server's network encryption
 
-Gets computer certificates on sql2016 that are being used for SQL Server network encryption
+    .EXAMPLE
+        PS C:\> Get-DbaNetworkCertificate -ComputerName sql2016
 
-#>
+        Gets computer certificates on sql2016 that are being used for SQL Server network encryption
+
+    #>
     [CmdletBinding()]
     param (
         [parameter(ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer", "SqlInstance")]
         [DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,
         [PSCredential]$Credential,
-        [Alias('Silent')]
         [switch]$EnableException
     )
-
+    
     process {
+        # Registry access
+        
+        
         foreach ($computer in $computername) {
 
-            Write-Message -Level Verbose -Message "Connecting to SQL WMI on $($computer.ComputerName)"
             try {
                 $sqlwmis = Invoke-ManagedComputerCommand -ComputerName $computer.ComputerName -ScriptBlock { $wmi.Services } -Credential $Credential -ErrorAction Stop | Where-Object DisplayName -match "SQL Server \("
-            }
-            catch {
+            } catch {
                 Stop-Function -Message $_ -Target $sqlwmi -Continue
             }
 
@@ -69,8 +71,7 @@ Gets computer certificates on sql2016 that are being used for SQL Server network
                     if (![System.String]::IsNullOrEmpty($regroot)) {
                         $regroot = ($regroot -Split 'Value\=')[1]
                         $vsname = ($vsname -Split 'Value\=')[1]
-                    }
-                    else {
+                    } else {
                         Write-Message -Level Warning -Message "Can't find instance $vsname on $env:COMPUTERNAME"
                         return
                     }
@@ -95,9 +96,10 @@ Gets computer certificates on sql2016 that are being used for SQL Server network
 
                     try {
                         $cert = Get-ChildItem Cert:\LocalMachine -Recurse -ErrorAction Stop | Where-Object Thumbprint -eq $Thumbprint
-                    }
-                    catch {
+                    } catch {
                         # Don't care - sometimes there's errors that are thrown for apparent good reason
+                        # here to avoid an empty catch
+                        $null = 1
                     }
 
                     if (!$cert) { continue }
@@ -118,12 +120,10 @@ Gets computer certificates on sql2016 that are being used for SQL Server network
                     }
                 }
 
-                Write-Message -Level Verbose -Message "Connecting to $computer to get a list of certs"
                 try {
                     Invoke-Command2 -ComputerName $computer.ComputerName -Credential $Credential -ArgumentList $regroot, $serviceaccount, $instancename, $vsname -ScriptBlock $scriptblock -ErrorAction Stop |
                         Select-DefaultView -ExcludeProperty Certificate
-                }
-                catch {
+                } catch {
                     Stop-Function -Message $_ -ErrorRecord $_ -Target $ComputerName -Continue
                 }
             }

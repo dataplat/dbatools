@@ -2,72 +2,70 @@
 function Get-DbaSchemaChangeHistory {
     <#
     .SYNOPSIS
-    Gets DDL changes logged in the system trace.
+        Gets DDL changes logged in the system trace.
 
     .DESCRIPTION
-    Queries the default system trace for any DDL changes in the specified timeframe
-    Only works with SQL 2005 and later, as the system trace didn't exist before then
+        Queries the default system trace for any DDL changes in the specified time frame
+        Only works with SQL 2005 and later, as the system trace didn't exist before then
 
     .PARAMETER SqlInstance
-    SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input to allow the function
-    to be executed against multiple SQL Server instances.
+        The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
 
     .PARAMETER SqlCredential
-    Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
     .PARAMETER Database
-    The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
+        The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
 
     .PARAMETER ExcludeDatabase
-    The database(s) to exclude - this list is auto-populated from the server
+        The database(s) to exclude - this list is auto-populated from the server
 
     .PARAMETER Since
-    A date from which DDL changes should be returned. Default is to start at the beggining of the current trace file
+        A date from which DDL changes should be returned. Default is to start at the beginning of the current trace file
 
     .PARAMETER Object
-    The name of a SQL Server object you want to look for changes on
+        The name of a SQL Server object you want to look for changes on
 
     .PARAMETER EnableException
-    By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-    This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-    Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-    Tags: Migration, Backup, Database
-    Author: Stuart Moore (@napalmgram - http://stuart-moore.com)
+        Tags: Migration, Backup, Database
+        Author: Stuart Moore (@napalmgram - http://stuart-moore.com)
 
-    Website: https://dbatools.io
-    Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-    License: MIT https://opensource.org/licenses/MIT
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-    https://dbatools.io/Get-DbaSchemaChangeHistory
+        https://dbatools.io/Get-DbaSchemaChangeHistory
 
     .EXAMPLE
-    Get-DbaSchemaChangeHistory -SqlInstance localhost
+        PS C:\> Get-DbaSchemaChangeHistory -SqlInstance localhost
 
-    Returns all DDL changes made in all databases on the SQL Server instance localhost since the system trace began
-
-    .EXAMPLE
-    Get-DbaSchemaChangeHistory -SqlInstance localhost -Since (Get-Date).AddDays(-7)
-
-    Returns all DDL changes made in all databases on the SQL Server instance localhost in the last 7 days
+        Returns all DDL changes made in all databases on the SQL Server instance localhost since the system trace began
 
     .EXAMPLE
-    Get-DbaSchemaChangeHistory -SqlInstance localhost -Database Finance, Prod -Since (Get-Date).AddDays(-7)
+        PS C:\> Get-DbaSchemaChangeHistory -SqlInstance localhost -Since (Get-Date).AddDays(-7)
 
-    Returns all DDL changes made in the Prod and Finance databases on the SQL Server instance localhost in the last 7 days
+        Returns all DDL changes made in all databases on the SQL Server instance localhost in the last 7 days
 
     .EXAMPLE
-    Get-DbaSchemaChangeHistory -SqlInstance localhost -Database Finance -Object AccountsTable -Since (Get-Date).AddDays(-7)
+        PS C:\> Get-DbaSchemaChangeHistory -SqlInstance localhost -Database Finance, Prod -Since (Get-Date).AddDays(-7)
 
-    Returns all DDL changes made  to the AccountsTable object in the Finance database on the SQL Server instance localhost in the last 7 days
+        Returns all DDL changes made in the Prod and Finance databases on the SQL Server instance localhost in the last 7 days
+
+    .EXAMPLE
+        PS C:\> Get-DbaSchemaChangeHistory -SqlInstance localhost -Database Finance -Object AccountsTable -Since (Get-Date).AddDays(-7)
+
+        Returns all DDL changes made  to the AccountsTable object in the Finance database on the SQL Server instance localhost in the last 7 days
 
     #>
-
     [CmdletBinding()]
     param (
-        [parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
+        [parameter(Position = 0, Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [Alias("Credential")]
@@ -84,13 +82,11 @@ function Get-DbaSchemaChangeHistory {
 
     process {
         foreach ($instance in $SqlInstance) {
-            Write-Message -Level Verbose -Message "Connecting to $instance"
 
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-            }
-            catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+            } catch {
+                Stop-Function -Message "Error occured while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
             if ($Server.Version.Major -le 8) {
                 Stop-Function -Message "This command doesn't support SQL Server 2000, sorry about that"
@@ -150,4 +146,3 @@ function Get-DbaSchemaChangeHistory {
         }
     }
 }
-

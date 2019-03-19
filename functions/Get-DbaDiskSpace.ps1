@@ -1,97 +1,98 @@
 #ValidationTags#CodeStyle,Messaging,FlowControl,Pipeline#
 function Get-DbaDiskSpace {
     <#
-        .SYNOPSIS
-            Displays disk information for all local disk on a server.
+    .SYNOPSIS
+        Displays disk information for all local disk on a server.
 
-        .DESCRIPTION
-            Returns a custom object with server name, name of disk, label of disk, total size, free size, percent free, block size and filesystem.
+    .DESCRIPTION
+        Returns a custom object with server name, name of disk, label of disk, total size, free size, percent free, block size and filesystem.
 
-            By default, this function only shows drives of types 2 and 3 (removable disk and local disk).
+        By default, this function only shows drives of types 2 and 3 (removable disk and local disk).
 
-            Requires Windows administrator access on SQL Servers
+        Requires Windows administrator access on SQL Servers
 
-        .PARAMETER ComputerName
-            The target computer. Defaults to localhost.
+    .PARAMETER ComputerName
+        The target computer. Defaults to localhost.
 
-        .PARAMETER Credential
-            Credential object used to connect to the computer as a different user.
+    .PARAMETER Credential
+        Credential object used to connect to the computer as a different user.
 
-        .PARAMETER Unit
-            This parameter has been deprecated and will be removed in 1.0.0
-            All properties previously generated through this command are present at the same time, but hidden by default.
+    .PARAMETER Unit
+        This parameter has been deprecated and will be removed in 1.0.0
+        All properties previously generated through this command are present at the same time, but hidden by default.
 
-        .PARAMETER CheckForSql
-            If this switch is enabled, disks will be checked for SQL Server data and log files. Windows Authentication is always used for this.
+    .PARAMETER CheckForSql
+        If this switch is enabled, disks will be checked for SQL Server data and log files. Windows Authentication is always used for this.
 
-        .PARAMETER SqlCredential
-            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+    .PARAMETER SqlCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-        .PARAMETER ExcludeDrive
-            Filter out drives - format is C:\
+    .PARAMETER ExcludeDrive
+        Filter out drives - format is C:\
 
-        .PARAMETER Detailed
-            Output all properties, will be deprecated in 1.0.0 release. Use Force Instead
+    .PARAMETER Detailed
+        Output all properties, will be deprecated in 1.0.0 release. Use Force Instead
 
-        .PARAMETER CheckFragmentation
-            If this switch is enabled, fragmentation of all filesystems will be checked.
+    .PARAMETER CheckFragmentation
+        If this switch is enabled, fragmentation of all filesystems will be checked.
 
-            This will increase the runtime of the function by seconds or even minutes per volume.
+        This will increase the runtime of the function by seconds or even minutes per volume.
 
-        .PARAMETER Force
-            Enabling this switch will cause the command to include ALL drives.
-            By default, only local disks and removable disks are shown, and hidden volumes are excluded.
+    .PARAMETER Force
+        Enabling this switch will cause the command to include ALL drives.
+        By default, only local disks and removable disks are shown, and hidden volumes are excluded.
 
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-        .PARAMETER WhatIf
-            If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
+    .PARAMETER WhatIf
+        If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
-        .PARAMETER Confirm
-            If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
+    .PARAMETER Confirm
+        If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
-        .NOTES
-            Tags: Storage, Disk
-            Author: Chrissy LeMaire (clemaire@gmail.com) & Jakob Bindslet (jakob@bindslet.dk)
+    .NOTES
+        Tags: Storage, Disk
+        Author: Chrissy LeMaire (@cl), netnerds.net | Jakob Bindslet
 
-            dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-            Copyright (C) 2016 Chrissy LeMaire
-            License: MIT https://opensource.org/licenses/MIT
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-        .LINK
-            https://dbatools.io/Get-DbaDiskSpace
+    .LINK
+        https://dbatools.io/Get-DbaDiskSpace
 
-        .EXAMPLE
-            Get-DbaDiskSpace -ComputerName srv0042
+    .EXAMPLE
+        PS C:\> Get-DbaDiskSpace -ComputerName srv0042
 
-            Get disk space for the server srv0042.
+        Get disk space for the server srv0042.
 
-        .EXAMPLE
-            Get-DbaDiskSpace -ComputerName srv0042 -Unit MB
+    .EXAMPLE
+        PS C:\> Get-DbaDiskSpace -ComputerName srv0042 -Unit MB
 
-            Get disk space for the server srv0042 and displays in megabytes (MB).
+        Get disk space for the server srv0042 and displays in megabytes (MB).
 
-        .EXAMPLE
-            Get-DbaDiskSpace -ComputerName srv0042, srv0007 -Unit TB
+    .EXAMPLE
+        PS C:\> Get-DbaDiskSpace -ComputerName srv0042, srv0007 -Unit TB
 
-            Get disk space from two servers and displays in terabytes (TB).
+        Get disk space from two servers and displays in terabytes (TB).
 
-        .EXAMPLE
-            Get-DbaDiskSpace -ComputerName srv0042 -Force
+    .EXAMPLE
+        PS C:\> Get-DbaDiskSpace -ComputerName srv0042 -Force
 
-            Get all disk and volume space information.
+        Get all disk and volume space information.
 
-        .EXAMPLE
-            Get-DbaDiskSpace -ComputerName srv0042 -ExcludeDrive 'C:\'
+    .EXAMPLE
+        PS C:\> Get-DbaDiskSpace -ComputerName srv0042 -ExcludeDrive 'C:\'
 
-            Get all disk and volume space information.
+        Get all disk and volume space information.
+
     #>
     [CmdletBinding()]
     param (
-        [Parameter(ValueFromPipeline = $true)]
+        [Parameter(ValueFromPipeline)]
         [Alias('ServerInstance', 'SqlInstance', 'SqlServer')]
         [DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,
         [PSCredential]$Credential,
@@ -128,24 +129,20 @@ function Get-DbaDiskSpace {
         foreach ($computer in $ComputerName) {
             if ($computer.ComputerName -notin $processed) {
                 $null = $processed.Add($computer.ComputerName)
-                Write-Message -Level VeryVerbose -Message "Connecting to $computer." -Target $computer.ComputerName
-            }
-            else {
+            } else {
                 continue
             }
 
             try {
                 $disks = Get-DbaCmObject -ComputerName $computer.ComputerName -Query "SELECT * FROM Win32_Volume$condition" -Credential $Credential -Namespace root\CIMv2 -ErrorAction Stop -WarningAction SilentlyContinue -EnableException
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failed to connect to $computer." -EnableException $EnableException -ErrorRecord $_ -Target $computer.ComputerName -Continue
             }
 
             if ($CheckForSql) {
                 try {
-                    $sqlServices = Get-DbaSqlService -ComputerName $computer -Type Engine
-                }
-                catch {
+                    $sqlServices = Get-DbaService -ComputerName $computer -Type Engine
+                } catch {
                     Write-Message -Level Warning -Message "Failed to connect to $computer to gather SQL Server instances, will not be reporting SQL Information." -ErrorRecord $_ -OverrideExceptionMessage -Target $computer.ComputerName
                 }
 
@@ -154,8 +151,7 @@ function Get-DbaDiskSpace {
                     foreach ($sqlService in $sqlServices) {
                         if ($sqlService.InstanceName -eq "MSSQLSERVER") {
                             $instanceName = $sqlService.ComputerName
-                        }
-                        else {
+                        } else {
                             $instanceName = "$($sqlService.ComputerName)\$($sqlService.InstanceName)"
                         }
                         Write-Message -Level VeryVerbose -Message "Processing instance $($instanceName)"
@@ -163,8 +159,7 @@ function Get-DbaDiskSpace {
                             $server = Connect-SqlInstance -SqlInstance $instanceName -SqlCredential $SqlCredential
                             if ($server.Version.Major -lt 9) {
                                 $sql = "SELECT DISTINCT SUBSTRING(physical_name, 1, LEN(physical_name) - CHARINDEX('\', REVERSE(physical_name)) + 1) AS SqlDisk FROM sysaltfiles"
-                            }
-                            else {
+                            } else {
                                 $sql = "SELECT DISTINCT SUBSTRING(physical_name, 1, LEN(physical_name) - CHARINDEX('\', REVERSE(physical_name)) + 1) AS SqlDisk FROM sys.master_files"
                             }
                             $results = $server.Query($sql)
@@ -175,8 +170,7 @@ function Get-DbaDiskSpace {
                                     }
                                 }
                             }
-                        }
-                        catch {
+                        } catch {
                             Write-Message -Level Warning -Message "Failed to connect to $instanceName on $computer. SQL information may not be accurate or services have been stopped." -ErrorRecord $_ -OverrideExceptionMessage -Target $computer.ComputerName
                         }
                     }

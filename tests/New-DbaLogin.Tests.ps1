@@ -1,11 +1,22 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
+Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 . "$PSScriptRoot\..\internal\functions\Connect-SqlInstance.ps1"
 . "$PSScriptRoot\..\internal\functions\Get-PasswordHash.ps1"
 . "$PSScriptRoot\..\internal\functions\Convert-HexStringToByte.ps1"
 
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
+Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+    Context "Validate parameters" {
+        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
+        [object[]]$knownParameters = 'SqlInstance','SqlCredential','Login','InputObject','LoginRenameHashtable','SecurePassword','HashedPassword','MapToCertificate','MapToAsymmetricKey','MapToCredential','Sid','DefaultDatabase','Language','PasswordExpiration','PasswordPolicy','Disabled','NewSid','Force','EnableException'
+        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
+        It "Should only contain our specific parameters" {
+            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        }
+    }
+}
+
+Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 
     $credLogin = 'credologino'
     $certificateName = 'DBAToolsPesterlogincertificate'
@@ -18,7 +29,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     $computerName = $server1.NetName
     $winLogin = "$computerName\$credLogin"
     $logins = "claudio", "port", "tester", "certifico", $winLogin
-    
+
     #cleanup
     try {
         foreach ($instance in $servers) {
@@ -35,9 +46,8 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
                 }
             }
         }
-    }
-    catch {<#nbd#> }
-    
+    } catch {<#nbd#> }
+
     #create Windows login
     $computer = [ADSI]"WinNT://$computerName"
     try {
@@ -45,8 +55,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         if ($user.Name -eq $credLogin) {
             $computer.Delete('User', $credLogin)
         }
-    }
-    catch {<#User does not exist#>}
+    } catch {<#User does not exist#>}
 
     $user = $computer.Create("user", $credLogin)
     $user.SetPassword($password)
@@ -56,18 +65,17 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     $null = New-DbaCredential -SqlInstance $server1 -Name $credLogin -CredentialIdentity $credLogin -Password $securePassword -Force
 
     #create master key if not exists
-    if (!($mkey = Get-DbaDatabaseMasterKey -SqlInstance $server1 -Database master)) {
-        $null = New-DbaDatabaseMasterKey -SqlInstance $server1 -Database master -Password $securePassword -Confirm:$false
+    if (!($mkey = Get-DbaDbMasterKey -SqlInstance $server1 -Database master)) {
+        $null = New-DbaDbMasterKey -SqlInstance $server1 -Database master -Password $securePassword -Confirm:$false
     }
-    
+
     try {
         #create certificate
         if ($crt = $server1.Databases['master'].Certificates[$certificateName]) {
             $crt.Drop()
         }
-    }
-    catch {<#nbd#> }
-    $null = New-DbaDbCertificate $server1 -Name $certificateName -Password $null
+    } catch {<#nbd#> }
+    $null = New-DbaDbCertificate $server1 -Name $certificateName -Password $null -Confirm:$false
 
     Context "Create new logins" {
         It "Should be created successfully - Hashed password" {
@@ -162,7 +170,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $login1.Sid | Should Not be $login2.Sid
         }
     }
-    
+
     if ((Connect-DbaInstance -SqlInstance $script:instance1).LoginMode -eq "Mixed") {
         Context "Connect with a new login" {
             It "Should login with newly created Sql Login, get instance name and kill the process" {
@@ -173,14 +181,14 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             }
         }
     }
-    
+
     Context "No overwrite" {
         $null = Get-DbaLogin -SqlInstance $server1 -Login tester | New-DbaLogin -SqlInstance $server2 -WarningAction SilentlyContinue -WarningVariable warning 3>&1
         It "Should not attempt overwrite" {
             $warning | Should Match "Login tester already exists"
         }
     }
-    
+
     try {
         foreach ($instance in $servers) {
             foreach ($login in $logins) {
@@ -196,13 +204,12 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
                 }
             }
         }
-        
+
         $computer.Delete('User', $credLogin)
         $server1.Credentials[$credLogin].Drop()
         $server1.Databases['master'].Certificates[$certificateName].Drop()
         if (!$mkey) {
-            $null = Remove-DbaDatabaseMasterKey -SqlInstance $script:instance1 -Database master -Confirm:$false
+            $null = Remove-DbaDbMasterKey -SqlInstance $script:instance1 -Database master -Confirm:$false
         }
-    }
-    catch {<#nbd#> }
+    } catch {<#nbd#> }
 }
