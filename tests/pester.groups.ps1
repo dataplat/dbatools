@@ -36,7 +36,6 @@ $TestsRunGroups = @{
         # these work but fail too often on appveyor
         # will revisit once they get their new data center
         'Remove-DbaAvailabilityGroup',
-        'Test-DbaLastBackup',
         'Reset-DbaAdmin',
         'Remove-DbaAgDatabase',
         'New-DbaAvailabilityGroup',
