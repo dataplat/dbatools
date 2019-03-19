@@ -48,12 +48,13 @@ function Restore-DbaDbCertificate {
         https://dbatools.io/Restore-DbaDbCertificate
 
     .EXAMPLE
-        PS C:\> Restore-DbaDbCertificate -SqlInstance Server1 -Path \\Server1\Certificates -SecurePassword (ConvertTo-SecureString -Force -AsPlainText GoodPass1234!!)
+        PS C:\> $securepass = Get-Credential usernamedoesntmatter | Select-Object -ExpandProperty Password
+        PS C:\> Restore-DbaDbCertificate -SqlInstance Server1 -Path \\Server1\Certificates -SecurePassword $securepass
 
         Restores all the certificates in the specified path, password is used to both decrypt and encrypt the private key.
 
     .EXAMPLE
-        PS C:\> Restore-DbaDbCertificate -SqlInstance Server1 -Path \\Server1\Certificates\DatabaseTDE.cer -SecurePassword (ConvertTo-SecureString -force -AsPlainText GoodPass1234!!)
+        PS C:\> Restore-DbaDbCertificate -SqlInstance Server1 -Path \\Server1\Certificates\DatabaseTDE.cer -SecurePassword (Get-Credential usernamedoesntmatter).Password
 
         Restores the DatabaseTDE certificate to Server1 and uses the MasterKey to encrypt the private key.
 
@@ -68,7 +69,7 @@ function Restore-DbaDbCertificate {
         [object[]]$Path,
         [Security.SecureString]$EncryptionPassword,
         [string]$Database = "master",
-        [Alias("Password")]
+        [Alias("Password", "DecryptionPassword")]
         [Security.SecureString]$SecurePassword = (Read-Host "Password" -AsSecureString),
         [switch]$EnableException
     )
@@ -98,28 +99,32 @@ function Restore-DbaDbCertificate {
                 $smocert.Name = $certname
                 $smocert.Parent = $server.Databases[$Database]
                 Write-Message -Level Verbose -Message "Creating Certificate: $certname"
+                $fullcertname = "$directory\$certname.cer"
+                $privatekey = "$directory\$certname.pvk"
+                Write-Message -Level Verbose -Message "Full certificate path: $fullcertname"
+                Write-Message -Level Verbose -Message "Private key: $privatekey"
                 try {
-                    $fullcertname = "$directory\$certname.cer"
-                    $privatekey = "$directory\$certname.pvk"
-                    Write-Message -Level Verbose -Message "Full certificate path: $fullcertname"
-                    Write-Message -Level Verbose -Message "Private key: $privatekey"
-                    $fromfile = $true
-
                     if ($EncryptionPassword) {
-                        $smocert.Create($fullcertname, $fromfile, $privatekey, [System.Runtime.InteropServices.marshal]::PtrToStringAuto([System.Runtime.InteropServices.marshal]::SecureStringToBSTR($password)), [System.Runtime.InteropServices.marshal]::PtrToStringAuto([System.Runtime.InteropServices.marshal]::SecureStringToBSTR($password)))
+                        $smocert.Create($fullcertname, 1, $privatekey, [System.Runtime.InteropServices.marshal]::PtrToStringAuto([System.Runtime.InteropServices.marshal]::SecureStringToBSTR($SecurePassword)), [System.Runtime.InteropServices.marshal]::PtrToStringAuto([System.Runtime.InteropServices.marshal]::SecureStringToBSTR($EncryptionPassword)))
                     } else {
-                        $smocert.Create($fullcertname, $fromfile, $privatekey, [System.Runtime.InteropServices.marshal]::PtrToStringAuto([System.Runtime.InteropServices.marshal]::SecureStringToBSTR($password)))
+                        $smocert.Create($fullcertname, 1, $privatekey, [System.Runtime.InteropServices.marshal]::PtrToStringAuto([System.Runtime.InteropServices.marshal]::SecureStringToBSTR($SecurePassword)))
                     }
-                    $cert = $smocert
                 } catch {
-                    Write-Message -Level Warning -Message $_ -ErrorRecord $_ -Target $instance
+                    try {
+                        if ($EncryptionPassword) {
+                            $smocert.Create($fullcertname, $([Microsoft.SqlServer.Management.Smo.CertificateSourceType]::"File"), $privatekey, [System.Runtime.InteropServices.marshal]::PtrToStringAuto([System.Runtime.InteropServices.marshal]::SecureStringToBSTR($SecurePassword)), [System.Runtime.InteropServices.marshal]::PtrToStringAuto([System.Runtime.InteropServices.marshal]::SecureStringToBSTR($EncryptionPassword)))
+                        } else {
+                            $smocert.Create($fullcertname, $([Microsoft.SqlServer.Management.Smo.CertificateSourceType]::"File"), $privatekey, [System.Runtime.InteropServices.marshal]::PtrToStringAuto([System.Runtime.InteropServices.marshal]::SecureStringToBSTR($SecurePassword)))
+                        }
+                    } catch {
+                        Stop-Function -Message $_ -ErrorRecord $_ -Target $instance -Continue
+                    }
                 }
             }
-            Get-DbaDbCertificate -SqlInstance $server -Database $Database -Certificate $cert.Name
+            Get-DbaDbCertificate -SqlInstance $server -Database $Database -Certificate $smocert.Name
         }
     }
     end {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Retore-DbaDatabaseCertificate
-
     }
 }
