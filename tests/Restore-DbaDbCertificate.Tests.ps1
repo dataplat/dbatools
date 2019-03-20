@@ -22,12 +22,14 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $backup = Backup-DbaDbCertificate -SqlInstance $script:instance1 -Database tempdb -EncryptionPassword $password -Confirm:$false
             $cert | Remove-DbaDbCertificate -Confirm:$false
         }
-        AfterAll {
+        AfterEach {
             $null = Remove-DbaDbCertificate -SqlInstance $script:instance1 -Certificate $cert.Name -Database tempdb -Confirm:$false
+        }
+        AfterAll {
             $null = $masterkey | Remove-DbaDbMasterKey -Confirm:$false
         }
 
-        It "restores the db cert" {
+        It "restores the db cert when passing in a .cer file" {
             $results = Restore-DbaDbCertificate -SqlInstance $script:instance1 -Path $backup.ExportPath -Password $password -Database tempdb -EncryptionPassword $password -Confirm:$false
             $results.Parent.Name | Should Be 'tempdb'
             $results.Name | Should Not BeNullOrEmpty
@@ -35,6 +37,24 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $results | Remove-DbaDbCertificate -Confirm:$false
             # TODO: Create a test for password generated cert
             # From what I can tell, what matters is creation, not restore.
+        }
+
+        It "restores the db cert when passing in a folder" {
+            $folder = split-path $backup.ExportPath -Parent
+            $results = Restore-DbaDbCertificate -SqlInstance $script:instance1 -Path $folder -Password $password -Database tempdb -EncryptionPassword $password -Confirm:$false
+            $results.Parent.Name | Should Be 'tempdb'
+            $results.Name | Should Not BeNullOrEmpty
+            $results.PrivateKeyEncryptionType | Should Be "Password"
+            $results | Remove-DbaDbCertificate -Confirm:$false
+        }
+
+        It "restores the db cert and encrypts with master key" {
+            $folder = split-path $backup.ExportPath -Parent
+            $results = Restore-DbaDbCertificate -SqlInstance $script:instance1 -Path $folder -Password $password -Database tempdb -Confirm:$false
+            $results.Parent.Name | Should Be 'tempdb'
+            $results.Name | Should Not BeNullOrEmpty
+            $results.PrivateKeyEncryptionType | Should Be "MasterKey"
+            $results | Remove-DbaDbCertificate -Confirm:$false
         }
     }
 }
