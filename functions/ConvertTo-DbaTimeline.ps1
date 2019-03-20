@@ -14,6 +14,11 @@ function ConvertTo-DbaTimeline {
 
         Pipe input, must an output from the above functions.
 
+    .PARAMETER ExcludeRowLabels
+        By default, the Timeline shows SqlInstance and item name (agent job or database) in row labels section of the chart.
+        When this parameter (ExcludeRowLabels) is set to true the row labels will not be shown which will maximise the chart area for better visualisation.
+        All relevant details are still available in the tooltip.
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -61,7 +66,7 @@ function ConvertTo-DbaTimeline {
     param (
         [parameter(Mandatory, ValueFromPipeline)]
         [object[]]$InputObject,
-        [switch]$NoRowLabels,
+        [switch]$ExcludeRowLabels,
         [switch]$EnableException
     )
     begin {
@@ -190,7 +195,7 @@ function ConvertTo-DbaTimeline {
             timeline: {
                 rowLabelStyle: { },
                 barLabelStyle: { },
-                showRowLabels: $(if($NoRowLabels){'false'} else {'true'})
+                showRowLabels: $(if($ExcludeRowLabels){'false'} else {'true'})
             },
             hAxis: {
                 format: 'dd/MM HH:mm',
