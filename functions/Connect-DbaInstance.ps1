@@ -436,7 +436,12 @@ function Connect-DbaInstance {
             }
 
             if ($instance.IsConnectionString) {
-                $server = New-Object Microsoft.SqlServer.Management.Smo.Server($instance.InputObject)
+                # this is the way, as recommended by Microsoft
+                # https://docs.microsoft.com/en-us/sql/relational-databases/security/encryption/configure-always-encrypted-using-powershell?view=sql-server-2017
+                $sqlconn = New-Object System.Data.SqlClient.SqlConnection $instance.InputObject
+                $serverconn = New-Object Microsoft.SqlServer.Management.Common.ServerConnection $sqlconn
+                $null = $serverconn.Connect()
+                $server = New-Object Microsoft.SqlServer.Management.Smo.Server $serverconn
             } elseif (-not $isAzure) {
                 $server = New-Object Microsoft.SqlServer.Management.Smo.Server($instance.FullSmoName)
             }
@@ -445,7 +450,7 @@ function Connect-DbaInstance {
                 $connstring = $server.ConnectionContext.ConnectionString
                 $server.ConnectionContext.ConnectionString = "$connstring;$appendconnectionstring"
                 $server.ConnectionContext.Connect()
-            } elseif (-not $isAzure) {
+            } elseif (-not $isAzure -and -not $instance.IsConnectionString) {
                 # It's okay to skip Azure because this is addressed above with New-DbaConnectionString
                 $server.ConnectionContext.ApplicationName = $ClientName
 
