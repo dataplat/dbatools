@@ -611,6 +611,9 @@ function New-DbaAvailabilityGroup {
             }
             if ((Get-DbaAvailabilityGroup -SqlInstance $Primary -SqlCredential $PrimarySqlCredential -AvailabilityGroup $Name).AvailabilityDatabases) {
                 $dbdone = $true
+            } else {
+                $dbdone++
+                Start-Sleep -Seconds 1
             }
         } while ($dbwait -lt 20 -and $dbdone -eq $false)
 
