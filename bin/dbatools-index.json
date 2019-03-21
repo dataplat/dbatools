@@ -1871,6 +1871,14 @@
                            ""
                        ],
                        [
+                           "ExcludeRowLabel",
+                           "By default, the Timeline shows SqlInstance and item name (agent job or database) in row labels section of the chart.\r\nWhen this parameter (ExcludeRowLabel) is set to true the row labels will not be shown which will maximise the chart area for better visualisation.\r\nAll relevant details are still available in the tooltip.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
                            "EnableException",
                            "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
                            "",
@@ -1879,7 +1887,7 @@
                            "False"
                        ]
                    ],
-        "Syntax":  "ConvertTo-DbaTimeline [-InputObject] \u003cObject[]\u003e [-EnableException] [\u003cCommonParameters\u003e]"
+        "Syntax":  "ConvertTo-DbaTimeline [-InputObject] \u003cObject[]\u003e [-ExcludeRowLabel] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "ConvertTo-DbaXESession",
@@ -35028,7 +35036,7 @@
         "CommandName":  "Restore-DbaDbCertificate",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Restore-DbaDbCertificate",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eRestore-DbaDbCertificate -SqlInstance Server1 -Path \\\\Server1\\Certificates -SecurePassword (ConvertTo-SecureString -Force -AsPlainText GoodPass1234!!)\nRestores all the certificates in the specified path, password is used to both decrypt and encrypt the private key.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eRestore-DbaDbCertificate -SqlInstance Server1 -Path \\\\Server1\\Certificates\\DatabaseTDE.cer -SecurePassword (ConvertTo-SecureString -force -AsPlainText GoodPass1234!!)\nRestores the DatabaseTDE certificate to Server1 and uses the MasterKey to encrypt the private key.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003e$securepass = Get-Credential usernamedoesntmatter | Select-Object -ExpandProperty Password\nPS C:\\\u003e Restore-DbaDbCertificate -SqlInstance Server1 -Path \\\\Server1\\Certificates -SecurePassword $securepass\nRestores all the certificates in the specified path, password is used to both decrypt and encrypt the private key.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eRestore-DbaDbCertificate -SqlInstance Server1 -Path \\\\Server1\\Certificates\\DatabaseTDE.cer -SecurePassword (Get-Credential usernamedoesntmatter).Password\nRestores the DatabaseTDE certificate to Server1 and uses the MasterKey to encrypt the private key.",
         "Params":  [
                        [
                            "SqlInstance",
@@ -35073,7 +35081,7 @@
                        [
                            "SecurePassword",
                            "Secure string used to decrypt the private key.",
-                           "Password",
+                           "Password,DecryptionPassword",
                            false,
                            "false",
                            "(Read-Host \"Password\" -AsSecureString)"
