@@ -78,6 +78,7 @@ function Install-DbaSqlWatch {
         [PSCredential]$SqlCredential,
         [string]$Database = "SQLWATCH",
         [string]$LocalFile,
+        [switch]$PreRelease,
         [switch]$Force,
         [switch]$EnableException
     )
@@ -96,7 +97,7 @@ function Install-DbaSqlWatch {
                 $DownloadBase = "https://github.com/marcingminski/sqlwatch/releases/download/"
 
                 Write-Message -Level Verbose -Message "Checking GitHub for the latest release."
-                $LatestReleaseUrl = (Invoke-TlsWebRequest -UseBasicParsing -Uri $ReleasesUrl | ConvertFrom-Json)[0].assets[0].browser_download_url
+                $LatestReleaseUrl = ((Invoke-TlsWebRequest -UseBasicParsing -Uri $ReleasesUrl | ConvertFrom-Json) | Where-Object { $_.prerelease -eq $PreRelease })[0].assets[0].browser_download_url
 
                 Write-Message -Level VeryVerbose -Message "Latest release is available at $LatestReleaseUrl"
                 $LocallyCachedZip = Join-Path -Path $DbatoolsData -ChildPath $($LatestReleaseUrl -replace $DownloadBase, '');
