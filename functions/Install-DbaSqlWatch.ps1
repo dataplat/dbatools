@@ -24,6 +24,9 @@ function Install-DbaSqlWatch {
     .PARAMETER Force
         If this switch is enabled, SqlWatch will be downloaded from the internet even if previously cached.
 
+    .PARAMETER PreRelease
+        If specified, a pre-release (beta) will be downloaded rather than a stable release
+
     .PARAMETER Confirm
         Prompts to confirm actions
 
