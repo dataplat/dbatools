@@ -193,7 +193,7 @@ function Add-DbaAgDatabase {
 
                 $replicadb = Get-DbaAgDatabase -SqlInstance $replica.Parent.Parent -Database $db.Name -AvailabilityGroup $ag.Name   #credential of secondary !!
 
-                if ($replicadb -and -not ($SeedingModeReplica -eq 'Automatic')) {
+                if (-not $replicadb.IsJoined) {
                     if ($Pscmdlet.ShouldProcess($ag.Parent.Name, "Joining availability group $db to $($db.Parent.Name)")) {
                         $timeout = 1
                         do {
