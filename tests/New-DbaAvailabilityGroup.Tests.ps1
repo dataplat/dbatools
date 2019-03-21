@@ -23,7 +23,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
         $agname = "dbatoolsci_addag_agroup"
         $password = 'MyV3ry$ecur3P@ssw0rd'
         $securePassword = ConvertTo-SecureString $password -AsPlainText -Force
-        $null = New-DbaDbMasterKey -SqlInstance $script:instance3 -Database master -WarningAction SilentlyContinue -ErrorAction Ignore -EnableException:$false -SecurePassword $securePassword
+        $null = New-DbaDbMasterKey -SqlInstance $script:instance3 -Database master -WarningAction SilentlyContinue -ErrorAction Ignore -EnableException:$false -SecurePassword $securePassword -Confirm:$false
         $null = New-DbaDbCertificate -SqlInstance $script:instance3 -Database master -Name dbatoolsci_AGCert -Subject 'AG Certificate' -ErrorAction Ignore
         $null = New-DbaEndpoint -SqlInstance $script:instance3 -Type DatabaseMirroring -Name dbatoolsci_AGEndpoint -Certificate dbatoolsci_AGCert | Start-DbaEndpoint
         $backup = Get-DbaDatabase -SqlInstance $script:instance3 -Database $dbname | Backup-DbaDatabase

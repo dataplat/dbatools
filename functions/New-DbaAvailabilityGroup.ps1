@@ -609,10 +609,12 @@ function New-DbaAvailabilityGroup {
                     }
                 }
             }
-            if ((Get-DbaAvailabilityGroup -SqlInstance $Primary -SqlCredential $PrimarySqlCredential -AvailabilityGroup $Name).AvailabilityDatabases) {
+
+            if (Get-DbaAgDatabase -SqlInstance $Primary -SqlCredential $PrimarySqlCredential -AvailabilityGroup $Name -Database $Database) {
                 $dbdone = $true
             } else {
-                $dbdone++
+                $null = Add-DbaAgDatabase -SqlInstance $Primary -SqlCredential $PrimarySqlCredential -AvailabilityGroup $Name -Database $Database -SeedingMode $SeedingMode -SharedPath $SharedPath -Secondary $Secondary -SecondarySqlCredential $SecondarySqlCredential -WarningAction SilentlyContinue
+                $dbwait++
                 Start-Sleep -Seconds 1
             }
         } while ($dbwait -lt 20 -and $dbdone -eq $false)
