@@ -39,7 +39,6 @@ $TestsRunGroups = @{
         'Get-DbaSuspectPage',
         'Reset-DbaAdmin',
         'Remove-DbaAgDatabase',
-        'New-DbaAvailabilityGroup',
         'Export-DbaDacPackage',
         'Set-DbaAgReplica',
         'Test-DbaOptimizeForAdHoc',
