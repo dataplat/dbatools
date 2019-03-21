@@ -279,10 +279,10 @@ function Get-DbaBackupHistory {
                                 "
 
                         $results = $server.ConnectionContext.ExecuteWithResults($forkCheckSql).Tables.Rows
-                        if ($results.count -gt 1) {
+                        if ($results.count -gt 1 -and -not $LastFull) {
                             Write-Message -Message "Found backups from multiple recovery forks for $($db.name) on $($server.name), this may affect your results" -Level Warning
                             foreach ($result in $results) {
-                                Write-Message -Message "Between $($result.MinDate)/$($result.FirstLsn) and $($result.MaxDate)/$($result.FinalLsn) $($result.name) was on Recovery Fork GUID $($result.RecFork) ($($result.backupcount) backups)"   -Level Warning
+                                Write-Message -Message "Between $($result.MinDate)/$($result.FirstLsn) and $($result.MaxDate)/$($result.FinalLsn) $($result.name) was on Recovery Fork GUID $($result.RecFork) ($($result.backupcount) backups)" -Level Warning
                             }
                             if ($null -eq $RecoveryFork) {
                                 $RecoveryFork = $results[-1].RecFork
@@ -353,7 +353,7 @@ function Get-DbaBackupHistory {
                         "
 
                         $results = $server.ConnectionContext.ExecuteWithResults($forkCheckSql).Tables.Rows
-                        if ($results.count -gt 1) {
+                        if ($results.count -gt 1 -and -not $LastFull) {
                             Write-Message -Message "Found backups from multiple recovery forks for $($db.name) on $($server.name), this may affect your results" -Level Warning
                             foreach ($result in $results) {
                                 Write-Message -Message "Between $($result.MinDate)/$($result.FirstLsn) and $($result.MaxDate)/$($result.FinalLsn) $($result.name) was on Recovery Fork GUID $($result.RecFork) ($($result.backupcount) backups)"   -Level Warning
