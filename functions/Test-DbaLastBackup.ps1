@@ -366,12 +366,15 @@ function Test-DbaLastBackup {
                     if ($Pscmdlet.ShouldProcess($destination, "Restoring $ogdbname as $dbname.")) {
                         Write-Message -Level Verbose -Message "Performing restore."
                         $startRestore = Get-Date
-                        if ($verifyonly) {
-                            $restoreresult = $lastbackup | Restore-DbaDatabase -SqlInstance $destserver -RestoredDatabaseNamePrefix $prefix -DestinationFilePrefix $Prefix -DestinationDataDirectory $datadirectory -DestinationLogDirectory $logdirectory -VerifyOnly:$VerifyOnly -IgnoreLogBackup:$IgnoreLogBackup -AzureCredential $AzureCredential -TrustDbBackupHistory
-                        } else {
-                            $restoreresult = $lastbackup | Restore-DbaDatabase -SqlInstance $destserver -RestoredDatabaseNamePrefix $prefix -DestinationFilePrefix $Prefix -DestinationDataDirectory $datadirectory -DestinationLogDirectory $logdirectory -IgnoreLogBackup:$IgnoreLogBackup -AzureCredential $AzureCredential -TrustDbBackupHistory
-                            Write-Message -Level Verbose -Message " Restore-DbaDatabase -SqlInstance $destserver -RestoredDatabaseNamePrefix $prefix -DestinationFilePrefix $Prefix -DestinationDataDirectory $datadirectory -DestinationLogDirectory $logdirectory -IgnoreLogBackup:$IgnoreLogBackup -AzureCredential $AzureCredential -TrustDbBackupHistory"
-
+                        try {
+                            if ($verifyonly) {
+                                $restoreresult = $lastbackup | Restore-DbaDatabase -SqlInstance $destserver -RestoredDatabaseNamePrefix $prefix -DestinationFilePrefix $Prefix -DestinationDataDirectory $datadirectory -DestinationLogDirectory $logdirectory -VerifyOnly:$VerifyOnly -IgnoreLogBackup:$IgnoreLogBackup -AzureCredential $AzureCredential -TrustDbBackupHistory -EnableException
+                            } else {
+                                $restoreresult = $lastbackup | Restore-DbaDatabase -SqlInstance $destserver -RestoredDatabaseNamePrefix $prefix -DestinationFilePrefix $Prefix -DestinationDataDirectory $datadirectory -DestinationLogDirectory $logdirectory -IgnoreLogBackup:$IgnoreLogBackup -AzureCredential $AzureCredential -TrustDbBackupHistory -EnableException
+                                Write-Message -Level Verbose -Message " Restore-DbaDatabase -SqlInstance $destserver -RestoredDatabaseNamePrefix $prefix -DestinationFilePrefix $Prefix -DestinationDataDirectory $datadirectory -DestinationLogDirectory $logdirectory -IgnoreLogBackup:$IgnoreLogBackup -AzureCredential $AzureCredential -TrustDbBackupHistory"
+                            }
+                        } catch {
+                            $errormsg = Get-ErrorMessage -Record $_
                         }
 
                         $endRestore = Get-Date
@@ -382,7 +385,11 @@ function Test-DbaLastBackup {
                         if ($restoreresult.RestoreComplete -eq $true) {
                             $success = "Success"
                         } else {
-                            $success = "Failure"
+                            if ($errormsg) {
+                                $success = $errormsg
+                            } else {
+                                $success = "Failure"
+                            }
                         }
                     }
 
