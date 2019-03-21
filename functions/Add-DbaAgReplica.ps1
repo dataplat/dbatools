@@ -163,6 +163,27 @@ function Add-DbaAgReplica {
 
                     if ($SeedingMode -and $server.VersionMajor -ge 13) {
                         $replica.SeedingMode = $SeedingMode
+                        if ($SeedingMode -eq "Automatic") {
+                            $serviceaccount = $server.ServiceAccount.Trim()
+                            $saname = ([DbaInstanceParameter]($server.DomainInstanceName)).ComputerName
+
+                            if ($serviceaccount) {
+                                if ($serviceaccount.StartsWith("NT ")) {
+                                    $serviceaccount = "$saname`$"
+                                }
+                                if ($serviceaccount.StartsWith("$saname")) {
+                                    $serviceaccount = "$saname`$"
+                                }
+                                if ($serviceaccount.StartsWith(".")) {
+                                    $serviceaccount = "$saname`$"
+                                }
+                            }
+
+                            if (-not $serviceaccount) {
+                                $serviceaccount = "$saname`$"
+                            }
+                            $null = Grant-DbaAgPermission -SqlInstance $server -Type AvailabilityGroup -AvailabilityGroup $InputObject.Name -Login $serviceaccount -Permission CreateAnyDatabase
+                        }
                     }
 
                     if ($Passthru) {
