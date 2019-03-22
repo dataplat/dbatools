@@ -37,7 +37,7 @@ function Get-DbaWsfcCluster {
         Gets failover cluster information about cluster01
 
     .EXAMPLE
-        PS C:\> Get-DbaWsfcCluster -ComputerName cluster01 | Select *
+        PS C:\> Get-DbaWsfcCluster -ComputerName cluster01 | Select-Object *
 
         Shows all cluster values, including the ones not shown in the default view
 

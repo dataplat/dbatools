@@ -44,7 +44,7 @@ function Get-DbaSpinLockStatistic {
         Get SpinLock Statistics for servers sql2008 and sqlserver2012.
 
     .EXAMPLE
-        PS C:\> $output = Get-DbaSpinLockStatistic -SqlInstance sql2008 | Select * | ConvertTo-DbaDataTable
+        PS C:\> $output = Get-DbaSpinLockStatistic -SqlInstance sql2008 | Select-Object * | ConvertTo-DbaDataTable
 
         Collects all SpinLock Statistics on server sql2008 into a Data Table.
 

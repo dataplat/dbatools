@@ -46,7 +46,7 @@ function Get-DbaDependency {
         https://dbatools.io/Get-DbaDependency
 
     .EXAMPLE
-        PS C:\> $table = (Get-DbaDatabase -SqlInstance sql2012 -Database Northwind).tables | Where Name -eq Customers
+        PS C:\> $table = (Get-DbaDatabase -SqlInstance sql2012 -Database Northwind).tables | Where-Object Name -eq Customers
         PS C:\> $table | Get-DbaDependency
 
         Returns everything that depends on the "Customers" table
