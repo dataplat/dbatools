@@ -37,16 +37,11 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 
     Context "Command actually works" {
         $results = Copy-DbaStartupProcedure -Source $script:instance2 -Destination $script:instance3
-        it "Should have standard properties" {
-            $ExpectedProps = 'ComputerName,InstanceName,SqlInstance'.Split(',')
-            ($results[0].PsObject.Properties.Name | Where-Object {$_ -in $ExpectedProps} | Sort-Object) | Should Be ($ExpectedProps | Sort-Object)
-        }
-
         It "Should include test procedure: $procName" {
-            ($results | Where-Object Name -eq $procName).Name | Should Be $procName
+            ($results | Where-Object Name -eq $procName).Name | Should -Be $procName
         }
-        It "Should exclude system procedures" {
-            ($results | Where-Object Name -eq 'sp_helpdb') | Should Be $null
+        It "Should be successful" {
+            ($results | Where-Object Name -eq $procName).Status | Should -Be 'Successful'
         }
     }
 }
