@@ -580,7 +580,6 @@ function New-DbaAvailabilityGroup {
         $dbdone = $false
         do {
             $null = Add-DbaAgDatabase -SqlInstance $Primary -SqlCredential $PrimarySqlCredential -AvailabilityGroup $Name -Database $Database -SeedingMode $SeedingMode -SharedPath $SharedPath -Secondary $Secondary -SecondarySqlCredential $SecondarySqlCredential
-
             foreach ($second in $secondaries) {
                 if ($server.HostPlatform -ne "Linux" -and $second.HostPlatform -ne "Linux") {
                     if ($Pscmdlet.ShouldProcess($second.Name, "Granting Connect permissions to service accounts: $serviceaccounts")) {
