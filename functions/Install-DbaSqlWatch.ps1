@@ -24,6 +24,9 @@ function Install-DbaSqlWatch {
     .PARAMETER Force
         If this switch is enabled, SqlWatch will be downloaded from the internet even if previously cached.
 
+    .PARAMETER PreRelease
+        If specified, a pre-release (beta) will be downloaded rather than a stable release
+
     .PARAMETER Confirm
         Prompts to confirm actions
 
@@ -78,6 +81,7 @@ function Install-DbaSqlWatch {
         [PSCredential]$SqlCredential,
         [string]$Database = "SQLWATCH",
         [string]$LocalFile,
+        [switch]$PreRelease,
         [switch]$Force,
         [switch]$EnableException
     )
@@ -88,17 +92,19 @@ function Install-DbaSqlWatch {
         $tempFolder = ([System.IO.Path]::GetTempPath()).TrimEnd("\")
         $zipfile = "$tempFolder\SqlWatch.zip"
 
+        $releasetxt = $(if ($PreRelease) {"pre-release"} else {"release"})
+
         if (-not $LocalFile) {
-            if ($PSCmdlet.ShouldProcess($env:computername, "Downloading latest release from GitHub")) {
+            if ($PSCmdlet.ShouldProcess($env:computername, "Downloading latest $releasetxt from GitHub")) {
                 Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Downloading latest release from GitHub"
                 # query the releases to find the latest, check and see if its cached
                 $ReleasesUrl = "https://api.github.com/repos/marcingminski/sqlwatch/releases"
                 $DownloadBase = "https://github.com/marcingminski/sqlwatch/releases/download/"
 
-                Write-Message -Level Verbose -Message "Checking GitHub for the latest release."
-                $LatestReleaseUrl = (Invoke-TlsWebRequest -UseBasicParsing -Uri $ReleasesUrl | ConvertFrom-Json)[0].assets[0].browser_download_url
+                Write-Message -Level Verbose -Message "Checking GitHub for the latest $releasetxt."
+                $LatestReleaseUrl = ((Invoke-TlsWebRequest -UseBasicParsing -Uri $ReleasesUrl | ConvertFrom-Json) | Where-Object { $_.prerelease -eq $PreRelease })[0].assets[0].browser_download_url
 
-                Write-Message -Level VeryVerbose -Message "Latest release is available at $LatestReleaseUrl"
+                Write-Message -Level VeryVerbose -Message "Latest $releasetxt is available at $LatestReleaseUrl"
                 $LocallyCachedZip = Join-Path -Path $DbatoolsData -ChildPath $($LatestReleaseUrl -replace $DownloadBase, '');
 
                 # if local cached copy exists, use it, otherwise download a new one
