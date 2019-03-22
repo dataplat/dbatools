@@ -28,7 +28,8 @@ function Start-DbaMigration {
         All Resource Governor objects. Use -Exclude ResourceGovernor to skip.
         All Server Audit Specifications. Use -Exclude ServerAuditSpecifications to skip.
         All Custom Errors (User Defined Messages). Use -Exclude CustomErrors to skip.
-        Copies All Data Collector collection sets. Does not configure the server. Use -Exclude DataCollector to skip.
+        All Data Collector collection sets. Does not configure the server. Use -Exclude DataCollector to skip.
+        All startup procedures. Use -Exclude StartupProcedures to skip.
 
         This script provides the ability to migrate databases using detach/copy/attach or backup/restore. SQL Server logins, including passwords, SID and database/server roles can also be migrated. In addition, job server objects can be migrated and server configuration settings can be exported or migrated. This script works with named instances, clusters and SQL Express.
 
@@ -79,10 +80,10 @@ function Start-DbaMigration {
     .PARAMETER SetSourceReadOnly
         If this switch is enabled, all migrated databases will be set to ReadOnly on the source instance prior to detach/attach & backup/restore. If -Reattach is specified, the database is set to read-only after reattaching.
 
-    
+
     .PARAMETER Exclude
         Exclude one or more objects to migrate
-    
+
         Databases
         Logins
         AgentServer
@@ -102,6 +103,7 @@ function Start-DbaMigration {
         ServerAuditSpecifications
         CustomErrors
         DataCollector
+        StartupProcedures
 
     .PARAMETER ExcludeSaRename
         If this switch is enabled, the sa account will not be renamed on the destination instance to match the source.
@@ -202,7 +204,7 @@ function Start-DbaMigration {
         [switch]$IncludeSupportDbs,
         [PSCredential]$SourceSqlCredential,
         [PSCredential]$DestinationSqlCredential,
-        [ValidateSet('Databases', 'Logins', 'AgentServer', 'Credentials', 'LinkedServers', 'SpConfigure', 'CentralManagementServer', 'DatabaseMail', 'SysDbUserObjects', 'SystemTriggers', 'BackupDevices', 'Audits', 'Endpoints', 'ExtendedEvents', 'PolicyManagement', 'ResourceGovernor', 'ServerAuditSpecifications', 'CustomErrors', 'DataCollector')]
+        [ValidateSet('Databases', 'Logins', 'AgentServer', 'Credentials', 'LinkedServers', 'SpConfigure', 'CentralManagementServer', 'DatabaseMail', 'SysDbUserObjects', 'SystemTriggers', 'BackupDevices', 'Audits', 'Endpoints', 'ExtendedEvents', 'PolicyManagement', 'ResourceGovernor', 'ServerAuditSpecifications', 'CustomErrors', 'DataCollector', 'StartupProcedures')]
         [string[]]$Exclude,
         [switch]$DisableJobsOnDestination,
         [switch]$DisableJobsOnSource,
@@ -212,10 +214,10 @@ function Start-DbaMigration {
         [switch]$Force,
         [switch]$EnableException
     )
-    
+
     begin {
         Test-DbaDeprecation -DeprecatedOn 1.0.0 -Parameter NetworkShare -CustomMessage "Using the parameter NetworkShare is deprecated. This parameter will be removed in version 1.0.0 or before. Use SharedPath instead."
-        
+
         if ($Exclude -notcontains "Databases") {
             if (-not $BackupRestore -and -not $DetachAttach -and -not $UseLastBackup) {
                 Stop-Function -Message "You must specify a database migration method (-BackupRestore or -DetachAttach) or -Exclude Databases"
@@ -246,7 +248,7 @@ function Start-DbaMigration {
         if ($UseLastBackup -and -not $BackupRestore) {
             $BackupRestore = $true
         }
-        
+
         $elapsed = [System.Diagnostics.Stopwatch]::StartNew()
         $started = Get-Date
         $sourceserver = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
@@ -347,12 +349,12 @@ function Start-DbaMigration {
                 $null = Update-SqlDbOwner -Source $sourceserver -Destination $dest -DestinationSqlCredential $DestinationSqlCredential
             }
         }
-        
+
         if ($Exclude -notcontains 'LinkedServers') {
             Write-Message -Level Verbose -Message "Migrating linked servers"
             Copy-DbaLinkedServer -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Force:$Force
         }
-        
+
         if ($Exclude -notcontains 'DataCollector') {
             Write-Message -Level Verbose -Message "Migrating Data Collector collection sets"
             Copy-DbaDataCollector -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Force:$Force
@@ -398,6 +400,11 @@ function Start-DbaMigration {
         if ($Exclude -notcontains 'AgentServer') {
             Write-Message -Level Verbose -Message "Migrating job server"
             Copy-DbaAgentServer -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -DisableJobsOnDestination:$DisableJobsOnDestination -DisableJobsOnSource:$DisableJobsOnSource -Force:$Force
+        }
+
+        if ($Exclude -notcontains 'StartupProcedures') {
+            Write-Message -Level Verbose -Message "Migrating startup procedures"
+            Copy-DbaStartupProcedure -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential
         }
     }
     end {
