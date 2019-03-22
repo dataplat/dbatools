@@ -16,6 +16,11 @@ function Add-DbaAgListener {
     .PARAMETER AvailabilityGroup
         The Availability Group to which a listener will be bestowed upon.
 
+    .PARAMETER Name
+        The name of the listener. If one is not specified, the Availability Group name will be used.
+
+        Note that Name cannot be used with Multiple Ags.
+
     .PARAMETER IPAddress
         Sets the IP address of the availability group listener.
 
@@ -71,6 +76,7 @@ function Add-DbaAgListener {
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string[]]$AvailabilityGroup,
+        [string]$Name,
         [ipaddress]$IPAddress,
         [ipaddress]$SubnetMask = "255.255.255.0",
         [int]$Port = 1433,
