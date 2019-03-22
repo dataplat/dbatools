@@ -119,12 +119,14 @@ function Copy-DbaLinkedServer {
                 }
 
                 $linkedServerName = $currentLinkedServer.Name
+                $linkedServerProductName = $currentLinkedServer.ProductName
                 $linkedServerDataSource = $currentLinkedServer.DataSource
 
                 $copyLinkedServer = [pscustomobject]@{
                     SourceServer      = $sourceServer.Name
                     DestinationServer = $destServer.Name
                     Name              = $linkedServerName
+                    ProductName       = $linkedServerProductName
                     DataSource        = $linkedServerDataSource
                     Type              = "Linked Server"
                     Status            = $null
@@ -183,7 +185,7 @@ function Copy-DbaLinkedServer {
 
                         $destServer.Query($sql)
 
-                        if ($copyLinkedServer.Name -ne $copyLinkedServer.DataSource) {
+                        if ($copyLinkedServer.ProductName -eq 'SQL Server' -and $copyLinkedServer.Name -ne $copyLinkedServer.DataSource) {
                             $sql2 = "EXEC sp_setnetname '$($copyLinkedServer.Name)', '$($copyLinkedServer.DataSource)'; "
                             $destServer.Query($sql2)
                         }
@@ -239,7 +241,7 @@ function Copy-DbaLinkedServer {
             $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
             return
         } catch {
-            Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Source
+            Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $Source
             return
         }
         if (!(Test-SqlSa -SqlInstance $sourceServer -SqlCredential $SourceSqlCredential)) {
@@ -264,7 +266,7 @@ function Copy-DbaLinkedServer {
             try {
                 $destServer = Connect-SqlInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential
             } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
             }
             if (!(Test-SqlSa -SqlInstance $destServer -SqlCredential $DestinationSqlCredential)) {
                 Stop-Function -Message "Not a sysadmin on $destinstance" -Target $destServer -Continue

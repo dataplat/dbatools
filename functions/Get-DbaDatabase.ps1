@@ -9,7 +9,7 @@ function Get-DbaDatabase {
         SQL Server. If the name of the database is provided, the command will return only the specific database information.
 
     .PARAMETER SqlInstance
-        The target SQL Server instance or instances. Defaults to localhost.
+        The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
@@ -150,8 +150,8 @@ function Get-DbaDatabase {
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [Alias("Databases")]
-        [object[]]$Database,
-        [object[]]$ExcludeDatabase,
+        [string[]]$Database,
+        [string[]]$ExcludeDatabase,
         [Alias("SystemDbOnly", "NoUserDb", "ExcludeAllUserDb")]
         [switch]$ExcludeUser,
         [Alias("UserDbOnly", "NoSystemDb", "ExcludeAllSystemDb")]
@@ -188,7 +188,7 @@ function Get-DbaDatabase {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
             } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             if (!$IncludeLastUsed) {
@@ -276,7 +276,11 @@ function Get-DbaDatabase {
 
             $inputObject = @()
             foreach ($dt in $backed_info) {
-                $inputObject += $server.Databases | Where-Object Name -ceq $dt.name
+                if ($server.DatabaseEngineType -eq "SqlAzureDatabase") {
+                    $inputObject += $server.Databases[$dt.name]
+                } else {
+                    $inputObject += $server.Databases | Where-Object Name -ceq $dt.name
+                }
             }
             $inputobject = $inputObject |
                 Where-Object {
@@ -344,7 +348,6 @@ function Get-DbaDatabase {
                     Add-Member -Force -InputObject $db -MemberType NoteProperty -Name LastRead -value $lastusedinfo.last_read
                     Add-Member -Force -InputObject $db -MemberType NoteProperty -Name LastWrite -value $lastusedinfo.last_write
                     Select-DefaultView -InputObject $db -Property $defaults
-                    #try { $server.Databases.Refresh() } catch {}
                 }
             } catch {
                 Stop-Function -ErrorRecord $_ -Target $instance -Message "Failure. Collection may have been modified. If so, please use parens (Get-DbaDatabase ....) | when working with commands that modify the collection such as Remove-DbaDatabase." -Continue

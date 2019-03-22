@@ -143,7 +143,7 @@ function Remove-DbaDatabaseSafely {
             return
         }
 
-        $sourceserver = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $sqlCredential -ParameterConnection
+        $sourceserver = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $sqlCredential
 
         if (-not $destination) {
             $destination = $sqlinstance
@@ -198,22 +198,26 @@ function Remove-DbaDatabaseSafely {
                 $serviceName = 'MSSQLSERVER'
             } else {
                 $instance = $destserver.InstanceName
-                if ($instance.length -eq 0) { $instance = "MSSQLSERVER" }
-                $serviceName = "SQL Server Agent ($instance)"
+                if ($instance.length -eq 0) {
+                    $instance = "MSSQLSERVER"
+                    $serviceName = "SQLSERVERAGENT"
+                } else {
+                    $serviceName = "SQLAgent`$$($instance)"
+                }
             }
 
             if ($Pscmdlet.ShouldProcess($destination, "Starting Sql Agent")) {
                 try {
                     $ipaddr = Resolve-SqlIpAddress $destserver
-                    $agentservice = Get-Service -ComputerName $ipaddr -DisplayName $serviceName
+                    $agentservice = Get-Service -ComputerName $ipaddr -Name $serviceName
 
                     if ($agentservice.Status -ne 'Running') {
                         $agentservice.Start()
                         $timeout = New-Timespan -seconds 60
                         $sw = [diagnostics.stopwatch]::StartNew()
-                        $agentstatus = (Get-Service -ComputerName $ipaddr -DisplayName $serviceName).Status
+                        $agentstatus = (Get-Service -ComputerName $ipaddr -Name $serviceName).Status
                         while ($AgentStatus -ne 'Running' -and $sw.elapsed -lt $timeout) {
-                            $agentStatus = (Get-Service -ComputerName $ipaddr -DisplayName $serviceName).Status
+                            $agentStatus = (Get-Service -ComputerName $ipaddr -Name $serviceName).Status
                         }
                     }
                 }
@@ -251,7 +255,7 @@ function Remove-DbaDatabaseSafely {
 
                 catch {
                     Write-Message -Level Warning -Message "DBCC CHECKDB failed."
-                    Stop-Function -Message "Error occured: $_" -Target $agentservice -ErrorRecord $_ -Continue
+                    Stop-Function -Message "Error occurred: $_" -Target $agentservice -ErrorRecord $_ -Continue
 
                     if ($force) {
                         return $true

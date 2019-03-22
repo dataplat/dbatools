@@ -32,7 +32,10 @@ function Copy-DbaAgentJob {
     .PARAMETER DisableOnDestination
         If this switch is enabled, the newly migrated job will be disabled on the destination server.
 
-    .PARAMETER WhatIf
+     .PARAMETER InputObject
+        Piped in jobs from Get-DbaAgentJob
+
+        .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
     .PARAMETER Confirm
@@ -71,15 +74,14 @@ function Copy-DbaAgentJob {
         PS C:\> Copy-DbaAgentJob -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force
 
         Shows what would happen if the command were executed using force.
-        
+
     .EXAMPLE
-        PS C:\> Get-DbaAgentJob -SqlInstance sqlserver2014a | Where-Object Category -eq "Report Server" | ForEach-Object {Copy-DbaAgentJob -Source $_.SqlInstance -Job $_.Name -Destination sqlserver2014b}
-        
+        PS C:\> Get-DbaAgentJob -SqlInstance sqlserver2014a | Where-Object Category -eq "Report Server" | Copy-DbaAgentJob -Destination sqlserver2014b
+
         Copies all SSRS jobs (subscriptions) from AlwaysOn Primary SQL instance sqlserver2014a to AlwaysOn Secondary SQL instance sqlserver2014b
     #>
     [cmdletbinding(DefaultParameterSetName = "Default", SupportsShouldProcess)]
     param (
-        [parameter(Mandatory)]
         [DbaInstanceParameter]$Source,
         [PSCredential]$SourceSqlCredential,
         [parameter(Mandatory)]
@@ -90,18 +92,19 @@ function Copy-DbaAgentJob {
         [switch]$DisableOnSource,
         [switch]$DisableOnDestination,
         [switch]$Force,
-        [Alias('Silent')]
+        [parameter(ValueFromPipeline)]
+        [Microsoft.SqlServer.Management.Smo.Agent.Job[]]$InputObject,
         [switch]$EnableException
     )
     begin {
-        try {
-            $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
-        } catch {
-            Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Source
-            return
+        if ($Source) {
+            try {
+                $InputObject = Get-DbaAgentJob -SqlInstance $Source -SqlCredential $SourceSqlCredential -Job $Job -ExcludeJob $ExcludeJob
+            } catch {
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $Source
+                return
+            }
         }
-
-        $serverJobs = $sourceServer.JobServer.Jobs
     }
     process {
         if (Test-FunctionInterrupt) { return }
@@ -109,16 +112,17 @@ function Copy-DbaAgentJob {
             try {
                 $destServer = Connect-SqlInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential
             } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
             }
             $destJobs = $destServer.JobServer.Jobs
 
-            foreach ($serverJob in $serverJobs) {
-                $jobName = $serverJob.name
+            foreach ($serverJob in $InputObject) {
+                $jobName = $serverJob.Name
                 $jobId = $serverJob.JobId
+                $sourceserver = $serverJob.Parent.Parent
 
                 $copyJobStatus = [pscustomobject]@{
-                    SourceServer      = $sourceServer.Name
+                    SourceServer      = $sourceserver.Name
                     DestinationServer = $destServer.Name
                     Name              = $jobName
                     Type              = "Agent Job"

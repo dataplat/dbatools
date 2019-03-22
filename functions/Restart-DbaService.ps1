@@ -65,7 +65,7 @@ function Restart-DbaService {
         Gets the SQL Server related services on computers sql1, sql2 and sql3 and restarts them.
 
     .EXAMPLE
-        PS C:\> Restart-DbaService -ComputerName sql1,sql2 -Instance MSSQLSERVER
+        PS C:\> Restart-DbaService -ComputerName sql1,sql2 -InstanceName MSSQLSERVER
 
         Restarts the SQL Server services related to the default instance MSSQLSERVER on computers sql1 and sql2.
 

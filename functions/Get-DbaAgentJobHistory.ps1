@@ -241,7 +241,7 @@ function Get-DbaAgentJobHistory {
                     Add-Member -Force -InputObject $execution -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
                     Add-Member -Force -InputObject $execution -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
                     Add-Member -Force -InputObject $execution -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
-                    $DurationInSeconds = ($execution.RunDuration % 100) + [int]( ($execution.RunDuration % 10000 ) / 100 ) * 60 + [int]( ($execution.RunDuration % 1000000 ) / 10000 ) * 60 * 60
+                    $DurationInSeconds = ($execution.RunDuration % 100) + [math]::floor( ($execution.RunDuration % 10000 ) / 100 ) * 60 + [math]::floor( ($execution.RunDuration % 1000000 ) / 10000 ) * 60 * 60
                     Add-Member -Force -InputObject $execution -MemberType NoteProperty -Name StartDate -value ([dbadatetime]$execution.RunDate)
                     Add-Member -Force -InputObject $execution -MemberType NoteProperty -Name EndDate -value ([dbadatetime]$execution.RunDate.AddSeconds($DurationInSeconds))
                     Add-Member -Force -InputObject $execution -MemberType NoteProperty -Name Duration -value ([prettytimespan](New-TimeSpan -Seconds $DurationInSeconds))
@@ -289,7 +289,7 @@ function Get-DbaAgentJobHistory {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
 

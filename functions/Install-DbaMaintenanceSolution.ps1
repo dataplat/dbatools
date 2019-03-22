@@ -72,13 +72,13 @@ function Install-DbaMaintenanceSolution {
         Installs Ola Hallengren's Solution objects on RES14224 in the DBA database.
         Backups will default to the default Backup Directory.
         If the Maintenance Solution already exists, the script will be halted.
-    
+
     .EXAMPLE
         PS C:\> Install-DbaMaintenanceSolution -SqlInstance RES14224 -Database DBA -BackupLocation "Z:\SQLBackup" -CleanupTime 72
 
         This will create the Ola Hallengren's Solution objects. Existing objects are not affected in any way.
 
-    
+
     .EXAMPLE
         PS C:\> $params = @{
                 >> SqlInstance = 'MyServer'
@@ -91,7 +91,7 @@ function Install-DbaMaintenanceSolution {
                 >> Verbose = $true
                 >> }
                 >> Install-DbaMaintenanceSolution @params
-    
+
         Installs Maintenance Solution to myserver in database. Adds Agent Jobs, and if any currently exist, they'll be replaced.
 
     .EXAMPLE
@@ -283,7 +283,7 @@ function Install-DbaMaintenanceSolution {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -NonPooled
             } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             if ((Test-Bound -ParameterName ReplaceExisting -Not)) {
@@ -304,7 +304,7 @@ function Install-DbaMaintenanceSolution {
 
             $db = $server.Databases[$Database]
 
-            if (-not $Solution -match 'All') {
+            if (-not ($Solution -match 'All')) {
                 $required = @('CommandExecute.sql')
             }
 
@@ -362,7 +362,7 @@ function Install-DbaMaintenanceSolution {
                     if ($jobs) {
                         $jobs | ForEach-Object {
                             if ($Pscmdlet.ShouldProcess($instance, "Dropping job $_.name")) {
-                                Remove-DbaAgentJob -SqlInstance $instance -Job $_.name
+                                Remove-DbaAgentJob -SqlInstance $server -Job $_.name
                             }
                         }
                     }

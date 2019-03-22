@@ -290,7 +290,7 @@ function Publish-DbaDacPackage {
                 try {
                     $dacServices = New-Object Microsoft.SqlServer.Dac.DacServices $connstring
                 } catch {
-                    Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $server -Continue
+                    Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $server -Continue
                 }
 
                 try {

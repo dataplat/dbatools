@@ -118,7 +118,7 @@ function Invoke-DbaDbShrink {
     .EXAMPLE
         PS C:\> Invoke-DbaDbShrink -SqlInstance sql2012 -AllUserDatabases
 
-        Shrinks all databases on SQL2012 (not ideal for production)
+        Shrinks all user databases on SQL2012 (not ideal for production)
 
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Low')]
@@ -157,13 +157,13 @@ function Invoke-DbaDbShrink {
             return
         }
 
-        if ((Test-Bound -ParameterName StepSize) -and $stepsize -lt 1024) {
+        if ((Test-Bound -ParameterName StepSize) -and $StepSize -lt 1024) {
             Stop-Function -Message "StepSize is measured in bits. Did you mean $StepSize bits? If so, please use 1024 or above. If not, then use the PowerShell bit notation like $($StepSize)MB or $($StepSize)GB"
             return
         }
 
-        if ($stepsize) {
-            $StepSizeKB = ([dbasize]($StepSize)).Kilobyte
+        if ($StepSize) {
+            $stepSizeKB = ([dbasize]($StepSize)).Kilobyte
         }
         $StatementTimeoutSeconds = $StatementTimeout * 60
 
@@ -182,13 +182,17 @@ function Invoke-DbaDbShrink {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             $server.ConnectionContext.StatementTimeout = $StatementTimeoutSeconds
             Write-Message -Level Verbose -Message "Connection timeout set to $StatementTimeout"
 
             $dbs = $server.Databases | Where-Object {$_.IsAccessible}
+
+            if ($AllUserDatabases) {
+                $dbs = $dbs | Where-Object { $_.IsSystemObject -eq $false }
+            }
 
             if ($Database) {
                 $dbs = $dbs | Where-Object Name -In $Database
@@ -248,12 +252,12 @@ function Invoke-DbaDbShrink {
 
                                 $shrinkGap = ($startingSize - $desiredFileSize)
                                 Write-Message -Level Verbose -Message "ShrinkGap: $([int]$shrinkGap) KB"
-                                Write-Message -Level Verbose -Message "Step Size: $(([dbasize]$StepSize).Megabyte) MB"
+                                Write-Message -Level Verbose -Message "Step Size: $($stepSizeKB) KB"
 
-                                if ($StepSizeKB -and ($shrinkGap -gt $stepSizeKB)) {
+                                if ($stepSizeKB -and ($shrinkGap -ge $stepSizeKB)) {
                                     for ($i = 1; $i -le [int](($shrinkGap) / $stepSizeKB); $i++) {
-                                        Write-Message -Level Verbose -Message "Step: $i"
-                                        $shrinkSize = $startingSize - (($StepSizeKB * 1024 * 1024) * $i)
+                                        Write-Message -Level Verbose -Message "Step: $i / $([int](($shrinkGap) / $stepSizeKB))"
+                                        $shrinkSize = $startingSize - ($stepSizeKB * $i)
                                         if ($shrinkSize -lt $desiredFileSize) {
                                             $shrinkSize = $desiredFileSize
                                         }

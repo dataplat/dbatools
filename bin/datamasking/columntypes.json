@@ -1,35 +1,5 @@
 [
     {
-        "TypeName": "Firstname",
-        "Synonym": [
-            "Firstname",
-            "Forename"
-        ]
-    },
-    {
-        "TypeName": "Lastname",
-        "Synonym": [
-            "Lastname",
-            "Surname"
-        ]
-    },
-    {
-        "TypeName": "Fullname",
-        "Synonym": [
-            "Fullname",
-            "TypeName"
-        ]
-    },
-    {
-        "TypeName": "Phone",
-        "Synonym": [
-            "Phonenumber",
-            "Phone",
-            "Telephone",
-            "TelephoneNumber"
-        ]
-    },
-    {
         "TypeName": "Address",
         "Synonym": [
             "Address",
@@ -39,11 +9,46 @@
         ]
     },
     {
-        "TypeName": "Zipcode",
+        "TypeName": "Bic",
         "Synonym": [
-            "Zipcode",
-            "Zip",
-            "Postalcode"
+            "Bic",
+            "BicAddress"
+        ]
+    },
+    {
+        "TypeName": "Bitcoin",
+        "Synonym": [
+            "Bitcoin",
+            "BitcoinAddress"
+        ]
+    },
+    {
+        "TypeName": "Email",
+        "Synonym": [
+            "Email",
+            "E-mail",
+            "EmailAddress"
+        ]
+    },
+    {
+        "TypeName": "Ethereum",
+        "Synonym": [
+            "Ethereum",
+            "EthereumAddress"
+        ]
+    },
+    {
+        "TypeName": "Creditcard",
+        "Synonym": [
+            "Creditcard",
+            "CreditcardNumber"
+        ]
+    },
+    {
+        "TypeName": "CreditcardCVV",
+        "Synonym": [
+            "Cvv",
+            "CreditcardCvv"
         ]
     },
     {
@@ -53,9 +58,10 @@
         ]
     },
     {
-        "TypeName": "State",
+        "TypeName": "Company",
         "Synonym": [
-            "State"
+            "Company",
+            "CompanyName"
         ]
     },
     {
@@ -68,6 +74,34 @@
         "TypeName": "CountryCode",
         "Synonym": [
             "CountryCode"
+        ]
+    },
+    {
+        "TypeName": "Firstname",
+        "Synonym": [
+            "Firstname",
+            "Forename"
+        ]
+    },
+    {
+        "TypeName": "Fullname",
+        "Synonym": [
+            "Fullname",
+            "TypeName"
+        ]
+    },
+    {
+        "TypeName": "Iban",
+        "Synonym": [
+            "Iban",
+            "IbanNumber"
+        ]
+    },
+    {
+        "TypeName": "Lastname",
+        "Synonym": [
+            "Lastname",
+            "Surname"
         ]
     },
     {
@@ -85,19 +119,44 @@
         ]
     },
     {
-        "TypeName": "Creditcard",
+        "TypeName": "Phone",
         "Synonym": [
-            "Creditcard",
-            "CreditcardNumber"
+            "Fax",
+            "FaxNumber",
+            "Phonenumber",
+            "Phone",
+            "Telephone",
+            "TelephoneNumber"
+        ]
+    },
+    {
+        "TypeName": "State",
+        "Synonym": [
+            "State"
+        ]
+    },
+    {
+        "TypeName": "StateAbbr",
+        "Synonym": [
+            "StateAbbreviation",
+            "StateCode"
         ]
     },
     {
         "TypeName": "Username",
         "Synonym": [
             "Login",
-			"LoginId",
+            "LoginId",
             "User",
             "UserId"
+        ]
+    },
+    {
+        "TypeName": "Zipcode",
+        "Synonym": [
+            "Zipcode",
+            "Zip",
+            "Postalcode"
         ]
     }
 ]
