@@ -92,7 +92,7 @@ function Copy-DbaAgentAlert {
             $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
             $serverAlerts = $sourceServer.JobServer.Alerts
         } catch {
-            Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Source
+            Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $Source
             return
         }
     }
@@ -102,7 +102,7 @@ function Copy-DbaAgentAlert {
             try {
                 $destServer = Connect-SqlInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential
             } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
             }
             $destAlerts = $destServer.JobServer.Alerts
 
@@ -148,6 +148,23 @@ function Copy-DbaAgentAlert {
                 }
                 if (($Alert -and $Alert -notcontains $alertName) -or ($ExcludeAlert -and $ExcludeAlert -contains $alertName)) {
                     continue
+                }
+
+                if ($serverAlert.HasNotification) {
+                    $alertOperators = $serverAlert.EnumNotifications()
+                    if ($destServerOperators.Name -notin $alertOperators.OperatorName) {
+                        $missingOperators = ($alertOperators | Where-Object OperatorName -NotIn $destServerOperators.Name).OperatorName
+                        if ($missingOperators.Count -gt 0 -or $missingOperators.Length -gt 0) {
+                            $operatorList = $missingOperators -join ','
+                            if ($PSCmdlet.ShouldProcess($destinstance, "Missing operator(s) at destination.")) {
+                                $copyAgentAlertStatus.Status = "Skipped"
+                                $copyAgentAlertStatus.Notes = "Operator(s) [$operatorList] do not exist on destination"
+                                $copyAgentAlertStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                                Write-Message -Message "One or more operators alerted by [$alertName] is not present at the destination. Alert will not be copied. Use Copy-DbaAgentOperator to copy the operator(s) to the destination. Missing operator(s): $operatorList" -Level Warning
+                                continue
+                            }
+                        }
+                    }
                 }
 
                 if ($destAlerts.name -contains $serverAlert.name) {

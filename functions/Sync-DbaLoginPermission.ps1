@@ -131,7 +131,7 @@ function Sync-DbaLoginPermission {
                 $Login = ($sourceServer.Logins | Where-Object Name -NotIn $ExcludeLogin).Name
             }
         } catch {
-            Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Source -Continue
+            Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $Source -Continue
             return
         }
     }
@@ -142,7 +142,7 @@ function Sync-DbaLoginPermission {
             try {
                 $destServer = Connect-SqlInstance -SqlInstance $dest -SqlCredential $DestinationSqlCredential -MinimumVersion 8
             } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $dest -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $dest -Continue
             }
 
             if ($PSCmdlet.ShouldProcess("Syncing Logins $Login")) {

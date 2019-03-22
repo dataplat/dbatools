@@ -183,7 +183,7 @@ function Copy-DbaCredential {
         try {
             $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -MinimumVersion 9
         } catch {
-            Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance
+            Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance
             return
         }
 
@@ -210,7 +210,7 @@ function Copy-DbaCredential {
             try {
                 $destServer = Connect-SqlInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential -MinimumVersion 9
             } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
             }
             Invoke-SmoCheck -SqlInstance $destServer
 

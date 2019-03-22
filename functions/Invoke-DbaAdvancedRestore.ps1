@@ -130,7 +130,7 @@ function Invoke-DbaAdvancedRestore {
         try {
             $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
         } catch {
-            Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+            Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             return
         }
         if ($KeepCDC -and ($NoRecovery -or ('' -ne $StandbyDirectory))) {
@@ -172,8 +172,8 @@ function Invoke-DbaAdvancedRestore {
                         }
                     }
                 } elseif (-not $WithReplace -and (-not $VerifyOnly)) {
-                    Stop-Function -Message "$Database exists and WithReplace not specified, stopping" -EnableException $EnableException
-                    return
+                    Write-Message -Level verbose -Message "$Database exists and WithReplace not specified, stopping"
+                    continue
                 }
             }
             Write-Message -Message "WithReplace  = $WithReplace" -Level Debug

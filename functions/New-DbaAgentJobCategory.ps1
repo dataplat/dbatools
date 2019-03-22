@@ -89,7 +89,7 @@ function New-DbaAgentJobCategory {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             foreach ($cat in $Category) {
@@ -114,7 +114,7 @@ function New-DbaAgentJobCategory {
                 } # end else category exists
 
                 # Return the job category
-                Get-DbaAgentJobCategory -SqlInstance $instance -Category $cat
+                Get-DbaAgentJobCategory -SqlInstance $server -Category $cat
 
             } # for each category
 

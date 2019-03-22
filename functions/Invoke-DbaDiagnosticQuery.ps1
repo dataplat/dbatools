@@ -228,7 +228,7 @@ function Invoke-DbaDiagnosticQuery {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
             } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             Write-Message -Level Verbose -Message "Collecting diagnostic query data from server: $instance"
@@ -347,7 +347,7 @@ function Invoke-DbaDiagnosticQuery {
                                 Write-Message -Level Verbose -Message ("Empty result for Query {0} - {1} - {2}" -f $scriptpart.QueryNr, $scriptpart.QueryName, $scriptpart.Description)
                             }
                         } catch {
-                            Write-Message -Level Verbose -Message ('Some error has occured on Server: {0} - Script: {1}, result unavailable' -f $instance, $scriptpart.QueryName) -Target $instance -ErrorRecord $_
+                            Write-Message -Level Verbose -Message ('Some error has occurred on Server: {0} - Script: {1}, result unavailable' -f $instance, $scriptpart.QueryName) -Target $instance -ErrorRecord $_
                         }
                         if ($result) {
                             [pscustomobject]@{
@@ -422,7 +422,7 @@ function Invoke-DbaDiagnosticQuery {
                                     Write-Message -Level Verbose -Message ("Empty result for Query {0} - {1} - {2}" -f $scriptpart.QueryNr, $scriptpart.QueryName, $scriptpart.Description) -Target $scriptpart -ErrorRecord $_
                                 }
                             } catch {
-                                Write-Message -Level Verbose -Message ('Some error has occured on Server: {0} - Script: {1} - Database: {2}, result will not be saved' -f $instance, $scriptpart.QueryName, $currentDb) -Target $currentdb -ErrorRecord $_
+                                Write-Message -Level Verbose -Message ('Some error has occurred on Server: {0} - Script: {1} - Database: {2}, result will not be saved' -f $instance, $scriptpart.QueryName, $currentDb) -Target $currentdb -ErrorRecord $_
                             }
 
                             if ($result) {

@@ -98,7 +98,7 @@ function Copy-DbaPolicyManagement {
         [Alias('Silent')]
         [switch]$EnableException
     )
-    
+
     begin {
         if (-not $script:isWindows) {
             Stop-Function -Message "Copy-DbaPolicyManagement does not support Linux - we're still waiting for the Core SMOs from Microsoft"
@@ -107,7 +107,7 @@ function Copy-DbaPolicyManagement {
         try {
             $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -MinimumVersion 10
         } catch {
-            Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Source
+            Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $Source
             return
         }
         $sourceSqlConn = $sourceServer.ConnectionContext.SqlConnectionObject
@@ -122,7 +122,7 @@ function Copy-DbaPolicyManagement {
             try {
                 $destServer = Connect-SqlInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential -MinimumVersion 10
             } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
             }
             $destSqlConn = $destServer.ConnectionContext.SqlConnectionObject
             $destSqlStoreConnection = New-Object Microsoft.SqlServer.Management.Sdk.Sfc.SqlStoreConnection $destSqlConn
@@ -147,8 +147,57 @@ function Copy-DbaPolicyManagement {
             }
 
             <#
+                            Categories
+            #>
+
+            Write-Message -Level Verbose -Message "Migrating categories"
+            $uniquePolicyCategories = $storePolicies | Select-Object -ExpandProperty PolicyCategory -Unique
+            $storeCategories = $sourceStore.PolicyCategories | Where-Object { $_.Name -in $uniquePolicyCategories }
+            foreach ($category in $storeCategories) {
+                $categoryName = $category.Name
+
+                $copyCategoryStatus = [pscustomobject]@{
+                    SourceServer      = $sourceServer.Name
+                    DestinationServer = $destServer.Name
+                    Name              = $categoryName
+                    Type              = "Policy Category"
+                    Status            = $null
+                    Notes             = $null
+                    DateTime          = [DbaDateTime](Get-Date)
+                }
+
+                if ($null -ne $destStore.PolicyCategories['Database']) {
+                    Write-Message -Level Verbose -Message "Policy category '$categoryName' was skipped because it already exists on $destination."
+
+                    $copyCategoryStatus.Status = "Skipped"
+                    $copyCategoryStatus.Notes = "Already exists on destination"
+                    $copyCategoryStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                    continue
+                }
+
+                if ($Pscmdlet.ShouldProcess($destination, "Migrating policy category $categoryName") -and $copyCategoryStatus.Status -ne 'Skipped') {
+                    try {
+                        $sql = $category.ScriptCreate().GetScript() | Out-String
+                        Write-Message -Level Debug -Message $sql
+                        Write-Message -Level Verbose -Message "Copying policy category $categoryName"
+                        $null = $destServer.Query($sql)
+                        $destStore.PolicyCategories.Refresh()
+
+                        $copyCategoryStatus.Status = "Successful"
+                        $copyCategoryStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                    } catch {
+                        $copyCategoryStatus.Status = "Failed"
+                        $copyCategoryStatus.Notes = $_.Exception.Message
+                        $copyCategoryStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+
+                        Stop-Function -Message "Issue creating policy category on $destination" -Target $categoryName -ErrorRecord $_
+                    }
+                }
+            }
+
+            <#
                         Conditions
-        #>
+            #>
 
             Write-Message -Level Verbose -Message "Migrating conditions"
             foreach ($condition in $storeConditions) {
@@ -215,7 +264,7 @@ function Copy-DbaPolicyManagement {
 
             <#
                         Policies
-        #>
+            #>
 
             Write-Message -Level Verbose -Message "Migrating policies"
             foreach ($policy in $storePolicies) {
@@ -261,7 +310,7 @@ function Copy-DbaPolicyManagement {
                     try {
                         $destStore.Conditions.Refresh()
                         $destStore.Policies.Refresh()
-                        $sql = $policy.ScriptCreateWithDependencies().GetScript() | Out-String
+                        $sql = $policy.ScriptCreate().GetScript() | Out-String
                         Write-Message -Level Debug -Message $sql
                         Write-Message -Level Verbose -Message "Copying policy $policyName"
                         $null = $destServer.Query($sql)
