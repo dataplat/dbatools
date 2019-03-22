@@ -17,3 +17,36 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Read https://github.com/sqlcollaborative/dbatools/blob/development/contributing.md#tests
     for more guidence.
 #>
+
+Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
+    BeforeAll {
+        $server = Connect-DbaInstance -SqlInstance $script:instance2
+        $procName = "dbatoolsci_test_startup"
+        $server.Query("CREATE OR ALTER PROCEDURE $procName
+                        AS
+                        SELECT @@SERVERNAME
+                        GO")
+        $server.Query("EXEC sp_procoption @ProcName = N'$procName'
+                            , @OptionName = 'startup'
+                            , @OptionValue = 'on'")
+    }
+
+    AfterAll {
+        Invoke-DbaQuery -SqlInstance $script:instance2, $script:instance3 -Database "master" -Query "DROP PROCEDURE dbatoolsci_test_startup"
+    }
+
+    Context "Command actually works" {
+        $results = Copy-DbaStartupProcedure -Source $script:instance2 -Destination $script:instance3
+        it "Should have standard properties" {
+            $ExpectedProps = 'ComputerName,InstanceName,SqlInstance'.Split(',')
+            ($results[0].PsObject.Properties.Name | Where-Object {$_ -in $ExpectedProps} | Sort-Object) | Should Be ($ExpectedProps | Sort-Object)
+        }
+
+        It "Should include test procedure: $procName" {
+            ($results | Where-Object Name -eq $procName).Name | Should Be $procName
+        }
+        It "Should exclude system procedures" {
+            ($results | Where-Object Name -eq 'sp_helpdb') | Should Be $null
+        }
+    }
+}
