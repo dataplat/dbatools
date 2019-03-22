@@ -122,20 +122,22 @@ function Export-DbaLinkedServer {
 
                 foreach ($ls in $InputObject) {
                     $currentls = $decrypted | Where-Object Name -eq $ls.Name
-
                     if ($currentls.Password) {
-                        $password = $currentls.Password.Replace("'", "''")
-
                         $tempsql = $ls.Script()
-                        $tempsql = $tempsql.Replace(' /* For security reasons the linked server remote logins password is changed with ######## */', '')
-                        $tempsql = $tempsql.Replace("rmtpassword='########'", "rmtpassword='$password'")
+                        foreach ($map in $currentls) {
+                            $rmtuser = $map.Identity.Replace("'", "''")
+                            $password = $map.Password.Replace("'", "''")
+                            $tempsql = $tempsql.Replace(' /* For security reasons the linked server remote logins password is changed with ######## */', '')
+                            $tempsql = $tempsql.Replace("rmtuser=N'$rmtuser',@rmtpassword='########'", "rmtuser=N'$rmtuser',@rmtpassword='$password'")
+                        }
                         $sql += $tempsql
                     } else {
                         $sql += $ls.Script()
                     }
                 }
             }
-
+            $sql
+            continue
             try {
                 if ($Append) {
                     Add-Content -Path $path -Value $sql
