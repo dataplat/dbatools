@@ -191,7 +191,7 @@ function Test-DbaLastBackup {
                 $DestinationCredential = $SqlCredential
             }
 
-            if ($db.LastFullBackup -eq 'Monday, January 1, 0001 12:00:00 AM')
+            if ($db.LastFullBackup -eq 'Monday, January 1, 0001 12:00:00 AM') {
                 [pscustomobject]@{
                     SourceServer   = $source
                     TestServer     = $destination
