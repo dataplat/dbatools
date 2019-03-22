@@ -136,8 +136,6 @@ function Export-DbaLinkedServer {
                     }
                 }
             }
-            $sql
-            continue
             try {
                 if ($Append) {
                     Add-Content -Path $path -Value $sql
