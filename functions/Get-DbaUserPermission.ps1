@@ -82,7 +82,12 @@ function Get-DbaUserPermission {
     )
 
     begin {
-        $endSQL = "	   BEGIN TRY DROP FUNCTION STIG.server_effective_permissions END TRY BEGIN CATCH END CATCH;
+
+        $baseSql = [System.IO.File]::ReadAllText("$script:PSModuleRoot\bin\stig.sql")
+
+        $endSQL = "USE tempdb
+                       GO
+                       BEGIN TRY DROP FUNCTION STIG.server_effective_permissions END TRY BEGIN CATCH END CATCH;
                        GO
                        BEGIN TRY DROP VIEW STIG.server_permissions END TRY BEGIN CATCH END CATCH;
                        GO
@@ -108,7 +113,7 @@ function Get-DbaUserPermission {
 
         $serverSQL = "SELECT  'SERVER LOGINS' AS Type ,
                                     sl.name AS Member ,
-                                    ISNULL(srm.Role, 'None') AS [Role/Securable/Class] ,
+                                    ISNULL(srm.role, 'None') AS [Role/Securable/Class] ,
                                     ' ' AS [Schema/Owner] ,
                                     ' ' AS [Securable] ,
                                     ' ' AS [Grantee Type] ,
@@ -119,7 +124,7 @@ function Get-DbaUserPermission {
                                     ' ' AS [Grantor Type] ,
                                     ' ' AS [Source View]
                             FROM    master.sys.syslogins sl
-                                    LEFT JOIN tempdb.[STIG].[server_role_members] srm ON sl.name = srm.Member
+                                    LEFT JOIN tempdb.[STIG].[server_role_members] srm ON sl.name = srm.member
                             WHERE   sl.name NOT LIKE 'NT %'
                                     AND sl.name NOT LIKE '##%'
                             UNION
@@ -142,7 +147,7 @@ function Get-DbaUserPermission {
 
         $dbSQL = "SELECT  'DB ROLE MEMBERS' AS type ,
                                 Member ,
-                                ISNULL(Role, 'None') AS [Role/Securable/Class],
+                                ISNULL(Role, ' ') AS [Role/Securable/Class] ,
                                 ' ' AS [Schema/Owner] ,
                                 ' ' AS [Securable] ,
                                 ' ' AS [Grantee Type] ,
@@ -156,7 +161,7 @@ function Get-DbaUserPermission {
                         UNION
                         SELECT DISTINCT
                                 'DB SECURABLES' AS Type ,
-                                ISNULL(drm.member, 'None') AS [Role/Securable/Class] ,
+                                drm.member ,
                                 dp.[Securable Type or Class] COLLATE SQL_Latin1_General_CP1_CI_AS ,
                                 dp.[Schema/Owner] ,
                                 dp.Securable ,
@@ -168,10 +173,10 @@ function Get-DbaUserPermission {
                                 dp.[Grantor Type] COLLATE SQL_Latin1_General_CP1_CI_AS ,
                                 dp.[Source View]
                         FROM    tempdb.[STIG].[database_role_members] drm
-                                LEFT JOIN tempdb.[STIG].[database_permissions] dp ON ( drm.Member = dp.Grantee
-                                                                                      OR drm.Role = dp.Grantee
+                                LEFT JOIN tempdb.[STIG].[database_permissions] dp ON ( drm.member = dp.grantee
+                                                                                      OR drm.role = dp.grantee
                                                                                      )
-                        WHERE	dp.Grantor IS NOT NULL
+                        WHERE dp.Grantor IS NOT NULL
                                 AND [Schema/Owner] <> 'sys'"
 
         if ($IncludePublicGuest) { $dbSQL = $dbSQL.Replace("LEFT JOIN", "FULL JOIN") }
@@ -189,7 +194,6 @@ function Get-DbaUserPermission {
             }
 
             $dbs = $server.Databases
-            $tempdb = $server.Databases['tempdb']
 
             if ($Database) {
                 $dbs = $dbs | Where-Object { $Database -contains $_.Name }
@@ -209,14 +213,11 @@ function Get-DbaUserPermission {
             foreach ($db in $dbs) {
                 Write-Message -Level Verbose -Message "Processing $db on $instance"
 
-                $db.ExecuteNonQuery($endSQL)
-
                 if ($db.IsAccessible -eq $false) {
                     Stop-Function -Message "The database $db is not accessible" -Continue
                 }
 
-                $sql = [System.IO.File]::ReadAllText("$script:PSModuleRoot\bin\stig.sql")
-                $sql = $sql.Replace("<TARGETDB>", $db.Name)
+                $sql = $baseSql.Replace("<TARGETDB>", "[" + $db.Name + "]").Replace("<QUOTETARGETDB>", $db.Name)
 
                 #Create objects in active database
                 Write-Message -Level Verbose -Message "Creating objects"
@@ -292,11 +293,12 @@ function Get-DbaUserPermission {
                 #Delete objects
                 Write-Message -Level Verbose -Message "Deleting objects"
                 try {
-                    $tempdb.ExecuteNonQuery($endSQL)
+                    $db.ExecuteNonQuery($endSQL)
                 } catch {
                     # here to avoid an empty catch
                     $null = 1
                 }
+
                 #Sashay Away
             }
         }
