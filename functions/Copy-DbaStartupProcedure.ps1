@@ -122,7 +122,11 @@ function Copy-DbaStartupProcedure {
                     DateTime          = [DbaDateTime](Get-Date)
                 }
 
-                if ($Procedure -and ($Procedure -notcontains $currentProcName -or $ExcludeProcedure -contains $currentProcName)) {
+                if ($Procedure -and ($Procedure -notcontains $currentProcName)) {
+                    continue
+                }
+
+                if ($ExcludeProcedure -and ($ExcludeProcedure -contains $currentProcName)) {
                     continue
                 }
 
