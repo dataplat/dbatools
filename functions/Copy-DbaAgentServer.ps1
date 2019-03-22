@@ -106,11 +106,15 @@ function Copy-DbaAgentServer {
             # All of these support whatif inside of them
             Copy-DbaAgentJobCategory -Source $sourceServer -Destination $destinstance -DestinationSqlCredentia $DestinationSqlCredential -Force:$force
 
+            $destServer.Refresh()
+            $destServer.JobServer.Refresh()
             $destServer.JobServer.JobCategories.Refresh()
             $destServer.JobServer.OperatorCategories.Refresh()
             $destServer.JobServer.AlertCategories.Refresh()
 
             Copy-DbaAgentOperator -Source $sourceServer -Destination $destinstance -DestinationSqlCredentia $DestinationSqlCredential -Force:$force
+            $destServer.Refresh()
+            $destServer.JobServer.Refresh()
             $destServer.JobServer.Operators.Refresh()
 
             # extra reconnect to force refresh
