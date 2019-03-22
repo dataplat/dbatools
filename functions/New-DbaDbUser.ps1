@@ -219,7 +219,7 @@ function New-DbaDbUser {
                         $smoUser.Name = $Name
 
                         if ( $PSBoundParameters.Keys -contains 'Login' -and $Login.GetType().Name -eq 'Login' ) {
-                            $smoUser.Login = Login
+                            $smoUser.Login = $Login
                         }
                         $smoUser.UserType = $UserType
 
