@@ -157,12 +157,11 @@ function Copy-DbaStartupProcedure {
                 if ($Pscmdlet.ShouldProcess($destInstance, "Creating startup procedure $currentProcFullName")) {
                     try {
                         Write-Message -Level Verbose -Message "Copying startup procedure $currentProcFullName"
-                        #$proc = Get-DbaDbStoredProcedure -SqlInstance $sourceServer -Database master | Where-Object {$_.Schema -eq $currentProcSchema -and $_.Name -eq $currentProcName}
-                        $sql = $currentProc.Definition | Out-String
+                        $sql = $sourceServer.Databases['master'].StoredProcedures.Item($currentProcName, $currentProcSchema).TextBody
                         Write-Message -Level Debug -Message $sql
-                        $destServer.Query($sql)
+                        Invoke-DbaQuery -SqlInstance $destServer -Query $sql -Database master -EnableException
                         $startupsql = "EXEC SP_PROCOPTION [$currentProcFullName], 'STARTUP', 'ON'"
-                        $destServer.Query($startupsql)
+                        Invoke-DbaQuery -SqlInstance $destServer -Query $startupsql -Database master -EnableException
 
                         $copyStartupProcStatus.Status = "Successful"
                         $copyStartupProcStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
