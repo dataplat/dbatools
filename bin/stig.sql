@@ -323,7 +323,7 @@ USE tempdb;
                     WHEN DP.class_desc IS NULL AND SK.name IS NOT NULL  THEN 'sys.symmetric_keys'
                     WHEN DP.class_desc IS NULL AND AK.name IS NOT NULL  THEN 'sys.asymmetric_keys'
                     WHEN DP.class_desc IS NULL AND CT.name IS NOT NULL  THEN 'sys.certificates'
-                    ELSE '<TARGETDB>.sys.database_permissions'
+                    ELSE '<QUOTETARGETDB>.sys.database_permissions'
                 END                 AS [Source View]
             FROM
                 <TARGETDB>.sys.database_permissions DP
