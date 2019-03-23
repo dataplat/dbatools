@@ -191,6 +191,27 @@ function Test-DbaLastBackup {
                 $DestinationCredential = $SqlCredential
             }
 
+            if ($db.LastFullBackup -eq 'Monday, January 1, 0001 12:00:00 AM') {
+                [pscustomobject]@{
+                    SourceServer   = $source
+                    TestServer     = $destination
+                    Database       = $db.name
+                    FileExists     = $false
+                    Size           = $null
+                    RestoreResult  = "Skipped"
+                    DbccResult     = "Skipped"
+                    RestoreStart   = $null
+                    RestoreEnd     = $null
+                    RestoreElapsed = $null
+                    DbccStart      = $null
+                    DbccEnd        = $null
+                    DbccElapsed    = $null
+                    BackupDates    = $null
+                    BackupFiles    = $null
+                }
+                continue
+            }
+
             try {
                 $destserver = Connect-SqlInstance -SqlInstance $destination -SqlCredential $DestinationCredential
             } catch {

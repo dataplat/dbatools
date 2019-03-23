@@ -255,7 +255,7 @@ function Remove-DbaDatabaseSafely {
 
                 catch {
                     Write-Message -Level Warning -Message "DBCC CHECKDB failed."
-                    Stop-Function -Message "Error occured: $_" -Target $agentservice -ErrorRecord $_ -Continue
+                    Stop-Function -Message "Error occurred: $_" -Target $agentservice -ErrorRecord $_ -Continue
 
                     if ($force) {
                         return $true
