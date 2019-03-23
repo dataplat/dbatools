@@ -1,4 +1,4 @@
-﻿<#
+<#
 Write-Host "Current Path : $((Get-Location).Path)"
 
 Write-Host @"
@@ -39,8 +39,7 @@ $previousVersion = Import-Clixml ".\vsts-version.xml"
 $currentVersion = [System.Diagnostics.FileVersionInfo]::GetVersionInfo((Get-Item "bin\dbatools.dll").FullName).FileVersion
 Remove-Item ".\vsts-version.xml"
 
-if ($previousVersion -ne $currentVersion)
-{
+if ($previousVersion -ne $currentVersion) {
     $branch = $env:BUILD_SOURCEBRANCHNAME
     Write-Host "Previous: $previousVersion | Current: $currentVersion | Library should be updated"
 
@@ -48,8 +47,6 @@ if ($previousVersion -ne $currentVersion)
     git commit -m "VSTS Library Compile ***NO_CI***"
     $errorMessage = git push "https://$env:SYSTEM_ACCESSTOKEN@github.com/sqlcollaborative/dbatools.git" head:$branch 2>&1
     if ($LASTEXITCODE -gt 0) { throw $errorMessage }
-}
-else
-{
+} else {
     Write-Host "Version: $currentVersion | Library is up to date"
 }

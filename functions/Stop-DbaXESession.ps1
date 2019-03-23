@@ -1,58 +1,67 @@
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Stop-DbaXESession {
     <#
     .SYNOPSIS
-    Stops Extended Events sessions.
+        Stops Extended Events sessions.
 
     .DESCRIPTION
-    This script stops Extended Events sessions on a SQL Server instance.
+        This script stops Extended Events sessions on a SQL Server instance.
 
     .PARAMETER SqlInstance
-    The SQL Instances that you're connecting to.
+        The target SQL Server instance or instances. You must have sysadmin access and server version must be SQL Server version 2008 or higher.
 
     .PARAMETER SqlCredential
-    Credential object used to connect to the SQL Server as a different user
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
     .PARAMETER Session
-    Only stop specific Extended Events sessions.
+        Specifies individual Extended Events sessions to stop.
 
     .PARAMETER AllSessions
-    Stop all Extended Events sessions on an instance, ignoring the packaged sessions: AlwaysOn_health, system_health, telemetry_xevents.
+        If this switch is enabled, all Extended Events sessions will be stopped except the packaged sessions AlwaysOn_health, system_health, telemetry_xevents.
 
-    .PARAMETER SessionCollection
-    Internal parameter to support piping from Get-DbaXESession
+    .PARAMETER InputObject
+        Accepts the object output by Get-DbaXESession as the list of sessions to be stopped.
+
+    .PARAMETER WhatIf
+        If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
+
+    .PARAMETER Confirm
+        If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
     .PARAMETER EnableException
-    By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-    This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-    Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-    Tags: Xevent
-    Author: Doug Meyers
-    Website: https://dbatools.io
-    Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-    License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+        Tags: ExtendedEvent, XE, XEvent
+        Author: Doug Meyers
+
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-    https://dbatools.io/Stop-DbaXESession
+        https://dbatools.io/Stop-DbaXESession
 
     .EXAMPLE
-    Stop-DbaXESession -SqlInstance sqlserver2012 -AllSessions
+        PS C:\> Stop-DbaXESession -SqlInstance sqlserver2012 -AllSessions
 
-    Stops all Extended Event Session on the sqlserver2014 instance.
-
-    .EXAMPLE
-    Stop-DbaXESession -SqlInstance sqlserver2012 -Session xesession1,xesession2
-
-    Stops the xesession1 and xesession2 Extended Event sessions.
+        Stops all Extended Event Session on the sqlserver2014 instance.
 
     .EXAMPLE
-    Get-DbaXESession -SqlInstance sqlserver2012 -Session xesession1 | Stop-DbaXESession
+        PS C:\> Stop-DbaXESession -SqlInstance sqlserver2012 -Session xesession1,xesession2
 
-    Stops the sessions returned from the Get-DbaXESession function.
+        Stops the xesession1 and xesession2 Extended Event sessions.
 
-#>
-    [CmdletBinding(DefaultParameterSetName = 'Session')]
+    .EXAMPLE
+        PS C:\> Get-DbaXESession -SqlInstance sqlserver2012 -Session xesession1 | Stop-DbaXESession
+
+        Stops the sessions returned from the Get-DbaXESession function.
+
+    #>
+    [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = 'Session')]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseSingularNouns", "", Justification = "Internal functions are ignored")]
     param (
         [parameter(Position = 1, Mandatory, ParameterSetName = 'Session')]
         [parameter(Position = 1, Mandatory, ParameterSetName = 'All')]
@@ -71,14 +80,14 @@ function Stop-DbaXESession {
         [switch]$AllSessions,
 
         [parameter(Mandatory, ValueFromPipeline, ParameterSetName = 'Object')]
-        [Microsoft.SqlServer.Management.XEvent.Session[]]$SessionCollection,
+        [Microsoft.SqlServer.Management.XEvent.Session[]]$InputObject,
         [switch]$EnableException
     )
 
     begin {
         # Stop each XESession
         function Stop-XESessions {
-            [CmdletBinding()]
+            [CmdletBinding(SupportsShouldProcess)]
             param ([Microsoft.SqlServer.Management.XEvent.Session[]]$xeSessions)
 
             foreach ($xe in $xeSessions) {
@@ -86,14 +95,14 @@ function Stop-DbaXESession {
                 $session = $xe.Name
                 if ($xe.isRunning) {
                     Write-Message -Level Verbose -Message "Stopping XEvent Session $session on $instance."
-                    try {
-                        $xe.Stop()
+                    if ($Pscmdlet.ShouldProcess("$instance", "Stopping XEvent Session $session")) {
+                        try {
+                            $xe.Stop()
+                        } catch {
+                            Stop-Function -Message "Could not stop XEvent Session on $instance" -Target $session -ErrorRecord $_ -Continue
+                        }
                     }
-                    catch {
-                        Stop-Function -Message "Could not stop XEvent Session on $instance" -Target $session -ErrorRecord $_ -Continue
-                    }
-                }
-                else {
+                } else {
                     Write-Message -Level Warning -Message "$session on $instance is already stopped"
                 }
                 Get-DbaXESession -SqlInstance $xe.Parent -Session $session
@@ -102,23 +111,25 @@ function Stop-DbaXESession {
     }
 
     process {
-        if ($SessionCollection) {
-            Stop-XESessions $SessionCollection
-        }
-        else {
+        if ($InputObject) {
+            if ($Pscmdlet.ShouldProcess("Configuring XEvent Sessions to stop")) {
+                Stop-XESessions $InputObject
+            }
+        } else {
             foreach ($instance in $SqlInstance) {
                 $xeSessions = Get-DbaXESession -SqlInstance $instance -SqlCredential $SqlCredential
 
                 # Filter xesessions based on parameters
                 if ($Session) {
                     $xeSessions = $xeSessions | Where-Object { $_.Name -in $Session }
-                }
-                elseif ($AllSessions) {
+                } elseif ($AllSessions) {
                     $systemSessions = @('AlwaysOn_health', 'system_health', 'telemetry_xevents')
                     $xeSessions = $xeSessions | Where-Object { $_.Name -notin $systemSessions }
                 }
 
-                Stop-XESessions $xeSessions
+                if ($Pscmdlet.ShouldProcess("$instance", "Configuring XEvent Session $xeSessions to Stop")) {
+                    Stop-XESessions $xeSessions
+                }
             }
         }
     }

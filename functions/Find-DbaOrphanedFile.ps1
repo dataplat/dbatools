@@ -1,103 +1,97 @@
 #ValidationTags#FlowControl,Pipeline#
 function Find-DbaOrphanedFile {
     <#
-        .SYNOPSIS
-            Find-DbaOrphanedFile finds orphaned database files. Orphaned database files are files not associated with any attached database.
+    .SYNOPSIS
+        Find-DbaOrphanedFile finds orphaned database files. Orphaned database files are files not associated with any attached database.
 
-        .DESCRIPTION
-            This command searches all directories associated with SQL database files for database files that are not currently in use by the SQL Server instance.
+    .DESCRIPTION
+        This command searches all directories associated with SQL database files for database files that are not currently in use by the SQL Server instance.
 
-            By default, it looks for orphaned .mdf, .ldf and .ndf files in the root\data directory, the default data path, the default log path, the system paths and any directory in use by any attached directory.
+        By default, it looks for orphaned .mdf, .ldf and .ndf files in the root\data directory, the default data path, the default log path, the system paths and any directory in use by any attached directory.
 
-            You can specify additional filetypes using the -FileType parameter, and additional paths to search using the -Path parameter.
+        You can specify additional filetypes using the -FileType parameter, and additional paths to search using the -Path parameter.
 
-        .PARAMETER SqlInstance
-            The SQL Server instance. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
+    .PARAMETER SqlInstance
+        The target SQL Server instance or instances. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
 
-        .PARAMETER SqlCredential
-            Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
+    .PARAMETER SqlCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-            $cred = Get-Credential, then pass this $cred to the -SqlCredential parameter.
+    .PARAMETER Path
+        Specifies one or more directories to search in addition to the default data and log directories.
 
-            Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
+    .PARAMETER FileType
+        Specifies file extensions other than mdf, ldf and ndf to search for. Do not include the dot (".") when specifying the extension.
 
-            To connect as a different Windows user, run PowerShell as that user.
+    .PARAMETER LocalOnly
+        If this switch is enabled, only local filenames will be returned. Using this switch with multiple servers is not recommended since it does not return the associated server name.
 
-        .PARAMETER Path
-            Specifies one or more directories to search in addition to the default data and log directories.
+    .PARAMETER RemoteOnly
+        If this switch is enabled, only remote filenames will be returned.
 
-        .PARAMETER FileType
-            Specifies file extensions other than mdf, ldf and ndf to search for. Do not include the dot (".") when specifying the extension.
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-        .PARAMETER LocalOnly
-            If this switch is enabled, only local filenames will be returned. Using this switch with multiple servers is not recommended since it does not return the associated server name.
+    .NOTES
+        Tags: Orphan, Database, DatabaseFile
+        Author: Sander Stad (@sqlstad), sqlstad.nl
 
-        .PARAMETER RemoteOnly
-            If this switch is enabled, only remote filenames will be returned.
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+        Requires: sysadmin access on SQL Servers
 
-        .NOTES
-            Tags: DisasterRecovery, Orphan
-            Author: Sander Stad (@sqlstad), sqlstad.nl
-            Requires: sysadmin access on SQL Servers
+        Thanks to Paul Randal's notes on FILESTREAM which can be found at http://www.sqlskills.com/blogs/paul/filestream-directory-structure/
 
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+    .LINK
+        https://dbatools.io/Find-DbaOrphanedFile
 
-            Thanks to Paul Randal's notes on FILESTREAM which can be found at http://www.sqlskills.com/blogs/paul/filestream-directory-structure/
+    .EXAMPLE
+        PS C:\> Find-DbaOrphanedFile -SqlInstance sqlserver2014a
 
-        .LINK
-            https://dbatools.io/Find-DbaOrphanedFile
+        Connects to sqlserver2014a, authenticating with Windows credentials, and searches for orphaned files. Returns server name, local filename, and unc path to file.
 
-        .EXAMPLE
-            Find-DbaOrphanedFile -SqlInstance sqlserver2014a
+    .EXAMPLE
+        PS C:\> Find-DbaOrphanedFile -SqlInstance sqlserver2014a -SqlCredential $cred
 
-            Connects to sqlserver2014a, authenticating with Windows credentials, and searches for orphaned files. Returns server name, local filename, and unc path to file.
+        Connects to sqlserver2014a, authenticating with SQL Server authentication, and searches for orphaned files. Returns server name, local filename, and unc path to file.
 
-        .EXAMPLE
-            Find-DbaOrphanedFile -SqlInstance sqlserver2014a -SqlCredential $cred
+    .EXAMPLE
+        PS C:\> Find-DbaOrphanedFile -SqlInstance sql2014 -Path 'E:\Dir1', 'E:\Dir2'
 
-            Connects to sqlserver2014a, authenticating with SQL Server authentication, and searches for orphaned files. Returns server name, local filename, and unc path to file.
+        Finds the orphaned files in "E:\Dir1" and "E:Dir2" in addition to the default directories.
 
-        .EXAMPLE
-            Find-DbaOrphanedFile -SqlInstance sql2014 -Path 'E:\Dir1', 'E:\Dir2'
+    .EXAMPLE
+        PS C:\> Find-DbaOrphanedFile -SqlInstance sql2014 -LocalOnly
 
-            Finds the orphaned files in "E:\Dir1" and "E:Dir2" in addition to the default directories.
+        Returns only the local file paths for orphaned files.
 
-        .EXAMPLE
-            Find-DbaOrphanedFile -SqlInstance sql2014 -LocalOnly
+    .EXAMPLE
+        PS C:\> Find-DbaOrphanedFile -SqlInstance sql2014 -RemoteOnly
 
-            Returns only the local filepaths for orphaned files.
+        Returns only the remote file path for orphaned files.
 
-        .EXAMPLE
-            Find-DbaOrphanedFile -SqlInstance sql2014 -RemoteOnly
+    .EXAMPLE
+        PS C:\> Find-DbaOrphanedFile -SqlInstance sql2014, sql2016 -FileType fsf, mld
 
-            Returns only the remote filepath for orphaned files.
-
-        .EXAMPLE
-            Find-DbaOrphanedFile -SqlInstance sql2014, sql2016 -FileType fsf, mld
-
-            Finds the orphaned ending with ".fsf" and ".mld" in addition to the default filetypes ".mdf", ".ldf", ".ndf" for both the servers sql2014 and sql2016.
+        Finds the orphaned ending with ".fsf" and ".mld" in addition to the default filetypes ".mdf", ".ldf", ".ndf" for both the servers sql2014 and sql2016.
 
     #>
     [CmdletBinding()]
-    Param (
-        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
+    param (
+        [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
-        [DbaInstanceParameter]$SqlInstance,
-        [parameter(Mandatory = $false)]
-        [object]$SqlCredential,
-        [parameter(Mandatory = $false)]
+        [DbaInstanceParameter[]]$SqlInstance,
+        [pscredential]$SqlCredential,
         [string[]]$Path,
         [string[]]$FileType,
         [switch]$LocalOnly,
         [switch]$RemoteOnly,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
 
     begin {
@@ -131,13 +125,12 @@ function Find-DbaOrphanedFile {
         function Get-SqlFileStructure {
             param
             (
-                [Parameter(Mandatory = $true, Position = 1)]
+                [Parameter(Mandatory, Position = 1)]
                 [Microsoft.SqlServer.Management.Smo.SqlSmoObject]$smoserver
             )
             if ($smoserver.versionMajor -eq 8) {
                 $sql = "select filename from sysaltfiles"
-            }
-            else {
+            } else {
                 $sql = "select physical_name as filename from sys.master_files"
             }
 
@@ -182,11 +175,9 @@ function Find-DbaOrphanedFile {
     process {
         foreach ($instance in $SqlInstance) {
             try {
-                Write-Message -Level Verbose -Message "Connecting to $instance"
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
-            }
-            catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+            } catch {
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
             # Reset all the arrays
             $dirtreefiles = $valid = $paths = $matching = @()
@@ -249,11 +240,11 @@ function Find-DbaOrphanedFile {
 
                     $result = [pscustomobject]@{
                         Server         = $server.name
-                        ComputerName   = $server.NetName
+                        ComputerName   = $server.ComputerName
                         InstanceName   = $server.ServiceName
                         SqlInstance    = $server.DomainInstanceName
                         Filename       = $fullpath
-                        RemoteFilename = Join-AdminUnc -Servername $server.netname -Filepath $fullpath
+                        RemoteFilename = Join-AdminUnc -Servername $server.ComputerName -Filepath $fullpath
                     }
 
                     if ($LocalOnly -eq $true) {

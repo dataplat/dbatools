@@ -1,0 +1,48 @@
+[
+    {
+        "Name": "Credicards",
+        "Columns": {
+            "Name": "CredicardNumber",
+            "MaskingType": "CreditCard",
+            "SubType": "MasterCard"
+        }
+    },
+    {
+        "Name": "Customer",
+        "Columns": [
+            {
+                "Name": "Firstname",
+                "MaskingType": "FirstName"
+            },
+            {
+                "Name": "Lastname",
+                "MaskingType": "Lastname"
+            },
+            {
+                "Name": "Address",
+                "MaskingType": "Address"
+            },
+            {
+                "Name": "Zipcode",
+                "MaskingType": "Zipcode"
+            },
+            {
+                "Name": "City",
+                "MaskingType": "City"
+            }
+        ]
+    },
+    {
+        "Name": "ContactInformation",
+        "Columns": [
+            {
+                "Name": "EmailAddress",
+                "MaskingType": "Email"
+            },
+            {
+                "Name": "HomePhone",
+                "MaskingType": "Phone"
+            }
+        ]
+    }
+]

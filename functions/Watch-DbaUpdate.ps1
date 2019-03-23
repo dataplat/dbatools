@@ -1,31 +1,35 @@
 function Watch-DbaUpdate {
     <#
-        .SYNOPSIS
-            Just for fun - checks the PowerShell Gallery every 1 hour for updates to dbatools. Notifies once per release.
+    .SYNOPSIS
+        Just for fun - checks the PowerShell Gallery every 1 hour for updates to dbatools. Notifies once per release.
 
-        .DESCRIPTION
-            Just for fun - checks the PowerShell Gallery every 1 hour for updates to dbatools. Notifies once max per release.
+    .DESCRIPTION
+        Just for fun - checks the PowerShell Gallery every 1 hour for updates to dbatools. Notifies once max per release.
 
-            Anyone know how to make it clickable so that it opens an URL?
+        Anyone know how to make it clickable so that it opens an URL?
 
-        .NOTES
-            Tags: JustForFun, Module
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+    .NOTES
+        Tags: JustForFun, Module
+        Author: Chrissy LeMaire (@cl), netnerds.net
 
-        .LINK
-            https://dbatools.io/Watch-DbaUpdate
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-        .EXAMPLE
-            Watch-DbaUpdate
+    .LINK
+        https://dbatools.io/Watch-DbaUpdate
 
-            Watches the gallery for updates to dbatools.
+    .EXAMPLE
+        PS C:\> Watch-DbaUpdate
+
+        Watches the gallery for updates to dbatools.
+
     #>
-
+    [cmdletbinding()]
+    param()
     process {
         if (([Environment]::OSVersion).Version.Major -lt 10) {
-            Write-Warning "This command only supports Windows 10 and higher."
+            Write-Message -Level Warning -Message "This command only supports Windows 10 and higher."
             return
         }
 
@@ -36,7 +40,7 @@ function Watch-DbaUpdate {
         # leave this in for the scheduled task
         $module = Get-Module -Name dbatools
 
-        if (!$module) {
+        if (-not $module) {
             Import-Module dbatools
             $module = Get-Module -Name dbatools
         }
@@ -48,7 +52,7 @@ function Watch-DbaUpdate {
 
         $file = "$env:LOCALAPPDATA\dbatools\watchupdate.xml"
 
-        $new = [pscustomobject]@{
+        $new = [PSCustomObject]@{
             NotifyVersion = $galleryVersion
         }
 
@@ -60,10 +64,9 @@ function Watch-DbaUpdate {
 
             if ($galleryVersion -gt $old.NotifyVersion) {
                 Export-Clixml -InputObject $new -Path $file
-                Show-Notification
+                Show-Notification -GalleryVersion $galleryVersion
             }
-        }
-        else {
+        } else {
             $directory = Split-Path $file
 
             if (!(Test-Path $directory)) {
@@ -71,7 +74,7 @@ function Watch-DbaUpdate {
             }
 
             Export-Clixml -InputObject $new -Path $file
-            Show-Notification
+            Show-Notification -GalleryVersion $galleryVersion
         }
     }
 }

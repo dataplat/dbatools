@@ -1,23 +1,23 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
-. "$PSScriptRoot\..\internal\Connect-SqlInstance.ps1"
+. "$PSScriptRoot\..\internal\functions\Connect-SqlInstance.ps1"
 
 Describe "$commandname Unit Tests" -Tag 'UnitTests' {
     InModuleScope dbatools {
         #mock Connect-SqlInstance { $true }
-        mock Test-DbaSqlPath { $true }
+        mock Test-DbaPath { $true }
 
         Context "Test Connection and User Rights" {
             It "Should throw on an invalid SQL Connection" {
                 #mock Test-SQLConnection {(1..12) | %{[System.Collections.ArrayList]$t += @{ConnectSuccess = $false}}}
                 Mock Connect-SqlInstance { throw }
-                { Get-XpDirTreeRestoreFile -path c:\dummy -SqlInstance bad\bad -EnableException $true } | Should Throw
+                { Get-XpDirTreeRestoreFile -path c:\dummy -SqlInstance bad\bad -EnableException } | Should Throw
             }
             It "Should throw if SQL Server can't see the path" {
-                Mock Test-DbaSqlPath { $false }
+                Mock Test-DbaPath { $false }
                 Mock Connect-SqlInstance { [DbaInstanceParameter]"bad\bad" }
-                { Get-XpDirTreeRestoreFile -path c:\dummy -SqlInstance bad\bad -EnableException $true } | Should Throw
+                { Get-XpDirTreeRestoreFile -path c:\dummy -SqlInstance bad\bad -EnableException } | Should Throw
             }
         }
         Context "Non recursive filestructure" {
@@ -27,6 +27,7 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
                 $obj = [PSCustomObject]@{
                     Name                 = 'BASEName'
                     NetName              = 'BASENetName'
+                    ComputerName         = 'BASEComputerName'
                     InstanceName         = 'BASEInstanceName'
                     DomainInstanceName   = 'BASEDomainInstanceName'
                     InstallDataDirectory = 'BASEInstallDataDirectory'
@@ -46,7 +47,7 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
                 $obj.PSObject.TypeNames.Add("Microsoft.SqlServer.Management.Smo.Server")
                 return $obj
             }
-            $results = Get-XpDirTreeRestoreFile -path c:\temp -SqlInstance bad\bad -EnableException $true
+            $results = Get-XpDirTreeRestoreFile -path c:\temp -SqlInstance bad\bad -EnableException
             It "Should return an array of 2 files" {
                 $results.count | Should Be 2
             }
@@ -67,6 +68,7 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
                 $obj = [PSCustomObject]@{
                     Name                 = 'BASEName'
                     NetName              = 'BASENetName'
+                    ComputerName         = 'BASEComputerName'
                     InstanceName         = 'BASEInstanceName'
                     DomainInstanceName   = 'BASEDomainInstanceName'
                     InstallDataDirectory = 'BASEInstallDataDirectory'
@@ -91,7 +93,7 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
             }
 
 
-            $results = Get-XpDirTreeRestoreFile -path c:\temp -SqlInstance bad\bad -EnableException $true
+            $results = Get-XpDirTreeRestoreFile -path c:\temp -SqlInstance bad\bad -EnableException
             It "Should return array of 4 files - recursion" {
                 $results.count | Should Be 4
             }

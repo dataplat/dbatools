@@ -1,62 +1,56 @@
 function Get-DbaDbRecoveryModel {
     <#
-        .SYNOPSIS
-            Get-DbaDbRecoveryModel displays the Recovery Model.
+    .SYNOPSIS
+        Get-DbaDbRecoveryModel displays the Recovery Model.
 
-        .DESCRIPTION
-            Get-DbaDbRecoveryModel displays the Recovery Model for all databases. This is the default, you can filter using -Database, -ExcludeDatabase, -RecoveryModel
+    .DESCRIPTION
+        Get-DbaDbRecoveryModel displays the Recovery Model for all databases. This is the default, you can filter using -Database, -ExcludeDatabase, -RecoveryModel
 
-        .PARAMETER SqlInstance
-            The SQL Server instance.
+    .PARAMETER SqlInstance
+        The target SQL Server instance or instances.
 
-        .PARAMETER SqlCredential
-            Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
+    .PARAMETER SqlCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-            $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
+    .PARAMETER Database
+        The database(s) to process - this list is auto-populated from the server. if unspecified, all databases will be processed.
 
-            Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
+    .PARAMETER ExcludeDatabase
+        The database(s) to exclude - this list is auto-populated from the server
 
-            To connect as a different Windows user, run PowerShell as that user.
+    .PARAMETER RecoveryModel
+        Filters the output based on Recovery Model. Valid options are Simple, Full and BulkLogged
 
-        .PARAMETER Database
-            The database(s) to process - this list is auto-populated from the server. if unspecified, all databases will be processed.
+        Details about the recovery models can be found here:
+        https://docs.microsoft.com/en-us/sql/relational-databases/backup-restore/recovery-models-sql-server
 
-        .PARAMETER ExcludeDatabase
-            The database(s) to exclude - this list is auto-populated from the server
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-        .PARAMETER RecoveryModel
-            Filters the output based on Recovery Model. Valid options are Simple, Full and BulkLogged
+    .NOTES
+        Tags: Recovery, RecoveryModel, Simple, Full, Bulk, BulkLogged
+        Author: Viorel Ciucu (@viorelciucu), https://www.cviorel.com
 
-            Details about the recovery models can be found here:
-            https://docs.microsoft.com/en-us/sql/relational-databases/backup-restore/recovery-models-sql-server
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+    .LINK
+        https://dbatools.io/Get-DbaDbRecoveryModel
 
-        .NOTES
-            Tags: Recovery, RecoveryModel, Simple, Full, Bulk, BulkLogged
-            Author: Viorel Ciucu (@viorelciucu), https://www.cviorel.com
+    .EXAMPLE
+        PS C:\> Get-DbaDbRecoveryModel -SqlInstance sql2014 -RecoveryModel BulkLogged -Verbose
 
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+        Gets all databases on SQL Server instance sql2014 having RecoveryModel set to BulkLogged.
 
-        .LINK
-            https://dbatools.io/Get-DbaDbRecoveryModel
+    .EXAMPLE
+        PS C:\> Get-DbaDbRecoveryModel -SqlInstance sql2014 -Database TestDB
 
-        .EXAMPLE
-            Get-DbaDbRecoveryModel -SqlInstance sql2014 -RecoveryModel BulkLogged -Verbose
+        Gets recovery model information for TestDB. If TestDB does not exist on the instance nothing is returned.
 
-            Gets all databases on SQL Server instance sql2014 having RecoveryModel set to BulkLogged
-
-        .EXAMPLE
-            Get-DbaDbRecoveryModel -SqlInstance sql2014 -Database TestDB
-
-            Gets recovery model information for TestDB. If TestDB does not exist on the instance we don't return anythig.
-
-    #>
+       #>
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
@@ -85,8 +79,7 @@ function Get-DbaDbRecoveryModel {
 
         if ($RecoveryModel) {
             Get-DbaDatabase @params | Where-Object RecoveryModel -in $RecoveryModel | Where-Object IsAccessible | Select-DefaultView -Property $defaults
-        }
-        else {
+        } else {
             Get-DbaDatabase @params | Select-DefaultView -Property $defaults
         }
     }

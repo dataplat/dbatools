@@ -12,6 +12,9 @@
     .PARAMETER Show
         Gets passed down to Pester's -Show parameter (useful if you want to reduce verbosity)
 
+    .PARAMETER PassThru
+        Gets passed down to Pester's -PassThru parameter (useful if you want to return an object to analyze)
+
     .PARAMETER TestIntegration
         dbatools's suite has unittests and integrationtests. This switch enables IntegrationTests, which need live instances
         see constants.ps1 for customizations
@@ -25,9 +28,8 @@
     .PARAMETER ScriptAnalyzer
         Enables checking the called function's code with Invoke-ScriptAnalyzer, with dbatools's profile
 
-
     .EXAMPLE
-        .\manual.pester.ps1 -Path Find-DbaOrphanedFile.Tests.ps1 -TestIntegration -Coverage -DependencyCovearge -ScriptAnalyzer
+        .\manual.pester.ps1 -Path Find-DbaOrphanedFile.Tests.ps1 -TestIntegration -Coverage -DependencyCoverage -ScriptAnalyzer
 
         The most complete number of checks:
           - Runs both unittests and integrationtests
@@ -38,6 +40,11 @@
         .\manual.pester.ps1 -Path Find-DbaOrphanedFile.Tests.ps1
 
         Runs unittests stored in Find-DbaOrphanedFile.Tests.ps1
+
+    .EXAMPLE
+        .\manual.pester.ps1 -Path Find-DbaOrphanedFile.Tests.ps1 -PassThru
+
+        Runs unittests stored in Find-DbaOrphanedFile.Tests.ps1 and returns an object that can be analyzed
 
     .EXAMPLE
         .\manual.pester.ps1 -Path orphan
@@ -60,7 +67,7 @@
         Gathers and shows code coverage measurement for Find-DbaOrphanedFile
 
     .EXAMPLE
-        .\manual.pester.ps1 -Path Find-DbaOrphanedFile.Tests.ps1 -TestIntegration -Coverage -DependencyCovearge
+        .\manual.pester.ps1 -Path Find-DbaOrphanedFile.Tests.ps1 -TestIntegration -Coverage -DependencyCoverage
 
         Gathers and shows code coverage measurement for Find-DbaOrphanedFile and all its dependencies
 
@@ -76,6 +83,9 @@ param (
     $Show = "All",
 
     [switch]
+    $PassThru,
+
+    [switch]
     $TestIntegration,
 
     [switch]
@@ -89,7 +99,9 @@ param (
 )
 
 $HasScriptAnalyzer = $null -ne (Get-Command Invoke-ScriptAnalyzer -ErrorAction SilentlyContinue).Version
-$HasPester = $null -ne (Get-Command Invoke-Pester -ErrorAction SilentlyContinue).Version
+$MinimumPesterVersion = [Version] '3.4.5.0' # Because this is when -Show was introduced
+$PesterVersion = (Get-Command Invoke-Pester -ErrorAction SilentlyContinue).Version
+$HasPester = $null -ne $PesterVersion
 
 if (!($HasScriptAnalyzer)) {
     Write-Warning "Please install PSScriptAnalyzer"
@@ -97,19 +109,26 @@ if (!($HasScriptAnalyzer)) {
     Write-Warning "     or go to https://github.com/PowerShell/PSScriptAnalyzer"
 }
 if (!($HasPester)) {
-    Write-Warning "Please install PSScriptAnalyzer"
+    Write-Warning "Please install Pester"
+    Write-Warning "     Install-Module -Name Pester -Force -SkipPublisherCheck"
+    Write-Warning "     or go to https://github.com/pester/Pester"
+}
+if ($PesterVersion -lt $MinimumPesterVersion) {
+    Write-Warning "Please update Pester to at least 3.4.5"
     Write-Warning "     Install-Module -Name Pester -Force -SkipPublisherCheck"
     Write-Warning "     or go to https://github.com/pester/Pester"
 }
 
-if (($HasPester -and $HasScriptAnalyzer) -eq $false) {
+if (($HasPester -and $HasScriptAnalyzer -and ($PesterVersion -ge $MinimumPesterVersion)) -eq $false) {
     Write-Warning "Exiting..."
     return
 }
 
 $ModuleBase = Split-Path -Path $PSScriptRoot -Parent
 
-$global:dbatools_dotsourcemodule = $true
+if (-not(Test-Path "$ModuleBase\.git" -Type Container)) {
+    New-Item -Type Container -Path "$ModuleBase\.git"
+}
 
 #removes previously imported dbatools, if any
 Remove-Module dbatools -ErrorAction Ignore
@@ -118,7 +137,7 @@ Import-Module "$ModuleBase\dbatools.psd1" -DisableNameChecking
 #imports the psm1 to be able to use internal functions in tests
 Import-Module "$ModuleBase\dbatools.psm1" -DisableNameChecking
 
-$ScriptAnalyzerRulesExclude = @('PSUseOutputTypeCorrectly', 'PSAvoidUsingPlainTextForPassword')
+$ScriptAnalyzerRulesExclude = @('PSUseOutputTypeCorrectly', 'PSAvoidUsingPlainTextForPassword', 'PSUseBOMForUnicodeEncodedFile')
 
 $testInt = $false
 if ($config_TestIntegration) {
@@ -153,7 +172,7 @@ function Get-CoverageIndications($Path, $ModuleBase) {
         }
     }
     $testpaths = @()
-    $allfiles = Get-ChildItem -File -Path "$ModuleBase\internal", "$ModuleBase\functions" -Filter '*.ps1'
+    $allfiles = Get-ChildItem -File -Path "$ModuleBase\internal\functions", "$ModuleBase\functions" -Filter '*.ps1'
     foreach ($f in $funcs) {
         # exclude always used functions ?!
         if ($f -in ('Connect-SqlInstance', 'Select-DefaultView', 'Stop-Function', 'Write-Message')) { continue }
@@ -172,8 +191,7 @@ if ($Path) {
     foreach ($item in $path) {
         if (Test-Path $item) {
             $files += Get-ChildItem -Path $item
-        }
-        else {
+        } else {
             $files += Get-ChildItem -Path "$ModuleBase\tests\*$item*.Tests.ps1"
         }
     }
@@ -187,20 +205,21 @@ $AllTestsWithinScenario = $files
 
 foreach ($f in $AllTestsWithinScenario) {
     $PesterSplat = @{
-        'Script' = $f.FullName
-        'Show'   = $show
+        'Script'   = $f.FullName
+        'Show'     = $show
+        'PassThru' = $passThru
     }
     #opt-in
     $HeadFunctionPath = $f.FullName
 
-    if ($Coverage) {
+    if ($Coverage -or $ScriptAnalyzer) {
         $CoverFiles = Get-CoverageIndications -Path $f -ModuleBase $ModuleBase
         $HeadFunctionPath = $CoverFiles | Select-Object -First 1
-
+    }
+    if ($Coverage) {
         if ($DependencyCoverage) {
             $CoverFilesPester = $CoverFiles
-        }
-        else {
+        } else {
             $CoverFilesPester = $HeadFunctionPath
         }
         $PesterSplat['CodeCoverage'] = $CoverFilesPester

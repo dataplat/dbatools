@@ -7,16 +7,16 @@ function Get-DbaDbMailLog {
         Gets the DBMail log from a SQL instance
 
     .PARAMETER SqlInstance
-        The SQL Server instance, or instances.
+        TThe target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
         Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted.
 
     .PARAMETER Since
-    Datetime object used to narrow the results to the send request date
+        Datetime object used to narrow the results to the send request date
 
     .PARAMETER Type
-    Narrow the results by type. Valid values include Error, Warning, Success, Information, Internal
+        Narrow the results by type. Valid values include Error, Warning, Success, Information, Internal
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -24,34 +24,36 @@ function Get-DbaDbMailLog {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: Logging
+        Tags: DatabaseMail, DBMail, Mail
+        Author: Chrissy LeMaire (@cl), netnerds.net
+
         Website: https://dbatools.io
-        Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-        License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
     .LINK
         https://dbatools.io/Get-DbaDbMailLog
 
     .EXAMPLE
-        Get-DbaDbMailLog -SqlInstance sql01\sharepoint
+        PS C:\> Get-DbaDbMailLog -SqlInstance sql01\sharepoint
 
-        Returns the entire dbmail log on sql01\sharepoint
-
-    .EXAMPLE
-        Get-DbaDbMailLog -SqlInstance sql01\sharepoint | Select *
-
-        Returns the entire dbmail log on sql01\sharepoint then return a bunch more columns
+        Returns the entire DBMail log on sql01\sharepoint
 
     .EXAMPLE
-        $servers = "sql2014","sql2016", "sqlcluster\sharepoint"
-        $servers | Get-DbaDbMailLog -Type Error, Information
+        PS C:\> Get-DbaDbMailLog -SqlInstance sql01\sharepoint | Select-Object *
 
-        Returns only the Error and Information dbmail log for "sql2014","sql2016" and "sqlcluster\sharepoint"
+        Returns the entire DBMail log on sql01\sharepoint, includes all returned information.
 
-#>
+    .EXAMPLE
+        PS C:\> $servers = "sql2014","sql2016", "sqlcluster\sharepoint"
+        PS C:\> $servers | Get-DbaDbMailLog -Type Error, Information
+
+        Returns only the Error and Information DBMail log for "sql2014","sql2016" and "sqlcluster\sharepoint"
+
+    #>
     [CmdletBinding()]
     param (
-        [Parameter(ValueFromPipeline = $true)]
+        [Parameter(ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [Alias("Credential")]
@@ -60,16 +62,15 @@ function Get-DbaDbMailLog {
         [DateTime]$Since,
         [ValidateSet('Error', 'Warning', 'Success', 'Information', 'Internal')]
         [string[]]$Type,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
     process {
         foreach ($instance in $SqlInstance) {
-            Write-Message -Level Verbose -Message "Attempting to connect to $instance"
 
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -Category Connectiondbmail -dbmailRecord $_ -Target $instance -Continue
             }
 
@@ -116,9 +117,8 @@ function Get-DbaDbMailLog {
 
             try {
                 $server.Query($sql) | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, LogDate, EventType, Description, Login
-            }
-            catch {
-                Stop-Function -Message "Query failure" -InnerErrorRecord $_ -Continue
+            } catch {
+                Stop-Function -Message "Failure" -InnerErrorRecord $_ -Continue
             }
         }
     }

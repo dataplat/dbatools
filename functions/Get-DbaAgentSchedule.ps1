@@ -1,58 +1,67 @@
 function Get-DbaAgentSchedule {
     <#
-        .SYNOPSIS
-            Returns all SQL Agent Shared Schedules on a SQL Server Agent.
+    .SYNOPSIS
+        Returns all SQL Agent Shared Schedules on a SQL Server Agent.
 
-        .DESCRIPTION
-            This function returns SQL Agent Shared Schedules.
+    .DESCRIPTION
+        This function returns SQL Agent Shared Schedules.
 
-        .PARAMETER SqlInstance
-            SqlInstance name or SMO object representing the SQL Server to connect to.
-            This can be a collection and receive pipeline input.
+    .PARAMETER SqlInstance
+        The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
 
-        .PARAMETER SqlCredential
-            PSCredential object to connect as. If not specified, current Windows login will be used.
+    .PARAMETER SqlCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+    .PARAMETER Schedule
+        Parameter to filter the schedules returned
 
-        .NOTES
-            Tags: Agent, Schedule
-            Author: Chris McKeown (@devopsfu), http://www.devopsfu.com
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+    .NOTES
+        Tags: Agent, Schedule
+        Author: Chris McKeown (@devopsfu), http://www.devopsfu.com
 
-        .LINK
-            https://dbatools.io/Get-DbaAgentSchedule
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-        .EXAMPLE
-            Get-DbaAgentSchedule -SqlInstance localhost
+    .LINK
+        https://dbatools.io/Get-DbaAgentSchedule
 
-            Returns all SQL Agent Shared Schedules on the local default SQL Server instance
+    .EXAMPLE
+        PS C:\> Get-DbaAgentSchedule -SqlInstance localhost
 
-        .EXAMPLE
-            Get-DbaAgentSchedule -SqlInstance localhost, sql2016
+        Returns all SQL Agent Shared Schedules on the local default SQL Server instance
 
-            Returns all SQL Agent Shared Schedules for the local and sql2016 SQL Server instances
+    .EXAMPLE
+        PS C:\> Get-DbaAgentSchedule -SqlInstance localhost, sql2016
+
+        Returns all SQL Agent Shared Schedules for the local and sql2016 SQL Server instances
+
+    .EXAMPLE
+        PS C:\> Get-DbaAgentSchedule -SqlInstance sql2016 -Schedule "Maintenance10min","Maintenance60min"
+
+        Returns the "Maintenance10min" & "Maintenance60min" schedules from the sql2016 SQL Server instance
     #>
     [CmdletBinding()]
     param (
-        [parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
+        [parameter(Position = 0, Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "Instance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
+        [Alias("Schedules")]
+        [object[]]$Schedule,
         [PSCredential]$SqlCredential,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
 
     begin {
         function Get-ScheduleDescription {
-            [CmdletBinding()]
             param (
-                [Parameter(Mandatory = $true)]
+                [Parameter(Mandatory)]
                 [ValidateNotNullOrEmpty()]
                 [object]$Schedule
 
@@ -84,8 +93,7 @@ function Get-DbaAgentSchedule {
                 {$_ -in 4, "Daily"} {
                     if ($Schedule.FrequencyInterval -eq 1) {
                         $description += "day "
-                    }
-                    elseif ($Schedule.FrequencyInterval -gt 1) {
+                    } elseif ($Schedule.FrequencyInterval -gt 1) {
                         $description += "$($Schedule.FrequencyInterval) day(s) "
                     }
                 }
@@ -95,8 +103,7 @@ function Get-DbaAgentSchedule {
                     # Check if it's for one or more weeks
                     if ($Schedule.FrequencyRecurrenceFactor -eq 1) {
                         $description += "week on "
-                    }
-                    elseif ($Schedule.FrequencyRecurrenceFactor -gt 1) {
+                    } elseif ($Schedule.FrequencyRecurrenceFactor -gt 1) {
                         $description += "$($Schedule.FrequencyRecurrenceFactor) week(s) on "
                     }
 
@@ -153,8 +160,7 @@ function Get-DbaAgentSchedule {
                     # Check if it's for one or more months
                     if ($Schedule.FrequencyRecurrenceFactor -eq 1) {
                         $description += "month "
-                    }
-                    elseif ($Schedule.FrequencyRecurrenceFactor -gt 1) {
+                    } elseif ($Schedule.FrequencyRecurrenceFactor -gt 1) {
                         $description += "$($Schedule.FrequencyRecurrenceFactor) month(s) "
                     }
 
@@ -198,8 +204,7 @@ function Get-DbaAgentSchedule {
                 # Check the subday types for minutes or hours i.e.
                 if ($schedule.FrequencySubDayInterval -in 0, 1) {
                     $description += "at $startTime. "
-                }
-                else {
+                } else {
 
                     switch ($Schedule.FrequencySubDayTypes) {
                         {$_ -in 2, "Seconds"} { $description += "every $($schedule.FrequencySubDayInterval) second(s) "}
@@ -213,8 +218,7 @@ function Get-DbaAgentSchedule {
                 # Check if an end date has been given
                 if ($Schedule.ActiveEndDate.Year -eq 9999) {
                     $description += "Schedule will be used starting on $startDate."
-                }
-                else {
+                } else {
                     $description += "Schedule will used between $startDate and $endDate."
                 }
             }
@@ -225,30 +229,36 @@ function Get-DbaAgentSchedule {
 
     process {
         foreach ($instance in $SqlInstance) {
-            Write-Message -Level Verbose -Message "Attempting to connect to $instance"
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-            }
-            catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+            } catch {
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             if ($server.Edition -like 'Express*') {
                 Stop-Function -Message "$($server.Edition) does not support SQL Server Agent. Skipping $server." -Continue
             }
 
-            $defaults = "ComputerName", "InstanceName", "SqlInstance", "Name as ScheduleName", "ActiveEndDate", "ActiveEndTimeOfDay", "ActiveStartDate", "ActiveStartTimeOfDay", "DateCreated", "FrequencyInterval", "FrequencyRecurrenceFactor", "FrequencyRelativeIntervals", "FrequencySubDayInterval", "FrequencySubDayTypes", "FrequencyTypes", "IsEnabled", "JobCount", "Description"
-
-            foreach ($schedule in $server.JobServer.SharedSchedules) {
-                $description = Get-ScheduleDescription -Schedule $schedule
-
-                Add-Member -Force -InputObject $schedule -MemberType NoteProperty ComputerName -value $server.NetName
-                Add-Member -Force -InputObject $schedule -MemberType NoteProperty InstanceName -value $server.ServiceName
-                Add-Member -Force -InputObject $schedule -MemberType NoteProperty SqlInstance -value $server.DomainInstanceName
-                Add-Member -Force -InputObject $schedule -MemberType NoteProperty Description -Value $description
-
-                Select-DefaultView -InputObject $schedule -Property $defaults
+            if ($Schedule) {
+                $scheduleCollection = $server.JobServer.SharedSchedules | Where-Object { $_.Name -in $Schedule }
+            } else {
+                $scheduleCollection = $server.JobServer.SharedSchedules
             }
+
         }
+
+        $defaults = "ComputerName", "InstanceName", "SqlInstance", "Name as ScheduleName", "ActiveEndDate", "ActiveEndTimeOfDay", "ActiveStartDate", "ActiveStartTimeOfDay", "DateCreated", "FrequencyInterval", "FrequencyRecurrenceFactor", "FrequencyRelativeIntervals", "FrequencySubDayInterval", "FrequencySubDayTypes", "FrequencyTypes", "IsEnabled", "JobCount", "Description"
+
+        foreach ($schedule in $scheduleCollection) {
+            $description = Get-ScheduleDescription -Schedule $schedule
+
+            $schedule | Add-Member -Type NoteProperty -Name ComputerName -Value $server.ComputerName
+            $schedule | Add-Member -Type NoteProperty -Name InstanceName -Value $server.ServiceName
+            $schedule | Add-Member -Type NoteProperty -Name SqlInstance -Value $server.DomainInstanceName
+            $schedule | Add-Member -Type NoteProperty -Name Description -Value $description
+
+            Select-DefaultView -InputObject $schedule -Property $defaults
+        }
+
     }
 }

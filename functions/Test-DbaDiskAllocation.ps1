@@ -1,83 +1,81 @@
 function Test-DbaDiskAllocation {
     <#
-        .SYNOPSIS
-            Checks all disks on a computer to see if they are formatted with allocation units of 64KB.
+    .SYNOPSIS
+        Checks all disks on a computer to see if they are formatted with allocation units of 64KB.
 
-        .DESCRIPTION
-            Checks all disks on a computer for disk allocation units that match best practice recommendations. If one server is checked, only $true or $false is returned. If multiple servers are checked, each server's name and an IsBestPractice field are returned.
+    .DESCRIPTION
+        Checks all disks on a computer for disk allocation units that match best practice recommendations. If one server is checked, only $true or $false is returned. If multiple servers are checked, each server's name and an IsBestPractice field are returned.
 
-            Specify -Detailed for details.
+        References:
+        https://technet.microsoft.com/en-us/library/dd758814(v=sql.100).aspx - "The performance question here is usually not one of correlation per the formula, but whether the cluster size has been explicitly defined at 64 KB, which is a best practice for SQL Server."
 
-            References:
-            https://technet.microsoft.com/en-us/library/dd758814(v=sql.100).aspx - "The performance question here is usually not one of correlation per the formula, but whether the cluster size has been explicitly defined at 64 KB, which is a best practice for SQL Server."
+    .PARAMETER ComputerName
+        The server(s) to check disk configuration on.
 
-            http://tk.azurewebsites.net/2012/08/
+    .PARAMETER NoSqlCheck
+        If this switch is enabled, the disk(s) will not be checked for SQL Server data or log files.
 
-        .PARAMETER ComputerName
-            The server(s) to check disk configuration on.
+    .PARAMETER SqlCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-        .PARAMETER NoSqlCheck
-            If this switch is enabled, the disk(s) will not be checked for SQL Server data or log files.
+    .PARAMETER Credential
+        Specifies an alternate Windows account to use when enumerating drives on the server. May require Administrator privileges. To use:
 
-        .PARAMETER SqlCredential
-            Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
+        $cred = Get-Credential, then pass $cred object to the -Credential parameter.
 
-            $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
+    .PARAMETER Detailed
+        Output all properties, will be deprecated in 1.0.0 release.
 
-            Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
+    .PARAMETER WhatIf
+        If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
-            To connect as a different Windows user, run PowerShell as that user.
+    .PARAMETER Confirm
+        If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
-        .PARAMETER Detailed
-            Output all properties, will be deprecated in 1.0.0 release.
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-        .PARAMETER WhatIf
-            If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
+    .NOTES
+        Tags: CIM, Storage
+        Author: Chrissy LeMaire (@cl), netnerds.net
 
-        .PARAMETER Confirm
-            If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+    .LINK
+        https://dbatools.io/Test-DbaDiskAllocation
 
-        .NOTES
-            Tags: CIM, Storage
-            Requires: Windows sysadmin access on SQL Servers
+    .EXAMPLE
+        PS C:\> Test-DbaDiskAllocation -ComputerName sqlserver2014a
 
-            dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-            Copyright (C) 2016 Chrissy LeMaire
-            License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+        Scans all disks on server sqlserver2014a for best practice allocation unit size.
 
-        .LINK
-            https://dbatools.io/Test-DbaDiskAllocation
+    .EXAMPLE
+        PS C:\> Test-DbaDiskAllocation -ComputerName sqlserver2014 | Select-Output *
 
-        .EXAMPLE
-            Test-DbaDiskAllocation -ComputerName sqlserver2014a
+        Scans all disks on server sqlserver2014a for allocation unit size and returns detailed results for each.
 
-            Scans all disks on server sqlserver2014a for best practice allocation unit size.
+    .EXAMPLE
+        PS C:\> Test-DbaDiskAllocation -ComputerName sqlserver2014a -NoSqlCheck
 
-        .EXAMPLE
-            Test-DbaDiskAllocation -ComputerName sqlserver2014 | Select-Output *
+        Scans all disks not hosting SQL Server data or log files on server sqlserver2014a for best practice allocation unit size.
 
-            Scans all disks on server sqlserver2014a for allocation unit size and returns detailed results for each.
-
-        .EXAMPLE
-            Test-DbaDiskAllocation -ComputerName sqlserver2014a -NoSqlCheck
-
-            Scans all disks not hosting SQL Server data or log files on server sqlserver2014a for best practice allocation unit size.
     #>
-    [CmdletBinding(SupportsShouldProcess = $true)]
+    [CmdletBinding(SupportsShouldProcess)]
     [OutputType("System.Collections.ArrayList", "System.Boolean")]
-    Param (
-        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
+    param (
+        [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer", "SqlInstance")]
         [object[]]$ComputerName,
         [switch]$NoSqlCheck,
-        [object]$SqlCredential,
+        [PSCredential]$SqlCredential,
+        [PSCredential]$Credential,
         [switch]$Detailed,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
 
     begin {
@@ -95,8 +93,7 @@ function Test-DbaDiskAllocation {
                 # $query = "Select Label, BlockSize, Name from Win32_Volume WHERE FileSystem='NTFS'"
                 # $disks = Get-WmiObject -ComputerName $ipaddr -Query $query | Sort-Object -Property Name
                 $disks = Get-CimInstance -CimSession $CIMsession -ClassName win32_volume -Filter "FileSystem='NTFS'" -ErrorAction Stop | Sort-Object -Property Name
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Can't connect to WMI on $computer."
                 return
             }
@@ -113,8 +110,7 @@ function Test-DbaDiskAllocation {
 
                     if ($instance -eq 'MSSQLSERVER') {
                         $SqlInstances += $ipaddr
-                    }
-                    else {
+                    } else {
                         $SqlInstances += "$ipaddr\$instance"
                     }
                 }
@@ -131,7 +127,6 @@ function Test-DbaDiskAllocation {
                         $sqldisk = $false
 
                         foreach ($SqlInstance in $SqlInstances) {
-                            Write-Message -Level Verbose -Message "Connecting to SQL instance ($SqlInstance)."
                             try {
                                 $smoserver = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
                                 $sql = "Select count(*) as Count from sys.master_files where physical_name like '$diskname%'"
@@ -140,9 +135,8 @@ function Test-DbaDiskAllocation {
                                     $sqldisk = $true
                                     break
                                 }
-                            }
-                            catch {
-                                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                            } catch {
+                                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
                                 continue
                             }
                         }
@@ -150,8 +144,7 @@ function Test-DbaDiskAllocation {
 
                     if ($disk.BlockSize -eq 65536) {
                         $IsBestPractice = $true
-                    }
-                    else {
+                    } else {
                         $IsBestPractice = $false
                     }
 
@@ -170,8 +163,7 @@ function Test-DbaDiskAllocation {
                             IsSqlDisk      = $sqldisk
                             IsBestPractice = $IsBestPractice
                         }
-                    }
-                    else {
+                    } else {
                         $alldisks += [PSCustomObject]@{
                             Server         = $computer
                             Name           = $diskname
@@ -187,11 +179,14 @@ function Test-DbaDiskAllocation {
     }
 
     process {
+        # uses cim commands
+        
+        
         foreach ($computer in $ComputerName) {
 
-            $computer = Resolve-DbaNetworkName -ComputerName $computer -Credential $credential
+            $computer = Resolve-DbaNetworkName -ComputerName $computer -Credential $Credential
             $ipaddr = $computer.IpAddress
-            $Computer = $computer.ComputerName
+            $Computer = $computer.FullComputerName
 
             if (!$Computer) {
                 Stop-Function -Message "Couldn't resolve hostname. Skipping." -Continue
@@ -201,8 +196,7 @@ function Test-DbaDiskAllocation {
 
             if (!$Credential) {
                 $cimsession = New-CimSession -ComputerName $Computer -ErrorAction SilentlyContinue
-            }
-            else {
+            } else {
                 $cimsession = New-CimSession -ComputerName $Computer -ErrorAction SilentlyContinue -Credential $Credential
             }
 
@@ -210,10 +204,9 @@ function Test-DbaDiskAllocation {
                 Write-Message -Level Verbose -Message "Creating CimSession on $computer over WSMan failed. Creating CimSession on $computer over DCOM."
 
                 if (!$Credential) {
-                    $cimsession = New-CimSession -ComputerName $Computer -SessionOption $sessionoption -ErrorAction SilentlyContinue -Credential $Credential
-                }
-                else {
-                    $cimsession = New-CimSession -ComputerName $Computer -SessionOption $sessionoption -ErrorAction SilentlyContinue
+                    $cimsession = New-CimSession -ComputerName $Computer -SessionOption $sessionoptions -ErrorAction SilentlyContinue
+                } else {
+                    $cimsession = New-CimSession -ComputerName $Computer -SessionOption $sessionoptions -ErrorAction SilentlyContinue -Credential $Credential
                 }
             }
 
@@ -223,13 +216,14 @@ function Test-DbaDiskAllocation {
 
             Write-Message -Level Verbose -Message "Getting Power Plan information from $Computer"
 
-            $data = Get-AllDiskAllocation $computer
+            if ($PScmdlet.ShouldProcess("$computer", "Getting Disk Allocation")) {
+                $data = Get-AllDiskAllocation $computer
 
-            if ($data.Count -gt 1) {
-                $data.GetEnumerator()
-            }
-            else {
-                $data
+                if ($data.Count -gt 1) {
+                    $data.GetEnumerator()
+                } else {
+                    $data
+                }
             }
         }
     }

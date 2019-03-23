@@ -1,4 +1,4 @@
-﻿$ScriptBlock = {
+$ScriptBlock = {
     param (
         $commandName,
 
@@ -29,7 +29,6 @@
             [System.Management.Automation.CompletionResultType]
             $CompletionResultType = [System.Management.Automation.CompletionResultType]::ParameterValue,
 
-            [Parameter(Mandatory = $false)]
             [switch]
             $NoQuotes = $false
         )

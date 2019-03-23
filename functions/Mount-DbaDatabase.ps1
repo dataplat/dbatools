@@ -1,76 +1,73 @@
 function Mount-DbaDatabase {
     <#
-        .SYNOPSIS
-            Attach a SQL Server Database - aliased to Attach-DbaDatabase
+    .SYNOPSIS
+        Attach a SQL Server Database - aliased to Attach-DbaDatabase
 
-        .DESCRIPTION
-            This command will attach a SQL Server database.
+    .DESCRIPTION
+        This command will attach a SQL Server database.
 
-        .PARAMETER SqlInstance
-            The SQL Server instance.
+    .PARAMETER SqlInstance
+        The target SQL Server instance or instances.
 
-        .PARAMETER SqlCredential
-            Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
+    .PARAMETER SqlCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-            $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
+    .PARAMETER Database
+        The database(s) to attach.
 
-            Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
+    .PARAMETER FileStructure
+        A StringCollection object value that contains a list database files. If FileStructure is not specified, BackupHistory will be used to guess the structure.
 
-            To connect as a different Windows user, run PowerShell as that user.
+    .PARAMETER DatabaseOwner
+        Sets the database owner for the database. The sa account (or equivalent) will be used if DatabaseOwner is not specified.
 
-        .PARAMETER Database
-            The database(s) to attach.
+    .PARAMETER AttachOption
+        An AttachOptions object value that contains the attachment options. Valid options are "None", "RebuildLog", "EnableBroker", "NewBroker" and "ErrorBrokerConversations".
 
-        .PARAMETER FileStructure
-            A StringCollection object value that contains a list database files. If FileStructure is not specified, BackupHistory will be used to guess the structure.
+    .PARAMETER WhatIf
+        If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
-        .PARAMETER DatabaseOwner
-            Sets the database owner for the database. The sa account (or equivalent) will be used if DatabaseOwner is not specified.
+    .PARAMETER Confirm
+        If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
-        .PARAMETER AttachOption
-            An AttachOptions object value that contains the attachment options. Valid options are "None", "RebuildLog", "EnableBroker", "NewBroker" and "ErrorBrokerConversations".
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-        .PARAMETER WhatIf
-            If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
+    .NOTES
+        Tags: Database
+        Author: Chrissy LeMaire (@cl), netnerds.net
 
-        .PARAMETER Confirm
-            If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+    .LINK
+        https://dbatools.io/Mount-DbaDatabase
 
-        .NOTES
-            Tags: Database
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+    .EXAMPLE
+        PS C:\> $fileStructure = New-Object System.Collections.Specialized.StringCollection
+        PS C:\> $fileStructure.Add("E:\archive\example.mdf")
+        PS C:\> $filestructure.Add("E:\archive\example.ldf")
+        PS C:\> $filestructure.Add("E:\archive\example.ndf")
+        PS C:\> Mount-DbaDatabase -SqlInstance sql2016 -Database example -FileStructure $fileStructure
 
-        .LINK
-            https://dbatools.io/Mount-DbaDatabase
+        Attaches a database named "example" to sql2016 with the files "E:\archive\example.mdf", "E:\archive\example.ldf" and "E:\archive\example.ndf". The database owner will be set to sa and the attach option is None.
 
-        .EXAMPLE
-            $fileStructure = New-Object System.Collections.Specialized.StringCollection
-            $fileStructure.Add("E:\archive\example.mdf")
-            $filestructure.Add("E:\archive\example.ldf")
-            $filestructure.Add("E:\archive\example.ndf")
-            Mount-DbaDatabase -SqlInstance sql2016 -Database example -FileStructure $fileStructure
+    .EXAMPLE
+        PS C:\> Mount-DbaDatabase -SqlInstance sql2016 -Database example
 
-            Attaches a database named "example" to sql2016 with the files "E:\archive\example.mdf", "E:\archive\example.ldf" and "E:\archive\example.ndf". The database owner will be set to sa and the attach option is None.
+        Since the FileStructure was not provided, this command will attempt to determine it based on backup history. If found, a database named example will be attached to sql2016.
 
-        .EXAMPLE
-            Mount-DbaDatabase -SqlInstance sql2016 -Database example
+    .EXAMPLE
+        PS C:\> Mount-DbaDatabase -SqlInstance sql2016 -Database example -WhatIf
 
-            Since the FileStructure was not provided, this command will attempt to determine it based on backup history. If found, a database named example will be attached to sql2016.
+        Shows what would happen if the command were executed (without actually performing the command)
 
-        .EXAMPLE
-            Mount-DbaDatabase -SqlInstance sql2016 -Database example -WhatIf
-
-            Shows what would happen if the command were executed (without actually performing the command)
     #>
     [CmdletBinding(SupportsShouldProcess)]
-    Param (
+    param (
         [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
@@ -82,22 +79,21 @@ function Mount-DbaDatabase {
         [string]$DatabaseOwner,
         [ValidateSet('None', 'RebuildLog', 'EnableBroker', 'NewBroker', 'ErrorBrokerConversations')]
         [string]$AttachOption = "None",
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
     process {
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
-            }
-            catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+            } catch {
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             if (-not $server.Logins.Item($DatabaseOwner)) {
                 try {
                     $DatabaseOwner = ($server.Logins | Where-Object { $_.id -eq 1 }).Name
-                }
-                catch {
+                } catch {
                     $DatabaseOwner = "sa"
                 }
             }
@@ -125,7 +121,7 @@ function Mount-DbaDatabase {
 
                     $FileStructure = New-Object System.Collections.Specialized.StringCollection
                     foreach ($file in $filepaths) {
-                        $exists = Test-DbaSqlpath -SqlInstance $server -Path $file
+                        $exists = Test-Dbapath -SqlInstance $server -Path $file
                         if (-not $exists) {
                             $message = "Could not find the files to build the FileStructure. Rerun the command and provide the FileStructure parameter."
                             Stop-Function -Message $message -Target $file -Continue
@@ -140,7 +136,7 @@ function Mount-DbaDatabase {
                         $server.AttachDatabase($db, $FileStructure, $DatabaseOwner, [Microsoft.SqlServer.Management.Smo.AttachOptions]::$AttachOption)
 
                         [pscustomobject]@{
-                            ComputerName  = $server.NetName
+                            ComputerName  = $server.ComputerName
                             InstanceName  = $server.ServiceName
                             SqlInstance   = $server.DomainInstanceName
                             Database      = $db
@@ -148,8 +144,7 @@ function Mount-DbaDatabase {
                             AttachOption  = $AttachOption
                             FileStructure = $FileStructure
                         }
-                    }
-                    catch {
+                    } catch {
                         Stop-Function -Message "Failure" -ErrorRecord $_ -Target $server
                     }
                 }

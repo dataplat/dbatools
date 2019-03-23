@@ -1,54 +1,50 @@
 function Get-DbaDetachedDatabaseInfo {
     <#
-        .SYNOPSIS
-            Get detailed information about detached SQL Server database files.
+    .SYNOPSIS
+        Get detailed information about detached SQL Server database files.
 
-        .DESCRIPTION
-            Gathers the following information from detached database files: database name, SQL Server version (compatibility level), collation, and file structure.
+    .DESCRIPTION
+        Gathers the following information from detached database files: database name, SQL Server version (compatibility level), collation, and file structure.
 
-            "Data files" and "Log file" report the structure of the data and log files as they were when the database was detached. "Database version" is the compatibility level.
+        "Data files" and "Log file" report the structure of the data and log files as they were when the database was detached. "Database version" is the compatibility level.
 
-            MDF files are most easily read by using a SQL Server to interpret them. Because of this, you must specify a SQL Server and the path must be relative to the SQL Server.
+        MDF files are most easily read by using a SQL Server to interpret them. Because of this, you must specify a SQL Server and the path must be relative to the SQL Server.
 
-        .PARAMETER SqlInstance
-            Source SQL Server. This instance must be online and is required to parse the information contained with in the detached database file.
+    .PARAMETER SqlInstance
+        Source SQL Server. This instance must be online and is required to parse the information contained with in the detached database file.
 
-            This function will not attach the database file, it will only use SQL Server to read its contents.
+        This function will not attach the database file, it will only use SQL Server to read its contents.
 
-        .PARAMETER SqlCredential
-            Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
+    .PARAMETER SqlCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-            $scred = Get-Credential, then pass $scred object to the -SourceSqlCredential parameter.
+    .PARAMETER Path
+        Specifies the path to the MDF file to be read. This path must be readable by the SQL Server service account. Ideally, the MDF will be located on the SQL Server itself, or on a network share to which the SQL Server service account has access.
 
-            Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
+    .NOTES
+        Tags: Database, Detach
+        Author: Chrissy LeMaire (@cl), netnerds.net
 
-            To connect as a different Windows user, run PowerShell as that user.
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-        .PARAMETER Path
-            Specifies the path to the MDF file to be read. This path must be readable by the SQL Server service account. Ideally, the MDF will be located on the SQL Server itself, or on a network share to which the SQL Server service account has access.
+    .LINK
+        https://dbatools.io/Get-DbaDetachedDatabaseInfo
 
-        .NOTES
-            Tags: DisasterRecovery
-            dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+    .EXAMPLE
+        PS C:\> Get-DbaDetachedDatabaseInfo -SqlInstance sql2016 -Path M:\Archive\mydb.mdf
 
-        .LINK
-            https://dbatools.io/Get-DbaDetachedDatabaseInfo
+        Returns information about the detached database file M:\Archive\mydb.mdf using the SQL Server instance sql2016. The M drive is relative to the SQL Server instance.
 
-        .EXAMPLE
-            Get-DbaDetachedDatabaseInfo -SqlInstance sql2016 -Path M:\Archive\mydb.mdf
-
-            Returns information about the detached database file M:\Archive\mydb.mdf using the SQL Server instance sql2016. The M drive is relative to the SQL Server instance.
-     #>
+    #>
 
     [CmdletBinding(DefaultParameterSetName = "Default")]
-    Param (
-        [parameter(Mandatory = $true)]
+    param (
+        [parameter(Mandatory)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter]$SqlInstance,
-        [parameter(Mandatory = $true)]
+        [parameter(Mandatory)]
         [Alias("Mdf")]
         [string]$Path,
         [PSCredential]$SqlCredential
@@ -62,7 +58,7 @@ function Get-DbaDetachedDatabaseInfo {
             $servername = $server.name
             $serviceaccount = $server.ServiceAccount
 
-            $exists = Test-DbaSqlPath $server $Path
+            $exists = Test-DbaPath -SqlInstance $server -Path $Path
 
             if ($exists -eq $false) {
                 throw "$servername cannot access the file $path. Does the file exist and does the service account ($serviceaccount) have access to the path?"
@@ -73,8 +69,7 @@ function Get-DbaDetachedDatabaseInfo {
                 $dbname = ($detachedDatabaseInfo | Where-Object { $_.Property -eq "Database name" }).Value
                 $exactdbversion = ($detachedDatabaseInfo | Where-Object { $_.Property -eq "Database version" }).Value
                 $collationid = ($detachedDatabaseInfo | Where-Object { $_.Property -eq "Collation" }).Value
-            }
-            catch {
+            } catch {
                 throw "$servername cannot read the file $path. Is the database detached?"
             }
 
@@ -100,8 +95,7 @@ function Get-DbaDetachedDatabaseInfo {
             try {
                 $dataset = $server.databases['master'].ExecuteWithResults($collationsql)
                 $collation = "$($dataset.Tables[0].Rows[0].Item(0))"
-            }
-            catch {
+            } catch {
                 $collation = $collationid
             }
 
@@ -115,8 +109,7 @@ function Get-DbaDetachedDatabaseInfo {
                 foreach ($file in $server.EnumDetachedLogFiles($path)) {
                     $logfiles += $file
                 }
-            }
-            catch {
+            } catch {
                 throw "$servername unable to enumerate database or log structure information for $path"
             }
 

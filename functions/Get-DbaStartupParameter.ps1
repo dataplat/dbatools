@@ -11,7 +11,7 @@ function Get-DbaStartupParameter {
         See https://msdn.microsoft.com/en-us/library/ms190737.aspx for more information.
 
     .PARAMETER SqlInstance
-        The SQL Server instance to connect to.
+        The target SQL Server instance or instances.
 
     .PARAMETER Credential
         Allows you to login to servers using alternate Windows credentials.
@@ -24,35 +24,38 @@ function Get-DbaStartupParameter {
     .PARAMETER EnableException
         If this switch is enabled, exceptions will be thrown to the caller, which will need to perform its own exception processing. Otherwise, the function will try to catch the exception, interpret it and provide a friendly error message.
 
+    .NOTES
+        Tags: WSMan, SQLWMI, Memory
+        Author: Chrissy LeMaire (@cl), netnerds.net
+
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
+
+    .LINK
+        https://dbatools.io/Get-DbaStartupParameter
+
     .EXAMPLE
-        Get-DbaStartupParameter -SqlInstance sql2014
+        PS C:\> Get-DbaStartupParameter -SqlInstance sql2014
 
         Logs into SQL WMI as the current user then displays the values for numerous startup parameters.
 
     .EXAMPLE
-        $wincred = Get-Credential ad\sqladmin
-        Get-DbaStartupParameter -SqlInstance sql2014 -Credential $wincred -Simple
+        PS C:\> $wincred = Get-Credential ad\sqladmin
+        PS C:\> Get-DbaStartupParameter -SqlInstance sql2014 -Credential $wincred -Simple
 
         Logs in to WMI using the ad\sqladmin credential and gathers simplified information about the SQL Server Startup Parameters.
 
-    .NOTES
-        Tags: WSMan, SQLWMI, Memory
-        dbatools PowerShell module (https://dbatools.io)
-        Copyright (C) 2016 Chrissy LeMaire
-        License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
-
-    .LINK
-        https://dbatools.io/Get-DbaStartupParameter
-#>
+    #>
     [CmdletBinding()]
-    param ([parameter(ValueFromPipeline, Mandatory = $true)]
+    param (
+        [parameter(ValueFromPipeline, Mandatory)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [Alias("SqlCredential")]
         [PSCredential]$Credential,
         [switch]$Simple,
-        [switch]
-        [Alias('Silent')]$EnableException
+        [switch]$EnableException
     )
 
     process {
@@ -64,7 +67,6 @@ function Get-DbaStartupParameter {
 
                 $computerName = (Resolve-DbaNetworkName -ComputerName $computerName).FullComputerName
 
-                Write-Message -Level Verbose -message "Attempting to connect to $computerName"
 
                 if ($instanceName.Length -eq 0) { $instanceName = "MSSQLSERVER" }
 
@@ -92,8 +94,7 @@ function Get-DbaStartupParameter {
 
                     if ($traceflags.length -eq 0) {
                         $traceflags = "None"
-                    }
-                    else {
+                    } else {
                         $traceflags = $traceflags.substring(2)
                     }
 
@@ -108,8 +109,7 @@ function Get-DbaStartupParameter {
                             TraceFlags      = $traceflags -join ','
                             ParameterString = $wmisvc.StartupParameters
                         }
-                    }
-                    else {
+                    } else {
                         # From https://msdn.microsoft.com/en-us/library/ms190737.aspx
 
                         $commandpromptparm = $params | Where-Object { $_ -eq '-c' }
@@ -123,25 +123,25 @@ function Get-DbaStartupParameter {
                         $minimalstart = $noeventlogs = $instancestart = $disablemonitoring = $false
                         $increasedextents = $commandprompt = $singleuser = $false
 
-                        if ($commandpromptparm -ne $null) {
+                        if ($null -ne $commandpromptparm) {
                             $commandprompt = $true
                         }
-                        if ($minimalstartparm -ne $null) {
+                        if ($null -ne $minimalstartparm) {
                             $minimalstart = $true
                         }
-                        if ($memorytoreserve -eq $null) {
+                        if ($null -eq $memorytoreserve) {
                             $memorytoreserve = 0
                         }
-                        if ($noeventlogsparm -ne $null) {
+                        if ($null -ne $noeventlogsparm) {
                             $noeventlogs = $true
                         }
-                        if ($instancestartparm -ne $null) {
+                        if ($null -ne $instancestartparm) {
                             $instancestart = $true
                         }
-                        if ($disablemonitoringparm -ne $null) {
+                        if ($null -ne $disablemonitoringparm) {
                             $disablemonitoring = $true
                         }
-                        if ($increasedextentsparm -ne $null) {
+                        if ($null -ne $increasedextentsparm) {
                             $increasedextents = $true
                         }
 
@@ -157,8 +157,8 @@ function Get-DbaStartupParameter {
                             InstanceName         = $instanceName
                             SqlInstance          = $ogInstance
                             MasterData           = $masterdata -replace '^-[dD]', ''
-                            MasterLog            = $masterlog  -replace '^-[lL]', ''
-                            ErrorLog             = $errorlog   -replace '^-[eE]', ''
+                            MasterLog            = $masterlog -replace '^-[lL]', ''
+                            ErrorLog             = $errorlog -replace '^-[eE]', ''
                             TraceFlags           = $traceflags -join ','
                             CommandPromptStart   = $commandprompt
                             MinimalStart         = $minimalstart
@@ -178,12 +178,10 @@ function Get-DbaStartupParameter {
                 # It's sorta like Invoke-Command.
                 if ($credential) {
                     Invoke-ManagedComputerCommand -Server $computerName -Credential $credential -ScriptBlock $Scriptblock -ArgumentList $computerName, $displayname
-                }
-                else {
+                } else {
                     Invoke-ManagedComputerCommand -Server $computerName -ScriptBlock $Scriptblock -ArgumentList $computerName, $displayname
                 }
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "$instance failed." -ErrorRecord $_ -Continue -Target $instance
             }
         }

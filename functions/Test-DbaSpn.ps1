@@ -1,71 +1,68 @@
 #ValidationTags#FlowControl,Pipeline#
 function Test-DbaSpn {
     <#
-        .SYNOPSIS
-            Test-DbaSpn will determine what SPNs *should* be set for a given server (and any instances of SQL running on it) and return
-            whether the SPNs are set or not.
+    .SYNOPSIS
+        Test-DbaSpn will determine what SPNs *should* be set for a given server (and any instances of SQL running on it) and return
+        whether the SPNs are set or not.
 
-        .DESCRIPTION
-            This function is designed to take in a server name(s) and attempt to determine required SPNs. It was initially written to mimic the (previously)
-            broken functionality of the Microsoft Kerberos Configuration manager and SQL Server 2016. The functon will connect to a remote server and,
-            through WMI, discover all running intances of SQL Server. For any instances with TCP/IP enabled, the script will determine which port(s)
-            the instances are listening on and generate the required SPNs. For named instances NOT using dynamic ports, the script will generate a port-
-            based SPN for those instances as well.  At a minimum, the script will test a base, port-less SPN for each instance discovered.
+    .DESCRIPTION
+        This function is designed to take in a server name(s) and attempt to determine required SPNs. It was initially written to mimic the (previously) broken functionality of the Microsoft Kerberos Configuration manager and SQL Server 2016.
 
-            Once the required SPNs are generated, the script will connect to Active Directory and search for any of the SPNs (if any) that are already
-            set.
+        - For any instances with TCP/IP enabled, the script will determine which port(s) the instances are listening on and generate the required SPNs.
+        - For named instances NOT using dynamic ports, the script will generate a port-based SPN for those instances as well.
+        - At a minimum, the script will test a base, port-less SPN for each instance discovered.
 
-            The function will return a custom object(s) that contains the server name checked, the instance name discovered, the account the service is
-            running under, and what the "required" SPN should be. It will also return a boolean property indicating if the SPN is set in Active Directory
-            or not.
+        Once the required SPNs are generated, the script will connect to Active Directory and search for any of the SPNs (if any) that are already set. The function will return a custom object(s) that contains the server name checked, the instance name discovered, the account the service is running under, and what the "required" SPN should be. It will also return a boolean property indicating if the SPN is set in Active Directory or not.
 
-        .PARAMETER ComputerName
-            The computer you want to discover any SQL Server instances on. This parameter is required.
+    .PARAMETER ComputerName
+        The computer you want to discover any SQL Server instances on. This parameter is required.
 
-        .PARAMETER Credential
-            The credential you want to use to connect to the remote server and active directory.
+    .PARAMETER Credential
+        The credential you want to use to connect to the remote server and active directory.
 
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-        .NOTES
-            Tags: SPN
-            Author: Drew Furgiuele (@pittfurg), http://www.port1433.com
-            Editor: niphlod
+    .NOTES
+        Tags: SPN
+        Author: Drew Furgiuele (@pittfurg), http://www.port1433.com | niphlod
 
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-        .LINK
-            https://dbatools.io/Test-DbaSpn
+    .LINK
+        https://dbatools.io/Test-DbaSpn
 
-        .EXAMPLE
-            Test-DbaSpn -ComputerName SQLSERVERA -Credential (Get-Credential)
+    .EXAMPLE
+        Test-DbaSpn -ComputerName SQLSERVERA -Credential ad\sqldba
 
-            Connects to a computer (SQLSERVERA) and queries WMI for all SQL instances and return "required" SPNs. It will then take each SPN it generates
-            and query Active Directory to make sure the SPNs are set.
+        Connects to a computer (SQLSERVERA) and queries WMI for all SQL instances and return "required" SPNs. It will then take each SPN it generates
+        and query Active Directory to make sure the SPNs are set.
 
-        .EXAMPLE
-            Test-DbaSpn -ComputerName SQLSERVERA,SQLSERVERB -Credential (Get-Credential)
+    .EXAMPLE
+        Test-DbaSpn -ComputerName SQLSERVERA,SQLSERVERB -Credential ad\sqldba
 
-            Connects to multiple computers (SQLSERVERA, SQLSERVERB) and queries WMI for all SQL instances and return "required" SPNs.
-            It will then take each SPN it generates and query Active Directory to make sure the SPNs are set.
+        Connects to multiple computers (SQLSERVERA, SQLSERVERB) and queries WMI for all SQL instances and return "required" SPNs.
+        It will then take each SPN it generates and query Active Directory to make sure the SPNs are set.
 
-        .EXAMPLE
-            Test-DbaSpn -ComputerName SQLSERVERC -Credential (Get-Credential)
+    .EXAMPLE
+        Test-DbaSpn -ComputerName SQLSERVERC -Credential ad\sqldba
 
-            Connects to a computer (SQLSERVERC) on a specified and queries WMI for all SQL instances and return "required" SPNs.
-            It will then take each SPN it generates and query Active Directory to make sure the SPNs are set. Note that the credential you pass must have be a valid login with appropriate rights on the domain
+        Connects to a computer (SQLSERVERC) on a specified and queries WMI for all SQL instances and return "required" SPNs.
+        It will then take each SPN it generates and query Active Directory to make sure the SPNs are set. Note that the credential you pass must have be a valid login with appropriate rights on the domain
+
     #>
     [cmdletbinding()]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseOutputTypeCorrectly", "", Justification = "PSSA Rule Ignored by BOH")]
     param (
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [Parameter(Mandatory, ValueFromPipeline)]
         [DbaInstance[]]$ComputerName,
         [PSCredential]$Credential,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
     begin {
         # spare the cmdlet to search for the same account over and over
@@ -75,8 +72,7 @@ function Test-DbaSpn {
         foreach ($computer in $ComputerName) {
             try {
                 $resolved = Resolve-DbaNetworkName -ComputerName $computer.ComputerName -Credential $Credential -ErrorAction Stop
-            }
-            catch {
+            } catch {
                 $resolved = Resolve-DbaNetworkName -ComputerName $computer.ComputerName -Turbo
             }
 
@@ -102,8 +98,7 @@ function Test-DbaSpn {
                         10 {
                             if ($version.Minor -eq 0) {
                                 "SQL Server 2008"
-                            }
-                            else {
+                            } else {
                                 "SQL Server 2008 R2"
                             }
                         }
@@ -176,8 +171,7 @@ function Test-DbaSpn {
                         #Each instance has a default SPN of MSSQLSvc\<fqdn> or MSSSQLSvc\<fqdn>:Instance
                         if ($instance.Name -eq "MSSQLSERVER") {
                             $spn.RequiredSPN = "MSSQLSvc/$hostEntry"
-                        }
-                        else {
+                        } else {
                             $spn.RequiredSPN = "MSSQLSvc/" + $hostEntry + ":" + $instance.Name
                         }
                     }
@@ -196,15 +190,13 @@ function Test-DbaSpn {
                             if (($ip.IpAddressProperties | Where-Object { $_.Name -eq "TcpDynamicPorts" }).Value -ne "") {
                                 $ipAllPort = ($ip.IPAddressProperties | Where-Object { $_.Name -eq "TcpDynamicPorts" }).Value + "d"
                             }
-                        }
-                        else {
+                        } else {
                             $enabled = ($ip.IPAddressProperties | Where-Object { $_.Name -eq "Enabled" }).Value
                             $active = ($ip.IPAddressProperties | Where-Object { $_.Name -eq "Active" }).Value
                             $tcpDynamicPorts = ($ip.IPAddressProperties | Where-Object { $_.Name -eq "TcpDynamicPorts" }).Value
                             if ($enabled -and $active -and $tcpDynamicPorts -eq "") {
                                 $ports += ($ip.IPAddressProperties | Where-Object { $_.Name -eq "TCPPort" }).Value
-                            }
-                            elseif ($enabled -and $active -and $tcpDynamicPorts -ne "") {
+                            } elseif ($enabled -and $active -and $tcpDynamicPorts -ne "") {
                                 $ports += $ipAllPort + "d"
                             }
                         }
@@ -222,16 +214,14 @@ function Test-DbaSpn {
                             $newspn.RequiredSPN = $newspn.RequiredSPN.Replace($newSPN.InstanceName, $newspn.Port)
                             $newspn.DynamicPort = $true
                             $newspn.Warning = "Dynamic port is enabled"
-                        }
-                        else {
+                        } else {
                             #If this is a named instance, replace the instance name with a port number (for non-dynamic ported named instances)
                             $newspn.Port = $port
                             $newspn.DynamicPort = $false
 
                             if ($newspn.InstanceName -eq "MSSQLSERVER") {
                                 $newspn.RequiredSPN = $newspn.RequiredSPN + ":" + $port
-                            }
-                            else {
+                            } else {
                                 $newspn.RequiredSPN = $newspn.RequiredSPN.Replace($newSPN.InstanceName, $newspn.Port)
                             }
                         }
@@ -241,12 +231,10 @@ function Test-DbaSpn {
                 $spns
             }
 
-            Write-Message -Message "Attempting to connect to SQL WMI on remote computer " -Level Verbose
 
             try {
                 $spns = Invoke-ManagedComputerCommand -ComputerName $hostEntry -ScriptBlock $Scriptblock -ArgumentList $resolved.FullComputerName, $hostEntry, $computer.InstanceName -Credential $Credential -ErrorAction Stop
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Couldn't connect to $computer" -ErrorRecord $_ -Continue
             }
 
@@ -257,8 +245,7 @@ function Test-DbaSpn {
                     Write-Message -Level Verbose -Message "Virtual account detected, changing target registration to computername"
                     $spn.InstanceServiceAccount = "$($resolved.Domain)\$($resolved.ComputerName)$"
                     $searchfor = 'Computer'
-                }
-                elseif ($spn.InstanceServiceAccount -like '*\*$') {
+                } elseif ($spn.InstanceServiceAccount -like '*\*$') {
                     Write-Message -Level Verbose -Message "Managed Service Account detected"
                     $searchfor = 'Computer'
                 }
@@ -270,14 +257,12 @@ function Test-DbaSpn {
                     try {
                         $result = Get-DbaADObject -ADObject $serviceAccount -Type $searchfor -Credential $Credential -EnableException
                         $resultCache[$spn.InstanceServiceAccount] = $result
-                    }
-                    catch {
+                    } catch {
                         if (![System.String]::IsNullOrEmpty($spn.InstanceServiceAccount)) {
                             Write-Message -Message "AD lookup failure. This may be because the domain cannot be resolved for the SQL Server service account ($serviceAccount)." -Level Warning
                         }
                     }
-                }
-                else {
+                } else {
                     $result = $resultCache[$spn.InstanceServiceAccount]
                 }
                 if ($result.Count -gt 0) {
@@ -286,13 +271,11 @@ function Test-DbaSpn {
                         if ($results.Properties.servicePrincipalName -contains $spn.RequiredSPN) {
                             $spn.IsSet = $true
                         }
-                    }
-                    catch {
+                    } catch {
                         Write-Message -Message "The SQL Service account ($serviceAccount) has been found, but you don't have enough permission to inspect its SPNs" -Level Warning
                         continue
                     }
-                }
-                else {
+                } else {
                     Write-Message -Level Warning -Message "SQL Service account not found. Results may not be accurate."
                     $spn
                     continue

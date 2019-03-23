@@ -1,82 +1,78 @@
 function Remove-DbaDatabase {
     <#
-.SYNOPSIS
-Drops a database, hopefully even the really stuck ones.
+    .SYNOPSIS
+        Drops a database, hopefully even the really stuck ones.
 
-.DESCRIPTION
-Tries a bunch of different ways to remove a database or two or more.
+    .DESCRIPTION
+        Tries a bunch of different ways to remove a database or two or more.
 
-.PARAMETER SqlInstance
-The SQL Server instance holding the databases to be removed.You must have sysadmin access and server version must be SQL Server version 2000 or higher.
+    .PARAMETER SqlInstance
+        The target SQL Server instance or instances.You must have sysadmin access and server version must be SQL Server version 2000 or higher.
 
-.PARAMETER SqlCredential
-Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted.
+    .PARAMETER SqlCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-$scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
+    .PARAMETER Database
+        The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
 
-Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. To connect as a different Windows user, run PowerShell as that user.
+    .PARAMETER InputObject
+        A collection of databases (such as returned by Get-DbaDatabase), to be removed.
 
-.PARAMETER Database
-The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
+    .PARAMETER IncludeSystemDb
+        Use this switch to disable any kind of verbose messages
 
-.PARAMETER DatabaseCollection
-A collection of databases (such as returned by Get-DbaDatabase), to be removed.
+    .PARAMETER WhatIf
+        Shows what would happen if the command were to run. No actions are actually performed.
 
-.PARAMETER IncludeSystemDb
-Use this switch to disable any kind of verbose messages
+    .PARAMETER Confirm
+        Prompts you for confirmation before executing any changing operations within the command.
 
-.PARAMETER WhatIf
-Shows what would happen if the command were to run. No actions are actually performed.
-
-.PARAMETER Confirm
-Prompts you for confirmation before executing any changing operations within the command.
-
-.PARAMETER EnableException
+    .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-.NOTES
-Tags: Delete, Databases
+    .NOTES
+        Tags: Delete, Databases
+        Author: Chrissy LeMaire (@cl), netnerds.net
 
-Website: https://dbatools.io
-Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-.LINK
-https://dbatools.io/Remove-DbaDatabase
+    .LINK
+        https://dbatools.io/Remove-DbaDatabase
 
-.EXAMPLE
-Remove-DbaDatabase -SqlInstance sql2016 -Database containeddb
+    .EXAMPLE
+        PS C:\> Remove-DbaDatabase -SqlInstance sql2016 -Database containeddb
 
-Prompts then removes the database containeddb on SQL Server sql2016
+        Prompts then removes the database containeddb on SQL Server sql2016
 
-.EXAMPLE
-Remove-DbaDatabase -SqlInstance sql2016 -Database containeddb, mydb
+    .EXAMPLE
+        PS C:\> Remove-DbaDatabase -SqlInstance sql2016 -Database containeddb, mydb
 
-Prompts then removes the databases containeddb and mydb on SQL Server sql2016
+        Prompts then removes the databases containeddb and mydb on SQL Server sql2016
 
-.EXAMPLE
-Remove-DbaDatabase -SqlInstance sql2016 -Database containeddb -Confirm:$false
+    .EXAMPLE
+        PS C:\> Remove-DbaDatabase -SqlInstance sql2016 -Database containeddb -Confirm:$false
 
-Does not prompt and swiftly removes containeddb on SQL Server sql2016
+        Does not prompt and swiftly removes containeddb on SQL Server sql2016
 
-.EXAMPLE
-Get-DbaDatabase -SqlInstance server\instance -ExcludeAllSystemDb | Remove-DbaDatabase
+    .EXAMPLE
+        PS C:\> Get-DbaDatabase -SqlInstance server\instance -ExcludeSystem | Remove-DbaDatabase
 
-Removes all the user databases from server\instance
+        Removes all the user databases from server\instance
 
-.EXAMPLE
-Get-DbaDatabase -SqlInstance server\instance -ExcludeAllSystemDb | Remove-DbaDatabase -Confirm:$false
+    .EXAMPLE
+        PS C:\> Get-DbaDatabase -SqlInstance server\instance -ExcludeSystem | Remove-DbaDatabase -Confirm:$false
 
-Removes all the user databases from server\instance without any confirmation
-#>
-    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'High', DefaultParameterSetName = "Default")]
-    Param (
-        [parameter(, Mandatory, ParameterSetName = "instance")]
+        Removes all the user databases from server\instance without any confirmation
+    #>
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High', DefaultParameterSetName = "Default")]
+    param (
+        [parameter(Mandatory, ParameterSetName = "instance")]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
-        [parameter(Mandatory = $false)]
         [Alias("Credential")]
         [PSCredential]
         $SqlCredential,
@@ -84,31 +80,30 @@ Removes all the user databases from server\instance without any confirmation
         [Alias("Databases")]
         [object[]]$Database,
         [Parameter(ValueFromPipeline, Mandatory, ParameterSetName = "databases")]
-        [Microsoft.SqlServer.Management.Smo.Database[]]$DatabaseCollection,
+        [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
         [switch]$IncludeSystemDb,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
 
     process {
 
         foreach ($instance in $SqlInstance) {
             try {
-                Write-Message -Level Verbose -Message "Connecting to $instance"
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
+            } catch {
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-            catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
-            }
-            $databasecollection += $server.Databases | Where-Object { $_.Name -in $Database }
+            $InputObject += $server.Databases | Where-Object { $_.Name -in $Database }
         }
 
         $system_dbs = @( "master", "model", "tempdb", "resource", "msdb" )
 
         if (-not($IncludeSystemDb)) {
-            $databasecollection = $databasecollection | Where-Object { $_.Name -notin $system_dbs}
+            $InputObject = $InputObject | Where-Object { $_.Name -notin $system_dbs}
         }
 
-        foreach ($db in $databasecollection) {
+        foreach ($db in $InputObject) {
             try {
                 $server = $db.Parent
                 if ($Pscmdlet.ShouldProcess("$db on $server", "KillDatabase")) {
@@ -116,52 +111,50 @@ Removes all the user databases from server\instance without any confirmation
                     $server.Refresh()
 
                     [pscustomobject]@{
-                        ComputerName = $server.NetName
+                        ComputerName = $server.ComputerName
                         InstanceName = $server.ServiceName
                         SqlInstance  = $server.DomainInstanceName
                         Database     = $db.name
                         Status       = "Dropped"
                     }
                 }
-            }
-            catch {
+            } catch {
                 try {
                     if ($Pscmdlet.ShouldProcess("$db on $server", "alter db set single_user with rollback immediate then drop")) {
                         $null = $server.Query("if exists (select * from sys.databases where name = '$($db.name)' and state = 0) alter database $db set single_user with rollback immediate; drop database $db")
 
                         [pscustomobject]@{
-                            ComputerName = $server.NetName
+                            ComputerName = $server.ComputerName
                             InstanceName = $server.ServiceName
                             SqlInstance  = $server.DomainInstanceName
                             Database     = $db.name
                             Status       = "Dropped"
                         }
                     }
-                }
-                catch {
+                } catch {
                     try {
                         if ($Pscmdlet.ShouldProcess("$db on $server", "SMO drop")) {
-                            $server.databases[$dbname].Drop()
+                            $dbname = $db.Name
+                            $db.Parent.databases[$dbname].Drop()
                             $server.Refresh()
 
                             [pscustomobject]@{
-                                ComputerName = $server.NetName
+                                ComputerName = $server.ComputerName
                                 InstanceName = $server.ServiceName
                                 SqlInstance  = $server.DomainInstanceName
                                 Database     = $db.name
                                 Status       = "Dropped"
                             }
                         }
-                    }
-                    catch {
+                    } catch {
                         Write-Message -Level Verbose -Message "Could not drop database $db on $server"
 
                         [pscustomobject]@{
-                            ComputerName = $server.NetName
+                            ComputerName = $server.ComputerName
                             InstanceName = $server.ServiceName
                             SqlInstance  = $server.DomainInstanceName
                             Database     = $db.name
-                            Status       = $_
+                            Status       = (Get-ErrorMessage -Record $_)
                         }
                     }
                 }

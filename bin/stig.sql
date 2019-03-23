@@ -12,53 +12,42 @@ USE tempdb;
 
             /*
             Objects defined in this file:
-
             VIEW STIG.database_role_members
                 Based on the system view sys.database_role_members, this presents the list of
                 database role memberships using roles' and users' names rather than their id numbers.
                 Although membership in database roles is hierarchical, this view lists only the direct memberships.
-
             FUNCTION STIG.database_roles_of(@database_principal sysname)
                 Given the name of a database principal (user or role), this table-valued function returns
                 a list of all the roles it belongs to, both directly and indirectly.
-
             FUNCTION STIG.members_of_db_role(@database_role sysname)
                 Given the name of a database role, this table-valued function returns
                 a list of all the roles and users that belong to it, both directly and indirectly.
-
             VIEW STIG.database_permissions
                 Based on the system view sys.database_permissions, this provides additional, descriptive material.
                 The list includes only those permissions explicitly granted (or denied) to a database user or role;
                 it does not include permissions that are implicit or inherited from a higher-level role.
                 Securable items that exist but have no explicit permissions assigned are included in the
                 list, with the columns that describe the grantor and grantee left null.
-
             FUNCTION STIG.database_effective_permissions(@Grantee sysname)
                 Given the name of a database principal (user or role), this table-valued function 
                 returns information about permissions granted (or denied) to that user or database role,
                 either directly or inherited from a higher-level role.
-
-
             VIEW STIG.server_role_members
                 Based on the system view sys.server_role_members, this presents the list of
                 server role memberships using roles' and users' names rather than their id numbers.
                 Although membership in server roles is hierarchical, this view lists only the direct memberships.
-
             FUNCTION STIG.server_roles_of(@server_principal sysname)
                 Given the name of a server principal (login or role), this table-valued function returns
                 a list of all the roles it belongs to, both directly and indirectly.
-
             FUNCTION STIG.members_of_server_role(@server_role sysname)
                 Given the name of a server role, this table-valued function returns
                 a list of all the roles and logins that belong to it, both directly and indirectly.
-
             VIEW STIG.server_permissions
                 Based on the system view sys.server_permissions, this provides additional, descriptive material.
                 The list includes only those permissions explicitly granted (or denied) to a server login or role;
                 it does not include permissions that are implicit or inherited from a higher-level role.
                 Securable items that exist but have no explicit permissions assigned are included in the
                 list, with columns describing the grantor and grantee left null.
-
             FUNCTION STIG.server_effective_permissions(@Grantee sysname)
                 Given the name of a server principal (login or server role), this table-valued function 
                 returns information about permissions granted (or denied) to that login or role,
@@ -188,7 +177,7 @@ USE tempdb;
             AS SELECT DISTINCT
                 @@SERVERNAME        AS [Current Server],
                 @@SERVICENAME       AS [Current Instance],
-                '<TARGETDB>'        AS [Current DB],
+                '<QUOTETARGETDB>'        AS [Current DB],
                 SYSTEM_USER         AS [Current Login],
                 USER                AS [Current User],
 
@@ -323,7 +312,7 @@ USE tempdb;
                     WHEN DP.class_desc IS NULL AND SK.name IS NOT NULL  THEN 'sys.symmetric_keys'
                     WHEN DP.class_desc IS NULL AND AK.name IS NOT NULL  THEN 'sys.asymmetric_keys'
                     WHEN DP.class_desc IS NULL AND CT.name IS NOT NULL  THEN 'sys.certificates'
-                    ELSE '<TARGETDB>.sys.database_permissions'
+                    ELSE '<QUOTETARGETDB>.sys.database_permissions'
                 END                 AS [Source View]
             FROM
                 <TARGETDB>.sys.database_permissions DP
@@ -483,7 +472,7 @@ USE tempdb;
                         P.[State],
                         P.[Grantor],
                         P.[Grantor Type],
-                        P.[source view]
+                        P.[Source View]
                     FROM
                         STIG.database_permissions P
                         INNER JOIN Targets T ON T.[Principal] = P.[Grantee]
@@ -670,7 +659,7 @@ USE tempdb;
             AS SELECT DISTINCT
                 @@SERVERNAME          AS [Current Server],
                 @@SERVICENAME         AS [Current Instance],
-                '<TARGETDB>'             AS [Current DB],
+                '<QUOTETARGETDB>'             AS [Current DB],
                 SYSTEM_USER           AS [Current Login],
                 USER                  AS [Current User],
                 CASE
@@ -694,8 +683,8 @@ USE tempdb;
                 END                    AS [Securable],
                 P1.name                AS [Grantee],
                 P1.type_desc           AS [Grantee Type],
-                sp.permission_name     AS [Permission],
-                sp.state_desc          AS [State],
+                SP.permission_name     AS [Permission],
+                SP.state_desc          AS [State],
                 P2.name                AS [Grantor],
                 P2.type_desc           AS [Grantor Type],
                 CASE
@@ -779,7 +768,7 @@ USE tempdb;
                         P.[State],
                         P.[Grantor],
                         P.[Grantor Type],
-                        P.[source view]
+                        P.[Source View]
                     FROM
                         STIG.server_permissions P
                         INNER JOIN Targets T ON T.[Principal] = P.[Grantee]
