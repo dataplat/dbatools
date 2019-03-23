@@ -258,6 +258,10 @@ function Invoke-DbaAdvancedRestore {
                                 $script = $script.TrimEnd() + ' WITH KEEP_CDC'
                             }
                             if ($true -ne $OutputScriptOnly) {
+                                if (($Restore.Script($server) -match '\ URL') -and $WithReplace) {
+                                    # restore does not generate WITH REPLACE
+                                    $null = Remove-DbaDatabase -SqlInstance $server -Database $Database -Confirm:$false
+                                }
                                 Write-Progress -id 1 -activity "Restoring $Database to $sqlinstance - Backup $BackupCnt of $($Backups.count)" -percentcomplete 0 -status ([System.String]::Format("Progress: {0} %", 0))
                                 $null = $server.ConnectionContext.ExecuteNonQuery($script)
                                 Write-Progress -id 1 -activity "Restoring $Database to $sqlinstance - Backup $BackupCnt of $($Backups.count)" -status "Complete" -Completed
@@ -285,6 +289,10 @@ function Invoke-DbaAdvancedRestore {
                                 return "Verify failed"
                             }
                         } else {
+                            if (($Restore.Script($server) -match '\ URL') -and $WithReplace) {
+                                # restore does not generate WITH REPLACE
+                                $null = Remove-DbaDatabase -SqlInstance $server -Database $Database -Confirm:$false
+                            }
                             $outerProgress = $BackupCnt / $Backups.Count * 100
                             if ($BackupCnt -eq 1) {
                                 Write-Progress -id 1 -Activity "Restoring $Database to $sqlinstance - Backup $BackupCnt of $($Backups.count)" -percentcomplete 0
