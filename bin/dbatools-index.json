@@ -163,6 +163,14 @@
                            ""
                        ],
                        [
+                           "Name",
+                           "The name of the listener. If one is not specified, the Availability Group name will be used.\nNote that Name cannot be used with Multiple Ags.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
                            "IPAddress",
                            "Sets the IP address of the availability group listener.",
                            "",
@@ -235,7 +243,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Add-DbaAgListener [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-AvailabilityGroup] \u003cString[]\u003e] [[-IPAddress] \u003cIPAddress\u003e] [[-SubnetMask] \u003cIPAddress\u003e] [[-Port] \u003cInt32\u003e] [-Dhcp] [-Passthru] [[-InputObject] \u003cAvailabilityGroup[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Add-DbaAgListener [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-AvailabilityGroup] \u003cString[]\u003e] [[-Name] \u003cString\u003e] [[-IPAddress] \u003cIPAddress\u003e] [[-SubnetMask] \u003cIPAddress\u003e] [[-Port] \u003cInt32\u003e] [-Dhcp] [-Passthru] [[-InputObject] \u003cAvailabilityGroup[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Add-DbaAgReplica",
@@ -4997,6 +5005,106 @@
                        ]
                    ],
         "Syntax":  "Copy-DbaSsisCatalog [-Source] \u003cDbaInstanceParameter\u003e [-Destination] \u003cDbaInstanceParameter[]\u003e [[-SourceSqlCredential] \u003cPSCredential\u003e] [[-DestinationSqlCredential] \u003cPSCredential\u003e] [[-Project] \u003cString\u003e] [[-Folder] \u003cString\u003e] [[-Environment] \u003cString\u003e] [[-CreateCatalogPassword] \u003cSecureString\u003e] [-EnableSqlClr] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+    },
+    {
+        "Name":  "Copy-DbaStartupProcedure",
+        "Description":  "By default, all procedures found flagged as startup procedures are copied and then set as a startup procedure on the destination instance. The -Procedure parameter is auto-populated for command-line completion and can be used to copy only specific startup procedures.\n\nIf the procedure already exists on the destination, it will be skipped unless -Force is used.",
+        "Tags":  [
+                     "Migration",
+                     "Procedure",
+                     "Startup",
+                     "StartupProcedure"
+                 ],
+        "Synopsis":  "Copy-DbaStartupProcedure migrates startup procedures (user defined procedures within master database) from one SQL Server to another.",
+        "Alias":  "",
+        "Author":  "Shawn Melton (@wsmelton), http://wsmelton.github.io",
+        "CommandName":  "Copy-DbaStartupProcedure",
+        "Availability":  "Windows, Linux, macOS",
+        "Links":  "https://dbatools.io/Copy-DbaStartupProcedure",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eCopy-DbaStartupProcedure -Source sqlserver2014a -Destination sqlcluster\nCopies all startup procedures from sqlserver2014a to sqlcluster using Windows credentials. If procedure(s) with the same name exists in the master database on sqlcluster, they will be skipped.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eCopy-DbaStartupProcedure -Source sqlserver2014a -SourceSqlCredential $scred -Destination sqlcluster -DestinationSqlCredential $dcred -Procedure logstartup -Force\nCopies only the startup procedure, logstartup, from sqlserver2014a to sqlcluster using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster. If the procedure already exists on \r\nsqlcluster, it will be updated because -Force was used.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eCopy-DbaStartupProcedure -Source sqlserver2014a -Destination sqlcluster -ExcludeProcedure logstartup -Force\nCopies all the startup procedures found on sqlserver2014a except logstartup to sqlcluster. If a startup procedure with the same name exists on sqlcluster, it will be updated because -Force was used.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eCopy-DbaStartupProcedure -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force\nShows what would happen if the command were executed using force.",
+        "Params":  [
+                       [
+                           "Source",
+                           "Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or higher.",
+                           "",
+                           true,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "SourceSqlCredential",
+                           "Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Destination",
+                           "Destination SQL Server. You must have sysadmin access and the server must be SQL Server 2000 or higher.",
+                           "",
+                           true,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "DestinationSqlCredential",
+                           "Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Procedure",
+                           "The startup procedure(s) to process. This list is auto-populated from the server. If unspecified, all startup procedrues will be processed.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "ExcludeProcedure",
+                           "The startup procedure(s) to exclude. This list is auto-populated from the server.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Force",
+                           "If this switch is enabled, the custom error will be dropped and recreated if it already exists on Destination.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "WhatIf",
+                           "If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.",
+                           "wi",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Confirm",
+                           "If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.",
+                           "cf",
+                           false,
+                           "false",
+                           ""
+                       ]
+                   ],
+        "Syntax":  "Copy-DbaStartupProcedure [-Source] \u003cDbaInstanceParameter\u003e [[-SourceSqlCredential] \u003cPSCredential\u003e] [-Destination] \u003cDbaInstanceParameter[]\u003e [[-DestinationSqlCredential] \u003cPSCredential\u003e] [[-Procedure] \u003cString[]\u003e] [[-ExcludeProcedure] \u003cString[]\u003e] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Copy-DbaSysDbUserObject",
@@ -20791,7 +20899,7 @@
         "CommandName":  "Import-DbaCsv",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Import-DbaCsv",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eImport-DbaCsv -Path C:\\temp\\housing.csv -SqlInstance sql001 -Database markets\nImports the entire comma-delimited housing.csv to the SQL \"markets\" database on a SQL Server named sql001, using the first row as column names.\nSince a table name was not specified, the table name is automatically determined from filename as \"housing\".\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eImport-DbaCsv -Path .\\housing.csv -SqlInstance sql001 -Database markets -Table housing -Delimiter \"`t\" -NoHeaderRow\nImports the entire comma-delimited housing.csv, including the first row which is not used for colum names, to the SQL markets database, into the housing table, on a SQL Server named sql001.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eImport-DbaCsv -Path C:\\temp\\huge.txt -SqlInstance sqlcluster -Database locations -Table latitudes -Delimiter \"|\"\nImports the entire pipe-delimited huge.txt to the locations database, into the latitudes table on a SQL Server named sqlcluster.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eImport-DbaCsv -Path c:\\temp\\SingleColumn.csv -SqlInstance sql001 -Database markets -Table TempTable -SingleColumn\nImports the single column CSV into TempTable\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eGet-ChildItem -Path \\\\FileServer\\csvs | Import-DbaCsv -SqlInstance sql001, sql002 -Database tempdb -AutoCreateTable\nImports every CSV in the \\\\FileServer\\csvs path into both sql001 and sql002\u0027s tempdb database. Each CSV will be imported into an automatically determined table name.\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eGet-ChildItem -Path \\\\FileServer\\csvs | Import-DbaCsv -SqlInstance sql001, sql002 -Database tempdb -AutoCreateTable -WhatIf\nShows what would happen if the command were to be executed\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003eImport-DbaCsv -Path c:\\temp\\dataset.csv -SqlInstance sql2016 -Database tempdb -Column Name, Address, Mobile\nImport only Name, Address and Mobile even if other columns exist. All other columns are ignored and therefore null or default values.\n-------------------------- EXAMPLE 8 --------------------------\nPS C:\\\u003e$columns = @{\n\u003e\u003e Text = \u0027FirstName\u0027\r\n\u003e\u003e Number = \u0027PhoneNumber\u0027\r\n\u003e\u003e }\r\nPS C:\\\u003e Import-DbaCsv -Path c:\\temp\\supersmall.csv -SqlInstance sql2016 -Database tempdb -ColumnMap $columns\nThe CSV column \u0027Text\u0027 is inserted into SQL column \u0027FirstName\u0027 and CSV column Number is inserted into the SQL Column \u0027PhoneNumber\u0027. All other columns are ignored and therefore null or default values.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eImport-DbaCsv -Path C:\\temp\\housing.csv -SqlInstance sql001 -Database markets\nImports the entire comma-delimited housing.csv to the SQL \"markets\" database on a SQL Server named sql001, using the first row as column names.\nSince a table name was not specified, the table name is automatically determined from filename as \"housing\".\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eImport-DbaCsv -Path .\\housing.csv -SqlInstance sql001 -Database markets -Table housing -Delimiter \"`t\" -NoHeaderRow\nImports the entire tab-delimited housing.csv, including the first row which is not used for colum names, to the SQL markets database, into the housing table, on a SQL Server named sql001.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eImport-DbaCsv -Path C:\\temp\\huge.txt -SqlInstance sqlcluster -Database locations -Table latitudes -Delimiter \"|\"\nImports the entire pipe-delimited huge.txt to the locations database, into the latitudes table on a SQL Server named sqlcluster.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eImport-DbaCsv -Path c:\\temp\\SingleColumn.csv -SqlInstance sql001 -Database markets -Table TempTable -SingleColumn\nImports the single column CSV into TempTable\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eGet-ChildItem -Path \\\\FileServer\\csvs | Import-DbaCsv -SqlInstance sql001, sql002 -Database tempdb -AutoCreateTable\nImports every CSV in the \\\\FileServer\\csvs path into both sql001 and sql002\u0027s tempdb database. Each CSV will be imported into an automatically determined table name.\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eGet-ChildItem -Path \\\\FileServer\\csvs | Import-DbaCsv -SqlInstance sql001, sql002 -Database tempdb -AutoCreateTable -WhatIf\nShows what would happen if the command were to be executed\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003eImport-DbaCsv -Path c:\\temp\\dataset.csv -SqlInstance sql2016 -Database tempdb -Column Name, Address, Mobile\nImport only Name, Address and Mobile even if other columns exist. All other columns are ignored and therefore null or default values.\n-------------------------- EXAMPLE 8 --------------------------\nPS C:\\\u003e$columns = @{\n\u003e\u003e Text = \u0027FirstName\u0027\r\n\u003e\u003e Number = \u0027PhoneNumber\u0027\r\n\u003e\u003e }\r\nPS C:\\\u003e Import-DbaCsv -Path c:\\temp\\supersmall.csv -SqlInstance sql2016 -Database tempdb -ColumnMap $columns\nThe CSV column \u0027Text\u0027 is inserted into SQL column \u0027FirstName\u0027 and CSV column Number is inserted into the SQL Column \u0027PhoneNumber\u0027. All other columns are ignored and therefore null or default values.",
         "Params":  [
                        [
                            "Path",
@@ -21035,7 +21143,7 @@
                        ],
                        [
                            "MaxQuotedFieldLength",
-                           "The axmimum length (in bytes) for any quoted field.",
+                           "The maxmimum length (in bytes) for any quoted field.",
                            "",
                            false,
                            "false",
@@ -22115,6 +22223,14 @@
                            ""
                        ],
                        [
+                           "PreRelease",
+                           "If specified, a pre-release (beta) will be downloaded rather than a stable release",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
                            "Force",
                            "If this switch is enabled, SqlWatch will be downloaded from the internet even if previously cached.",
                            "",
@@ -22147,7 +22263,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Install-DbaSqlWatch [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString\u003e] [[-LocalFile] \u003cString\u003e] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Install-DbaSqlWatch [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString\u003e] [[-LocalFile] \u003cString\u003e] [-PreRelease] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Install-DbaWatchUpdate",
@@ -38959,7 +39075,7 @@
                        [
                            "EnableException",
                            "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
-                           "Silent",
+                           "",
                            false,
                            "false",
                            "False"
