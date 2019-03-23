@@ -48,7 +48,7 @@ function Get-DbaAvailabilityGroup {
         Shows basic information on the Availability Group AG-a on sqlserver2014a.
 
     .EXAMPLE
-        PS C:\> Get-DbaAvailabilityGroup -SqlInstance sqlserver2014a | Select *
+        PS C:\> Get-DbaAvailabilityGroup -SqlInstance sqlserver2014a | Select-Object *
 
         Returns full object properties on all Availability Group(s) on sqlserver2014a.
 

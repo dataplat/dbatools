@@ -150,7 +150,7 @@ function New-DbaDbUser {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
             } catch {
-                Stop-Function -Message "Error occured while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             $databases = $server.Databases | Where-Object IsAccessible -eq $true
@@ -219,7 +219,7 @@ function New-DbaDbUser {
                         $smoUser.Name = $Name
 
                         if ( $PSBoundParameters.Keys -contains 'Login' -and $Login.GetType().Name -eq 'Login' ) {
-                            $smoUser.Login = Login
+                            $smoUser.Login = $Login
                         }
                         $smoUser.UserType = $UserType
 

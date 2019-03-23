@@ -68,6 +68,11 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $server.ConnectionContext.StatementTimeout | Should Be 0
         }
 
+        It "connects using a connection string" {
+            $server = Connect-DbaInstance -SqlInstance "Data Source=$script:instance1;Initial Catalog=tempdb;Integrated Security=True;"
+            $server.Databases.Name.Count -gt 0 | Should Be $true
+        }
+
         It "sets connectioncontext parameters that are provided" {
             $params = @{
                 'BatchSeparator'           = 'GO'
