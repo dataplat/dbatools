@@ -1065,6 +1065,7 @@ $script:xplat = @(
     'Copy-DbaSysDbUserObject',
     'Copy-DbaAgentProxy',
     'Copy-DbaAgentAlert',
+    'Copy-DbaStartupProcedure',
     'Get-DbaDetachedDatabaseInfo',
     'Restore-DbaBackupFromDirectory',
     'Copy-DbaAgentJobCategory',
