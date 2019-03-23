@@ -188,7 +188,7 @@ USE tempdb;
             AS SELECT DISTINCT
                 @@SERVERNAME        AS [Current Server],
                 @@SERVICENAME       AS [Current Instance],
-                '<QUOTETARGETDB>'     AS [Current DB],
+                '<QUOTETARGETDB>'             AS [Current DB],
                 SYSTEM_USER         AS [Current Login],
                 USER                AS [Current User],
 
