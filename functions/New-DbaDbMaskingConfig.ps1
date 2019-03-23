@@ -610,6 +610,7 @@ function New-DbaDbMaskingConfig {
                             Format          = $null
                             Deterministic   = $false
                             Nullable        = $columnobject.Nullable
+                            Composite       = $null
                         }
                     }
                 }
