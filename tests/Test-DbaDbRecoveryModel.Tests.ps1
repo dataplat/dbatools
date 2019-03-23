@@ -75,7 +75,7 @@ Describe "$CommandName Intigration Tests" -Tag  "IntegrationTests" {
     }
 
     Context "Psudo Simple Recovery" {
-        $results = Test-DbaDbRecoveryModel -SqlInstance $script:instance2 -RecoveryModel Full | Where {$_.database -eq "$psudoSimpleRecovery"}
+        $results = Test-DbaDbRecoveryModel -SqlInstance $script:instance2 -RecoveryModel Full | Where-Object {$_.database -eq "$psudoSimpleRecovery"}
 
         It "Should return $psudoSimpleRecovery" {
             $results.Database | should -Be "$psudoSimpleRecovery"

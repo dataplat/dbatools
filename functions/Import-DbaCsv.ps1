@@ -134,7 +134,7 @@ function Import-DbaCsv {
         Defines the default value for Threshold indicating when the CsvReader should replace/remove consecutive null bytes.
 
     .PARAMETER MaxQuotedFieldLength
-        The axmimum length (in bytes) for any quoted field.
+        The maxmimum length (in bytes) for any quoted field.
 
     .PARAMETER SkipEmptyLine
         Skip empty lines.
@@ -180,7 +180,7 @@ function Import-DbaCsv {
     .EXAMPLE
         PS C:\> Import-DbaCsv -Path .\housing.csv -SqlInstance sql001 -Database markets -Table housing -Delimiter "`t" -NoHeaderRow
 
-        Imports the entire comma-delimited housing.csv, including the first row which is not used for colum names, to the SQL markets database, into the housing table, on a SQL Server named sql001.
+        Imports the entire tab-delimited housing.csv, including the first row which is not used for colum names, to the SQL markets database, into the housing table, on a SQL Server named sql001.
 
     .EXAMPLE
         PS C:\> Import-DbaCsv -Path C:\temp\huge.txt -SqlInstance sqlcluster -Database locations -Table latitudes -Delimiter "|"
@@ -407,7 +407,7 @@ function Import-DbaCsv {
                     $sqlconn = $server.ConnectionContext.SqlConnectionObject
                     $sqlconn.Open()
                 } catch {
-                    Stop-Function -Message "Error occured while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                    Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
                 }
 
                 if (-not $NoTransaction) {

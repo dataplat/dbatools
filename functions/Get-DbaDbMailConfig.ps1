@@ -45,7 +45,7 @@ function Get-DbaDbMailConfig {
         Returns the ProhibitedExtensions configuration on sql01\sharepoint
 
     .EXAMPLE
-        PS C:\> Get-DbaDbMailConfig -SqlInstance sql01\sharepoint | Select *
+        PS C:\> Get-DbaDbMailConfig -SqlInstance sql01\sharepoint | Select-Object *
 
         Returns the DBMail configs on sql01\sharepoint then return a bunch more columns
 

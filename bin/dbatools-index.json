@@ -163,6 +163,14 @@
                            ""
                        ],
                        [
+                           "Name",
+                           "The name of the listener. If one is not specified, the Availability Group name will be used.\nNote that Name cannot be used with Multiple Ags.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
                            "IPAddress",
                            "Sets the IP address of the availability group listener.",
                            "",
@@ -235,7 +243,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Add-DbaAgListener [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-AvailabilityGroup] \u003cString[]\u003e] [[-IPAddress] \u003cIPAddress\u003e] [[-SubnetMask] \u003cIPAddress\u003e] [[-Port] \u003cInt32\u003e] [-Dhcp] [-Passthru] [[-InputObject] \u003cAvailabilityGroup[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Add-DbaAgListener [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-AvailabilityGroup] \u003cString[]\u003e] [[-Name] \u003cString\u003e] [[-IPAddress] \u003cIPAddress\u003e] [[-SubnetMask] \u003cIPAddress\u003e] [[-Port] \u003cInt32\u003e] [-Dhcp] [-Passthru] [[-InputObject] \u003cAvailabilityGroup[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Add-DbaAgReplica",
@@ -1871,6 +1879,14 @@
                            ""
                        ],
                        [
+                           "ExcludeRowLabel",
+                           "By default, the Timeline shows SqlInstance and item name (agent job or database) in row labels section of the chart.\r\nWhen this parameter (ExcludeRowLabel) is set to true the row labels will not be shown which will maximise the chart area for better visualisation.\r\nAll relevant details are still available in the tooltip.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
                            "EnableException",
                            "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
                            "",
@@ -1879,7 +1895,7 @@
                            "False"
                        ]
                    ],
-        "Syntax":  "ConvertTo-DbaTimeline [-InputObject] \u003cObject[]\u003e [-EnableException] [\u003cCommonParameters\u003e]"
+        "Syntax":  "ConvertTo-DbaTimeline [-InputObject] \u003cObject[]\u003e [-ExcludeRowLabel] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "ConvertTo-DbaXESession",
@@ -1894,7 +1910,7 @@
         "CommandName":  "ConvertTo-DbaXESession",
         "Availability":  "Windows, Linux, macOS",
         "Links":  null,
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaTrace -SqlInstance sql2017, sql2012 | Where Id -eq 2 | ConvertTo-DbaXESession -Name \u0027Test\u0027\nConverts Trace with ID 2 to a Session named Test on SQL Server instances named sql2017 and sql2012 and creates the Session on each respective server.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaTrace -SqlInstance sql2014 | Out-GridView -PassThru | ConvertTo-DbaXESession -Name \u0027Test\u0027 | Start-DbaXESession\nConverts selected traces on sql2014 to sessions, creates the session, and starts it.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaTrace -SqlInstance sql2014 | Where Id -eq 1 | ConvertTo-DbaXESession -Name \u0027Test\u0027 -OutputScriptOnly\nConverts trace ID 1 on sql2014 to an Extended Event and outputs the resulting T-SQL.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaTrace -SqlInstance sql2017, sql2012 | Where-Object Id -eq 2 | ConvertTo-DbaXESession -Name \u0027Test\u0027\nConverts Trace with ID 2 to a Session named Test on SQL Server instances named sql2017 and sql2012 and creates the Session on each respective server.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaTrace -SqlInstance sql2014 | Out-GridView -PassThru | ConvertTo-DbaXESession -Name \u0027Test\u0027 | Start-DbaXESession\nConverts selected traces on sql2014 to sessions, creates the session, and starts it.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaTrace -SqlInstance sql2014 | Where-Object Id -eq 1 | ConvertTo-DbaXESession -Name \u0027Test\u0027 -OutputScriptOnly\nConverts trace ID 1 on sql2014 to an Extended Event and outputs the resulting T-SQL.",
         "Params":  [
                        [
                            "InputObject",
@@ -2051,13 +2067,13 @@
         "CommandName":  "Copy-DbaAgentJob",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Copy-DbaAgentJob",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eCopy-DbaAgentJob -Source sqlserver2014a -Destination sqlcluster\nCopies all jobs from sqlserver2014a to sqlcluster, using Windows credentials. If jobs with the same name exist on sqlcluster, they will be skipped.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eCopy-DbaAgentJob -Source sqlserver2014a -Destination sqlcluster -Job PSJob -SourceSqlCredential $cred -Force\nCopies a single job, the PSJob job from sqlserver2014a to sqlcluster, using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster. If a job with the same name exists on \r\nsqlcluster, it will be dropped and recreated because -Force was used.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eCopy-DbaAgentJob -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force\nShows what would happen if the command were executed using force.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaAgentJob -SqlInstance sqlserver2014a | Where-Object Category -eq \"Report Server\" | ForEach-Object {Copy-DbaAgentJob -Source $_.SqlInstance -Job $_.Name -Destination sqlserver2014b}\nCopies all SSRS jobs (subscriptions) from AlwaysOn Primary SQL instance sqlserver2014a to AlwaysOn Secondary SQL instance sqlserver2014b",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eCopy-DbaAgentJob -Source sqlserver2014a -Destination sqlcluster\nCopies all jobs from sqlserver2014a to sqlcluster, using Windows credentials. If jobs with the same name exist on sqlcluster, they will be skipped.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eCopy-DbaAgentJob -Source sqlserver2014a -Destination sqlcluster -Job PSJob -SourceSqlCredential $cred -Force\nCopies a single job, the PSJob job from sqlserver2014a to sqlcluster, using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster. If a job with the same name exists on \r\nsqlcluster, it will be dropped and recreated because -Force was used.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eCopy-DbaAgentJob -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force\nShows what would happen if the command were executed using force.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaAgentJob -SqlInstance sqlserver2014a | Where-Object Category -eq \"Report Server\" | Copy-DbaAgentJob -Destination sqlserver2014b\nCopies all SSRS jobs (subscriptions) from AlwaysOn Primary SQL instance sqlserver2014a to AlwaysOn Secondary SQL instance sqlserver2014b",
         "Params":  [
                        [
                            "Source",
                            "Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or higher.",
                            "",
-                           true,
+                           false,
                            "false",
                            ""
                        ],
@@ -2126,9 +2142,17 @@
                            "False"
                        ],
                        [
+                           "InputObject",
+                           "Piped in jobs from Get-DbaAgentJob",
+                           "",
+                           false,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
                            "EnableException",
                            "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
-                           "Silent",
+                           "",
                            false,
                            "false",
                            "False"
@@ -2150,7 +2174,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Copy-DbaAgentJob [-Source] \u003cDbaInstanceParameter\u003e [[-SourceSqlCredential] \u003cPSCredential\u003e] [-Destination] \u003cDbaInstanceParameter[]\u003e [[-DestinationSqlCredential] \u003cPSCredential\u003e] [[-Job] \u003cObject[]\u003e] [[-ExcludeJob] \u003cObject[]\u003e] [-DisableOnSource] [-DisableOnDestination] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Copy-DbaAgentJob [[-Source] \u003cDbaInstanceParameter\u003e] [[-SourceSqlCredential] \u003cPSCredential\u003e] [-Destination] \u003cDbaInstanceParameter[]\u003e [[-DestinationSqlCredential] \u003cPSCredential\u003e] [[-Job] \u003cObject[]\u003e] [[-ExcludeJob] \u003cObject[]\u003e] [-DisableOnSource] [-DisableOnDestination] [-Force] [[-InputObject] \u003cJob[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Copy-DbaAgentJobCategory",
@@ -4983,6 +5007,106 @@
         "Syntax":  "Copy-DbaSsisCatalog [-Source] \u003cDbaInstanceParameter\u003e [-Destination] \u003cDbaInstanceParameter[]\u003e [[-SourceSqlCredential] \u003cPSCredential\u003e] [[-DestinationSqlCredential] \u003cPSCredential\u003e] [[-Project] \u003cString\u003e] [[-Folder] \u003cString\u003e] [[-Environment] \u003cString\u003e] [[-CreateCatalogPassword] \u003cSecureString\u003e] [-EnableSqlClr] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
+        "Name":  "Copy-DbaStartupProcedure",
+        "Description":  "By default, all procedures found flagged as startup procedures are copied and then set as a startup procedure on the destination instance. The -Procedure parameter is auto-populated for command-line completion and can be used to copy only specific startup procedures.\n\nIf the procedure already exists on the destination, it will be skipped unless -Force is used.",
+        "Tags":  [
+                     "Migration",
+                     "Procedure",
+                     "Startup",
+                     "StartupProcedure"
+                 ],
+        "Synopsis":  "Copy-DbaStartupProcedure migrates startup procedures (user defined procedures within master database) from one SQL Server to another.",
+        "Alias":  "",
+        "Author":  "Shawn Melton (@wsmelton), http://wsmelton.github.io",
+        "CommandName":  "Copy-DbaStartupProcedure",
+        "Availability":  "Windows, Linux, macOS",
+        "Links":  "https://dbatools.io/Copy-DbaStartupProcedure",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eCopy-DbaStartupProcedure -Source sqlserver2014a -Destination sqlcluster\nCopies all startup procedures from sqlserver2014a to sqlcluster using Windows credentials. If procedure(s) with the same name exists in the master database on sqlcluster, they will be skipped.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eCopy-DbaStartupProcedure -Source sqlserver2014a -SourceSqlCredential $scred -Destination sqlcluster -DestinationSqlCredential $dcred -Procedure logstartup -Force\nCopies only the startup procedure, logstartup, from sqlserver2014a to sqlcluster using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster. If the procedure already exists on \r\nsqlcluster, it will be updated because -Force was used.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eCopy-DbaStartupProcedure -Source sqlserver2014a -Destination sqlcluster -ExcludeProcedure logstartup -Force\nCopies all the startup procedures found on sqlserver2014a except logstartup to sqlcluster. If a startup procedure with the same name exists on sqlcluster, it will be updated because -Force was used.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eCopy-DbaStartupProcedure -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force\nShows what would happen if the command were executed using force.",
+        "Params":  [
+                       [
+                           "Source",
+                           "Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or higher.",
+                           "",
+                           true,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "SourceSqlCredential",
+                           "Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Destination",
+                           "Destination SQL Server. You must have sysadmin access and the server must be SQL Server 2000 or higher.",
+                           "",
+                           true,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "DestinationSqlCredential",
+                           "Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Procedure",
+                           "The startup procedure(s) to process. This list is auto-populated from the server. If unspecified, all startup procedrues will be processed.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "ExcludeProcedure",
+                           "The startup procedure(s) to exclude. This list is auto-populated from the server.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Force",
+                           "If this switch is enabled, the custom error will be dropped and recreated if it already exists on Destination.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "WhatIf",
+                           "If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.",
+                           "wi",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Confirm",
+                           "If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.",
+                           "cf",
+                           false,
+                           "false",
+                           ""
+                       ]
+                   ],
+        "Syntax":  "Copy-DbaStartupProcedure [-Source] \u003cDbaInstanceParameter\u003e [[-SourceSqlCredential] \u003cPSCredential\u003e] [-Destination] \u003cDbaInstanceParameter[]\u003e [[-DestinationSqlCredential] \u003cPSCredential\u003e] [[-Procedure] \u003cString[]\u003e] [[-ExcludeProcedure] \u003cString[]\u003e] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+    },
+    {
         "Name":  "Copy-DbaSysDbUserObject",
         "Description":  "Imports all user objects found in source SQL Server\u0027s master, msdb and model databases to the destination. This is useful because many DBAs store backup/maintenance procs/tables/triggers/etc (among other things) in master or msdb.\n\nIt is also useful for migrating objects within the model database.",
         "Tags":  [
@@ -6297,6 +6421,113 @@
                        ]
                    ],
         "Syntax":  "Export-DbaDacPackage -SqlInstance \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Database \u003cObject[]\u003e] [-ExcludeDatabase \u003cObject[]\u003e] [-AllUserDatabases] [-Path \u003cString\u003e] [-DacOption \u003cObject\u003e] [-Type \u003cString\u003e] [-Table \u003cString[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]\nExport-DbaDacPackage -SqlInstance \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Database \u003cObject[]\u003e] [-ExcludeDatabase \u003cObject[]\u003e] [-AllUserDatabases] [-Path \u003cString\u003e] [-ExtendedParameters \u003cString\u003e] [-ExtendedProperties \u003cString\u003e] [-Type \u003cString\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
+    },
+    {
+        "Name":  "Export-DbaDbTableData",
+        "Description":  "Exports data from tables",
+        "Tags":  [
+                     "Migration",
+                     "Backup",
+                     "Export"
+                 ],
+        "Synopsis":  "Exports data from tables",
+        "Alias":  "",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
+        "CommandName":  "Export-DbaDbTableData",
+        "Availability":  "Windows, Linux, macOS",
+        "Links":  "https://dbatools.io/Export-DbaDbTableData",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaDbTable -SqlInstance sql2017 -Database AdventureWorks2014 -Table EmployeePayHistory | Export-DbaDbTableData\nExports data from EmployeePayHistory in AdventureWorks2014 in sql2017\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaDbTable -SqlInstance sql2017 -Database AdventureWorks2014 -Table EmployeePayHistory | Export-DbaDbTableData -Path C:\\temp\\export.sql -Append\nExports data from EmployeePayHistory in AdventureWorks2014 in sql2017 using a trusted connection - Will append the output to the file C:\\temp\\export.sql if it already exists\r\nScript does not include Batch Separator and will not compile\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaDbTable -SqlInstance sql2016 -Database MyDatabase -Table \u0027dbo.Table1\u0027, \u0027dbo.Table2\u0027 -SqlCredential sqladmin | Export-DbaDbTableData -Path C:\\temp\\export.sql\nExports only data from \u0027dbo.Table1\u0027 and \u0027dbo.Table2\u0027 in MyDatabase to C:temp\\export.sql and uses the SQL login \"sqladmin\" to login to sql2016",
+        "Params":  [
+                       [
+                           "InputObject",
+                           "Pipeline input from Get-DbaDbTable",
+                           "",
+                           true,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
+                           "Path",
+                           "The output filename and location. If no path is specified, one will be created. If the file already exists, the output will be appended.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Encoding",
+                           "Specifies the file encoding. The default is UTF8.\nValid values are:\r\n-- ASCII: Uses the encoding for the ASCII (7-bit) character set.\r\n-- BigEndianUnicode: Encodes in UTF-16 format using the big-endian byte order.\r\n-- Byte: Encodes a set of characters into a sequence of bytes.\r\n-- String: Uses the encoding type for a string.\r\n-- Unicode: Encodes in UTF-16 format using the little-endian byte order.\r\n-- UTF7: Encodes in UTF-7 format.\r\n-- UTF8: Encodes in UTF-8 format.\r\n-- Unknown: The encoding type is unknown or invalid. The data can be treated as binary.",
+                           "",
+                           false,
+                           "false",
+                           "UTF8"
+                       ],
+                       [
+                           "BatchSeparator",
+                           "Specifies the Batch Separator to use. Default is None",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "NoPrefix",
+                           "Do not include a Prefix",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "Passthru",
+                           "Output script to console",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "NoClobber",
+                           "Do not overwrite file",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "Append",
+                           "Append to file",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "WhatIf",
+                           "Shows what would happen if the command were to run. No actions are actually performed",
+                           "wi",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Confirm",
+                           "Prompts you for confirmation before executing any changing operations within the command",
+                           "cf",
+                           false,
+                           "false",
+                           ""
+                       ]
+                   ],
+        "Syntax":  "Export-DbaDbTableData [-InputObject] \u003cTable[]\u003e [[-Path] \u003cString\u003e] [[-Encoding] \u003cString\u003e] [[-BatchSeparator] \u003cString\u003e] [-NoPrefix] [-Passthru] [-NoClobber] [-Append] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Export-DbaDiagnosticQuery",
@@ -9760,7 +9991,7 @@
         "CommandName":  "Get-DbaAvailabilityGroup",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Get-DbaAvailabilityGroup",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaAvailabilityGroup -SqlInstance sqlserver2014a\nReturns basic information on all the Availability Group(s) found on sqlserver2014a.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaAvailabilityGroup -SqlInstance sqlserver2014a -AvailabilityGroup AG-a\nShows basic information on the Availability Group AG-a on sqlserver2014a.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaAvailabilityGroup -SqlInstance sqlserver2014a | Select *\nReturns full object properties on all Availability Group(s) on sqlserver2014a.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaAvailabilityGroup -SqlInstance sqlserver2014a | Select-Object -ExpandProperty PrimaryReplicaServerName\nReturns the SQL Server instancename of the primary replica as a string\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eGet-DbaAvailabilityGroup -SqlInstance sqlserver2014a -AvailabilityGroup AG-a -IsPrimary\nReturns true/false if the server, sqlserver2014a, is the primary replica for AG-a Availability Group.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaAvailabilityGroup -SqlInstance sqlserver2014a\nReturns basic information on all the Availability Group(s) found on sqlserver2014a.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaAvailabilityGroup -SqlInstance sqlserver2014a -AvailabilityGroup AG-a\nShows basic information on the Availability Group AG-a on sqlserver2014a.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaAvailabilityGroup -SqlInstance sqlserver2014a | Select-Object *\nReturns full object properties on all Availability Group(s) on sqlserver2014a.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaAvailabilityGroup -SqlInstance sqlserver2014a | Select-Object -ExpandProperty PrimaryReplicaServerName\nReturns the SQL Server instancename of the primary replica as a string\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eGet-DbaAvailabilityGroup -SqlInstance sqlserver2014a -AvailabilityGroup AG-a -IsPrimary\nReturns true/false if the server, sqlserver2014a, is the primary replica for AG-a Availability Group.",
         "Params":  [
                        [
                            "SqlInstance",
@@ -10323,7 +10554,7 @@
         "CommandName":  "Get-DbaClientProtocol",
         "Availability":  "Windows only",
         "Links":  "https://dbatools.io/Get-DbaClientProtocol",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaClientProtocol -ComputerName sqlserver2014a\nGets the SQL Server related client protocols on computer sqlserver2014a.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003e\u0027sql1\u0027,\u0027sql2\u0027,\u0027sql3\u0027 | Get-DbaClientProtocol\nGets the SQL Server related client protocols on computers sql1, sql2 and sql3.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaClientProtocol -ComputerName sql1,sql2 | Out-GridView\nGets the SQL Server related client protocols on computers sql1 and sql2, and shows them in a grid view.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003e(Get-DbaClientProtocol -ComputerName sql2 | Where { $_.DisplayName = \u0027via\u0027 }).Disable()\nDisables the VIA ClientNetworkProtocol on computer sql2.\r\nIf successful, return code 0 is shown.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaClientProtocol -ComputerName sqlserver2014a\nGets the SQL Server related client protocols on computer sqlserver2014a.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003e\u0027sql1\u0027,\u0027sql2\u0027,\u0027sql3\u0027 | Get-DbaClientProtocol\nGets the SQL Server related client protocols on computers sql1, sql2 and sql3.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaClientProtocol -ComputerName sql1,sql2 | Out-GridView\nGets the SQL Server related client protocols on computers sql1 and sql2, and shows them in a grid view.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003e(Get-DbaClientProtocol -ComputerName sql2 | Where-Object { $_.DisplayName = \u0027via\u0027 }).Disable()\nDisables the VIA ClientNetworkProtocol on computer sql2.\r\nIf successful, return code 0 is shown.",
         "Params":  [
                        [
                            "ComputerName",
@@ -10865,7 +11096,7 @@
         "CommandName":  "Get-DbaCpuRingBuffer",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Get-DbaCpuRingBuffer",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaCpuRingBuffer -SqlInstance sql2008, sqlserver2012\nGets CPU Statistics from sys.dm_os_ring_buffers for servers sql2008 and sqlserver2012 for last 60 minutes.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaCpuRingBuffer -SqlInstance sql2008 -CollectionMinutes 240\nGets CPU Statistics from sys.dm_os_ring_buffers for server sql2008 for last 240 minutes\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003e$output = Get-DbaCpuRingBuffer -SqlInstance sql2008 -CollectionMinutes 240 | Select * | ConvertTo-DbaDataTable\nGets CPU Statistics from sys.dm_os_ring_buffers for server sql2008 for last 240 minutes into a Data Table.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003e\u0027sql2008\u0027,\u0027sql2012\u0027 | Get-DbaCpuRingBuffer\nGets CPU Statistics from sys.dm_os_ring_buffers for servers sql2008 and sqlserver2012\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003e$cred = Get-Credential sqladmin\nPS C:\\\u003e Get-DbaCpuRingBuffer -SqlInstance sql2008 -SqlCredential $cred\nConnects using sqladmin credential and returns CPU Statistics from sys.dm_os_ring_buffers from sql2008",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaCpuRingBuffer -SqlInstance sql2008, sqlserver2012\nGets CPU Statistics from sys.dm_os_ring_buffers for servers sql2008 and sqlserver2012 for last 60 minutes.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaCpuRingBuffer -SqlInstance sql2008 -CollectionMinutes 240\nGets CPU Statistics from sys.dm_os_ring_buffers for server sql2008 for last 240 minutes\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003e$output = Get-DbaCpuRingBuffer -SqlInstance sql2008 -CollectionMinutes 240 | Select-Object * | ConvertTo-DbaDataTable\nGets CPU Statistics from sys.dm_os_ring_buffers for server sql2008 for last 240 minutes into a Data Table.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003e\u0027sql2008\u0027,\u0027sql2012\u0027 | Get-DbaCpuRingBuffer\nGets CPU Statistics from sys.dm_os_ring_buffers for servers sql2008 and sqlserver2012\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003e$cred = Get-Credential sqladmin\nPS C:\\\u003e Get-DbaCpuRingBuffer -SqlInstance sql2008 -SqlCredential $cred\nConnects using sqladmin credential and returns CPU Statistics from sys.dm_os_ring_buffers from sql2008",
         "Params":  [
                        [
                            "SqlInstance",
@@ -12410,7 +12641,7 @@
         "CommandName":  "Get-DbaDbMail",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Get-DbaDbMail",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaDbMail -SqlInstance sql01\\sharepoint\nReturns the db mail server object on sql01\\sharepoint\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaDbMail -SqlInstance sql01\\sharepoint | Select *\nReturns the db mail server object on sql01\\sharepoint then return a bunch more columns\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003e$servers = \"sql2014\",\"sql2016\", \"sqlcluster\\sharepoint\"\nPS C:\\\u003e $servers | Get-DbaDbMail\nReturns the db mail server object for \"sql2014\",\"sql2016\" and \"sqlcluster\\sharepoint\"",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaDbMail -SqlInstance sql01\\sharepoint\nReturns the db mail server object on sql01\\sharepoint\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaDbMail -SqlInstance sql01\\sharepoint | Select-Object *\nReturns the db mail server object on sql01\\sharepoint then return a bunch more columns\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003e$servers = \"sql2014\",\"sql2016\", \"sqlcluster\\sharepoint\"\nPS C:\\\u003e $servers | Get-DbaDbMail\nReturns the db mail server object for \"sql2014\",\"sql2016\" and \"sqlcluster\\sharepoint\"",
         "Params":  [
                        [
                            "SqlInstance",
@@ -12453,7 +12684,7 @@
         "CommandName":  "Get-DbaDbMailAccount",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Get-DbaDbMailAccount",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaDbMailAccount -SqlInstance sql01\\sharepoint\nReturns Database Mail accounts on sql01\\sharepoint\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaDbMailAccount -SqlInstance sql01\\sharepoint -Account \u0027The DBA Team\u0027\nReturns The DBA Team Database Mail account from sql01\\sharepoint\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaDbMailAccount -SqlInstance sql01\\sharepoint | Select *\nReturns the Database Mail accounts on sql01\\sharepoint then return a bunch more columns\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003e$servers = \"sql2014\",\"sql2016\", \"sqlcluster\\sharepoint\"\nPS C:\\\u003e $servers | Get-DbaDbMail | Get-DbaDbMailAccount\nReturns the Database Mail accounts for \"sql2014\",\"sql2016\" and \"sqlcluster\\sharepoint\"",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaDbMailAccount -SqlInstance sql01\\sharepoint\nReturns Database Mail accounts on sql01\\sharepoint\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaDbMailAccount -SqlInstance sql01\\sharepoint -Account \u0027The DBA Team\u0027\nReturns The DBA Team Database Mail account from sql01\\sharepoint\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaDbMailAccount -SqlInstance sql01\\sharepoint | Select-Object *\nReturns the Database Mail accounts on sql01\\sharepoint then return a bunch more columns\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003e$servers = \"sql2014\",\"sql2016\", \"sqlcluster\\sharepoint\"\nPS C:\\\u003e $servers | Get-DbaDbMail | Get-DbaDbMailAccount\nReturns the Database Mail accounts for \"sql2014\",\"sql2016\" and \"sqlcluster\\sharepoint\"",
         "Params":  [
                        [
                            "SqlInstance",
@@ -12520,7 +12751,7 @@
         "CommandName":  "Get-DbaDbMailConfig",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Get-DbaDbMailConfig",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaDbMailConfig -SqlInstance sql01\\sharepoint\nReturns DBMail configs on sql01\\sharepoint\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaDbMailConfig -SqlInstance sql01\\sharepoint -Name ProhibitedExtensions\nReturns the ProhibitedExtensions configuration on sql01\\sharepoint\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaDbMailConfig -SqlInstance sql01\\sharepoint | Select *\nReturns the DBMail configs on sql01\\sharepoint then return a bunch more columns\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003e$servers = \"sql2014\",\"sql2016\", \"sqlcluster\\sharepoint\"\nPS C:\\\u003e $servers | Get-DbaDbMail | Get-DbaDbMailConfig\nReturns the DBMail configs for \"sql2014\",\"sql2016\" and \"sqlcluster\\sharepoint\"",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaDbMailConfig -SqlInstance sql01\\sharepoint\nReturns DBMail configs on sql01\\sharepoint\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaDbMailConfig -SqlInstance sql01\\sharepoint -Name ProhibitedExtensions\nReturns the ProhibitedExtensions configuration on sql01\\sharepoint\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaDbMailConfig -SqlInstance sql01\\sharepoint | Select-Object *\nReturns the DBMail configs on sql01\\sharepoint then return a bunch more columns\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003e$servers = \"sql2014\",\"sql2016\", \"sqlcluster\\sharepoint\"\nPS C:\\\u003e $servers | Get-DbaDbMail | Get-DbaDbMailConfig\nReturns the DBMail configs for \"sql2014\",\"sql2016\" and \"sqlcluster\\sharepoint\"",
         "Params":  [
                        [
                            "SqlInstance",
@@ -12579,7 +12810,7 @@
         "CommandName":  "Get-DbaDbMailHistory",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Get-DbaDbMailHistory",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaDbMailHistory -SqlInstance sql01\\sharepoint\nReturns the entire DBMail history on sql01\\sharepoint\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaDbMailHistory -SqlInstance sql01\\sharepoint | Select *\nReturns the entire DBMail history on sql01\\sharepoint then return a bunch more columns\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003e$servers = \"sql2014\",\"sql2016\", \"sqlcluster\\sharepoint\"\nPS C:\\\u003e $servers | Get-DbaDbMailHistory\nReturns the all DBMail history for \"sql2014\",\"sql2016\" and \"sqlcluster\\sharepoint\"",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaDbMailHistory -SqlInstance sql01\\sharepoint\nReturns the entire DBMail history on sql01\\sharepoint\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaDbMailHistory -SqlInstance sql01\\sharepoint | Select-Object *\nReturns the entire DBMail history on sql01\\sharepoint then return a bunch more columns\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003e$servers = \"sql2014\",\"sql2016\", \"sqlcluster\\sharepoint\"\nPS C:\\\u003e $servers | Get-DbaDbMailHistory\nReturns the all DBMail history for \"sql2014\",\"sql2016\" and \"sqlcluster\\sharepoint\"",
         "Params":  [
                        [
                            "SqlInstance",
@@ -12638,7 +12869,7 @@
         "CommandName":  "Get-DbaDbMailLog",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Get-DbaDbMailLog",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaDbMailLog -SqlInstance sql01\\sharepoint\nReturns the entire DBMail log on sql01\\sharepoint\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaDbMailLog -SqlInstance sql01\\sharepoint | Select *\nReturns the entire DBMail log on sql01\\sharepoint, includes all returned information.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003e$servers = \"sql2014\",\"sql2016\", \"sqlcluster\\sharepoint\"\nPS C:\\\u003e $servers | Get-DbaDbMailLog -Type Error, Information\nReturns only the Error and Information DBMail log for \"sql2014\",\"sql2016\" and \"sqlcluster\\sharepoint\"",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaDbMailLog -SqlInstance sql01\\sharepoint\nReturns the entire DBMail log on sql01\\sharepoint\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaDbMailLog -SqlInstance sql01\\sharepoint | Select-Object *\nReturns the entire DBMail log on sql01\\sharepoint, includes all returned information.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003e$servers = \"sql2014\",\"sql2016\", \"sqlcluster\\sharepoint\"\nPS C:\\\u003e $servers | Get-DbaDbMailLog -Type Error, Information\nReturns only the Error and Information DBMail log for \"sql2014\",\"sql2016\" and \"sqlcluster\\sharepoint\"",
         "Params":  [
                        [
                            "SqlInstance",
@@ -12697,7 +12928,7 @@
         "CommandName":  "Get-DbaDbMailProfile",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Get-DbaDbMailProfile",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaDbMailProfile -SqlInstance sql01\\sharepoint\nReturns DBMail profiles on sql01\\sharepoint\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaDbMailProfile -SqlInstance sql01\\sharepoint -Profile \u0027The DBA Team\u0027\nReturns The DBA Team DBMail profile from sql01\\sharepoint\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaDbMailProfile -SqlInstance sql01\\sharepoint | Select *\nReturns the DBMail profiles on sql01\\sharepoint then return a bunch more columns\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003e$servers = \"sql2014\",\"sql2016\", \"sqlcluster\\sharepoint\"\nPS C:\\\u003e $servers | Get-DbaDbMail | Get-DbaDbMailProfile\nReturns the DBMail profiles for \"sql2014\",\"sql2016\" and \"sqlcluster\\sharepoint\"",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaDbMailProfile -SqlInstance sql01\\sharepoint\nReturns DBMail profiles on sql01\\sharepoint\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaDbMailProfile -SqlInstance sql01\\sharepoint -Profile \u0027The DBA Team\u0027\nReturns The DBA Team DBMail profile from sql01\\sharepoint\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaDbMailProfile -SqlInstance sql01\\sharepoint | Select-Object *\nReturns the DBMail profiles on sql01\\sharepoint then return a bunch more columns\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003e$servers = \"sql2014\",\"sql2016\", \"sqlcluster\\sharepoint\"\nPS C:\\\u003e $servers | Get-DbaDbMail | Get-DbaDbMailProfile\nReturns the DBMail profiles for \"sql2014\",\"sql2016\" and \"sqlcluster\\sharepoint\"",
         "Params":  [
                        [
                            "SqlInstance",
@@ -12764,7 +12995,7 @@
         "CommandName":  "Get-DbaDbMailServer",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Get-DbaDbMailServer",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaDbMailServer -SqlInstance sql01\\sharepoint\nReturns all DBMail servers on sql01\\sharepoint\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaDbMailServer -SqlInstance sql01\\sharepoint -Server DbaTeam\nReturns The DBA Team DBMail server from sql01\\sharepoint\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaDbMailServer -SqlInstance sql01\\sharepoint | Select *\nReturns the DBMail servers on sql01\\sharepoint then return a bunch more columns\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003e$servers = \"sql2014\",\"sql2016\", \"sqlcluster\\sharepoint\"\nPS C:\\\u003e $servers | Get-DbaDbMail | Get-DbaDbMailServer\nReturns the DBMail servers for \"sql2014\",\"sql2016\" and \"sqlcluster\\sharepoint\"",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaDbMailServer -SqlInstance sql01\\sharepoint\nReturns all DBMail servers on sql01\\sharepoint\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaDbMailServer -SqlInstance sql01\\sharepoint -Server DbaTeam\nReturns The DBA Team DBMail server from sql01\\sharepoint\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaDbMailServer -SqlInstance sql01\\sharepoint | Select-Object *\nReturns the DBMail servers on sql01\\sharepoint then return a bunch more columns\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003e$servers = \"sql2014\",\"sql2016\", \"sqlcluster\\sharepoint\"\nPS C:\\\u003e $servers | Get-DbaDbMail | Get-DbaDbMailServer\nReturns the DBMail servers for \"sql2014\",\"sql2016\" and \"sqlcluster\\sharepoint\"",
         "Params":  [
                        [
                            "SqlInstance",
@@ -14392,7 +14623,7 @@
         "CommandName":  "Get-DbaDependency",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Get-DbaDependency",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003e$table = (Get-DbaDatabase -SqlInstance sql2012 -Database Northwind).tables | Where Name -eq Customers\nPS C:\\\u003e $table | Get-DbaDependency\nReturns everything that depends on the \"Customers\" table",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003e$table = (Get-DbaDatabase -SqlInstance sql2012 -Database Northwind).tables | Where-Object Name -eq Customers\nPS C:\\\u003e $table | Get-DbaDependency\nReturns everything that depends on the \"Customers\" table",
         "Params":  [
                        [
                            "InputObject",
@@ -14839,7 +15070,7 @@
         "CommandName":  "Get-DbaEstimatedCompletionTime",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Get-DbaEstimatedCompletionTime",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaEstimatedCompletionTime -SqlInstance sql2016\nGets estimated completion times for queries performed against the entire server\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaEstimatedCompletionTime -SqlInstance sql2016 | Select *\nGets estimated completion times for queries performed against the entire server PLUS the SQL query text of each command\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaEstimatedCompletionTime -SqlInstance sql2016 | Where-Object { $_.Text -match \u0027somequerytext\u0027 }\nGets results for commands whose queries only match specific text (match is like LIKE but way more powerful)\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaEstimatedCompletionTime -SqlInstance sql2016 -Database Northwind,pubs,Adventureworks2014\nGets estimated completion times for queries performed against the Northwind, pubs, and Adventureworks2014 databases",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaEstimatedCompletionTime -SqlInstance sql2016\nGets estimated completion times for queries performed against the entire server\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaEstimatedCompletionTime -SqlInstance sql2016 | Select-Object *\nGets estimated completion times for queries performed against the entire server PLUS the SQL query text of each command\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaEstimatedCompletionTime -SqlInstance sql2016 | Where-Object { $_.Text -match \u0027somequerytext\u0027 }\nGets results for commands whose queries only match specific text (match is like LIKE but way more powerful)\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaEstimatedCompletionTime -SqlInstance sql2016 -Database Northwind,pubs,Adventureworks2014\nGets estimated completion times for queries performed against the Northwind, pubs, and Adventureworks2014 databases",
         "Params":  [
                        [
                            "SqlInstance",
@@ -15377,7 +15608,7 @@
         "CommandName":  "Get-DbaIoLatency",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Get-DbaIoLatency",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaIoLatency -SqlInstance sql2008, sqlserver2012\nGet IO subsystem latency statistics for servers sql2008 and sqlserver2012.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003e$output = Get-DbaIoLatency -SqlInstance sql2008 | Select * | ConvertTo-DbaDataTable\nCollects all IO subsystem latency statistics on server sql2008 into a Data Table.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003e\u0027sql2008\u0027,\u0027sqlserver2012\u0027 | Get-DbaIoLatency\nGet IO subsystem latency statistics for servers sql2008 and sqlserver2012 via pipline\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003e$cred = Get-Credential sqladmin\nPS C:\\\u003e Get-DbaIoLatency -SqlInstance sql2008 -SqlCredential $cred\nConnects using sqladmin credential and returns IO subsystem latency statistics from sql2008",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaIoLatency -SqlInstance sql2008, sqlserver2012\nGet IO subsystem latency statistics for servers sql2008 and sqlserver2012.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003e$output = Get-DbaIoLatency -SqlInstance sql2008 | Select-Object * | ConvertTo-DbaDataTable\nCollects all IO subsystem latency statistics on server sql2008 into a Data Table.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003e\u0027sql2008\u0027,\u0027sqlserver2012\u0027 | Get-DbaIoLatency\nGet IO subsystem latency statistics for servers sql2008 and sqlserver2012 via pipline\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003e$cred = Get-Credential sqladmin\nPS C:\\\u003e Get-DbaIoLatency -SqlInstance sql2008 -SqlCredential $cred\nConnects using sqladmin credential and returns IO subsystem latency statistics from sql2008",
         "Params":  [
                        [
                            "SqlInstance",
@@ -15419,7 +15650,7 @@
         "CommandName":  "Get-DbaLastBackup",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Get-DbaLastBackup",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaLastBackup -SqlInstance ServerA\\sql987\nReturns a custom object displaying Server, Database, RecoveryModel, LastFullBackup, LastDiffBackup, LastLogBackup, SinceFull, SinceDiff, SinceLog, Status, DatabaseCreated, DaysSinceDbCreated\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaLastBackup -SqlInstance ServerA\\sql987\nReturns a custom object with Server name, Database name, and the date the last time backups were performed.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaLastBackup -SqlInstance ServerA\\sql987 | Select *\nReturns a custom object with Server name, Database name, and the date the last time backups were performed, and also recoverymodel and calculations on how long ago backups were taken and what the \r\nstatus is.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaLastBackup -SqlInstance ServerA\\sql987 | Select * | Out-Gridview\nReturns a gridview displaying Server, Database, RecoveryModel, LastFullBackup, LastDiffBackup, LastLogBackup, SinceFull, SinceDiff, SinceLog, Status, DatabaseCreated, DaysSinceDbCreated.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaLastBackup -SqlInstance ServerA\\sql987\nReturns a custom object displaying Server, Database, RecoveryModel, LastFullBackup, LastDiffBackup, LastLogBackup, SinceFull, SinceDiff, SinceLog, Status, DatabaseCreated, DaysSinceDbCreated\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaLastBackup -SqlInstance ServerA\\sql987\nReturns a custom object with Server name, Database name, and the date the last time backups were performed.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaLastBackup -SqlInstance ServerA\\sql987 | Select-Object *\nReturns a custom object with Server name, Database name, and the date the last time backups were performed, and also recoverymodel and calculations on how long ago backups were taken and what the \r\nstatus is.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaLastBackup -SqlInstance ServerA\\sql987 | Select-Object * | Out-Gridview\nReturns a gridview displaying Server, Database, RecoveryModel, LastFullBackup, LastDiffBackup, LastLogBackup, SinceFull, SinceDiff, SinceLog, Status, DatabaseCreated, DaysSinceDbCreated.",
         "Params":  [
                        [
                            "SqlInstance",
@@ -15535,7 +15766,7 @@
         "CommandName":  "Get-DbaLatchStatistic",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Get-DbaLatchStatistic",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaLatchStatistic -SqlInstance sql2008, sqlserver2012\nCheck latch statistics for servers sql2008 and sqlserver2012\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaLatchStatistic -SqlInstance sql2008 -Threshold 98\nCheck latch statistics on server sql2008 for thresholds above 98%\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003e$output = Get-DbaLatchStatistic -SqlInstance sql2008 -Threshold 100 | Select * | ConvertTo-DbaDataTable\nCollects all latch statistics on server sql2008 into a Data Table.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003e\u0027sql2008\u0027,\u0027sqlserver2012\u0027 | Get-DbaLatchStatistic\nGet latch statistics for servers sql2008 and sqlserver2012 via pipline\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003e$cred = Get-Credential sqladmin\nPS C:\\\u003e Get-DbaLatchStatistic -SqlInstance sql2008 -SqlCredential $cred\nConnects using sqladmin credential and returns latch statistics from sql2008\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003e$output = Get-DbaLatchStatistic -SqlInstance sql2008\nPS C:\\\u003e $output\r\nPS C:\\\u003e foreach ($row in ($output | Sort-Object -Unique Url)) { Start-Process ($row).Url }\nDisplays the output then loads the associated sqlskills website for each result. Opens one tab per unique URL.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaLatchStatistic -SqlInstance sql2008, sqlserver2012\nCheck latch statistics for servers sql2008 and sqlserver2012\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaLatchStatistic -SqlInstance sql2008 -Threshold 98\nCheck latch statistics on server sql2008 for thresholds above 98%\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003e$output = Get-DbaLatchStatistic -SqlInstance sql2008 -Threshold 100 | Select-Object * | ConvertTo-DbaDataTable\nCollects all latch statistics on server sql2008 into a Data Table.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003e\u0027sql2008\u0027,\u0027sqlserver2012\u0027 | Get-DbaLatchStatistic\nGet latch statistics for servers sql2008 and sqlserver2012 via pipline\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003e$cred = Get-Credential sqladmin\nPS C:\\\u003e Get-DbaLatchStatistic -SqlInstance sql2008 -SqlCredential $cred\nConnects using sqladmin credential and returns latch statistics from sql2008\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003e$output = Get-DbaLatchStatistic -SqlInstance sql2008\nPS C:\\\u003e $output\r\nPS C:\\\u003e foreach ($row in ($output | Sort-Object -Unique Url)) { Start-Process ($row).Url }\nDisplays the output then loads the associated sqlskills website for each result. Opens one tab per unique URL.",
         "Params":  [
                        [
                            "SqlInstance",
@@ -16045,7 +16276,7 @@
         "CommandName":  "Get-DbaModule",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Get-DbaModule",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaModule -SqlInstance sql2008, sqlserver2012\nReturn all modules for servers sql2008 and sqlserver2012 sorted by Database, Modify_Date ASC.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaModule -SqlInstance sql2008, sqlserver2012 | Select *\nShows hidden definition column (informative wall of text).\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaModule -SqlInstance sql2008 -Database TestDB -ModifiedSince \"2017-01-01 10:00:00\"\nReturn all modules on server sql2008 for only the TestDB database with a modified date after 1 January 2017 10:00:00 AM.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaModule -SqlInstance sql2008 -Type View, Trigger, ScalarFunction\nReturn all modules on server sql2008 for all databases that are triggers, views or scalar functions.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaModule -SqlInstance sql2008, sqlserver2012\nReturn all modules for servers sql2008 and sqlserver2012 sorted by Database, Modify_Date ASC.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaModule -SqlInstance sql2008, sqlserver2012 | Select-Object *\nShows hidden definition column (informative wall of text).\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaModule -SqlInstance sql2008 -Database TestDB -ModifiedSince \"2017-01-01 10:00:00\"\nReturn all modules on server sql2008 for only the TestDB database with a modified date after 1 January 2017 10:00:00 AM.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaModule -SqlInstance sql2008 -Type View, Trigger, ScalarFunction\nReturn all modules on server sql2008 for all databases that are triggers, views or scalar functions.",
         "Params":  [
                        [
                            "SqlInstance",
@@ -16135,7 +16366,7 @@
         "CommandName":  "Get-DbaMsdtc",
         "Availability":  "Windows only",
         "Links":  "https://dbatools.io/Get-DbaMsdtc",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaMsdtc -ComputerName srv0042\nGet DTC status for the server srv0042\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003e$Computers = (Get-Content D:\\configfiles\\SQL\\MySQLInstances.txt | % {$_.split(\u0027\\\u0027)[0]})\nPS C:\\\u003e $Computers | Get-DbaMsdtc\nGet DTC status for all the computers in a .txt file\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaMsdtc -Computername $Computers | where { $_.dtcservicestate -ne \u0027running\u0027 }\nGet DTC status for all the computers where the MSDTC Service is not running\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaMsdtc -ComputerName srv0042 | Out-Gridview\nGet DTC status for the computer srv0042 and show in a grid view",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaMsdtc -ComputerName srv0042\nGet DTC status for the server srv0042\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003e$Computers = (Get-Content D:\\configfiles\\SQL\\MySQLInstances.txt | % {$_.split(\u0027\\\u0027)[0]})\nPS C:\\\u003e $Computers | Get-DbaMsdtc\nGet DTC status for all the computers in a .txt file\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaMsdtc -Computername $Computers | Where-Object { $_.dtcservicestate -ne \u0027running\u0027 }\nGet DTC status for all the computers where the MSDTC Service is not running\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaMsdtc -ComputerName srv0042 | Out-Gridview\nGet DTC status for the computer srv0042 and show in a grid view",
         "Params":  [
                        [
                            "ComputerName",
@@ -18208,7 +18439,7 @@
         "CommandName":  "Get-DbaServerProtocol",
         "Availability":  "Windows only",
         "Links":  "https://dbatools.io/Get-DbaServerProtocol",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaServerProtocol -ComputerName sqlserver2014a\nGets the SQL Server related server protocols on computer sqlserver2014a.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003e\u0027sql1\u0027,\u0027sql2\u0027,\u0027sql3\u0027 | Get-DbaServerProtocol\nGets the SQL Server related server protocols on computers sql1, sql2 and sql3.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaServerProtocol -ComputerName sql1,sql2 | Out-GridView\nGets the SQL Server related server protocols on computers sql1 and sql2, and shows them in a grid view.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003e(Get-DbaServerProtocol -ComputerName sql1 | Where { $_.DisplayName = \u0027via\u0027 }).Disable()\nDisables the VIA ServerNetworkProtocol on computer sql1.\r\nIf successful, return code 0 is shown.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaServerProtocol -ComputerName sqlserver2014a\nGets the SQL Server related server protocols on computer sqlserver2014a.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003e\u0027sql1\u0027,\u0027sql2\u0027,\u0027sql3\u0027 | Get-DbaServerProtocol\nGets the SQL Server related server protocols on computers sql1, sql2 and sql3.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaServerProtocol -ComputerName sql1,sql2 | Out-GridView\nGets the SQL Server related server protocols on computers sql1 and sql2, and shows them in a grid view.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003e(Get-DbaServerProtocol -ComputerName sql1 | Where-Object { $_.DisplayName = \u0027via\u0027 }).Disable()\nDisables the VIA ServerNetworkProtocol on computer sql1.\r\nIf successful, return code 0 is shown.",
         "Params":  [
                        [
                            "ComputerName",
@@ -18568,7 +18799,7 @@
         "CommandName":  "Get-DbaSpinLockStatistic",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Get-DbaSpinLockStatistic",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaSpinLockStatistic -SqlInstance sql2008, sqlserver2012\nGet SpinLock Statistics for servers sql2008 and sqlserver2012.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003e$output = Get-DbaSpinLockStatistic -SqlInstance sql2008 | Select * | ConvertTo-DbaDataTable\nCollects all SpinLock Statistics on server sql2008 into a Data Table.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003e\u0027sql2008\u0027,\u0027sqlserver2012\u0027 | Get-DbaSpinLockStatistic\nGet SpinLock Statistics for servers sql2008 and sqlserver2012 via pipline\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003e$cred = Get-Credential sqladmin\nPS C:\\\u003e Get-DbaSpinLockStatistic -SqlInstance sql2008 -SqlCredential $cred\nConnects using sqladmin credential and returns SpinLock Statistics from sql2008",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaSpinLockStatistic -SqlInstance sql2008, sqlserver2012\nGet SpinLock Statistics for servers sql2008 and sqlserver2012.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003e$output = Get-DbaSpinLockStatistic -SqlInstance sql2008 | Select-Object * | ConvertTo-DbaDataTable\nCollects all SpinLock Statistics on server sql2008 into a Data Table.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003e\u0027sql2008\u0027,\u0027sqlserver2012\u0027 | Get-DbaSpinLockStatistic\nGet SpinLock Statistics for servers sql2008 and sqlserver2012 via pipline\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003e$cred = Get-Credential sqladmin\nPS C:\\\u003e Get-DbaSpinLockStatistic -SqlInstance sql2008 -SqlCredential $cred\nConnects using sqladmin credential and returns SpinLock Statistics from sql2008",
         "Params":  [
                        [
                            "SqlInstance",
@@ -19644,7 +19875,7 @@
         "CommandName":  "Get-DbaWaitStatistic",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Get-DbaWaitStatistic",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaWaitStatistic -SqlInstance sql2008, sqlserver2012\nCheck wait statistics for servers sql2008 and sqlserver2012\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaWaitStatistic -SqlInstance sql2008 -Threshold 98 -IncludeIgnorable\nCheck wait statistics on server sql2008 for thresholds above 98% and include wait stats that are most often, but not always, ignorable\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaWaitStatistic -SqlInstance sql2008 | Select *\nShows detailed notes, if available, from Paul\u0027s post\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003e$output = Get-DbaWaitStatistic -SqlInstance sql2008 -Threshold 100 -IncludeIgnorable | Select-Object * | ConvertTo-DbaDataTable\nCollects all Wait Statistics (including ignorable waits) on server sql2008 into a Data Table.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003e$output = Get-DbaWaitStatistic -SqlInstance sql2008\nPS C:\\\u003e foreach ($row in ($output | Sort-Object -Unique Url)) { Start-Process ($row).Url }\nDisplays the output then loads the associated sqlskills website for each result. Opens one tab per unique URL.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaWaitStatistic -SqlInstance sql2008, sqlserver2012\nCheck wait statistics for servers sql2008 and sqlserver2012\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaWaitStatistic -SqlInstance sql2008 -Threshold 98 -IncludeIgnorable\nCheck wait statistics on server sql2008 for thresholds above 98% and include wait stats that are most often, but not always, ignorable\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaWaitStatistic -SqlInstance sql2008 | Select-Object *\nShows detailed notes, if available, from Paul\u0027s post\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003e$output = Get-DbaWaitStatistic -SqlInstance sql2008 -Threshold 100 -IncludeIgnorable | Select-Object * | ConvertTo-DbaDataTable\nCollects all Wait Statistics (including ignorable waits) on server sql2008 into a Data Table.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003e$output = Get-DbaWaitStatistic -SqlInstance sql2008\nPS C:\\\u003e foreach ($row in ($output | Sort-Object -Unique Url)) { Start-Process ($row).Url }\nDisplays the output then loads the associated sqlskills website for each result. Opens one tab per unique URL.",
         "Params":  [
                        [
                            "SqlInstance",
@@ -19819,7 +20050,7 @@
         "CommandName":  "Get-DbaWsfcCluster",
         "Availability":  "Windows only",
         "Links":  "https://dbatools.io/Get-DbaWsfcCluster",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaWsfcCluster -ComputerName cluster01\nGets failover cluster information about cluster01\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaWsfcCluster -ComputerName cluster01 | Select *\nShows all cluster values, including the ones not shown in the default view",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaWsfcCluster -ComputerName cluster01\nGets failover cluster information about cluster01\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaWsfcCluster -ComputerName cluster01 | Select-Object *\nShows all cluster values, including the ones not shown in the default view",
         "Params":  [
                        [
                            "ComputerName",
@@ -19951,7 +20182,7 @@
         "CommandName":  "Get-DbaWsfcNetworkInterface",
         "Availability":  "Windows only",
         "Links":  "https://dbatools.io/Get-DbaWsfcNetworkInterface",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaWsfcNetworkInterface -ComputerName cluster01\nGets network interface information from the failover cluster cluster01\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaWsfcNetworkInterface -ComputerName cluster01 | Select *\nShows all network interface  values, including the ones not shown in the default view",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaWsfcNetworkInterface -ComputerName cluster01\nGets network interface information from the failover cluster cluster01\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaWsfcNetworkInterface -ComputerName cluster01 | Select-Object *\nShows all network interface  values, including the ones not shown in the default view",
         "Params":  [
                        [
                            "ComputerName",
@@ -20039,7 +20270,7 @@
         "CommandName":  "Get-DbaWsfcResource",
         "Availability":  "Windows only",
         "Links":  "https://dbatools.io/Get-DbaWsfcResource",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaWsfcResource -ComputerName cluster01\nGets resource information from the failover cluster cluster01\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaWsfcResource -ComputerName cluster01 | Select *\nShows all resource values, including the ones not shown in the default view",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaWsfcResource -ComputerName cluster01\nGets resource information from the failover cluster cluster01\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaWsfcResource -ComputerName cluster01 | Select-Object *\nShows all resource values, including the ones not shown in the default view",
         "Params":  [
                        [
                            "ComputerName",
@@ -20127,7 +20358,7 @@
         "CommandName":  "Get-DbaWsfcRole",
         "Availability":  "Windows only",
         "Links":  "https://dbatools.io/Get-DbaWsfcRole",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaWsfcRole -ComputerName cluster01\nGets role information from the failover cluster cluster01\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaWsfcRole -ComputerName cluster01 | Select *\nShows all role values, including the ones not shown in the default view",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaWsfcRole -ComputerName cluster01\nGets role information from the failover cluster cluster01\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaWsfcRole -ComputerName cluster01 | Select-Object *\nShows all role values, including the ones not shown in the default view",
         "Params":  [
                        [
                            "ComputerName",
@@ -20668,7 +20899,7 @@
         "CommandName":  "Import-DbaCsv",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Import-DbaCsv",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eImport-DbaCsv -Path C:\\temp\\housing.csv -SqlInstance sql001 -Database markets\nImports the entire comma-delimited housing.csv to the SQL \"markets\" database on a SQL Server named sql001, using the first row as column names.\nSince a table name was not specified, the table name is automatically determined from filename as \"housing\".\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eImport-DbaCsv -Path .\\housing.csv -SqlInstance sql001 -Database markets -Table housing -Delimiter \"`t\" -NoHeaderRow\nImports the entire comma-delimited housing.csv, including the first row which is not used for colum names, to the SQL markets database, into the housing table, on a SQL Server named sql001.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eImport-DbaCsv -Path C:\\temp\\huge.txt -SqlInstance sqlcluster -Database locations -Table latitudes -Delimiter \"|\"\nImports the entire pipe-delimited huge.txt to the locations database, into the latitudes table on a SQL Server named sqlcluster.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eImport-DbaCsv -Path c:\\temp\\SingleColumn.csv -SqlInstance sql001 -Database markets -Table TempTable -SingleColumn\nImports the single column CSV into TempTable\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eGet-ChildItem -Path \\\\FileServer\\csvs | Import-DbaCsv -SqlInstance sql001, sql002 -Database tempdb -AutoCreateTable\nImports every CSV in the \\\\FileServer\\csvs path into both sql001 and sql002\u0027s tempdb database. Each CSV will be imported into an automatically determined table name.\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eGet-ChildItem -Path \\\\FileServer\\csvs | Import-DbaCsv -SqlInstance sql001, sql002 -Database tempdb -AutoCreateTable -WhatIf\nShows what would happen if the command were to be executed\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003eImport-DbaCsv -Path c:\\temp\\dataset.csv -SqlInstance sql2016 -Database tempdb -Column Name, Address, Mobile\nImport only Name, Address and Mobile even if other columns exist. All other columns are ignored and therefore null or default values.\n-------------------------- EXAMPLE 8 --------------------------\nPS C:\\\u003e$columns = @{\n\u003e\u003e Text = \u0027FirstName\u0027\r\n\u003e\u003e Number = \u0027PhoneNumber\u0027\r\n\u003e\u003e }\r\nPS C:\\\u003e Import-DbaCsv -Path c:\\temp\\supersmall.csv -SqlInstance sql2016 -Database tempdb -ColumnMap $columns\nThe CSV column \u0027Text\u0027 is inserted into SQL column \u0027FirstName\u0027 and CSV column Number is inserted into the SQL Column \u0027PhoneNumber\u0027. All other columns are ignored and therefore null or default values.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eImport-DbaCsv -Path C:\\temp\\housing.csv -SqlInstance sql001 -Database markets\nImports the entire comma-delimited housing.csv to the SQL \"markets\" database on a SQL Server named sql001, using the first row as column names.\nSince a table name was not specified, the table name is automatically determined from filename as \"housing\".\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eImport-DbaCsv -Path .\\housing.csv -SqlInstance sql001 -Database markets -Table housing -Delimiter \"`t\" -NoHeaderRow\nImports the entire tab-delimited housing.csv, including the first row which is not used for colum names, to the SQL markets database, into the housing table, on a SQL Server named sql001.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eImport-DbaCsv -Path C:\\temp\\huge.txt -SqlInstance sqlcluster -Database locations -Table latitudes -Delimiter \"|\"\nImports the entire pipe-delimited huge.txt to the locations database, into the latitudes table on a SQL Server named sqlcluster.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eImport-DbaCsv -Path c:\\temp\\SingleColumn.csv -SqlInstance sql001 -Database markets -Table TempTable -SingleColumn\nImports the single column CSV into TempTable\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eGet-ChildItem -Path \\\\FileServer\\csvs | Import-DbaCsv -SqlInstance sql001, sql002 -Database tempdb -AutoCreateTable\nImports every CSV in the \\\\FileServer\\csvs path into both sql001 and sql002\u0027s tempdb database. Each CSV will be imported into an automatically determined table name.\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eGet-ChildItem -Path \\\\FileServer\\csvs | Import-DbaCsv -SqlInstance sql001, sql002 -Database tempdb -AutoCreateTable -WhatIf\nShows what would happen if the command were to be executed\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003eImport-DbaCsv -Path c:\\temp\\dataset.csv -SqlInstance sql2016 -Database tempdb -Column Name, Address, Mobile\nImport only Name, Address and Mobile even if other columns exist. All other columns are ignored and therefore null or default values.\n-------------------------- EXAMPLE 8 --------------------------\nPS C:\\\u003e$columns = @{\n\u003e\u003e Text = \u0027FirstName\u0027\r\n\u003e\u003e Number = \u0027PhoneNumber\u0027\r\n\u003e\u003e }\r\nPS C:\\\u003e Import-DbaCsv -Path c:\\temp\\supersmall.csv -SqlInstance sql2016 -Database tempdb -ColumnMap $columns\nThe CSV column \u0027Text\u0027 is inserted into SQL column \u0027FirstName\u0027 and CSV column Number is inserted into the SQL Column \u0027PhoneNumber\u0027. All other columns are ignored and therefore null or default values.",
         "Params":  [
                        [
                            "Path",
@@ -20912,7 +21143,7 @@
                        ],
                        [
                            "MaxQuotedFieldLength",
-                           "The axmimum length (in bytes) for any quoted field.",
+                           "The maxmimum length (in bytes) for any quoted field.",
                            "",
                            false,
                            "false",
@@ -21531,6 +21762,285 @@
         "Syntax":  "Install-DbaFirstResponderKit [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Branch] \u003cString\u003e] [[-Database] \u003cObject\u003e] [[-LocalFile] \u003cString\u003e] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
+        "Name":  "Install-DbaInstance",
+        "Description":  "This function will help you to quickly install a SQL Server instance on one or many computers.\nSome of the things this function will do for you:\n* Add your login as an admin to the new instance\n* Search for SQL Server installations in the specified file repository\n* Generate SA password if needed\n* Install specific features using \u0027Default\u0027 and \u0027All\u0027 templates or cherry-pick the ones you need\n* Set number of tempdb files based on number of cores (SQL2016+)\n* Activate .Net 3.5 feature for SQL2012/2014\n* Restart the machine if needed after the installation is done\n\nFully customizable installation parameters allow you to:\n* Use existing Configuration.ini files for the installation\n* Define service account credentials using native Powershell syntax\n* Override any configurations by using -Configuration switch\n* Change the TCP port after the installation is done\n* Enable \u0027Perform volume maintenance tasks\u0027 for the SQL Server account\n\nNote that the dowloaded installation media must be extracted and available to the server where the installation runs.\nNOTE: If no ProductID (PID) is found in the configuration files/parameters, Evaluation version is going to be installed.",
+        "Tags":  "Install",
+        "Synopsis":  "This function will help you to quickly install a SQL Server instance.",
+        "Alias":  "",
+        "Author":  "Reitse Eskens (@2meterDBA), Kirill Kravtsov (@nvarscar)",
+        "CommandName":  "Install-DbaInstance",
+        "Availability":  "Windows only",
+        "Links":  null,
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nC:\\PS\u003eInstall-DbaInstance -Version 2017 -Feature All\nInstall a default SQL Server instance and run the installation enabling all features with default settings. Automatically generates configuration.ini\n-------------------------- EXAMPLE 2 --------------------------\nC:\\PS\u003eInstall-DbaInstance -SqlInstance sql2017\\sqlexpress, server01 -Version 2017 -Feature Default\nInstall a named SQL Server instance named sqlexpress on sql2017, and a default instance on server01. Automatically generates configuration.ini.\r\nDefault features will be installed.\n-------------------------- EXAMPLE 3 --------------------------\nC:\\PS\u003eInstall-DbaInstance -Version 2008R2 -SqlInstance sql2017 -ConfigurationFile C:\\temp\\configuration.ini\nInstall a default named SQL Server instance on the remote machine, sql2017 and use the local configuration.ini\n-------------------------- EXAMPLE 4 --------------------------\nC:\\PS\u003eInstall-DbaInstance -Version 2017 -InstancePath G:\\SQLServer\nRun the installation locally with default settings apart from the application volume, this will be redirected to G:\\SQLServer.\n-------------------------- EXAMPLE 5 --------------------------\nC:\\PS\u003e$svcAcc = Get-Credential MyDomain\\SvcSqlServer\nC:\\PS\u003e Install-DbaInstance -Version 2016 -InstancePath D:\\Root -DataPath E: -LogPath L: -PerformVolumeMaintenanceTasks -EngineCredential $svcAcc\nInstall SQL Server 2016 instance into D:\\Root drive, set default data folder as E: and default logs folder as L:.\r\nPerform volume maintenance tasks permission is granted. MyDomain\\SvcSqlServer is used as a service account for SqlServer.\n-------------------------- EXAMPLE 6 --------------------------\nC:\\PS\u003e$config = @{\nAGTSVCSTARTUPTYPE     = \"Manual\"\r\n    SQLCOLLATION          = \"Latin1_General_CI_AS\"\r\n    BROWSERSVCSTARTUPTYPE = \"Manual\"\r\n    FILESTREAMLEVEL       = 1\r\n}\r\nC:\\PS\u003e Install-DbaInstance -SqlInstance localhost\\v2017:1337 -Version 2017 -Configuration $config\nRun the installation locally with default settings overriding the value of specific configuration items.\r\nInstance name will be defined as \u0027v2017\u0027; TCP port will be changed to 1337 after installation.",
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "The target computer and, optionally, a new instance name and a port number.\r\nUse one of the following generic formats:\r\nServer1\r\nServer2\\Instance1\r\nServer1\\Alpha:1533, Server2\\Omega:1566\r\n\"ServerName\\NewInstanceName,1534\"\nYou can also define instance name and port using -InstanceName and -Port parameters.",
+                           "ComputerName",
+                           false,
+                           "false",
+                           "$env:COMPUTERNAME"
+                       ],
+                       [
+                           "Version",
+                           "SQL Server version you wish to install.",
+                           "",
+                           true,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "InstanceName",
+                           "Name of the SQL Server instance to install. Overrides the instance name specified in -SqlInstance.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "SaCredential",
+                           "Securely provide the password for the sa account when using mixed mode authentication.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Credential",
+                           "Used when executing installs against remote servers",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Authentication",
+                           "Chooses an authentication protocol for remote connections.\r\nIf the protocol fails to establish a connection\nDefaults:\r\n* CredSSP when -Credential is specified - due to the fact that repository Path is usually a network share and credentials need to be passed to the remote host\r\n  to avoid the double-hop issue.\r\n* Default when -Credential is not specified. Will likely fail if a network path is specified.",
+                           "",
+                           false,
+                           "false",
+                           "Credssp"
+                       ],
+                       [
+                           "ConfigurationFile",
+                           "The path to the custom Configuration.ini file.",
+                           "FilePath",
+                           false,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
+                           "Configuration",
+                           "A hashtable with custom configuration items that you want to use during the installation.\r\nOverrides all other parameters.\r\nFor example, to define a custom server collation you can use the following parameter:\r\nPS\u003e Install-DbaInstance -Version 2017 -Configuration @{ SQLCOLLATION = \u0027Latin1_General_BIN\u0027 }\nFull list of parameters can be found here: https://docs.microsoft.com/en-us/sql/database-engine/install-windows/install-sql-server-from-the-command-prompt#Install",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Path",
+                           "Path to the folder(s) with SQL Server installation media downloaded. It will be scanned recursively for a corresponding setup.exe.\r\nPath should be available from the remote server.\r\nIf a setup.exe file is missing in the repository, the installation will fail.\r\nConsider setting the following configuration if you want to omit this parameter: `Set-DbatoolsConfig -Name Path.SQLServerSetup -Value \u0027\\\\path\\to\\installations\u0027`",
+                           "",
+                           false,
+                           "false",
+                           "(Get-DbatoolsConfigValue -Name \u0027Path.SQLServerSetup\u0027)"
+                       ],
+                       [
+                           "Feature",
+                           "Features to install. Templates like \"Default\" and \"All\" can be used to setup a predefined set of components.",
+                           "",
+                           false,
+                           "false",
+                           "Default"
+                       ],
+                       [
+                           "AuthenticationMode",
+                           "Chooses between Mixed and Windows authentication.",
+                           "",
+                           false,
+                           "false",
+                           "Windows"
+                       ],
+                       [
+                           "InstancePath",
+                           "Root folder for instance components. Includes SQL Server logs, system databases, etc.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "DataPath",
+                           "Path to the Data folder.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "LogPath",
+                           "Path to the Log folder.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "TempPath",
+                           "Path to the TempDB folder.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "BackupPath",
+                           "Path to the Backup folder.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "AdminAccount",
+                           "One or more members of the sysadmin group. Uses UserName from the -Credential parameter if specified, or current Windows user by default.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Port",
+                           "After successful installation, changes SQL Server TCP port to this value. Overrides the port specified in -SqlInstance.",
+                           "",
+                           false,
+                           "false",
+                           "0"
+                       ],
+                       [
+                           "Throttle",
+                           "Maximum number of computers updated in parallel. Once reached, the update operations will queue up.\r\nDefault: 50",
+                           "",
+                           false,
+                           "false",
+                           "50"
+                       ],
+                       [
+                           "ProductID",
+                           "Product ID, or simply, serial number of your SQL Server installation, which will determine which version to install.\r\nIf the PID is already built into the installation media, can be ignored.",
+                           "PID",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "EngineCredential",
+                           "Service account of the SQL Server Database Engine",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "AgentCredential",
+                           "Service account of the SQL Server Agent",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "ASCredential",
+                           "Service account of the Analysis Services",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "ISCredential",
+                           "Service account of the Integration Services",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "RSCredential",
+                           "Service account of the Reporting Services",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "FTCredential",
+                           "Service account of the Full-Text catalog service",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "PBEngineCredential",
+                           "Service account of the PolyBase service",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "SaveConfiguration",
+                           "Save installation configuration file in a custom location. Will not be preserved otherwise.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "PerformVolumeMaintenanceTasks",
+                           "Allow SQL Server service account to perform Volume Maintenance tasks.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "Restart",
+                           "Restart computer automatically if a restart is required before or after the installation.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "WhatIf",
+                           "Shows what would happen if the command were to run. No actions are actually performed.",
+                           "wi",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Confirm",
+                           "Prompts you for confirmation before executing any changing operations within the command.",
+                           "cf",
+                           false,
+                           "false",
+                           ""
+                       ]
+                   ],
+        "Syntax":  "Install-DbaInstance [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [-Version] \u003cString\u003e [[-InstanceName] \u003cString\u003e] [[-SaCredential] \u003cPSCredential\u003e] [[-Credential] \u003cPSCredential\u003e] [[-Authentication] \u003cString\u003e] [[-ConfigurationFile] \u003cObject\u003e] [[-Configuration] \u003cHashtable\u003e] [[-Path] \u003cString[]\u003e] [[-Feature] \u003cString\u003e] [[-AuthenticationMode] \u003cString\u003e] [[-InstancePath] \u003cString\u003e] [[-DataPath] \u003cString\u003e] [[-LogPath] \u003cString\u003e] [[-TempPath] \u003cString\u003e] [[-BackupPath] \u003cString\u003e] [[-AdminAccount] \u003cString[]\u003e] [[-Port] \u003cInt32\u003e] [[-Throttle] \u003cInt32\u003e] [[-ProductID] \u003cString\u003e] [[-EngineCredential] \u003cPSCredential\u003e] \r\n[[-AgentCredential] \u003cPSCredential\u003e] [[-ASCredential] \u003cPSCredential\u003e] [[-ISCredential] \u003cPSCredential\u003e] [[-RSCredential] \u003cPSCredential\u003e] [[-FTCredential] \u003cPSCredential\u003e] [[-PBEngineCredential] \u003cPSCredential\u003e] [[-SaveConfiguration] \u003cString\u003e] [-PerformVolumeMaintenanceTasks] [-Restart] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+    },
+    {
         "Name":  "Install-DbaMaintenanceSolution",
         "Description":  "This script will download and install the latest version of SQL Server Maintenance Solution created by Ola Hallengren",
         "Tags":  [
@@ -21713,6 +22223,14 @@
                            ""
                        ],
                        [
+                           "PreRelease",
+                           "If specified, a pre-release (beta) will be downloaded rather than a stable release",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
                            "Force",
                            "If this switch is enabled, SqlWatch will be downloaded from the internet even if previously cached.",
                            "",
@@ -21745,7 +22263,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Install-DbaSqlWatch [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString\u003e] [[-LocalFile] \u003cString\u003e] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Install-DbaSqlWatch [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString\u003e] [[-LocalFile] \u003cString\u003e] [-PreRelease] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Install-DbaWatchUpdate",
@@ -21876,6 +22394,139 @@
                        ]
                    ],
         "Syntax":  "Install-DbaWhoIsActive [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-LocalFile \u003cString\u003e] [-Database \u003cObject\u003e] [-EnableException] [-Force] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+    },
+    {
+        "Name":  "Invoke-DbaAdvancedInstall",
+        "Description":  "Invokes an install process for a single computer and restarts it if needed",
+        "Synopsis":  "Designed for internal use, implements parallel execution for Install-DbaInstance.",
+        "Alias":  "",
+        "CommandName":  "Invoke-DbaAdvancedInstall",
+        "Availability":  "Windows only",
+        "Links":  null,
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eInvoke-DbaAdvancedUpdate -ComputerName SQL1 -Action $actions\nInvokes update actions on SQL1 after restarting it.",
+        "Params":  [
+                       [
+                           "ComputerName",
+                           "Target computer with SQL instance or instances.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "InstanceName",
+                           "Instance name to be used for the installation",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Port",
+                           "After successful installation, changes SQL Server TCP port to this value. Overrides the port specified in -SqlInstance.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "InstallationPath",
+                           "Path to setup.exe",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "ConfigurationPath",
+                           "Path to Configuration.ini on a local machine",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "ArgumentList",
+                           "Array of command line arguments for setup.exe",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Version",
+                           "Canonic version of SQL Server, e.g. 10.50, 11.0",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Configuration",
+                           "A hashtable with custom configuration items that you want to use during the installation.\r\nOverrides all other parameters.\r\nFor example, to define a custom server collation you can use the following parameter:\r\nPS\u003e Install-DbaInstance -Version 2017 -Configuration @{ SQLCOLLATION = \u0027Latin1_General_BIN\u0027 }\nFull list of parameters can be found here: https://docs.microsoft.com/en-us/sql/database-engine/install-windows/install-sql-server-from-the-command-prompt#Install",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Restart",
+                           "Restart computer automatically after a successful installation of Sql Server and wait until it comes back online.\r\nUsing this parameter is the only way to chain-install more than 1 instance, since every single patch will require a restart of said computer.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "PerformVolumeMaintenanceTasks",
+                           "Allow SQL Server service account to perform Volume Maintenance tasks.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "SaveConfiguration",
+                           "Save installation configuration file in a custom location. Will not be preserved otherwise.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Authentication",
+                           "Chooses an authentication protocol for remote connections.\r\nIf the protocol fails to establish a connection\nDefaults:\r\n* CredSSP when -Credential is specified - due to the fact that repository Path is usually a network share and credentials need to be passed to the remote host\r\n  to avoid the double-hop issue.\r\n* Default when -Credential is not specified. Will likely fail if a network path is specified.",
+                           "",
+                           false,
+                           "false",
+                           "Credssp"
+                       ],
+                       [
+                           "Credential",
+                           "Windows Credential with permission to log on to the remote server.\r\nMust be specified for any remote connection if installation media is located on a network folder.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "SaCredential",
+                           "Securely provide the password for the sa account when using mixed mode authentication.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ]
+                   ],
+        "Syntax":  "Invoke-DbaAdvancedInstall [[-ComputerName] \u003cString\u003e] [[-InstanceName] \u003cString\u003e] [[-Port] \u003cNullable`1\u003e] [[-InstallationPath] \u003cString\u003e] [[-ConfigurationPath] \u003cString\u003e] [[-ArgumentList] \u003cString[]\u003e] [[-Version] \u003cVersion\u003e] [[-Configuration] \u003cHashtable\u003e] [[-Restart] \u003cBoolean\u003e] [[-PerformVolumeMaintenanceTasks] \u003cBoolean\u003e] [[-SaveConfiguration] \u003cString\u003e] [[-Authentication] \u003cString\u003e] [[-Credential] \u003cPSCredential\u003e] [[-SaCredential] \u003cPSCredential\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Invoke-DbaAdvancedRestore",
@@ -32389,7 +33040,7 @@
         "CommandName":  "Remove-DbaDbSnapshot",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Remove-DbaDbSnapshot",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eRemove-DbaDbSnapshot -SqlInstance sql2014 -Snapshot HR_snap_20161201, HR_snap_20161101\nRemoves database snapshots named HR_snap_20161201 and HR_snap_20161101\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eRemove-DbaDbSnapshot -SqlInstance sql2014 -Database HR, Accounting\nRemoves all database snapshots having HR and Accounting as base dbs\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaDbSnapshot -SqlInstance sql2014 -Database HR, Accounting | Remove-DbaDbSnapshot\nRemoves all database snapshots having HR and Accounting as base dbs\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eRemove-DbaDbSnapshot -SqlInstance sql2014 -Snapshot HR_snapshot, Accounting_snapshot\nRemoves HR_snapshot and Accounting_snapshot\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eGet-DbaDbSnapshot -SqlInstance sql2016 | Where SnapshotOf -like \u0027*dumpsterfire*\u0027 | Remove-DbaDbSnapshot\nRemoves all snapshots associated with databases that have dumpsterfire in the name\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eGet-DbaDbSnapshot -SqlInstance sql2016 | Out-GridView -Passthru | Remove-DbaDbSnapshot\nAllows the selection of snapshots on sql2016 to remove\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003eRemove-DbaDbSnapshot -SqlInstance sql2014 -AllSnapshots\nRemoves all database snapshots from sql2014\n-------------------------- EXAMPLE 8 --------------------------\nPS C:\\\u003eRemove-DbaDbSnapshot -SqlInstance sql2014 -AllSnapshots -Confirm\nRemoves all database snapshots from sql2014 and prompts for each database",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eRemove-DbaDbSnapshot -SqlInstance sql2014 -Snapshot HR_snap_20161201, HR_snap_20161101\nRemoves database snapshots named HR_snap_20161201 and HR_snap_20161101\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eRemove-DbaDbSnapshot -SqlInstance sql2014 -Database HR, Accounting\nRemoves all database snapshots having HR and Accounting as base dbs\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaDbSnapshot -SqlInstance sql2014 -Database HR, Accounting | Remove-DbaDbSnapshot\nRemoves all database snapshots having HR and Accounting as base dbs\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eRemove-DbaDbSnapshot -SqlInstance sql2014 -Snapshot HR_snapshot, Accounting_snapshot\nRemoves HR_snapshot and Accounting_snapshot\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eGet-DbaDbSnapshot -SqlInstance sql2016 | Where-Object SnapshotOf -like \u0027*dumpsterfire*\u0027 | Remove-DbaDbSnapshot\nRemoves all snapshots associated with databases that have dumpsterfire in the name\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eGet-DbaDbSnapshot -SqlInstance sql2016 | Out-GridView -Passthru | Remove-DbaDbSnapshot\nAllows the selection of snapshots on sql2016 to remove\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003eRemove-DbaDbSnapshot -SqlInstance sql2014 -AllSnapshots\nRemoves all database snapshots from sql2014\n-------------------------- EXAMPLE 8 --------------------------\nPS C:\\\u003eRemove-DbaDbSnapshot -SqlInstance sql2014 -AllSnapshots -Confirm\nRemoves all database snapshots from sql2014 and prompts for each database",
         "Params":  [
                        [
                            "SqlInstance",
@@ -32966,7 +33617,7 @@
         "CommandName":  "Remove-DbaSpn",
         "Availability":  "Windows only",
         "Links":  "https://dbatools.io/Remove-DbaSpn",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eRemove-DbaSpn -SPN MSSQLSvc\\SQLSERVERA.domain.something -ServiceAccount domain\\account\nConnects to Active Directory and removes a provided SPN from the given account (and also the relative delegation)\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eRemove-DbaSpn -SPN MSSQLSvc\\SQLSERVERA.domain.something -ServiceAccount domain\\account -EnableException\nConnects to Active Directory and removes a provided SPN from the given account, suppressing all error messages and throw exceptions that can be caught instead\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eRemove-DbaSpn -SPN MSSQLSvc\\SQLSERVERA.domain.something -ServiceAccount domain\\account -Credential ad\\sqldba\nConnects to Active Directory and removes a provided SPN to the given account. Uses alternative account to connect to AD.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eTest-DbaSpn -ComputerName sql2005 | Where { $_.isSet -eq $true } | Remove-DbaSpn -WhatIf\nShows what would happen trying to remove all set SPNs for sql2005 and the relative delegations\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eTest-DbaSpn -ComputerName sql2005 | Where { $_.isSet -eq $true } | Remove-DbaSpn\nRemoves all set SPNs for sql2005 and the relative delegations",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eRemove-DbaSpn -SPN MSSQLSvc\\SQLSERVERA.domain.something -ServiceAccount domain\\account\nConnects to Active Directory and removes a provided SPN from the given account (and also the relative delegation)\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eRemove-DbaSpn -SPN MSSQLSvc\\SQLSERVERA.domain.something -ServiceAccount domain\\account -EnableException\nConnects to Active Directory and removes a provided SPN from the given account, suppressing all error messages and throw exceptions that can be caught instead\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eRemove-DbaSpn -SPN MSSQLSvc\\SQLSERVERA.domain.something -ServiceAccount domain\\account -Credential ad\\sqldba\nConnects to Active Directory and removes a provided SPN to the given account. Uses alternative account to connect to AD.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eTest-DbaSpn -ComputerName sql2005 | Where-Object { $_.isSet -eq $true } | Remove-DbaSpn -WhatIf\nShows what would happen trying to remove all set SPNs for sql2005 and the relative delegations\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eTest-DbaSpn -ComputerName sql2005 | Where-Object { $_.isSet -eq $true } | Remove-DbaSpn\nRemoves all set SPNs for sql2005 and the relative delegations",
         "Params":  [
                        [
                            "SPN",
@@ -33240,7 +33891,7 @@
         "CommandName":  "Rename-DbaDatabase",
         "Availability":  "Windows only",
         "Links":  "https://dbatools.io/Rename-DbaDatabase",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eRename-DbaDatabase -SqlInstance sqlserver2014a -Database HR -DatabaseName HR2 -Preview | select *\nShows the detailed result set you\u0027ll get renaming the HR database to HR2 without doing anything\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eRename-DbaDatabase -SqlInstance sqlserver2014a -Database HR -DatabaseName HR2\nRenames the HR database to HR2\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaDatabase -SqlInstance sqlserver2014a -Database HR | Rename-DbaDatabase -DatabaseName HR2\nSame as before, but with a piped database (renames the HR database to HR2)\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eRename-DbaDatabase -SqlInstance sqlserver2014a -Database HR -DatabaseName \"dbatools_\u003cDBN\u003e\"\nRenames the HR database to dbatools_HR\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eRename-DbaDatabase -SqlInstance sqlserver2014a -Database HR -DatabaseName \"dbatools_\u003cDBN\u003e_\u003cDATE\u003e\"\nRenames the HR database to dbatools_HR_20170807 (if today is 07th Aug 2017)\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eRename-DbaDatabase -SqlInstance sqlserver2014a -Database HR -FileGroupName \"dbatools_\u003cFGN\u003e\"\nRenames every FileGroup within HR to \"dbatools_[the original FileGroup name]\"\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003eRename-DbaDatabase -SqlInstance sqlserver2014a -Database HR -DatabaseName \"dbatools_\u003cDBN\u003e\" -FileGroupName \"\u003cDBN\u003e_\u003cFGN\u003e\"\nRenames the HR database to \"dbatools_HR\", then renames every FileGroup within to \"dbatools_HR_[the original FileGroup name]\"\n-------------------------- EXAMPLE 8 --------------------------\nPS C:\\\u003eRename-DbaDatabase -SqlInstance sqlserver2014a -Database HR -FileGroupName \"dbatools_\u003cDBN\u003e_\u003cFGN\u003e\"\nPS C:\\\u003e Rename-DbaDatabase -SqlInstance sqlserver2014a -Database HR -DatabaseName \"dbatools_\u003cDBN\u003e\"\nRenames the HR database to \"dbatools_HR\", then renames every FileGroup within to \"dbatools_HR_[the original FileGroup name]\"\n-------------------------- EXAMPLE 9 --------------------------\nPS C:\\\u003eRename-DbaDatabase -SqlInstance sqlserver2014a -Database HR -DatabaseName \"dbatools_\u003cDBN\u003e\" -FileName \"\u003cDBN\u003e_\u003cFGN\u003e_\u003cFNN\u003e\"\nRenames the HR database to \"dbatools_HR\" and then all filenames as \"dbatools_HR_[Name of the FileGroup]_[original_filename]\"\r\nThe db stays online (watch out!). You can then proceed manually to move/copy files by hand, set the db offline and then online again to finish the rename process\n-------------------------- EXAMPLE 10 --------------------------\nPS C:\\\u003eRename-DbaDatabase -SqlInstance sqlserver2014a -Database HR -DatabaseName \"dbatools_\u003cDBN\u003e\" -FileName \"\u003cDBN\u003e_\u003cFGN\u003e_\u003cFNN\u003e\" -SetOffline\nRenames the HR database to \"dbatools_HR\" and then all filenames as \"dbatools_HR_[Name of the FileGroup]_[original_filename]\"\r\nThe db is then set offline (watch out!). You can then proceed manually to move/copy files by hand and then set it online again to finish the rename process\n-------------------------- EXAMPLE 11 --------------------------\nPS C:\\\u003eRename-DbaDatabase -SqlInstance sqlserver2014a -Database HR -DatabaseName \"dbatools_\u003cDBN\u003e\" -FileName \"\u003cDBN\u003e_\u003cFGN\u003e_\u003cFNN\u003e\" -Move\nRenames the HR database to \"dbatools_HR\" and then all filenames as \"dbatools_HR_[Name of the FileGroup]_[original_filename]\"\r\nThe db is then set offline (watch out!). The function tries to do a simple rename and then sets the db online again to finish the rename process",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eRename-DbaDatabase -SqlInstance sqlserver2014a -Database HR -DatabaseName HR2 -Preview | Select-Object *\nShows the detailed result set you\u0027ll get renaming the HR database to HR2 without doing anything\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eRename-DbaDatabase -SqlInstance sqlserver2014a -Database HR -DatabaseName HR2\nRenames the HR database to HR2\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaDatabase -SqlInstance sqlserver2014a -Database HR | Rename-DbaDatabase -DatabaseName HR2\nSame as before, but with a piped database (renames the HR database to HR2)\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eRename-DbaDatabase -SqlInstance sqlserver2014a -Database HR -DatabaseName \"dbatools_\u003cDBN\u003e\"\nRenames the HR database to dbatools_HR\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eRename-DbaDatabase -SqlInstance sqlserver2014a -Database HR -DatabaseName \"dbatools_\u003cDBN\u003e_\u003cDATE\u003e\"\nRenames the HR database to dbatools_HR_20170807 (if today is 07th Aug 2017)\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eRename-DbaDatabase -SqlInstance sqlserver2014a -Database HR -FileGroupName \"dbatools_\u003cFGN\u003e\"\nRenames every FileGroup within HR to \"dbatools_[the original FileGroup name]\"\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003eRename-DbaDatabase -SqlInstance sqlserver2014a -Database HR -DatabaseName \"dbatools_\u003cDBN\u003e\" -FileGroupName \"\u003cDBN\u003e_\u003cFGN\u003e\"\nRenames the HR database to \"dbatools_HR\", then renames every FileGroup within to \"dbatools_HR_[the original FileGroup name]\"\n-------------------------- EXAMPLE 8 --------------------------\nPS C:\\\u003eRename-DbaDatabase -SqlInstance sqlserver2014a -Database HR -FileGroupName \"dbatools_\u003cDBN\u003e_\u003cFGN\u003e\"\nPS C:\\\u003e Rename-DbaDatabase -SqlInstance sqlserver2014a -Database HR -DatabaseName \"dbatools_\u003cDBN\u003e\"\nRenames the HR database to \"dbatools_HR\", then renames every FileGroup within to \"dbatools_HR_[the original FileGroup name]\"\n-------------------------- EXAMPLE 9 --------------------------\nPS C:\\\u003eRename-DbaDatabase -SqlInstance sqlserver2014a -Database HR -DatabaseName \"dbatools_\u003cDBN\u003e\" -FileName \"\u003cDBN\u003e_\u003cFGN\u003e_\u003cFNN\u003e\"\nRenames the HR database to \"dbatools_HR\" and then all filenames as \"dbatools_HR_[Name of the FileGroup]_[original_filename]\"\r\nThe db stays online (watch out!). You can then proceed manually to move/copy files by hand, set the db offline and then online again to finish the rename process\n-------------------------- EXAMPLE 10 --------------------------\nPS C:\\\u003eRename-DbaDatabase -SqlInstance sqlserver2014a -Database HR -DatabaseName \"dbatools_\u003cDBN\u003e\" -FileName \"\u003cDBN\u003e_\u003cFGN\u003e_\u003cFNN\u003e\" -SetOffline\nRenames the HR database to \"dbatools_HR\" and then all filenames as \"dbatools_HR_[Name of the FileGroup]_[original_filename]\"\r\nThe db is then set offline (watch out!). You can then proceed manually to move/copy files by hand and then set it online again to finish the rename process\n-------------------------- EXAMPLE 11 --------------------------\nPS C:\\\u003eRename-DbaDatabase -SqlInstance sqlserver2014a -Database HR -DatabaseName \"dbatools_\u003cDBN\u003e\" -FileName \"\u003cDBN\u003e_\u003cFGN\u003e_\u003cFNN\u003e\" -Move\nRenames the HR database to \"dbatools_HR\" and then all filenames as \"dbatools_HR_[Name of the FileGroup]_[original_filename]\"\r\nThe db is then set offline (watch out!). The function tries to do a simple rename and then sets the db online again to finish the rename process",
         "Params":  [
                        [
                            "SqlInstance",
@@ -34501,7 +35152,7 @@
         "CommandName":  "Restore-DbaDbCertificate",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Restore-DbaDbCertificate",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eRestore-DbaDbCertificate -SqlInstance Server1 -Path \\\\Server1\\Certificates -SecurePassword (ConvertTo-SecureString -Force -AsPlainText GoodPass1234!!)\nRestores all the certificates in the specified path, password is used to both decrypt and encrypt the private key.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eRestore-DbaDbCertificate -SqlInstance Server1 -Path \\\\Server1\\Certificates\\DatabaseTDE.cer -SecurePassword (ConvertTo-SecureString -force -AsPlainText GoodPass1234!!)\nRestores the DatabaseTDE certificate to Server1 and uses the MasterKey to encrypt the private key.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003e$securepass = Get-Credential usernamedoesntmatter | Select-Object -ExpandProperty Password\nPS C:\\\u003e Restore-DbaDbCertificate -SqlInstance Server1 -Path \\\\Server1\\Certificates -SecurePassword $securepass\nRestores all the certificates in the specified path, password is used to both decrypt and encrypt the private key.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eRestore-DbaDbCertificate -SqlInstance Server1 -Path \\\\Server1\\Certificates\\DatabaseTDE.cer -SecurePassword (Get-Credential usernamedoesntmatter).Password\nRestores the DatabaseTDE certificate to Server1 and uses the MasterKey to encrypt the private key.",
         "Params":  [
                        [
                            "SqlInstance",
@@ -34546,7 +35197,7 @@
                        [
                            "SecurePassword",
                            "Secure string used to decrypt the private key.",
-                           "Password",
+                           "Password,DecryptionPassword",
                            false,
                            "false",
                            "(Read-Host \"Password\" -AsSecureString)"
@@ -38424,7 +39075,7 @@
                        [
                            "EnableException",
                            "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
-                           "Silent",
+                           "",
                            false,
                            "false",
                            "False"
@@ -38458,7 +39109,7 @@
         "CommandName":  "Set-DbaSpn",
         "Availability":  "Windows only",
         "Links":  "https://dbatools.io/Set-DbaSpn",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eSet-DbaSpn -SPN MSSQLSvc/SQLSERVERA.domain.something -ServiceAccount domain\\account\nPS C:\\\u003e Set-DbaSpn -SPN MSSQLSvc/SQLSERVERA.domain.something -ServiceAccount domain\\account -EnableException\nConnects to Active Directory and adds a provided SPN to the given account.\r\nConnects to Active Directory and adds a provided SPN to the given account, suppressing all error messages and throw exceptions that can be caught instead\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eSet-DbaSpn -SPN MSSQLSvc/SQLSERVERA.domain.something -ServiceAccount domain\\account -Credential ad\\sqldba\nConnects to Active Directory and adds a provided SPN to the given account. Uses alternative account to connect to AD.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eSet-DbaSpn -SPN MSSQLSvc/SQLSERVERA.domain.something -ServiceAccount domain\\account -NoDelegation\nConnects to Active Directory and adds a provided SPN to the given account, without the delegation.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eTest-DbaSpn -ComputerName sql2016 | Where { $_.isSet -eq $false } | Set-DbaSpn\nSets all missing SPNs for sql2016\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eTest-DbaSpn -ComputerName sql2016 | Where { $_.isSet -eq $false } | Set-DbaSpn -WhatIf\nDisplays what would happen trying to set all missing SPNs for sql2016",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eSet-DbaSpn -SPN MSSQLSvc/SQLSERVERA.domain.something -ServiceAccount domain\\account\nPS C:\\\u003e Set-DbaSpn -SPN MSSQLSvc/SQLSERVERA.domain.something -ServiceAccount domain\\account -EnableException\nConnects to Active Directory and adds a provided SPN to the given account.\r\nConnects to Active Directory and adds a provided SPN to the given account, suppressing all error messages and throw exceptions that can be caught instead\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eSet-DbaSpn -SPN MSSQLSvc/SQLSERVERA.domain.something -ServiceAccount domain\\account -Credential ad\\sqldba\nConnects to Active Directory and adds a provided SPN to the given account. Uses alternative account to connect to AD.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eSet-DbaSpn -SPN MSSQLSvc/SQLSERVERA.domain.something -ServiceAccount domain\\account -NoDelegation\nConnects to Active Directory and adds a provided SPN to the given account, without the delegation.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eTest-DbaSpn -ComputerName sql2016 | Where-Object { $_.isSet -eq $false } | Set-DbaSpn\nSets all missing SPNs for sql2016\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eTest-DbaSpn -ComputerName sql2016 | Where-Object { $_.isSet -eq $false } | Set-DbaSpn -WhatIf\nDisplays what would happen trying to set all missing SPNs for sql2016",
         "Params":  [
                        [
                            "SPN",
@@ -41829,7 +42480,7 @@
         "CommandName":  "Test-DbaDeprecatedFeature",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Test-DbaDeprecatedFeature",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaDatabase -SqlInstance sql2008 -Database testdb, db2 | Test-DbaDeprecatedFeature\nCheck deprecated features on server sql2008 for only the testdb and db2 databases\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaDatabase -SqlInstance sql2008 -Database testdb, db2 | Test-DbaDeprecatedFeature | Select *\nSee the object definition in the output as well\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eTest-DbaDeprecatedFeature -SqlInstance sql2008, sqlserver2012\nCheck deprecated features for all databases on the servers sql2008 and sqlserver2012.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eTest-DbaDeprecatedFeature -SqlInstance sql2008 -Database TestDB\nCheck deprecated features on server sql2008 for only the TestDB database",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaDatabase -SqlInstance sql2008 -Database testdb, db2 | Test-DbaDeprecatedFeature\nCheck deprecated features on server sql2008 for only the testdb and db2 databases\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaDatabase -SqlInstance sql2008 -Database testdb, db2 | Test-DbaDeprecatedFeature | Select-Object *\nSee the object definition in the output as well\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eTest-DbaDeprecatedFeature -SqlInstance sql2008, sqlserver2012\nCheck deprecated features for all databases on the servers sql2008 and sqlserver2012.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eTest-DbaDeprecatedFeature -SqlInstance sql2008 -Database TestDB\nCheck deprecated features on server sql2008 for only the TestDB database",
         "Params":  [
                        [
                            "SqlInstance",
