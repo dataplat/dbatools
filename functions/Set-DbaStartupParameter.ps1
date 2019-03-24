@@ -35,7 +35,7 @@ function Set-DbaStartupParameter {
 
         Will be ignored if SqlInstance is offline or the Offline switch is set. To override this behaviour use the Force switch. This is to ensure you understand the risk as we cannot validate the path if the instance is offline
 
-    .PARAMETER TraceFlags
+    .PARAMETER TraceFlag
         A comma separated list of TraceFlags to be applied at SQL Server startup
         By default these will be appended to any existing trace flags set
 
@@ -78,12 +78,12 @@ function Set-DbaStartupParameter {
     .PARAMETER IncreasedExtents
         Increases the number of extents that are allocated for each file in a filegroup.
 
-    .PARAMETER TraceFlagsOverride
+    .PARAMETER TraceFlagOverride
         Overrides the default behaviour and replaces any existing trace flags. If not trace flags specified will just remove existing ones
 
     .PARAMETER StartupConfig
         Pass in a previously saved SQL Instance startup config
-        using this parameter will set TraceFlagsOverride to true, so existing Trace Flags will be overridden
+        using this parameter will set TraceFlagOverride to true, so existing Trace Flags will be overridden
 
     .PARAMETER Offline
         Setting this switch will try perform the requested actions without connect to the SQL Server Instance, this will speed things up if you know the Instance is offline.
@@ -128,22 +128,22 @@ function Set-DbaStartupParameter {
         Shows what would happen if you attempted to configure the SQL Instance sql2016 to IncreasedExtents = False (no -E)
 
     .EXAMPLE
-        PS C:\> Set-DbaStartupParameter -SqlInstance server1\instance1 -SingleUser -TraceFlags 8032,8048
+        PS C:\> Set-DbaStartupParameter -SqlInstance server1\instance1 -TraceFlag 8032,8048
 
         This will append Trace Flags 8032 and 8048 to the startup parameters
 
     .EXAMPLE
-        PS C:\> Set-DbaStartupParameter -SqlInstance sql2016 -SingleUser:$false -TraceFlagsOverride
+        PS C:\> Set-DbaStartupParameter -SqlInstance sql2016 -SingleUser:$false -TraceFlagOverride
 
         This will remove all trace flags and set SingleUser to false
 
     .EXAMPLE
-        PS C:\> Set-DbaStartupParameter -SqlInstance server1\instance1 -SingleUser -TraceFlags 8032,8048 -TraceFlagsOverride
+        PS C:\> Set-DbaStartupParameter -SqlInstance server1\instance1 -SingleUser -TraceFlag 8032,8048 -TraceFlagOverride
 
         This will set Trace Flags 8032 and 8048 to the startup parameters, removing any existing Trace Flags
 
     .EXAMPLE
-        PS C:\> Set-DbaStartupParameter -SqlInstance sql2016 -SingleUser:$false -TraceFlagsOverride -Offline
+        PS C:\> Set-DbaStartupParameter -SqlInstance sql2016 -SingleUser:$false -TraceFlagOverride -Offline
 
         This will remove all trace flags and set SingleUser to false from an offline instance
 
@@ -178,7 +178,7 @@ function Set-DbaStartupParameter {
         [string]$MasterData,
         [string]$MasterLog,
         [string]$ErrorLog,
-        [string[]]$TraceFlags,
+        [string[]]$TraceFlag,
         [switch]$CommandPromptStart,
         [switch]$MinimalStart,
         [int]$MemoryToReserve,
@@ -188,7 +188,7 @@ function Set-DbaStartupParameter {
         [switch]$StartAsNamedInstance,
         [switch]$DisableMonitoring,
         [switch]$IncreasedExtents,
-        [switch]$TraceFlagsOverride,
+        [switch]$TraceFlagOverride,
         [object]$StartupConfig,
         [switch]$Offline,
         [switch]$Force,
@@ -223,7 +223,7 @@ function Set-DbaStartupParameter {
         if ('StartupConfig' -in $PSBoundParameters.Keys) {
             Write-Message -Level VeryVerbose -Message "startupObject passed in"
             $newStartup = $StartupConfig
-            $TraceFlagsOverride = $true
+            $TraceFlagOverride = $true
         } else {
             Write-Message -Level VeryVerbose -Message "Parameters passed in"
             $newStartup = $currentStartup.PSObject.Copy()
@@ -350,18 +350,18 @@ function Set-DbaStartupParameter {
         if ($newStartup.TraceFlags -eq 'None') {
             $newStartup.TraceFlags = ''
         }
-        if ($TraceFlagsOverride -and 'TraceFlags' -in $PSBoundParameters.Keys) {
-            if ($null -ne $TraceFlags -and '' -ne $TraceFlags) {
-                $newStartup.TraceFlags = $TraceFlags -join ','
-                $parameterString += (($TraceFlags.Split(',') | ForEach-Object { "-T$_" }) -join ';') + ";"
+        if ($TraceFlagOverride -and 'TraceFlag' -in $PSBoundParameters.Keys) {
+            if ($null -ne $TraceFlag -and '' -ne $TraceFlag) {
+                $newStartup.TraceFlags = $TraceFlag -join ','
+                $parameterString += (($TraceFlag.Split(',') | ForEach-Object { "-T$_" }) -join ';') + ";"
             }
         } else {
-            if ('TraceFlags' -in $PSBoundParameters.Keys) {
-                if ($null -eq $TraceFlags) { $TraceFlags = '' }
+            if ('TraceFlag' -in $PSBoundParameters.Keys) {
+                if ($null -eq $TraceFlag) { $TraceFlag = '' }
                 $oldFlags = @($currentStartup.TraceFlags) -split ',' | Where-Object { $_ -ne 'None' }
-                $newFlags = $TraceFlags
+                $newFlags = $TraceFlag
                 $newStartup.TraceFlags = (@($oldFlags) + @($newFlags) | Sort-Object -Unique) -join ','
-            } elseif ($TraceFlagsOverride) {
+            } elseif ($TraceFlagOverride) {
                 $newStartup.TraceFlags = ''
             } else {
                 $newStartup.TraceFlags = if ($currentStartup.TraceFlags -eq 'None') { }
