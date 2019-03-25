@@ -140,7 +140,11 @@ $scriptBlock = {
         }
     } else {
         foreach ($name in $names) {
-            Add-Type -Path (Resolve-Path -Path "$DllRoot\$name.dll") -ErrorAction Ignore
+            try {
+                Add-Type -Path (Resolve-Path -Path "$DllRoot\$name.dll") -ErrorAction Stop
+            } catch {
+                continue
+            }
         }
     }
 }
