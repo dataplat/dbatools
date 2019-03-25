@@ -88,6 +88,8 @@ function Get-DbaRandomizedDataset {
     process {
         if (Test-FunctionInterrupt) { return }
 
+        $supportedDataTypes = 'bigint', 'bit', 'bool', 'char', 'date', 'datetime', 'datetime2', 'decimal', 'int', 'float', 'guid', 'money', 'numeric', 'nchar', 'ntext', 'nvarchar', 'real', 'smalldatetime', 'smallint', 'text', 'time', 'tinyint', 'uniqueidentifier', 'userdefineddatatype', 'varchar'
+
         # Check variables
         if (-not $InputObject -and -not $Template -and -not $TemplateFile) {
             Stop-Function -Message "Please enter a template or assign a template file" -Continue
@@ -120,7 +122,11 @@ function Get-DbaRandomizedDataset {
                 $row = New-Object PSCustomObject
 
                 foreach ($column in $templateSet.Columns) {
-                    $value = Get-DbaRandomizedValue -RandomizerType $column.Type -RandomizerSubType $column.SubType -Locale $Locale
+                    if ($column.SubType -in $supportedDataTypes) {
+                        $value = Get-DbaRandomizedValue -DataType $column.SubType
+                    } else {
+                        $value = Get-DbaRandomizedValue -RandomizerType $column.MaskingType -RandomizerSubtype $column.SubType
+                    }
 
                     $row | Add-Member -Name $column.Name -Type NoteProperty -Value $value
                 }
