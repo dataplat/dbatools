@@ -385,7 +385,7 @@ function Restore-DbaDatabase {
             return
         }
 
-        if ($RestoreInstnance.DatabaseEngineEdition -eq "SqlManagedInstance"){
+        if ($RestoreInstance.DatabaseEngineEdition -eq "SqlManagedInstance"){
             Write-Message -Level Verbose -Message "Restore target is a Managed Instance, restricted feature set available"
             $MiParams = ("DestinationDataDirectory","DestinationLogDirectory","DestinationFileStreamDirectoru","XpDirTree","FileMapping","UseDestintionDefaultDirectories","ReuseSourceFolderStructure","DestinationFilePrefix","StandbyDirecttory","ReplaceDbNameInFile","KeepCDC")
             ForEach ($MiParam in $MiParams){
