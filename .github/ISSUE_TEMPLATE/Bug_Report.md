@@ -1,18 +1,34 @@
 ---
 name: "Bug report \U0001F41B"
 about: Found errors or unexpected behavior using dbatools module
+title: "[Bug]"
+labels: ''
+assignees: ''
 
 ---
 
 ### Before submitting a bug report:
 
-- [ ] Ensure you are able to reproduce it on the latest released version (_we release often_)
-- [ ] Verified this bug is not already reported in an issue
+- [ ] *Running latest release* `(gmo dbatools -list).Version | select -First 1`
 - [ ] Verified errors are not related to permissions
-- [ ] Can reproduce in a clean PowerShell session (_clean = `powershell -NoProfile`_)
-- [ ] If issue is with `Copy-DbaDatabase`, using `Backup-DbaDatabase | Restore-DbaDatabase` still does not work
+- [ ] If issue is with `Copy-DbaDatabase`, replicate issue using `Backup-DbaDatabase ... | Restore-DbaDatabase ...`
 
-Note that we do not have the resources to make `Copy-DbaDatabase` work in every environment. Instead, we try to ensure Backup & Restore work in your enviornment.
+> Note that we do not have the resources to make `Copy-DbaDatabase` work in every environment. Instead, we try to ensure Backup & Restore work in your environment.
+
+## Environmental data
+
+<!-- Provide output of the following two commands -->
+
+### PowerShell:
+<!-- Paste output of `$PSVersionTable` -->
+```powershell
+
+```
+### SQL Server: 
+<!-- Paste output of `SELECT @@VERSION` -->
+```sql
+
+```
 
 ## Steps to Reproduce
 
@@ -39,10 +55,3 @@ Sample output or detail explanation if possible
 <!--
 Output or detailed explanation if possible
 -->
-
-## Environmental data
-
-<!-- Provide output of the following two commands -->
-
- - PowerShell: <!-- $PSVersionTable output -->
- - - SQL Server: <!-- SELECT @@VERSION output -->
