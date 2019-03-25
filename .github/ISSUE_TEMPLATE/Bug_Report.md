@@ -9,21 +9,23 @@ assignees: ''
 
 ### Before submitting a bug report:
 
-- [ ] *Running latest release* `(gmo dbatools -list).Version | select -First 1`
+**Collect output of following command and paste below:**
+
+```
+& {"### PowerShell version:`n$($PSVersionTable | Out-String)"; "`n### dbatools Module version:`n$(gmo dbatools -List | select name, path, version | fl -force | Out-String)"}
+```
+
+- [ ] *Running latest release of dbatools*
 - [ ] Verified errors are not related to permissions
 - [ ] If issue is with `Copy-DbaDatabase`, replicate issue using `Backup-DbaDatabase ... | Restore-DbaDatabase ...`
 
 > Note that we do not have the resources to make `Copy-DbaDatabase` work in every environment. Instead, we try to ensure Backup & Restore work in your environment.
 
 ## Environmental data
-
-<!-- Provide output of the following two commands -->
-
-### PowerShell:
-<!-- Paste output of `$PSVersionTable` -->
-```powershell
-
 ```
+<!-- Paste out of above command here -->
+```
+
 ### SQL Server: 
 <!-- Paste output of `SELECT @@VERSION` -->
 ```sql
