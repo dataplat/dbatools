@@ -384,6 +384,16 @@ function Restore-DbaDatabase {
             Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             return
         }
+
+        if ($RestoreInstnance.DatabaseEngineEdition -eq "SqlManagedInstance"){
+            Write-Message -Level Verbose -Message "Restore target is a Managed Instance, restricted feature set available"
+            $MiParams = ("DestinationDataDirectory","DestinationLogDirectory","DestinationFileStreamDirectoru","XpDirTree","FileMapping","UseDestintionDefaultDirectories","ReuseSourceFolderStructure","DestinationFilePrefix","StandbyDirecttory","ReplaceDbNameInFile","KeepCDC")
+            ForEach ($MiParam in $MiParams){
+                if (Test-Bound $MiParam){
+                    Write-Message -Leve Warning "Restoring to a Managed SQL Instance, parameter $MiParm is not supported"
+                }
+            }
+        }
         if ($PSCmdlet.ParameterSetName -eq "Restore") {
             $UseDestinationDefaultDirectories = $true
             $paramCount = 0
