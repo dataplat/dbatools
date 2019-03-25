@@ -87,7 +87,7 @@ function Update-SqlPermission {
         if ($null -ne $DestServer.JobServer.Jobs[$ownedJob.Name]) {
             if ($Pscmdlet.ShouldProcess($destination, "Changing of job owner to $userName for $($ownedJob.Name).")) {
                 try {
-                    $destOwnedJob = $DestServer.JobServer.Jobs | Where-Object { $_.Name -eq $ownedJobs.Name }
+                    $destOwnedJob = $DestServer.JobServer.Jobs | Where-Object { $_.Name -eq $ownedJob.Name }
                     $destOwnedJob.Set_OwnerLoginName($userName)
                     $destOwnedJob.Alter()
                     Write-Message -Level Verbose -Message "Changing job owner to $userName for $($ownedJob.Name) on $destination successfully performed."
