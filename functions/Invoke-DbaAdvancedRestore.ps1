@@ -306,7 +306,7 @@ function Invoke-DbaAdvancedRestore {
                                 Write-Progress -id 1 -Activity "Restoring $Database to $sqlinstance - Backup $BackupCnt of $($Backups.count)" -percentcomplete 0
                             }
                             Write-Progress -id 2 -ParentId 1 -Activity "Restore $($backup.FullName -Join ',')" -percentcomplete 0
-                            # $script = $Restore.Script($Server)
+                            $script = $Restore.Script($Server)
                             $percentcomplete = [Microsoft.SqlServer.Management.Smo.PercentCompleteEventHandler] {
                                 Write-Progress -id 2 -ParentId 1 -Activity "Restore $($backup.FullName -Join ',')" -percentcomplete $_.Percent -status ([System.String]::Format("Progress: {0} %", $_.Percent))
                             }
