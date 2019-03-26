@@ -160,7 +160,7 @@ function Invoke-DbaAdvancedRestore {
         foreach ($Database in $Databases) {
             $DatabaseRestoreStartTime = Get-Date
             if ($Database -in $Server.Databases.Name) {
-                if (-not $OutputScriptOnly -and -not $VerifyOnly) {
+                if (-not $OutputScriptOnly -and -not $VerifyOnly -and $Server.DatabaseEngineEdition -ne "SqlManagedInstance") {
                     if ($Pscmdlet.ShouldProcess("Killing processes in $Database on $SqlInstance as it exists and WithReplace specified  `n", "Cannot proceed if processes exist, ", "Database Exists and WithReplace specified, need to kill processes to restore")) {
                         try {
                             Write-Message -Level Verbose -Message "Killing processes on $Database"
@@ -171,6 +171,18 @@ function Invoke-DbaAdvancedRestore {
                             Write-Message -Level Verbose -Message "No processes to kill in $Database"
                         }
                     }
+                } elseif (-not $OutputScriptOnly -and -not $VerifyOnly -and $Server.DatabaseEngineEdition -eq "SqlManagedInstance") {
+                    if ($Pscmdlet.ShouldProcess("Dropping $Database on $SqlInstance as it exists and WithReplace specified  `n", "Cannot proceed if database exist, ", "Database Exists and WithReplace specified, need to drop database to restore")) {
+                        try {
+                            Write-Message -Level Verbose "$SqlInstance is a Managed instance so dropping database was WithReplace not supported"
+                            $null = Stop-DbaProcess -SqlInstance $Server -Database $Database -WarningAction Silentlycontinue
+                            $null = Remove-DbaDatabase -SqlInstance $Server -Database $Database -Confirm:$false
+                            $server.ConnectionContext.Connect()
+                        } catch {
+                            Write-Message -Level Verbose -Message "No processes to kill in $Database"
+                        }
+                    }
+
                 } elseif (-not $WithReplace -and (-not $VerifyOnly)) {
                     Write-Message -Level verbose -Message "$Database exists and WithReplace not specified, stopping"
                     continue
@@ -179,6 +191,7 @@ function Invoke-DbaAdvancedRestore {
             Write-Message -Message "WithReplace  = $WithReplace" -Level Debug
             $backups = @($InternalHistory | Where-Object {$_.Database -eq $Database} | Sort-Object -Property Type, FirstLsn)
             $BackupCnt = 1
+
             foreach ($backup in $backups) {
                 $FileRestoreStartTime = Get-Date
                 $Restore = New-Object Microsoft.SqlServer.Management.Smo.Restore
@@ -199,8 +212,11 @@ function Invoke-DbaAdvancedRestore {
                         $Restore.ToPointInTime = $RestoreTime
                     }
                 }
+
                 $Restore.Database = $database
-                $Restore.ReplaceDatabase = $WithReplace
+                if ($Server.DatabaseEngineEdition -ne "SqlManagedInstance") {
+                    $Restore.ReplaceDatabase = $WithReplace
+                }
                 if ($MaxTransferSize) {
                     $Restore.MaxTransferSize = $MaxTransferSize
                 }
@@ -290,7 +306,7 @@ function Invoke-DbaAdvancedRestore {
                                 Write-Progress -id 1 -Activity "Restoring $Database to $sqlinstance - Backup $BackupCnt of $($Backups.count)" -percentcomplete 0
                             }
                             Write-Progress -id 2 -ParentId 1 -Activity "Restore $($backup.FullName -Join ',')" -percentcomplete 0
-                            $script = $Restore.Script($Server)
+                            # $script = $Restore.Script($Server)
                             $percentcomplete = [Microsoft.SqlServer.Management.Smo.PercentCompleteEventHandler] {
                                 Write-Progress -id 2 -ParentId 1 -Activity "Restore $($backup.FullName -Join ',')" -percentcomplete $_.Percent -status ([System.String]::Format("Progress: {0} %", $_.Percent))
                             }
