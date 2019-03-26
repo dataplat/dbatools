@@ -52,6 +52,9 @@ function Set-DbaAgReplica {
 
         Manual requires you to create a backup of the database on the primary replica and manually restore that backup on the secondary replica.
 
+    .PARAMETER SessionTimeout
+        How many seconds an availability replica waits for a ping response from a connected replica before considering the connection to have failed.
+
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
 
@@ -100,6 +103,7 @@ function Set-DbaAgReplica {
         [string]$ConnectionModeInSecondaryRole,
         [ValidateSet('Automatic', 'Manual')]
         [string]$SeedingMode,
+        [int]$SessionTimeout,
         [string]$EndpointUrl,
         [string]$ReadonlyRoutingConnectionUrl,
         [parameter(ValueFromPipeline)]
@@ -152,6 +156,16 @@ function Set-DbaAgReplica {
 
                     if ($SeedingMode) {
                         $agreplica.SeedingMode = $SeedingMode
+                    }
+
+                    if ($SessionTimeout) {
+                        if ($SessionTimeout -lt 10) {
+                         $Message = "Per https://goo.gl/REjcsp, " +
+                          "We recommend that you keep the time-out period at 10 seconds or greater. " +
+                          "Setting the value to less than 10 seconds creates the possibility of a heavily loaded system missing PINGs and declaring a false failure."
+                         Write-Warning -Message $Message
+                        }
+                        $agreplica.SessionTimeout = $SessionTimeout
                     }
 
                     $agreplica.Alter()
