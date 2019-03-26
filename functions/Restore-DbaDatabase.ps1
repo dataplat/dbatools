@@ -385,12 +385,14 @@ function Restore-DbaDatabase {
             return
         }
 
-        if ($RestoreInstance.DatabaseEngineEdition -eq "SqlManagedInstance"){
+        if ($RestoreInstance.DatabaseEngineEdition -eq "SqlManagedInstance") {
             Write-Message -Level Verbose -Message "Restore target is a Managed Instance, restricted feature set available"
-            $MiParams = ("DestinationDataDirectory","DestinationLogDirectory","DestinationFileStreamDirectoru","XpDirTree","FileMapping","UseDestintionDefaultDirectories","ReuseSourceFolderStructure","DestinationFilePrefix","StandbyDirecttory","ReplaceDbNameInFile","KeepCDC")
-            ForEach ($MiParam in $MiParams){
-                if (Test-Bound $MiParam){
-                    Write-Message -Leve Warning "Restoring to a Managed SQL Instance, parameter $MiParm is not supported"
+            $MiParams = ("DestinationDataDirectory", "DestinationLogDirectory", "DestinationFileStreamDirectoru", "XpDirTree", "FileMapping", "UseDestintionDefaultDirectories", "ReuseSourceFolderStructure", "DestinationFilePrefix", "StandbyDirecttory", "ReplaceDbNameInFile", "KeepCDC")
+            ForEach ($MiParam in $MiParams) {
+                if (Test-Bound $MiParam) {
+                    # Write-Message -Level Warning "Restoring to a Managed SQL Instance, parameter $MiParm is not supported"
+                    Stop-Function -Category InvalidArgument -Message "The parameter $MiParam cannot be used with a Managed SQL Instance"
+                    return
                 }
             }
         }
@@ -490,9 +492,12 @@ function Restore-DbaDatabase {
         $BackupHistory = @()
     }
     process {
+        $test = "stuart3"
+        $test
         if (Test-FunctionInterrupt) {
             return
         }
+
         if ($RestoreInstance.VersionMajor -eq 8 -and $true -ne $TrustDbBackupHistory) {
             foreach ($file in $Path) {
                 $bh = Get-DbaBackupInformation -SqlInstance $RestoreInstance -Path $file
@@ -540,7 +545,8 @@ function Restore-DbaDatabase {
                             }
                         }
                     }
-
+                    $test = "stuart2"
+                    $test
                     if ($f.BackupPath -like 'http*') {
                         if ('' -ne $AzureCredential) {
                             Write-Message -Message "At least one Azure backup passed in with a credential, assume correct" -Level Verbose
@@ -564,6 +570,8 @@ function Restore-DbaDatabase {
                             $_.Start -as [DateTime]
                         }
                     }
+                    $test = "stuart1"
+                    $test
                 }
             } else {
                 $files = @()
@@ -702,6 +710,7 @@ function Restore-DbaDatabase {
                 }
             }
             Write-Message -Message "Passing in to restore" -Level Verbose
+
             if ($PSCmdlet.ParameterSetName -eq "RestorePage" -and $RestoreInstance.Edition -notlike '*Enterprise*') {
                 Write-Message -Message "Taking Tail log backup for page restore for non-Enterprise" -Level Verbose
                 $TailBackup = Backup-DbaDatabase -SqlInstance $RestoreInstance -Database $DatabaseName -Type Log -BackupDirectory $PageRestoreTailFolder -Norecovery -CopyOnly
