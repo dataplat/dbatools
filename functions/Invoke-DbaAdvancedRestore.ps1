@@ -366,7 +366,7 @@ function Invoke-DbaAdvancedRestore {
                 $BackupCnt++
             }
             Write-Progress -id 2 -Activity "Finished" -Completed
-            if ($server.ConnsectionContext.exists) {
+            if ($server.ConnectionContext.exists) {
                 $server.ConnectionContext.Disconnect()
             }
             Write-Progress -id 1 -Activity "Finished" -Completed
