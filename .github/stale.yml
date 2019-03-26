@@ -19,5 +19,6 @@ issues:
     - Documentation
     - Question
     - Confirmed
+    - Solution Provided
 # Label to use when marking an issue as stale
 staleLabel: stale

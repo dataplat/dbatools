@@ -178,7 +178,7 @@ EXEC master.sys.sp_help_log_shipping_monitor"
             }
 
             # Get the log shipped databases
-            $results = $server.Query($sql)
+            $results = @($server.Query($sql))
 
             # Check if any rows were returned
             if ($results.Count -lt 1) {
