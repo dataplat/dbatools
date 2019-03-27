@@ -5057,7 +5057,7 @@
                        ],
                        [
                            "Procedure",
-                           "The startup procedure(s) to process. This list is auto-populated from the server. If unspecified, all startup procedrues will be processed.",
+                           "The startup procedure(s) to process. This list is auto-populated from the server. If unspecified, all startup procedures will be processed.",
                            "",
                            false,
                            "false",
@@ -39184,7 +39184,7 @@
         "CommandName":  "Set-DbaStartupParameter",
         "Availability":  "Windows only",
         "Links":  null,
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eSet-DbaStartupParameter -SqlInstance server1\\instance1 -SingleUser\nWill configure the SQL Instance server1\\instance1 to startup up in Single User mode at next startup\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eSet-DbaStartupParameter -SqlInstance sql2016 -IncreasedExtents\nWill configure the SQL Instance sql2016 to IncreasedExtents = True (-E)\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eSet-DbaStartupParameter -SqlInstance sql2016  -IncreasedExtents:$false -WhatIf\nShows what would happen if you attempted to configure the SQL Instance sql2016 to IncreasedExtents = False (no -E)\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eSet-DbaStartupParameter -SqlInstance server1\\instance1 -SingleUser -TraceFlags 8032,8048\nThis will append Trace Flags 8032 and 8048 to the startup parameters\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eSet-DbaStartupParameter -SqlInstance sql2016 -SingleUser:$false -TraceFlagsOverride\nThis will remove all trace flags and set SingleUser to false\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eSet-DbaStartupParameter -SqlInstance server1\\instance1 -SingleUser -TraceFlags 8032,8048 -TraceFlagsOverride\nThis will set Trace Flags 8032 and 8048 to the startup parameters, removing any existing Trace Flags\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003eSet-DbaStartupParameter -SqlInstance sql2016 -SingleUser:$false -TraceFlagsOverride -Offline\nThis will remove all trace flags and set SingleUser to false from an offline instance\n-------------------------- EXAMPLE 8 --------------------------\nPS C:\\\u003eSet-DbaStartupParameter -SqlInstance sql2016 -ErrorLog c:\\Sql\\ -Offline\nThis will attempt to change the ErrorLog path to c:\\sql\\. However, with the offline switch this will not happen. To force it, use the -Force switch like so:\nSet-DbaStartupParameter -SqlInstance sql2016 -ErrorLog c:\\Sql\\ -Offline -Force\n-------------------------- EXAMPLE 9 --------------------------\nPS C:\\\u003e$StartupConfig = Get-DbaStartupParameter -SqlInstance server1\\instance1\nPS C:\\\u003e Set-DbaStartupParameter -SqlInstance server1\\instance1 -SingleUser -NoLoggingToWinEvents\r\nPS C:\\\u003e #Restart your SQL instance with the tool of choice\r\nPS C:\\\u003e #Do Some work\r\nPS C:\\\u003e Set-DbaStartupParameter -SqlInstance server1\\instance1 -StartUpConfig $StartUpConfig\r\nPS C:\\\u003e #Restart your SQL instance with the tool of choice and you\u0027re back to normal\nIn this example we take a copy of the existing startup configuration of server1\\instance1\nWe then change the startup parameters ahead of some work\nAfter the work has been completed, we can push the original startup parameters back to server1\\instance1 and resume normal operation",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eSet-DbaStartupParameter -SqlInstance server1\\instance1 -SingleUser\nWill configure the SQL Instance server1\\instance1 to startup up in Single User mode at next startup\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eSet-DbaStartupParameter -SqlInstance sql2016 -IncreasedExtents\nWill configure the SQL Instance sql2016 to IncreasedExtents = True (-E)\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eSet-DbaStartupParameter -SqlInstance sql2016  -IncreasedExtents:$false -WhatIf\nShows what would happen if you attempted to configure the SQL Instance sql2016 to IncreasedExtents = False (no -E)\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eSet-DbaStartupParameter -SqlInstance server1\\instance1 -TraceFlag 8032,8048\nThis will append Trace Flags 8032 and 8048 to the startup parameters\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eSet-DbaStartupParameter -SqlInstance sql2016 -SingleUser:$false -TraceFlagOverride\nThis will remove all trace flags and set SingleUser to false\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eSet-DbaStartupParameter -SqlInstance server1\\instance1 -SingleUser -TraceFlag 8032,8048 -TraceFlagOverride\nThis will set Trace Flags 8032 and 8048 to the startup parameters, removing any existing Trace Flags\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003eSet-DbaStartupParameter -SqlInstance sql2016 -SingleUser:$false -TraceFlagOverride -Offline\nThis will remove all trace flags and set SingleUser to false from an offline instance\n-------------------------- EXAMPLE 8 --------------------------\nPS C:\\\u003eSet-DbaStartupParameter -SqlInstance sql2016 -ErrorLog c:\\Sql\\ -Offline\nThis will attempt to change the ErrorLog path to c:\\sql\\. However, with the offline switch this will not happen. To force it, use the -Force switch like so:\nSet-DbaStartupParameter -SqlInstance sql2016 -ErrorLog c:\\Sql\\ -Offline -Force\n-------------------------- EXAMPLE 9 --------------------------\nPS C:\\\u003e$StartupConfig = Get-DbaStartupParameter -SqlInstance server1\\instance1\nPS C:\\\u003e Set-DbaStartupParameter -SqlInstance server1\\instance1 -SingleUser -NoLoggingToWinEvents\r\nPS C:\\\u003e #Restart your SQL instance with the tool of choice\r\nPS C:\\\u003e #Do Some work\r\nPS C:\\\u003e Set-DbaStartupParameter -SqlInstance server1\\instance1 -StartupConfig $StartupConfig\r\nPS C:\\\u003e #Restart your SQL instance with the tool of choice and you\u0027re back to normal\nIn this example we take a copy of the existing startup configuration of server1\\instance1\nWe then change the startup parameters ahead of some work\nAfter the work has been completed, we can push the original startup parameters back to server1\\instance1 and resume normal operation",
         "Params":  [
                        [
                            "SqlInstance",
@@ -39235,7 +39235,7 @@
                            ""
                        ],
                        [
-                           "TraceFlags",
+                           "TraceFlag",
                            "A comma separated list of TraceFlags to be applied at SQL Server startup\r\nBy default these will be appended to any existing trace flags set",
                            "",
                            false,
@@ -39315,7 +39315,7 @@
                            "False"
                        ],
                        [
-                           "TraceFlagsOverride",
+                           "TraceFlagOverride",
                            "Overrides the default behaviour and replaces any existing trace flags. If not trace flags specified will just remove existing ones",
                            "",
                            false,
@@ -39323,8 +39323,8 @@
                            "False"
                        ],
                        [
-                           "StartUpConfig",
-                           "Pass in a previously saved SQL Instance startup config\r\nusing this parameter will set TraceFlagsOverride to true, so existing Trace Flags will be overridden",
+                           "StartupConfig",
+                           "Pass in a previously saved SQL Instance startup config\r\nusing this parameter will set TraceFlagOverride to true, so existing Trace Flags will be overridden",
                            "",
                            false,
                            "false",
@@ -39371,7 +39371,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Set-DbaStartupParameter [-SqlInstance] \u003cDbaInstanceParameter\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Credential] \u003cPSCredential\u003e] [[-MasterData] \u003cString\u003e] [[-MasterLog] \u003cString\u003e] [[-ErrorLog] \u003cString\u003e] [[-TraceFlags] \u003cString[]\u003e] [-CommandPromptStart] [-MinimalStart] [[-MemoryToReserve] \u003cInt32\u003e] [-SingleUser] [[-SingleUserDetails] \u003cString\u003e] [-NoLoggingToWinEvents] [-StartAsNamedInstance] [-DisableMonitoring] [-IncreasedExtents] [-TraceFlagsOverride] [[-StartUpConfig] \u003cObject\u003e] [-Offline] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Set-DbaStartupParameter [-SqlInstance] \u003cDbaInstanceParameter\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Credential] \u003cPSCredential\u003e] [[-MasterData] \u003cString\u003e] [[-MasterLog] \u003cString\u003e] [[-ErrorLog] \u003cString\u003e] [[-TraceFlag] \u003cString[]\u003e] [-CommandPromptStart] [-MinimalStart] [[-MemoryToReserve] \u003cInt32\u003e] [-SingleUser] [[-SingleUserDetails] \u003cString\u003e] [-NoLoggingToWinEvents] [-StartAsNamedInstance] [-DisableMonitoring] [-IncreasedExtents] [-TraceFlagOverride] [[-StartupConfig] \u003cObject\u003e] [-Offline] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Set-DbaTcpPort",
