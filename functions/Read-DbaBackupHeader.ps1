@@ -101,8 +101,9 @@ function Read-DbaBackupHeader {
     )
 
     begin {
-        foreach ($p in $path) {
-            if ([System.IO.Path]::GetExtension($p).Length -eq 0) {
+        foreach ($p in $Path) {
+            Write-Message -Level Verbose -Message "Checking: $p"
+            if ([System.IO.Path]::GetExtension($p.ToString()).Length -eq 0) {
                 Stop-Function -Message "Path ($p) should be a file, not a folder" -Category InvalidArgument
                 return
             }
