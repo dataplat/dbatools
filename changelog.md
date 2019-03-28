@@ -5,6 +5,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
     and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.782] - 2019-03-10
+### Added
+* More Azure support
+
 ## [0.9.781] - 2019-03-08
 ### Fixed
 * `Get-DbaAgentJobHistory` adds an hour to the `enddate` and duration [#4345](https://github.com/sqlcollaborative/dbatools/issues/4345)
