@@ -218,14 +218,13 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
                 $server = Connect-DbaInstance -SqlInstance $script:instance2
                 $sql = "CREATE CREDENTIAL [$script:azureblob] WITH IDENTITY = N'SHARED ACCESS SIGNATURE', SECRET = N'$env:azurepasswd'"
                 $server.Query($sql)
-                $server.Query("CREATE DATABASE dbatoolsci_azure")
-                $server.Query($sql)
-                $server = Connect-DbaInstance -SqlInstance $script:instance3
-                $sql = "CREATE CREDENTIAL [$script:azureblob] WITH IDENTITY = N'SHARED ACCESS SIGNATURE', SECRET = N'$env:azurepasswd'"
-                $server.Query($sql)
-                $server.Query("CREATE DATABASE dbatoolsci_azure")
                 $sql = "CREATE CREDENTIAL [dbatools_ci] WITH IDENTITY = N'$script:azureblobaccount', SECRET = N'$env:azurelegacypasswd'"
                 $server.Query($sql)
+                $server3 = Connect-DbaInstance -SqlInstance $script:instance3
+                $sql = "CREATE CREDENTIAL [$script:azureblob] WITH IDENTITY = N'SHARED ACCESS SIGNATURE', SECRET = N'$env:azurepasswd'"
+                $server3.Query($sql)
+                $sql = "CREATE CREDENTIAL [dbatools_ci] WITH IDENTITY = N'$script:azureblobaccount', SECRET = N'$env:azurelegacypasswd'"
+                $server3.Query($sql)
             }
             AfterAll {
                 Get-DbaDatabase -SqlInstance $script:instance3 -Database $backuprestoredb | Remove-DbaDatabase -Confirm:$false
@@ -238,8 +237,8 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
             }
             $results = Copy-DbaDatabase -source $script:instance2 -Destination $script:instance3 -Database $backuprestoredb -BackupRestore -SharedPath $script:azureblob -AzureCredential dbatools_ci
             It "Should Copy $backuprestoredb via Azure legacy credentials" {
-                $results.Name -eq $backuprestoredb
-                $results.Status -eq "Successful"
+                $results.Name -eq $backuprestoredb | Should -Be $True
+                $results.Status -eq "Successful" | Should -Be $True
             }
         }
     }
