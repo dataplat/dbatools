@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
     and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.793] - 2019-03-20
+* `Restore-DbaDbCertificate` - fails when importing all certs from a folder [#5256](https://github.com/sqlcollaborative/dbatools/issues/5256)
+### Changed
+* Improved connection strings in `Connect-DbaInstance`
+
 ## [0.9.792] - 2019-03-20
 ### Fixed
 * `Test-DbaLastBackup` doesn't execute if backup file is corrupted [#4957](https://github.com/sqlcollaborative/dbatools/issues/4957)
