@@ -384,6 +384,18 @@ function Restore-DbaDatabase {
             Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             return
         }
+
+        if ($RestoreInstance.DatabaseEngineEdition -eq "SqlManagedInstance") {
+            Write-Message -Level Verbose -Message "Restore target is a Managed Instance, restricted feature set available"
+            $MiParams = ("DestinationDataDirectory", "DestinationLogDirectory", "DestinationFileStreamDirectoru", "XpDirTree", "FileMapping", "UseDestintionDefaultDirectories", "ReuseSourceFolderStructure", "DestinationFilePrefix", "StandbyDirecttory", "ReplaceDbNameInFile", "KeepCDC")
+            ForEach ($MiParam in $MiParams) {
+                if (Test-Bound $MiParam) {
+                    # Write-Message -Level Warning "Restoring to a Managed SQL Instance, parameter $MiParm is not supported"
+                    Stop-Function -Category InvalidArgument -Message "The parameter $MiParam cannot be used with a Managed SQL Instance"
+                    return
+                }
+            }
+        }
         if ($PSCmdlet.ParameterSetName -eq "Restore") {
             $UseDestinationDefaultDirectories = $true
             $paramCount = 0
@@ -483,6 +495,7 @@ function Restore-DbaDatabase {
         if (Test-FunctionInterrupt) {
             return
         }
+
         if ($RestoreInstance.VersionMajor -eq 8 -and $true -ne $TrustDbBackupHistory) {
             foreach ($file in $Path) {
                 $bh = Get-DbaBackupInformation -SqlInstance $RestoreInstance -Path $file
@@ -530,13 +543,12 @@ function Restore-DbaDatabase {
                             }
                         }
                     }
-
                     if ($f.BackupPath -like 'http*') {
                         if ('' -ne $AzureCredential) {
                             Write-Message -Message "At least one Azure backup passed in with a credential, assume correct" -Level Verbose
                             Write-Message -Message "Storage Account Identity access means striped backups cannot be restore"
                         } else {
-                            $f.BackupPath -match 'https://.*/.*/'
+                            $null = $f.BackupPath -match 'https://.*/.*/'
                             if (Get-DbaCredential -SqlInstance $RestoreInstance -name $matches[0].trim('/') ) {
                                 Write-Message -Message "We have a SAS credential to use with $($f.BackupPath)" -Level Verbose
                             } else {
@@ -692,6 +704,7 @@ function Restore-DbaDatabase {
                 }
             }
             Write-Message -Message "Passing in to restore" -Level Verbose
+
             if ($PSCmdlet.ParameterSetName -eq "RestorePage" -and $RestoreInstance.Edition -notlike '*Enterprise*') {
                 Write-Message -Message "Taking Tail log backup for page restore for non-Enterprise" -Level Verbose
                 $TailBackup = Backup-DbaDatabase -SqlInstance $RestoreInstance -Database $DatabaseName -Type Log -BackupDirectory $PageRestoreTailFolder -Norecovery -CopyOnly
