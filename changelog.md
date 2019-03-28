@@ -5,12 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
     and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.784] - 2019-03-11
+### Fixed
+* `Copy-DbaPolicyManagement` doesn't copy policy categories [#1040](https://github.com/sqlcollaborative/dbatools/issues/1040)
+* `Copy-DbaPolicyManagement` copies conditions but not policies [#1049](https://github.com/sqlcollaborative/dbatools/issues/1049)
+### Added
+* New function `New-DbaDbMailAccount`
+
 ## [0.9.783] - 2019-03-11
 ### Fixed
 * Azure support in `Invoke-DbaDbDataMasking` [#5122](https://github.com/sqlcollaborative/dbatools/issues/5122)
 ### Changed
 * Improved speed of `Get-DbaLogin` for instances with many logins
-
 ### Added
 * Alias for database name in `New-DbaDatabase`
 * More Azure support
