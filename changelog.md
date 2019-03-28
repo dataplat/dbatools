@@ -5,10 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
     and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.791] - 2019-03-18
+### Fixed
+* `Read-DbaBackupHeader` - SQL 2005 backup fails with column "CompressedBackupSize" does not belong to table [#4945](https://github.com/sqlcollaborative/dbatools/issues/4945)
+### Added
+* New function `Install-DbaInstance` to script as much of the installation of a new SQL Server instance as possible
+* `Copy-DbaAgentJob` now supports piped-in Job objects [#5240](https://github.com/sqlcollaborative/dbatools/issues/5240)
+
 ## [0.9.790] - 2019-03-18
 ### Added
 * New function `Export-DbaDbDataTable`
-
 
 ## [0.9.788] - 2019-03-17
 ### Fixed
