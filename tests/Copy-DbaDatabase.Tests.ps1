@@ -213,6 +213,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     if ($env:azurepasswd) {
         Context "Copying via Azure storage" {
             BeforeAll {
+                Remove-Variable results
                 Get-DbaProcess -SqlInstance $script:instance2, $script:instance3 -Program 'dbatools PowerShell module - dbatools.io' | Stop-DbaProcess -WarningAction SilentlyContinue
                 Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance3 -Database $backuprestoredb
                 $server = Connect-DbaInstance -SqlInstance $script:instance2
@@ -237,8 +238,8 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
             }
             $results = Copy-DbaDatabase -source $script:instance2 -Destination $script:instance3 -Database $backuprestoredb -BackupRestore -SharedPath $script:azureblob -AzureCredential dbatools_ci
             It "Should Copy $backuprestoredb via Azure legacy credentials" {
-                $results.Name -eq $backuprestoredb | Should -Be $True
-                $results.Status -eq "Successful" | Should -Be $True
+                $results.Name  | Should -Be $backuprestoredb
+                $results.Status  | Should -Be 'Successful'
             }
         }
     }
