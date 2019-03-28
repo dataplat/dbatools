@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
     and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.795] - 2019-03-23
+### Fixed
+* `Get-DbaUserPermission` misses database role assignments [#4887](https://github.com/sqlcollaborative/dbatools/issues/4887)
+* Build dates for the latest SQL Server Cumulative Updates
+
 ## [0.9.794] - 2019-03-22
 ### Fixed
 * `Get-DbaBackupHistory` warnings and not finding the right backup [#5263](https://github.com/sqlcollaborative/dbatools/issues/5263)
