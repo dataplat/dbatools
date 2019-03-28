@@ -795,7 +795,7 @@ function Copy-DbaDatabase {
             $miRestore = $false
             if ($destServer.DatabaseEngineEdition -eq 'SqlManagedInstance') {
                 # we have a managed instance destination, set an internal flag to disable switches that don't work
-                $miDisable = $True
+                $miRestore = $True
             }
             if ($DetachAttach) {
                 if ($sourceServer.ComputerName -eq $env:COMPUTERNAME -or $destServer.ComputerName -eq $env:COMPUTERNAME) {
