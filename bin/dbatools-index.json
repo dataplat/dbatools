@@ -37036,6 +37036,14 @@
                            ""
                        ],
                        [
+                           "SessionTimeout",
+                           "How many seconds an availability replica waits for a ping response from a connected replica before considering the connection to have failed.",
+                           "",
+                           false,
+                           "false",
+                           "0"
+                       ],
+                       [
                            "EndpointUrl",
                            "The endpoint URL.",
                            "",
@@ -37084,7 +37092,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Set-DbaAgReplica [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-AvailabilityGroup] \u003cString\u003e] [[-Replica] \u003cString\u003e] [[-AvailabilityMode] \u003cString\u003e] [[-FailoverMode] \u003cString\u003e] [[-BackupPriority] \u003cInt32\u003e] [[-ConnectionModeInPrimaryRole] \u003cString\u003e] [[-ConnectionModeInSecondaryRole] \u003cString\u003e] [[-SeedingMode] \u003cString\u003e] [[-EndpointUrl] \u003cString\u003e] [[-ReadonlyRoutingConnectionUrl] \u003cString\u003e] [[-InputObject] \u003cAvailabilityReplica\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Set-DbaAgReplica [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-AvailabilityGroup] \u003cString\u003e] [[-Replica] \u003cString\u003e] [[-AvailabilityMode] \u003cString\u003e] [[-FailoverMode] \u003cString\u003e] [[-BackupPriority] \u003cInt32\u003e] [[-ConnectionModeInPrimaryRole] \u003cString\u003e] [[-ConnectionModeInSecondaryRole] \u003cString\u003e] [[-SeedingMode] \u003cString\u003e] [[-SessionTimeout] \u003cInt32\u003e] [[-EndpointUrl] \u003cString\u003e] [[-ReadonlyRoutingConnectionUrl] \u003cString\u003e] [[-InputObject] \u003cAvailabilityReplica\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Set-DbaAvailabilityGroup",
