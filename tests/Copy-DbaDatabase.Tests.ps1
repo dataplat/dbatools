@@ -239,13 +239,13 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
             $results = Copy-DbaDatabase -source $script:instance2 -Destination $script:instance3 -Database $backuprestoredb -BackupRestore -SharedPath $script:azureblob -AzureCredential dbatools_ci
             It "Should Copy $backuprestoredb via Azure legacy credentials" {
                 $results[0].Name  | Should -Be $backuprestoredb
-                $results[0].Status  | Should -Be 'Successful'
+                $results[0].Status  | Should -BeLike 'Successful*'
             }
             $results = Copy-DbaDatabase -source $script:instance2 -Destination $script:instance3 -Database $backuprestoredb -Newname djkhgfkjghfdjgd -BackupRestore -SharedPath $script:azureblob -AzureCredential dbatools_ci
             It "Should Copy $backuprestoredb via Azure new credentials" {
                 $results[0].Name  | Should -Be $backuprestoredb
-                $results[0].NewName | Should -Be 'djkhgfkjghfdjgd'
-                $results[0].Status  | Should -Be 'Successful'
+                $results[0].DestinationDatabase | Should -Be 'djkhgfkjghfdjgd'
+                $results[0].Status  | Should -BeLike 'Successful*'
             }
         }
     }
