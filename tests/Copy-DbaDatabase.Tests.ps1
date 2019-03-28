@@ -241,6 +241,12 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
                 $results.Name  | Should -Be $backuprestoredb
                 $results.Status  | Should -Be 'Successful'
             }
+            $results = Copy-DbaDatabase -source $script:instance2 -Destination $script:instance3 -Database $backuprestoredb -Newname djkhgfkjghfdjgd -BackupRestore -SharedPath $script:azureblob -AzureCredential dbatools_ci
+            It "Should Copy $backuprestoredb via Azure new credentials" {
+                $results.Name  | Should -Be $backuprestoredb
+                $results.NewName | Should -Be 'djkhgfkjghfdjgd'
+                $results.Status  | Should -Be 'Successful'
+            }
         }
     }
 }
