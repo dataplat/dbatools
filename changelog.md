@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
     and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.787] - 2019-03-17
+## Fixed
+* TEPP is no longer broken [#5171](https://github.com/sqlcollaborative/dbatools/issues/5171)
+* Resolved issues in `Get-DbaCmObject` [#4096](https://github.com/sqlcollaborative/dbatools/issues/4096)
+* `Stop-Function` not recognized in `Set-DbatoolsConfig` [#5065](https://github.com/sqlcollaborative/dbatools/issues/5065)
+
+
 ## [0.9.785] - 2019-03-16
 ### Fixed
 * TLS handling for AWS instances in `Get-DbaComputerSystem`
