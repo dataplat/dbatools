@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
     and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.792] - 2019-03-20
+### Fixed
+* `Test-DbaLastBackup` doesn't execute if backup file is corrupted [#4957](https://github.com/sqlcollaborative/dbatools/issues/4957)
+* `Restore-DbaDbCertificate` from a file fails on SQL Server 2012 [#5082](https://github.com/sqlcollaborative/dbatools/issues/5082)
+* Databases with same name on multiple instances do not render properly in `ConvertTo-DbaTimeline` [#3916](https://github.com/sqlcollaborative/dbatools/issues/3916)
+* Correct service name detection in `Remove-DbaDatabaseSafely` [#5210](https://github.com/sqlcollaborative/dbatools/issues/5210)
+* While doing `Start-DbaMigration`, `-SetSourceRedOnly` fails if there are even inactive sessions on database [#5177](https://github.com/sqlcollaborative/dbatools/issues/5177)
+### Changed
+* Tweaks to `ConvertTo-DbaTimeline` output
+
 ## [0.9.791] - 2019-03-18
 ### Fixed
 * `Read-DbaBackupHeader` - SQL 2005 backup fails with column "CompressedBackupSize" does not belong to table [#4945](https://github.com/sqlcollaborative/dbatools/issues/4945)
