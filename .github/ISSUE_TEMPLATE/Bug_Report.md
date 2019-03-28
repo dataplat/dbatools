@@ -38,6 +38,14 @@ assignees: ''
 
 <!-- NOTE: If the above information is not provided as a minimum your issue will not be acknowledged -->
 
+## Errors Received
+
+<!-- Provide full output of `$error[0] | Select *` -->
+
+```powershell
+<# OUTPUT of $error[0] | select * #>
+```
+
 ## Steps to Reproduce
 
 ```sql
