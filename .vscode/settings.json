@@ -15,5 +15,7 @@
     // editor settings that will auto add the closing quote or curly brace
     "editor.autoClosingBrackets": "always",
     "editor.autoClosingQuotes": "always",
-    "editor.autoSurround": "languageDefined"
+    "editor.autoSurround": "languageDefined",
+    "editor.formatOnPaste": true,
+    "editor.formatOnType": true
 }
