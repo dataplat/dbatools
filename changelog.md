@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
     and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.788] - 2019-03-17
+### Fixed
+* `SqlCredential` parameter not working with `Get-DbaCmsRegServer` [#5025](https://github.com/sqlcollaborative/dbatools/issues/5025)
+* Include the `SqlInstance` in the "failure to connect" error message (impacts _many_ functions) [#5091](https://github.com/sqlcollaborative/dbatools/issues/5091)
+* `Get-DbaPermission` fails on contained databases [#5093](https://github.com/sqlcollaborative/dbatools/issues/5093)
+* Resolved issue creating login from Windows with square brackets in the name in `New-DbaLogin` [#5138](https://github.com/sqlcollaborative/dbatools/issues/5138)
+* Fix column mappings in `Write-DbaDataTable` [#5124](https://github.com/sqlcollaborative/dbatools/issues/5124)
+* `Get-DbaUserPermission` misses database role assignments [#4887](https://github.com/sqlcollaborative/dbatools/issues/4887)
+* `Copy-DbaDbTableData` causes failure on max pool size [#5080](https://github.com/sqlcollaborative/dbatools/issues/5080)
+* `-Force` handling in `New-DbaDbUser` [#4962](https://github.com/sqlcollaborative/dbatools/issues/4962)
+* Multiple computers not being processed in `Resolve-DbaNetworkName`
+### Changed
+* Renamed `Write-DbaDataTable` to `Write-DbaDbDataTable`
+### Added
+* Ability to bypass server name resolution in `Resolve-DbaNetworkName` [#5101](https://github.com/sqlcollaborative/dbatools/issues/5101)
+
 ## [0.9.787] - 2019-03-17
 ## Fixed
 * TEPP is no longer broken [#5171](https://github.com/sqlcollaborative/dbatools/issues/5171)
