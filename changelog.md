@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
     and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.785] - 2019-03-16
+### Fixed
+* TLS handling for AWS instances in `Get-DbaComputerSystem`
+* Improved connection support for Azure
+* `Export-DbaLogin` produces an empty file [#4604](https://github.com/sqlcollaborative/dbatools/issues/4604)
+
 ## [0.9.784] - 2019-03-11
 ### Fixed
 * `Copy-DbaPolicyManagement` doesn't copy policy categories [#1040](https://github.com/sqlcollaborative/dbatools/issues/1040)
