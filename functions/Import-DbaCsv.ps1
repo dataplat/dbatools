@@ -61,6 +61,9 @@ function Import-DbaCsv {
     .PARAMETER ColumnMap
         By default, the bulk copy tries to automap columns. When it doesn't work as desired, this parameter will help. Check out the examples for more information.
 
+    .PARAMETER AutoColumnMap
+        If this switch is enabled, bcp will attempt to map exact-match columns names from the source document to the target table.
+
     .PARAMETER AutoCreateTable
         Creates a table if it does not already exist. The table will be created with sub-optimal data types such as nvarchar(max)
 
