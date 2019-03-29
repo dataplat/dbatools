@@ -393,6 +393,7 @@ function New-DbaAvailabilityGroup {
                 if ($server.VersionMajor -ge 13) {
                     $ag.BasicAvailabilityGroup = $Basic
                     $ag.DatabaseHealthTrigger = $DatabaseHealthTrigger
+                    $ag.DtcSupportEnabled = $DtcSupport
                 }
 
                 if ($server.VersionMajor -ge 14) {
