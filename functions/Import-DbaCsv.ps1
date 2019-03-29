@@ -242,6 +242,7 @@ function Import-DbaCsv {
         [switch]$KeepNulls,
         [string[]]$Column,
         [hashtable[]]$ColumnMap,
+        [switch]$AutoColumnMap,
         [switch]$AutoCreateTable,
         [switch]$NoProgress,
         [switch]$NoHeaderRow,
@@ -514,6 +515,18 @@ function Import-DbaCsv {
                         $bulkCopy.BatchSize = $BatchSize
                         $bulkCopy.NotifyAfter = $NotifyAfter
                         $bulkCopy.EnableStreaming = $true
+
+                        if ($AutoMapColumns) {
+                            if ($ColumnMap) {
+                                Write-Message -Level Verbose -Message "ColumnMap was supplied. Additional auto-mapping will not be attempted."
+                            } else {
+                                $ColumnMap = New-Object -TypeName "System.Collections.Hashtable"
+
+                                $firstline -split $Delimiter | ForEach-Object {
+                                    $ColumnMap.Add($PSItem,$PSItem)
+                                }
+                            }
+                        }
 
                         if ($ColumnMap) {
                             foreach ($columnname in $ColumnMap) {
