@@ -214,7 +214,6 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     if ($env:azurepasswd) {
         Context "Copying via Azure storage" {
             BeforeAll {
-                Remove-Variable results
                 Get-DbaProcess -SqlInstance $script:instance2, $script:instance3 -Program 'dbatools PowerShell module - dbatools.io' | Stop-DbaProcess -WarningAction SilentlyContinue
                 Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance3 -Database $backuprestoredb
                 $server = Connect-DbaInstance -SqlInstance $script:instance2
@@ -242,7 +241,9 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
                 $results[0].Name  | Should -Be $backuprestoredb
                 $results[0].Status  | Should -BeLike 'Successful*'
             }
-            $results = Copy-DbaDatabase -source $script:instance2 -Destination $script:instance3 -Database $backuprestoredb -Newname djkhgfkjghfdjgd -BackupRestore -SharedPath $script:azureblob -AzureCredential dbatools_ci
+            # Because I think the backup are tripping over each other with the names
+            Start-Sleep -Seconds 60
+            $results = Copy-DbaDatabase -source $script:instance2 -Destination $script:instance3 -Database $backuprestoredb -Newname djkhgfkjghfdjgd -BackupRestore -SharedPath $script:azureblob
             It "Should Copy $backuprestoredb via Azure new credentials" {
                 $results[0].Name  | Should -Be $backuprestoredb
                 $results[0].DestinationDatabase | Should -Be 'djkhgfkjghfdjgd'
