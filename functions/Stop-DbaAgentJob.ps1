@@ -82,7 +82,7 @@ function Stop-DbaAgentJob {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             $InputObject += $server.JobServer.Jobs
@@ -117,7 +117,7 @@ function Stop-DbaAgentJob {
 
                 if ($wait) {
                     while ($currentjob.CurrentRunStatus -ne 'Idle') {
-                        Write-Message -Level Output -Message "$currentjob is $($currentjob.CurrentRunStatus)"
+                        Write-Message -Level Verbose -Message "$currentjob is $($currentjob.CurrentRunStatus)"
                         Start-Sleep -Seconds 3
                         $currentjob.Refresh()
                     }

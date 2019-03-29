@@ -46,12 +46,12 @@ function Get-DbaLastBackup {
         Returns a custom object with Server name, Database name, and the date the last time backups were performed.
 
     .EXAMPLE
-        PS C:\> Get-DbaLastBackup -SqlInstance ServerA\sql987 | Select *
+        PS C:\> Get-DbaLastBackup -SqlInstance ServerA\sql987 | Select-Object *
 
         Returns a custom object with Server name, Database name, and the date the last time backups were performed, and also recoverymodel and calculations on how long ago backups were taken and what the status is.
 
     .EXAMPLE
-        PS C:\> Get-DbaLastBackup -SqlInstance ServerA\sql987 | Select * | Out-Gridview
+        PS C:\> Get-DbaLastBackup -SqlInstance ServerA\sql987 | Select-Object * | Out-Gridview
 
         Returns a gridview displaying Server, Database, RecoveryModel, LastFullBackup, LastDiffBackup, LastLogBackup, SinceFull, SinceDiff, SinceLog, Status, DatabaseCreated, DaysSinceDbCreated.
 
@@ -84,7 +84,7 @@ function Get-DbaLastBackup {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential -MinimumVersion 9
             } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             $dbs = $server.Databases | Where-Object { $_.name -ne 'tempdb' }

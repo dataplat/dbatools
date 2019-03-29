@@ -108,7 +108,7 @@ function Set-DbaPowerPlan {
 
                 $computerResolved = $computerResolved.FullComputerName
             } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $computer
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $computer
                 return
             }
 

@@ -206,7 +206,7 @@ function New-DbaLogin {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
             } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             foreach ($loginItem in $loginCollection) {
@@ -333,6 +333,7 @@ function New-DbaLogin {
 
                 if ($Pscmdlet.ShouldProcess($SqlInstance, "Creating login $loginName on $instance")) {
                     try {
+                        $loginName = $loginName.Replace('[', '').Replace(']', '')
                         $newLogin = New-Object Microsoft.SqlServer.Management.Smo.Login($server, $loginName)
                         $newLogin.LoginType = $loginType
 
@@ -361,7 +362,7 @@ function New-DbaLogin {
                             if ($currentPasswordExpiration) {
                                 $withParams += ", CHECK_EXPIRATION = ON"
                                 $newLogin.PasswordExpirationEnabled = $true
-                            } else {
+                            } elseif ($loginType -eq 'SqlLogin') {
                                 $withParams += ", CHECK_EXPIRATION = OFF"
                                 $newLogin.PasswordExpirationEnabled = $false
                             }
@@ -370,7 +371,7 @@ function New-DbaLogin {
                             if ($currentPasswordPolicyEnforced) {
                                 $withParams += ", CHECK_POLICY = ON"
                                 $newLogin.PasswordPolicyEnforced = $true
-                            } else {
+                            } elseif ($loginType -eq 'SqlLogin') {
                                 $withParams += ", CHECK_POLICY = OFF"
                                 $newLogin.PasswordPolicyEnforced = $false
                             }
@@ -425,7 +426,6 @@ function New-DbaLogin {
                                     $sql = "CREATE LOGIN [$loginName] WITH PASSWORD = '$unsecurePassword'"
                                 } elseif ($loginType -eq 'SqlLogin' ) { $sql = "CREATE LOGIN [$loginName] WITH PASSWORD = $currentHashedPassword HASHED" + $withParams }
                                 else { $sql = "CREATE LOGIN [$loginName] FROM WINDOWS" + $withParams }
-
                                 $null = $server.Query($sql)
                                 $newLogin = $server.logins[$loginName]
                                 Write-Message -Level Verbose -Message "Successfully added $loginName to $instance."

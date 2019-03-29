@@ -85,7 +85,7 @@ function Set-DbaAgReplica {
         PS C:\> Get-DbaAgReplica -SqlInstance sql2016 | Out-GridView -Passthru | Set-DbaAgReplica -BackupPriority 5000
 
         Sets the backup priority to 5000 for the selected availability groups.
-       #>
+    #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Medium')]
     param (
         [DbaInstanceParameter[]]$SqlInstance,
@@ -160,10 +160,8 @@ function Set-DbaAgReplica {
 
                     if ($SessionTimeout) {
                         if ($SessionTimeout -lt 10) {
-                         $Message = "Per https://goo.gl/REjcsp, " +
-                          "We recommend that you keep the time-out period at 10 seconds or greater. " +
-                          "Setting the value to less than 10 seconds creates the possibility of a heavily loaded system missing PINGs and declaring a false failure."
-                         Write-Warning -Message $Message
+                            $Message = "We recommend that you keep the time-out period at 10 seconds or greater. Setting the value to less than 10 seconds creates the possibility of a heavily loaded system missing pings and falsely declaring failure. Please see sqlps.io/agrec for more information."
+                            Write-Message -Message $Message -Level Warning
                         }
                         $agreplica.SessionTimeout = $SessionTimeout
                     }

@@ -25,11 +25,11 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         # SQL2008R2SP2 will return a number of modules from the msdb database so it is a good candidate to test
         $results = Get-DbaModule -SqlInstance $script:instance1 -Type View -Database msdb
         It "Should only have one type of object" {
-            ($results | Select -Unique Database | Measure-Object).Count | Should Be 1
+            ($results | Select-Object -Unique Database | Measure-Object).Count | Should Be 1
         }
 
         It "Should only have one database" {
-            ($results | Select -Unique Type | Measure-Object).Count | Should Be 1
+            ($results | Select-Object -Unique Type | Measure-Object).Count | Should Be 1
         }
     }
 }

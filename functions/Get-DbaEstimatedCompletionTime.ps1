@@ -58,7 +58,7 @@ function Get-DbaEstimatedCompletionTime {
         Gets estimated completion times for queries performed against the entire server
 
     .EXAMPLE
-        PS C:\> Get-DbaEstimatedCompletionTime -SqlInstance sql2016 | Select *
+        PS C:\> Get-DbaEstimatedCompletionTime -SqlInstance sql2016 | Select-Object *
 
         Gets estimated completion times for queries performed against the entire server PLUS the SQL query text of each command
 
@@ -121,7 +121,7 @@ function Get-DbaEstimatedCompletionTime {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
 
             } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             if ($Database) {

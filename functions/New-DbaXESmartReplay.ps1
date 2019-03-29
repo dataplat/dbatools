@@ -45,7 +45,7 @@ function New-DbaXESmartReplay {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: ExtendedEvent, XE, XEvent
+        Tags: ExtendedEvent, XE, XEvent, SmartTarget
         Author: Chrissy LeMaire (@cl) | SmartTarget by Gianluca Sartori (@spaghettidba)
 
         Website: https://dbatools.io
@@ -99,7 +99,7 @@ function New-DbaXESmartReplay {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 11
             } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
             if ($Pscmdlet.ShouldProcess($instance, "Creating new XESmartReply")) {
                 Write-Message -Message "Making a New XE SmartReplay for $Event against $instance running on $($server.name)" -Level Verbose

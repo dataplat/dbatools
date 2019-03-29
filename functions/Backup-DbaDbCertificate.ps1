@@ -235,7 +235,7 @@ function Backup-DbaDbCertificate {
         if (Test-FunctionInterrupt) { return }
 
         if ($SqlInstance) {
-            $InputObject += Get-DbaDbCertificate -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database -ExcludeDatabase $ExcludeDatabase
+            $InputObject += Get-DbaDbCertificate -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database -ExcludeDatabase $ExcludeDatabase -Certificate $Certificate
         }
 
         foreach ($cert in $InputObject) {

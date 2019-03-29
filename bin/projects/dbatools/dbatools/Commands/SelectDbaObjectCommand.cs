@@ -1,10 +1,7 @@
 ﻿using System;
 using System.Collections;
-using System.Collections.Generic;
 using System.Linq;
 using System.Management.Automation;
-using System.Text;
-using System.Threading.Tasks;
 using Sqlcollaborative.Dbatools.Parameter;
 
 namespace Sqlcollaborative.Dbatools.Commands
@@ -42,6 +39,27 @@ namespace Sqlcollaborative.Dbatools.Commands
         [Parameter(ParameterSetName = "DefaultParameter")]
         [Parameter(ParameterSetName = "SkipLastParameter")]
         public string ExpandProperty;
+
+        /// <summary>
+        /// Allow users to specify an alias property as part of the select
+        /// </summary>
+        [Parameter(ParameterSetName = "DefaultParameter", Position = 1)]
+        [Parameter(ParameterSetName = "SkipLastParameter", Position = 1)]
+        public SelectAliasParameter[] Alias;
+
+        /// <summary>
+        /// Specify script properties at runtime as part of the select
+        /// </summary>
+        [Parameter(ParameterSetName = "DefaultParameter", Position = 2)]
+        [Parameter(ParameterSetName = "SkipLastParameter", Position = 2)]
+        public SelectScriptPropertyParameter[] ScriptProperty;
+
+        /// <summary>
+        /// Specify script methods at runtime as part of the select
+        /// </summary>
+        [Parameter(ParameterSetName = "DefaultParameter", Position = 3)]
+        [Parameter(ParameterSetName = "SkipLastParameter", Position = 3)]
+        public SelectScriptMethodParameter[] ScriptMethod;
 
         /// <summary>
         /// Whether to exclude duplicates
@@ -120,7 +138,7 @@ namespace Sqlcollaborative.Dbatools.Commands
         /// <summary>
         /// List of properties to NOT clone into the hashtable used against Select-Object
         /// </summary>
-        private string[] _NonclonedProperties = new string[] { "Property", "ShowProperty", "ShowExcludeProperty", "TypeName", "KeepInputObject" };
+        private string[] _NonclonedProperties = new string[] { "Property", "ShowProperty", "ShowExcludeProperty", "TypeName", "KeepInputObject", "Alias", "ScriptMethod", "ScriptProperty" };
 
         /// <summary>
         /// Whether some adjustments to the object need to be done or whether the Select-Object output can be simply passed through.
@@ -158,7 +176,7 @@ namespace Sqlcollaborative.Dbatools.Commands
             if (MyInvocation.BoundParameters.ContainsKey("Property"))
                 clonedBoundParameters["Property"] = Property.Select(o => o.Value).AsEnumerable().ToArray();
 
-            if ((ShowExcludeProperty.Length > 0) || (ShowProperty.Length > 0) || (!String.IsNullOrEmpty(TypeName)) || (KeepInputObject.ToBool()))
+            if ((ShowExcludeProperty.Length > 0) || (ShowProperty.Length > 0) || (!String.IsNullOrEmpty(TypeName)) || (KeepInputObject.ToBool()) || (Alias != null) || (ScriptMethod != null) || (ScriptProperty != null))
                 _NoAdjustment = false;
 
             if (ShowProperty.Length > 0)
@@ -193,6 +211,20 @@ namespace Sqlcollaborative.Dbatools.Commands
                     foreach (PSPropertyInfo info in tempItem.Properties.Where(o => !item.Properties.Select(n => n.Name).Contains(o.Name)))
                         item.Properties.Add(info);
                 }
+
+                if (Alias != null)
+                    foreach (SelectAliasParameter alias in Alias)
+                        foreach (PSAliasProperty aliasItem in alias.Aliases)
+                            item.Members.Add(aliasItem);
+                if (ScriptMethod != null)
+                    foreach (SelectScriptMethodParameter method in ScriptMethod)
+                        foreach (PSScriptMethod methodItem in method.Methods)
+                            item.Members.Add(methodItem);
+                if (ScriptProperty != null)
+                    foreach (SelectScriptPropertyParameter property in ScriptProperty)
+                        foreach (PSScriptProperty propertyItem in property.Value)
+                            item.Members.Add(propertyItem);
+
                 if (ShowProperty.Length > 0)
                     item.Members.Add(new PSMemberSet("PSStandardMembers", _DisplayPropertySet));
                 else if (ShowExcludeProperty.Length > 0)

@@ -78,8 +78,7 @@ function Set-DbaSpConfigure {
         [string[]]$Name,
         [parameter(ValueFromPipeline)]
         [object[]]$InputObject,
-        [switch][Alias('Silent')]
-        $EnableException
+        [switch]$EnableException
     )
     process {
         foreach ($instance in $SqlInstance) {
@@ -107,7 +106,7 @@ function Set-DbaSpConfigure {
 
             If ($Pscmdlet.ShouldProcess($SqlInstance, "Adjusting server configuration $configuration from $currentConfigValue to $value.")) {
                 try {
-                    $server.Configuration.$configuration.ConfigValue = $value
+                    $configobject.Property.ConfigValue = $value
                     $server.Configuration.Alter()
 
                     [pscustomobject]@{

@@ -79,7 +79,7 @@ function Read-DbaBackupHeader {
         Gets a list of all .bak files on the \\nas\sql share and reads the headers using the server named "sql2016". This means that the server, sql2016, must have read access to the \\nas\sql share.
 
     .EXAMPLE
-        PS C:\> Read-DbaBackupHeader -Path https://dbatoolsaz.blob.core.windows.net/azbackups/restoretime/restoretime_201705131850.bak -AzureCredential AzureBackupUser
+        PS C:\> Read-DbaBackupHeader -SqlInstance sql2016 -Path https://dbatoolsaz.blob.core.windows.net/azbackups/restoretime/restoretime_201705131850.bak -AzureCredential AzureBackupUser
 
         Gets the backup header information from the SQL Server backup file stored at https://dbatoolsaz.blob.core.windows.net/azbackups/restoretime/restoretime_201705131850.bak on Azure
 
@@ -101,9 +101,10 @@ function Read-DbaBackupHeader {
     )
 
     begin {
-        foreach ($p in $path) {
-            if ([System.IO.Path]::GetExtension($p).Length -eq 0) {
-                Stop-Function -Message "Path ($p) should be a file, not a folder" -Category InvalidArgument
+        foreach ($p in $Path) {
+            Write-Message -Level Verbose -Message "Checking: $p"
+            if ([System.IO.Path]::GetExtension("$p").Length -eq 0) {
+                Stop-Function -Message "Path ("$p") should be a file, not a folder" -Category InvalidArgument
                 return
             }
         }
@@ -111,7 +112,7 @@ function Read-DbaBackupHeader {
         try {
             $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
         } catch {
-            Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+            Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             return
         }
         $getHeaderScript = {
@@ -138,21 +139,23 @@ function Read-DbaBackupHeader {
 
             foreach ($row in $dataTable) {
                 $row.BackupPath = $Path
-                
+
                 $backupsize = $row.BackupSize
                 $null = $dataTable.Columns.Remove("BackupSize")
                 $null = $dataTable.Columns.Add("BackupSize", [dbasize])
                 if ($backupsize -isnot [dbnull]) {
                     $row.BackupSize = [dbasize]$backupsize
                 }
-                
+
                 $cbackupsize = $row.CompressedBackupSize
-                $null = $dataTable.Columns.Remove("CompressedBackupSize")
+                if ($dataTable.Columns['CompressedBackupSize']) {
+                    $null = $dataTable.Columns.Remove("CompressedBackupSize")
+                }
                 $null = $dataTable.Columns.Add("CompressedBackupSize", [dbasize])
                 if ($cbackupsize -isnot [dbnull]) {
                     $row.CompressedBackupSize = [dbasize]$cbackupsize
                 }
-                
+
                 $restore.FileNumber = $row.Position
                 <# Select-Object does a quick and dirty conversion from datatable to PS object #>
                 $row.FileList = $restore.ReadFileList($server) | Select-Object *

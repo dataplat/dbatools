@@ -41,7 +41,7 @@ Function Invoke-DbaAdvancedUpdate {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .EXAMPLE
-    PS C:\> Invoke-DbaAdvancedUpdate -ComputerName SQL1 -Action $actions -RestartNeeded $true
+    PS C:\> Invoke-DbaAdvancedUpdate -ComputerName SQL1 -Action $actions
 
     Invokes update actions on SQL1 after restarting it.
     #>

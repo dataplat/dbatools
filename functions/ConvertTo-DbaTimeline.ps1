@@ -14,6 +14,11 @@ function ConvertTo-DbaTimeline {
 
         Pipe input, must an output from the above functions.
 
+    .PARAMETER ExcludeRowLabel
+        By default, the Timeline shows SqlInstance and item name (agent job or database) in row labels section of the chart.
+        When this parameter (ExcludeRowLabel) is set to true the row labels will not be shown which will maximise the chart area for better visualisation.
+        All relevant details are still available in the tooltip.
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -61,6 +66,7 @@ function ConvertTo-DbaTimeline {
     param (
         [parameter(Mandatory, ValueFromPipeline)]
         [object[]]$InputObject,
+        [switch]$ExcludeRowLabel,
         [switch]$EnableException
     )
     begin {
@@ -133,17 +139,26 @@ function ConvertTo-DbaTimeline {
         if ($InputObject[0].SqlInstance -notin $servers) {
             $servers += $InputObject[0].SqlInstance
         }
-        # This is where do column mapping.
+        <#
+            Initially I wanted the server name to appear dynamically based on whether a single or multiple servers were passed as input
+            However (as usual) this is not so simple as we're in pipe mode which means PS is processing each input at once and
+            it does not know how many parameters it has until it has gone through them all. For example $servers.count will start with 1
+            and will be increasing as the process goes through the pipe, or it will stop t 1 if there's only 1 server passed.
+            The $InputObject[0].* is also not available in the begin block. All this means that we will alway show server name next to job name now.
+            I am not 100% happy with this but not sure how to solve it for now.
+        #>
 
-        # Check for types - this will help support if someone assigns a variable then pipes
-        # AgentJobHistory is a forced type while backuphistory is a legit type
+        <#
+            This is where do column mapping.
+            Check for types - this will help support if someone assigns a variable then pipes
+            AgentJobHistory is a forced type while backuphistory is a legit type
+        #>
         if ($InputObject[0].TypeName -eq 'AgentJobHistory') {
             $CallerName = "Get-DbaAgentJobHistory"
-            $data = $InputObject | Select-Object @{ Name = "SqlInstance"; Expression = { $_.SqlInstance } }, @{ Name = "InstanceName"; Expression = { $_.InstanceName } }, @{ Name = "vLabel"; Expression = { $_.Job -replace "\'", ''} }, @{ Name = "hLabel"; Expression = { $_.Status } }, @{ Name = "Style"; Expression = { $(Convert-DbaTimelineStatusColor($_.Status)) } }, @{ Name = "StartDate"; Expression = { $(ConvertTo-JsDate($_.StartDate)) } }, @{ Name = "EndDate"; Expression = { $(ConvertTo-JsDate($_.EndDate)) } }
-
+            $data = $InputObject | Select-Object @{ Name = "SqlInstance"; Expression = { $_.SqlInstance } }, @{ Name = "InstanceName"; Expression = { $_.InstanceName } }, @{ Name = "vLabel"; Expression = { "[" + $($_.SqlInstance -replace "\\", "\\\") + "] " + $_.Job -replace "\'", ''} }, @{ Name = "hLabel"; Expression = { $_.Status } }, @{ Name = "Style"; Expression = { $(Convert-DbaTimelineStatusColor($_.Status)) } }, @{ Name = "StartDate"; Expression = { $(ConvertTo-JsDate($_.StartDate)) } }, @{ Name = "EndDate"; Expression = { $(ConvertTo-JsDate($_.EndDate)) } }
         } elseif ($InputObject[0] -is [Sqlcollaborative.Dbatools.Database.BackupHistory]) {
             $CallerName = "Get-DbaBackupHistory"
-            $data = $InputObject | Select-Object @{ Name = "SqlInstance"; Expression = { $_.SqlInstance } }, @{ Name = "InstanceName"; Expression = { $_.InstanceName } }, @{ Name = "vLabel"; Expression = { $_.Database } }, @{ Name = "hLabel"; Expression = { $_.Type } }, @{ Name = "StartDate"; Expression = { $(ConvertTo-JsDate($_.Start)) } }, @{ Name = "EndDate"; Expression = { $(ConvertTo-JsDate($_.End)) } }
+            $data = $InputObject | Select-Object @{ Name = "SqlInstance"; Expression = { $_.SqlInstance } }, @{ Name = "InstanceName"; Expression = { $_.InstanceName } }, @{ Name = "vLabel"; Expression = { "[" + $($_.SqlInstance -replace "\\", "\\\") + "] " + $_.Database } }, @{ Name = "hLabel"; Expression = { $_.Type } }, @{ Name = "StartDate"; Expression = { $(ConvertTo-JsDate($_.Start)) } }, @{ Name = "EndDate"; Expression = { $(ConvertTo-JsDate($_.End)) } }
         } else {
             # sorry to be so formal, can't help it ;)
             Stop-Function -Message "Unsupported input data. To request support for additional commands, please file an issue at dbatools.io/issues and we'll take a look"
@@ -180,6 +195,7 @@ function ConvertTo-DbaTimeline {
             timeline: {
                 rowLabelStyle: { },
                 barLabelStyle: { },
+                showRowLabels: $(if($ExcludeRowLabel){'false'} else {'true'})
             },
             hAxis: {
                 format: 'dd/MM HH:mm',
@@ -199,7 +215,7 @@ function ConvertTo-DbaTimeline {
 </head>
 <body>
     <div class="container-fluid">
-    <div class="pull-left"><h3><code>$($CallerName)</code> timeline for server <code>$($servers -join ', ')</code></h3></div><div class="pull-right text-right"><img class="text-right" style="vertical-align:bottom; margin-top: 10px;" src="https://dbatools.io/wp-content/uploads/2016/05/dbatools-logo-1.png" width=150></div>
+    <div class="pull-left"><h3><code>$($CallerName)</code> timeline for <code>$($servers -join ', ')</code></h3></div><div class="pull-right text-right"><img class="text-right" style="vertical-align:bottom; margin-top: 10px;" src="https://dbatools.io/wp-content/uploads/2016/05/dbatools-logo-1.png" width=150></div>
          <div class="clearfix"></div>
          <div class="col-12">
             <div class="chart" id="Chart"></div>

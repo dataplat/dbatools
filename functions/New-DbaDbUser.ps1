@@ -108,7 +108,7 @@ function New-DbaDbUser {
 
             # Does user exist with same login?
             if ( $existingUser = ( $Database.Users | Where-Object Login -eq $smoLogin ) ) {
-                if (Test-Bound 'Force') {
+                if ($Force) {
                     if ($Pscmdlet.ShouldProcess($existingUser, "Dropping existing user $($existingUser.Name) because -Force was used")) {
                         try {
                             $existingUser.Drop()
@@ -130,7 +130,7 @@ function New-DbaDbUser {
 
             # Does user exist with same login?
             if ( $existingUser = ( $Database.Users | Where-Object Name -eq $Username ) ) {
-                if (Test-Bound 'Force') {
+                if ($Force) {
                     if ($Pscmdlet.ShouldProcess($existingUser, "Dropping existing user $($existingUser.Name) because -Force was used")) {
                         try {
                             $existingUser.Drop()
@@ -150,7 +150,7 @@ function New-DbaDbUser {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
             } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             $databases = $server.Databases | Where-Object IsAccessible -eq $true
@@ -219,7 +219,7 @@ function New-DbaDbUser {
                         $smoUser.Name = $Name
 
                         if ( $PSBoundParameters.Keys -contains 'Login' -and $Login.GetType().Name -eq 'Login' ) {
-                            $smoUser.Login = Login
+                            $smoUser.Login = $Login
                         }
                         $smoUser.UserType = $UserType
 

@@ -93,7 +93,7 @@ function Export-DbaCmsRegServer {
         foreach ($object in $InputObject) {
             try {
                 if ($object -is [Microsoft.SqlServer.Management.RegisteredServers.RegisteredServersStore]) {
-                    $object = Get-DbaCmsRegServerGroup -SqlInstance $object.ServerConnection.SqlConnectionObject -Id 1
+                    $object = Get-DbaCmsRegServerGroup -SqlInstance $object.ParentServer -Id 1
                 }
 
                 if ($object -is [Microsoft.SqlServer.Management.RegisteredServers.RegisteredServer]) {
