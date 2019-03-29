@@ -29,7 +29,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     Context "Works as expected" {
         $results = $path | Import-DbaCsv -SqlInstance $script:instance1 -Database tempdb -Delimiter `t -NotifyAfter 50000 -WarningVariable warn
         It "accepts piped input and doesn't add rows if the table does not exist" {
-            $resulst | Should -Be $null
+            $results | Should -Be $null
         }
 
         if (-not $env:appveyor) {
