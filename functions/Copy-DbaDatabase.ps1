@@ -925,506 +925,506 @@ function Copy-DbaDatabase {
             $databaseList = New-Object System.Collections.ArrayList
             $SupportDBs = "ReportServer", "ReportServerTempDB", "distribution"
             foreach ($currentdb in ($sourceServer.Databases | Where-Object IsAccessible)) {
-            $dbName = $currentdb.Name
-            $dbOwner = $currentdb.Owner
-
-            if ($currentdb.Id -le 4) {
-                continue
-            }
-            if ($Database -and $Database -notcontains $dbName) {
-                continue
-            }
-            if ($IncludeSupportDBs -eq $false -and $SupportDBs -contains $dbName) {
-                continue
-            }
-            if ($IncludeSupportDBs -eq $true -and $SupportDBs -notcontains $dbName) {
-                if ($AllDatabases -eq $false -and $Database.length -eq 0) {
-                    continue
-                }
-            }
-            $null = $databaseList.Add($currentdb)
-        }
-
-        Write-Message -Level Verbose -Message "Performing count."
-        $dbCount = $databaseList.Count
-
-        if ((Test-Bound 'NewName') -and $dbCount -gt 1) {
-            Stop-Function -Message "Cannot use NewName when copying multiple databases"
-            return
-        }
-
-
-        Write-Message -Level Verbose -Message "Building file structure inventory for $dbCount databases."
-
-        if ($sourceServer.VersionMajor -eq 8) {
-            $sql = "select DB_NAME (dbid) as dbname, name, filename, CASE WHEN groupid = 0 THEN 'LOG' ELSE 'ROWS' END as filetype from sysaltfiles"
-        } else {
-            $sql = "SELECT db.Name AS dbname, type_desc AS FileType, mf.Name, Physical_Name AS filename FROM sys.master_files mf INNER JOIN  sys.databases db ON db.database_id = mf.database_id"
-        }
-
-        $dbFileTable = $sourceServer.Databases['master'].ExecuteWithResults($sql)
-
-        if ($destServer.VersionMajor -eq 8) {
-            $sql = "select DB_NAME (dbid) as dbname, name, filename, CASE WHEN groupid = 0 THEN 'LOG' ELSE 'ROWS' END as filetype from sysaltfiles"
-        } else {
-            $sql = "SELECT db.Name AS dbname, type_desc AS FileType, mf.Name, Physical_Name AS filename FROM sys.master_files mf INNER JOIN  sys.databases db ON db.database_id = mf.database_id"
-        }
-
-        $remoteDbFileTable = $destServer.Databases['master'].ExecuteWithResults($sql)
-
-        $fileStructure = Get-SqlFileStructure -sourceserver $sourceServer -destserver $destServer -databaselist $databaseList -ReuseSourceFolderStructure $ReuseSourceFolderStructure
-
-        $elapsed = [System.Diagnostics.Stopwatch]::StartNew()
-        $started = Get-Date
-        $script:TimeNow = (Get-Date -UFormat "%m%d%Y%H%M%S")
-
-        if ($AllDatabases -or $ExcludeDatabase -or $IncludeSupportDbs -or $Database) {
-            foreach ($currentdb in $databaseList) {
                 $dbName = $currentdb.Name
                 $dbOwner = $currentdb.Owner
-                $destinationDbName = $dbName
-                if ((Test-Bound "NewName")) {
-                    Write-Message -Level Verbose -Message "NewName specified, copying $dbname as $NewName"
-                    $destinationDbName = $NewName
-                    $replaceInFile = $True
-                }
-                if ($(Test-Bound "Prefix")) {
-                    $destinationDbName = $prefix + $destinationDbName
-                    Write-Message -Level Verbose -Message "Prefix supplied, copying $dbname as $destinationDbName"
-                }
 
-                $filestructure.databases[$dbname].Add('destinationDbName', $destinationDbName)
-                ForEach ($key in $filestructure.databases[$dbname].Destination.Keys) {
-                    $splitFileName = Split-Path $fileStructure.databases[$dbname].Destination[$key].remotefilename -Leaf
-                    $SplitPath = Split-Path $fileStructure.databases[$dbname].Destination[$key].remotefilename
-                    if ($replaceInFile) {
-                        $splitFileName = $splitFileName.replace($dbname, $destinationDbName)
-                    }
-                    $splitFileName = $prefix + $splitFileName
-                    $filestructure.databases[$dbname].Destination.$key.remotefilename = Join-Path $SplitPath $splitFileName
-                    $splitFileName = Split-Path $filestructure.databases[$dbname].Destination[$key].physical -Leaf
-                    $SplitPath = Split-Path $fileStructure.databases[$dbname].Destination[$key].physical
-                    if ($replaceInFile) {
-                        $splitFileName = $splitFileName.replace($dbname, $destinationDbName)
-                    }
-                    $splitFileName = $prefix + $splitFileName
-                    $filestructure.databases[$dbname].Destination.$key.physical = Join-Path $SplitPath $splitFileName
-                }
-
-                $copyDatabaseStatus = [pscustomobject]@{
-                    SourceServer        = $sourceServer.Name
-                    DestinationServer   = $destServer.Name
-                    Name                = $dbName
-                    DestinationDatabase = $DestinationDbname
-                    Type                = "Database"
-                    Status              = $null
-                    Notes               = $null
-                    DateTime            = [DbaDateTime](Get-Date)
-                }
-
-                Write-Message -Level Verbose -Message "`n######### Database: $dbName #########"
-                $dbStart = Get-Date
-
-                if ($ExcludeDatabase -contains $dbName) {
-                    Write-Message -Level Verbose -Message "$dbName excluded. Skipping."
+                if ($currentdb.Id -le 4) {
                     continue
                 }
-
-                Write-Message -Level Verbose -Message "Checking for accessibility."
-                if ($currentdb.IsAccessible -eq $false) {
-                    if ($Pscmdlet.ShouldProcess($destinstance, "Skipping $dbName. Database is inaccessible.")) {
-                        Write-Message -Level Verbose -Message "Skipping $dbName. Database is inaccessible."
-
-                        $copyDatabaseStatus.Status = "Skipped"
-                        $copyDatabaseStatus.Notes = "Database is not accessible"
-                        $copyDatabaseStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                if ($Database -and $Database -notcontains $dbName) {
+                    continue
                 }
-                continue
-            }
-
-            if ($fsWarning) {
-                $fsRows = $dbFileTable.Tables[0].Select("dbname = '$dbName' and FileType = 'FileStream'")
-
-                if ($fsRows.Count -gt 0) {
-                    if ($Pscmdlet.ShouldProcess($destinstance, "Skipping $dbName (contains FILESTREAM).")) {
-                        Write-Message -Level Verbose -Message "Skipping $dbName (contains FILESTREAM)."
-                        $copyDatabaseStatus.Status = "Skipped"
-                        $copyDatabaseStatus.Notes = "Contains FILESTREAM"
-                        $copyDatabaseStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                if ($IncludeSupportDBs -eq $false -and $SupportDBs -contains $dbName) {
+                    continue
                 }
-                continue
+                if ($IncludeSupportDBs -eq $true -and $SupportDBs -notcontains $dbName) {
+                    if ($AllDatabases -eq $false -and $Database.length -eq 0) {
+                        continue
+                    }
+                }
+                $null = $databaseList.Add($currentdb)
             }
-        }
 
-        if ($ReuseSourceFolderStructure) {
-            $fgRows = $dbFileTable.Tables[0].Select("dbname = '$dbName' and FileType = 'ROWS'")[0]
-            $remotePath = Split-Path $fgRows.Filename
+            Write-Message -Level Verbose -Message "Performing count."
+            $dbCount = $databaseList.Count
 
-            if (!(Test-DbaPath -SqlInstance $destServer -Path $remotePath)) {
-                if ($Pscmdlet.ShouldProcess($destinstance, "$remotePath does not exist on $destinstance and ReuseSourceFolderStructure was specified")) {
-                    # Stop-Function -Message "Cannot resolve $remotePath on $source. `n`nYou have specified ReuseSourceFolderStructure and exact folder structure does not exist. Halting script."
-                    $copyDatabaseStatus.Status = "Failed"
-                    $copyDatabaseStatus.Notes = "$remotePath does not exist on $destinstance and ReuseSourceFolderStructure was specified" #"Can't resolve $remotePath"
-                    $copyDatabaseStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+            if ((Test-Bound 'NewName') -and $dbCount -gt 1) {
+                Stop-Function -Message "Cannot use NewName when copying multiple databases"
+                return
             }
-            continue
-        }
-    }
 
-    Write-Message -Level Verbose -Message "Checking Availability Group status."
-    if ($currentdb.AvailabilityGroupName -and !$force -and $DetachAttach) {
-        $agName = $currentdb.AvailabilityGroupName
-        Write-Message -Level Verbose -Message "Database is part of an Availability Group ($agName). Use -Force to drop from $agName and migrate. Alternatively, you can use the safer backup/restore method."
-        continue
-    }
 
-    $dbStatus = $currentdb.Status.ToString()
+            Write-Message -Level Verbose -Message "Building file structure inventory for $dbCount databases."
 
-    if ($dbStatus.StartsWith("Normal") -eq $false) {
-        if ($Pscmdlet.ShouldProcess($destinstance, "$dbName is not in a Normal state. Skipping.")) {
-            Write-Message -Level Verbose -Message "$dbName is not in a Normal state. Skipping."
-
-            $copyDatabaseStatus.Status = "Skipped"
-            $copyDatabaseStatus.Notes = "Not in normal state"
-            $copyDatabaseStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-    }
-    continue
-    }
-
-    if ($currentdb.ReplicationOptions -ne "None" -and $DetachAttach -eq $true) {
-        if ($Pscmdlet.ShouldProcess($destinstance, "$dbName is part of replication. Skipping.")) {
-            Write-Message -Level Verbose -Message "$dbName is part of replication. Skipping."
-
-            $copyDatabaseStatus.Status = "Skipped"
-            $copyDatabaseStatus.Notes = "Part of replication"
-            $copyDatabaseStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-    }
-    continue
-    }
-
-    if ($currentdb.IsMirroringEnabled -and !$force -and $DetachAttach) {
-        if ($Pscmdlet.ShouldProcess($destinstance, "Database is being mirrored. Use -Force to break mirror and migrate. Alternatively, you can use the safer backup/restore method.")) {
-            Write-Message -Level Verbose -Message "Database is being mirrored. Use -Force to break mirror and migrate. Alternatively, you can use the safer backup/restore method."
-
-            $copyDatabaseStatus.Status = "Skipped"
-            $copyDatabaseStatus.Notes = "Database is mirrored"
-            $copyDatabaseStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-    }
-
-    continue
-    }
-
-    if (($null -ne $destServer.Databases[$DestinationdbName]) -and !$force -and !$WithReplace) {
-        if ($Pscmdlet.ShouldProcess($destinstance, "$DestinationdbName exists at destination. Use -Force to drop and migrate. Aborting routine for this database.")) {
-            Write-Message -Level Verbose -Message "$DestinationdbName exists at destination. Use -Force to drop and migrate. Aborting routine for this database."
-
-            $copyDatabaseStatus.Status = "Skipped"
-            $copyDatabaseStatus.Notes = "Already exists on destination"
-            $copyDatabaseStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-    }
-    continue
-    } elseif ($null -ne $destServer.Databases[$DestinationdbName] -and $force) {
-        if ($Pscmdlet.ShouldProcess($destinstance, "DROP DATABASE $DestinationdbName")) {
-            Write-Message -Level Verbose -Message "$DestinationdbName already exists. -Force was specified. Dropping $DestinationdbName on $destinstance."
-            $removeresult = Remove-DbaDatabase -SqlInstance $destserver -Database $DestinationdbName -Confirm:$false
-            $dropResult = $removeresult.Status -eq 'Dropped'
-
-            if ($dropResult -eq $false) {
-                Write-Message -Level Verbose -Message "Database could not be dropped. Aborting routine for this database."
-
-                $copyDatabaseStatus.Status = "Failed"
-                $copyDatabaseStatus.Notes = "Could not drop database"
-                $copyDatabaseStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-            continue
-        }
-    }
-    }
-
-    if ($force) {
-        $WithReplace = $true
-    }
-
-    Write-Message -Level Verbose -Message "Started: $dbStart."
-
-    if ($sourceServer.VersionMajor -ge 9) {
-        $sourceDbOwnerChaining = $sourceServer.Databases[$dbName].DatabaseOwnershipChaining
-        $sourceDbTrustworthy = $sourceServer.Databases[$dbName].Trustworthy
-        $sourceDbBrokerEnabled = $sourceServer.Databases[$dbName].BrokerEnabled
-    }
-
-    $sourceDbReadOnly = $sourceServer.Databases[$dbName].ReadOnly
-
-    if ($SetSourceReadOnly) {
-        If ($Pscmdlet.ShouldProcess($source, "Set $dbName to read-only")) {
-            Write-Message -Level Verbose -Message "Setting database to read-only."
-            try {
-                $result = Set-DbaDbState -SqlInstance $sourceServer -Database $dbName -ReadOnly -EnableException -Force
-            } catch {
-                Stop-Function -Continue -Message "Couldn't set database to read-only. Aborting routine for this database" -ErrorRecord $_
-            }
-        }
-    }
-
-    if ($BackupRestore) {
-        if ($UseLastBackup) {
-            $whatifmsg = "Gathering last backup information for $dbName from $Source and restoring"
-        } else {
-            $whatifmsg = "Backup $dbName from $source and restoring"
-        }
-        If ($Pscmdlet.ShouldProcess($destinstance, $whatifmsg)) {
-            if ($UseLastBackup) {
-                $backupTmpResult = Get-DbaBackupHistory -SqlInstance $sourceServer -Database $dbName -IncludeCopyOnly -Last
-                if (-not $backupTmpResult) {
-                    $copyDatabaseStatus.Type = "Database (BackupRestore)"
-                    $copyDatabaseStatus.Status = "Failed"
-                    $copyDatabaseStatus.Notes = "No backups for $dbName on $source"
-                    $copyDatabaseStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                continue
-            }
-        } else {
-            $backupTmpResult = $backupCollection | Where-Object Database -eq $dbName
-        if (-not $backupTmpResult) {
-            if ($SharedPath -like 'https*') {
-                $backupTmpResult = Backup-DbaDatabase -SqlInstance $sourceServer -Database $dbName -AzureBaseUrl $SharedPath -FileCount $numberfiles -CopyOnly:$CopyOnly -AzureCredential $AzureCredential
-
+            if ($sourceServer.VersionMajor -eq 8) {
+                $sql = "select DB_NAME (dbid) as dbname, name, filename, CASE WHEN groupid = 0 THEN 'LOG' ELSE 'ROWS' END as filetype from sysaltfiles"
             } else {
-                $backupTmpResult = Backup-DbaDatabase -SqlInstance $sourceServer -Database $dbName -BackupDirectory $SharedPath -FileCount $numberfiles -CopyOnly:$CopyOnly
+                $sql = "SELECT db.Name AS dbname, type_desc AS FileType, mf.Name, Physical_Name AS filename FROM sys.master_files mf INNER JOIN  sys.databases db ON db.database_id = mf.database_id"
             }
-        }
-        if ($backupTmpResult) {
-            $backupCollection += $backupTmpResult
-        }
-        $backupResult = $BackupTmpResult.BackupComplete
-        if (-not $backupResult) {
-            $serviceAccount = $sourceServer.ServiceAccount
-            Write-Message -Level Verbose -Message "Backup Failed. Does SQL Server account $serviceAccount have access to $($SharedPath)? Aborting routine for this database."
 
-            $copyDatabaseStatus.Status = "Failed"
-            $copyDatabaseStatus.Notes = "Backup failed. Verify service account access to $SharedPath."
-            $copyDatabaseStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-        continue
-    }
-    }
-    Write-Message -Level Verbose -Message "Reuse = $ReuseSourceFolderStructure."
-    try {
-        $msg = $null
-        if ($miRestore) {
-            $restoreResultTmp = $backupTmpResult | Restore-DbaDatabase -SqlInstance $destServer -DatabaseName $DestinationdbName -TrustDbBackupHistory -WithReplace:$WithReplace  -EnableException -AzureCredential $AzureCredential
-    } else {
-        $restoreResultTmp = $backupTmpResult | Restore-DbaDatabase -SqlInstance $destServer -DatabaseName $DestinationdbName -ReuseSourceFolderStructure:$ReuseSourceFolderStructure -NoRecovery:$NoRecovery -TrustDbBackupHistory -WithReplace:$WithReplace -Continue:$Continue -EnableException -ReplaceDbNameInFile -AzureCredential $AzureCredential
-    }
-    } catch {
-        $msg = $_.Exception.InnerException.InnerException.InnerException.InnerException.Message
-        Stop-Function -Message "Failure attempting to restore $dbName to $destinstance" -Exception $_.Exception.InnerException.InnerException.InnerException.InnerException
-    }
-    $restoreResult = $restoreResultTmp.RestoreComplete
+            $dbFileTable = $sourceServer.Databases['master'].ExecuteWithResults($sql)
 
-    if ($restoreResult -eq $true) {
-        Write-Message -Level Verbose -Message "Successfully restored $dbName to $destinstance."
-        $copyDatabaseStatus.Status = "Successful"
-        $copyDatabaseStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-    } else {
-        if ($ReuseSourceFolderStructure) {
-            Write-Message -Level Verbose -Message "Failed to restore $dbName to $destinstance. You specified -ReuseSourceFolderStructure. Does the exact same destination directory structure exist?"
-            Write-Message -Level Verbose -Message "Aborting routine for this database."
+            if ($destServer.VersionMajor -eq 8) {
+                $sql = "select DB_NAME (dbid) as dbname, name, filename, CASE WHEN groupid = 0 THEN 'LOG' ELSE 'ROWS' END as filetype from sysaltfiles"
+            } else {
+                $sql = "SELECT db.Name AS dbname, type_desc AS FileType, mf.Name, Physical_Name AS filename FROM sys.master_files mf INNER JOIN  sys.databases db ON db.database_id = mf.database_id"
+            }
 
-            $copyDatabaseStatus.Status = "Failed"
-            $copyDatabaseStatus.Notes = "Failed to restore. ReuseSourceFolderStructure was specified, verify same directory structure exist on destination."
-            $copyDatabaseStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-        continue
-    } else {
-        Write-Message -Level Verbose -Message "Failed to restore $dbName to $destinstance. Aborting routine for this database."
+            $remoteDbFileTable = $destServer.Databases['master'].ExecuteWithResults($sql)
 
-        $copyDatabaseStatus.Status = "Failed"
-        if (-not $msg) {
-            $msg = "Failed to restore database"
-        }
-        $copyDatabaseStatus.Notes = $msg
-        $copyDatabaseStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-    continue
-    }
-    }
-    if (-not $NoBackupCleanUp -and $Destination.Count -eq 1) {
-        foreach ($backupFile in ($backupTmpResult.BackupPath)) {
-            try {
-                if (Test-Path $backupFile -ErrorAction Stop) {
-                    Write-Message -Level Verbose -Message "Deleting $backupFile."
-                    Remove-Item $backupFile -ErrorAction Stop
+            $fileStructure = Get-SqlFileStructure -sourceserver $sourceServer -destserver $destServer -databaselist $databaseList -ReuseSourceFolderStructure $ReuseSourceFolderStructure
+
+            $elapsed = [System.Diagnostics.Stopwatch]::StartNew()
+            $started = Get-Date
+            $script:TimeNow = (Get-Date -UFormat "%m%d%Y%H%M%S")
+
+            if ($AllDatabases -or $ExcludeDatabase -or $IncludeSupportDbs -or $Database) {
+                foreach ($currentdb in $databaseList) {
+                    $dbName = $currentdb.Name
+                    $dbOwner = $currentdb.Owner
+                    $destinationDbName = $dbName
+                    if ((Test-Bound "NewName")) {
+                        Write-Message -Level Verbose -Message "NewName specified, copying $dbname as $NewName"
+                        $destinationDbName = $NewName
+                        $replaceInFile = $True
+                    }
+                    if ($(Test-Bound "Prefix")) {
+                        $destinationDbName = $prefix + $destinationDbName
+                        Write-Message -Level Verbose -Message "Prefix supplied, copying $dbname as $destinationDbName"
+                    }
+
+                    $filestructure.databases[$dbname].Add('destinationDbName', $destinationDbName)
+                    ForEach ($key in $filestructure.databases[$dbname].Destination.Keys) {
+                        $splitFileName = Split-Path $fileStructure.databases[$dbname].Destination[$key].remotefilename -Leaf
+                        $SplitPath = Split-Path $fileStructure.databases[$dbname].Destination[$key].remotefilename
+                        if ($replaceInFile) {
+                            $splitFileName = $splitFileName.replace($dbname, $destinationDbName)
+                        }
+                        $splitFileName = $prefix + $splitFileName
+                        $filestructure.databases[$dbname].Destination.$key.remotefilename = Join-Path $SplitPath $splitFileName
+                        $splitFileName = Split-Path $filestructure.databases[$dbname].Destination[$key].physical -Leaf
+                        $SplitPath = Split-Path $fileStructure.databases[$dbname].Destination[$key].physical
+                        if ($replaceInFile) {
+                            $splitFileName = $splitFileName.replace($dbname, $destinationDbName)
+                        }
+                        $splitFileName = $prefix + $splitFileName
+                        $filestructure.databases[$dbname].Destination.$key.physical = Join-Path $SplitPath $splitFileName
+                    }
+
+                    $copyDatabaseStatus = [pscustomobject]@{
+                        SourceServer        = $sourceServer.Name
+                        DestinationServer   = $destServer.Name
+                        Name                = $dbName
+                        DestinationDatabase = $DestinationDbname
+                        Type                = "Database"
+                        Status              = $null
+                        Notes               = $null
+                        DateTime            = [DbaDateTime](Get-Date)
+                    }
+
+                    Write-Message -Level Verbose -Message "`n######### Database: $dbName #########"
+                    $dbStart = Get-Date
+
+                    if ($ExcludeDatabase -contains $dbName) {
+                        Write-Message -Level Verbose -Message "$dbName excluded. Skipping."
+                        continue
+                    }
+
+                    Write-Message -Level Verbose -Message "Checking for accessibility."
+                    if ($currentdb.IsAccessible -eq $false) {
+                        if ($Pscmdlet.ShouldProcess($destinstance, "Skipping $dbName. Database is inaccessible.")) {
+                            Write-Message -Level Verbose -Message "Skipping $dbName. Database is inaccessible."
+
+                            $copyDatabaseStatus.Status = "Skipped"
+                            $copyDatabaseStatus.Notes = "Database is not accessible"
+                            $copyDatabaseStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                        }
+                        continue
+                    }
+
+                    if ($fsWarning) {
+                        $fsRows = $dbFileTable.Tables[0].Select("dbname = '$dbName' and FileType = 'FileStream'")
+
+                        if ($fsRows.Count -gt 0) {
+                            if ($Pscmdlet.ShouldProcess($destinstance, "Skipping $dbName (contains FILESTREAM).")) {
+                                Write-Message -Level Verbose -Message "Skipping $dbName (contains FILESTREAM)."
+                                $copyDatabaseStatus.Status = "Skipped"
+                                $copyDatabaseStatus.Notes = "Contains FILESTREAM"
+                                $copyDatabaseStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                        }
+                        continue
+                    }
                 }
-            } catch {
-                try {
-                    Write-Message -Level Verbose -Message "Trying alternate SQL method to delete $backupFile."
-                    $sql = "EXEC master.sys.xp_delete_file 0, '$backupFile'"
-                    Write-Message -Level Debug -Message $sql
-                    $null = $sourceServer.Query($sql)
-                } catch {
-                    Write-Message -Level Verbose -Message "Cannot delete backup file $backupFile."
 
-                    # Set NoBackupCleanup so that there's a warning at the end
-                    $NoBackupCleanup = $true
+                if ($ReuseSourceFolderStructure) {
+                    $fgRows = $dbFileTable.Tables[0].Select("dbname = '$dbName' and FileType = 'ROWS'")[0]
+                    $remotePath = Split-Path $fgRows.Filename
+
+                    if (!(Test-DbaPath -SqlInstance $destServer -Path $remotePath)) {
+                        if ($Pscmdlet.ShouldProcess($destinstance, "$remotePath does not exist on $destinstance and ReuseSourceFolderStructure was specified")) {
+                            # Stop-Function -Message "Cannot resolve $remotePath on $source. `n`nYou have specified ReuseSourceFolderStructure and exact folder structure does not exist. Halting script."
+                            $copyDatabaseStatus.Status = "Failed"
+                            $copyDatabaseStatus.Notes = "$remotePath does not exist on $destinstance and ReuseSourceFolderStructure was specified" #"Can't resolve $remotePath"
+                            $copyDatabaseStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                    }
+                    continue
                 }
             }
-        }
-    }
-    }
 
-    $dbFinish = Get-Date
-    if ($NoRecovery -eq $false) {
-        # needed because the newly restored database doesn't show up
-        $destServer.Databases.Refresh()
-        $dbOwner = $sourceServer.Databases[$dbName].Owner
-        if ($null -eq $dbOwner -or $destServer.Logins.Name -notcontains $dbOwner) {
-            $dbOwner = Get-SaLoginName -SqlInstance $destServer
-        }
-        Write-Message -Level Verbose -Message "Updating database owner to $dbOwner."
-        $OwnerResult = Set-DbaDbOwner -SqlInstance $destServer -Database $dbName -TargetLogin $dbOwner -EnableException
-        if ($OwnerResult.Length -eq 0) {
-            Write-Message -Level Verbose -Message "Failed to update database owner."
-        }
-    }
-    }
+            Write-Message -Level Verbose -Message "Checking Availability Group status."
+            if ($currentdb.AvailabilityGroupName -and !$force -and $DetachAttach) {
+                $agName = $currentdb.AvailabilityGroupName
+                Write-Message -Level Verbose -Message "Database is part of an Availability Group ($agName). Use -Force to drop from $agName and migrate. Alternatively, you can use the safer backup/restore method."
+                continue
+            }
 
-    if ($DetachAttach) {
+            $dbStatus = $currentdb.Status.ToString()
 
-        $copyDatabaseStatus.Type = "Database (DetachAttach)"
+            if ($dbStatus.StartsWith("Normal") -eq $false) {
+                if ($Pscmdlet.ShouldProcess($destinstance, "$dbName is not in a Normal state. Skipping.")) {
+                    Write-Message -Level Verbose -Message "$dbName is not in a Normal state. Skipping."
 
-        $sourceFileStructure = New-Object System.Collections.Specialized.StringCollection
-        foreach ($file in $fileStructure.Databases[$dbName].Source.Values) {
-            $null = $sourceFileStructure.Add($file.Physical)
-        }
+                    $copyDatabaseStatus.Status = "Skipped"
+                    $copyDatabaseStatus.Notes = "Not in normal state"
+                    $copyDatabaseStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                }
+                continue
+            }
 
-        $dbOwner = $sourceServer.Databases[$dbName].Owner
+            if ($currentdb.ReplicationOptions -ne "None" -and $DetachAttach -eq $true) {
+                if ($Pscmdlet.ShouldProcess($destinstance, "$dbName is part of replication. Skipping.")) {
+                    Write-Message -Level Verbose -Message "$dbName is part of replication. Skipping."
 
-        if ($null -eq $dbOwner -or $destServer.Logins.Name -notcontains $dbOwner) {
-            $dbOwner = Get-SaLoginName -SqlInstance $destServer
-        }
+                    $copyDatabaseStatus.Status = "Skipped"
+                    $copyDatabaseStatus.Notes = "Part of replication"
+                    $copyDatabaseStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                }
+                continue
+            }
 
-        if ($Pscmdlet.ShouldProcess($destinstance, "Detach $dbName from $source and attach, then update dbowner")) {
-            $migrationResult = Start-SqlDetachAttach $sourceServer $destServer $fileStructure $dbName
+            if ($currentdb.IsMirroringEnabled -and !$force -and $DetachAttach) {
+                if ($Pscmdlet.ShouldProcess($destinstance, "Database is being mirrored. Use -Force to break mirror and migrate. Alternatively, you can use the safer backup/restore method.")) {
+                    Write-Message -Level Verbose -Message "Database is being mirrored. Use -Force to break mirror and migrate. Alternatively, you can use the safer backup/restore method."
 
-            $dbFinish = Get-Date
+                    $copyDatabaseStatus.Status = "Skipped"
+                    $copyDatabaseStatus.Notes = "Database is mirrored"
+                    $copyDatabaseStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                }
 
-            if ($reattach -eq $true) {
-                $sourceServer.Databases.Refresh()
-                $destServer.Databases.Refresh()
-                $result = Mount-SqlDatabase $sourceServer $dbName $sourceFileStructure $dbOwner
+                continue
+            }
 
-                if ($result -eq $true) {
-                    $sourceServer.Databases[$dbName].DatabaseOwnershipChaining = $sourceDbOwnerChaining
-                    $sourceServer.Databases[$dbName].Trustworthy = $sourceDbTrustworthy
-                    $sourceServer.Databases[$dbName].BrokerEnabled = $sourceDbBrokerEnabled
-                    $sourceServer.Databases[$dbName].Alter()
+            if (($null -ne $destServer.Databases[$DestinationdbName]) -and !$force -and !$WithReplace) {
+                if ($Pscmdlet.ShouldProcess($destinstance, "$DestinationdbName exists at destination. Use -Force to drop and migrate. Aborting routine for this database.")) {
+                    Write-Message -Level Verbose -Message "$DestinationdbName exists at destination. Use -Force to drop and migrate. Aborting routine for this database."
 
-                    if ($SetSourceReadOnly -or $sourceDbReadOnly) {
-                        try {
-                            $result = Set-DbaDbState -SqlInstance $sourceServer -Database $dbName -ReadOnly -EnableException
-                        } catch {
-                            Stop-Function -Message "Couldn't set database to read-only" -ErrorRecord $_
+                    $copyDatabaseStatus.Status = "Skipped"
+                    $copyDatabaseStatus.Notes = "Already exists on destination"
+                    $copyDatabaseStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                }
+                continue
+            } elseif ($null -ne $destServer.Databases[$DestinationdbName] -and $force) {
+                if ($Pscmdlet.ShouldProcess($destinstance, "DROP DATABASE $DestinationdbName")) {
+                    Write-Message -Level Verbose -Message "$DestinationdbName already exists. -Force was specified. Dropping $DestinationdbName on $destinstance."
+                    $removeresult = Remove-DbaDatabase -SqlInstance $destserver -Database $DestinationdbName -Confirm:$false
+                    $dropResult = $removeresult.Status -eq 'Dropped'
+
+                    if ($dropResult -eq $false) {
+                        Write-Message -Level Verbose -Message "Database could not be dropped. Aborting routine for this database."
+
+                        $copyDatabaseStatus.Status = "Failed"
+                        $copyDatabaseStatus.Notes = "Could not drop database"
+                        $copyDatabaseStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                        continue
+                    }
+                }
+            }
+
+            if ($force) {
+                $WithReplace = $true
+            }
+
+            Write-Message -Level Verbose -Message "Started: $dbStart."
+
+            if ($sourceServer.VersionMajor -ge 9) {
+                $sourceDbOwnerChaining = $sourceServer.Databases[$dbName].DatabaseOwnershipChaining
+                $sourceDbTrustworthy = $sourceServer.Databases[$dbName].Trustworthy
+                $sourceDbBrokerEnabled = $sourceServer.Databases[$dbName].BrokerEnabled
+            }
+
+            $sourceDbReadOnly = $sourceServer.Databases[$dbName].ReadOnly
+
+            if ($SetSourceReadOnly) {
+                If ($Pscmdlet.ShouldProcess($source, "Set $dbName to read-only")) {
+                    Write-Message -Level Verbose -Message "Setting database to read-only."
+                    try {
+                        $result = Set-DbaDbState -SqlInstance $sourceServer -Database $dbName -ReadOnly -EnableException -Force
+                    } catch {
+                        Stop-Function -Continue -Message "Couldn't set database to read-only. Aborting routine for this database" -ErrorRecord $_
+                    }
+                }
+            }
+
+            if ($BackupRestore) {
+                if ($UseLastBackup) {
+                    $whatifmsg = "Gathering last backup information for $dbName from $Source and restoring"
+                } else {
+                    $whatifmsg = "Backup $dbName from $source and restoring"
+                }
+                If ($Pscmdlet.ShouldProcess($destinstance, $whatifmsg)) {
+                    if ($UseLastBackup) {
+                        $backupTmpResult = Get-DbaBackupHistory -SqlInstance $sourceServer -Database $dbName -IncludeCopyOnly -Last
+                        if (-not $backupTmpResult) {
+                            $copyDatabaseStatus.Type = "Database (BackupRestore)"
+                            $copyDatabaseStatus.Status = "Failed"
+                            $copyDatabaseStatus.Notes = "No backups for $dbName on $source"
+                            $copyDatabaseStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                        continue
+                        }
+                    } else {
+                        $backupTmpResult = $backupCollection | Where-Object Database -eq $dbName
+                        if (-not $backupTmpResult) {
+                            if ($SharedPath -like 'https*') {
+                                $backupTmpResult = Backup-DbaDatabase -SqlInstance $sourceServer -Database $dbName -AzureBaseUrl $SharedPath -FileCount $numberfiles -CopyOnly:$CopyOnly -AzureCredential $AzureCredential
+
+                            } else {
+                                $backupTmpResult = Backup-DbaDatabase -SqlInstance $sourceServer -Database $dbName -BackupDirectory $SharedPath -FileCount $numberfiles -CopyOnly:$CopyOnly
+                            }
+                        }
+                        if ($backupTmpResult) {
+                            $backupCollection += $backupTmpResult
+                        }
+                        $backupResult = $BackupTmpResult.BackupComplete
+                        if (-not $backupResult) {
+                            $serviceAccount = $sourceServer.ServiceAccount
+                            Write-Message -Level Verbose -Message "Backup Failed. Does SQL Server account $serviceAccount have access to $($SharedPath)? Aborting routine for this database."
+
+                            $copyDatabaseStatus.Status = "Failed"
+                            $copyDatabaseStatus.Notes = "Backup failed. Verify service account access to $SharedPath."
+                            $copyDatabaseStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                        continue
                         }
                     }
-                    Write-Message -Level Verbose -Message "Successfully reattached $dbName to $source."
-                } else {
-                    Write-Message -Level Verbose -Message "Could not reattach $dbName to $source."
-                    $copyDatabaseStatus.Status = "Failed"
-                    $copyDatabaseStatus.Notes = "Could not reattach database to $source"
+                    Write-Message -Level Verbose -Message "Reuse = $ReuseSourceFolderStructure."
+                    try {
+                        $msg = $null
+                        if ($miRestore) {
+                            $restoreResultTmp = $backupTmpResult | Restore-DbaDatabase -SqlInstance $destServer -DatabaseName $DestinationdbName -TrustDbBackupHistory -WithReplace:$WithReplace  -EnableException -AzureCredential $AzureCredential
+                        } else {
+                            $restoreResultTmp = $backupTmpResult | Restore-DbaDatabase -SqlInstance $destServer -DatabaseName $DestinationdbName -ReuseSourceFolderStructure:$ReuseSourceFolderStructure -NoRecovery:$NoRecovery -TrustDbBackupHistory -WithReplace:$WithReplace -Continue:$Continue -EnableException -ReplaceDbNameInFile -AzureCredential $AzureCredential
+                        }
+                    } catch {
+                        $msg = $_.Exception.InnerException.InnerException.InnerException.InnerException.Message
+                        Stop-Function -Message "Failure attempting to restore $dbName to $destinstance" -Exception $_.Exception.InnerException.InnerException.InnerException.InnerException
+                    }
+                $restoreResult = $restoreResultTmp.RestoreComplete
+
+                if ($restoreResult -eq $true) {
+                    Write-Message -Level Verbose -Message "Successfully restored $dbName to $destinstance."
+                    $copyDatabaseStatus.Status = "Successful"
                     $copyDatabaseStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-            }
-        }
-
-        if ($migrationResult -eq $true) {
-            Write-Message -Level Verbose -Message "Successfully attached $dbName to $destinstance."
-            $copyDatabaseStatus.Status = "Successful"
-            $copyDatabaseStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-    } else {
-        Write-Message -Level Verbose -Message "Failed to attach $dbName to $destinstance. Aborting routine for this database."
-
-        $copyDatabaseStatus.Status = "Failed"
-        $copyDatabaseStatus.Notes = "Failed to attach database to destination"
-        $copyDatabaseStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-
-    continue
-    }
-    }
-    }
-    $NewDatabase = Get-DbaDatabase -SqlInstance $destServer -database $DestinationdbName
-
-    # restore potentially lost settings
-    if ($destServer.VersionMajor -ge 9 -and $NoRecovery -eq $false) {
-        if ($sourceDbOwnerChaining -ne $NewDatabase.DatabaseOwnershipChaining) {
-            if ($Pscmdlet.ShouldProcess($destinstance, "Updating DatabaseOwnershipChaining on $DestinationdbName")) {
-                try {
-                    $NewDatabase.DatabaseOwnershipChaining = $sourceDbOwnerChaining
-                    $NewDatabase.Alter()
-                    Write-Message -Level Verbose -Message "Successfully updated DatabaseOwnershipChaining for $sourceDbOwnerChaining on $DestinationdbName on $destinstance."
-                } catch {
-                    $copyDatabaseStatus.Status = "Successful - failed to apply DatabaseOwnershipChaining."
-                    $copyDatabaseStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                Stop-Function -Message "Failed to update DatabaseOwnershipChaining for $sourceDbOwnerChaining on $DestinationdbName on $destinstance." -Target $destinstance -ErrorRecord $_ -Continue
-            }
-        }
-    }
-
-    if ($sourceDbTrustworthy -ne $NewDatabase.Trustworthy) {
-        if ($Pscmdlet.ShouldProcess($destinstance, "Updating Trustworthy on $DestinationdbName")) {
-            try {
-                $NewDatabase.Trustworthy = $sourceDbTrustworthy
-                $NewDatabase.Alter()
-                Write-Message -Level Verbose -Message "Successfully updated Trustworthy to $sourceDbTrustworthy for $DestinationdbName on $destinstance"
-            } catch {
-                $copyDatabaseStatus.Status = "Successful - failed to apply Trustworthy"
-                $copyDatabaseStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-            Stop-Function -Message "Failed to update Trustworthy to $sourceDbTrustworthy for $DestinationdbName on $destinstance." -Target $destinstance -ErrorRecord $_ -Continue
-        }
-    }
-    }
-
-    if ($sourceDbBrokerEnabled -ne $NewDatabase.BrokerEnabled) {
-        if ($Pscmdlet.ShouldProcess($destinstance, "Updating BrokerEnabled on $dbName")) {
-            try {
-                $NewDatabase.BrokerEnabled = $sourceDbBrokerEnabled
-                $NewDatabase.Alter()
-                Write-Message -Level Verbose -Message "Successfully updated BrokerEnabled to $sourceDbBrokerEnabled for $DestinationdbName on $destinstance."
-            } catch {
-                $copyDatabaseStatus.Status = "Successful - failed to apply BrokerEnabled"
-                $copyDatabaseStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-            Stop-Function -Message "Failed to update BrokerEnabled to $sourceDbBrokerEnabled for $DestinationdbName on $destinstance." -Target $destinstance -ErrorRecord $_ -Continue
-        }
-    }
-    }
-    }
-
-    if ($sourceDbReadOnly -ne $NewDatabase.ReadOnly -and -not $NoRecovery) {
-        if ($Pscmdlet.ShouldProcess($destinstance, "Updating ReadOnly status on $DestinationdbName")) {
-            try {
-                if ($sourceDbReadOnly) {
-                    $result = Set-DbaDbState -SqlInstance $destserver -Database $DestinationdbName -ReadOnly -EnableException
                 } else {
-                    $result = Set-DbaDbState -SqlInstance $destserver -Database $DestinationdbName -ReadWrite -EnableException
+                    if ($ReuseSourceFolderStructure) {
+                        Write-Message -Level Verbose -Message "Failed to restore $dbName to $destinstance. You specified -ReuseSourceFolderStructure. Does the exact same destination directory structure exist?"
+                        Write-Message -Level Verbose -Message "Aborting routine for this database."
+
+                        $copyDatabaseStatus.Status = "Failed"
+                        $copyDatabaseStatus.Notes = "Failed to restore. ReuseSourceFolderStructure was specified, verify same directory structure exist on destination."
+                        $copyDatabaseStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                    continue
+                    } else {
+                        Write-Message -Level Verbose -Message "Failed to restore $dbName to $destinstance. Aborting routine for this database."
+
+                        $copyDatabaseStatus.Status = "Failed"
+                        if (-not $msg) {
+                            $msg = "Failed to restore database"
+                        }
+                        $copyDatabaseStatus.Notes = $msg
+                        $copyDatabaseStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                        continue
+                    }
                 }
-            } catch {
-                $copyDatabaseStatus.Status = "Successful - failed to apply ReadOnly."
+                if (-not $NoBackupCleanUp -and $Destination.Count -eq 1) {
+                    foreach ($backupFile in ($backupTmpResult.BackupPath)) {
+                        try {
+                            if (Test-Path $backupFile -ErrorAction Stop) {
+                                Write-Message -Level Verbose -Message "Deleting $backupFile."
+                                Remove-Item $backupFile -ErrorAction Stop
+                            }
+                        } catch {
+                            try {
+                                Write-Message -Level Verbose -Message "Trying alternate SQL method to delete $backupFile."
+                                $sql = "EXEC master.sys.xp_delete_file 0, '$backupFile'"
+                                Write-Message -Level Debug -Message $sql
+                                $null = $sourceServer.Query($sql)
+                            } catch {
+                                Write-Message -Level Verbose -Message "Cannot delete backup file $backupFile."
+
+                                # Set NoBackupCleanup so that there's a warning at the end
+                                $NoBackupCleanup = $true
+                            }
+                        }
+                    }
+                }
+            }
+
+            $dbFinish = Get-Date
+            if ($NoRecovery -eq $false) {
+                # needed because the newly restored database doesn't show up
+                $destServer.Databases.Refresh()
+                $dbOwner = $sourceServer.Databases[$dbName].Owner
+                if ($null -eq $dbOwner -or $destServer.Logins.Name -notcontains $dbOwner) {
+                    $dbOwner = Get-SaLoginName -SqlInstance $destServer
+                }
+                Write-Message -Level Verbose -Message "Updating database owner to $dbOwner."
+                $OwnerResult = Set-DbaDbOwner -SqlInstance $destServer -Database $dbName -TargetLogin $dbOwner -EnableException
+                if ($OwnerResult.Length -eq 0) {
+                    Write-Message -Level Verbose -Message "Failed to update database owner."
+                }
+            }
+            }
+
+            if ($DetachAttach) {
+
+                $copyDatabaseStatus.Type = "Database (DetachAttach)"
+
+                $sourceFileStructure = New-Object System.Collections.Specialized.StringCollection
+                foreach ($file in $fileStructure.Databases[$dbName].Source.Values) {
+                    $null = $sourceFileStructure.Add($file.Physical)
+                }
+
+                $dbOwner = $sourceServer.Databases[$dbName].Owner
+
+                if ($null -eq $dbOwner -or $destServer.Logins.Name -notcontains $dbOwner) {
+                    $dbOwner = Get-SaLoginName -SqlInstance $destServer
+                }
+
+                if ($Pscmdlet.ShouldProcess($destinstance, "Detach $dbName from $source and attach, then update dbowner")) {
+                    $migrationResult = Start-SqlDetachAttach $sourceServer $destServer $fileStructure $dbName
+
+                    $dbFinish = Get-Date
+
+                    if ($reattach -eq $true) {
+                        $sourceServer.Databases.Refresh()
+                        $destServer.Databases.Refresh()
+                        $result = Mount-SqlDatabase $sourceServer $dbName $sourceFileStructure $dbOwner
+
+                        if ($result -eq $true) {
+                            $sourceServer.Databases[$dbName].DatabaseOwnershipChaining = $sourceDbOwnerChaining
+                            $sourceServer.Databases[$dbName].Trustworthy = $sourceDbTrustworthy
+                            $sourceServer.Databases[$dbName].BrokerEnabled = $sourceDbBrokerEnabled
+                            $sourceServer.Databases[$dbName].Alter()
+
+                            if ($SetSourceReadOnly -or $sourceDbReadOnly) {
+                                try {
+                                    $result = Set-DbaDbState -SqlInstance $sourceServer -Database $dbName -ReadOnly -EnableException
+                                } catch {
+                                    Stop-Function -Message "Couldn't set database to read-only" -ErrorRecord $_
+                                }
+                            }
+                            Write-Message -Level Verbose -Message "Successfully reattached $dbName to $source."
+                        } else {
+                            Write-Message -Level Verbose -Message "Could not reattach $dbName to $source."
+                            $copyDatabaseStatus.Status = "Failed"
+                            $copyDatabaseStatus.Notes = "Could not reattach database to $source"
+                            $copyDatabaseStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                    }
+                }
+
+                if ($migrationResult -eq $true) {
+                    Write-Message -Level Verbose -Message "Successfully attached $dbName to $destinstance."
+                    $copyDatabaseStatus.Status = "Successful"
+                    $copyDatabaseStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+            } else {
+                Write-Message -Level Verbose -Message "Failed to attach $dbName to $destinstance. Aborting routine for this database."
+
+                $copyDatabaseStatus.Status = "Failed"
+                $copyDatabaseStatus.Notes = "Failed to attach database to destination"
                 $copyDatabaseStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-            Stop-Function -Message "Failed to update ReadOnly status on $DestinationdbName." -Target $destinstance -ErrorRecord $_ -Continue
+
+            continue
+            }
+            }
+            }
+            $NewDatabase = Get-DbaDatabase -SqlInstance $destServer -database $DestinationdbName
+
+            # restore potentially lost settings
+            if ($destServer.VersionMajor -ge 9 -and $NoRecovery -eq $false) {
+                if ($sourceDbOwnerChaining -ne $NewDatabase.DatabaseOwnershipChaining) {
+                    if ($Pscmdlet.ShouldProcess($destinstance, "Updating DatabaseOwnershipChaining on $DestinationdbName")) {
+                        try {
+                            $NewDatabase.DatabaseOwnershipChaining = $sourceDbOwnerChaining
+                            $NewDatabase.Alter()
+                            Write-Message -Level Verbose -Message "Successfully updated DatabaseOwnershipChaining for $sourceDbOwnerChaining on $DestinationdbName on $destinstance."
+                        } catch {
+                            $copyDatabaseStatus.Status = "Successful - failed to apply DatabaseOwnershipChaining."
+                            $copyDatabaseStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                        Stop-Function -Message "Failed to update DatabaseOwnershipChaining for $sourceDbOwnerChaining on $DestinationdbName on $destinstance." -Target $destinstance -ErrorRecord $_ -Continue
+                    }
+                }
+            }
+
+            if ($sourceDbTrustworthy -ne $NewDatabase.Trustworthy) {
+                if ($Pscmdlet.ShouldProcess($destinstance, "Updating Trustworthy on $DestinationdbName")) {
+                    try {
+                        $NewDatabase.Trustworthy = $sourceDbTrustworthy
+                        $NewDatabase.Alter()
+                        Write-Message -Level Verbose -Message "Successfully updated Trustworthy to $sourceDbTrustworthy for $DestinationdbName on $destinstance"
+                    } catch {
+                        $copyDatabaseStatus.Status = "Successful - failed to apply Trustworthy"
+                        $copyDatabaseStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                    Stop-Function -Message "Failed to update Trustworthy to $sourceDbTrustworthy for $DestinationdbName on $destinstance." -Target $destinstance -ErrorRecord $_ -Continue
+                }
+            }
+            }
+
+            if ($sourceDbBrokerEnabled -ne $NewDatabase.BrokerEnabled) {
+                if ($Pscmdlet.ShouldProcess($destinstance, "Updating BrokerEnabled on $dbName")) {
+                    try {
+                        $NewDatabase.BrokerEnabled = $sourceDbBrokerEnabled
+                        $NewDatabase.Alter()
+                        Write-Message -Level Verbose -Message "Successfully updated BrokerEnabled to $sourceDbBrokerEnabled for $DestinationdbName on $destinstance."
+                    } catch {
+                        $copyDatabaseStatus.Status = "Successful - failed to apply BrokerEnabled"
+                        $copyDatabaseStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                    Stop-Function -Message "Failed to update BrokerEnabled to $sourceDbBrokerEnabled for $DestinationdbName on $destinstance." -Target $destinstance -ErrorRecord $_ -Continue
+                }
+            }
+            }
+            }
+
+            if ($sourceDbReadOnly -ne $NewDatabase.ReadOnly -and -not $NoRecovery) {
+                if ($Pscmdlet.ShouldProcess($destinstance, "Updating ReadOnly status on $DestinationdbName")) {
+                    try {
+                        if ($sourceDbReadOnly) {
+                            $result = Set-DbaDbState -SqlInstance $destserver -Database $DestinationdbName -ReadOnly -EnableException
+                        } else {
+                            $result = Set-DbaDbState -SqlInstance $destserver -Database $DestinationdbName -ReadWrite -EnableException
+                        }
+                    } catch {
+                        $copyDatabaseStatus.Status = "Successful - failed to apply ReadOnly."
+                        $copyDatabaseStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                    Stop-Function -Message "Failed to update ReadOnly status on $DestinationdbName." -Target $destinstance -ErrorRecord $_ -Continue
+                }
+            }
+            }
+
+            if ($SetSourceOffline -and $sourceServer.databases[$DestinationdbName].status -notlike '*offline*') {
+                if ($Pscmdlet.ShouldProcess($destinstance, "Setting $DestinationdbName offline on $source")) {
+                    Stop-DbaProcess -SqlInstance $sourceServer -Database $DestinationdbName
+                    Set-DbaDbState -SqlInstance $sourceServer -SqlCredential $SourceSqlCredential -database $DestinationdbName -Offline
+                }
+            }
+
+            $dbTotalTime = $dbFinish - $dbStart
+            $dbTotalTime = ($dbTotalTime.ToString().Split(".")[0])
+
+            Write-Message -Level Verbose -Message "Finished: $dbFinish."
+            Write-Message -Level Verbose -Message "Elapsed time: $dbTotalTime."
+
+            } # end db by db processing
+            }
         }
-    }
-    }
-
-    if ($SetSourceOffline -and $sourceServer.databases[$DestinationdbName].status -notlike '*offline*') {
-        if ($Pscmdlet.ShouldProcess($destinstance, "Setting $DestinationdbName offline on $source")) {
-            Stop-DbaProcess -SqlInstance $sourceServer -Database $DestinationdbName
-            Set-DbaDbState -SqlInstance $sourceServer -SqlCredential $SourceSqlCredential -database $DestinationdbName -Offline
-        }
-    }
-
-    $dbTotalTime = $dbFinish - $dbStart
-    $dbTotalTime = ($dbTotalTime.ToString().Split(".")[0])
-
-    Write-Message -Level Verbose -Message "Finished: $dbFinish."
-    Write-Message -Level Verbose -Message "Elapsed time: $dbTotalTime."
-
-    } # end db by db processing
-    }
-    }
     }
     end {
         if (Test-FunctionInterrupt) {
