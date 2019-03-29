@@ -60,7 +60,7 @@ function Get-DbaWaitStatistic {
         Check wait statistics on server sql2008 for thresholds above 98% and include wait stats that are most often, but not always, ignorable
 
     .EXAMPLE
-        PS C:\> Get-DbaWaitStatistic -SqlInstance sql2008 | Select *
+        PS C:\> Get-DbaWaitStatistic -SqlInstance sql2008 | Select-Object *
 
         Shows detailed notes, if available, from Paul's post
 
@@ -868,7 +868,7 @@ function Get-DbaWaitStatistic {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
             } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
             Write-Message -Level Verbose -Message "Connected to $instance"
             if ($IncludeIgnorable) {

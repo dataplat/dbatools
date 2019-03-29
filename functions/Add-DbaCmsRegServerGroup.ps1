@@ -93,7 +93,7 @@ function Add-DbaCmsRegServerGroup {
 
         foreach ($reggroup in $InputObject) {
             $parentserver = Get-RegServerParent -InputObject $reggroup
-            $server = $parentserver.ServerConnection.ServerInstance.SqlConnectionObject
+            $server = $reggroup.ParentServer
 
             if ($null -eq $parentserver) {
                 Stop-Function -Message "Something went wrong and it's hard to explain, sorry. This basically shouldn't happen." -Continue
@@ -105,7 +105,7 @@ function Add-DbaCmsRegServerGroup {
                     $newgroup.Description = $Description
                     $newgroup.Create()
 
-                    Get-DbaCmsRegServerGroup -SqlInstance $parentserver.ServerConnection.SqlConnectionObject -Group (Get-RegServerGroupReverseParse -object $newgroup)
+                    Get-DbaCmsRegServerGroup -SqlInstance $server -Group (Get-RegServerGroupReverseParse -object $newgroup)
                     $parentserver.ServerConnection.Disconnect()
                 } catch {
                     Stop-Function -Message "Failed to add $reggroup on $server" -ErrorRecord $_ -Continue

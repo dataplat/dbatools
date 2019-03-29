@@ -67,7 +67,7 @@ function Get-DbaPbmStore {
                 # DMF is the Declarative Management Framework, Policy Based Management's old name
                 $store = New-Object Microsoft.SqlServer.Management.DMF.PolicyStore $sqlStoreConnection
             } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             Add-Member -Force -InputObject $store -MemberType NoteProperty ComputerName -value $server.ComputerName

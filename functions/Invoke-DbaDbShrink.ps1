@@ -118,7 +118,7 @@ function Invoke-DbaDbShrink {
     .EXAMPLE
         PS C:\> Invoke-DbaDbShrink -SqlInstance sql2012 -AllUserDatabases
 
-        Shrinks all databases on SQL2012 (not ideal for production)
+        Shrinks all user databases on SQL2012 (not ideal for production)
 
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Low')]
@@ -182,13 +182,17 @@ function Invoke-DbaDbShrink {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             $server.ConnectionContext.StatementTimeout = $StatementTimeoutSeconds
             Write-Message -Level Verbose -Message "Connection timeout set to $StatementTimeout"
 
             $dbs = $server.Databases | Where-Object {$_.IsAccessible}
+
+            if ($AllUserDatabases) {
+                $dbs = $dbs | Where-Object { $_.IsSystemObject -eq $false }
+            }
 
             if ($Database) {
                 $dbs = $dbs | Where-Object Name -In $Database

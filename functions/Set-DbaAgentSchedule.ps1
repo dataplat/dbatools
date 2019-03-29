@@ -328,7 +328,7 @@ function Set-DbaAgentSchedule {
                 try {
                     $Server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
                 } catch {
-                    Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                    Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
                 }
 
                 # Check if the job exists
@@ -392,12 +392,12 @@ function Set-DbaAgentSchedule {
 
                         if ($StartDate) {
                             Write-Message -Message "Setting job schedule start date to $StartDate for schedule $ScheduleName" -Level Verbose
-                            $JobSchedule.StartDate = $StartDate
+                            $JobSchedule.ActiveStartDate = $StartDate
                         }
 
                         if ($EndDate) {
                             Write-Message -Message "Setting job schedule end date to $EndDate for schedule $ScheduleName" -Level Verbose
-                            $JobSchedule.EndDate = $EndDate
+                            $JobSchedule.ActiveEndDate = $EndDate
                         }
 
                         if ($StartTime) {

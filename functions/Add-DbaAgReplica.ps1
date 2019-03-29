@@ -119,7 +119,7 @@ function Add-DbaAgReplica {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 11
             } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             if ($Certificate) {
@@ -163,6 +163,27 @@ function Add-DbaAgReplica {
 
                     if ($SeedingMode -and $server.VersionMajor -ge 13) {
                         $replica.SeedingMode = $SeedingMode
+                        if ($SeedingMode -eq "Automatic") {
+                            $serviceaccount = $server.ServiceAccount.Trim()
+                            $saname = ([DbaInstanceParameter]($server.DomainInstanceName)).ComputerName
+
+                            if ($serviceaccount) {
+                                if ($serviceaccount.StartsWith("NT ")) {
+                                    $serviceaccount = "$saname`$"
+                                }
+                                if ($serviceaccount.StartsWith("$saname")) {
+                                    $serviceaccount = "$saname`$"
+                                }
+                                if ($serviceaccount.StartsWith(".")) {
+                                    $serviceaccount = "$saname`$"
+                                }
+                            }
+
+                            if (-not $serviceaccount) {
+                                $serviceaccount = "$saname`$"
+                            }
+                            $null = Grant-DbaAgPermission -SqlInstance $server -Type AvailabilityGroup -AvailabilityGroup $InputObject.Name -Login $serviceaccount -Permission CreateAnyDatabase
+                        }
                     }
 
                     if ($Passthru) {

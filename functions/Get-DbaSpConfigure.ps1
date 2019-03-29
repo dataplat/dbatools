@@ -222,7 +222,8 @@ function Get-DbaSpConfigure {
                         IsRunningDefaultValue = $isDefault
                         Parent                = $server
                         ConfigName            = ($smoName).$DisplayName
-                    } | Select-DefaultView -ExcludeProperty ServerName, Parent, ConfigName
+                        Property              = $prop
+                    } | Select-DefaultView -ExcludeProperty ServerName, Parent, ConfigName, Property
                 }
             }
         }
