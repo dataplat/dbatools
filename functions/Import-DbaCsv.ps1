@@ -526,7 +526,7 @@ function Import-DbaCsv {
                                 $ColumnMap = New-Object -TypeName "System.Collections.Hashtable"
 
                                 $firstline -split $Delimiter | ForEach-Object {
-                                    $ColumnMap.Add($PSItem,$PSItem)
+                                    $ColumnMap.Add($PSItem, $PSItem)
                                 }
                             }
                         }
