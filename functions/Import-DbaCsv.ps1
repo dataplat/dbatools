@@ -519,7 +519,7 @@ function Import-DbaCsv {
                         $bulkCopy.NotifyAfter = $NotifyAfter
                         $bulkCopy.EnableStreaming = $true
 
-                        if ($AutoMapColumns) {
+                        if ($AutoColumnMap) {
                             if ($ColumnMap) {
                                 Write-Message -Level Verbose -Message "ColumnMap was supplied. Additional auto-mapping will not be attempted."
                             } else {
