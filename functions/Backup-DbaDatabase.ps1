@@ -264,7 +264,7 @@ function Backup-DbaDatabase {
                     $FileCount = 1
                 } else {
                     Write-Message -Message "AzureUrl and no credential, testing for SAS credential"
-                    if (Get-DbaCredential -SqlInstance $server -Name $AzureBaseUrl) {
+                    if (Get-DbaCredential -SqlInstance $server -Name $AzureBaseUrl.trim("/")) {
                         Write-Message -Message "Found a SAS backup credental" -Level Verbose
                     } else {
                         Stop-Function -Message "You must provide the credential name for the Azure Storage Account"
@@ -367,7 +367,7 @@ function Backup-DbaDatabase {
                 $SMOBackuptype = "Database"
                 $backup.Incremental = $true
                 $outputType = 'Differential'
-                $gbhSwitch = @{'LastDiff' = $true}
+                $gbhSwitch = @{'LastDiff' = $true }
             }
             $Backup.NoRecovery = $false
             if ($Type -eq "Log") {
@@ -376,14 +376,14 @@ function Backup-DbaDatabase {
                 $OutputType = 'Log'
                 $SMOBackupType = 'Log'
                 $Backup.NoRecovery = $NoRecovery
-                $gbhSwitch = @{'LastLog' = $true}
+                $gbhSwitch = @{'LastLog' = $true }
             }
 
             if ($Type -in 'Full', 'Database') {
                 Write-Message -Level VeryVerbose -Message "Creating full backup"
                 $SMOBackupType = "Database"
                 $OutputType = 'Full'
-                $gbhSwitch = @{'LastFull' = $true}
+                $gbhSwitch = @{'LastFull' = $true }
             }
 
             $backup.CopyOnly = $copyonly
@@ -538,7 +538,7 @@ function Backup-DbaDatabase {
                             if ($server.VersionMajor -eq '8') {
                                 $HeaderInfo = Get-BackupAncientHistory -SqlInstance $server -Database $dbname
                             } else {
-                                $HeaderInfo = Get-DbaBackupHistory -SqlInstance $server -Database $dbname @gbhSwitch -IncludeCopyOnly -RecoveryFork $db.RecoveryForkGuid  | Sort-Object -Property End -Descending | Select-Object -First 1
+                                $HeaderInfo = Get-DbaBackupHistory -SqlInstance $server -Database $dbname @gbhSwitch -IncludeCopyOnly -RecoveryFork $db.RecoveryForkGuid | Sort-Object -Property End -Descending | Select-Object -First 1
                             }
                             $Verified = $false
                             if ($Verify) {

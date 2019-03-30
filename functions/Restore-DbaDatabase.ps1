@@ -548,7 +548,11 @@ function Restore-DbaDatabase {
                             Write-Message -Message "At least one Azure backup passed in with a credential, assume correct" -Level Verbose
                             Write-Message -Message "Storage Account Identity access means striped backups cannot be restore"
                         } else {
-                            $null = $f.BackupPath -match 'https://.*/.*/'
+                            if ($f.BackupPath.count -gt 1) {
+                                $null = $f.BackupPath[0] -match 'https://.*/.*/'
+                            } else {
+                                $null = $f.BackupPath -match 'https://.*/.*/'
+                            }
                             if (Get-DbaCredential -SqlInstance $RestoreInstance -name $matches[0].trim('/') ) {
                                 Write-Message -Message "We have a SAS credential to use with $($f.BackupPath)" -Level Verbose
                             } else {
