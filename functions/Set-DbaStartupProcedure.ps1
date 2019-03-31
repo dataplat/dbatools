@@ -52,11 +52,6 @@ function Set-DbaStartupProcedure {
 
         Attempts to clear the automatic execution of the procedure '[dbo].[StartUpProc1]' in the master database of the sqlexpress instance on host winserver  and the default instance on host sql2016 when the instance is started.
 
-    .EXAMPLE
-        PS C:\> Get-DbaCmsRegServer -SqlInstance sql2014 | Set-DbaStartupProcedure
-
-        Returns an object with SQL Server start time, uptime as TimeSpan object, uptime as a string, and Windows host boot time, host uptime as TimeSpan objects and host uptime as a string for every server listed in the Central Management Server on sql2014
-
     #>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess, ConfirmImpact = 'High')]
     param (
