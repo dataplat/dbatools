@@ -1,7 +1,7 @@
 
 -- SQL Server 2019 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: March 3, 2019
+-- Last Modified: March 28, 2019
 -- https://www.sqlskills.com/blogs/glenn/
 -- http://sqlserverperformance.wordpress.com/
 -- Twitter: GlennAlanBerry
@@ -62,6 +62,7 @@ SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version In
 -- 15.0.1100.94		CTP 2.1								11/7/2018
 -- 15.0.1200.24		CTP 2.2								12/6/2018
 -- 15.0.1300.359	CTP 2.3								3/1/2019
+-- 15.0.1400.75		CTP 2.4								3/27/2019
 
 		
 															
@@ -90,6 +91,7 @@ SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version In
 -- Download and install Azure Data Studio 
 -- https://bit.ly/2vgke1A
 
+-- SQL Server 2019 Configuration Manager is SQLServerManager15.msc
 
 
 -- Get socket, physical core and logical core count from the SQL Server Error log. (Query 2) (Core Counts)
