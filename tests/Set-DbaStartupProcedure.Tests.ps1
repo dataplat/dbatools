@@ -22,7 +22,7 @@ Describe "$commandname Integration Test" -Tag "IntegrationTests" {
     BeforeAll {
         $server = Connect-DbaInstance -SqlInstance $script:instance2
         $random = Get-Random
-        $startupProc = "dbo.StartUpProc$random" 
+        $startupProc = "dbo.StartUpProc$random"
         $dbname = 'master'
 
         $null = $server.Query("CREATE PROCEDURE $startupProc AS Select 1", $dbname)
@@ -74,5 +74,4 @@ Describe "$commandname Integration Test" -Tag "IntegrationTests" {
             $result.Note -eq "Requested procedure does not exist" | Should Be $true
         }
     }
-
 }

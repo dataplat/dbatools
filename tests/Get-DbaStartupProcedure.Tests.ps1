@@ -5,7 +5,7 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
         [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance','SqlCredential','EnableException'
+        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'EnableException'
         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         It "Should only contain our specific parameters" {
             (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
@@ -16,7 +16,7 @@ Describe "$commandname Integration Test" -Tag "IntegrationTests" {
     BeforeAll {
         $server = Connect-DbaInstance -SqlInstance $script:instance2
         $random = Get-Random
-        $startupProc = "dbo.StartUpProc$random" 
+        $startupProc = "dbo.StartUpProc$random"
         $dbname = 'master'
 
         $null = $server.Query("CREATE PROCEDURE $startupProc AS Select 1", $dbname)
@@ -34,5 +34,4 @@ Describe "$commandname Integration Test" -Tag "IntegrationTests" {
             $result.Name -eq "StartUpProc$random" | Should Be $true
         }
     }
-
 }
