@@ -394,9 +394,9 @@ function Invoke-DbaDbDataGenerator {
                                         $columnValue = $null
 
                                         if ($columnobject.SubType -in $supportedDataTypes) {
-                                            $columnValue = Get-DbaRandomizedValue -DataType $columnobject.SubType -CharacterString $CharacterString -Locale $Locale
+                                            $columnValue = Get-DbaRandomizedValue -DataType $columnobject.SubType -CharacterString $charstring -Locale $Locale
                                         } else {
-                                            $columnValue = Get-DbaRandomizedValue -RandomizerType $columnobject.MaskingType -RandomizerSubtype $columnobject.SubType -CharacterString $CharacterString -Locale $Locale
+                                            $columnValue = Get-DbaRandomizedValue -RandomizerType $columnobject.MaskingType -RandomizerSubtype $columnobject.SubType -CharacterString $charstring -Locale $Locale
                                         }
 
                                     } catch {
@@ -439,7 +439,6 @@ function Invoke-DbaDbDataGenerator {
                         try {
                             $sqlcmd = New-Object System.Data.SqlClient.SqlCommand($insertQuery, $sqlconn, $transaction)
                             $null = $sqlcmd.ExecuteNonQuery()
-                            $null = $transaction.Commit()
                         } catch {
                             Write-Message -Level VeryVerbose -Message "$insertQuery"
                             $errormessage = $_.Exception.Message.ToString()
