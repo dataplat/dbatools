@@ -457,7 +457,7 @@ function Invoke-DbaDbDataGenerator {
                         if ($tableobject.Columns.Identity -contains $true) {
                             $insertQuery += "SET IDENTITY_INSERT [$($tableobject.Schema)].[$($tableobject.Name)] OFF;"
                         }
-                        #$insertQuery
+
                         try {
                             $sqlcmd = New-Object System.Data.SqlClient.SqlCommand($insertQuery, $sqlconn, $transaction)
                             $null = $sqlcmd.ExecuteNonQuery()
