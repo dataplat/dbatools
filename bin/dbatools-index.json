@@ -21054,6 +21054,14 @@
                            ""
                        ],
                        [
+                           "KeepOrdinalOrder",
+                           "By default, the importer will attempt to map exact-match columns names from the source document to the target table. Using this parameter will keep the ordinal order instead.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
                            "AutoCreateTable",
                            "Creates a table if it does not already exist. The table will be created with sub-optimal data types such as nvarchar(max)",
                            "",
@@ -21214,7 +21222,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Import-DbaCsv [[-Path] \u003cObject[]\u003e] [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [-Database] \u003cString\u003e [[-Table] \u003cString\u003e] [[-Schema] \u003cString\u003e] [-Truncate] [[-Delimiter] \u003cChar\u003e] [-SingleColumn] [[-BatchSize] \u003cInt32\u003e] [[-NotifyAfter] \u003cInt32\u003e] [-TableLock] [-CheckConstraints] [-FireTriggers] [-KeepIdentity] [-KeepNulls] [[-Column] \u003cString[]\u003e] [[-ColumnMap] \u003cHashtable[]\u003e] [-AutoCreateTable] [-NoProgress] [-NoHeaderRow] [[-Quote] \u003cChar\u003e] [[-Escape] \u003cChar\u003e] [[-Comment] \u003cChar\u003e] [[-TrimmingOption] \u003cString\u003e] [[-BufferSize] \u003cInt32\u003e] [[-ParseErrorAction] \u003cString\u003e] \r\n[[-Encoding] \u003cEncoding\u003e] [[-NullValue] \u003cString\u003e] [[-Threshold] \u003cInt32\u003e] [[-MaxQuotedFieldLength] \u003cInt32\u003e] [-SkipEmptyLine] [-SupportsMultiline] [-UseColumnDefault] [-NoTransaction] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Import-DbaCsv [[-Path] \u003cObject[]\u003e] [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [-Database] \u003cString\u003e [[-Table] \u003cString\u003e] [[-Schema] \u003cString\u003e] [-Truncate] [[-Delimiter] \u003cChar\u003e] [-SingleColumn] [[-BatchSize] \u003cInt32\u003e] [[-NotifyAfter] \u003cInt32\u003e] [-TableLock] [-CheckConstraints] [-FireTriggers] [-KeepIdentity] [-KeepNulls] [[-Column] \u003cString[]\u003e] [[-ColumnMap] \u003cHashtable[]\u003e] [-KeepOrdinalOrder] [-AutoCreateTable] [-NoProgress] [-NoHeaderRow] [[-Quote] \u003cChar\u003e] [[-Escape] \u003cChar\u003e] [[-Comment] \u003cChar\u003e] [[-TrimmingOption] \u003cString\u003e] [[-BufferSize] \u003cInt32\u003e] [[-ParseErrorAction] \r\n\u003cString\u003e] [[-Encoding] \u003cEncoding\u003e] [[-NullValue] \u003cString\u003e] [[-Threshold] \u003cInt32\u003e] [[-MaxQuotedFieldLength] \u003cInt32\u003e] [-SkipEmptyLine] [-SupportsMultiline] [-UseColumnDefault] [-NoTransaction] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Import-DbaPfDataCollectorSetTemplate",
