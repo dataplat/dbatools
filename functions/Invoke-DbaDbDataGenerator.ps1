@@ -74,27 +74,12 @@ function Invoke-DbaDbDataGenerator {
         https://dbatools.io/Invoke-DbaDbDataGenerator
 
     .EXAMPLE
-        Invoke-DbaDbDataGenerator -SqlInstance SQLDB2 -Database DB1 -FilePath C:\Temp\sqldb1.db1.tables.json
+        Invoke-DbaDbDataGenerator -SqlInstance sqldb2 -Database DB1 -FilePath C:\temp\sqldb1.db1.tables.json
 
         Apply the data generation configuration from the file "sqldb1.db1.tables.json" to the db1 database on sqldb2. Prompt for confirmation for each table.
 
-    .EXAMPLE
-        Get-ChildItem -Path C:\Temp\sqldb1.db1.tables.json | Invoke-DbaDbDataGenerator -SqlInstance SQLDB2 -Database DB1 -Confirm:$false
-
-        Apply the data generation configuration from the file "sqldb1.db1.tables.json" to the db1 database on sqldb2. Do not prompt for confirmation.
-
-    .EXAMPLE
-        New-DbaDbDataGeneratorConfig -SqlInstance SQLDB1 -Database DB1 -Path C:\Temp\clone -OutVariable file
-        $file | Invoke-DbaDbDataGenerator -SqlInstance SQLDB2 -Database DB1 -Confirm:$false
-
-        Create the data generation configuration file "sqldb1.db1.tables.json", then use it to mask the db1 database on sqldb2. Do not prompt for confirmation.
-
-    .EXAMPLE
-        Get-ChildItem -Path C:\Temp\sqldb1.db1.tables.json | Invoke-DbaDbDataGenerator -SqlInstance SQLDB2, sqldb3 -Database DB1 -Confirm:$false
-
-        See what would happen if you the data generation configuration from the file "sqldb1.db1.tables.json" to the db1 database on sqldb2 and sqldb3. Do not prompt for confirmation.
-
     #>
+
     [CmdLetBinding(SupportsShouldProcess, ConfirmImpact = "High")]
     param (
         [DbaInstanceParameter[]]$SqlInstance,
@@ -125,7 +110,7 @@ function Invoke-DbaDbDataGenerator {
             Stop-Function -Message "Could not load randomizer dll" -Continue
         }
 
-        $supportedDataTypes = 'bit', 'bool', 'char', 'date', 'datetime', 'datetime2', 'decimal', 'int', 'money', 'nchar', 'ntext', 'nvarchar', 'smalldatetime', 'text', 'time', 'uniqueidentifier', 'userdefineddatatype', 'varchar'
+        $supportedDataTypes = 'bigint', 'bit', 'bool', 'char', 'date', 'datetime', 'datetime2', 'decimal', 'int', 'float', 'guid', 'money', 'numeric', 'nchar', 'ntext', 'nvarchar', 'real', 'smalldatetime', 'smallint', 'text', 'time', 'tinyint', 'uniqueidentifier', 'userdefineddatatype', 'varchar'
 
         $supportedFakerMaskingTypes = ($faker | Get-Member -MemberType Property | Select-Object Name -ExpandProperty Name)
 
@@ -207,6 +192,7 @@ function Invoke-DbaDbDataGenerator {
                     }
 
                     $uniqueValues = @()
+
                     # Check if the table contains unique indexes
                     if ($tableobject.HasUniqueIndex) {
                         # Loop through the rows and generate a unique value for each row
@@ -263,8 +249,8 @@ function Invoke-DbaDbDataGenerator {
                         }
 
                     }
-                    $tableobject.HasUniqueIndex
-                    $uniqueValues.Count
+
+
                     $uniqueValueColumns = $uniqueValueColumns | Select-Object -Unique
 
                     $sqlconn.ChangeDatabase($db.Name)
@@ -343,7 +329,7 @@ function Invoke-DbaDbDataGenerator {
 
                                 # make sure max is good
                                 if ($columnobject.Nullable -and (($nullmod++) % $ModulusFactor -eq 0)) {
-                                    $columnValues += $null
+                                    $columnValue = $null
                                 } elseif ($tableobject.HasUniqueIndex -and $columnobject.Name -in $uniqueValueColumns) {
 
                                     if ($uniqueValues.Count -lt 1) {
@@ -351,7 +337,7 @@ function Invoke-DbaDbDataGenerator {
                                         return
                                     }
 
-                                    $newValue = $uniqueValues[$rowNumber].$($columnobject.Name)
+                                    $columnValue = $uniqueValues[$rowNumber].$($columnobject.Name)
 
                                 } elseif ($columnobject.Identity) {
                                     if ($nextIdentity -or (-not $nextIdentity -and $tableobject.TruncateTable)) {
@@ -359,7 +345,7 @@ function Invoke-DbaDbDataGenerator {
                                     } else {
                                         $nextIdentity = $identityValues.CurrentIdentity + $identityValues.IdentityIncrement
                                     }
-                                    $columnValues += $nextIdentity
+                                    $columnValue = $nextIdentity
                                 } else {
                                     # make sure max is good
                                     if ($MaxValue) {
@@ -407,182 +393,36 @@ function Invoke-DbaDbDataGenerator {
                                     try {
                                         $columnValue = $null
 
-                                        if (-not $columnValue) {
-                                            $columnValue = switch ($columnobject.ColumnType) {
-                                                {
-                                                    $psitem -in 'bit', 'bool'
-                                                } {
-                                                    $faker.System.Random.Bool()
-                                                }
-                                                {
-                                                    $psitem -match 'date'
-                                                } {
-                                                    if ($columnobject.MinValue -or $columnobject.MaxValue) {
-                                                        ($faker.Date.Between($nowmin, $nowmax)).ToString("yyyyMMdd")
-                                                    } else {
-                                                        ($faker.Date.Past()).ToString("yyyyMMdd")
-                                                    }
-                                                }
-                                                {
-                                                    $psitem -match 'int'
-                                                } {
-                                                    if ($columnobject.MinValue -or $columnobject.MaxValue) {
-                                                        $faker.System.Random.Int($columnobject.MinValue, $columnobject.MaxValue)
-                                                    } else {
-                                                        $faker.System.Random.Int(0, $max)
-                                                    }
-                                                }
-                                                'money' {
-                                                    if ($columnobject.MinValue -or $columnobject.MaxValue) {
-                                                        $faker.Finance.Amount($columnobject.MinValue, $columnobject.MaxValue)
-                                                    } else {
-                                                        $faker.Finance.Amount(0, $max)
-                                                    }
-                                                }
-                                                'time' {
-                                                    ($faker.Date.Past()).ToString("h:mm tt zzz")
-                                                }
-                                                'uniqueidentifier' {
-                                                    $faker.System.Random.Guid().Guid
-                                                }
-                                                'userdefineddatatype' {
-                                                    if ($columnobject.MaxValue -eq 1) {
-                                                        $faker.System.Random.Bool()
-                                                    } else {
-                                                        $null
-                                                    }
-                                                }
-                                                default {
-                                                    $null
-                                                }
-                                            }
+                                        if ($columnobject.SubType -in $supportedDataTypes) {
+                                            $columnValue = Get-DbaRandomizedValue -DataType $columnobject.SubType -CharacterString $CharacterString -Locale $Locale
+                                        } else {
+                                            $columnValue = Get-DbaRandomizedValue -RandomizerType $columnobject.MaskingType -RandomizerSubtype $columnobject.SubType -CharacterString $CharacterString -Locale $Locale
                                         }
 
-                                        if (-not $columnValue) {
-                                            $columnValue = switch ($columnobject.SubType.ToLower()) {
-                                                'number' {
-                                                    $faker.$($columnobject.MaskingType).$($columnobject.SubType)($columnobject.MaxValue)
-                                                }
-                                                {
-                                                    $psitem -in 'bit', 'bool'
-                                                } {
-                                                    $faker.System.Random.Bool()
-                                                }
-                                                {
-                                                    $psitem -in 'date', 'datetime', 'datetime2', 'smalldatetime'
-                                                } {
-                                                    if ($columnobject.MinValue -or $columnobject.MaxValue) {
-                                                        ($faker.Date.Between($nowmin, $nowmax)).ToString("yyyyMMdd")
-                                                    } else {
-                                                        ($faker.Date.Past()).ToString("yyyyMMdd")
-                                                    }
-                                                }
-                                                'shuffle' {
-                                                    ($row.($columnobject.Name) -split '' | Sort-Object {
-                                                            Get-Random
-                                                        }) -join ''
-                                                }
-                                                'string' {
-                                                    if ($max -eq -1) {
-                                                        $max = 1024
-                                                    }
-
-                                                    if ($columnobject.SubType -eq "String" -and (Test-Bound -ParameterName ExactLength)) {
-                                                        $max = ($row.$($columnobject.Name)).Length
-                                                    }
-
-                                                    if ($columnobject.ColumnType -eq 'xml') {
-                                                        $null
-                                                    } else {
-                                                        $faker.$($columnobject.MaskingType).String2($max, $charstring)
-                                                    }
-                                                }
-                                                default {
-                                                    $null
-                                                }
-                                            }
-                                        }
-
-                                        if (-not $columnValue) {
-                                            $columnValue = switch ($columnobject.MaskingType.ToLower()) {
-                                                {
-                                                    $psitem -in 'bit', 'bool'
-                                                } {
-                                                    $faker.System.Random.Bool()
-                                                }
-                                                {
-                                                    $psitem -in 'address', 'commerce', 'company', 'context', 'database', 'date', 'finance', 'hacker', 'hashids', 'image', 'internet', 'lorem', 'name', 'person', 'phone', 'random', 'rant', 'system'
-                                                } {
-                                                    if ($columnobject.Format) {
-                                                        $faker.$($columnobject.MaskingType).$($columnobject.SubType)("$($columnobject.Format)")
-                                                    } else {
-                                                        $faker.$($columnobject.MaskingType).$($columnobject.SubType)()
-                                                    }
-                                                }
-                                                default {
-                                                    if ($max -eq -1) {
-                                                        $max = 1024
-                                                    }
-                                                    if ((Test-Bound -ParameterName ExactLength)) {
-                                                        $max = ($row.$($columnobject.Name)).ToString().Length
-                                                    }
-                                                    if ($max -eq 1) {
-                                                        $faker.System.Random.Bool()
-                                                    } else {
-                                                        try {
-                                                            if ($columnobject.Format) {
-                                                                $faker.$($columnobject.MaskingType).$($columnobject.SubType)("$($columnobject.Format)")
-                                                            } else {
-                                                                $faker.$($columnobject.MaskingType).$($columnobject.SubType)()
-                                                            }
-                                                        } catch {
-                                                            $faker.Random.String2($max, $charstring)
-                                                        }
-                                                    }
-                                                }
-                                            }
-
-                                        }
                                     } catch {
                                         Stop-Function -Message "Failure" -Target $faker -Continue -ErrorRecord $_
                                     }
 
-
-                                    if ($columnobject.ColumnType -eq 'xml') {
-                                        # nothing, unsure how i'll handle this
-                                    } elseif ($columnobject.ColumnType -in 'uniqueidentifier') {
-                                        if ($null -eq $columnValue -and $columnobject.Nullable) {
-                                            $columnValues += "NULL"
-                                        } else {
-                                            $columnValues += "'$columnValue'"
-                                        }
-                                    } elseif ($columnobject.ColumnType -match 'int') {
-                                        if ($null -eq $columnValue -and $columnobject.Nullable) {
-                                            $columnValues += "NULL"
-                                        } else {
-                                            $columnValues += "$columnValue"
-                                        }
-                                    } elseif ($columnobject.ColumnType -in 'bit', 'bool') {
-                                        if ($null -eq $columnValue -and $columnobject.Nullable) {
-                                            $columnValues += "NULL"
-                                        } else {
-                                            if ($newValue) {
-                                                $columnValues += "1"
-                                            } else {
-                                                $columnValues += "0"
-                                            }
-                                        }
-                                    } else {
-                                        if ($null -eq $columnValue -and $columnobject.Nullable) {
-                                            $columnValues += "NULL"
-                                        } else {
-                                            $columnValue = ($columnValue).Tostring().Replace("'", "''")
-                                            $columnValues += "'$columnValue'"
-                                        }
-                                    }
-
                                 }
 
+                                if ($null -eq $columnValue -and $columnobject.Nullable -eq $true) {
+                                    $columnValues += 'NULL'
+                                } elseif ($columnobject.ColumnType -eq 'xml') {
+                                    # nothing, unsure how i'll handle this
+                                } elseif ($columnobject.ColumnType -in 'uniqueidentifier') {
+                                    $columnValues += "'$columnValue'"
+                                } elseif ($columnobject.ColumnType -match 'int') {
+                                    $columnValues += "$columnValue"
+                                } elseif ($columnobject.ColumnType -in 'bit', 'bool') {
+                                    if ($columnValue) {
+                                        $columnValues += "1"
+                                    } else {
+                                        $columnValues += "0"
+                                    }
+                                } else {
+                                    $columnValue = ($columnValue).Tostring().Replace("'", "''")
+                                    $columnValues += "'$columnValue'"
+                                }
                             }
 
                             if ($i -lt $tableobject.Rows) {
@@ -599,6 +439,7 @@ function Invoke-DbaDbDataGenerator {
                         try {
                             $sqlcmd = New-Object System.Data.SqlClient.SqlCommand($insertQuery, $sqlconn, $transaction)
                             $null = $sqlcmd.ExecuteNonQuery()
+                            $null = $transaction.Commit()
                         } catch {
                             Write-Message -Level VeryVerbose -Message "$insertQuery"
                             $errormessage = $_.Exception.Message.ToString()
