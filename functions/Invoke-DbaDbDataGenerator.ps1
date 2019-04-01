@@ -210,7 +210,18 @@ function Invoke-DbaDbDataGenerator {
                                     $columnMaskInfo = $tableobject.Columns | Where-Object Name -eq $indexColumn.Name
 
                                     # Generate a new value
-                                    $newValue = $faker.$($columnMaskInfo.MaskingType).$($columnMaskInfo.SubType)()
+                                    try {
+                                        $columnValue = $null
+
+                                        if ($columnobject.SubType -in $supportedDataTypes) {
+                                            $newValue = Get-DbaRandomizedValue -DataType $columnMaskInfo.SubType -Locale $Locale
+                                        } else {
+                                            $newValue = Get-DbaRandomizedValue -RandomizerType $columnMaskInfo.MaskingType -RandomizerSubtype $columnMaskInfo.SubType -Locale $Locale
+                                        }
+
+                                    } catch {
+                                        Stop-Function -Message "Failure" -Target $faker -Continue -ErrorRecord $_
+                                    }
 
                                     # Check if the value is already present as a property
                                     if (($rowValue | Get-Member -MemberType NoteProperty).Name -notcontains $indexColumn.Name) {
@@ -230,7 +241,18 @@ function Invoke-DbaDbDataGenerator {
                                         $columnMaskInfo = $tableobject.Columns | Where-Object Name -eq $indexColumn.Name
 
                                         # Generate a new value
-                                        $newValue = $faker.$($columnMaskInfo.MaskingType).$($columnMaskInfo.SubType)()
+                                        try {
+                                            $columnValue = $null
+
+                                            if ($columnobject.SubType -in $supportedDataTypes) {
+                                                $newValue = Get-DbaRandomizedValue -DataType $columnMaskInfo.SubType -Locale $Locale
+                                            } else {
+                                                $newValue = Get-DbaRandomizedValue -RandomizerType $columnMaskInfo.MaskingType -RandomizerSubtype $columnMaskInfo.SubType -Locale $Locale
+                                            }
+
+                                        } catch {
+                                            Stop-Function -Message "Failure" -Target $faker -Continue -ErrorRecord $_
+                                        }
 
                                         # Check if the value is already present as a property
                                         if (($rowValue | Get-Member -MemberType NoteProperty).Name -notcontains $indexColumn.Name) {
