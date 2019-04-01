@@ -41,9 +41,6 @@ function Get-DbaRandomizedValue {
     .PARAMETER Locale
         Set the local to enable certain settings in the masking. The default is 'en'
 
-    .PARAMETER DisplayLegend
-        Get all the possibilities for the randomizer
-
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
@@ -104,7 +101,6 @@ function Get-DbaRandomizedValue {
         [string]$Format,
         [string]$Symbol,
         [string]$Locale = 'en',
-        [switch]$DisplayLegend,
         [switch]$EnableException
     )
 
@@ -112,12 +108,6 @@ function Get-DbaRandomizedValue {
     begin {
         # Get all the random possibilities
         $randomizerTypes = Import-Csv (Resolve-Path -Path "$script:PSModuleRoot\bin\randomizer\en.randomizertypes.csv") | Group-Object {$_.Type}
-
-        if ($DisplayLegend) {
-            $randomizerTypes.Group
-
-            return
-        }
 
         # Create the faker objects
         Add-Type -Path (Resolve-Path -Path "$script:PSModuleRoot\bin\randomizer\Bogus.dll")
@@ -393,7 +383,7 @@ function Get-DbaRandomizedValue {
                     $faker.Name.$RandomizerSubType()
                 }
                 'person' {
-                        $faker.Person.$RandomizerSubType
+                    $faker.Person.$RandomizerSubType
                 }
                 'phone' {
                     if ($Format) {
