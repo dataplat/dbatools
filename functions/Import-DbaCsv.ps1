@@ -61,8 +61,8 @@ function Import-DbaCsv {
     .PARAMETER ColumnMap
         By default, the bulk copy tries to automap columns. When it doesn't work as desired, this parameter will help. Check out the examples for more information.
 
-    .PARAMETER AutoColumnMap
-        If this switch is enabled, bcp will attempt to map exact-match columns names from the source document to the target table.
+    .PARAMETER KeepOrdinalOrder
+        By default, the importer will attempt to map exact-match columns names from the source document to the target table. Using this parameter will keep the ordinal order instead.
 
     .PARAMETER AutoCreateTable
         Creates a table if it does not already exist. The table will be created with sub-optimal data types such as nvarchar(max)
@@ -245,7 +245,7 @@ function Import-DbaCsv {
         [switch]$KeepNulls,
         [string[]]$Column,
         [hashtable[]]$ColumnMap,
-        [switch]$AutoColumnMap,
+        [switch]$KeepOrdinalOrder,
         [switch]$AutoCreateTable,
         [switch]$NoProgress,
         [switch]$NoHeaderRow,
@@ -519,7 +519,7 @@ function Import-DbaCsv {
                         $bulkCopy.NotifyAfter = $NotifyAfter
                         $bulkCopy.EnableStreaming = $true
 
-                        if ($AutoColumnMap) {
+                        if (-not $KeepOrdinalOrder -and -not $AutoCreateTable) {
                             if ($ColumnMap) {
                                 Write-Message -Level Verbose -Message "ColumnMap was supplied. Additional auto-mapping will not be attempted."
                             } else {
