@@ -16,7 +16,7 @@ if (-not(Test-Path 'C:\Program Files\WindowsPowerShell\Modules\PSScriptAnalyzer\
 #Get Pester (to run tests) - choco isn't working onall scenarios, weird
 Write-Host -Object "appveyor.prep: Install Pester" -ForegroundColor DarkGreen
 if (-not(Test-Path 'C:\Program Files\WindowsPowerShell\Modules\Pester\4.4.2')) {
-    Install-Module -Name Pester -Force -SkipPublisherCheck | Out-Null
+    Install-Module -Name Pester -Force -SkipPublisherCheck -MaximumVersion 4.4.2 | Out-Null
 }
 
 
