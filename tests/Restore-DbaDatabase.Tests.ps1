@@ -866,7 +866,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
                 $server.Query("DROP CREDENTIAL dbatools_ci")
                 Get-DbaDatabase -SqlInstance $script:instance2 -Database "dbatoolsci_azure" | Remove-DbaDatabase -Confirm:$false
             }
-            It "supports legacy credential setups" {
+            It -Skip "supports legacy credential setups" {
                 $results = Restore-DbaDatabase -SqlInstance $script:instance2 -WithReplace -DatabaseName dbatoolsci_azure -Path https://dbatools.blob.core.windows.net/legacy/dbatoolsci_azure.bak -AzureCredential dbatools_ci
                 $results.BackupFile | Should -Be 'https://dbatools.blob.core.windows.net/legacy/dbatoolsci_azure.bak'
                 $results.Script -match 'CREDENTIAL' | Should -Be $true

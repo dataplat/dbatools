@@ -11,7 +11,7 @@
     RootModule             = 'dbatools.psm1'
 
     # Version number of this module.
-    ModuleVersion          = '0.9.784'
+    ModuleVersion          = '0.9.799'
 
     # ID used to uniquely identify this module
     GUID                   = '9d139310-ce45-41ce-8e8b-d76335aa1789'
@@ -92,6 +92,7 @@
         'Copy-DbaSysDbUserObject',
         'Copy-DbaAgentProxy',
         'Copy-DbaAgentAlert',
+        'Copy-DbaStartupProcedure',
         'Get-DbaDetachedDatabaseInfo',
         'Restore-DbaBackupFromDirectory',
         'Copy-DbaAgentJobCategory',
@@ -145,7 +146,7 @@
         'Get-DbaServerRoleMember',
         'Resolve-DbaNetworkName',
         'Export-DbaAvailabilityGroup',
-        'Write-DbaDataTable',
+        'Write-DbaDbTableData',
         'New-DbaDbSnapshot',
         'Restore-DbaDbSnapshot',
         'Get-DbaServerTrigger',
@@ -455,13 +456,13 @@
         'Move-DbaCmsRegServerGroup',
         'Remove-DbaCmsRegServer',
         'Remove-DbaCmsRegServerGroup',
-        'New-DbaDbMailAccount',
         'New-DbaDbDataGeneratorConfig',
         'Invoke-DbaDbDataGenerator',
         'Get-DbaRandomizedValue',
         'Get-DbaRandomizedDatasetTemplate',
         'Get-DbaRandomizedDataset',
         'Get-DbaRandomizedType',
+        'Export-DbaDbTableData',
         # noncoresmo
         # SMO issues
         'Export-DbaUser',
@@ -506,6 +507,8 @@
         'Test-DbaMaxMemory', # can be fixed by not testing remote when linux is detected
         'Rename-DbaDatabase', # can maybebe fixed by not remoting when linux is detected
         # CM and Windows functions
+        'Install-DbaInstance',
+        'Invoke-DbaAdvancedInstall',
         'Update-DbaInstance',
         'Invoke-DbaAdvancedUpdate',
         'Invoke-DbaPfRelog',
@@ -632,6 +635,7 @@
     # Aliases to export from this module
     # Aliases are stored in dbatools.psm1
     # KEEP Detach-DbaDatabase, Dismount-DbaDatabase and Start-SqlMigration FOREVER
+    # Also keep Get-DbaRegisteredServer and Write-DbaDataTable, prolly
     AliasesToExport        = @(
         'Add-DbaRegisteredServer',
         'Add-DbaRegisteredServerGroup',
@@ -822,7 +826,8 @@
         'Test-SqlTempDbConfiguration',
         'Update-DbaSqlServiceAccount',
         'Watch-DbaXEventSession',
-        'Watch-SqlDbLogin'
+        'Watch-SqlDbLogin',
+        'Write-DbaDbTableData'
     )
 
     # List of all modules packaged with this module

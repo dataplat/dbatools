@@ -5,6 +5,112 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
     and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.797] - 2019-03-25
+### Fixed
+* `Test-DbaDbLogShipStatus` incorrectly reports no information available [#5287](https://github.com/sqlcollaborative/dbatools/issues/5287)
+* Job ownership transfer logic in `Update-SqlPermission`
+
+### Added
+* Managed Instance parameter warnings
+
+## [0.9.795] - 2019-03-23
+### Fixed
+* `Get-DbaUserPermission` misses database role assignments [#4887](https://github.com/sqlcollaborative/dbatools/issues/4887)
+* Build dates for the latest SQL Server Cumulative Updates
+
+## [0.9.794] - 2019-03-22
+### Fixed
+* `Get-DbaBackupHistory` warnings and not finding the right backup [#5263](https://github.com/sqlcollaborative/dbatools/issues/5263)
+* `New-DbaAvailabilityGroup` lacks resiliency [#4933](https://github.com/sqlcollaborative/dbatools/issues/4933)
+* `Add-DbaAgReplica` missing permission for automatic seeding [#4816](https://github.com/sqlcollaborative/dbatools/issues/4816)
+* `Test-DbaLastBackup` is not restoring user databases [#4574](https://github.com/sqlcollaborative/dbatools/issues/4574)
+* `Set-DbaSpConfigure` & `Get-DbaSpConfigure` "The property 'ConfigValue' cannot be found on this object" [#5199](https://github.com/sqlcollaborative/dbatools/issues/5199)
+* DLL error when importing [#5195](https://github.com/sqlcollaborative/dbatools/issues/5195)
+* `Add-DbaAgListener` parameter for Listener Name [#5000](https://github.com/sqlcollaborative/dbatools/issues/5000)
+* `Copy-DbaSqlServerAgent` fails when copying across a job that's dependent on a new proxy account or operator [#2166](https://github.com/sqlcollaborative/dbatools/issues/2166)
+* `New-DbaDbUser` not properly referencing the `$Login` variable
+* `Export-DbaLinkedServer` confuses when linked has multiple mappings [#5243](https://github.com/sqlcollaborative/dbatools/issues/5243)
+
+### Added
+* Prerelease installation support for `Install-DbaSqlWatch`
+* Build references for the latest SQL Server Cumulative Updates
+* New function `Copy-DbaStartupProcedure` [#555](https://github.com/sqlcollaborative/dbatools/issues/555)
+
+## [0.9.793] - 2019-03-20
+* `Restore-DbaDbCertificate` - fails when importing all certs from a folder [#5256](https://github.com/sqlcollaborative/dbatools/issues/5256)
+### Changed
+* Improved connection strings in `Connect-DbaInstance`
+
+## [0.9.792] - 2019-03-20
+### Fixed
+* `Test-DbaLastBackup` doesn't execute if backup file is corrupted [#4957](https://github.com/sqlcollaborative/dbatools/issues/4957)
+* `Restore-DbaDbCertificate` from a file fails on SQL Server 2012 [#5082](https://github.com/sqlcollaborative/dbatools/issues/5082)
+* Databases with same name on multiple instances do not render properly in `ConvertTo-DbaTimeline` [#3916](https://github.com/sqlcollaborative/dbatools/issues/3916)
+* Correct service name detection in `Remove-DbaDatabaseSafely` [#5210](https://github.com/sqlcollaborative/dbatools/issues/5210)
+* While doing `Start-DbaMigration`, `-SetSourceRedOnly` fails if there are even inactive sessions on database [#5177](https://github.com/sqlcollaborative/dbatools/issues/5177)
+### Changed
+* Tweaks to `ConvertTo-DbaTimeline` output
+
+## [0.9.791] - 2019-03-18
+### Fixed
+* `Read-DbaBackupHeader` - SQL 2005 backup fails with column "CompressedBackupSize" does not belong to table [#4945](https://github.com/sqlcollaborative/dbatools/issues/4945)
+### Added
+* New function `Install-DbaInstance` to script as much of the installation of a new SQL Server instance as possible
+* `Copy-DbaAgentJob` now supports piped-in Job objects [#5240](https://github.com/sqlcollaborative/dbatools/issues/5240)
+
+## [0.9.790] - 2019-03-18
+### Added
+* New function `Export-DbaDbDataTable`
+
+## [0.9.788] - 2019-03-17
+### Fixed
+* `SqlCredential` parameter not working with `Get-DbaCmsRegServer` [#5025](https://github.com/sqlcollaborative/dbatools/issues/5025)
+* Include the `SqlInstance` in the "failure to connect" error message (impacts _many_ functions) [#5091](https://github.com/sqlcollaborative/dbatools/issues/5091)
+* `Get-DbaPermission` fails on contained databases [#5093](https://github.com/sqlcollaborative/dbatools/issues/5093)
+* Resolved issue creating login from Windows with square brackets in the name in `New-DbaLogin` [#5138](https://github.com/sqlcollaborative/dbatools/issues/5138)
+* Fix column mappings in `Write-DbaDataTable` [#5124](https://github.com/sqlcollaborative/dbatools/issues/5124)
+* `Get-DbaUserPermission` misses database role assignments [#4887](https://github.com/sqlcollaborative/dbatools/issues/4887)
+* `Copy-DbaDbTableData` causes failure on max pool size [#5080](https://github.com/sqlcollaborative/dbatools/issues/5080)
+* `-Force` handling in `New-DbaDbUser` [#4962](https://github.com/sqlcollaborative/dbatools/issues/4962)
+* Multiple computers not being processed in `Resolve-DbaNetworkName`
+### Changed
+* Renamed `Write-DbaDataTable` to `Write-DbaDbDataTable`
+### Added
+* Ability to bypass server name resolution in `Resolve-DbaNetworkName` [#5101](https://github.com/sqlcollaborative/dbatools/issues/5101)
+
+## [0.9.787] - 2019-03-17
+## Fixed
+* TEPP is no longer broken [#5171](https://github.com/sqlcollaborative/dbatools/issues/5171)
+* Resolved issues in `Get-DbaCmObject` [#4096](https://github.com/sqlcollaborative/dbatools/issues/4096)
+* `Stop-Function` not recognized in `Set-DbatoolsConfig` [#5065](https://github.com/sqlcollaborative/dbatools/issues/5065)
+
+
+## [0.9.785] - 2019-03-16
+### Fixed
+* TLS handling for AWS instances in `Get-DbaComputerSystem`
+* Improved connection support for Azure
+* `Export-DbaLogin` produces an empty file [#4604](https://github.com/sqlcollaborative/dbatools/issues/4604)
+
+## [0.9.784] - 2019-03-11
+### Fixed
+* `Copy-DbaPolicyManagement` doesn't copy policy categories [#1040](https://github.com/sqlcollaborative/dbatools/issues/1040)
+* `Copy-DbaPolicyManagement` copies conditions but not policies [#1049](https://github.com/sqlcollaborative/dbatools/issues/1049)
+### Added
+* New function `New-DbaDbMailAccount`
+
+## [0.9.783] - 2019-03-11
+### Fixed
+* Azure support in `Invoke-DbaDbDataMasking` [#5122](https://github.com/sqlcollaborative/dbatools/issues/5122)
+### Changed
+* Improved speed of `Get-DbaLogin` for instances with many logins
+### Added
+* Alias for database name in `New-DbaDatabase`
+* More Azure support
+
+## [0.9.782] - 2019-03-10
+### Added
+* More Azure support
+
 ## [0.9.781] - 2019-03-08
 ### Fixed
 * `Get-DbaAgentJobHistory` adds an hour to the `enddate` and duration [#4345](https://github.com/sqlcollaborative/dbatools/issues/4345)

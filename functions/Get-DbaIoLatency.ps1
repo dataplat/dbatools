@@ -39,7 +39,7 @@ function Get-DbaIoLatency {
         Get IO subsystem latency statistics for servers sql2008 and sqlserver2012.
 
     .EXAMPLE
-        PS C:\> $output = Get-DbaIoLatency -SqlInstance sql2008 | Select * | ConvertTo-DbaDataTable
+        PS C:\> $output = Get-DbaIoLatency -SqlInstance sql2008 | Select-Object * | ConvertTo-DbaDataTable
 
         Collects all IO subsystem latency statistics on server sql2008 into a Data Table.
 
@@ -131,7 +131,7 @@ function Get-DbaIoLatency {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
             } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
             Write-Message -Level Verbose -Message "Connected to $instance"
 

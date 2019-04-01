@@ -332,7 +332,9 @@ function Connect-DbaInstance {
                     $null = $serverconn.Connect()
                     $server = New-Object Microsoft.SqlServer.Management.Smo.Server $serverconn
                     # Make ComputerName easily available in the server object
+                    Add-Member -InputObject $server -NotePropertyName IsAzure -NotePropertyValue $true -Force
                     Add-Member -InputObject $server -NotePropertyName ComputerName -NotePropertyValue $instance.ComputerName -Force
+                    Add-Member -InputObject $server -NotePropertyName DbaInstanceName -NotePropertyValue $instance.InstanceName -Force
                     Add-Member -InputObject $server -NotePropertyName NetPort -NotePropertyValue $instance.Port -Force -Passthru
                     continue
                 } catch {
@@ -371,6 +373,12 @@ function Connect-DbaInstance {
                     continue
                 } else {
                     $instance.InputObject
+                    [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::SetInstance($instance.FullSmoName.ToLower(), $instance.InputObject.ConnectionContext.Copy(), ($instance.InputObject.ConnectionContext.FixedServerRoles -match "SysAdmin"))
+
+                    # Update cache for instance names
+                    if ([Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache["sqlinstance"] -notcontains $instance.FullSmoName.ToLower()) {
+                        [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache["sqlinstance"] += $instance.FullSmoName.ToLower()
+                    }
                     continue
                 }
             }
@@ -402,7 +410,9 @@ function Connect-DbaInstance {
                         } else {
                             $parsedcomputername = $server.NetName
                         }
+                        Add-Member -InputObject $server -NotePropertyName IsAzure -NotePropertyValue $false -Force
                         Add-Member -InputObject $server -NotePropertyName ComputerName -NotePropertyValue $instance.ComputerName -Force
+                        Add-Member -InputObject $server -NotePropertyName DbaInstanceName -NotePropertyValue $instance.InstanceName -Force
                         Add-Member -InputObject $server -NotePropertyName NetPort -NotePropertyValue $instance.Port -Force
                     }
                     if ($MinimumVersion -and $server.VersionMajor) {
@@ -414,22 +424,33 @@ function Connect-DbaInstance {
                     if ($AzureUnsupported -and $server.DatabaseEngineType -eq "SqlAzureDatabase") {
                         Stop-Function -Message "Azure SQL Database not supported" -Continue
                     }
+
+                    [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::SetInstance($instance.FullSmoName.ToLower(), $server.ConnectionContext.Copy(), ($server.ConnectionContext.FixedServerRoles -match "SysAdmin"))
+                    # Update cache for instance names
+                    if ([Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache["sqlinstance"] -notcontains $instance.FullSmoName.ToLower()) {
+                        [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache["sqlinstance"] += $instance.FullSmoName.ToLower()
+                    }
                     $server
                     continue
                 }
             }
 
             if ($instance.IsConnectionString) {
-                $server = New-Object Microsoft.SqlServer.Management.Smo.Server($instance.InputObject)
+                # this is the way, as recommended by Microsoft
+                # https://docs.microsoft.com/en-us/sql/relational-databases/security/encryption/configure-always-encrypted-using-powershell?view=sql-server-2017
+                $sqlconn = New-Object System.Data.SqlClient.SqlConnection $instance.InputObject
+                $serverconn = New-Object Microsoft.SqlServer.Management.Common.ServerConnection $sqlconn
+                $null = $serverconn.Connect()
+                $server = New-Object Microsoft.SqlServer.Management.Smo.Server $serverconn
             } elseif (-not $isAzure) {
-                $server = New-Object Microsoft.SqlServer.Management.Smo.Server $instance.FullSmoName
+                $server = New-Object Microsoft.SqlServer.Management.Smo.Server($instance.FullSmoName)
             }
 
             if ($AppendConnectionString) {
                 $connstring = $server.ConnectionContext.ConnectionString
                 $server.ConnectionContext.ConnectionString = "$connstring;$appendconnectionstring"
                 $server.ConnectionContext.Connect()
-            } elseif (-not $isAzure) {
+            } elseif (-not $isAzure -and -not $instance.IsConnectionString) {
                 # It's okay to skip Azure because this is addressed above with New-DbaConnectionString
                 $server.ConnectionContext.ApplicationName = $ClientName
 
@@ -630,7 +651,9 @@ function Connect-DbaInstance {
                     } else {
                         $parsedcomputername = $server.NetName
                     }
+                    Add-Member -InputObject $server -NotePropertyName IsAzure -NotePropertyValue $false -Force
                     Add-Member -InputObject $server -NotePropertyName ComputerName -NotePropertyValue $instance.ComputerName -Force
+                    Add-Member -InputObject $server -NotePropertyName DbaInstanceName -NotePropertyValue $instance.InstanceName -Force
                     Add-Member -InputObject $server -NotePropertyName NetPort -NotePropertyValue $instance.Port -Force
                 }
             }

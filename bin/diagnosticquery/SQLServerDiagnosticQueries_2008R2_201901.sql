@@ -1,7 +1,7 @@
 
 -- SQL Server 2008 R2 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: February 1, 2019
+-- Last Modified: March 22, 2019
 -- https://www.sqlserverperformance.wordpress.com/
 -- https://www.sqlskills.com/blogs/glenn/
 -- Twitter: GlennAlanBerry
@@ -111,6 +111,7 @@ SELECT SERVERPROPERTY ('MachineName') AS [Server Name], @@VERSION AS [SQL Server
 -- Download SQL Server Management Studio (SSMS)
 -- https://msdn.microsoft.com/en-us/library/mt238290.aspx
 
+-- SQL Server 2008 R2 Configuration Manager is SQLServerManager10.msc
 
 
 -- When was SQL Server installed  (Query 2) (SQL Server Install Date) 

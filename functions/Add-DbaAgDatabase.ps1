@@ -139,6 +139,12 @@ function Add-DbaAgDatabase {
                 $secondaryReplicas = Get-DbaAgReplica -SqlInstance $Secondary -SqlCredential $SecondarySqlCredential -AvailabilityGroup $ag.Name | Where-Object Role -eq Secondary
             }
 
+            if ($SeedingMode -ne "Automatic") {
+                if ((Get-DbaDatabase -SqlInstance $ag.Parent -Database $db.Name).LastFullBackup -eq 'Monday, January 1, 0001 12:00:00 AM') {
+                    Stop-Function -Message "Cannot add $($db.Name) to $($ag.Name) on $($ag.Parent.Name). An initial full backup must be created first." -Continue
+                }
+            }
+
             if ($SeedingMode -eq "Automatic") {
                 # first check
                 if ($Pscmdlet.ShouldProcess($Primary, "Backing up $db to NUL")) {
@@ -193,7 +199,7 @@ function Add-DbaAgDatabase {
 
                 $replicadb = Get-DbaAgDatabase -SqlInstance $replica.Parent.Parent -Database $db.Name -AvailabilityGroup $ag.Name   #credential of secondary !!
 
-                if ($replicadb -and -not ($SeedingModeReplica -eq 'Automatic')) {
+                if (-not $replicadb.IsJoined) {
                     if ($Pscmdlet.ShouldProcess($ag.Parent.Name, "Joining availability group $db to $($db.Parent.Name)")) {
                         $timeout = 1
                         do {

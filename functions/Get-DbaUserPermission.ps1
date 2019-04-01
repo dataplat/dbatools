@@ -142,7 +142,7 @@ function Get-DbaUserPermission {
 
         $dbSQL = "SELECT  'DB ROLE MEMBERS' AS type ,
                                 Member ,
-                                Role ,
+                                ISNULL(Role, 'None') AS [Role/Securable/Class],
                                 ' ' AS [Schema/Owner] ,
                                 ' ' AS [Securable] ,
                                 ' ' AS [Grantee Type] ,
@@ -156,7 +156,7 @@ function Get-DbaUserPermission {
                         UNION
                         SELECT DISTINCT
                                 'DB SECURABLES' AS Type ,
-                                drm.Member ,
+                                ISNULL(drm.member, 'None') AS [Role/Securable/Class] ,
                                 dp.[Securable Type or Class] COLLATE SQL_Latin1_General_CP1_CI_AS ,
                                 dp.[Schema/Owner] ,
                                 dp.Securable ,
@@ -185,7 +185,7 @@ function Get-DbaUserPermission {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 10
             } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             $dbs = $server.Databases

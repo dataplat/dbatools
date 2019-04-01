@@ -1,18 +1,50 @@
 ---
 name: "Bug report \U0001F41B"
 about: Found errors or unexpected behavior using dbatools module
+title: "[Bug]"
+labels: ''
+assignees: ''
 
 ---
 
 ### Before submitting a bug report:
 
-- [ ] Ensure you are able to reproduce it on the latest released version (_we release often_)
-- [ ] Verified this bug is not already reported in an issue
-- [ ] Verified errors are not related to permissions
-- [ ] Can reproduce in a clean PowerShell session (_clean = `powershell -NoProfile`_)
-- [ ] If issue is with `Copy-DbaDatabase`, using `Backup-DbaDatabase | Restore-DbaDatabase` still does not work
+**Collect output of following command and paste below:**
 
-Note that we do not have the resources to make `Copy-DbaDatabase` work in every environment. Instead, we try to ensure Backup & Restore work in your enviornment.
+```
+& {"### PowerShell version:`n$($PSVersionTable | Out-String)"; "`n### dbatools Module version:`n$(gmo dbatools -List | select name, path, version | fl -force | Out-String)"}
+```
+
+- [ ] *Running latest release of dbatools*
+- [ ] Verified errors are not related to permissions
+- [ ] Is this bug with `Copy-DbaDatabase`? You can replicate it using `Backup-DbaDatabase ... | Restore-DbaDatabase ...`
+
+> NOTE: `Copy-DbaDatabase` will not work in every environment and every situation. Instead, we try to ensure Backup & Restore work in your environment.
+
+## Environmental data
+<!-- Paste out of this one-liner into the code block below:
+& {"### PowerShell version:`n$($PSVersionTable | Out-String)"; "`n### dbatools Module version:`n$(gmo dbatools -List | select name, path, version | fl -force | Out-String)"}
+-->
+
+```
+<# REPLACE WITH output OF environment one-liner #>
+```
+
+### SQL Server: 
+<!-- Paste output of `SELECT @@VERSION` -->
+```sql
+/* REPLACE WITH output of @@VERSION */
+```
+
+<!-- NOTE: If the above information is not provided as a minimum your issue will not be acknowledged -->
+
+## Errors Received
+
+<!-- Provide full output of `$error[0] | Select *` -->
+
+```powershell
+<# OUTPUT of $error[0] | select * #>
+```
 
 ## Steps to Reproduce
 
@@ -39,10 +71,3 @@ Sample output or detail explanation if possible
 <!--
 Output or detailed explanation if possible
 -->
-
-## Environmental data
-
-<!-- Provide output of the following two commands -->
-
- - PowerShell: <!-- $PSVersionTable output -->
- - - SQL Server: <!-- SELECT @@VERSION output -->

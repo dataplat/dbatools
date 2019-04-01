@@ -1,7 +1,7 @@
 
 -- SQL Server 2017 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: March 3, 2019
+-- Last Modified: March 25, 2019
 -- https://www.sqlskills.com/blogs/glenn/
 -- http://sqlserverperformance.wordpress.com/
 -- Twitter: GlennAlanBerry
@@ -81,7 +81,8 @@ SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version In
 -- 14.0.3037.1		CU10								8/27/2018		https://support.microsoft.com/en-us/help/4342123/cumulative-update-10-for-sql-server-2017
 -- 14.0.3038.14		CU11								9/20/2018		https://support.microsoft.com/en-us/help/4462262	
 -- 14.0.3045.24		CU12								10/23/2018		https://support.microsoft.com/en-us/help/4464082/cumulative-update-12-for-sql-server-2017
--- 14.0.3048.4		CU13								12/18/2018		https://support.microsoft.com/en-us/help/4466404/cumulative-update-13-for-sql-server-2017		
+-- 14.0.3048.4		CU13								12/18/2018		https://support.microsoft.com/en-us/help/4466404/cumulative-update-13-for-sql-server-2017
+-- 14.0.3076.1		CU14								3/25/2019		https://support.microsoft.com/en-us/help/4484710/cumulative-update-14-for-sql-server-2017			
 		
 															
 
@@ -90,6 +91,9 @@ SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version In
 
 -- SQL Server 2017 build versions
 -- https://bit.ly/2FLY88I
+
+-- Recommended updates and configuration options for SQL Server 2017 and 2016 with high-performance workloads
+-- https://bit.ly/2JsReue
 
 -- Performance and Stability Fixes in SQL Server 2017 CU Builds
 -- https://bit.ly/2GV3CNM
@@ -115,6 +119,7 @@ SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version In
 -- Download and install Azure Data Studio  
 -- https://bit.ly/2vgke1A
 
+-- SQL Server 2017 Configuration Manager is SQLServerManager14.msc
 
 
 -- Get socket, physical core and logical core count from the SQL Server Error log. (Query 2) (Core Counts)
@@ -204,7 +209,7 @@ DBCC TRACESTATUS (-1);
 
 -- Common trace flags that should be enabled in most cases
 -- TF 460  - Improvement: Optional replacement for "String or binary data would be truncated" message with extended information in SQL Server 2017
---           https://bit.ly/2sboMli
+--           https://bit.ly/2sboMli (added in CU12)
 
 -- TF 3226 - Supresses logging of successful database backup messages to the SQL Server Error Log
 --           https://bit.ly/2p6MTjS  

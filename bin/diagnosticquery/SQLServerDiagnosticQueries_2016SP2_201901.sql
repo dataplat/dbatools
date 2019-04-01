@@ -1,7 +1,7 @@
 
 -- SQL Server 2016 SP2 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: March 9, 2019
+-- Last Modified: March 22, 2019
 -- https://www.sqlskills.com/blogs/glenn/
 -- http://sqlserverperformance.wordpress.com/
 -- Twitter: GlennAlanBerry
@@ -70,6 +70,7 @@ SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version In
 -- 13.0.5216.0		SP2 CU3				9/20/2018		https://support.microsoft.com/en-us/help/4458871
 -- 13.0.5233.0		SP2 CU4			   11/13/2018		https://support.microsoft.com/en-us/help/4464106/cumulative-update-4-for-sql-server-2016-sp2
 -- 13.0.5264.1		SP2 CU5             1/23/2019	    https://support.microsoft.com/en-us/help/4475776/cumulative-update-5-for-sql-server-2016-sp2
+-- 13.0.5292.0		SP2 CU6				3/19/2019		https://support.microsoft.com/en-us/help/4488536/cumulative-update-6-for-sql-server-2016-sp2		
 
 		
 															
@@ -82,6 +83,9 @@ SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version In
 
 -- SQL Server 2016 build versions 
 -- https://bit.ly/2epkTDT
+
+-- Recommended updates and configuration options for SQL Server 2017 and 2016 with high-performance workloads
+-- https://bit.ly/2JsReue
 
 -- Where to find information about the latest SQL Server builds
 -- https://bit.ly/2IGHbfY
@@ -101,7 +105,7 @@ SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version In
 -- Download and install Azure Data Studio
 -- https://bit.ly/2vgke1A
 
-
+-- SQL Server 2016 Configuration Manager is SQLServerManager13.msc
 
 -- Get socket, physical core and logical core count from the SQL Server Error log. (Query 2) (Core Counts)
 -- This query might take a few seconds depending on the size of your error log
@@ -187,6 +191,9 @@ DBCC TRACESTATUS (-1);
 -- It is very useful to know what global trace flags are currently enabled as part of the diagnostic process.
 
 -- Common trace flags that should be enabled in most cases
+-- TF 460  - Improvement: Optional replacement for "String or binary data would be truncated" message with extended information in SQL Server 2017
+--           https://bit.ly/2sboMli  (added in SP2 CU6)
+
 -- TF 3226 - Supresses logging of successful database backup messages to the SQL Server Error Log
 --           https://bit.ly/2p6MTjS  
 
