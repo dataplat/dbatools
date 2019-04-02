@@ -56,8 +56,8 @@ function Export-DbaLogin {
     .PARAMETER Confirm
         If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
-    .PARAMETER SetDefaultMaster
-        If this switch is enabled, all logins will be scripted with default database 'master', 
+    .PARAMETER SetDefaultTempdb
+        If this switch is enabled, all logins will be scripted with default database 'tempdb', 
         that could help to successfuly import logins on server that is missing default database for login.   
 
     .NOTES
@@ -135,7 +135,7 @@ function Export-DbaLogin {
         [switch]$NoClobber,
         [switch]$Append,
         [switch]$ExcludeDatabases,
-        [switch]$SetDefaultMaster,
+        [switch]$SetDefaultTempdb,
         [switch]$ExcludeJobs,
         [Alias('Silent')]
         [switch]$EnableException,
@@ -273,8 +273,8 @@ function Export-DbaLogin {
 
                     $outsql += "`r`nUSE master`n"
                     # Getting some attributes
-                    if ($SetDefaultMaster -eq true) {
-                        $defaultDb = "master" } else {
+                    if ($SetDefaultTempdb -eq true) {
+                        $defaultDb = "tempdb" } else {
                         $defaultDb = $sourceLogin.DefaultDatabase
                         }
                     $language = $sourceLogin.Language
