@@ -112,15 +112,17 @@ function Get-DbaRandomizedValue {
         # Create the faker objects
         $typePath = Resolve-Path -Path "$script:PSModuleRoot\bin\randomizer\Bogus.dll"
 
-        if ([AppDomain]::CurrentDomain.GetAssemblies().Location -notcontains $typePath) {
+        if ([AppDomain]::CurrentDomain.GetAssemblies().Location -notcontains $typePath.Path) {
             Write-Message -Level Verbose -Message "Randomizer type not loaded yet. Loading it"
             try {
-                Add-Type -Path (Resolve-Path -Path "$script:PSModuleRoot\bin\randomizer\Bogus.dll")
-                $faker = New-Object Bogus.Faker($Locale)
+                Add-Type -Path (Resolve-Path -Path $typePath)
             } catch {
                 Stop-Function -Message "Couldn't load randomizer dll" -Target $typePath -ErrorRecord $_ -Continue
             }
         }
+
+        # Create faker object
+        $faker = New-Object Bogus.Faker($Locale)
 
         $supportedDataTypes = 'bigint', 'bit', 'bool', 'char', 'date', 'datetime', 'datetime2', 'decimal', 'int', 'float', 'guid', 'money', 'numeric', 'nchar', 'ntext', 'nvarchar', 'real', 'smalldatetime', 'smallint', 'text', 'time', 'tinyint', 'uniqueidentifier', 'userdefineddatatype', 'varchar'
 
