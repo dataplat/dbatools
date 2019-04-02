@@ -122,12 +122,10 @@ function Get-DbaRandomizedDataset {
                 $row = New-Object PSCustomObject
 
                 foreach ($column in $templateSet.Columns) {
-                    $column
                     try {
                         if ($column.SubType -in $supportedDataTypes) {
                             $value = Get-DbaRandomizedValue -DataType $column.SubType -Locale $Locale -EnableException
                         } else {
-                            "$($column.Type) - $($column.SubType)"
                             $value = Get-DbaRandomizedValue -RandomizerType $column.Type -RandomizerSubtype $column.SubType -Locale $Locale -EnableException
                         }
 
