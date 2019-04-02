@@ -107,10 +107,11 @@ function Get-DbaRandomizedValue {
 
     begin {
         # Get all the random possibilities
-        $randomizerTypes = Import-Csv (Resolve-Path -Path "$script:PSModuleRoot\bin\randomizer\en.randomizertypes.csv") | Group-Object {$_.Type}
+        $randomizerTypes = Import-Csv (Resolve-Path -Path "$script:PSModuleRoot\bin\randomizer\en.randomizertypes.csv") | Group-Object { $_.Type }
 
         # Create the faker objects
         $typePath = Resolve-Path -Path "$script:PSModuleRoot\bin\randomizer\Bogus.dll"
+
         if ([AppDomain]::CurrentDomain.GetAssemblies().Location -notcontains $typePath) {
             Write-Message -Level Verbose -Message "Randomizer type not loaded yet. Loading it"
             try {
@@ -196,14 +197,14 @@ function Get-DbaRandomizedValue {
                         ($faker.Date.Past()).ToString("yyyyMMdd")
                     }
                 }
-                { $psitem -in 'datetime', 'datetime2', 'smalldatetime'} {
+                { $psitem -in 'datetime', 'datetime2', 'smalldatetime' } {
                     if ($Min -or $Max) {
                         ($faker.Date.Between($Min, $Max)).ToString("yyyy-MM-dd HH:mm:ss.fffffff")
                     } else {
                         ($faker.Date.Past()).ToString("yyyy-MM-dd HH:mm:ss.fffffff")
                     }
                 }
-                { $psitem -in 'decimal', 'float', 'money', 'numeric', 'real'} {
+                { $psitem -in 'decimal', 'float', 'money', 'numeric', 'real' } {
                     $faker.Finance.Amount($Min, $Max, $Precision)
                 }
                 'int' {
