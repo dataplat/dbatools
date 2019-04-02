@@ -122,13 +122,19 @@ function Get-DbaRandomizedDataset {
                 $row = New-Object PSCustomObject
 
                 foreach ($column in $templateSet.Columns) {
-                    if ($column.SubType -in $supportedDataTypes) {
-                        $value = Get-DbaRandomizedValue -DataType $column.SubType
-                    } else {
-                        $value = Get-DbaRandomizedValue -RandomizerType $column.MaskingType -RandomizerSubtype $column.SubType
-                    }
+                    $column
+                    try {
+                        if ($column.SubType -in $supportedDataTypes) {
+                            $value = Get-DbaRandomizedValue -DataType $column.SubType -Locale $Locale -EnableException
+                        } else {
+                            "$($column.Type) - $($column.SubType)"
+                            $value = Get-DbaRandomizedValue -RandomizerType $column.Type -RandomizerSubtype $column.SubType -Locale $Locale -EnableException
+                        }
 
-                    $row | Add-Member -Name $column.Name -Type NoteProperty -Value $value
+                        $row | Add-Member -Name $column.Name -Type NoteProperty -Value $value
+                    } catch {
+                        Stop-Function -Message "Could not generate a randomized value.`n$_" -ErrorRecord $_ -Continue
+                    }
                 }
 
                 $row
