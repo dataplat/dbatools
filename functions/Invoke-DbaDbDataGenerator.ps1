@@ -94,7 +94,6 @@ function Invoke-DbaDbDataGenerator {
         [string[]]$Column,
         [string[]]$ExcludeTable,
         [string[]]$ExcludeColumn,
-        [string]$Query,
         [int]$MaxValue,
         [switch]$ExactLength,
         [int]$ModulusFactor = 10,
