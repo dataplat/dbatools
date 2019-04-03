@@ -131,9 +131,9 @@ function Invoke-DbaDbDataMasking {
     begin {
         $supportedDataTypes = 'bit', 'bool', 'char', 'date', 'datetime', 'datetime2', 'decimal', 'int', 'money', 'nchar', 'ntext', 'nvarchar', 'smalldatetime', 'text', 'time', 'uniqueidentifier', 'userdefineddatatype', 'varchar'
 
-        $supportedFakerMaskingTypes = Get-DbaRandomizedType | Select-Object Type -Unique
+        $supportedFakerMaskingTypes = Get-DbaRandomizedType | Select-Object Type -ExpandProperty Type -Unique
 
-        $supportedFakerSubTypes = Get-DbaRandomizedType | Select-Object Subtype -Unique
+        $supportedFakerSubTypes = Get-DbaRandomizedType | Select-Object Subtype -ExpandProperty Subtype -Unique
 
         $supportedFakerSubTypes += "Date"
     }
@@ -482,6 +482,37 @@ function Invoke-DbaDbDataMasking {
                             # Increase the row number
                             $rowNumber++
                         }
+
+                        $columnsWithComposites = @()
+                        $columnsWithComposites += $tableobject.Columns | Where-Object Composite -ne $null
+
+                        if ($columnsWithComposites.Count -ge 1) {
+                            foreach ($columnObject in $columnsWithComposites) {
+
+                                $compositeItems = @()
+
+                                foreach ($columnComposite in $columnObject.Composite) {
+
+                                    if ($columnComposite.Type -eq 'Column') {
+                                        $compositeItems += $columnComposite.Value
+                                    } else {
+                                        $compositeItems += "'$($columnComposite.Value)'"
+                                    }
+                                }
+
+                                $updatequery = "UPDATE [$($tableobject.Schema)].[$($tableobject.Name)] SET $($columnObject.Name) = $($compositeItems -join ' + ')"
+
+                                try {
+                                    $sqlcmd = New-Object System.Data.SqlClient.SqlCommand($updatequery, $sqlconn, $transaction)
+                                    $null = $sqlcmd.ExecuteNonQuery()
+                                } catch {
+                                    Write-Message -Level VeryVerbose -Message "$updatequery"
+                                    $errormessage = $_.Exception.Message.ToString()
+                                    Stop-Function -Message "Error updating $($tableobject.Schema).$($tableobject.Name): $errormessage" -Target $updatequery -Continue -ErrorRecord $_
+                                }
+                            }
+                        }
+
                         try {
                             $null = $transaction.Commit()
                             [pscustomobject]@{
@@ -503,7 +534,11 @@ function Invoke-DbaDbDataMasking {
 
                     # Empty the unique values array
                     $uniqueValues = $null
+
+
+
                 }
+
                 try {
                     $sqlconn.Close()
                 } catch {
