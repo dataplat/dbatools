@@ -19,7 +19,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         $sql = "CREATE TABLE [dbo].[people](
                     [FirstName] [varchar](50) NULL,
                     [LastName] [varchar](50) NULL,
-                    [City] [datetime] NULL
+                    [City] [varchar](100) NULL
                 ) ON [PRIMARY];"
         New-DbaDatabase -SqlInstance $script:instance2 -Name $db
         Invoke-DbaQuery -SqlInstance $script:instance2 -Database $db -Query $sql
@@ -37,9 +37,11 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
 
         It "Returns the proper output" {
             $file = New-DbaDbDataGeneratorConfig -SqlInstance $script:instance2 -Database $db -Path C:\temp -Rows 10
-            $results = $file | Invoke-DbaDbDataGenerator -SqlInstance $script:instance2 -Database $db -Confirm:$false
+
+            $results = Invoke-DbaDbDataGenerator -SqlInstance $script:instance2 -Database $db -Confirm:$false -FilePath $file.FullName
+
             foreach ($result in $results) {
-                $result.Rows | Should -Be 2
+                $result.Rows | Should -Be 10
                 $result.Database | Should -Contain $db
             }
 
