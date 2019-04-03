@@ -114,6 +114,12 @@ function New-DbaDbDataGeneratorConfig {
         }
 
         $results = @()
+
+        if ($InputObject.Count -lt 1) {
+            Stop-Function -Message "No databases found" -Target $Database
+            return
+        }
+
         foreach ($db in $InputObject) {
             $server = $db.Parent
             $tables = @()
@@ -389,6 +395,7 @@ function New-DbaDbDataGeneratorConfig {
                 if (-not $script:isWindows) {
                     $temppath = $temppath.Replace("\", "/")
                 }
+                $temppath
                 Set-Content -Path $temppath -Value ($results | ConvertTo-Json -Depth 5)
                 Get-ChildItem -Path $temppath
             } catch {
