@@ -135,7 +135,7 @@ function Export-DbaLogin {
         [switch]$NoClobber,
         [switch]$Append,
         [switch]$ExcludeDatabases,
-        [switch]$SetDefaultTempdb,
+        [string]$DefaultDatabase,
         [switch]$ExcludeJobs,
         [Alias('Silent')]
         [switch]$EnableException,
@@ -273,8 +273,8 @@ function Export-DbaLogin {
 
                     $outsql += "`r`nUSE master`n"
                     # Getting some attributes
-                    if ($SetDefaultTempdb -eq true) {
-                        $defaultDb = "tempdb" } else {
+                    if ($DefaultDatabase) {
+                        $defaultDb = $DefaultDatabase } else {
                         $defaultDb = $sourceLogin.DefaultDatabase
                         }
                     $language = $sourceLogin.Language
