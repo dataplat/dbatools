@@ -210,316 +210,110 @@ function New-DbaDbMaskingConfig {
                         # Make it easier to get the type name
                         $maskingType = $maskingType | Select-Object TypeName -ExpandProperty TypeName
 
+                        $maskingType = $null
+                        $maskingSubtype = $null
+
                         switch ($maskingType.ToLower()) {
                             "address" {
-                                $columns += [PSCustomObject]@{
-                                    Name            = $columnobject.Name
-                                    ColumnType      = $columnType
-                                    CharacterString = $null
-                                    MinValue        = $min
-                                    MaxValue        = $columnLength
-                                    MaskingType     = "Address"
-                                    SubType         = "StreetAddress"
-                                    Format          = $null
-                                    Deterministic   = $false
-                                    Nullable        = $columnobject.Nullable
-                                }
+                                $maskingType = "Address"
+                                $maskingSubtype = "StreetAddress"
                             }
                             "bic" {
-                                $columns += [PSCustomObject]@{
-                                    Name            = $columnobject.Name
-                                    ColumnType      = $columnType
-                                    CharacterString = $null
-                                    MinValue        = $min
-                                    MaxValue        = $columnLength
-                                    MaskingType     = "Finance"
-                                    SubType         = "Bic"
-                                    Format          = $null
-                                    Deterministic   = $false
-                                    Nullable        = $columnobject.Nullable
-                                }
-                            }
-                            "bitcoin" {
-                                $columns += [PSCustomObject]@{
-                                    Name            = $columnobject.Name
-                                    ColumnType      = $columnType
-                                    CharacterString = $null
-                                    MinValue        = $min
-                                    MaxValue        = $columnLength
-                                    MaskingType     = "Finance"
-                                    SubType         = "BitcoinAddress"
-                                    Format          = $null
-                                    Deterministic   = $false
-                                    Nullable        = $columnobject.Nullable
-                                }
-                            }
-                            "country" {
-                                $columns += [PSCustomObject]@{
-                                    Name            = $columnobject.Name
-                                    ColumnType      = $columnType
-                                    CharacterString = $null
-                                    MinValue        = $min
-                                    MaxValue        = $columnLength
-                                    MaskingType     = "Address"
-                                    SubType         = "Country"
-                                    Format          = $null
-                                    Deterministic   = $false
-                                    Nullable        = $columnobject.Nullable
-                                }
-                            }
-                            "countrycode" {
-                                $columns += [PSCustomObject]@{
-                                    Name            = $columnobject.Name
-                                    ColumnType      = $columnType
-                                    CharacterString = $null
-                                    MinValue        = $min
-                                    MaxValue        = $columnLength
-                                    MaskingType     = "Address"
-                                    SubType         = "CountryCode"
-                                    Format          = $null
-                                    Deterministic   = $false
-                                    Nullable        = $columnobject.Nullable
-                                }
-                            }
-                            "ethereum" {
-                                $columns += [PSCustomObject]@{
-                                    Name            = $columnobject.Name
-                                    ColumnType      = $columnType
-                                    CharacterString = $null
-                                    MinValue        = $min
-                                    MaxValue        = $columnLength
-                                    MaskingType     = "Finance"
-                                    SubType         = "EthereumAddress"
-                                    Format          = $null
-                                    Deterministic   = $false
-                                    Nullable        = $columnobject.Nullable
-                                }
+                                $maskingType = "Finance"
+                                $maskingSubtype = "Bic"
                             }
                             "city" {
-                                $columns += [PSCustomObject]@{
-                                    Name            = $columnobject.Name
-                                    ColumnType      = $columnType
-                                    CharacterString = $null
-                                    MinValue        = $min
-                                    MaxValue        = $columnLength
-                                    MaskingType     = "Address"
-                                    SubType         = "City"
-                                    Format          = $null
-                                    Deterministic   = $false
-                                    Nullable        = $columnobject.Nullable
-                                }
-                            }
-                            "creditcardcvv" {
-                                $columns += [PSCustomObject]@{
-                                    Name            = $columnobject.Name
-                                    ColumnType      = $columnType
-                                    CharacterString = $null
-                                    MinValue        = $min
-                                    MaxValue        = $columnLength
-                                    MaskingType     = "Finance"
-                                    SubType         = "CreditCardCvv"
-                                    Format          = $null
-                                    Deterministic   = $false
-                                    Nullable        = $columnobject.Nullable
-                                }
+                                $maskingType = "Address"
+                                $maskingSubtype = "City"
                             }
                             "company" {
-                                $columns += [PSCustomObject]@{
-                                    Name            = $columnobject.Name
-                                    ColumnType      = $columnType
-                                    CharacterString = $null
-                                    MinValue        = $min
-                                    MaxValue        = $columnLength
-                                    MaskingType     = "Company"
-                                    SubType         = "CompanyName"
-                                    Format          = $null
-                                    Deterministic   = $false
-                                    Nullable        = $columnobject.Nullable
-                                }
+                                $maskingType = "Company"
+                                $maskingSubtype = "CompanyName"
+                            }
+                            "country" {
+                                $maskingType = "Address"
+                                $maskingSubtype = "Country"
+                            }
+                            "countrycode" {
+                                $maskingType = "Address"
+                                $maskingSubtype = "CountryCode"
                             }
                             "creditcard" {
-                                $columns += [PSCustomObject]@{
-                                    Name            = $columnobject.Name
-                                    ColumnType      = $columnType
-                                    CharacterString = $null
-                                    MinValue        = $min
-                                    MaxValue        = $columnLength
-                                    MaskingType     = "Finance"
-                                    SubType         = "CreditcardNumber"
-                                    Format          = $null
-                                    Deterministic   = $false
-                                    Nullable        = $columnobject.Nullable
-                                }
+                                $maskingType = "Finance"
+                                $maskingSubtype = "CreditcardNumber"
+                            }
+                            "creditcardcvv" {
+                                $maskingType = "Finance"
+                                $maskingSubtype = "CreditCardCvv"
                             }
                             "email" {
-                                $columns += [PSCustomObject]@{
-                                    Name            = $columnobject.Name
-                                    ColumnType      = $columnType
-                                    CharacterString = $null
-                                    MinValue        = $min
-                                    MaxValue        = $columnLength
-                                    MaskingType     = "Internet"
-                                    SubType         = "Email"
-                                    Format          = $null
-                                    Deterministic   = $false
-                                    Nullable        = $columnobject.Nullable
-                                }
+                                $maskingType = "Internet"
+                                $maskingSubtype = "Email"
+                            }
+                            "ethereum" {
+                                $maskingType = "Finance"
+                                $maskingSubtype = "EthereumAddress"
                             }
                             "firstname" {
-                                $columns += [PSCustomObject]@{
-                                    Name            = $columnobject.Name
-                                    ColumnType      = $columnType
-                                    CharacterString = $null
-                                    MinValue        = $min
-                                    MaxValue        = $columnLength
-                                    MaskingType     = "Name"
-                                    SubType         = "Firstname"
-                                    Format          = $null
-                                    Deterministic   = $false
-                                    Nullable        = $columnobject.Nullable
-                                }
+                                $maskingType = "Name"
+                                $maskingSubtype = "Firstname"
                             }
                             "fullname" {
-                                $columns += [PSCustomObject]@{
-                                    Name            = $columnobject.Name
-                                    ColumnType      = $columnType
-                                    CharacterString = $null
-                                    MinValue        = $min
-                                    MaxValue        = $columnLength
-                                    MaskingType     = "Name"
-                                    SubType         = "FullName"
-                                    Format          = $null
-                                    Deterministic   = $false
-                                    Nullable        = $columnobject.Nullable
-                                }
+                                $maskingType = "Name"
+                                $maskingSubtype = "FullName"
                             }
                             "iban" {
-                                $columns += [PSCustomObject]@{
-                                    Name            = $columnobject.Name
-                                    ColumnType      = $columnType
-                                    CharacterString = $null
-                                    MinValue        = $min
-                                    MaxValue        = $columnLength
-                                    MaskingType     = "Finance"
-                                    SubType         = "Iban"
-                                    Format          = $null
-                                    Deterministic   = $false
-                                    Nullable        = $columnobject.Nullable
-                                }
+                                $maskingType = "Finance"
+                                $maskingSubtype = "Iban"
                             }
                             "lastname" {
-                                $columns += [PSCustomObject]@{
-                                    Name            = $columnobject.Name
-                                    ColumnType      = $columnType
-                                    CharacterString = $null
-                                    MinValue        = $min
-                                    MaxValue        = $columnLength
-                                    MaskingType     = "Name"
-                                    SubType         = "Lastname"
-                                    Format          = $null
-                                    Deterministic   = $false
-                                    Nullable        = $columnobject.Nullable
-                                }
+                                $maskingType = "Name"
+                                $maskingSubtype = "Lastname"
                             }
                             "latitude" {
-                                $columns += [PSCustomObject]@{
-                                    Name            = $columnobject.Name
-                                    ColumnType      = $columnType
-                                    CharacterString = $null
-                                    MinValue        = $min
-                                    MaxValue        = $columnLength
-                                    MaskingType     = "Address"
-                                    SubType         = "Latitude"
-                                    Format          = $null
-                                    Deterministic   = $false
-                                    Nullable        = $columnobject.Nullable
-                                }
+                                $maskingType = "Address"
+                                $maskingSubtype = "Latitude"
                             }
                             "longitude" {
-                                $columns += [PSCustomObject]@{
-                                    Name            = $columnobject.Name
-                                    ColumnType      = $columnType
-                                    CharacterString = $null
-                                    MinValue        = $min
-                                    MaxValue        = $columnLength
-                                    MaskingType     = "Address"
-                                    SubType         = "Longitude"
-                                    Format          = $null
-                                    Deterministic   = $false
-                                    Nullable        = $columnobject.Nullable
-                                }
+                                $maskingType = "Address"
+                                $maskingSubtype = "Longitude"
                             }
                             "phone" {
-                                $columns += [PSCustomObject]@{
-                                    Name            = $columnobject.Name
-                                    ColumnType      = $columnType
-                                    CharacterString = $null
-                                    MinValue        = $min
-                                    MaxValue        = $columnLength
-                                    MaskingType     = "Phone"
-                                    SubType         = "PhoneNumber"
-                                    Format          = $null
-                                    Deterministic   = $false
-                                    Nullable        = $columnobject.Nullable
-                                }
+                                $maskingType = "Phone"
+                                $maskingSubtype = "PhoneNumber"
                             }
                             "state" {
-                                $columns += [PSCustomObject]@{
-                                    Name            = $columnobject.Name
-                                    ColumnType      = $columnType
-                                    CharacterString = $null
-                                    MinValue        = $min
-                                    MaxValue        = $columnLength
-                                    MaskingType     = "Address"
-                                    SubType         = "State"
-                                    Format          = $null
-                                    Deterministic   = $false
-                                    Nullable        = $columnobject.Nullable
-                                }
+                                $maskingType = "Address"
+                                $maskingSubtype = "State"
                             }
                             "stateabbr" {
-                                $columns += [PSCustomObject]@{
-                                    Name            = $columnobject.Name
-                                    ColumnType      = $columnType
-                                    CharacterString = $null
-                                    MinValue        = $min
-                                    MaxValue        = $columnLength
-                                    MaskingType     = "Address"
-                                    SubType         = "StateAbbr"
-                                    Format          = $null
-                                    Deterministic   = $false
-                                    Nullable        = $columnobject.Nullable
-                                }
-                            }
-                            "zipcode" {
-                                $columns += [PSCustomObject]@{
-                                    Name            = $columnobject.Name
-                                    ColumnType      = $columnType
-                                    CharacterString = $null
-                                    MinValue        = $min
-                                    MaxValue        = $columnLength
-                                    MaskingType     = "Address"
-                                    SubType         = "Zipcode"
-                                    Format          = $null
-                                    Deterministic   = $false
-                                    Nullable        = $columnobject.Nullable
-                                }
+                                $maskingType = "Address"
+                                $maskingSubtype = "StateAbbr"
                             }
                             "username" {
-                                $columns += [PSCustomObject]@{
-                                    Name            = $columnobject.Name
-                                    ColumnType      = $columnType
-                                    CharacterString = $null
-                                    MinValue        = $min
-                                    MaxValue        = $columnLength
-                                    MaskingType     = "Internet"
-                                    SubType         = "UserName"
-                                    Format          = $null
-                                    Deterministic   = $false
-                                    Nullable        = $columnobject.Nullable
-                                }
+                                $maskingType = "Internet"
+                                $maskingSubtype = "UserName"
+                            }
+                            "zipcode" {
+                                $maskingType = "Address"
+                                $maskingSubtype = "Zipcode"
                             }
                         }
+
+                        $columns += [PSCustomObject]@{
+                            Name            = $columnobject.Name
+                            ColumnType      = $columnType
+                            CharacterString = $null
+                            MinValue        = $min
+                            MaxValue        = $MaxValue
+                            MaskingType     = $maskingType
+                            SubType         = $maskingSubType
+                            Format          = $null
+                            Deterministic   = $false
+                            Nullable        = $columnobject.Nullable
+                            Composite       = $null
+                        }
+
                     } else {
                         $type = "Random"
 
