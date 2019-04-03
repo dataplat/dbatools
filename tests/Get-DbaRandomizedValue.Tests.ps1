@@ -25,7 +25,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         It "Should return random string of max length 255" {
             $result = Get-DbaRandomizedValue -DataType varchar
 
-            $types.Length | Should BeGreaterThan 1
+            $result.Length | Should BeGreaterThan 1
         }
 
         It "Should return a random address zipcode" {
