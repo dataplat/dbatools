@@ -56,9 +56,9 @@ function Export-DbaLogin {
     .PARAMETER Confirm
         If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
-    .PARAMETER SetDefaultTempdb
-        If this switch is enabled, all logins will be scripted with default database 'tempdb', 
-        that could help to successfuly import logins on server that is missing default database for login.   
+    .PARAMETER DefaultDatabase
+        If this switch is enabled, all logins will be scripted with specified default database,
+        that could help to successfuly import logins on server that is missing default database for login.
 
     .NOTES
         Tags: Export, Login
