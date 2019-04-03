@@ -210,93 +210,93 @@ function New-DbaDbMaskingConfig {
                         # Make it easier to get the type name
                         $maskingType = $maskingType | Select-Object TypeName -ExpandProperty TypeName
 
-                        $maskingType = $null
-                        $maskingSubtype = $null
+                        $type = $null
+                        $subtype = $null
 
                         switch ($maskingType.ToLower()) {
                             "address" {
-                                $maskingType = "Address"
-                                $maskingSubtype = "StreetAddress"
+                                $type = "Address"
+                                $subtype = "StreetAddress"
                             }
                             "bic" {
-                                $maskingType = "Finance"
-                                $maskingSubtype = "Bic"
+                                $type = "Finance"
+                                $subtype = "Bic"
                             }
                             "city" {
-                                $maskingType = "Address"
-                                $maskingSubtype = "City"
+                                $type = "Address"
+                                $subtype = "City"
                             }
                             "company" {
-                                $maskingType = "Company"
-                                $maskingSubtype = "CompanyName"
+                                $type = "Company"
+                                $subtype = "CompanyName"
                             }
                             "country" {
-                                $maskingType = "Address"
-                                $maskingSubtype = "Country"
+                                $type = "Address"
+                                $subtype = "Country"
                             }
                             "countrycode" {
-                                $maskingType = "Address"
-                                $maskingSubtype = "CountryCode"
+                                $type = "Address"
+                                $subtype = "CountryCode"
                             }
                             "creditcard" {
-                                $maskingType = "Finance"
-                                $maskingSubtype = "CreditcardNumber"
+                                $type = "Finance"
+                                $subtype = "CreditcardNumber"
                             }
                             "creditcardcvv" {
-                                $maskingType = "Finance"
-                                $maskingSubtype = "CreditCardCvv"
+                                $type = "Finance"
+                                $subtype = "CreditCardCvv"
                             }
                             "email" {
-                                $maskingType = "Internet"
-                                $maskingSubtype = "Email"
+                                $type = "Internet"
+                                $subtype = "Email"
                             }
                             "ethereum" {
-                                $maskingType = "Finance"
-                                $maskingSubtype = "EthereumAddress"
+                                $type = "Finance"
+                                $subtype = "EthereumAddress"
                             }
                             "firstname" {
-                                $maskingType = "Name"
-                                $maskingSubtype = "Firstname"
+                                $type = "Name"
+                                $subtype = "Firstname"
                             }
                             "fullname" {
-                                $maskingType = "Name"
-                                $maskingSubtype = "FullName"
+                                $type = "Name"
+                                $subtype = "FullName"
                             }
                             "iban" {
-                                $maskingType = "Finance"
-                                $maskingSubtype = "Iban"
+                                $type = "Finance"
+                                $subtype = "Iban"
                             }
                             "lastname" {
-                                $maskingType = "Name"
-                                $maskingSubtype = "Lastname"
+                                $type = "Name"
+                                $subtype = "Lastname"
                             }
                             "latitude" {
-                                $maskingType = "Address"
-                                $maskingSubtype = "Latitude"
+                                $type = "Address"
+                                $subtype = "Latitude"
                             }
                             "longitude" {
-                                $maskingType = "Address"
-                                $maskingSubtype = "Longitude"
+                                $type = "Address"
+                                $subtype = "Longitude"
                             }
                             "phone" {
-                                $maskingType = "Phone"
-                                $maskingSubtype = "PhoneNumber"
+                                $type = "Phone"
+                                $subtype = "PhoneNumber"
                             }
                             "state" {
-                                $maskingType = "Address"
-                                $maskingSubtype = "State"
+                                $type = "Address"
+                                $subtype = "State"
                             }
                             "stateabbr" {
-                                $maskingType = "Address"
-                                $maskingSubtype = "StateAbbr"
+                                $type = "Address"
+                                $subtype = "StateAbbr"
                             }
                             "username" {
-                                $maskingType = "Internet"
-                                $maskingSubtype = "UserName"
+                                $type = "Internet"
+                                $subtype = "UserName"
                             }
                             "zipcode" {
-                                $maskingType = "Address"
-                                $maskingSubtype = "Zipcode"
+                                $type = "Address"
+                                $subtype = "Zipcode"
                             }
                         }
 
@@ -306,8 +306,8 @@ function New-DbaDbMaskingConfig {
                             CharacterString = $null
                             MinValue        = $min
                             MaxValue        = $MaxValue
-                            MaskingType     = $maskingType
-                            SubType         = $maskingSubType
+                            MaskingType     = $type
+                            SubType         = $subtype
                             Format          = $null
                             Deterministic   = $false
                             Nullable        = $columnobject.Nullable
