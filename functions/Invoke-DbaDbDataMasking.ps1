@@ -492,11 +492,40 @@ function Invoke-DbaDbDataMasking {
                                 $compositeItems = @()
 
                                 foreach ($columnComposite in $columnObject.Composite) {
-
+                                    $columnComposite
                                     if ($columnComposite.Type -eq 'Column') {
                                         $compositeItems += $columnComposite.Value
-                                    } else {
+                                    } elseif ($columnComposite.Type -eq 'Random') {
+                                        try {
+                                            $newValue = $null
+
+                                            if ($columnobject.SubType -in $supportedDataTypes) {
+                                                $newValue = Get-DbaRandomizedValue -DataType $columnobject.SubType -CharacterString $charstring -Min $columnComposite.Min -Max $columnComposite.Max -Locale $Locale
+                                            } else {
+                                                $newValue = Get-DbaRandomizedValue -RandomizerType $columnComposite.Type -RandomizerSubType $columnComposite.Subtype  -CharacterString $charstring -Min $columnComposite.Min -Max $columnComposite.Max -Locale $Locale
+                                            }
+
+                                        } catch {
+                                            Stop-Function -Message "Failure" -Target $faker -Continue -ErrorRecord $_
+                                        }
+
+                                        if ($columnobject.ColumnType -match 'int') {
+                                            $compositeItems += " $newValue"
+                                        } elseif ($columnobject.ColumnType -in 'bit', 'bool') {
+                                            if ($columnValue) {
+                                                $compositeItems += "1"
+                                            } else {
+                                                $compositeItems += "0"
+                                            }
+                                        } else {
+                                            $newValue = ($newValue).Tostring().Replace("'", "''")
+                                            $compositeItems += "'$newValue'"
+                                        }
+
+                                    } elseif ($columnComposite.Type -eq 'Static') {
                                         $compositeItems += "'$($columnComposite.Value)'"
+                                    } else {
+                                        $compositeItems += ""
                                     }
                                 }
 
