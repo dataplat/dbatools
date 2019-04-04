@@ -11,7 +11,7 @@
     RootModule             = 'dbatools.psm1'
 
     # Version number of this module.
-    ModuleVersion          = '0.9.800'
+    ModuleVersion          = '0.9.801'
 
     # ID used to uniquely identify this module
     GUID                   = '9d139310-ce45-41ce-8e8b-d76335aa1789'
@@ -463,6 +463,12 @@
         'Get-DbaRandomizedDataset',
         'Get-DbaRandomizedType',
         'Export-DbaDbTableData',
+        'Get-DbaRandomizedDataset',
+        'Get-DbaRandomizedDatasetTemplate',
+        'Get-DbaRandomizedType',
+        'Get-DbaRandomizedValue',
+        'Invoke-DbaDbDataGenerator',
+        'New-DbaDbDataGeneratorConfig',
         # noncoresmo
         # SMO issues
         'Export-DbaUser',
