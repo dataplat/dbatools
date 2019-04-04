@@ -492,7 +492,6 @@ function Invoke-DbaDbDataMasking {
                                 $compositeItems = @()
 
                                 foreach ($columnComposite in $columnObject.Composite) {
-                                    $columnComposite
                                     if ($columnComposite.Type -eq 'Column') {
                                         $compositeItems += $columnComposite.Value
                                     } elseif ($columnComposite.Type -eq 'Random') {
