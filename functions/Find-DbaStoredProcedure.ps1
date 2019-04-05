@@ -145,7 +145,7 @@ foreach ($db in $dbs) {
             if ($row.TextBody -match $Pattern) {
                 $sp = $db.StoredProcedures | Where-Object { $_.Schema -eq $procSchema -and $_.Name -eq $proc }
 
-            $StoredProcedureText = $sp.TextBody.split("`n")
+            $StoredProcedureText = $row.TextBody.split("`n")
             $spTextFound = $StoredProcedureText | Select-String -Pattern $Pattern | ForEach-Object { "(LineNumber: $($_.LineNumber)) $($_.ToString().Trim())" }
 
     [PSCustomObject]@{
@@ -160,7 +160,7 @@ foreach ($db in $dbs) {
         LastModified             = $sp.DateLastModified
         StoredProcedureTextFound = $spTextFound -join "`n"
         StoredProcedure          = $sp
-        StoredProcedureFullText  = $sp.TextBody
+        StoredProcedureFullText  = $StoredProcedureText
     } | Select-DefaultView -ExcludeProperty StoredProcedure, StoredProcedureFullText
 }
 }
