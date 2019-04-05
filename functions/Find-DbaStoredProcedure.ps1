@@ -104,98 +104,98 @@ function Find-DbaStoredProcedure {
 
             if ($IncludeSystemDatabases) {
                 $dbs = $server.Databases | Where-Object { $_.Status -eq "normal" }
-            } else {
-                $dbs = $server.Databases | Where-Object { $_.Status -eq "normal" -and $_.IsSystemObject -eq $false }
-            }
-
-            if ($Database) {
-                $dbs = $dbs | Where-Object Name -In $Database
-            }
-
-            if ($ExcludeDatabase) {
-                $dbs = $dbs | Where-Object Name -NotIn $ExcludeDatabase
-            }
-
-            $totalcount = 0
-            $dbcount = $dbs.count
-            foreach ($db in $dbs) {
-                Write-Message -Level Verbose -Message "Searching on database $db"
-
-                # If system objects aren't needed, find stored procedure text using SQL
-                # This prevents SMO from having to enumerate
-
-                if (!$IncludeSystemObjects) {
-                    Write-Message -Level Debug -Message $sql
-                    $rows = $db.ExecuteWithResults($sql).Tables.Rows
-                    $sproccount = 0
-
-                    foreach ($row in $rows) {
-                        $totalcount++; $sproccount++; $everyserverspcount++
-
-                        $procSchema = $row.ProcSchema
-                        $proc = $row.Name
-
-                        Write-Message -Level Verbose -Message "Looking in stored procedure: $procSchema.$proc textBody for $pattern"
-                        if ($row.TextBody -match $Pattern) {
-                            $sp = $db.StoredProcedures | Where-Object {$_.Schema -eq $procSchema -and $_.Name -eq $proc}
-
-                            $StoredProcedureText = $sp.TextBody.split("`n")
-                            $spTextFound = $StoredProcedureText | Select-String -Pattern $Pattern | ForEach-Object { "(LineNumber: $($_.LineNumber)) $($_.ToString().Trim())" }
-
-                            [PSCustomObject]@{
-                                ComputerName             = $server.ComputerName
-                                SqlInstance              = $server.ServiceName
-                                Database                 = $db.Name
-                                Schema                   = $sp.Schema
-                                Name                     = $sp.Name
-                                Owner                    = $sp.Owner
-                                IsSystemObject           = $sp.IsSystemObject
-                                CreateDate               = $sp.CreateDate
-                                LastModified             = $sp.DateLastModified
-                                StoredProcedureTextFound = $spTextFound -join "`n"
-                                StoredProcedure          = $sp
-                                StoredProcedureFullText  = $sp.TextBody
-                            } | Select-DefaultView -ExcludeProperty StoredProcedure, StoredProcedureFullText
-                        }
-                    }
-                } else {
-                    $storedprocedures = $db.StoredProcedures
-
-                    foreach ($sp in $storedprocedures) {
-                        $totalcount++; $sproccount++; $everyserverspcount++
-
-                        $procSchema = $sp.Schema
-                        $proc = $sp.Name
-
-                        Write-Message -Level Verbose -Message "Looking in stored procedure $procSchema.$proc textBody for $pattern"
-                        if ($sp.TextBody -match $Pattern) {
-
-                            $StoredProcedureText = $sp.TextBody.split("`n")
-                            $spTextFound = $StoredProcedureText | Select-String -Pattern $Pattern | ForEach-Object { "(LineNumber: $($_.LineNumber)) $($_.ToString().Trim())" }
-
-                            [PSCustomObject]@{
-                                ComputerName             = $server.ComputerName
-                                SqlInstance              = $server.ServiceName
-                                Database                 = $db.Name
-                                Schema                   = $sp.Schema
-                                Name                     = $sp.Name
-                                Owner                    = $sp.Owner
-                                IsSystemObject           = $sp.IsSystemObject
-                                CreateDate               = $sp.CreateDate
-                                LastModified             = $sp.DateLastModified
-                                StoredProcedureTextFound = $spTextFound -join "`n"
-                                StoredProcedure          = $sp
-                                StoredProcedureFullText  = $sp.TextBody
-                            } | Select-DefaultView -ExcludeProperty StoredProcedure, StoredProcedureFullText
-                        }
-                    }
-                }
-                Write-Message -Level Verbose -Message "Evaluated $sproccount stored procedures in $db"
-            }
-            Write-Message -Level Verbose -Message "Evaluated $totalcount total stored procedures in $dbcount databases"
-        }
+        } else {
+            $dbs = $server.Databases | Where-Object { $_.Status -eq "normal" -and $_.IsSystemObject -eq $false }
     }
-    end {
-        Write-Message -Level Verbose -Message "Evaluated $everyserverspcount total stored procedures"
-    }
+
+    if ($Database) {
+        $dbs = $dbs | Where-Object Name -In $Database
+}
+
+if ($ExcludeDatabase) {
+    $dbs = $dbs | Where-Object Name -NotIn $ExcludeDatabase
+}
+
+$totalcount = 0
+$dbcount = $dbs.count
+foreach ($db in $dbs) {
+    Write-Message -Level Verbose -Message "Searching on database $db"
+
+    # If system objects aren't needed, find stored procedure text using SQL
+    # This prevents SMO from having to enumerate
+
+    if (!$IncludeSystemObjects) {
+        Write-Message -Level Debug -Message $sql
+        $rows = $db.ExecuteWithResults($sql).Tables.Rows
+        $sproccount = 0
+
+        foreach ($row in $rows) {
+            $totalcount++; $sproccount++; $everyserverspcount++
+
+            $procSchema = $row.ProcSchema
+            $proc = $row.Name
+
+            Write-Message -Level Verbose -Message "Looking in stored procedure: $procSchema.$proc textBody for $pattern"
+            if ($row.TextBody -match $Pattern) {
+                $sp = $db.StoredProcedures | Where-Object { $_.Schema -eq $procSchema -and $_.Name -eq $proc }
+
+            $StoredProcedureText = $sp.TextBody.split("`n")
+            $spTextFound = $StoredProcedureText | Select-String -Pattern $Pattern | ForEach-Object { "(LineNumber: $($_.LineNumber)) $($_.ToString().Trim())" }
+
+    [PSCustomObject]@{
+        ComputerName             = $server.ComputerName
+        SqlInstance              = $server.ServiceName
+        Database                 = $db.Name
+        Schema                   = $sp.Schema
+        Name                     = $sp.Name
+        Owner                    = $sp.Owner
+        IsSystemObject           = $sp.IsSystemObject
+        CreateDate               = $sp.CreateDate
+        LastModified             = $sp.DateLastModified
+        StoredProcedureTextFound = $spTextFound -join "`n"
+        StoredProcedure          = $sp
+        StoredProcedureFullText  = $sp.TextBody
+    } | Select-DefaultView -ExcludeProperty StoredProcedure, StoredProcedureFullText
+}
+}
+} else {
+    $storedprocedures = $db.StoredProcedures
+
+    foreach ($sp in $storedprocedures) {
+        $totalcount++; $sproccount++; $everyserverspcount++
+
+        $procSchema = $sp.Schema
+        $proc = $sp.Name
+
+        Write-Message -Level Verbose -Message "Looking in stored procedure $procSchema.$proc textBody for $pattern"
+        if ($sp.TextBody -match $Pattern) {
+
+            $StoredProcedureText = $sp.TextBody.split("`n")
+            $spTextFound = $StoredProcedureText | Select-String -Pattern $Pattern | ForEach-Object { "(LineNumber: $($_.LineNumber)) $($_.ToString().Trim())" }
+
+    [PSCustomObject]@{
+        ComputerName             = $server.ComputerName
+        SqlInstance              = $server.ServiceName
+        Database                 = $db.Name
+        Schema                   = $sp.Schema
+        Name                     = $sp.Name
+        Owner                    = $sp.Owner
+        IsSystemObject           = $sp.IsSystemObject
+        CreateDate               = $sp.CreateDate
+        LastModified             = $sp.DateLastModified
+        StoredProcedureTextFound = $spTextFound -join "`n"
+        StoredProcedure          = $sp
+        StoredProcedureFullText  = $sp.TextBody
+    } | Select-DefaultView -ExcludeProperty StoredProcedure, StoredProcedureFullText
+}
+}
+}
+Write-Message -Level Verbose -Message "Evaluated $sproccount stored procedures in $db"
+}
+Write-Message -Level Verbose -Message "Evaluated $totalcount total stored procedures in $dbcount databases"
+}
+}
+end {
+    Write-Message -Level Verbose -Message "Evaluated $everyserverspcount total stored procedures"
+}
 }
