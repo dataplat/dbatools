@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
     and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.979] - 2019-03-31
+### Fixed
+* `New-DbaAvailabilityGroup` Missing Implementation of DtcSupport [#5310](https://github.com/sqlcollaborative/dbatools/issues/5310)
+### Added
+* Support for Managed Instances and Azure Blob Storage in `Copy-DbaDatabase` [#5322](https://github.com/sqlcollaborative/dbatools/pull/5322)
+
 ## [0.9.978] - 2019-03-28
 ### Changed
 * Remove output from `Write-DbaDataTable` [#5313](https://github.com/sqlcollaborative/dbatools/pull/5313)
