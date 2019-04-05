@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
     and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.801] - 2019-04-04
+### Fixed
+* Properly use `append` in `Export-DbaRepServerSetting` [#5333](https://github.com/sqlcollaborative/dbatools/pull/5333)
+### Added
+* New functions for data generation [#5331](https://github.com/sqlcollaborative/dbatools/pull/5331)
+
 ## [0.9.800] - 2019-04-02
 ### Changed
 * Latest versions of Glenn Berry's diagnostic queries
