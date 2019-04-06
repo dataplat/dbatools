@@ -274,9 +274,10 @@ function Export-DbaLogin {
                     $outsql += "`r`nUSE master`n"
                     # Getting some attributes
                     if ($DefaultDatabase) {
-                        $defaultDb = $DefaultDatabase } else {
+                        $defaultDb = $DefaultDatabase
+                    } else {
                         $defaultDb = $sourceLogin.DefaultDatabase
-                        }
+                    }
                     $language = $sourceLogin.Language
 
                     if ($sourceLogin.PasswordPolicyEnforced -eq $false) {
