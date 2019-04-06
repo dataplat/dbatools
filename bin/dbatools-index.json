@@ -6984,6 +6984,14 @@
                            "False"
                        ],
                        [
+                           "DefaultDatabase",
+                           "If this switch is enabled, all logins will be scripted with specified default database,\r\nthat could help to successfuly import logins on server that is missing default database for login.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
                            "ExcludeJobs",
                            "If this switch is enabled, Agent job ownership will not be exported.",
                            "",
@@ -7040,7 +7048,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Export-DbaLogin [[-SqlInstance] \u003cDbaInstanceParameter\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Login] \u003cObject[]\u003e] [[-ExcludeLogin] \u003cObject[]\u003e] [[-Database] \u003cObject[]\u003e] [[-Path] \u003cString\u003e] [-NoClobber] [-Append] [-ExcludeDatabases] [-ExcludeJobs] [-EnableException] [-ExcludeGoBatchSeparator] [[-DestinationVersion] \u003cString\u003e] [[-InputObject] \u003cObject[]\u003e] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Export-DbaLogin [[-SqlInstance] \u003cDbaInstanceParameter\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Login] \u003cObject[]\u003e] [[-ExcludeLogin] \u003cObject[]\u003e] [[-Database] \u003cObject[]\u003e] [[-Path] \u003cString\u003e] [-NoClobber] [-Append] [-ExcludeDatabases] [[-DefaultDatabase] \u003cString\u003e] [-ExcludeJobs] [-EnableException] [-ExcludeGoBatchSeparator] [[-DestinationVersion] \u003cString\u003e] [[-InputObject] \u003cObject[]\u003e] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Export-DbaPfDataCollectorSetTemplate",
