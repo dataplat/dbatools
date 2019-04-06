@@ -184,11 +184,11 @@ namespace Sqlcollaborative.Dbatools.Commands
         #endregion Private fields
 
         #region Internal Resources
-        private static string _scriptErrorValidationFullName = "Stop-Function -Message \"Invalid Name: {0} ! At least one '.' is required, to separate module from name\" -EnableException ${1} -Category InvalidArgument -FunctionName 'Set-DbatoolsConfig'";
-        private static string _scriptErrorValidationName = "Stop-Function -Message \"Invalid Name: {0} ! Need to specify a legally namespaced name!\" -EnableException ${1} -Category InvalidArgument -FunctionName 'Set-DbatoolsConfig'";
-        private static string _scriptErrorValidationValidation = "Stop-Function -Message \"Invalid validation name: {0}. Supported validations: {1}\" -EnableException ${2} -Category InvalidArgument -FunctionName 'Set-DbatoolsConfig'";
-        private static string _updateError = "param ($Exception)\nStop-Function -Message \"Could not update configuration: {0}\" -EnableException ${1} -Category InvalidArgument -Exception $Exception -FunctionName 'Set-DbatoolsConfig'";
-        private static string _updatePolicyForbids = "Stop-Function -Message \"Could not update configuration: {0} - The current settings have been enforced by policy!\" -EnableException ${1} -Category PermissionDenied -FunctionName 'Set-DbatoolsConfig'";
+        private static string _scriptErrorValidationFullName = "$__dbatools_Module = Get-Module dbatools\n& $__dbatools_Module { Stop-Function -Message \"Invalid Name: {0} ! At least one '.' is required, to separate module from name\" -EnableException ${1} -Category InvalidArgument -FunctionName 'Set-DbatoolsConfig' }";
+        private static string _scriptErrorValidationName = "$__dbatools_Module = Get-Module dbatools\n& $__dbatools_Module { Stop-Function -Message \"Invalid Name: {0} ! Need to specify a legally namespaced name!\" -EnableException ${1} -Category InvalidArgument -FunctionName 'Set-DbatoolsConfig' }";
+        private static string _scriptErrorValidationValidation = "$__dbatools_Module = Get-Module dbatools\n& $__dbatools_Module { Stop-Function -Message \"Invalid validation name: {0}. Supported validations: {1}\" -EnableException ${2} -Category InvalidArgument -FunctionName 'Set-DbatoolsConfig' }";
+        private static string _updateError = "param ($Exception)\n$__dbatools_Module = Get-Module dbatools\n& $__dbatools_Module { Stop-Function -Message \"Could not update configuration: {0}\" -EnableException ${1} -Category InvalidArgument -Exception $Exception -FunctionName 'Set-DbatoolsConfig' }";
+        private static string _updatePolicyForbids = "$__dbatools_Module = Get-Module dbatools\n& $__dbatools_Module { Stop-Function -Message \"Could not update configuration: {0} - The current settings have been enforced by policy!\" -EnableException ${1} -Category PermissionDenied -FunctionName 'Set-DbatoolsConfig' }";
         #endregion Internal Resources
 
         #region Cmdlet methods

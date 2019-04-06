@@ -88,7 +88,7 @@ function Copy-DbaAgentServer {
         try {
             $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
         } catch {
-            Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Source
+            Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $Source
             return
         }
         Invoke-SmoCheck -SqlInstance $sourceServer
@@ -100,37 +100,44 @@ function Copy-DbaAgentServer {
             try {
                 $destServer = Connect-SqlInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential
             } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
             }
             Invoke-SmoCheck -SqlInstance $destServer
             # All of these support whatif inside of them
-            Copy-DbaAgentJobCategory -Source $sourceServer -Destination $destServer -Force:$force
+            Copy-DbaAgentJobCategory -Source $sourceServer -Destination $destinstance -DestinationSqlCredentia $DestinationSqlCredential -Force:$force
 
+            $destServer.Refresh()
+            $destServer.JobServer.Refresh()
             $destServer.JobServer.JobCategories.Refresh()
             $destServer.JobServer.OperatorCategories.Refresh()
             $destServer.JobServer.AlertCategories.Refresh()
 
-            Copy-DbaAgentOperator -Source $sourceServer -Destination $destServer -Force:$force
+            Copy-DbaAgentOperator -Source $sourceServer -Destination $destinstance -DestinationSqlCredentia $DestinationSqlCredential -Force:$force
+            $destServer.Refresh()
+            $destServer.JobServer.Refresh()
             $destServer.JobServer.Operators.Refresh()
 
-            Copy-DbaAgentAlert -Source $sourceServer -Destination $destServer -Force:$force -IncludeDefaults
+            # extra reconnect to force refresh
+            $destServer = Connect-SqlInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential
+
+            Copy-DbaAgentAlert -Source $sourceServer -Destination $destinstance -DestinationSqlCredentia $DestinationSqlCredential -Force:$force -IncludeDefaults
             $destServer.JobServer.Alerts.Refresh()
 
-            Copy-DbaAgentProxy -Source $sourceServer -Destination $destServer -Force:$force
+            Copy-DbaAgentProxy -Source $sourceServer -Destination $destinstance -DestinationSqlCredentia $DestinationSqlCredential -Force:$force
             $destServer.JobServer.ProxyAccounts.Refresh()
 
-            Copy-DbaAgentSchedule -Source $sourceServer -Destination $destServer -Force:$force
+            Copy-DbaAgentSchedule -Source $sourceServer -Destination $destinstance -DestinationSqlCredentia $DestinationSqlCredential -Force:$force
             $destServer.JobServer.SharedSchedules.Refresh()
 
             $destServer.JobServer.Refresh()
             $destServer.Refresh()
-            Copy-DbaAgentJob -Source $sourceServer -Destination $destServer -Force:$force -DisableOnDestination:$DisableJobsOnDestination -DisableOnSource:$DisableJobsOnSource
+            Copy-DbaAgentJob -Source $sourceServer -Destination $destinstance -DestinationSqlCredentia $DestinationSqlCredential -Force:$force -DisableOnDestination:$DisableJobsOnDestination -DisableOnSource:$DisableJobsOnSource
 
             # To do
             <#
-            Copy-DbaAgentMasterServer -Source $sourceServer -Destination $destServer -Force:$force
-            Copy-DbaAgentTargetServer -Source $sourceServer -Destination $destServer -Force:$force
-            Copy-DbaAgentTargetServerGroup -Source $sourceServer -Destination $destServer -Force:$force
+            Copy-DbaAgentMasterServer -Source $sourceServer -Destination $destinstance -DestinationSqlCredentia $DestinationSqlCredential -Force:$force
+            Copy-DbaAgentTargetServer -Source $sourceServer -Destination $destinstance -DestinationSqlCredentia $DestinationSqlCredential -Force:$force
+            Copy-DbaAgentTargetServerGroup -Source $sourceServer -Destination $destinstance -DestinationSqlCredentia $DestinationSqlCredential -Force:$force
         #>
 
             <# Here are the properties which must be migrated separately #>

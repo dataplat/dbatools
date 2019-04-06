@@ -5,7 +5,7 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     Context "Validate parameters" {
         [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance','SqlCredential','Credential','EnableException'
+        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Credential', 'EnableException'
         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         It "Should only contain our specific parameters" {
             (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
@@ -24,12 +24,6 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
                 Mock Get-DbaMaxMemory -MockWith { return $null }
                 { Test-DbaMaxMemory -SqlInstance '' } | Should Throw
             }
-
-            It 'SqlInstance parameter host cannot be found' {
-                Mock Get-DbaMaxMemory -MockWith { return $null }
-                Test-DbaMaxMemory -SqlInstance 'ABC' 3> $null | Should be $null
-            }
-
         }
 
         Context 'Validate functionality - Single Instance' {

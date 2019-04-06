@@ -283,7 +283,7 @@ function Install-DbaMaintenanceSolution {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -NonPooled
             } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             if ((Test-Bound -ParameterName ReplaceExisting -Not)) {
@@ -304,7 +304,7 @@ function Install-DbaMaintenanceSolution {
 
             $db = $server.Databases[$Database]
 
-            if (-not $Solution -match 'All') {
+            if (-not ($Solution -match 'All')) {
                 $required = @('CommandExecute.sql')
             }
 

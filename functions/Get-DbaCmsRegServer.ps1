@@ -140,7 +140,7 @@ function Get-DbaCmsRegServer {
         }
 
         if ($ExcludeGroup) {
-            $excluded = Get-DbaCmsRegServer $serverstore.ServerConnection.SqlConnectionObject -Group $ExcludeGroup
+            $excluded = Get-DbaCmsRegServer -SqlInstance $serverstore.ParentServer -Group $ExcludeGroup
             Write-Message -Level Verbose -Message "Excluding $ExcludeGroup"
             $servers = $servers | Where-Object { $_.Urn.Value -notin $excluded.Urn.Value }
         }
@@ -162,6 +162,7 @@ function Get-DbaCmsRegServer {
             Add-Member -Force -InputObject $server -MemberType NoteProperty -Name Group -value $groupname
             Add-Member -Force -InputObject $server -MemberType NoteProperty -Name FQDN -Value $null
             Add-Member -Force -InputObject $server -MemberType NoteProperty -Name IPAddress -Value $null
+            Add-Member -Force -InputObject $server -MemberType NoteProperty -Name ParentServer -Value $serverstore.ParentServer
 
             if ($ResolveNetworkName) {
                 try {

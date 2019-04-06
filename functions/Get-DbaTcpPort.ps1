@@ -184,7 +184,7 @@ function Get-DbaTcpPort {
                 try {
                     $server = Connect-SqlInstance -SqlInstance "TCP:$instance" -SqlCredential $SqlCredential -MinimumVersion 9
                 } catch {
-                    Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target "TCP:$instance" -Continue
+                    Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target "TCP:$instance" -Continue
                 }
 
                 # WmiComputer can be unreliable :( Use T-SQL

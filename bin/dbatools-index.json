@@ -163,6 +163,14 @@
                            ""
                        ],
                        [
+                           "Name",
+                           "The name of the listener. If one is not specified, the Availability Group name will be used.\nNote that Name cannot be used with Multiple Ags.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
                            "IPAddress",
                            "Sets the IP address of the availability group listener.",
                            "",
@@ -235,7 +243,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Add-DbaAgListener [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-AvailabilityGroup] \u003cString[]\u003e] [[-IPAddress] \u003cIPAddress\u003e] [[-SubnetMask] \u003cIPAddress\u003e] [[-Port] \u003cInt32\u003e] [-Dhcp] [-Passthru] [[-InputObject] \u003cAvailabilityGroup[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Add-DbaAgListener [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-AvailabilityGroup] \u003cString[]\u003e] [[-Name] \u003cString\u003e] [[-IPAddress] \u003cIPAddress\u003e] [[-SubnetMask] \u003cIPAddress\u003e] [[-Port] \u003cInt32\u003e] [-Dhcp] [-Passthru] [[-InputObject] \u003cAvailabilityGroup[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Add-DbaAgReplica",
@@ -403,7 +411,7 @@
         "Alias":  "Add-DbaRegisteredServer",
         "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "CommandName":  "Add-DbaCmsRegServer",
-        "Availability":  "Windows only",
+        "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Add-DbaCmsRegServer",
         "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eAdd-DbaCmsRegServer -SqlInstance sql2008 -ServerName sql01\nCreates a registered server on sql2008\u0027s CMS which points to the SQL Server, sql01. When scrolling in CMS, the name \"sql01\" will be visible.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eAdd-DbaCmsRegServer -SqlInstance sql2008 -ServerName sql01 -Name \"The 2008 Clustered Instance\" -Description \"HR\u0027s Dedicated SharePoint instance\"\nCreates a registered server on sql2008\u0027s CMS which points to the SQL Server, sql01. When scrolling in CMS, \"The 2008 Clustered Instance\" will be visible.\r\nClearly this is hard to explain ;)\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eAdd-DbaCmsRegServer -SqlInstance sql2008 -ServerName sql01 -Group hr\\Seattle\nCreates a registered server on sql2008\u0027s CMS which points to the SQL Server, sql01. When scrolling in CMS, the name \"sql01\" will be visible within the Seattle group which is in the hr group.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaCmsRegServerGroup -SqlInstance sql2008 -Group hr\\Seattle | Add-DbaCmsRegServer -ServerName sql01111\nCreates a registered server on sql2008\u0027s CMS which points to the SQL Server, sql01. When scrolling in CMS, the name \"sql01\" will be visible within the Seattle group which is in the hr group.",
         "Params":  [
@@ -501,7 +509,7 @@
         "Alias":  "Add-DbaRegisteredServerGroup",
         "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "CommandName":  "Add-DbaCmsRegServerGroup",
-        "Availability":  "Windows only",
+        "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Add-DbaCmsRegServerGroup",
         "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eAdd-DbaCmsRegServerGroup -SqlInstance sql2012 -Name HR\nCreates a registered server group called HR, in the root of sql2012\u0027s CMS\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eAdd-DbaCmsRegServerGroup -SqlInstance sql2012, sql2014 -Name sub-folder -Group HR\nCreates a registered server group on sql2012 and sql2014 called sub-folder within the HR group\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaCmsRegServerGroup -SqlInstance sql2012, sql2014 -Group HR | Add-DbaCmsRegServerGroup -Name sub-folder\nCreates a registered server group on sql2012 and sql2014 called sub-folder within the HR group of each server",
         "Params":  [
@@ -1597,6 +1605,14 @@
                            ""
                        ],
                        [
+                           "AzureUnsupported",
+                           "Terminate if Azure is detected but not supported",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
                            "BatchSeparator",
                            "A string to separate groups of SQL statements being executed. By default, this is \"GO\".",
                            "",
@@ -1655,6 +1671,14 @@
                        [
                            "MinPoolSize",
                            "Sets the minimum number of connections allowed in the connection pool for this specific connection string.",
+                           "",
+                           false,
+                           "false",
+                           "0"
+                       ],
+                       [
+                           "MinimumVersion",
+                           "Terminate if the target SQL Server instance version does not meet version requirements",
                            "",
                            false,
                            "false",
@@ -1765,7 +1789,7 @@
                            "False"
                        ]
                    ],
-        "Syntax":  "Connect-DbaInstance [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cObject[]\u003e] [[-AccessToken] \u003cString\u003e] [[-ApplicationIntent] \u003cString\u003e] [[-BatchSeparator] \u003cString\u003e] [[-ClientName] \u003cString\u003e] [[-ConnectTimeout] \u003cInt32\u003e] [-EncryptConnection] [[-FailoverPartner] \u003cString\u003e] [[-LockTimeout] \u003cInt32\u003e] [[-MaxPoolSize] \u003cInt32\u003e] [[-MinPoolSize] \u003cInt32\u003e] [-MultipleActiveResultSets] [-MultiSubnetFailover] [[-NetworkProtocol] \u003cString\u003e] [-NonPooledConnection] [[-PacketSize] \u003cInt32\u003e] [[-PooledConnectionLifetime] \u003cInt32\u003e] [[-SqlExecutionModes] \u003cString\u003e] \r\n[[-StatementTimeout] \u003cInt32\u003e] [-TrustServerCertificate] [[-WorkstationId] \u003cString\u003e] [[-AppendConnectionString] \u003cString\u003e] [-SqlConnectionOnly] [-DisableException] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Connect-DbaInstance [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString\u003e] [[-AccessToken] \u003cString\u003e] [[-ApplicationIntent] \u003cString\u003e] [-AzureUnsupported] [[-BatchSeparator] \u003cString\u003e] [[-ClientName] \u003cString\u003e] [[-ConnectTimeout] \u003cInt32\u003e] [-EncryptConnection] [[-FailoverPartner] \u003cString\u003e] [[-LockTimeout] \u003cInt32\u003e] [[-MaxPoolSize] \u003cInt32\u003e] [[-MinPoolSize] \u003cInt32\u003e] [[-MinimumVersion] \u003cInt32\u003e] [-MultipleActiveResultSets] [-MultiSubnetFailover] [[-NetworkProtocol] \u003cString\u003e] [-NonPooledConnection] [[-PacketSize] \u003cInt32\u003e] [[-PooledConnectionLifetime] \u003cInt32\u003e] \r\n[[-SqlExecutionModes] \u003cString\u003e] [[-StatementTimeout] \u003cInt32\u003e] [-TrustServerCertificate] [[-WorkstationId] \u003cString\u003e] [[-AppendConnectionString] \u003cString\u003e] [-SqlConnectionOnly] [-DisableException] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "ConvertTo-DbaDataTable",
@@ -1855,6 +1879,14 @@
                            ""
                        ],
                        [
+                           "ExcludeRowLabel",
+                           "By default, the Timeline shows SqlInstance and item name (agent job or database) in row labels section of the chart.\r\nWhen this parameter (ExcludeRowLabel) is set to true the row labels will not be shown which will maximise the chart area for better visualisation.\r\nAll relevant details are still available in the tooltip.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
                            "EnableException",
                            "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
                            "",
@@ -1863,7 +1895,7 @@
                            "False"
                        ]
                    ],
-        "Syntax":  "ConvertTo-DbaTimeline [-InputObject] \u003cObject[]\u003e [-EnableException] [\u003cCommonParameters\u003e]"
+        "Syntax":  "ConvertTo-DbaTimeline [-InputObject] \u003cObject[]\u003e [-ExcludeRowLabel] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "ConvertTo-DbaXESession",
@@ -2035,13 +2067,13 @@
         "CommandName":  "Copy-DbaAgentJob",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Copy-DbaAgentJob",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eCopy-DbaAgentJob -Source sqlserver2014a -Destination sqlcluster\nCopies all jobs from sqlserver2014a to sqlcluster, using Windows credentials. If jobs with the same name exist on sqlcluster, they will be skipped.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eCopy-DbaAgentJob -Source sqlserver2014a -Destination sqlcluster -Job PSJob -SourceSqlCredential $cred -Force\nCopies a single job, the PSJob job from sqlserver2014a to sqlcluster, using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster. If a job with the same name exists on \r\nsqlcluster, it will be dropped and recreated because -Force was used.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eCopy-DbaAgentJob -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force\nShows what would happen if the command were executed using force.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaAgentJob -SqlInstance sqlserver2014a | Where-Object Category -eq \"Report Server\" | ForEach-Object {Copy-DbaAgentJob -Source $_.SqlInstance -Job $_.Name -Destination sqlserver2014b}\nCopies all SSRS jobs (subscriptions) from AlwaysOn Primary SQL instance sqlserver2014a to AlwaysOn Secondary SQL instance sqlserver2014b",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eCopy-DbaAgentJob -Source sqlserver2014a -Destination sqlcluster\nCopies all jobs from sqlserver2014a to sqlcluster, using Windows credentials. If jobs with the same name exist on sqlcluster, they will be skipped.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eCopy-DbaAgentJob -Source sqlserver2014a -Destination sqlcluster -Job PSJob -SourceSqlCredential $cred -Force\nCopies a single job, the PSJob job from sqlserver2014a to sqlcluster, using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster. If a job with the same name exists on \r\nsqlcluster, it will be dropped and recreated because -Force was used.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eCopy-DbaAgentJob -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force\nShows what would happen if the command were executed using force.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaAgentJob -SqlInstance sqlserver2014a | Where-Object Category -eq \"Report Server\" | Copy-DbaAgentJob -Destination sqlserver2014b\nCopies all SSRS jobs (subscriptions) from AlwaysOn Primary SQL instance sqlserver2014a to AlwaysOn Secondary SQL instance sqlserver2014b",
         "Params":  [
                        [
                            "Source",
                            "Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or higher.",
                            "",
-                           true,
+                           false,
                            "false",
                            ""
                        ],
@@ -2110,9 +2142,17 @@
                            "False"
                        ],
                        [
+                           "InputObject",
+                           "Piped in jobs from Get-DbaAgentJob",
+                           "",
+                           false,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
                            "EnableException",
                            "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
-                           "Silent",
+                           "",
                            false,
                            "false",
                            "False"
@@ -2134,7 +2174,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Copy-DbaAgentJob [-Source] \u003cDbaInstanceParameter\u003e [[-SourceSqlCredential] \u003cPSCredential\u003e] [-Destination] \u003cDbaInstanceParameter[]\u003e [[-DestinationSqlCredential] \u003cPSCredential\u003e] [[-Job] \u003cObject[]\u003e] [[-ExcludeJob] \u003cObject[]\u003e] [-DisableOnSource] [-DisableOnDestination] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Copy-DbaAgentJob [[-Source] \u003cDbaInstanceParameter\u003e] [[-SourceSqlCredential] \u003cPSCredential\u003e] [-Destination] \u003cDbaInstanceParameter[]\u003e [[-DestinationSqlCredential] \u003cPSCredential\u003e] [[-Job] \u003cObject[]\u003e] [[-ExcludeJob] \u003cObject[]\u003e] [-DisableOnSource] [-DisableOnDestination] [-Force] [[-InputObject] \u003cJob[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Copy-DbaAgentJobCategory",
@@ -3047,7 +3087,7 @@
         "CommandName":  "Copy-DbaDatabase",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Copy-DbaDatabase",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eCopy-DbaDatabase -Source sql2014a -Destination sql2014b -Database TestDB -BackupRestore -SharedPath \\\\fileshare\\sql\\migration\nMigrates a single user database TestDB using Backup and restore from instance sql2014a to sql2014b. Backup files are stored in \\\\fileshare\\sql\\migration.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eCopy-DbaDatabase -Source sql2012 -Destination sql2014, sql2016 -DetachAttach -Reattach\nDatabases will be migrated from sql2012 to both sql2014 and sql2016 using the detach/copy files/attach method.The following will be performed: kick all users out of the database, detach all data/log \r\nfiles, move files across the network over an admin share (\\\\SqlSERVER\\M$\\MSSql...), attach file on destination server, reattach at source. If the database files (*.mdf, *.ndf, *.ldf) on *destination* \r\nexist and aren\u0027t in use, they will be overwritten.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eCopy-DbaDatabase -Source sql2014a -Destination sqlcluster, sql2016 -BackupRestore -UseLastBackup -Force\nMigrates all user databases to sqlcluster and sql2016 using the last Full, Diff and Log backups from sql204a. If the databases exists on the destinations, they will be dropped prior to attach.\nNote that the backups must exist in a location accessible by all destination servers, such a network share.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eCopy-DbaDatabase -Source sql2014a -Destination sqlcluster -ExcludeDatabase Northwind, pubs -IncludeSupportDbs -Force -BackupRestore -SharedPath \\\\fileshare\\sql\\migration\nMigrates all user databases except for Northwind and pubs by using backup/restore (copy-only). Backup files are stored in \\\\fileshare\\sql\\migration. If the database exists on the destination, it will \r\nbe dropped prior to attach.\nIt also includes the support databases (ReportServer, ReportServerTempDb, distribution).",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eCopy-DbaDatabase -Source sql2014a -Destination sql2014b -Database TestDB -BackupRestore -SharedPath \\\\fileshare\\sql\\migration\nMigrates a single user database TestDB using Backup and restore from instance sql2014a to sql2014b. Backup files are stored in \\\\fileshare\\sql\\migration.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eCopy-DbaDatabase -Source sql2012 -Destination sql2014, sql2016 -DetachAttach -Reattach\nDatabases will be migrated from sql2012 to both sql2014 and sql2016 using the detach/copy files/attach method.The following will be performed: kick all users out of the database, detach all data/log \r\nfiles, move files across the network over an admin share (\\\\SqlSERVER\\M$\\MSSql...), attach file on destination server, reattach at source. If the database files (*.mdf, *.ndf, *.ldf) on *destination* \r\nexist and aren\u0027t in use, they will be overwritten.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eCopy-DbaDatabase -Source sql2014a -Destination sqlcluster, sql2016 -BackupRestore -UseLastBackup -Force\nMigrates all user databases to sqlcluster and sql2016 using the last Full, Diff and Log backups from sql204a. If the databases exists on the destinations, they will be dropped prior to attach.\nNote that the backups must exist in a location accessible by all destination servers, such a network share.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eCopy-DbaDatabase -Source sql2014a -Destination sqlcluster -ExcludeDatabase Northwind, pubs -IncludeSupportDbs -Force -BackupRestore -SharedPath \\\\fileshare\\sql\\migration\nMigrates all user databases except for Northwind and pubs by using backup/restore (copy-only). Backup files are stored in \\\\fileshare\\sql\\migration. If the database exists on the destination, it will \r\nbe dropped prior to attach.\nIt also includes the support databases (ReportServer, ReportServerTempDb, distribution).\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003ePS C:\\ Copy-DbaDatabase -Source sql2014 -Destination managedinstance.cus19c972e4513d6.database.windows.net -DestinationCredential $cred -AllDatabases -SharedPath \r\nhttps://someblob.blob.core.windows.net/sql\nMigrate all user databases from instance sql2014 to the specified Azure SQL Manage Instance using the blob storage account https://someblob.blob.core.windows.net/sql using a Shared Access Signature \r\n(SAS) credential with a name matching the blob storage account\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003ePS C:\\ Copy-DbaDatabase -Source sql2014 -Destination managedinstance.cus19c972e4513d6.database.windows.net -DestinationCredential $cred -Database MyDb -NewName AzureDb -WithReplace -SharedPath \r\nhttps://someblob.blob.core.windows.net/sql -Azure Credential AzBlobCredential\nMigrates Mydb from instance sql2014 to AzureDb on the specified Azure SQL Manage Instance, replacing the existing AzureDb if it exists, using the blob storage account \r\nhttps://someblob.blob.core.windows.net/sql using the Sql Server Credential AzBlobCredential",
         "Params":  [
                        [
                            "Source",
@@ -3115,8 +3155,16 @@
                        ],
                        [
                            "SharedPath",
-                           "Specifies the network location for the backup files. The SQL Server service accounts must have read/write permission on this path.",
+                           "Specifies the network location for the backup files. The SQL Server service accounts must have read/write permission on this path.\r\nCan be either a full path \u0027c:\\backups\u0027, a UNC path \u0027\\\\server\\backups\u0027 or an Azure storage Account \u0027https://example.blob.core.windows.net/sql/\u0027",
                            "NetworkShare",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "AzureCredential",
+                           "The name of the credential on the SQL instance that can write to the AzureBaseUrl, only needed if using Storage access keys\r\nIf using SAS credentials, the command will look for a credential with a name matching the AzureBaseUrl",
+                           "",
                            false,
                            "false",
                            ""
@@ -3282,7 +3330,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Copy-DbaDatabase [-Source \u003cDbaInstanceParameter\u003e] [-SourceSqlCredential \u003cPSCredential\u003e] -Destination \u003cDbaInstanceParameter[]\u003e [-DestinationSqlCredential \u003cPSCredential\u003e] [-Database \u003cObject[]\u003e] [-ExcludeDatabase \u003cObject[]\u003e] [-AllDatabases] -BackupRestore [-SharedPath \u003cString\u003e] [-WithReplace] [-NoRecovery] [-NoBackupCleanup] [-NumberFiles \u003cInt32\u003e] [-SetSourceReadOnly] [-ReuseSourceFolderStructure] [-IncludeSupportDbs] [-UseLastBackup] [-Continue] [-InputObject \u003cDatabase[]\u003e] [-NoCopyOnly] [-SetSourceOffline] [-NewName \u003cString\u003e] [-Prefix \u003cString\u003e] [-Force] [-EnableException] [-WhatIf] [-Confirm] \r\n[\u003cCommonParameters\u003e]\nCopy-DbaDatabase [-Source \u003cDbaInstanceParameter\u003e] [-SourceSqlCredential \u003cPSCredential\u003e] -Destination \u003cDbaInstanceParameter[]\u003e [-DestinationSqlCredential \u003cPSCredential\u003e] [-Database \u003cObject[]\u003e] [-ExcludeDatabase \u003cObject[]\u003e] [-AllDatabases] -DetachAttach [-Reattach] [-SetSourceReadOnly] [-ReuseSourceFolderStructure] [-IncludeSupportDbs] [-InputObject \u003cDatabase[]\u003e] [-NoCopyOnly] [-SetSourceOffline] [-NewName \u003cString\u003e] [-Prefix \u003cString\u003e] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Copy-DbaDatabase [-Source \u003cDbaInstanceParameter\u003e] [-SourceSqlCredential \u003cPSCredential\u003e] -Destination \u003cDbaInstanceParameter[]\u003e [-DestinationSqlCredential \u003cPSCredential\u003e] [-Database \u003cObject[]\u003e] [-ExcludeDatabase \u003cObject[]\u003e] [-AllDatabases] -BackupRestore [-SharedPath \u003cString\u003e] [-AzureCredential \u003cString\u003e] [-WithReplace] [-NoRecovery] [-NoBackupCleanup] [-NumberFiles \u003cInt32\u003e] [-SetSourceReadOnly] [-ReuseSourceFolderStructure] [-IncludeSupportDbs] [-UseLastBackup] [-Continue] [-InputObject \u003cDatabase[]\u003e] [-NoCopyOnly] [-SetSourceOffline] [-NewName \u003cString\u003e] [-Prefix \u003cString\u003e] [-Force] \r\n[-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nCopy-DbaDatabase [-Source \u003cDbaInstanceParameter\u003e] [-SourceSqlCredential \u003cPSCredential\u003e] -Destination \u003cDbaInstanceParameter[]\u003e [-DestinationSqlCredential \u003cPSCredential\u003e] [-Database \u003cObject[]\u003e] [-ExcludeDatabase \u003cObject[]\u003e] [-AllDatabases] [-AzureCredential \u003cString\u003e] -DetachAttach [-Reattach] [-SetSourceReadOnly] [-ReuseSourceFolderStructure] [-IncludeSupportDbs] [-InputObject \u003cDatabase[]\u003e] [-NoCopyOnly] [-SetSourceOffline] [-NewName \u003cString\u003e] [-Prefix \u003cString\u003e] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Copy-DbaDataCollector",
@@ -3683,7 +3731,7 @@
     },
     {
         "Name":  "Copy-DbaDbTableData",
-        "Description":  "Copies data between SQL Server tables using SQL Bulk Copy.\nThe same can be achieved also doing\n$sourcetable = Invoke-DbaQuery -SqlInstance instance1 ... -As DataTable\nWrite-DbaDataTable -SqlInstance ... -InputObject $sourcetable\nbut it will force buffering the contents on the table in memory (high RAM usage for large tables).\nWith this function, a streaming copy will be done in the most speedy and least resource-intensive way.",
+        "Description":  "Copies data between SQL Server tables using SQL Bulk Copy.\nThe same can be achieved also doing\n$sourcetable = Invoke-DbaQuery -SqlInstance instance1 ... -As DataTable\nWrite-DbaDbTableData -SqlInstance ... -InputObject $sourcetable\nbut it will force buffering the contents on the table in memory (high RAM usage for large tables).\nWith this function, a streaming copy will be done in the most speedy and least resource-intensive way.",
         "Tags":  "Migration",
         "Synopsis":  "Copies data between SQL Server tables.",
         "Alias":  "Copy-DbaTableData",
@@ -3691,7 +3739,7 @@
         "CommandName":  "Copy-DbaDbTableData",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Copy-DbaDbTableData",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eCopy-DbaDbTableData -SqlInstance sql1 -Destination sql2 -Database dbatools_from -Table dbo.test_table\nCopies all the data from table dbo.test_table in database dbatools_from on sql1 to table test_table in database dbatools_from on sql2.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eCopy-DbaDbTableData -SqlInstance sql1 -Destination sql2 -Database dbatools_from -DestinationDatabase dbatools_dest -Table [Schema].[test table]\nCopies all the data from table [Schema].[test table] in database dbatools_from on sql1 to table [Schema].[test table] in database dbatools_dest on sql2\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaDbTable -SqlInstance sql1 -Database tempdb -Table tb1, tb2 | Copy-DbaDbTableData -DestinationTable tb3\nCopies all data from tables tb1 and tb2 in tempdb on sql1 to tb3 in tempdb on sql1\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaDbTable -SqlInstance sql1 -Database tempdb -Table tb1, tb2 | Copy-DbaDbTableData -Destination sql2\nCopies data from tbl1 in tempdb on sql1 to tbl1 in tempdb on sql2\r\nthen\r\nCopies data from tbl2 in tempdb on sql1 to tbl2 in tempdb on sql2\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eCopy-DbaDbTableData -SqlInstance sql1 -Destination sql2 -Database dbatools_from -Table test_table -KeepIdentity -Truncate\nCopies all the data in table test_table from sql1 to sql2, using the database dbatools_from, keeping identity columns and truncating the destination\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003e$params = @{\n\u003e\u003e SourceSqlInstance = \u0027sql1\u0027\r\n\u003e\u003e DestinationSqlInstance = \u0027sql2\u0027\r\n\u003e\u003e Database = \u0027dbatools_from\u0027\r\n\u003e\u003e DestinationDatabase = \u0027dbatools_dest\u0027\r\n\u003e\u003e Table = \u0027[Schema].[Table]\u0027\r\n\u003e\u003e DestinationTable = \u0027[dbo].[Table.Copy]\u0027\r\n\u003e\u003e KeepIdentity = $true\r\n\u003e\u003e KeepNulls = $true\r\n\u003e\u003e Truncate = $true\r\n\u003e\u003e BatchSize = 10000\r\n\u003e\u003e }\r\n\u003e\u003e\r\nPS C:\\\u003e Copy-DbaDbTableData @params\nCopies all the data from table [Schema].[Table] in database dbatools_from on sql1 to table [dbo].[Table.Copy] in database dbatools_dest on sql2\r\nKeeps identity columns and Nulls, truncates the destination and processes in BatchSize of 10000.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eCopy-DbaDbTableData -SqlInstance sql1 -Destination sql2 -Database dbatools_from -Table dbo.test_table\nCopies all the data from table dbo.test_table in database dbatools_from on sql1 to table test_table in database dbatools_from on sql2.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eCopy-DbaDbTableData -SqlInstance sql1 -Destination sql2 -Database dbatools_from -DestinationDatabase dbatools_dest -Table [Schema].[test table]\nCopies all the data from table [Schema].[test table] in database dbatools_from on sql1 to table [Schema].[test table] in database dbatools_dest on sql2\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaDbTable -SqlInstance sql1 -Database tempdb -Table tb1, tb2 | Copy-DbaDbTableData -DestinationTable tb3\nCopies all data from tables tb1 and tb2 in tempdb on sql1 to tb3 in tempdb on sql1\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaDbTable -SqlInstance sql1 -Database tempdb -Table tb1, tb2 | Copy-DbaDbTableData -Destination sql2\nCopies data from tbl1 in tempdb on sql1 to tbl1 in tempdb on sql2\r\nthen\r\nCopies data from tbl2 in tempdb on sql1 to tbl2 in tempdb on sql2\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eCopy-DbaDbTableData -SqlInstance sql1 -Destination sql2 -Database dbatools_from -Table test_table -KeepIdentity -Truncate\nCopies all the data in table test_table from sql1 to sql2, using the database dbatools_from, keeping identity columns and truncating the destination\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003e$params = @{\n\u003e\u003e SqlInstance = \u0027sql1\u0027\r\n\u003e\u003e Destination = \u0027sql2\u0027\r\n\u003e\u003e Database = \u0027dbatools_from\u0027\r\n\u003e\u003e DestinationDatabase = \u0027dbatools_dest\u0027\r\n\u003e\u003e Table = \u0027[Schema].[Table]\u0027\r\n\u003e\u003e DestinationTable = \u0027[dbo].[Table.Copy]\u0027\r\n\u003e\u003e KeepIdentity = $true\r\n\u003e\u003e KeepNulls = $true\r\n\u003e\u003e Truncate = $true\r\n\u003e\u003e BatchSize = 10000\r\n\u003e\u003e }\r\n\u003e\u003e\r\nPS C:\\\u003e Copy-DbaDbTableData @params\nCopies all the data from table [Schema].[Table] in database dbatools_from on sql1 to table [dbo].[Table.Copy] in database dbatools_dest on sql2\r\nKeeps identity columns and Nulls, truncates the destination and processes in BatchSize of 10000.",
         "Params":  [
                        [
                            "SqlInstance",
@@ -4967,6 +5015,106 @@
         "Syntax":  "Copy-DbaSsisCatalog [-Source] \u003cDbaInstanceParameter\u003e [-Destination] \u003cDbaInstanceParameter[]\u003e [[-SourceSqlCredential] \u003cPSCredential\u003e] [[-DestinationSqlCredential] \u003cPSCredential\u003e] [[-Project] \u003cString\u003e] [[-Folder] \u003cString\u003e] [[-Environment] \u003cString\u003e] [[-CreateCatalogPassword] \u003cSecureString\u003e] [-EnableSqlClr] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
+        "Name":  "Copy-DbaStartupProcedure",
+        "Description":  "By default, all procedures found flagged as startup procedures are copied and then set as a startup procedure on the destination instance. The -Procedure parameter is auto-populated for command-line completion and can be used to copy only specific startup procedures.\n\nIf the procedure already exists on the destination, it will be skipped unless -Force is used.",
+        "Tags":  [
+                     "Migration",
+                     "Procedure",
+                     "Startup",
+                     "StartupProcedure"
+                 ],
+        "Synopsis":  "Copy-DbaStartupProcedure migrates startup procedures (user defined procedures within master database) from one SQL Server to another.",
+        "Alias":  "",
+        "Author":  "Shawn Melton (@wsmelton), http://wsmelton.github.io",
+        "CommandName":  "Copy-DbaStartupProcedure",
+        "Availability":  "Windows, Linux, macOS",
+        "Links":  "https://dbatools.io/Copy-DbaStartupProcedure",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eCopy-DbaStartupProcedure -Source sqlserver2014a -Destination sqlcluster\nCopies all startup procedures from sqlserver2014a to sqlcluster using Windows credentials. If procedure(s) with the same name exists in the master database on sqlcluster, they will be skipped.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eCopy-DbaStartupProcedure -Source sqlserver2014a -SourceSqlCredential $scred -Destination sqlcluster -DestinationSqlCredential $dcred -Procedure logstartup -Force\nCopies only the startup procedure, logstartup, from sqlserver2014a to sqlcluster using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster. If the procedure already exists on \r\nsqlcluster, it will be updated because -Force was used.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eCopy-DbaStartupProcedure -Source sqlserver2014a -Destination sqlcluster -ExcludeProcedure logstartup -Force\nCopies all the startup procedures found on sqlserver2014a except logstartup to sqlcluster. If a startup procedure with the same name exists on sqlcluster, it will be updated because -Force was used.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eCopy-DbaStartupProcedure -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force\nShows what would happen if the command were executed using force.",
+        "Params":  [
+                       [
+                           "Source",
+                           "Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or higher.",
+                           "",
+                           true,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "SourceSqlCredential",
+                           "Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Destination",
+                           "Destination SQL Server. You must have sysadmin access and the server must be SQL Server 2000 or higher.",
+                           "",
+                           true,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "DestinationSqlCredential",
+                           "Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Procedure",
+                           "The startup procedure(s) to process. This list is auto-populated from the server. If unspecified, all startup procedures will be processed.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "ExcludeProcedure",
+                           "The startup procedure(s) to exclude. This list is auto-populated from the server.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Force",
+                           "If this switch is enabled, the custom error will be dropped and recreated if it already exists on Destination.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "WhatIf",
+                           "If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.",
+                           "wi",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Confirm",
+                           "If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.",
+                           "cf",
+                           false,
+                           "false",
+                           ""
+                       ]
+                   ],
+        "Syntax":  "Copy-DbaStartupProcedure [-Source] \u003cDbaInstanceParameter\u003e [[-SourceSqlCredential] \u003cPSCredential\u003e] [-Destination] \u003cDbaInstanceParameter[]\u003e [[-DestinationSqlCredential] \u003cPSCredential\u003e] [[-Procedure] \u003cString[]\u003e] [[-ExcludeProcedure] \u003cString[]\u003e] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+    },
+    {
         "Name":  "Copy-DbaSysDbUserObject",
         "Description":  "Imports all user objects found in source SQL Server\u0027s master, msdb and model databases to the destination. This is useful because many DBAs store backup/maintenance procs/tables/triggers/etc (among other things) in master or msdb.\n\nIt is also useful for migrating objects within the model database.",
         "Tags":  [
@@ -6025,7 +6173,7 @@
         "Alias":  "Export-DbaRegisteredServer",
         "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "CommandName":  "Export-DbaCmsRegServer",
-        "Availability":  "Windows only",
+        "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Export-DbaCmsRegServer",
         "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eExport-DbaCmsRegServer -SqlInstance sql2008\nExports all Registered Server and Registered Server Groups on sql2008 to an automatically generated file name in the current directory\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaCmsRegServer -SqlInstance sql2008, sql2012 | Export-DbaCmsRegServer\nExports all registered servers on sql2008 and sql2012. Warning - each one will have its own individual file. Consider piping groups.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaCmsRegServerGroup -SqlInstance sql2008, sql2012 | Export-DbaCmsRegServer\nExports all registered servers on sql2008 and sql2012, organized by group.",
         "Params":  [
@@ -6181,7 +6329,7 @@
         "CommandName":  "Export-DbaDacPackage",
         "Availability":  "Windows only",
         "Links":  "https://dbatools.io/Export-DbaDacPackage",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eExport-DbaDacPackage -SqlInstance sql2016 -Database SharePoint_Config\nExports the dacpac for SharePoint_Config on sql2016 to $home\\Documents\\SharePoint_Config.dacpac\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003e$options = New-DbaDacOption -Type Dacpac -Action Export\nPS C:\\\u003e $options.ExtractAllTableData = $true\r\nPS C:\\\u003e $options.CommandTimeout = 0\r\nPS C:\\\u003e Export-DbaDacPackage -SqlInstance sql2016 -Database DB1 -Options $options\nUses DacOption object to set the CommandTimeout to 0 then extracts the dacpac for DB1 on sql2016 to $home\\Documents\\DB1.dacpac including all table data.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eExport-DbaDacPackage -SqlInstance sql2016 -AllUserDatabases -ExcludeDatabase \"DBMaintenance\",\"DBMonitoring\" C:\\temp\nExports dacpac packages for all USER databases, excluding \"DBMaintenance\" \u0026 \"DBMonitoring\", on sql2016 and saves them to C:\\temp\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003e$moreparams = \"/OverwriteFiles:$true /Quiet:$true\"\nPS C:\\\u003e Export-DbaDacPackage -SqlInstance sql2016 -Database SharePoint_Config -Path C:\\temp -ExtendedParameters $moreparams\nUsing extended parameters to over-write the files and performs the extraction in quiet mode. Uses command line instead of SMO behind the scenes.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eExport-DbaDacPackage -SqlInstance sql2016 -Database SharePoint_Config\nExports the dacpac for SharePoint_Config on sql2016 to $home\\Documents\\SharePoint_Config.dacpac\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003e$options = New-DbaDacOption -Type Dacpac -Action Export\nPS C:\\\u003e $options.ExtractAllTableData = $true\r\nPS C:\\\u003e $options.CommandTimeout = 0\r\nPS C:\\\u003e Export-DbaDacPackage -SqlInstance sql2016 -Database DB1 -Options $options\nUses DacOption object to set the CommandTimeout to 0 then extracts the dacpac for DB1 on sql2016 to $home\\Documents\\DB1.dacpac including all table data.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eExport-DbaDacPackage -SqlInstance sql2016 -AllUserDatabases -ExcludeDatabase \"DBMaintenance\",\"DBMonitoring\" -Path \"C:\\temp\"\nExports dacpac packages for all USER databases, excluding \"DBMaintenance\" \u0026 \"DBMonitoring\", on sql2016 and saves them to C:\\temp\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003e$moreparams = \"/OverwriteFiles:$true /Quiet:$true\"\nPS C:\\\u003e Export-DbaDacPackage -SqlInstance sql2016 -Database SharePoint_Config -Path C:\\temp -ExtendedParameters $moreparams\nUsing extended parameters to over-write the files and performs the extraction in quiet mode. Uses command line instead of SMO behind the scenes.",
         "Params":  [
                        [
                            "SqlInstance",
@@ -6281,6 +6429,113 @@
                        ]
                    ],
         "Syntax":  "Export-DbaDacPackage -SqlInstance \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Database \u003cObject[]\u003e] [-ExcludeDatabase \u003cObject[]\u003e] [-AllUserDatabases] [-Path \u003cString\u003e] [-DacOption \u003cObject\u003e] [-Type \u003cString\u003e] [-Table \u003cString[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]\nExport-DbaDacPackage -SqlInstance \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Database \u003cObject[]\u003e] [-ExcludeDatabase \u003cObject[]\u003e] [-AllUserDatabases] [-Path \u003cString\u003e] [-ExtendedParameters \u003cString\u003e] [-ExtendedProperties \u003cString\u003e] [-Type \u003cString\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
+    },
+    {
+        "Name":  "Export-DbaDbTableData",
+        "Description":  "Exports data from tables",
+        "Tags":  [
+                     "Migration",
+                     "Backup",
+                     "Export"
+                 ],
+        "Synopsis":  "Exports data from tables",
+        "Alias":  "",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
+        "CommandName":  "Export-DbaDbTableData",
+        "Availability":  "Windows, Linux, macOS",
+        "Links":  "https://dbatools.io/Export-DbaDbTableData",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaDbTable -SqlInstance sql2017 -Database AdventureWorks2014 -Table EmployeePayHistory | Export-DbaDbTableData\nExports data from EmployeePayHistory in AdventureWorks2014 in sql2017\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaDbTable -SqlInstance sql2017 -Database AdventureWorks2014 -Table EmployeePayHistory | Export-DbaDbTableData -Path C:\\temp\\export.sql -Append\nExports data from EmployeePayHistory in AdventureWorks2014 in sql2017 using a trusted connection - Will append the output to the file C:\\temp\\export.sql if it already exists\r\nScript does not include Batch Separator and will not compile\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaDbTable -SqlInstance sql2016 -Database MyDatabase -Table \u0027dbo.Table1\u0027, \u0027dbo.Table2\u0027 -SqlCredential sqladmin | Export-DbaDbTableData -Path C:\\temp\\export.sql\nExports only data from \u0027dbo.Table1\u0027 and \u0027dbo.Table2\u0027 in MyDatabase to C:temp\\export.sql and uses the SQL login \"sqladmin\" to login to sql2016",
+        "Params":  [
+                       [
+                           "InputObject",
+                           "Pipeline input from Get-DbaDbTable",
+                           "",
+                           true,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
+                           "Path",
+                           "The output filename and location. If no path is specified, one will be created. If the file already exists, the output will be appended.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Encoding",
+                           "Specifies the file encoding. The default is UTF8.\nValid values are:\r\n-- ASCII: Uses the encoding for the ASCII (7-bit) character set.\r\n-- BigEndianUnicode: Encodes in UTF-16 format using the big-endian byte order.\r\n-- Byte: Encodes a set of characters into a sequence of bytes.\r\n-- String: Uses the encoding type for a string.\r\n-- Unicode: Encodes in UTF-16 format using the little-endian byte order.\r\n-- UTF7: Encodes in UTF-7 format.\r\n-- UTF8: Encodes in UTF-8 format.\r\n-- Unknown: The encoding type is unknown or invalid. The data can be treated as binary.",
+                           "",
+                           false,
+                           "false",
+                           "UTF8"
+                       ],
+                       [
+                           "BatchSeparator",
+                           "Specifies the Batch Separator to use. Default is None",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "NoPrefix",
+                           "Do not include a Prefix",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "Passthru",
+                           "Output script to console",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "NoClobber",
+                           "Do not overwrite file",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "Append",
+                           "Append to file",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "WhatIf",
+                           "Shows what would happen if the command were to run. No actions are actually performed",
+                           "wi",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Confirm",
+                           "Prompts you for confirmation before executing any changing operations within the command",
+                           "cf",
+                           false,
+                           "false",
+                           ""
+                       ]
+                   ],
+        "Syntax":  "Export-DbaDbTableData [-InputObject] \u003cTable[]\u003e [[-Path] \u003cString\u003e] [[-Encoding] \u003cString\u003e] [[-BatchSeparator] \u003cString\u003e] [-NoPrefix] [-Passthru] [-NoClobber] [-Append] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Export-DbaDiagnosticQuery",
@@ -6654,14 +6909,14 @@
         "CommandName":  "Export-DbaLogin",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Export-DbaLogin",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eExport-DbaLogin -SqlInstance sql2005 -Path C:\\temp\\sql2005-logins.sql\nExports the logins for SQL Server \"sql2005\" and writes them to the file \"C:\\temp\\sql2005-logins.sql\"\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eExport-DbaLogin -SqlInstance sqlserver2014a -ExcludeLogin realcajun -SqlCredential $scred -Path C:\\temp\\logins.sql -Append\nAuthenticates to sqlserver2014a using SQL Authentication. Exports all logins except for realcajun to C:\\temp\\logins.sql, and appends to the file if it exists. If not, the file will be created.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eExport-DbaLogin -SqlInstance sqlserver2014a -Login realcajun, netnerds -Path C:\\temp\\logins.sql\nExports ONLY logins netnerds and realcajun FROM sqlserver2014a to the file  C:\\temp\\logins.sql\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eExport-DbaLogin -SqlInstance sqlserver2014a -Login realcajun, netnerds -Database HR, Accounting\nExports ONLY logins netnerds and realcajun FROM sqlserver2014a with the permissions on databases HR and Accounting\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eExport-DbaLogin -SqlInstance sqlserver2008 -Login realcajun, netnerds -Path C:\\temp\\login.sql -ExcludeGoBatchSeparator\nExports ONLY logins netnerds and realcajun FROM sqlserver2008 server, to the C:\\temp\\login.sql file without the \u0027GO\u0027 batch separator.\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eExport-DbaLogin -SqlInstance sqlserver2008 -Login realcajun -Path C:\\temp\\users.sql -DestinationVersion SQLServer2016\nExports login realcajun from sqlserver2008 to the file C:\\temp\\users.sql with syntax to run on SQL Server 2016",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eExport-DbaLogin -SqlInstance sql2005 -Path C:\\temp\\sql2005-logins.sql\nExports the logins for SQL Server \"sql2005\" and writes them to the file \"C:\\temp\\sql2005-logins.sql\"\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eExport-DbaLogin -SqlInstance sqlserver2014a -ExcludeLogin realcajun -SqlCredential $scred -Path C:\\temp\\logins.sql -Append\nAuthenticates to sqlserver2014a using SQL Authentication. Exports all logins except for realcajun to C:\\temp\\logins.sql, and appends to the file if it exists. If not, the file will be created.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eExport-DbaLogin -SqlInstance sqlserver2014a -Login realcajun, netnerds -Path C:\\temp\\logins.sql\nExports ONLY logins netnerds and realcajun FROM sqlserver2014a to the file  C:\\temp\\logins.sql\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eExport-DbaLogin -SqlInstance sqlserver2014a -Login realcajun, netnerds -Database HR, Accounting\nExports ONLY logins netnerds and realcajun FROM sqlserver2014a with the permissions on databases HR and Accounting\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eGet-DbaDatabase -SqlInstance sqlserver2014a -Database HR, Accounting | Export-DbaLogin\nExports ONLY logins FROM sqlserver2014a with permissions on databases HR and Accounting\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eExport-DbaLogin -SqlInstance sqlserver2008 -Login realcajun, netnerds -Path C:\\temp\\login.sql -ExcludeGoBatchSeparator\nExports ONLY logins netnerds and realcajun FROM sqlserver2008 server, to the C:\\temp\\login.sql file without the \u0027GO\u0027 batch separator.\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003eExport-DbaLogin -SqlInstance sqlserver2008 -Login realcajun -Path C:\\temp\\users.sql -DestinationVersion SQLServer2016\nExports login realcajun from sqlserver2008 to the file C:\\temp\\users.sql with syntax to run on SQL Server 2016\n-------------------------- EXAMPLE 8 --------------------------\nPS C:\\\u003eGet-DbaDatabase -SqlInstance sqlserver2008 -Login realcajun | Export-DbaLogin\nExports login realcajun from sqlserver2008\n-------------------------- EXAMPLE 9 --------------------------\nPS C:\\\u003eGet-DbaLogin -SqlInstance sqlserver2008 | Where-Object { $_.IsDisabled -eq $false } | Export-DbaLogin\nExports all enabled logins from sqlserver2008",
         "Params":  [
                        [
                            "SqlInstance",
                            "The target SQL Server instance or instances. SQL Server 2000 and above supported.",
                            "ServerInstance,SqlServer",
-                           true,
-                           "true (ByValue)",
+                           false,
+                           "false",
                            ""
                        ],
                        [
@@ -6761,6 +7016,14 @@
                            ""
                        ],
                        [
+                           "InputObject",
+                           "Enables piping from Get-DbaDatabase, Get-DbaLogin and more.",
+                           "",
+                           false,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
                            "WhatIf",
                            "If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.",
                            "wi",
@@ -6777,7 +7040,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Export-DbaLogin [-SqlInstance] \u003cDbaInstanceParameter\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Login] \u003cObject[]\u003e] [[-ExcludeLogin] \u003cObject[]\u003e] [[-Database] \u003cObject[]\u003e] [[-Path] \u003cString\u003e] [-NoClobber] [-Append] [-ExcludeDatabases] [-ExcludeJobs] [-EnableException] [-ExcludeGoBatchSeparator] [[-DestinationVersion] \u003cString\u003e] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Export-DbaLogin [[-SqlInstance] \u003cDbaInstanceParameter\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Login] \u003cObject[]\u003e] [[-ExcludeLogin] \u003cObject[]\u003e] [[-Database] \u003cObject[]\u003e] [[-Path] \u003cString\u003e] [-NoClobber] [-Append] [-ExcludeDatabases] [-ExcludeJobs] [-EnableException] [-ExcludeGoBatchSeparator] [[-DestinationVersion] \u003cString\u003e] [[-InputObject] \u003cObject[]\u003e] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Export-DbaPfDataCollectorSetTemplate",
@@ -10299,7 +10562,7 @@
         "CommandName":  "Get-DbaClientProtocol",
         "Availability":  "Windows only",
         "Links":  "https://dbatools.io/Get-DbaClientProtocol",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaClientProtocol -ComputerName sqlserver2014a\nGets the SQL Server related client protocols on computer sqlserver2014a.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003e\u0027sql1\u0027,\u0027sql2\u0027,\u0027sql3\u0027 | Get-DbaClientProtocol\nGets the SQL Server related client protocols on computers sql1, sql2 and sql3.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaClientProtocol -ComputerName sql1,sql2 | Out-GridView\nGets the SQL Server related client protocols on computers sql1 and sql2, and shows them in a grid view.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003e(Get-DbaClientProtocol -ComputerName sql2 | Where-Object { $_.DisplayName = \u0027via\u0027 }).Disable()\nDisables the VIA ClientNetworkProtocol on computer sql2.\r\nIf successful, return code 0 is shown.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaClientProtocol -ComputerName sqlserver2014a\nGets the SQL Server related client protocols on computer sqlserver2014a.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003e\u0027sql1\u0027,\u0027sql2\u0027,\u0027sql3\u0027 | Get-DbaClientProtocol\nGets the SQL Server related client protocols on computers sql1, sql2 and sql3.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaClientProtocol -ComputerName sql1,sql2 | Out-GridView\nGets the SQL Server related client protocols on computers sql1 and sql2, and shows them in a grid view.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003e(Get-DbaClientProtocol -ComputerName sql2 | Where-Object { $_.DisplayName -eq \u0027Named Pipes\u0027 }).Disable()\nDisables the VIA ClientNetworkProtocol on computer sql2.\r\nIf successful, return code 0 is shown.",
         "Params":  [
                        [
                            "ComputerName",
@@ -10471,7 +10734,7 @@
         "Alias":  "Get-DbaCmsRegServerName,Get-DbaRegisteredServer,Get-SqlRegisteredServerName",
         "Author":  "Bryan Hamby (@galador)",
         "CommandName":  "Get-DbaCmsRegServer",
-        "Availability":  "Windows only",
+        "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Get-DbaCmsRegServer",
         "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaCmsRegServer -SqlInstance sqlserver2014a\nGets a list of servers from the CMS on sqlserver2014a, using Windows Credentials.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaCmsRegServer -SqlInstance sqlserver2014a -IncludeSelf\nGets a list of servers from the CMS on sqlserver2014a and includes sqlserver2014a in the output results.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaCmsRegServer -SqlInstance sqlserver2014a -SqlCredential $credential | Select-Object -Unique -ExpandProperty ServerName\nReturns only the server names from the CMS on sqlserver2014a, using SQL Authentication to authenticate to the server.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaCmsRegServer -SqlInstance sqlserver2014a -Group HR, Accounting\nGets a list of servers in the HR and Accounting groups from the CMS on sqlserver2014a.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eGet-DbaCmsRegServer -SqlInstance sqlserver2014a -Group HR\\Development\nReturns a list of servers in the HR and sub-group Development from the CMS on sqlserver2014a.",
         "Params":  [
@@ -10643,7 +10906,7 @@
         "Alias":  "Get-DbaRegisteredServerStore",
         "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "CommandName":  "Get-DbaCmsRegServerStore",
-        "Availability":  "Windows only",
+        "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Get-DbaCmsRegServerStore",
         "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaCmsRegServerStore -SqlInstance sqlserver2014a\nReturns a SQL Server Registered Server Store Object from sqlserver2014a\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaCmsRegServerStore -SqlInstance sqlserver2014a -SqlCredential sqladmin\nReturns a SQL Server Registered Server Store Object from sqlserver2014a  by logging in with the sqladmin login",
         "Params":  [
@@ -11060,7 +11323,7 @@
         "Params":  [
                        [
                            "SqlInstance",
-                           "The target SQL Server instance or instances. Defaults to localhost.",
+                           "The target SQL Server instance or instances.",
                            "ServerInstance,SqlServer",
                            true,
                            "true (ByValue)",
@@ -11203,7 +11466,7 @@
                            "False"
                        ]
                    ],
-        "Syntax":  "Get-DbaDatabase [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Database \u003cObject[]\u003e] [-ExcludeDatabase \u003cObject[]\u003e] [-ExcludeUser] [-ExcludeSystem] [-Owner \u003cString[]\u003e] [-Encrypted] [-Status \u003cString[]\u003e] [-Access \u003cString\u003e] [-RecoveryModel \u003cString[]\u003e] [-NoFullBackup] [-NoFullBackupSince \u003cDateTime\u003e] [-NoLogBackup] [-NoLogBackupSince \u003cDateTime\u003e] [-EnableException] [-IncludeLastUsed] [-OnlyAccessible] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Get-DbaDatabase [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Database \u003cString[]\u003e] [-ExcludeDatabase \u003cString[]\u003e] [-ExcludeUser] [-ExcludeSystem] [-Owner \u003cString[]\u003e] [-Encrypted] [-Status \u003cString[]\u003e] [-Access \u003cString\u003e] [-RecoveryModel \u003cString[]\u003e] [-NoFullBackup] [-NoFullBackupSince \u003cDateTime\u003e] [-NoLogBackup] [-NoLogBackupSince \u003cDateTime\u003e] [-EnableException] [-IncludeLastUsed] [-OnlyAccessible] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Get-DbaDbAssembly",
@@ -11545,8 +11808,8 @@
         "Author":  "Patrick Flynn (@sqllensman)",
         "CommandName":  "Get-DbaDbccUserOption",
         "Availability":  "Windows, Linux, macOS",
-        "Links":  "https://dbatools.io/Get-DbaDbccUserOptions",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaDbccUserOptions -SqlInstance Server1\nGet results of DBCC USEROPTIONS for Instance Server1\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003e\u0027Sql1\u0027,\u0027Sql2/sqlexpress\u0027 | Get-DbaDbccUserOptions\nGet results of DBCC USEROPTIONS for Instances Sql1 and Sql2/sqlexpress\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003e$cred = Get-Credential sqladmin\nPS C:\\\u003e Get-DbaDbccUserOptions -SqlInstance Server1 -SqlCredential $cred\nConnects using sqladmin credential and gets results of DBCC USEROPTIONS for Instance Server1\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaDbccUserOptions -SqlInstance Server1 -Option ansi_nulls, ansi_warnings, datefirst\nGets results of DBCC USEROPTIONS for Instance Server1. Only display results for the options ansi_nulls, ansi_warnings, datefirst",
+        "Links":  "https://dbatools.io/Get-DbaDbccUserOption",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaDbccUserOption -SqlInstance Server1\nGet results of DBCC USEROPTIONS for Instance Server1\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003e\u0027Sql1\u0027,\u0027Sql2/sqlexpress\u0027 | Get-DbaDbccUserOption\nGet results of DBCC USEROPTIONS for Instances Sql1 and Sql2/sqlexpress\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003e$cred = Get-Credential sqladmin\nPS C:\\\u003e Get-DbaDbccUserOption -SqlInstance Server1 -SqlCredential $cred\nConnects using sqladmin credential and gets results of DBCC USEROPTIONS for Instance Server1\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaDbccUserOption -SqlInstance Server1 -Option ansi_nulls, ansi_warnings, datefirst\nGets results of DBCC USEROPTIONS for Instance Server1. Only display results for the options ansi_nulls, ansi_warnings, datefirst",
         "Params":  [
                        [
                            "SqlInstance",
@@ -13762,7 +14025,7 @@
                        ],
                        [
                            "IncludeSystemDBs",
-                           "If this switch is enabled, system databases will be processed. By default, only user databases are processed.",
+                           "Deprecated - if filtering is needed, please pipe filtered results from Get-DbaDatabase",
                            "",
                            false,
                            "false",
@@ -17527,6 +17790,269 @@
         "Syntax":  "Get-DbaQueryExecutionTime [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Database \u003cObject[]\u003e] [-ExcludeDatabase \u003cObject[]\u003e] [[-MaxResultsPerDb] \u003cInt32\u003e] [[-MinExecs] \u003cInt32\u003e] [[-MinExecMs] \u003cInt32\u003e] [[-ExcludeSystem]] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
+        "Name":  "Get-DbaRandomizedDataset",
+        "Description":  "Generates a random value based on a template.\nThe templates standardized in the templates folder and can be used to generate a data set.\nThere is also an option to point to a specific template",
+        "Tags":  "DataGeneration",
+        "Synopsis":  "This function will generate a random data set based on a template",
+        "Alias":  "",
+        "Author":  "Sander Stad (@sqlstad, sqlstad.nl)",
+        "CommandName":  "Get-DbaRandomizedDataset",
+        "Availability":  "Windows, Linux, macOS",
+        "Links":  "https://dbatools.io/Get-DbaRandomizedDataSet",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaRandomizedDataset -Template Personaldata\nGenerate a data set based on the default template PersonalData.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaRandomizedDataset -Template Personaldata -Rows 10\nGenerate a data set based on the default template PersonalData with 10 rows\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaRandomizedDataset -TemplateFile C:\\Dataset\\FinancialData.json\nGenerates data set based on a template file in another directory\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaRandomizedDataset -Template Personaldata, FinancialData\nGenerates multiple data sets\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eGet-DbaRandomizedDatasetTemplate -Template PersonalData | Get-DbaRandomizedDataset\nPipe the templates from Get-DbaRandomizedDatasetTemplate to Get-DbaRandomizedDataset and generate the data set",
+        "Params":  [
+                       [
+                           "Template",
+                           "The name of the template to use.\r\nIt will go through the default templates to see if it\u0027s present",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "TemplateFile",
+                           "File to use as a template",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Rows",
+                           "Amount of rows to generate. Th default is 100.",
+                           "",
+                           false,
+                           "false",
+                           "100"
+                       ],
+                       [
+                           "Locale",
+                           "Set the local to enable certain settings in the masking. The default is \u0027en\u0027",
+                           "",
+                           false,
+                           "false",
+                           "en"
+                       ],
+                       [
+                           "InputObject",
+                           "Accepts piped input from Get-DbaRandomizedDatasetTemplate",
+                           "",
+                           false,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ]
+                   ],
+        "Syntax":  "Get-DbaRandomizedDataset [[-Template] \u003cString[]\u003e] [[-TemplateFile] \u003cString[]\u003e] [[-Rows] \u003cInt32\u003e] [[-Locale] \u003cString\u003e] [[-InputObject] \u003cObject[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
+    },
+    {
+        "Name":  "Get-DbaRandomizedDatasetTemplate",
+        "Description":  "Retrieves the templates from the default directory and if assigned custom directories",
+        "Tags":  "DataGeneration",
+        "Synopsis":  "Gets the dataset templates",
+        "Alias":  "",
+        "Author":  "Sander Stad (@sqlstad, sqlstad.nl)",
+        "CommandName":  "Get-DbaRandomizedDatasetTemplate",
+        "Availability":  "Windows, Linux, macOS",
+        "Links":  "https://dbatools.io/Get-DbaRandomizedDatasetTemplate",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaRandomizedDatasetTemplate\nGet the templates from the default directory\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaRandomizedDatasetTemplate  -Template Personaldata, Test\nGet the templates from thedefault directory and filter on PersonalData and Test\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaRandomizedDatasetTemplate  -Path C:\\DatasetTemplates\nGet the templates from a custom directory",
+        "Params":  [
+                       [
+                           "Template",
+                           "The name of the template to use.\r\nIt will go through the default templates to see if it\u0027s present",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Path",
+                           "Path or paths that contain template files",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "ExcludeDefault",
+                           "Exclude the default templates",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ]
+                   ],
+        "Syntax":  "Get-DbaRandomizedDatasetTemplate [[-Template] \u003cString[]\u003e] [[-Path] \u003cString[]\u003e] [-ExcludeDefault] [-EnableException] [\u003cCommonParameters\u003e]"
+    },
+    {
+        "Name":  "Get-DbaRandomizedType",
+        "Description":  "Retrieves the types and sub types available",
+        "Tags":  "DataGeneration",
+        "Synopsis":  "Get the randomized types and sub types",
+        "Alias":  "",
+        "Author":  "Sander Stad (@sqlstad, sqlstad.nl)",
+        "CommandName":  "Get-DbaRandomizedType",
+        "Availability":  "Windows, Linux, macOS",
+        "Links":  "https://dbatools.io/Get-DbaRandomizedDatasetTemplate",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaRandomizedType\nGet all the types and subtypes\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaRandomizedType -Pattern \"Addr\"\nFind all the types and sub types based on a pattern\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaRandomizedType -RandomizedType Person\nFind all the sub types for Person\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaRandomizedType -RandomizedSubType LastName\nGet all the types and subtypes that known by \"LastName\"",
+        "Params":  [
+                       [
+                           "RandomizedType",
+                           "Filter the randomized types",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "RandomizedSubType",
+                           "Filter the randomized sub types",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Pattern",
+                           "Get the types and sub types based on a pattern",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ]
+                   ],
+        "Syntax":  "Get-DbaRandomizedType [[-RandomizedType] \u003cString[]\u003e] [[-RandomizedSubType] \u003cString[]\u003e] [[-Pattern] \u003cString\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
+    },
+    {
+        "Name":  "Get-DbaRandomizedValue",
+        "Description":  "Generates a random value based on the assigned sql data type or bogus type with sub type.\nIt supports a wide range of sql data types and an entire dictionary of various random values.",
+        "Tags":  [
+                     "DataMasking",
+                     "DataGeneration"
+                 ],
+        "Synopsis":  "This function will generate a random value for a specific data type or bogus type and subtype",
+        "Alias":  "",
+        "Author":  "Sander Stad (@sqlstad, sqlstad.nl)",
+        "CommandName":  "Get-DbaRandomizedValue",
+        "Availability":  "Windows, Linux, macOS",
+        "Links":  "https://dbatools.io/Get-DbaRandomizedValue",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaRandomizedValue -DataType bit\nWill return either a 1 or 0\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaRandomizedValue -DataType int\nWill generate a number between -2147483648 and 2147483647\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaRandomizedValue -RandomizerSubType Zipcode\nGenerates a random zipcode\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaRandomizedValue -RandomizerSubType Zipcode -Format \"#### ##\"\nGenerates a random zipcode like \"1234 56\"\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eGet-DbaRandomizedValue -RandomizerSubType PhoneNumber -Format \"(###) #######\"\nGenerates a random phonenumber like \"(123) 4567890\"",
+        "Params":  [
+                       [
+                           "DataType",
+                           "The target SQL Server instance or instances.\nSupported data types are bigint, bit, bool, char, date, datetime, datetime2, decimal, int, float, guid, money, numeric, nchar, ntext, nvarchar, real, smalldatetime, smallint, text, time, tinyint, \r\nuniqueidentifier, userdefineddatatype, varchar",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "RandomizerType",
+                           "Bogus type to use.\nSupported types are Address, Commerce, Company, Database, Date, Finance, Hacker, Hashids, Image, Internet, Lorem, Name, Person, Phone, Random, Rant, System",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "RandomizerSubType",
+                           "Subtype to use.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Min",
+                           "Minimum value used to generate certain lengths of values. Default is 0",
+                           "",
+                           false,
+                           "false",
+                           "1"
+                       ],
+                       [
+                           "Max",
+                           "Maximum value used to generate certain lengths of values. Default is 255",
+                           "",
+                           false,
+                           "false",
+                           "255"
+                       ],
+                       [
+                           "Precision",
+                           "Precision used for numeric sql data types like decimal, numeric, real and float",
+                           "",
+                           false,
+                           "false",
+                           "2"
+                       ],
+                       [
+                           "CharacterString",
+                           "The characters to use in string data. \u0027abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789\u0027 by default",
+                           "",
+                           false,
+                           "false",
+                           "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+                       ],
+                       [
+                           "Format",
+                           "Use specilized formatting with certain randomizer types like phone number.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Symbol",
+                           "Use a symbol in front of the value i.e. $100,12",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Locale",
+                           "Set the local to enable certain settings in the masking. The default is \u0027en\u0027",
+                           "",
+                           false,
+                           "false",
+                           "en"
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ]
+                   ],
+        "Syntax":  "Get-DbaRandomizedValue [[-DataType] \u003cString\u003e] [[-RandomizerType] \u003cString\u003e] [[-RandomizerSubType] \u003cString\u003e] [[-Min] \u003cInt64\u003e] [[-Max] \u003cInt64\u003e] [[-Precision] \u003cInt32\u003e] [[-CharacterString] \u003cString\u003e] [[-Format] \u003cString\u003e] [[-Symbol] \u003cString\u003e] [[-Locale] \u003cString\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
+    },
+    {
         "Name":  "Get-DbaRegistryRoot",
         "Description":  "Uses SQL WMI to find the Registry Root of each SQL Server instance on a computer",
         "Tags":  [
@@ -18184,7 +18710,7 @@
         "CommandName":  "Get-DbaServerProtocol",
         "Availability":  "Windows only",
         "Links":  "https://dbatools.io/Get-DbaServerProtocol",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaServerProtocol -ComputerName sqlserver2014a\nGets the SQL Server related server protocols on computer sqlserver2014a.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003e\u0027sql1\u0027,\u0027sql2\u0027,\u0027sql3\u0027 | Get-DbaServerProtocol\nGets the SQL Server related server protocols on computers sql1, sql2 and sql3.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaServerProtocol -ComputerName sql1,sql2 | Out-GridView\nGets the SQL Server related server protocols on computers sql1 and sql2, and shows them in a grid view.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003e(Get-DbaServerProtocol -ComputerName sql1 | Where-Object { $_.DisplayName = \u0027via\u0027 }).Disable()\nDisables the VIA ServerNetworkProtocol on computer sql1.\r\nIf successful, return code 0 is shown.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaServerProtocol -ComputerName sqlserver2014a\nGets the SQL Server related server protocols on computer sqlserver2014a.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003e\u0027sql1\u0027,\u0027sql2\u0027,\u0027sql3\u0027 | Get-DbaServerProtocol\nGets the SQL Server related server protocols on computers sql1, sql2 and sql3.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaServerProtocol -ComputerName sql1,sql2 | Out-GridView\nGets the SQL Server related server protocols on computers sql1 and sql2, and shows them in a grid view.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003e(Get-DbaServerProtocol -ComputerName sql1 | Where-Object { $_.DisplayName -eq \u0027Named Pipes\u0027 }).Disable()\nDisables the VIA ServerNetworkProtocol on computer sql1.\r\nIf successful, return code 0 is shown.",
         "Params":  [
                        [
                            "ComputerName",
@@ -18708,7 +19234,7 @@
         "CommandName":  "Get-DbaSsisExecutionHistory",
         "Availability":  "Windows only",
         "Links":  "https://dbatools.io/Get-DbaSsisExecutionHistory",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaSsisExecutionHistory -SqlInstance SMTQ01 -Folder SMTQ_PRC\nGet all history items for SMTQ01 in folder SMTQ_PRC.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaSsisExecutionHistory -SqlInstance SMTQ01 -Status Failed,Cancelled\nGets all failed or canceled executions for SMTQ01.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaSsisExecutionHistory -SqlInstance SMTQ01,SMTQ02 -Status Failed,Cancelled -Whatif\nShows what would happen if the command were executed and would return the SQL statement that would be executed per instance.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaSsisExecutionHistory -SqlInstance SMTQ01 -Folder SMTQ_PRC\nGet all history items for SMTQ01 in folder SMTQ_PRC.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaSsisExecutionHistory -SqlInstance SMTQ01 -Status Failed,Cancelled\nGets all failed or canceled executions for SMTQ01.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaSsisExecutionHistory -SqlInstance SMTQ01,SMTQ02 -Status Failed,Cancelled\nShows what would happen if the command were executed and would return the SQL statement that would be executed per instance.",
         "Params":  [
                        [
                            "SqlInstance",
@@ -18997,7 +19523,7 @@
         "Alias":  "Get-DbaConfig",
         "Author":  "Friedrich Weinmann (@FredWeinmann)",
         "CommandName":  "Get-DbatoolsConfig",
-        "Availability":  "Windows only",
+        "Availability":  "Windows, Linux, macOS",
         "Links":  null,
         "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbatoolsConfig \u0027Mail.To\u0027\nRetrieves the configuration element for the key \"Mail.To\"\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbatoolsConfig -Force\nRetrieve all configuration elements from all modules, even hidden ones.",
         "Params":  [
@@ -19047,7 +19573,7 @@
         "Alias":  "Get-DbaConfigValue",
         "Author":  "Friedrich Weinmann (@FredWeinmann)",
         "CommandName":  "Get-DbatoolsConfigValue",
-        "Availability":  "Windows only",
+        "Availability":  "Windows, Linux, macOS",
         "Links":  null,
         "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbatoolsConfigValue -Name \u0027System.MailServer\u0027\nReturns the configured value that was assigned to the key \u0027System.MailServer\u0027\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbatoolsConfigValue -Name \u0027Default.CoffeeMilk\u0027 -Fallback 0\nReturns the configured value for \u0027Default.CoffeeMilk\u0027. If no such value is configured, it returns \u00270\u0027 instead.",
         "Params":  [
@@ -20576,7 +21102,7 @@
         "Alias":  "Import-DbaRegisteredServer",
         "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "CommandName":  "Import-DbaCmsRegServer",
-        "Availability":  "Windows only",
+        "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Import-DbaCmsRegServer",
         "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eImport-DbaCmsRegServer -SqlInstance sql2012 -Path C:\\temp\\corp-regservers.xml\nImports C:\\temp\\corp-regservers.xml to the CMS on sql2012\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eImport-DbaCmsRegServer -SqlInstance sql2008 -Group hr\\Seattle -Path C:\\temp\\Seattle.xml\nImports C:\\temp\\Seattle.xml to Seattle subgroup within the hr group on sql2008\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaCmsRegServer -SqlInstance sql2008, sql2012 | Import-DbaCmsRegServer -SqlInstance sql2017\nImports all registered servers from sql2008 and sql2012 to sql2017\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaCmsRegServerGroup -SqlInstance sql2008 -Group hr\\Seattle | Import-DbaCmsRegServer -SqlInstance sql2017 -Group Seattle\nImports all registered servers from the hr\\Seattle group on sql2008 to the Seattle group on sql2017",
         "Params":  [
@@ -20644,7 +21170,7 @@
         "CommandName":  "Import-DbaCsv",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Import-DbaCsv",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eImport-DbaCsv -Path C:\\temp\\housing.csv -SqlInstance sql001 -Database markets\nImports the entire comma-delimited housing.csv to the SQL \"markets\" database on a SQL Server named sql001, using the first row as column names.\nSince a table name was not specified, the table name is automatically determined from filename as \"housing\".\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eImport-DbaCsv -Path .\\housing.csv -SqlInstance sql001 -Database markets -Table housing -Delimiter \"`t\" -NoHeaderRow\nImports the entire comma-delimited housing.csv, including the first row which is not used for colum names, to the SQL markets database, into the housing table, on a SQL Server named sql001.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eImport-DbaCsv -Path C:\\temp\\huge.txt -SqlInstance sqlcluster -Database locations -Table latitudes -Delimiter \"|\"\nImports the entire pipe-delimited huge.txt to the locations database, into the latitudes table on a SQL Server named sqlcluster.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eImport-DbaCsv -Path c:\\temp\\SingleColumn.csv -SqlInstance sql001 -Database markets -Table TempTable -SingleColumn\nImports the single column CSV into TempTable\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eGet-ChildItem -Path \\\\FileServer\\csvs | Import-DbaCsv -SqlInstance sql001, sql002 -Database tempdb -AutoCreateTable\nImports every CSV in the \\\\FileServer\\csvs path into both sql001 and sql002\u0027s tempdb database. Each CSV will be imported into an automatically determined table name.\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eGet-ChildItem -Path \\\\FileServer\\csvs | Import-DbaCsv -SqlInstance sql001, sql002 -Database tempdb -AutoCreateTable -WhatIf\nShows what would happen if the command were to be executed\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003eImport-DbaCsv -Path c:\\temp\\dataset.csv -SqlInstance sql2016 -Database tempdb -Column Name, Address, Mobile\nImport only Name, Address and Mobile even if other columns exist. All other columns are ignored and therefore null or default values.\n-------------------------- EXAMPLE 8 --------------------------\nPS C:\\\u003e$columns = @{\n\u003e\u003e Text = \u0027FirstName\u0027\r\n\u003e\u003e Number = \u0027PhoneNumber\u0027\r\n\u003e\u003e }\r\nPS C:\\\u003e Import-DbaCsv -Path c:\\temp\\supersmall.csv -SqlInstance sql2016 -Database tempdb -ColumnMap $columns\nThe CSV column \u0027Text\u0027 is inserted into SQL column \u0027FirstName\u0027 and CSV column Number is inserted into the SQL Column \u0027PhoneNumber\u0027. All other columns are ignored and therefore null or default values.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eImport-DbaCsv -Path C:\\temp\\housing.csv -SqlInstance sql001 -Database markets\nImports the entire comma-delimited housing.csv to the SQL \"markets\" database on a SQL Server named sql001, using the first row as column names.\nSince a table name was not specified, the table name is automatically determined from filename as \"housing\".\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eImport-DbaCsv -Path .\\housing.csv -SqlInstance sql001 -Database markets -Table housing -Delimiter \"`t\" -NoHeaderRow\nImports the entire tab-delimited housing.csv, including the first row which is not used for colum names, to the SQL markets database, into the housing table, on a SQL Server named sql001.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eImport-DbaCsv -Path C:\\temp\\huge.txt -SqlInstance sqlcluster -Database locations -Table latitudes -Delimiter \"|\"\nImports the entire pipe-delimited huge.txt to the locations database, into the latitudes table on a SQL Server named sqlcluster.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eImport-DbaCsv -Path c:\\temp\\SingleColumn.csv -SqlInstance sql001 -Database markets -Table TempTable -SingleColumn\nImports the single column CSV into TempTable\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eGet-ChildItem -Path \\\\FileServer\\csvs | Import-DbaCsv -SqlInstance sql001, sql002 -Database tempdb -AutoCreateTable\nImports every CSV in the \\\\FileServer\\csvs path into both sql001 and sql002\u0027s tempdb database. Each CSV will be imported into an automatically determined table name.\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eGet-ChildItem -Path \\\\FileServer\\csvs | Import-DbaCsv -SqlInstance sql001, sql002 -Database tempdb -AutoCreateTable -WhatIf\nShows what would happen if the command were to be executed\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003eImport-DbaCsv -Path c:\\temp\\dataset.csv -SqlInstance sql2016 -Database tempdb -Column Name, Address, Mobile\nImport only Name, Address and Mobile even if other columns exist. All other columns are ignored and therefore null or default values.\n-------------------------- EXAMPLE 8 --------------------------\nPS C:\\\u003e$columns = @{\n\u003e\u003e Text = \u0027FirstName\u0027\r\n\u003e\u003e Number = \u0027PhoneNumber\u0027\r\n\u003e\u003e }\r\nPS C:\\\u003e Import-DbaCsv -Path c:\\temp\\supersmall.csv -SqlInstance sql2016 -Database tempdb -ColumnMap $columns\nThe CSV column \u0027Text\u0027 is inserted into SQL column \u0027FirstName\u0027 and CSV column Number is inserted into the SQL Column \u0027PhoneNumber\u0027. All other columns are ignored and therefore null or default values.",
         "Params":  [
                        [
                            "Path",
@@ -20791,6 +21317,14 @@
                            ""
                        ],
                        [
+                           "KeepOrdinalOrder",
+                           "By default, the importer will attempt to map exact-match columns names from the source document to the target table. Using this parameter will keep the ordinal order instead.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
                            "AutoCreateTable",
                            "Creates a table if it does not already exist. The table will be created with sub-optimal data types such as nvarchar(max)",
                            "",
@@ -20888,7 +21422,7 @@
                        ],
                        [
                            "MaxQuotedFieldLength",
-                           "The axmimum length (in bytes) for any quoted field.",
+                           "The maxmimum length (in bytes) for any quoted field.",
                            "",
                            false,
                            "false",
@@ -20919,6 +21453,14 @@
                            "False"
                        ],
                        [
+                           "NoTransaction",
+                           "Do not use a transaction when performing the import.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
                            "EnableException",
                            "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
                            "",
@@ -20943,7 +21485,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Import-DbaCsv [[-Path] \u003cObject[]\u003e] [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [-Database] \u003cString\u003e [[-Table] \u003cString\u003e] [[-Schema] \u003cString\u003e] [-Truncate] [[-Delimiter] \u003cChar\u003e] [-SingleColumn] [[-BatchSize] \u003cInt32\u003e] [[-NotifyAfter] \u003cInt32\u003e] [-TableLock] [-CheckConstraints] [-FireTriggers] [-KeepIdentity] [-KeepNulls] [[-Column] \u003cString[]\u003e] [[-ColumnMap] \u003cHashtable[]\u003e] [-AutoCreateTable] [-NoProgress] [-NoHeaderRow] [[-Quote] \u003cChar\u003e] [[-Escape] \u003cChar\u003e] [[-Comment] \u003cChar\u003e] [[-TrimmingOption] \u003cString\u003e] [[-BufferSize] \u003cInt32\u003e] [[-ParseErrorAction] \u003cString\u003e] \r\n[[-Encoding] \u003cEncoding\u003e] [[-NullValue] \u003cString\u003e] [[-Threshold] \u003cInt32\u003e] [[-MaxQuotedFieldLength] \u003cInt32\u003e] [-SkipEmptyLine] [-SupportsMultiline] [-UseColumnDefault] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Import-DbaCsv [[-Path] \u003cObject[]\u003e] [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [-Database] \u003cString\u003e [[-Table] \u003cString\u003e] [[-Schema] \u003cString\u003e] [-Truncate] [[-Delimiter] \u003cChar\u003e] [-SingleColumn] [[-BatchSize] \u003cInt32\u003e] [[-NotifyAfter] \u003cInt32\u003e] [-TableLock] [-CheckConstraints] [-FireTriggers] [-KeepIdentity] [-KeepNulls] [[-Column] \u003cString[]\u003e] [[-ColumnMap] \u003cHashtable[]\u003e] [-KeepOrdinalOrder] [-AutoCreateTable] [-NoProgress] [-NoHeaderRow] [[-Quote] \u003cChar\u003e] [[-Escape] \u003cChar\u003e] [[-Comment] \u003cChar\u003e] [[-TrimmingOption] \u003cString\u003e] [[-BufferSize] \u003cInt32\u003e] [[-ParseErrorAction] \r\n\u003cString\u003e] [[-Encoding] \u003cEncoding\u003e] [[-NullValue] \u003cString\u003e] [[-Threshold] \u003cInt32\u003e] [[-MaxQuotedFieldLength] \u003cInt32\u003e] [-SkipEmptyLine] [-SupportsMultiline] [-UseColumnDefault] [-NoTransaction] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Import-DbaPfDataCollectorSetTemplate",
@@ -21499,6 +22041,285 @@
         "Syntax":  "Install-DbaFirstResponderKit [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Branch] \u003cString\u003e] [[-Database] \u003cObject\u003e] [[-LocalFile] \u003cString\u003e] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
+        "Name":  "Install-DbaInstance",
+        "Description":  "This function will help you to quickly install a SQL Server instance on one or many computers.\nSome of the things this function will do for you:\n* Add your login as an admin to the new instance\n* Search for SQL Server installations in the specified file repository\n* Generate SA password if needed\n* Install specific features using \u0027Default\u0027 and \u0027All\u0027 templates or cherry-pick the ones you need\n* Set number of tempdb files based on number of cores (SQL2016+)\n* Activate .Net 3.5 feature for SQL2012/2014\n* Restart the machine if needed after the installation is done\n\nFully customizable installation parameters allow you to:\n* Use existing Configuration.ini files for the installation\n* Define service account credentials using native Powershell syntax\n* Override any configurations by using -Configuration switch\n* Change the TCP port after the installation is done\n* Enable \u0027Perform volume maintenance tasks\u0027 for the SQL Server account\n\nNote that the dowloaded installation media must be extracted and available to the server where the installation runs.\nNOTE: If no ProductID (PID) is found in the configuration files/parameters, Evaluation version is going to be installed.",
+        "Tags":  "Install",
+        "Synopsis":  "This function will help you to quickly install a SQL Server instance.",
+        "Alias":  "",
+        "Author":  "Reitse Eskens (@2meterDBA), Kirill Kravtsov (@nvarscar)",
+        "CommandName":  "Install-DbaInstance",
+        "Availability":  "Windows only",
+        "Links":  null,
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nC:\\PS\u003eInstall-DbaInstance -Version 2017 -Feature All\nInstall a default SQL Server instance and run the installation enabling all features with default settings. Automatically generates configuration.ini\n-------------------------- EXAMPLE 2 --------------------------\nC:\\PS\u003eInstall-DbaInstance -SqlInstance sql2017\\sqlexpress, server01 -Version 2017 -Feature Default\nInstall a named SQL Server instance named sqlexpress on sql2017, and a default instance on server01. Automatically generates configuration.ini.\r\nDefault features will be installed.\n-------------------------- EXAMPLE 3 --------------------------\nC:\\PS\u003eInstall-DbaInstance -Version 2008R2 -SqlInstance sql2017 -ConfigurationFile C:\\temp\\configuration.ini\nInstall a default named SQL Server instance on the remote machine, sql2017 and use the local configuration.ini\n-------------------------- EXAMPLE 4 --------------------------\nC:\\PS\u003eInstall-DbaInstance -Version 2017 -InstancePath G:\\SQLServer\nRun the installation locally with default settings apart from the application volume, this will be redirected to G:\\SQLServer.\n-------------------------- EXAMPLE 5 --------------------------\nC:\\PS\u003e$svcAcc = Get-Credential MyDomain\\SvcSqlServer\nC:\\PS\u003e Install-DbaInstance -Version 2016 -InstancePath D:\\Root -DataPath E: -LogPath L: -PerformVolumeMaintenanceTasks -EngineCredential $svcAcc\nInstall SQL Server 2016 instance into D:\\Root drive, set default data folder as E: and default logs folder as L:.\r\nPerform volume maintenance tasks permission is granted. MyDomain\\SvcSqlServer is used as a service account for SqlServer.\n-------------------------- EXAMPLE 6 --------------------------\nC:\\PS\u003e$config = @{\nAGTSVCSTARTUPTYPE     = \"Manual\"\r\n    SQLCOLLATION          = \"Latin1_General_CI_AS\"\r\n    BROWSERSVCSTARTUPTYPE = \"Manual\"\r\n    FILESTREAMLEVEL       = 1\r\n}\r\nC:\\PS\u003e Install-DbaInstance -SqlInstance localhost\\v2017:1337 -Version 2017 -Configuration $config\nRun the installation locally with default settings overriding the value of specific configuration items.\r\nInstance name will be defined as \u0027v2017\u0027; TCP port will be changed to 1337 after installation.",
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "The target computer and, optionally, a new instance name and a port number.\r\nUse one of the following generic formats:\r\nServer1\r\nServer2\\Instance1\r\nServer1\\Alpha:1533, Server2\\Omega:1566\r\n\"ServerName\\NewInstanceName,1534\"\nYou can also define instance name and port using -InstanceName and -Port parameters.",
+                           "ComputerName",
+                           false,
+                           "false",
+                           "$env:COMPUTERNAME"
+                       ],
+                       [
+                           "Version",
+                           "SQL Server version you wish to install.",
+                           "",
+                           true,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "InstanceName",
+                           "Name of the SQL Server instance to install. Overrides the instance name specified in -SqlInstance.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "SaCredential",
+                           "Securely provide the password for the sa account when using mixed mode authentication.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Credential",
+                           "Used when executing installs against remote servers",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Authentication",
+                           "Chooses an authentication protocol for remote connections.\r\nIf the protocol fails to establish a connection\nDefaults:\r\n* CredSSP when -Credential is specified - due to the fact that repository Path is usually a network share and credentials need to be passed to the remote host\r\n  to avoid the double-hop issue.\r\n* Default when -Credential is not specified. Will likely fail if a network path is specified.",
+                           "",
+                           false,
+                           "false",
+                           "Credssp"
+                       ],
+                       [
+                           "ConfigurationFile",
+                           "The path to the custom Configuration.ini file.",
+                           "FilePath",
+                           false,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
+                           "Configuration",
+                           "A hashtable with custom configuration items that you want to use during the installation.\r\nOverrides all other parameters.\r\nFor example, to define a custom server collation you can use the following parameter:\r\nPS\u003e Install-DbaInstance -Version 2017 -Configuration @{ SQLCOLLATION = \u0027Latin1_General_BIN\u0027 }\nFull list of parameters can be found here: https://docs.microsoft.com/en-us/sql/database-engine/install-windows/install-sql-server-from-the-command-prompt#Install",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Path",
+                           "Path to the folder(s) with SQL Server installation media downloaded. It will be scanned recursively for a corresponding setup.exe.\r\nPath should be available from the remote server.\r\nIf a setup.exe file is missing in the repository, the installation will fail.\r\nConsider setting the following configuration if you want to omit this parameter: `Set-DbatoolsConfig -Name Path.SQLServerSetup -Value \u0027\\\\path\\to\\installations\u0027`",
+                           "",
+                           false,
+                           "false",
+                           "(Get-DbatoolsConfigValue -Name \u0027Path.SQLServerSetup\u0027)"
+                       ],
+                       [
+                           "Feature",
+                           "Features to install. Templates like \"Default\" and \"All\" can be used to setup a predefined set of components.",
+                           "",
+                           false,
+                           "false",
+                           "Default"
+                       ],
+                       [
+                           "AuthenticationMode",
+                           "Chooses between Mixed and Windows authentication.",
+                           "",
+                           false,
+                           "false",
+                           "Windows"
+                       ],
+                       [
+                           "InstancePath",
+                           "Root folder for instance components. Includes SQL Server logs, system databases, etc.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "DataPath",
+                           "Path to the Data folder.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "LogPath",
+                           "Path to the Log folder.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "TempPath",
+                           "Path to the TempDB folder.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "BackupPath",
+                           "Path to the Backup folder.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "AdminAccount",
+                           "One or more members of the sysadmin group. Uses UserName from the -Credential parameter if specified, or current Windows user by default.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Port",
+                           "After successful installation, changes SQL Server TCP port to this value. Overrides the port specified in -SqlInstance.",
+                           "",
+                           false,
+                           "false",
+                           "0"
+                       ],
+                       [
+                           "Throttle",
+                           "Maximum number of computers updated in parallel. Once reached, the update operations will queue up.\r\nDefault: 50",
+                           "",
+                           false,
+                           "false",
+                           "50"
+                       ],
+                       [
+                           "ProductID",
+                           "Product ID, or simply, serial number of your SQL Server installation, which will determine which version to install.\r\nIf the PID is already built into the installation media, can be ignored.",
+                           "PID",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "EngineCredential",
+                           "Service account of the SQL Server Database Engine",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "AgentCredential",
+                           "Service account of the SQL Server Agent",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "ASCredential",
+                           "Service account of the Analysis Services",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "ISCredential",
+                           "Service account of the Integration Services",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "RSCredential",
+                           "Service account of the Reporting Services",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "FTCredential",
+                           "Service account of the Full-Text catalog service",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "PBEngineCredential",
+                           "Service account of the PolyBase service",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "SaveConfiguration",
+                           "Save installation configuration file in a custom location. Will not be preserved otherwise.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "PerformVolumeMaintenanceTasks",
+                           "Allow SQL Server service account to perform Volume Maintenance tasks.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "Restart",
+                           "Restart computer automatically if a restart is required before or after the installation.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "WhatIf",
+                           "Shows what would happen if the command were to run. No actions are actually performed.",
+                           "wi",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Confirm",
+                           "Prompts you for confirmation before executing any changing operations within the command.",
+                           "cf",
+                           false,
+                           "false",
+                           ""
+                       ]
+                   ],
+        "Syntax":  "Install-DbaInstance [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [-Version] \u003cString\u003e [[-InstanceName] \u003cString\u003e] [[-SaCredential] \u003cPSCredential\u003e] [[-Credential] \u003cPSCredential\u003e] [[-Authentication] \u003cString\u003e] [[-ConfigurationFile] \u003cObject\u003e] [[-Configuration] \u003cHashtable\u003e] [[-Path] \u003cString[]\u003e] [[-Feature] \u003cString\u003e] [[-AuthenticationMode] \u003cString\u003e] [[-InstancePath] \u003cString\u003e] [[-DataPath] \u003cString\u003e] [[-LogPath] \u003cString\u003e] [[-TempPath] \u003cString\u003e] [[-BackupPath] \u003cString\u003e] [[-AdminAccount] \u003cString[]\u003e] [[-Port] \u003cInt32\u003e] [[-Throttle] \u003cInt32\u003e] [[-ProductID] \u003cString\u003e] [[-EngineCredential] \u003cPSCredential\u003e] \r\n[[-AgentCredential] \u003cPSCredential\u003e] [[-ASCredential] \u003cPSCredential\u003e] [[-ISCredential] \u003cPSCredential\u003e] [[-RSCredential] \u003cPSCredential\u003e] [[-FTCredential] \u003cPSCredential\u003e] [[-PBEngineCredential] \u003cPSCredential\u003e] [[-SaveConfiguration] \u003cString\u003e] [-PerformVolumeMaintenanceTasks] [-Restart] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+    },
+    {
         "Name":  "Install-DbaMaintenanceSolution",
         "Description":  "This script will download and install the latest version of SQL Server Maintenance Solution created by Ola Hallengren",
         "Tags":  [
@@ -21681,6 +22502,14 @@
                            ""
                        ],
                        [
+                           "PreRelease",
+                           "If specified, a pre-release (beta) will be downloaded rather than a stable release",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
                            "Force",
                            "If this switch is enabled, SqlWatch will be downloaded from the internet even if previously cached.",
                            "",
@@ -21713,7 +22542,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Install-DbaSqlWatch [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString\u003e] [[-LocalFile] \u003cString\u003e] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Install-DbaSqlWatch [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString\u003e] [[-LocalFile] \u003cString\u003e] [-PreRelease] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Install-DbaWatchUpdate",
@@ -21844,6 +22673,139 @@
                        ]
                    ],
         "Syntax":  "Install-DbaWhoIsActive [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-LocalFile \u003cString\u003e] [-Database \u003cObject\u003e] [-EnableException] [-Force] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+    },
+    {
+        "Name":  "Invoke-DbaAdvancedInstall",
+        "Description":  "Invokes an install process for a single computer and restarts it if needed",
+        "Synopsis":  "Designed for internal use, implements parallel execution for Install-DbaInstance.",
+        "Alias":  "",
+        "CommandName":  "Invoke-DbaAdvancedInstall",
+        "Availability":  "Windows only",
+        "Links":  null,
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eInvoke-DbaAdvancedUpdate -ComputerName SQL1 -Action $actions\nInvokes update actions on SQL1 after restarting it.",
+        "Params":  [
+                       [
+                           "ComputerName",
+                           "Target computer with SQL instance or instances.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "InstanceName",
+                           "Instance name to be used for the installation",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Port",
+                           "After successful installation, changes SQL Server TCP port to this value. Overrides the port specified in -SqlInstance.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "InstallationPath",
+                           "Path to setup.exe",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "ConfigurationPath",
+                           "Path to Configuration.ini on a local machine",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "ArgumentList",
+                           "Array of command line arguments for setup.exe",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Version",
+                           "Canonic version of SQL Server, e.g. 10.50, 11.0",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Configuration",
+                           "A hashtable with custom configuration items that you want to use during the installation.\r\nOverrides all other parameters.\r\nFor example, to define a custom server collation you can use the following parameter:\r\nPS\u003e Install-DbaInstance -Version 2017 -Configuration @{ SQLCOLLATION = \u0027Latin1_General_BIN\u0027 }\nFull list of parameters can be found here: https://docs.microsoft.com/en-us/sql/database-engine/install-windows/install-sql-server-from-the-command-prompt#Install",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Restart",
+                           "Restart computer automatically after a successful installation of Sql Server and wait until it comes back online.\r\nUsing this parameter is the only way to chain-install more than 1 instance, since every single patch will require a restart of said computer.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "PerformVolumeMaintenanceTasks",
+                           "Allow SQL Server service account to perform Volume Maintenance tasks.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "SaveConfiguration",
+                           "Save installation configuration file in a custom location. Will not be preserved otherwise.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Authentication",
+                           "Chooses an authentication protocol for remote connections.\r\nIf the protocol fails to establish a connection\nDefaults:\r\n* CredSSP when -Credential is specified - due to the fact that repository Path is usually a network share and credentials need to be passed to the remote host\r\n  to avoid the double-hop issue.\r\n* Default when -Credential is not specified. Will likely fail if a network path is specified.",
+                           "",
+                           false,
+                           "false",
+                           "Credssp"
+                       ],
+                       [
+                           "Credential",
+                           "Windows Credential with permission to log on to the remote server.\r\nMust be specified for any remote connection if installation media is located on a network folder.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "SaCredential",
+                           "Securely provide the password for the sa account when using mixed mode authentication.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ]
+                   ],
+        "Syntax":  "Invoke-DbaAdvancedInstall [[-ComputerName] \u003cString\u003e] [[-InstanceName] \u003cString\u003e] [[-Port] \u003cNullable`1\u003e] [[-InstallationPath] \u003cString\u003e] [[-ConfigurationPath] \u003cString\u003e] [[-ArgumentList] \u003cString[]\u003e] [[-Version] \u003cVersion\u003e] [[-Configuration] \u003cHashtable\u003e] [[-Restart] \u003cBoolean\u003e] [[-PerformVolumeMaintenanceTasks] \u003cBoolean\u003e] [[-SaveConfiguration] \u003cString\u003e] [[-Authentication] \u003cString\u003e] [[-Credential] \u003cPSCredential\u003e] [[-SaCredential] \u003cPSCredential\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Invoke-DbaAdvancedRestore",
@@ -22023,7 +22985,7 @@
         "CommandName":  "Invoke-DbaAdvancedUpdate",
         "Availability":  "Windows only",
         "Links":  null,
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eInvoke-DbaAdvancedUpdate -ComputerName SQL1 -Action $actions -RestartNeeded $true\nInvokes update actions on SQL1 after restarting it.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eInvoke-DbaAdvancedUpdate -ComputerName SQL1 -Action $actions\nInvokes update actions on SQL1 after restarting it.",
         "Params":  [
                        [
                            "ComputerName",
@@ -22589,6 +23551,152 @@
                        ]
                    ],
         "Syntax":  "Invoke-DbaDbClone [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString[]\u003e] [[-InputObject] \u003cDatabase[]\u003e] [[-CloneDatabase] \u003cString[]\u003e] [-ExcludeStatistics] [-ExcludeQueryStore] [-UpdateStatistics] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+    },
+    {
+        "Name":  "Invoke-DbaDbDataGenerator",
+        "Description":  "Invoke-DbaDbDataMasking is able to generate random data for tables.",
+        "Tags":  [
+                     "DataGeneration",
+                     "Database"
+                 ],
+        "Synopsis":  "Invoke-DbaDbDataGenerator generates random data for tables",
+        "Alias":  "",
+        "Author":  "Sander Stad (@sqlstad, sqlstad.nl)",
+        "CommandName":  "Invoke-DbaDbDataGenerator",
+        "Availability":  "Windows, Linux, macOS",
+        "Links":  "https://dbatools.io/Invoke-DbaDbDataGenerator",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eInvoke-DbaDbDataGenerator -SqlInstance sqldb2 -Database DB1 -FilePath C:\\temp\\sqldb1.db1.tables.json\nApply the data generation configuration from the file \"sqldb1.db1.tables.json\" to the db1 database on sqldb2. Prompt for confirmation for each table.",
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "The target SQL Server instance or instances.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "SqlCredential",
+                           "Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Database",
+                           "Databases to process through",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "FilePath",
+                           "Configuration file that contains the which tables and columns need to be masked",
+                           "Path,FullName",
+                           true,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
+                           "Locale",
+                           "Set the local to enable certain settings in the masking",
+                           "",
+                           false,
+                           "false",
+                           "en"
+                       ],
+                       [
+                           "CharacterString",
+                           "The characters to use in string data. \u0027abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789\u0027 by default",
+                           "",
+                           false,
+                           "false",
+                           "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+                       ],
+                       [
+                           "Table",
+                           "Tables to process. By default all the tables will be processed",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Column",
+                           "Columns to process. By default all the columns will be processed",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "ExcludeTable",
+                           "Exclude specific tables even if it\u0027s listed in the config file.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "ExcludeColumn",
+                           "Exclude specific columns even if it\u0027s listed in the config file.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "MaxValue",
+                           "Force a max length of strings instead of relying on datatype maxes. Note if a string datatype has a lower MaxValue, that will be used instead.\nUseful for adhoc updates and testing, otherwise, the config file should be used.",
+                           "",
+                           false,
+                           "false",
+                           "0"
+                       ],
+                       [
+                           "ExactLength",
+                           "Mask string values to the same length. So \u0027Tate\u0027 will be replaced with 4 random characters.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "ModulusFactor",
+                           "Calculating the next nullable by using the remainder from the modulus. Default is every 10.",
+                           "",
+                           false,
+                           "false",
+                           "10"
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "WhatIf",
+                           "If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.",
+                           "wi",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Confirm",
+                           "If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.",
+                           "cf",
+                           false,
+                           "false",
+                           ""
+                       ]
+                   ],
+        "Syntax":  "Invoke-DbaDbDataGenerator [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString[]\u003e] [-FilePath] \u003cObject\u003e [[-Locale] \u003cString\u003e] [[-CharacterString] \u003cString\u003e] [[-Table] \u003cString[]\u003e] [[-Column] \u003cString[]\u003e] [[-ExcludeTable] \u003cString[]\u003e] [[-ExcludeColumn] \u003cString[]\u003e] [[-MaxValue] \u003cInt32\u003e] [-ExactLength] [[-ModulusFactor] \u003cInt32\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Invoke-DbaDbDataMasking",
@@ -25609,7 +26717,7 @@
         "Alias":  "Move-DbaRegisteredServer",
         "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "CommandName":  "Move-DbaCmsRegServer",
-        "Availability":  "Windows only",
+        "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Move-DbaCmsRegServer",
         "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eMove-DbaCmsRegServer -SqlInstance sql2012 -Name \u0027Web SQL Cluster\u0027 -NewGroup HR\\Prod\nMoves the registered server on sql2012 titled \u0027Web SQL Cluster\u0027 to the Prod group within the HR group\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaCmsRegServer -SqlInstance sql2017 -Name \u0027Web SQL Cluster\u0027 | Move-DbaCmsRegServer -NewGroup Web\nMoves the registered server \u0027Web SQL Cluster\u0027 on sql2017 to the Web group, also on sql2017",
         "Params":  [
@@ -25699,7 +26807,7 @@
         "Alias":  "Move-DbaRegisteredServerGroup",
         "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "CommandName":  "Move-DbaCmsRegServerGroup",
-        "Availability":  "Windows only",
+        "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Move-DbaCmsRegServerGroup",
         "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eMove-DbaCmsRegServerGroup -SqlInstance sql2012 -Group HR\\Development -NewGroup AD\\Prod\nMoves the Development group within HR to the Prod group within AD\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaCmsRegServerGroup -SqlInstance sql2017 -Group HR\\Development| Move-DbaCmsRegServer -NewGroup Web\nMoves the Development group within HR to the Web group",
         "Params":  [
@@ -27263,6 +28371,14 @@
                            "0"
                        ],
                        [
+                           "Database",
+                           "Database name",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
                            "EncryptConnection",
                            "When true, SQL Server uses SSL encryption for all data sent between the client and server if the server has a certificate installed. Recognized values are true, false, yes, and no. For more \r\ninformation, see Connection String Syntax.\nBeginning in .NET Framework 4.5, when TrustServerCertificate is false and Encrypt is true, the server name (or IP address) in a SQL Server SSL certificate must exactly match the server name (or IP \r\naddress) specified in the connection string. Otherwise, the connection attempt will fail. For information about support for certificates whose subject starts with a wildcard character (*), see \r\nAccepted wildcards used by server certificates for server authentication.",
                            "",
@@ -27415,7 +28531,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "New-DbaConnectionString [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-Credential] \u003cPSCredential\u003e] [[-AccessToken] \u003cString\u003e] [[-ApplicationIntent] \u003cString\u003e] [[-BatchSeparator] \u003cString\u003e] [[-ClientName] \u003cString\u003e] [[-ConnectTimeout] \u003cInt32\u003e] [-EncryptConnection] [[-FailoverPartner] \u003cString\u003e] [-IsActiveDirectoryUniversalAuth] [[-LockTimeout] \u003cInt32\u003e] [[-MaxPoolSize] \u003cInt32\u003e] [[-MinPoolSize] \u003cInt32\u003e] [-MultipleActiveResultSets] [-MultiSubnetFailover] [[-NetworkProtocol] \u003cString\u003e] [-NonPooledConnection] [[-PacketSize] \u003cInt32\u003e] [[-PooledConnectionLifetime] \u003cInt32\u003e] [[-SqlExecutionModes] \u003cString\u003e] \r\n[[-StatementTimeout] \u003cInt32\u003e] [-TrustServerCertificate] [[-WorkstationId] \u003cString\u003e] [[-AppendConnectionString] \u003cString\u003e] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "New-DbaConnectionString [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-Credential] \u003cPSCredential\u003e] [[-AccessToken] \u003cString\u003e] [[-ApplicationIntent] \u003cString\u003e] [[-BatchSeparator] \u003cString\u003e] [[-ClientName] \u003cString\u003e] [[-ConnectTimeout] \u003cInt32\u003e] [[-Database] \u003cString\u003e] [-EncryptConnection] [[-FailoverPartner] \u003cString\u003e] [-IsActiveDirectoryUniversalAuth] [[-LockTimeout] \u003cInt32\u003e] [[-MaxPoolSize] \u003cInt32\u003e] [[-MinPoolSize] \u003cInt32\u003e] [-MultipleActiveResultSets] [-MultiSubnetFailover] [[-NetworkProtocol] \u003cString\u003e] [-NonPooledConnection] [[-PacketSize] \u003cInt32\u003e] [[-PooledConnectionLifetime] \u003cInt32\u003e] \r\n[[-SqlExecutionModes] \u003cString\u003e] [[-StatementTimeout] \u003cInt32\u003e] [-TrustServerCertificate] [[-WorkstationId] \u003cString\u003e] [[-AppendConnectionString] \u003cString\u003e] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "New-DbaConnectionStringBuilder",
@@ -27820,7 +28936,7 @@
                        [
                            "Name",
                            "The name of the new database or databases to be created.",
-                           "",
+                           "Database",
                            false,
                            "false",
                            ""
@@ -28090,6 +29206,207 @@
                        ]
                    ],
         "Syntax":  "New-DbaDbCertificate [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Name] \u003cString[]\u003e] [[-Database] \u003cString[]\u003e] [[-Subject] \u003cString[]\u003e] [[-StartDate] \u003cDateTime\u003e] [[-ExpirationDate] \u003cDateTime\u003e] [-ActiveForServiceBrokerDialog] [[-SecurePassword] \u003cSecureString\u003e] [[-InputObject] \u003cDatabase[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+    },
+    {
+        "Name":  "New-DbaDbDataGeneratorConfig",
+        "Description":  "Generates a new data generation configuration file. This file is important to apply any data generation to a table in a database.\n\nRead more here:\nhttps://sachabarbs.wordpress.com/2018/06/11/bogus-simple-fake-data-tool/\nhttps://github.com/bchavez/Bogus",
+        "Tags":  [
+                     "DataGeneration",
+                     "Database"
+                 ],
+        "Synopsis":  "Generates a new data generation configuration file.",
+        "Alias":  "",
+        "Author":  "Sander Stad (@sqlstad, sqlstad.nl)",
+        "CommandName":  "New-DbaDbDataGeneratorConfig",
+        "Availability":  "Windows, Linux, macOS",
+        "Links":  "https://dbatools.io/New-DbaDbDataGeneratorConfig",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eNew-DbaDbDataGeneratorConfig -SqlInstance SQLDB1 -Database DB1 -Path C:\\Temp\\clone\nProcess all tables and columns for database DB1 on instance SQLDB1\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eNew-DbaDbDataGeneratorConfig -SqlInstance SQLDB1 -Database DB1 -Table Customer -Path C:\\Temp\\clone\nProcess only table Customer with all the columns",
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "The target SQL Server instance or instances.",
+                           "",
+                           true,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "SqlCredential",
+                           "Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Database",
+                           "Databases to process through",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Table",
+                           "Tables to process. By default all the tables will be processed",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "ResetIdentity",
+                           "Resets the identity column for a table to it\u0027s starting value. By default it will continue with the next identity.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "TruncateTable",
+                           "Truncates the tabel befoe inserting the values",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "Rows",
+                           "Amount of rows that need to be generated. The default is 1000.",
+                           "",
+                           false,
+                           "false",
+                           "1000"
+                       ],
+                       [
+                           "Path",
+                           "Path where to save the generated JSON files.\r\nThe naming convention will be \"servername.databasename.tables.json\"",
+                           "",
+                           true,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Force",
+                           "Forcefully execute commands when needed",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ]
+                   ],
+        "Syntax":  "New-DbaDbDataGeneratorConfig [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString[]\u003e] [[-Table] \u003cString[]\u003e] [-ResetIdentity] [-TruncateTable] [[-Rows] \u003cInt32\u003e] [-Path] \u003cString\u003e [-Force] [-EnableException] [\u003cCommonParameters\u003e]"
+    },
+    {
+        "Name":  "New-DbaDbMailAccount",
+        "Description":  "Creates a new database mail account",
+        "Tags":  "DbMail",
+        "Synopsis":  "Creates a new database mail account",
+        "Alias":  "",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
+        "CommandName":  "New-DbaDbMailAccount",
+        "Availability":  "Windows, Linux, macOS",
+        "Links":  "https://dbatools.io/New-DbaDbMailAccount",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003e$account = New-DbaDbMailAccount -SqlInstance sql2017 -Name \u0027The DBA Team\u0027 -EmailAddress admin@ad.local -MailServer smtp.ad.local\nCreates a new db mail account with the email address admin@ad.local on sql2017 named \"The DBA Team\" using the smtp.ad.local mail server",
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "The target SQL Server instance or instances. You must have sysadmin access and server version must be SQL Server version 2008 or higher.",
+                           "ServerInstance,SqlServer",
+                           true,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
+                           "SqlCredential",
+                           "Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Name",
+                           "The Name of the account to be created.",
+                           "",
+                           true,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "DisplayName",
+                           "Sets the name of the mail account that is displayed in messages.",
+                           "",
+                           false,
+                           "false",
+                           "$Name"
+                       ],
+                       [
+                           "Description",
+                           "Sets the description of the purpose of the mail account.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "EmailAddress",
+                           "Sets the e-mail address of the mail account.",
+                           "",
+                           true,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "ReplyToAddress",
+                           "Sets the e-mail address to which the mail account replies.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "MailServer",
+                           "The name of the mail server.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "WhatIf",
+                           "If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.",
+                           "wi",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Confirm",
+                           "If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.",
+                           "cf",
+                           false,
+                           "false",
+                           ""
+                       ]
+                   ],
+        "Syntax":  "New-DbaDbMailAccount [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [-Name] \u003cString\u003e [[-DisplayName] \u003cString\u003e] [[-Description] \u003cString\u003e] [-EmailAddress] \u003cString\u003e [[-ReplyToAddress] \u003cString\u003e] [[-MailServer] \u003cString\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "New-DbaDbMailProfile",
@@ -30043,7 +31360,7 @@
         "CommandName":  "Read-DbaBackupHeader",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Read-DbaBackupHeader",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eRead-DbaBackupHeader -SqlInstance sql2016 -Path S:\\backups\\mydb\\mydb.bak\nLogs into sql2016 using Windows authentication and reads the local file on sql2016, S:\\backups\\mydb\\mydb.bak.\nIf you are running this command on a workstation and connecting remotely, remember that sql2016 cannot access files on your own workstation.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eRead-DbaBackupHeader -SqlInstance sql2016 -Path \\\\nas\\sql\\backups\\mydb\\mydb.bak, \\\\nas\\sql\\backups\\otherdb\\otherdb.bak\nLogs into sql2016 and reads two backup files - mydb.bak and otherdb.bak. The SQL Server service account must have rights to read this file.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eRead-DbaBackupHeader -SqlInstance . -Path C:\\temp\\myfile.bak -Simple\nLogs into the local workstation (or computer) and shows simplified output about C:\\temp\\myfile.bak. The SQL Server service account must have rights to read this file.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003e$backupinfo = Read-DbaBackupHeader -SqlInstance . -Path C:\\temp\\myfile.bak\nPS C:\\\u003e $backupinfo.FileList\nDisplays detailed information about each of the datafiles contained in the backupset.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eRead-DbaBackupHeader -SqlInstance . -Path C:\\temp\\myfile.bak -FileList\nAlso returns detailed information about each of the datafiles contained in the backupset.\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003e\"C:\\temp\\myfile.bak\", \"\\backupserver\\backups\\myotherfile.bak\" | Read-DbaBackupHeader -SqlInstance sql2016  | Where-Object { $_.BackupSize.Megabyte -gt 100 }\nReads the two files and returns only backups larger than 100 MB\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003eGet-ChildItem \\\\nas\\sql\\*.bak | Read-DbaBackupHeader -SqlInstance sql2016\nGets a list of all .bak files on the \\\\nas\\sql share and reads the headers using the server named \"sql2016\". This means that the server, sql2016, must have read access to the \\\\nas\\sql share.\n-------------------------- EXAMPLE 8 --------------------------\nPS C:\\\u003eRead-DbaBackupHeader -Path https://dbatoolsaz.blob.core.windows.net/azbackups/restoretime/restoretime_201705131850.bak -AzureCredential AzureBackupUser\nGets the backup header information from the SQL Server backup file stored at https://dbatoolsaz.blob.core.windows.net/azbackups/restoretime/restoretime_201705131850.bak on Azure",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eRead-DbaBackupHeader -SqlInstance sql2016 -Path S:\\backups\\mydb\\mydb.bak\nLogs into sql2016 using Windows authentication and reads the local file on sql2016, S:\\backups\\mydb\\mydb.bak.\nIf you are running this command on a workstation and connecting remotely, remember that sql2016 cannot access files on your own workstation.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eRead-DbaBackupHeader -SqlInstance sql2016 -Path \\\\nas\\sql\\backups\\mydb\\mydb.bak, \\\\nas\\sql\\backups\\otherdb\\otherdb.bak\nLogs into sql2016 and reads two backup files - mydb.bak and otherdb.bak. The SQL Server service account must have rights to read this file.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eRead-DbaBackupHeader -SqlInstance . -Path C:\\temp\\myfile.bak -Simple\nLogs into the local workstation (or computer) and shows simplified output about C:\\temp\\myfile.bak. The SQL Server service account must have rights to read this file.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003e$backupinfo = Read-DbaBackupHeader -SqlInstance . -Path C:\\temp\\myfile.bak\nPS C:\\\u003e $backupinfo.FileList\nDisplays detailed information about each of the datafiles contained in the backupset.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eRead-DbaBackupHeader -SqlInstance . -Path C:\\temp\\myfile.bak -FileList\nAlso returns detailed information about each of the datafiles contained in the backupset.\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003e\"C:\\temp\\myfile.bak\", \"\\backupserver\\backups\\myotherfile.bak\" | Read-DbaBackupHeader -SqlInstance sql2016  | Where-Object { $_.BackupSize.Megabyte -gt 100 }\nReads the two files and returns only backups larger than 100 MB\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003eGet-ChildItem \\\\nas\\sql\\*.bak | Read-DbaBackupHeader -SqlInstance sql2016\nGets a list of all .bak files on the \\\\nas\\sql share and reads the headers using the server named \"sql2016\". This means that the server, sql2016, must have read access to the \\\\nas\\sql share.\n-------------------------- EXAMPLE 8 --------------------------\nPS C:\\\u003eRead-DbaBackupHeader -SqlInstance sql2016 -Path https://dbatoolsaz.blob.core.windows.net/azbackups/restoretime/restoretime_201705131850.bak -AzureCredential AzureBackupUser\nGets the backup header information from the SQL Server backup file stored at https://dbatoolsaz.blob.core.windows.net/azbackups/restoretime/restoretime_201705131850.bak on Azure",
         "Params":  [
                        [
                            "SqlInstance",
@@ -30366,7 +31683,7 @@
         "Synopsis":  "Registers an existing configuration object in registry.",
         "Alias":  "Register-DbaConfig",
         "CommandName":  "Register-DbatoolsConfig",
-        "Availability":  "Windows only",
+        "Availability":  "Windows, Linux, macOS",
         "Links":  null,
         "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbatoolsConfig message.style.* | Register-DbatoolsConfig\nRetrieves all configuration items that that start with message.style. and registers them in registry for the current user.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eRegister-DbatoolsConfig -FullName \"message.consoleoutput.disable\" -Scope SystemDefault\nRetrieves the configuration item \"message.consoleoutput.disable\" and registers it in registry as the default setting for all users on this machine.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eRegister-DbatoolsConfig -Module Message -Scope SystemMandatory\nRetrieves all configuration items of the module Message, then registers them in registry to enforce them for all users on the current system.",
         "Params":  [
@@ -31300,7 +32617,7 @@
         "Alias":  "Remove-DbaRegisteredServer",
         "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "CommandName":  "Remove-DbaCmsRegServer",
-        "Availability":  "Windows only",
+        "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Remove-DbaCmsRegServer",
         "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eRemove-DbaCmsRegServer -SqlInstance sql2012 -Group HR, Accounting\nRemoves all servers from the HR and Accounting groups on sql2012\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eRemove-DbaCmsRegServer -SqlInstance sql2012 -Group HR\\Development\nRemoves all servers from the HR and sub-group Development from the CMS on sql2012.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eRemove-DbaCmsRegServer -SqlInstance sql2012 -Confirm:$false\nRemoves all registered servers on sql2012 and turns off all prompting",
         "Params":  [
@@ -31390,7 +32707,7 @@
         "Alias":  "Remove-DbaRegisteredServerGroup",
         "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "CommandName":  "Remove-DbaCmsRegServerGroup",
-        "Availability":  "Windows only",
+        "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Remove-DbaCmsRegServerGroup",
         "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eRemove-DbaCmsRegServerGroup -SqlInstance sql2012 -Group HR, Accounting\nRemoves the HR and Accounting groups on sql2012\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eRemove-DbaCmsRegServerGroup -SqlInstance sql2012 -Group HR\\Development -Confirm:$false\nRemoves the Development subgroup within the HR group on sql2012 and turns off all prompting",
         "Params":  [
@@ -33798,7 +35115,7 @@
         "CommandName":  "Restart-DbaService",
         "Availability":  "Windows only",
         "Links":  "https://dbatools.io/Restart-DbaService",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eRestart-DbaService -ComputerName sqlserver2014a\nRestarts the SQL Server related services on computer sqlserver2014a.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003e\u0027sql1\u0027,\u0027sql2\u0027,\u0027sql3\u0027| Get-DbaService | Restart-DbaService\nGets the SQL Server related services on computers sql1, sql2 and sql3 and restarts them.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eRestart-DbaService -ComputerName sql1,sql2 -Instance MSSQLSERVER\nRestarts the SQL Server services related to the default instance MSSQLSERVER on computers sql1 and sql2.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eRestart-DbaService -ComputerName $MyServers -Type SSRS\nRestarts the SQL Server related services of type \"SSRS\" (Reporting Services) on computers in the variable MyServers.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eRestart-DbaService -ComputerName sql1 -Type Engine -Force\nRestarts SQL Server database engine services on sql1 forcing dependent SQL Server Agent services to restart as well.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eRestart-DbaService -ComputerName sqlserver2014a\nRestarts the SQL Server related services on computer sqlserver2014a.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003e\u0027sql1\u0027,\u0027sql2\u0027,\u0027sql3\u0027| Get-DbaService | Restart-DbaService\nGets the SQL Server related services on computers sql1, sql2 and sql3 and restarts them.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eRestart-DbaService -ComputerName sql1,sql2 -InstanceName MSSQLSERVER\nRestarts the SQL Server services related to the default instance MSSQLSERVER on computers sql1 and sql2.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eRestart-DbaService -ComputerName $MyServers -Type SSRS\nRestarts the SQL Server related services of type \"SSRS\" (Reporting Services) on computers in the variable MyServers.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eRestart-DbaService -ComputerName sql1 -Type Engine -Force\nRestarts SQL Server database engine services on sql1 forcing dependent SQL Server Agent services to restart as well.",
         "Params":  [
                        [
                            "ComputerName",
@@ -34358,7 +35675,7 @@
         "CommandName":  "Restore-DbaDbCertificate",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Restore-DbaDbCertificate",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eRestore-DbaDbCertificate -SqlInstance Server1 -Path \\\\Server1\\Certificates -SecurePassword (ConvertTo-SecureString -Force -AsPlainText GoodPass1234!!)\nRestores all the certificates in the specified path, password is used to both decrypt and encrypt the private key.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eRestore-DbaDbCertificate -SqlInstance Server1 -Path \\\\Server1\\Certificates\\DatabaseTDE.cer -SecurePassword (ConvertTo-SecureString -force -AsPlainText GoodPass1234!!)\nRestores the DatabaseTDE certificate to Server1 and uses the MasterKey to encrypt the private key.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003e$securepass = Get-Credential usernamedoesntmatter | Select-Object -ExpandProperty Password\nPS C:\\\u003e Restore-DbaDbCertificate -SqlInstance Server1 -Path \\\\Server1\\Certificates -SecurePassword $securepass\nRestores all the certificates in the specified path, password is used to both decrypt and encrypt the private key.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eRestore-DbaDbCertificate -SqlInstance Server1 -Path \\\\Server1\\Certificates\\DatabaseTDE.cer -SecurePassword (Get-Credential usernamedoesntmatter).Password\nRestores the DatabaseTDE certificate to Server1 and uses the MasterKey to encrypt the private key.",
         "Params":  [
                        [
                            "SqlInstance",
@@ -34403,7 +35720,7 @@
                        [
                            "SecurePassword",
                            "Secure string used to decrypt the private key.",
-                           "Password",
+                           "Password,DecryptionPassword",
                            false,
                            "false",
                            "(Read-Host \"Password\" -AsSecureString)"
@@ -36242,6 +37559,14 @@
                            ""
                        ],
                        [
+                           "SessionTimeout",
+                           "How many seconds an availability replica waits for a ping response from a connected replica before considering the connection to have failed.",
+                           "",
+                           false,
+                           "false",
+                           "0"
+                       ],
+                       [
                            "EndpointUrl",
                            "The endpoint URL.",
                            "",
@@ -36290,7 +37615,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Set-DbaAgReplica [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-AvailabilityGroup] \u003cString\u003e] [[-Replica] \u003cString\u003e] [[-AvailabilityMode] \u003cString\u003e] [[-FailoverMode] \u003cString\u003e] [[-BackupPriority] \u003cInt32\u003e] [[-ConnectionModeInPrimaryRole] \u003cString\u003e] [[-ConnectionModeInSecondaryRole] \u003cString\u003e] [[-SeedingMode] \u003cString\u003e] [[-EndpointUrl] \u003cString\u003e] [[-ReadonlyRoutingConnectionUrl] \u003cString\u003e] [[-InputObject] \u003cAvailabilityReplica\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Set-DbaAgReplica [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-AvailabilityGroup] \u003cString\u003e] [[-Replica] \u003cString\u003e] [[-AvailabilityMode] \u003cString\u003e] [[-FailoverMode] \u003cString\u003e] [[-BackupPriority] \u003cInt32\u003e] [[-ConnectionModeInPrimaryRole] \u003cString\u003e] [[-ConnectionModeInSecondaryRole] \u003cString\u003e] [[-SeedingMode] \u003cString\u003e] [[-SessionTimeout] \u003cInt32\u003e] [[-EndpointUrl] \u003cString\u003e] [[-ReadonlyRoutingConnectionUrl] \u003cString\u003e] [[-InputObject] \u003cAvailabilityReplica\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Set-DbaAvailabilityGroup",
@@ -38281,7 +39606,7 @@
                        [
                            "EnableException",
                            "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
-                           "Silent",
+                           "",
                            false,
                            "false",
                            "False"
@@ -38390,7 +39715,7 @@
         "CommandName":  "Set-DbaStartupParameter",
         "Availability":  "Windows only",
         "Links":  null,
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eSet-DbaStartupParameter -SqlInstance server1\\instance1 -SingleUser\nWill configure the SQL Instance server1\\instance1 to startup up in Single User mode at next startup\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eSet-DbaStartupParameter -SqlInstance sql2016 -IncreasedExtents\nWill configure the SQL Instance sql2016 to IncreasedExtents = True (-E)\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eSet-DbaStartupParameter -SqlInstance sql2016  -IncreasedExtents:$false -WhatIf\nShows what would happen if you attempted to configure the SQL Instance sql2016 to IncreasedExtents = False (no -E)\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eSet-DbaStartupParameter -SqlInstance server1\\instance1 -SingleUser -TraceFlags 8032,8048\nThis will append Trace Flags 8032 and 8048 to the startup parameters\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eSet-DbaStartupParameter -SqlInstance sql2016 -SingleUser:$false -TraceFlagsOverride\nThis will remove all trace flags and set SingleUser to false\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eSet-DbaStartupParameter -SqlInstance server1\\instance1 -SingleUser -TraceFlags 8032,8048 -TraceFlagsOverride\nThis will set Trace Flags 8032 and 8048 to the startup parameters, removing any existing Trace Flags\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003eSet-DbaStartupParameter -SqlInstance sql2016 -SingleUser:$false -TraceFlagsOverride -Offline\nThis will remove all trace flags and set SingleUser to false from an offline instance\n-------------------------- EXAMPLE 8 --------------------------\nPS C:\\\u003eSet-DbaStartupParameter -SqlInstance sql2016 -ErrorLog c:\\Sql\\ -Offline\nThis will attempt to change the ErrorLog path to c:\\sql\\. However, with the offline switch this will not happen. To force it, use the -Force switch like so:\nSet-DbaStartupParameter -SqlInstance sql2016 -ErrorLog c:\\Sql\\ -Offline -Force\n-------------------------- EXAMPLE 9 --------------------------\nPS C:\\\u003e$StartupConfig = Get-DbaStartupParameter -SqlInstance server1\\instance1\nPS C:\\\u003e Set-DbaStartupParameter -SqlInstance server1\\instance1 -SingleUser -NoLoggingToWinEvents\r\nPS C:\\\u003e #Restart your SQL instance with the tool of choice\r\nPS C:\\\u003e #Do Some work\r\nPS C:\\\u003e Set-DbaStartupParameter -SqlInstance server1\\instance1 -StartUpConfig $StartUpConfig\r\nPS C:\\\u003e #Restart your SQL instance with the tool of choice and you\u0027re back to normal\nIn this example we take a copy of the existing startup configuration of server1\\instance1\nWe then change the startup parameters ahead of some work\nAfter the work has been completed, we can push the original startup parameters back to server1\\instance1 and resume normal operation",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eSet-DbaStartupParameter -SqlInstance server1\\instance1 -SingleUser\nWill configure the SQL Instance server1\\instance1 to startup up in Single User mode at next startup\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eSet-DbaStartupParameter -SqlInstance sql2016 -IncreasedExtents\nWill configure the SQL Instance sql2016 to IncreasedExtents = True (-E)\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eSet-DbaStartupParameter -SqlInstance sql2016  -IncreasedExtents:$false -WhatIf\nShows what would happen if you attempted to configure the SQL Instance sql2016 to IncreasedExtents = False (no -E)\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eSet-DbaStartupParameter -SqlInstance server1\\instance1 -TraceFlag 8032,8048\nThis will append Trace Flags 8032 and 8048 to the startup parameters\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eSet-DbaStartupParameter -SqlInstance sql2016 -SingleUser:$false -TraceFlagOverride\nThis will remove all trace flags and set SingleUser to false\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eSet-DbaStartupParameter -SqlInstance server1\\instance1 -SingleUser -TraceFlag 8032,8048 -TraceFlagOverride\nThis will set Trace Flags 8032 and 8048 to the startup parameters, removing any existing Trace Flags\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003eSet-DbaStartupParameter -SqlInstance sql2016 -SingleUser:$false -TraceFlagOverride -Offline\nThis will remove all trace flags and set SingleUser to false from an offline instance\n-------------------------- EXAMPLE 8 --------------------------\nPS C:\\\u003eSet-DbaStartupParameter -SqlInstance sql2016 -ErrorLog c:\\Sql\\ -Offline\nThis will attempt to change the ErrorLog path to c:\\sql\\. However, with the offline switch this will not happen. To force it, use the -Force switch like so:\nSet-DbaStartupParameter -SqlInstance sql2016 -ErrorLog c:\\Sql\\ -Offline -Force\n-------------------------- EXAMPLE 9 --------------------------\nPS C:\\\u003e$StartupConfig = Get-DbaStartupParameter -SqlInstance server1\\instance1\nPS C:\\\u003e Set-DbaStartupParameter -SqlInstance server1\\instance1 -SingleUser -NoLoggingToWinEvents\r\nPS C:\\\u003e #Restart your SQL instance with the tool of choice\r\nPS C:\\\u003e #Do Some work\r\nPS C:\\\u003e Set-DbaStartupParameter -SqlInstance server1\\instance1 -StartupConfig $StartupConfig\r\nPS C:\\\u003e #Restart your SQL instance with the tool of choice and you\u0027re back to normal\nIn this example we take a copy of the existing startup configuration of server1\\instance1\nWe then change the startup parameters ahead of some work\nAfter the work has been completed, we can push the original startup parameters back to server1\\instance1 and resume normal operation",
         "Params":  [
                        [
                            "SqlInstance",
@@ -38441,7 +39766,7 @@
                            ""
                        ],
                        [
-                           "TraceFlags",
+                           "TraceFlag",
                            "A comma separated list of TraceFlags to be applied at SQL Server startup\r\nBy default these will be appended to any existing trace flags set",
                            "",
                            false,
@@ -38521,7 +39846,7 @@
                            "False"
                        ],
                        [
-                           "TraceFlagsOverride",
+                           "TraceFlagOverride",
                            "Overrides the default behaviour and replaces any existing trace flags. If not trace flags specified will just remove existing ones",
                            "",
                            false,
@@ -38529,8 +39854,8 @@
                            "False"
                        ],
                        [
-                           "StartUpConfig",
-                           "Pass in a previously saved SQL Instance startup config\r\nusing this parameter will set TraceFlagsOverride to true, so existing Trace Flags will be overridden",
+                           "StartupConfig",
+                           "Pass in a previously saved SQL Instance startup config\r\nusing this parameter will set TraceFlagOverride to true, so existing Trace Flags will be overridden",
                            "",
                            false,
                            "false",
@@ -38577,7 +39902,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Set-DbaStartupParameter [-SqlInstance] \u003cDbaInstanceParameter\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Credential] \u003cPSCredential\u003e] [[-MasterData] \u003cString\u003e] [[-MasterLog] \u003cString\u003e] [[-ErrorLog] \u003cString\u003e] [[-TraceFlags] \u003cString[]\u003e] [-CommandPromptStart] [-MinimalStart] [[-MemoryToReserve] \u003cInt32\u003e] [-SingleUser] [[-SingleUserDetails] \u003cString\u003e] [-NoLoggingToWinEvents] [-StartAsNamedInstance] [-DisableMonitoring] [-IncreasedExtents] [-TraceFlagsOverride] [[-StartUpConfig] \u003cObject\u003e] [-Offline] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Set-DbaStartupParameter [-SqlInstance] \u003cDbaInstanceParameter\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Credential] \u003cPSCredential\u003e] [[-MasterData] \u003cString\u003e] [[-MasterLog] \u003cString\u003e] [[-ErrorLog] \u003cString\u003e] [[-TraceFlag] \u003cString[]\u003e] [-CommandPromptStart] [-MinimalStart] [[-MemoryToReserve] \u003cInt32\u003e] [-SingleUser] [[-SingleUserDetails] \u003cString\u003e] [-NoLoggingToWinEvents] [-StartAsNamedInstance] [-DisableMonitoring] [-IncreasedExtents] [-TraceFlagOverride] [[-StartupConfig] \u003cObject\u003e] [-Offline] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Set-DbaTcpPort",
@@ -43681,19 +45006,19 @@
         "Syntax":  "Watch-DbaXESession [-SqlCredential \u003cPSCredential\u003e] [-Session \u003cString\u003e] [-Raw] [-EnableException] [\u003cCommonParameters\u003e]\nWatch-DbaXESession -SqlInstance \u003cDbaInstanceParameter\u003e [-SqlCredential \u003cPSCredential\u003e] [-Session \u003cString\u003e] [-Raw] [-EnableException] [\u003cCommonParameters\u003e]\nWatch-DbaXESession [-SqlCredential \u003cPSCredential\u003e] [-Session \u003cString\u003e] -InputObject \u003cSession\u003e [-Raw] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
-        "Name":  "Write-DbaDataTable",
+        "Name":  "Write-DbaDbTableData",
         "Description":  "Writes a .NET DataTable to a SQL Server table using SQL Bulk Copy.",
         "Tags":  [
                      "DataTable",
                      "Insert"
                  ],
         "Synopsis":  "Writes data to a SQL Server Table.",
-        "Alias":  "",
+        "Alias":  "Write-DbaDataTable",
         "Author":  "Chrissy LeMaire (@cl), netnerds.net",
-        "CommandName":  "Write-DbaDataTable",
+        "CommandName":  "Write-DbaDbTableData",
         "Availability":  "Windows, Linux, macOS",
-        "Links":  "https://dbatools.io/Write-DbaDataTable",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003e$DataTable = Import-Csv C:\\temp\\customers.csv\nPS C:\\\u003e Write-DbaDataTable -SqlInstance sql2014 -InputObject $DataTable -Table mydb.dbo.customers\nPerforms a bulk insert of all the data in customers.csv into database mydb, schema dbo, table customers. A progress bar will be shown as rows are inserted. If the destination table does not exist, \r\nthe import will be halted.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003e$tableName = \"MyTestData\"\nPS C:\\\u003e $query = \"SELECT name, create_date, owner_sid FROM sys.databases\"\r\nPS C:\\\u003e $dataset = Invoke-DbaQuery -SqlInstance \u0027localhost,1417\u0027 -SqlCredential $containerCred -Database master -Query $query\r\nPS C:\\\u003e $dataset | Select-Object name, create_date, @{L=\"owner_sid\";E={$_.\"owner_sid\"}} | Write-DbaDataTable -SqlInstance \u0027localhost,1417\u0027 -SqlCredential $containerCred -Database tempdb -Table \r\nmyTestData -Schema dbo -AutoCreateTable\nPulls data from a SQL Server instance and then performs a bulk insert of the dataset to a new, auto-generated table tempdb.dbo.MyTestData.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003e$DataTable = Import-Csv C:\\temp\\customers.csv\nPS C:\\\u003e Write-DbaDataTable -SqlInstance sql2014 -InputObject $DataTable -Table mydb.dbo.customers -AutoCreateTable -Confirm\nPerforms a bulk insert of all the data in customers.csv. If mydb.dbo.customers does not exist, it will be created with inefficient but forgiving DataTypes.\nPrompts for confirmation before a variety of steps.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003e$DataTable = Import-Csv C:\\temp\\customers.csv\nPS C:\\\u003e Write-DbaDataTable -SqlInstance sql2014 -InputObject $DataTable -Table mydb.dbo.customers -Truncate\nPerforms a bulk insert of all the data in customers.csv. Prior to importing into mydb.dbo.customers, the user is informed that the table will be truncated and asks for confirmation. The user is \r\nprompted again to perform the import.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003e$DataTable = Import-Csv C:\\temp\\customers.csv\nPS C:\\\u003e Write-DbaDataTable -SqlInstance sql2014 -InputObject $DataTable -Database mydb -Table customers -KeepNulls\nPerforms a bulk insert of all the data in customers.csv into mydb.dbo.customers. Because Schema was not specified, dbo was used. NULL values in the destination table will be preserved.\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003e$passwd = ConvertTo-SecureString \"P@ssw0rd\" -AsPlainText -Force\nPS C:\\\u003e $AzureCredential = New-Object System.Management.Automation.PSCredential(\"AzureAccount\"),$passwd)\r\nPS C:\\\u003e $DataTable = Import-Csv C:\\temp\\customers.csv\r\nPS C:\\\u003e Write-DbaDataTable -SqlInstance AzureDB.database.windows.net -InputObject $DataTable -Database mydb -Table customers -KeepNulls -Credential $AzureCredential -BulkCopyTimeOut 300\nThis performs the same operation as the previous example, but against a SQL Azure Database instance using the required credentials.\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003e$process = Get-Process\nPS C:\\\u003e Write-DbaDataTable -InputObject $process -SqlInstance sql2014 -Table \"[[DbName]]].[Schema.With.Dots].[`\"[Process]]`\"]\" -AutoCreateTable\nCreates a table based on the Process object with over 60 columns, converted from PowerShell data types to SQL Server data types. After the table is created a bulk insert is performed to add process \r\ninformation into the table\r\nWrites the results of Get-Process to a table named: \"[Process]\" in schema named: Schema.With.Dots in database named: [DbName]\r\nThe Table name, Schema name and Database name must be wrapped in square brackets [ ]\r\nSpecial charcters like \" must be escaped by a ` charcter.\r\nIn addition any actual instance of the ] character must be escaped by being duplicated.\nThis is an example of the type conversion in action. All process properties are converted, including special types like TimeSpan. Script properties are resolved before the type conversion starts \r\nthanks to ConvertTo-DbaDataTable.",
+        "Links":  "https://dbatools.io/Write-DbaDbTableData",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003e$DataTable = Import-Csv C:\\temp\\customers.csv\nPS C:\\\u003e Write-DbaDbTableData -SqlInstance sql2014 -InputObject $DataTable -Table mydb.dbo.customers\nPerforms a bulk insert of all the data in customers.csv into database mydb, schema dbo, table customers. A progress bar will be shown as rows are inserted. If the destination table does not exist, \r\nthe import will be halted.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003e$tableName = \"MyTestData\"\nPS C:\\\u003e $query = \"SELECT name, create_date, owner_sid FROM sys.databases\"\r\nPS C:\\\u003e $dataset = Invoke-DbaQuery -SqlInstance \u0027localhost,1417\u0027 -SqlCredential $containerCred -Database master -Query $query\r\nPS C:\\\u003e $dataset | Select-Object name, create_date, @{L=\"owner_sid\";E={$_.\"owner_sid\"}} | Write-DbaDbTableData -SqlInstance \u0027localhost,1417\u0027 -SqlCredential $containerCred -Database tempdb -Table \r\nmyTestData -Schema dbo -AutoCreateTable\nPulls data from a SQL Server instance and then performs a bulk insert of the dataset to a new, auto-generated table tempdb.dbo.MyTestData.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003e$DataTable = Import-Csv C:\\temp\\customers.csv\nPS C:\\\u003e Write-DbaDbTableData -SqlInstance sql2014 -InputObject $DataTable -Table mydb.dbo.customers -AutoCreateTable -Confirm\nPerforms a bulk insert of all the data in customers.csv. If mydb.dbo.customers does not exist, it will be created with inefficient but forgiving DataTypes.\nPrompts for confirmation before a variety of steps.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003e$DataTable = Import-Csv C:\\temp\\customers.csv\nPS C:\\\u003e Write-DbaDbTableData -SqlInstance sql2014 -InputObject $DataTable -Table mydb.dbo.customers -Truncate\nPerforms a bulk insert of all the data in customers.csv. Prior to importing into mydb.dbo.customers, the user is informed that the table will be truncated and asks for confirmation. The user is \r\nprompted again to perform the import.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003e$DataTable = Import-Csv C:\\temp\\customers.csv\nPS C:\\\u003e Write-DbaDbTableData -SqlInstance sql2014 -InputObject $DataTable -Database mydb -Table customers -KeepNulls\nPerforms a bulk insert of all the data in customers.csv into mydb.dbo.customers. Because Schema was not specified, dbo was used. NULL values in the destination table will be preserved.\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003e$passwd = ConvertTo-SecureString \"P@ssw0rd\" -AsPlainText -Force\nPS C:\\\u003e $AzureCredential = New-Object System.Management.Automation.PSCredential(\"AzureAccount\"),$passwd)\r\nPS C:\\\u003e $DataTable = Import-Csv C:\\temp\\customers.csv\r\nPS C:\\\u003e Write-DbaDbTableData -SqlInstance AzureDB.database.windows.net -InputObject $DataTable -Database mydb -Table customers -KeepNulls -Credential $AzureCredential -BulkCopyTimeOut 300\nThis performs the same operation as the previous example, but against a SQL Azure Database instance using the required credentials.\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003e$process = Get-Process\nPS C:\\\u003e Write-DbaDbTableData -InputObject $process -SqlInstance sql2014 -Table \"[[DbName]]].[Schema.With.Dots].[`\"[Process]]`\"]\" -AutoCreateTable\nCreates a table based on the Process object with over 60 columns, converted from PowerShell data types to SQL Server data types. After the table is created a bulk insert is performed to add process \r\ninformation into the table\r\nWrites the results of Get-Process to a table named: \"[Process]\" in schema named: Schema.With.Dots in database named: [DbName]\r\nThe Table name, Schema name and Database name must be wrapped in square brackets [ ]\r\nSpecial charcters like \" must be escaped by a ` charcter.\r\nIn addition any actual instance of the ] character must be escaped by being duplicated.\nThis is an example of the type conversion in action. All process properties are converted, including special types like TimeSpan. Script properties are resolved before the type conversion starts \r\nthanks to ConvertTo-DbaDataTable.",
         "Params":  [
                        [
                            "SqlInstance",
@@ -43824,14 +45149,6 @@
                            "5000"
                        ],
                        [
-                           "RegularUser",
-                           "Deprecated - now all connections are regular user (don\u0027t require admin)",
-                           "",
-                           false,
-                           "false",
-                           "False"
-                       ],
-                       [
                            "EnableException",
                            "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
                            "Silent",
@@ -43864,6 +45181,6 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Write-DbaDataTable [-SqlInstance] \u003cDbaInstanceParameter\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cObject\u003e] -InputObject \u003cObject\u003e [-Table] \u003cString\u003e [[-Schema] \u003cString\u003e] [-BatchSize \u003cInt32\u003e] [-NotifyAfter \u003cInt32\u003e] [-AutoCreateTable] [-NoTableLock] [-CheckConstraints] [-FireTriggers] [-KeepIdentity] [-KeepNulls] [-Truncate] [-bulkCopyTimeOut \u003cInt32\u003e] [-RegularUser] [-EnableException] [-UseDynamicStringLength] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Write-DbaDbTableData [-SqlInstance] \u003cDbaInstanceParameter\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cObject\u003e] -InputObject \u003cObject\u003e [-Table] \u003cString\u003e [[-Schema] \u003cString\u003e] [-BatchSize \u003cInt32\u003e] [-NotifyAfter \u003cInt32\u003e] [-AutoCreateTable] [-NoTableLock] [-CheckConstraints] [-FireTriggers] [-KeepIdentity] [-KeepNulls] [-Truncate] [-bulkCopyTimeOut \u003cInt32\u003e] [-EnableException] [-UseDynamicStringLength] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     }
 ]

@@ -212,9 +212,9 @@ ON fd.Drive = LEFT(df.physical_name, 1);
                     }
                 }
                 if ($result.GrowthType -eq "Percent") {
-                    $nextgrowtheventadd = [dbasize]($result.size * ($result.Growth * 0.01) * 1024)
+                    $nextgrowtheventadd = [dbasize]($result.size * 8 * ($result.Growth * 0.01) * 1024)
                 } else {
-                    $nextgrowtheventadd = [dbasize]($result.Growth * 8 * 1024)
+                    $nextgrowtheventadd = [dbasize]($result.Growth * 1024)
                 }
                 if (($nextgrowtheventadd.Byte -gt ($MaxSize.Byte - $size.Byte)) -and $maxsize -gt 0) {
                     [dbasize]$nextgrowtheventadd = 0

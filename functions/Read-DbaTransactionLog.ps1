@@ -68,7 +68,7 @@ function Read-DbaTransactionLog {
     try {
         $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
     } catch {
-        Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+        Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
         return
     }
 

@@ -160,6 +160,9 @@ function Invoke-Parallel {
         [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [Alias('CN', '__Server', 'IPAddress', 'Server', 'ComputerName')]
         [PSObject]$InputObject,
+        [string]$ObjectName = "input objects",
+        [string]$Activity = "Running Query",
+        [string]$Status = "Starting threads",
 
         [PSObject]$Parameter,
 
@@ -249,9 +252,14 @@ function Invoke-Parallel {
 
                 #Progress bar if we have inputobject count (bound parameter)
                 if (-not $Quiet) {
-                    Write-Progress -Id $ProgressId -Activity "Running Query" -Status "Starting threads"`
-                        -CurrentOperation "$startedCount threads defined - $totalCount input objects - $script:completedCount input objects processed"`
-                        -PercentComplete $( Try { $script:completedCount / $totalCount * 100 } Catch {0} )
+                    $writeProgressSplat = @{
+                        Id               = $ProgressId
+                        Activity         = $Activity
+                        Status           = $Status
+                        CurrentOperation = "$startedCount threads defined - $totalCount $ObjectName - $script:completedCount $ObjectName processed"
+                        PercentComplete  = try { $script:completedCount / $totalCount * 100 } catch { 0 }
+                    }
+                    Write-Progress @writeProgressSplat
                 }
 
                 #run through each runspace.
@@ -539,7 +547,7 @@ function Invoke-Parallel {
 
             Get-RunspaceData -wait
             if (-not $quiet) {
-                Write-Progress -Id $ProgressId -Activity "Running Query" -Status "Starting threads" -Completed
+                Write-Progress -Id $ProgressId -Activity $Activity -Status $Status -Completed
             }
         } finally {
             #Close the runspace pool, unless we specified no close on timeout and something timed out

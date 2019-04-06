@@ -146,14 +146,14 @@ function New-DbaLogShippingSecondaryDatabase {
     try {
         $ServerSecondary = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
     } catch {
-        Stop-Function -Message "Failure" -Category ConnectionError -Target $SqlInstance -ErrorRecord $_ -Continue
+        Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -Target $SqlInstance -ErrorRecord $_ -Continue
     }
 
     # Try connecting to the instance
     try {
         $ServerPrimary = Connect-SqlInstance -SqlInstance $PrimaryServer -SqlCredential $PrimarySqlCredential
     } catch {
-        Stop-Function -Message "Failure" -Category ConnectionError -Target $PrimaryServer -ErrorRecord $_ -Continue
+        Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -Target $PrimaryServer -ErrorRecord $_ -Continue
     }
 
     # Check if the database is present on the primary sql server

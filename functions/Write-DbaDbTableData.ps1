@@ -1,5 +1,5 @@
 #ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
-function Write-DbaDataTable {
+function Write-DbaDbTableData {
     <#
     .SYNOPSIS
         Writes data to a SQL Server Table.
@@ -71,9 +71,6 @@ function Write-DbaDataTable {
     .PARAMETER BulkCopyTimeOut
         Value in seconds for the BulkCopy operations timeout. The default is 30 seconds.
 
-    .PARAMETER RegularUser
-        Deprecated - now all connections are regular user (don't require admin)
-
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
@@ -98,11 +95,11 @@ function Write-DbaDataTable {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Write-DbaDataTable
+        https://dbatools.io/Write-DbaDbTableData
 
     .EXAMPLE
         PS C:\> $DataTable = Import-Csv C:\temp\customers.csv
-        PS C:\> Write-DbaDataTable -SqlInstance sql2014 -InputObject $DataTable -Table mydb.dbo.customers
+        PS C:\> Write-DbaDbTableData -SqlInstance sql2014 -InputObject $DataTable -Table mydb.dbo.customers
 
         Performs a bulk insert of all the data in customers.csv into database mydb, schema dbo, table customers. A progress bar will be shown as rows are inserted. If the destination table does not exist, the import will be halted.
 
@@ -110,13 +107,13 @@ function Write-DbaDataTable {
         PS C:\> $tableName = "MyTestData"
         PS C:\> $query = "SELECT name, create_date, owner_sid FROM sys.databases"
         PS C:\> $dataset = Invoke-DbaQuery -SqlInstance 'localhost,1417' -SqlCredential $containerCred -Database master -Query $query
-        PS C:\> $dataset | Select-Object name, create_date, @{L="owner_sid";E={$_."owner_sid"}} | Write-DbaDataTable -SqlInstance 'localhost,1417' -SqlCredential $containerCred -Database tempdb -Table myTestData -Schema dbo -AutoCreateTable
+        PS C:\> $dataset | Select-Object name, create_date, @{L="owner_sid";E={$_."owner_sid"}} | Write-DbaDbTableData -SqlInstance 'localhost,1417' -SqlCredential $containerCred -Database tempdb -Table myTestData -Schema dbo -AutoCreateTable
 
         Pulls data from a SQL Server instance and then performs a bulk insert of the dataset to a new, auto-generated table tempdb.dbo.MyTestData.
 
     .EXAMPLE
         PS C:\> $DataTable = Import-Csv C:\temp\customers.csv
-        PS C:\> Write-DbaDataTable -SqlInstance sql2014 -InputObject $DataTable -Table mydb.dbo.customers -AutoCreateTable -Confirm
+        PS C:\> Write-DbaDbTableData -SqlInstance sql2014 -InputObject $DataTable -Table mydb.dbo.customers -AutoCreateTable -Confirm
 
         Performs a bulk insert of all the data in customers.csv. If mydb.dbo.customers does not exist, it will be created with inefficient but forgiving DataTypes.
 
@@ -124,13 +121,13 @@ function Write-DbaDataTable {
 
     .EXAMPLE
         PS C:\> $DataTable = Import-Csv C:\temp\customers.csv
-        PS C:\> Write-DbaDataTable -SqlInstance sql2014 -InputObject $DataTable -Table mydb.dbo.customers -Truncate
+        PS C:\> Write-DbaDbTableData -SqlInstance sql2014 -InputObject $DataTable -Table mydb.dbo.customers -Truncate
 
         Performs a bulk insert of all the data in customers.csv. Prior to importing into mydb.dbo.customers, the user is informed that the table will be truncated and asks for confirmation. The user is prompted again to perform the import.
 
     .EXAMPLE
         PS C:\> $DataTable = Import-Csv C:\temp\customers.csv
-        PS C:\> Write-DbaDataTable -SqlInstance sql2014 -InputObject $DataTable -Database mydb -Table customers -KeepNulls
+        PS C:\> Write-DbaDbTableData -SqlInstance sql2014 -InputObject $DataTable -Database mydb -Table customers -KeepNulls
 
         Performs a bulk insert of all the data in customers.csv into mydb.dbo.customers. Because Schema was not specified, dbo was used. NULL values in the destination table will be preserved.
 
@@ -138,13 +135,13 @@ function Write-DbaDataTable {
         PS C:\> $passwd = ConvertTo-SecureString "P@ssw0rd" -AsPlainText -Force
         PS C:\> $AzureCredential = New-Object System.Management.Automation.PSCredential("AzureAccount"),$passwd)
         PS C:\> $DataTable = Import-Csv C:\temp\customers.csv
-        PS C:\> Write-DbaDataTable -SqlInstance AzureDB.database.windows.net -InputObject $DataTable -Database mydb -Table customers -KeepNulls -Credential $AzureCredential -BulkCopyTimeOut 300
+        PS C:\> Write-DbaDbTableData -SqlInstance AzureDB.database.windows.net -InputObject $DataTable -Database mydb -Table customers -KeepNulls -Credential $AzureCredential -BulkCopyTimeOut 300
 
         This performs the same operation as the previous example, but against a SQL Azure Database instance using the required credentials.
 
     .EXAMPLE
         PS C:\> $process = Get-Process
-        PS C:\> Write-DbaDataTable -InputObject $process -SqlInstance sql2014 -Table "[[DbName]]].[Schema.With.Dots].[`"[Process]]`"]" -AutoCreateTable
+        PS C:\> Write-DbaDbTableData -InputObject $process -SqlInstance sql2014 -Table "[[DbName]]].[Schema.With.Dots].[`"[Process]]`"]" -AutoCreateTable
 
         Creates a table based on the Process object with over 60 columns, converted from PowerShell data types to SQL Server data types. After the table is created a bulk insert is performed to add process information into the table
         Writes the results of Get-Process to a table named: "[Process]" in schema named: Schema.With.Dots in database named: [DbName]
@@ -190,7 +187,6 @@ function Write-DbaDataTable {
         [switch]$Truncate,
         [ValidateNotNull()]
         [int]$bulkCopyTimeOut = 5000,
-        [switch]$RegularUser,
         [Alias('Silent')]
         [switch]$EnableException,
         [switch]$UseDynamicStringLength
@@ -236,6 +232,10 @@ function Write-DbaDataTable {
             }
 
             if ($Pscmdlet.ShouldProcess($SqlInstance, "Writing $rowCount rows to $Fqtn")) {
+                foreach ($prop in $DataTable.Columns.ColumnName) {
+                    $null = $bulkCopy.ColumnMappings.Add($prop, $prop)
+                }
+
                 $bulkCopy.WriteToServer($DataTable)
                 if ($rowCount -is [int]) {
                     Write-Progress -id 1 -activity "Inserting $rowCount rows" -status "Complete" -Completed
@@ -446,7 +446,7 @@ function Write-DbaDataTable {
         try {
             $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
         } catch {
-            Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $SqlInstance
+            Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $SqlInstance
             return
         }
 
@@ -500,7 +500,7 @@ function Write-DbaDataTable {
         if ($Truncate -eq $true) {
             if ($Pscmdlet.ShouldProcess($SqlInstance, "Truncating $fqtn")) {
                 try {
-                    Write-Message -Level Output -Message "Truncating $fqtn."
+                    Write-Message -Level Verbose -Message "Truncating $fqtn."
                     $null = $server.Databases[$databaseName].Query("TRUNCATE TABLE $fqtn")
                 } catch {
                     Write-Message -Level Warning -Message "Could not truncate $fqtn. Table may not exist or may have key constraints." -ErrorRecord $_
@@ -571,10 +571,10 @@ function Write-DbaDataTable {
         try {
             $wrappedCmd = $ExecutionContext.InvokeCommand.GetCommand('ConvertTo-DbaDataTable', [System.Management.Automation.CommandTypes]::Function)
             $splatCDDT = @{
-                TimeSpanType = (Get-DbatoolsConfigValue -FullName 'commands.write-dbadatatable.timespantype' -Fallback 'TotalMilliseconds')
-                SizeType     = (Get-DbatoolsConfigValue -FullName 'commands.write-dbadatatable.sizetype' -Fallback 'Int64')
-                IgnoreNull   = (Get-DbatoolsConfigValue -FullName 'commands.write-dbadatatable.ignorenull' -Fallback $false)
-                Raw          = (Get-DbatoolsConfigValue -FullName 'commands.write-dbadatatable.raw' -Fallback $false)
+                TimeSpanType = (Get-DbatoolsConfigValue -FullName 'commands.Write-DbaDbTableData.timespantype' -Fallback 'TotalMilliseconds')
+                SizeType     = (Get-DbatoolsConfigValue -FullName 'commands.Write-DbaDbTableData.sizetype' -Fallback 'Int64')
+                IgnoreNull   = (Get-DbatoolsConfigValue -FullName 'commands.Write-DbaDbTableData.ignorenull' -Fallback $false)
+                Raw          = (Get-DbatoolsConfigValue -FullName 'commands.Write-DbaDbTableData.raw' -Fallback $false)
             }
             $scriptCmd = { & $wrappedCmd @splatCDDT }
             $steppablePipeline = $scriptCmd.GetSteppablePipeline()
@@ -672,6 +672,5 @@ function Write-DbaDataTable {
             $bulkCopy.Close()
             $bulkCopy.Dispose()
         }
-        Test-DbaDeprecation -DeprecatedOn 1.0.0 -Parameter RegularUser
     }
 }
