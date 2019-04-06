@@ -46,7 +46,7 @@ function Export-DbaXECsv {
         [Alias('FullName')]
         [object[]]$InputObject,
         [parameter(Mandatory)]
-        [string]$Path,
+        [string]$Path = (Get-DbatoolsConfigValue -FullName 'Path.DbatoolsExport'),
         [switch]$EnableException
     )
     begin {

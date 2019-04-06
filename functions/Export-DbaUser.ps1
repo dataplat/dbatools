@@ -123,7 +123,7 @@ function Export-DbaUser {
         [ValidateSet('SQLServer2000', 'SQLServer2005', 'SQLServer2008/2008R2', 'SQLServer2012', 'SQLServer2014', 'SQLServer2016', 'SQLServer2017')]
         [string]$DestinationVersion,
         [Alias("OutFile", "FilePath", "FileName")]
-        [string]$Path,
+        [string]$Path = (Get-DbatoolsConfigValue -FullName 'Path.DbatoolsExport'),
         [Alias("NoOverwrite")]
         [switch]$NoClobber,
         [switch]$Append,

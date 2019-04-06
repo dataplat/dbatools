@@ -73,7 +73,7 @@ function Export-DbaRepServerSetting {
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [string]$Path,
+        [string]$Path = (Get-DbatoolsConfigValue -FullName 'Path.DbatoolsExport'),
         [object[]]$ScriptOption,
         [Parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Replication.ReplicationServer[]]$InputObject,
@@ -91,6 +91,7 @@ function Export-DbaRepServerSetting {
 
         foreach ($repserver in $InputObject) {
             $server = $repserver.SqlServerName
+            #TODO: Fix this as we're always going to have Path bound now
             if (-not (Test-Bound -ParameterName Path)) {
                 $timenow = (Get-Date -uformat "%m%d%Y%H%M%S")
                 $mydocs = [Environment]::GetFolderPath('MyDocuments')

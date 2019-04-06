@@ -66,7 +66,7 @@ function Export-DbaCmsRegServer {
         [PSCredential]$SqlCredential,
         [parameter(ValueFromPipeline)]
         [object[]]$InputObject,
-        [string]$Path,
+        [string]$Path = (Get-DbatoolsConfigValue -FullName 'Path.DbatoolsExport'),
         [ValidateSet("None", "PersistLoginName", "PersistLoginNameAndPassword")]
         [string]$CredentialPersistenceType = "None",
         [switch]$EnableException
@@ -95,7 +95,7 @@ function Export-DbaCmsRegServer {
                 if ($object -is [Microsoft.SqlServer.Management.RegisteredServers.RegisteredServersStore]) {
                     $object = Get-DbaCmsRegServerGroup -SqlInstance $object.ParentServer -Id 1
                 }
-
+# TODO: Need to handle $Path always being bound
                 if ($object -is [Microsoft.SqlServer.Management.RegisteredServers.RegisteredServer]) {
                     if ((Test-Bound -ParameterName Path -Not)) {
                         $servername = $object.SqlInstance.Replace('\', '$')

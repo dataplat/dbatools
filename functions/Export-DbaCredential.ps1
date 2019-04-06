@@ -62,7 +62,7 @@ function Export-DbaCredential {
         [string[]]$Identity,
         [PSCredential]$SqlCredential,
         [PSCredential]$Credential,
-        [string]$Path,
+        [string]$Path= (Get-DbatoolsConfigValue -FullName 'Path.DbatoolsExport'),
         [switch]$ExcludePassword,
         [switch]$Append,
         [Microsoft.SqlServer.Management.Smo.Credential[]]$InputObject,
@@ -95,6 +95,7 @@ function Export-DbaCredential {
                 Stop-Function -Message "Can't connect to registry on $instance." -Target $sourceNetBios -ErrorRecord $_
                 return
             }
+            #TODO: Fix this as we're always going to have Path bound now
 
             if (-not (Test-Bound -ParameterName Path)) {
                 $timenow = (Get-Date -uformat "%m%d%Y%H%M%S")
