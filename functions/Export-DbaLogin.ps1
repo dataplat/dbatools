@@ -56,6 +56,10 @@ function Export-DbaLogin {
     .PARAMETER Confirm
         If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
+    .PARAMETER DefaultDatabase
+        If this switch is enabled, all logins will be scripted with specified default database,
+        that could help to successfuly import logins on server that is missing default database for login.
+
     .NOTES
         Tags: Export, Login
         Author: Chrissy LeMaire (@cl), netnerds.net
@@ -131,6 +135,7 @@ function Export-DbaLogin {
         [switch]$NoClobber,
         [switch]$Append,
         [switch]$ExcludeDatabases,
+        [string]$DefaultDatabase,
         [switch]$ExcludeJobs,
         [Alias('Silent')]
         [switch]$EnableException,
@@ -268,7 +273,11 @@ function Export-DbaLogin {
 
                     $outsql += "`r`nUSE master`n"
                     # Getting some attributes
-                    $defaultDb = $sourceLogin.DefaultDatabase
+                    if ($DefaultDatabase) {
+                        $defaultDb = $DefaultDatabase
+                    } else {
+                        $defaultDb = $sourceLogin.DefaultDatabase
+                    }
                     $language = $sourceLogin.Language
 
                     if ($sourceLogin.PasswordPolicyEnforced -eq $false) {
