@@ -5,6 +5,32 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
     and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.801] - 2019-04-04
+### Fixed
+* Properly use `append` in `Export-DbaRepServerSetting` [#5333](https://github.com/sqlcollaborative/dbatools/pull/5333)
+### Added
+* New functions for data generation [#5331](https://github.com/sqlcollaborative/dbatools/pull/5331)
+
+## [0.9.800] - 2019-04-02
+### Changed
+* Latest versions of Glenn Berry's diagnostic queries
+### Added
+* Auto-map column names in `Import-DbaCsv` [#5321](https://github.com/sqlcollaborative/dbatools/pull/5321)
+
+## [0.9.799] - 2019-03-31
+### Fixed
+* `New-DbaAvailabilityGroup` Missing Implementation of DtcSupport [#5310](https://github.com/sqlcollaborative/dbatools/issues/5310)
+### Added
+* Support for Managed Instances and Azure Blob Storage in `Copy-DbaDatabase` [#5322](https://github.com/sqlcollaborative/dbatools/pull/5322)
+
+## [0.9.798] - 2019-03-28
+### Changed
+* Remove output from `Write-DbaDataTable` [#5313](https://github.com/sqlcollaborative/dbatools/pull/5313)
+### Added
+* Session timeout parameter for `Set-DbaAgReplica` [#5139](https://github.com/sqlcollaborative/dbatools/issues/5139)
+* PS Core support for `Read-DbaBackupHeader` [#5070](https://github.com/sqlcollaborative/dbatools/issues/5070)
+* Restores in Managed Instances [#5309](https://github.com/sqlcollaborative/dbatools/pull/5309)
+
 ## [0.9.797] - 2019-03-25
 ### Fixed
 * `Test-DbaDbLogShipStatus` incorrectly reports no information available [#5287](https://github.com/sqlcollaborative/dbatools/issues/5287)
