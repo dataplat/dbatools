@@ -103,14 +103,22 @@ function Get-DbaComputerSystem {
 
                 if ($IncludeAws) {
                     try {
-                        $isAws = Invoke-Command2 -ComputerName $computerResolved -Credential $Credential -ScriptBlock { ((Invoke-TlsRestMethod -TimeoutSec 15 -Uri 'http://169.254.169.254').StatusCode) -eq 200 } -Raw
+                        $ProxiedFunc = "function Invoke-TlsRestMethod {`n" + $(Get-Item function:\Invoke-TlsRestMethod).ScriptBlock + "`n}"
+                        $isAws = Invoke-Command2 -ComputerName $computerResolved -Credential $Credential -ArgumentList $ProxiedFunc -ScriptBlock {
+                            Param( $ProxiedFunc )
+                            . ([ScriptBlock]::Create($ProxiedFunc))
+                            ((Invoke-TlsRestMethod2 -TimeoutSec 15 -Uri 'http://169.254.169.254').StatusCode) -eq 200
+                        } -Raw
                     } catch [System.Net.WebException] {
                         $isAws = $false
                         Write-Message -Level Warning -Message "$computerResolved was not found to be an EC2 instance. Verify http://169.254.169.254 is accessible on the computer."
                     }
 
                     if ($isAws) {
+                        $ProxiedFunc = "function Invoke-TlsRestMethod {`n" + $(Get-Item function:\Invoke-TlsRestMethod).ScriptBlock + "`n}"
                         $scriptBlock = {
+                            Param( $ProxiedFunc )
+                            . ([ScriptBlock]::Create($ProxiedFunc))
                             [PSCustomObject]@{
                                 AmiId            = (Invoke-TlsRestMethod -Uri 'http://169.254.169.254/latest/meta-data/ami-id')
                                 IamRoleArn       = ((Invoke-TlsRestMethod -Uri 'http://169.254.169.254/latest/meta-data/iam/info').InstanceProfileArn)
@@ -120,7 +128,7 @@ function Get-DbaComputerSystem {
                                 PublicHostname   = (Invoke-TlsRestMethod -Uri 'http://169.254.169.254/latest/meta-data/public-hostname')
                             }
                         }
-                        $awsProps = Invoke-Command2 -ComputerName $computerResolved -Credential $Credential -ScriptBlock $scriptBlock
+                        $awsProps = Invoke-Command2 -ComputerName $computerResolved -Credential $Credential -ArgumentList $ProxiedFunc -ScriptBlock $scriptBlock
                     }
                 }
                 $inputObject = [PSCustomObject]@{
