@@ -361,14 +361,6 @@ function Set-DbaAgentJobStep {
                         } else {
                             Stop-Function -Message "The database is not present on instance $instance." -Target $instance -Continue
                         }
-                    } else {
-                        # Check if the database is present on the server
-                        if ($server.Databases.Name -contains $currentJobStep.DatabaseName) {
-                            Write-Message -Message "Setting job step database name to $($currentJobStep.DatabaseName)" -Level Verbose
-                            $JobStep.DatabaseName = $currentJobStep.DatabaseName
-                        } else {
-                            Stop-Function -Message "The database is not present on instance $instance." -Target $instance -Continue
-                        }
                     }
 
                     if (($DatabaseUser) -and ($Database)) {
