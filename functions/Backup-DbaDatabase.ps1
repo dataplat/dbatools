@@ -214,6 +214,11 @@ function Backup-DbaDatabase {
             $TimeStampFormat = "yyyyMMddHHmm"
         }
 
+        if (Test-Bound 'AzureBaseUrl' -and Test-Bound 'CreateFolder') {
+            Stop-Function -Level Warning -Message 'CreateFolder cannot be specified with an Azure Backup, the container must exist and be referenced by the URL'
+            return
+        }
+
         if ($SqlInstance) {
             try {
                 $Server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential -AzureUnsupported
