@@ -240,7 +240,7 @@ function New-DbaAvailabilityGroup {
         [int]$BackupPriority = 50,
         [ValidateSet('AllowAllConnections', 'AllowReadWriteConnections')]
         [string]$ConnectionModeInPrimaryRole = 'AllowAllConnections',
-        [ValidateSet('AllowAllConnections', 'AllowNoConnections', 'AllowReadIntentConnectionsOnly')]
+        [ValidateSet('AllowAllConnections', 'AllowNoConnections', 'AllowReadIntentConnectionsOnly', 'No', 'Read-intent only', 'Yes')]
         [string]$ConnectionModeInSecondaryRole = 'AllowAllConnections',
         [ValidateSet('Automatic', 'Manual')]
         [string]$SeedingMode = 'Manual',
@@ -264,6 +264,16 @@ function New-DbaAvailabilityGroup {
         if ($Force -and $Secondary -and (-not $SharedPath -and -not $UseLastBackup) -and ($SeedingMode -ne 'Automatic')) {
             Stop-Function -Message "SharedPath or UseLastBackup is required when Force is used"
             return
+        }
+
+        if ($ConnectionModeInSecondaryRole) {
+            $ConnectionModeInSecondaryRole =
+            switch ($ConnectionModeInSecondaryRole) {
+                "No" { "AllowNoConnections" }
+                "Read-intent only" { "AllowReadIntentConnectionsOnly" }
+                "Yes" { "AllowAllConnections" }
+                default { $ConnectionModeInSecondaryRole }
+            }
         }
 
         try {
@@ -418,7 +428,7 @@ function New-DbaAvailabilityGroup {
                 }
 
                 if ($server.VersionMajor -ge 13) {
-                    $replicaparams += @{SeedingMode = $SeedingMode}
+                    $replicaparams += @{SeedingMode = $SeedingMode }
                 }
 
                 $null = Add-DbaAgReplica @replicaparams -EnableException -SqlInstance $server
