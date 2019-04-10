@@ -178,11 +178,12 @@ function Copy-DbaLogin {
                     continue
                 }
 
-                if ($sourceLogin.LoginType -like 'Window*' -and $SourceServer.DatabaseEngineEdition -eq 'SqlManagedInstance' ) {
-                    Write-Message -Level Verbose -Message ""
+                if ($sourceLogin.LoginType -like 'Window*' -and $destServer.DatabaseEngineEdition -eq 'SqlManagedInstance' ) {
+                    Write-Message -Level Verbose -Message "$sourceLogin is a Windows login, not supported on a SQL Managed Instance"
                     $copyLoginStatus.Status = "Skipped"
-                    $copyLoginStatus.Notes = "$sourceLogin is a Windows login, not support on a SQL Managed Instance"
+                    $copyLoginStatus.Notes = "$sourceLogin is a Windows login, not supported on a SQL Managed Instance"
                     $copyLoginStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                    continue
                 }
 
                 $serverName = Resolve-NetBiosName $sourceServer
