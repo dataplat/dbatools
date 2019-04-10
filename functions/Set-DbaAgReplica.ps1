@@ -99,7 +99,7 @@ function Set-DbaAgReplica {
         [int]$BackupPriority,
         [ValidateSet('AllowAllConnections', 'AllowReadWriteConnections')]
         [string]$ConnectionModeInPrimaryRole,
-        [ValidateSet('AllowAllConnections', 'AllowNoConnections', 'AllowReadIntentConnectionsOnly')]
+        [ValidateSet('AllowAllConnections', 'AllowNoConnections', 'AllowReadIntentConnectionsOnly', 'No', 'Read-intent only', 'Yes')]
         [string]$ConnectionModeInSecondaryRole,
         [ValidateSet('Automatic', 'Manual')]
         [string]$SeedingMode,
@@ -115,6 +115,16 @@ function Set-DbaAgReplica {
             if (-not $AvailabilityGroup -or -not $Replica) {
                 Stop-Function -Message "You must specify an AvailabilityGroup and replica or pipe in an availabilty group to continue."
                 return
+            }
+        }
+
+        if ($ConnectionModeInSecondaryRole) {
+            $ConnectionModeInSecondaryRole =
+            switch ($ConnectionModeInSecondaryRole) {
+                "No" { "AllowNoConnections" }
+                "Read-intent only" { "AllowReadIntentConnectionsOnly" }
+                "Yes" { "AllowAllConnections" }
+                default { $ConnectionModeInSecondaryRole }
             }
         }
 
