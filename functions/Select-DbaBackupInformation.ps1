@@ -213,15 +213,10 @@ function Select-DbaBackupInformation {
 
             if ($false -eq $IgnoreLogs) {
                 $FilteredLogs = $DatabaseHistory | Where-Object {$_.Type -in ('Log', 'Transaction Log') -and $_.Start -le $RestoreTime -and $_.LastLSN -ge $LogBaseLsn -and $_.FirstLSN -ne $_.LastLSN}  | Sort-Object -Property LastLsn, FirstLsn
-                $GroupedLogs = $FilteredLogs | Group-Object -Property LastLSN, FirstLSN
+                $GroupedLogs = $FilteredLogs | Group-Object -Property BackupSetID
                 ForEach ($Group in $GroupedLogs) {
-                    $Log = $DatabaseHistory | Where-Object { $_.BackupSetID -eq $Group.group[0].BackupSetID } | select-object -First 1
-                    if ($Log.FullName) {
-                        $Log.FullName = ($DatabaseHistory | Where-Object { $_.BackupSetID -eq $Group.group[0].BackupSetID }).Fullname
-                    } else {
-                        Stop-Function -Message "Fullname property not found. This could mean that a full backup could not be found or the command must be re-run with the -Continue switch."
-                        return
-                    }
+                    $Log = $Group.group[0]
+                    $Log.FullName = $Group.group.fullname
                     $dbhistory += $Log
                 }
                 # Get Last T-log
