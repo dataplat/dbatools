@@ -211,6 +211,10 @@ function Select-DbaBackupInformation {
                 }
             }
 
+            if ($true -eq $IgnoreFull -and $true -eq $IgnoreDiffs) {
+                #Set a Fake starting LSN
+            }
+
             if ($false -eq $IgnoreLogs) {
                 $FilteredLogs = $DatabaseHistory | Where-Object {$_.Type -in ('Log', 'Transaction Log') -and $_.Start -le $RestoreTime -and $_.LastLSN -ge $LogBaseLsn -and $_.FirstLSN -ne $_.LastLSN}  | Sort-Object -Property LastLsn, FirstLsn
                 $GroupedLogs = $FilteredLogs | Group-Object -Property LastLSN, FirstLSN
@@ -222,15 +226,11 @@ function Select-DbaBackupInformation {
                         Stop-Function -Message "Fullname property not found. This could mean that a full backup could not be found or the command must be re-run with the -Continue switch."
                         return
                     }
-                    $dbhistory += $Log
+                    #$dbhistory += $Log
+                    $dbhistory += $DatabaseHistory | Where-Object {$_.BackupSetID -eq $Group.group[0].BackupSetID}
                 }
                 # Get Last T-log
-
-                $lastLog = $DatabaseHistory | Where-Object {$_.Type -in ('Log', 'Transaction Log') -and $_.End -ge $RestoreTime -and $_.DatabaseBackupLSN -eq $Full.CheckpointLSN} | Sort-Object -Property LastLsn, FirstLsn  | Select-Object -First 1
-                if ($null -ne $lastlog) {
-                    $lastLog.FullName = ($DatabaseHistory | Where-Object { $_.BackupSetID -eq $lastLog.BackupSetID }).Fullname
-                }
-                $dbHistory += $lastLog
+                $dbHistory += $DatabaseHistory | Where-Object {$_.Type -in ('Log', 'Transaction Log') -and $_.End -ge $RestoreTime -and $_.DatabaseBackupLSN -eq $Full.CheckpointLSN} | Sort-Object -Property LastLsn, FirstLsn  | Select-Object -First 1
             }
             $dbhistory
         }
