@@ -639,6 +639,10 @@ function Restore-DbaDatabase {
         if (Test-FunctionInterrupt) {
             return
         }
+        if (($BackupHistory.Database | select -unique).count -gt 1 -and (Test-Bound 'DatabaseName')) {
+            Stop-Function -Message "Multiple Databases' backups passed in, but only 1 name to restore them under. Stopping as cannot work out how to proceed" -Category  InvalidArgument
+            return
+        }
         if ($PSCmdlet.ParameterSetName -like "Restore*") {
             if ($BackupHistory.Count -eq 0) {
                 Write-Message -Level Warning -Message "No backups passed through. `n This could mean the SQL instance cannot see the referenced files, the file's headers could not be read or some other issue"
