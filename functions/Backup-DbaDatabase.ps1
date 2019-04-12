@@ -194,7 +194,7 @@ function Backup-DbaDatabase {
         [int]$MaxTransferSize,
         [int]$BlockSize,
         [int]$BufferCount,
-        [string]$AzureBaseUrl,
+        [string[]]$AzureBaseUrl,
         [string]$AzureCredential,
         [switch]$NoRecovery,
         [switch]$BuildPath,
@@ -217,6 +217,16 @@ function Backup-DbaDatabase {
         if ((Test-Bound 'AzureBaseUrl') -and (Test-Bound 'CreateFolder')) {
             Stop-Function -Message 'CreateFolder cannot be specified with an Azure Backup, the container must exist and be referenced by the URL'
             return
+        }
+
+        if ((Test-Bound 'AzureCredential') -and (Test-Bound 'BlockSize')) {
+            Write-Message -Level Warning -Message 'BlockSize cannot be specified when backup up to an Azure page blob, ignoring'
+            $BlockSize = $null
+        }
+
+        if ((Test-Bound 'AzureCredential') -and (Test-Bound 'MaxTransferSize')) {
+            Write-Message -Level Warning -Message 'MaxTransferSize cannot be specified when backup up to an Azure page blob ignoring'
+            $MaxTransferSize = $null
         }
 
         if ($SqlInstance) {
@@ -258,24 +268,28 @@ function Backup-DbaDatabase {
             }
             if ($BlockSize) {
                 if ($BlockSize -notin (0.5kb, 1kb, 2kb, 4kb, 8kb, 16kb, 32kb, 64kb)) {
+
                     Stop-Function -Message "Block size must be one of 0.5kb,1kb,2kb,4kb,8kb,16kb,32kb,64kb"
                     return
                 }
             }
-            if ('' -ne $AzureBaseUrl) {
+            if ($null -ne $AzureBaseUrl) {
                 $AzureBaseUrl = $AzureBaseUrl.Trim("/")
                 if ('' -ne $AzureCredential) {
                     Write-Message -Message "Azure Credential name passed in, will proceed assuming it's value" -Level Verbose
                     $FileCount = 1
                 } else {
-                    Write-Message -Message "AzureUrl and no credential, testing for SAS credential"
-                    if (Get-DbaCredential -SqlInstance $server -Name $AzureBaseUrl.trim("/")) {
-                        Write-Message -Message "Found a SAS backup credental" -Level Verbose
-                    } else {
-                        Stop-Function -Message "You must provide the credential name for the Azure Storage Account"
-                        return
+                    foreach ($baseUrl in $AzureBaseUrl){
+                        Write-Message -Message "AzureUrl and no credential, testing for SAS credential"
+                        if (Get-DbaCredential -SqlInstance $server -Name $AzureBaseUrl.trim("/")) {
+                            Write-Message -Message "Found a SAS backup credental" -Level Verbose
+                        } else {
+                            Stop-Function -Message "You must provide the credential name for the Azure Storage Account"
+                            return
+                        }
                     }
                 }
+                $FileCount = $AzureBaseUrl.count
                 $BackupDirectory = $AzureBaseUrl
             }
 
