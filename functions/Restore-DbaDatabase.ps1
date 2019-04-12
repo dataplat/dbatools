@@ -639,7 +639,7 @@ function Restore-DbaDatabase {
         if (Test-FunctionInterrupt) {
             return
         }
-        if (($BackupHistory.Database | select -unique).count -gt 1 -and (Test-Bound 'DatabaseName')) {
+        if (($BackupHistory.Database | Select-Object -unique).count -gt 1 -and ('' -ne $DatabaseName)) {
             Stop-Function -Message "Multiple Databases' backups passed in, but only 1 name to restore them under. Stopping as cannot work out how to proceed" -Category  InvalidArgument
             return
         }
