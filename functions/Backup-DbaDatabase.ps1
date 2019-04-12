@@ -413,7 +413,7 @@ function Backup-DbaDatabase {
 
             $backup.CopyOnly = $copyonly
             $backup.Action = $SMOBackupType
-            if ('' -ne $AzureBaseUrl -and $null -ne $AzureCredential) {
+            if ($null -ne $AzureBaseUrl -and $null -ne $AzureCredential) {
                 $backup.CredentialName = $AzureCredential
             }
 
@@ -497,7 +497,7 @@ function Backup-DbaDatabase {
             }
 
 
-            if ('' -eq $AzureBaseUrl -and $BackupDirectory) {
+            if ($null -eq $AzureBaseUrl -and $BackupDirectory) {
                 $FinalBackupPath = $FinalBackupPath | ForEach-Object { [IO.Path]::GetFullPath($_) }
             }
 
@@ -510,7 +510,7 @@ function Backup-DbaDatabase {
 
                 foreach ($backupfile in $FinalBackupPath) {
                     $device = New-Object Microsoft.SqlServer.Management.Smo.BackupDeviceItem
-                    if ('' -ne $AzureBaseUrl) {
+                    if ($null -ne $AzureBaseUrl) {
                         $device.DeviceType = "URL"
                     } else {
                         $device.DeviceType = "File"
