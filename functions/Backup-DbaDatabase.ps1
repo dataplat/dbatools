@@ -94,13 +94,14 @@ function Backup-DbaDatabase {
         Internal parameter
 
     .PARAMETER AzureBaseUrl
-        The URL to the base container of an Azure Storage account to write backups to.
-
+        The URL(s) to the base container of an Azure Storage account to write backups to.
+        If specifying the AzureCredential parameter you can only provide 1 value as page blobs do not support multiple URLs
+        If useing Shared Access keys, you may specify as many URLs as you want, as long as a corresponding credential exists on the source server.
         If specified, the only other parameters than can be used are "CopyOnly", "Type", "CompressBackup", "Checksum", "Verify", "AzureCredential", "CreateFolder".
 
     .PARAMETER AzureCredential
         The name of the credential on the SQL instance that can write to the AzureBaseUrl, only needed if using Storage access keys
-        If using SAS credentials, the command will look for a credential with a name matching the AzureBaseUrl
+        If using SAS credentials, the command will look for a credential with a name matching the AzureBaseUrl. As page blobs are used with this option we force the number of files to 1 and ignore any value passed in for BlockSize or MaxTransferSize
 
     .PARAMETER NoRecovery
         This is passed in to perform a tail log backup if needed
@@ -168,6 +169,10 @@ function Backup-DbaDatabase {
         PS C:\> Backup-DbaDatabase -SqlInstance Sql2017 -Database master -BackupFileName NUL
 
         Performs a backup of master, but sends the output to the NUL device (ie; throws it away)
+
+        PS C:\ Backup-DbaDatabase -SqlInstance Sql2016 -Database stripetest -AzureBaseUrl https://az.blob.core.windows.net/sql,https://dbatools.blob.core.windows.net/sql
+
+        Performs a backup of the database striptest, striping it across the 2 Azure blob containers at https://az.blob.core.windows.net/sql and https://dbatools.blob.core.windows.net/sql, assuming that Shared Access Signature credentials for both containers exist on the source instance
     #>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess)]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingPlainTextForPassword", "")] #For AzureCredential
@@ -279,7 +284,7 @@ function Backup-DbaDatabase {
                     Write-Message -Message "Azure Credential name passed in, will proceed assuming it's value" -Level Verbose
                     $FileCount = 1
                 } else {
-                    foreach ($baseUrl in $AzureBaseUrl){
+                    foreach ($baseUrl in $AzureBaseUrl) {
                         Write-Message -Message "AzureUrl and no credential, testing for SAS credential"
                         if (Get-DbaCredential -SqlInstance $server -Name $AzureBaseUrl.trim("/")) {
                             Write-Message -Message "Found a SAS backup credental" -Level Verbose
