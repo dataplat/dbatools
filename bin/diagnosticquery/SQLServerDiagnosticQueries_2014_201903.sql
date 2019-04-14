@@ -1,7 +1,7 @@
 
 -- SQL Server 2014 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: March 22, 2019
+-- Last Modified: April 11, 2019
 -- https://www.sqlskills.com/blogs/glenn/
 -- http://sqlserverperformance.wordpress.com/
 -- Twitter: GlennAlanBerry
@@ -118,9 +118,6 @@ SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version In
 
 -- Performance and Stability Related Fixes in Post-SQL Server 2014 SP3 Builds
 -- https://bit.ly/2PRGTWS
-
--- Announcing updates to the SQL Server Incremental Servicing Model (ISM)
--- https://bit.ly/1RzYITz
 
 -- Update Center for Microsoft SQL Server
 -- https://bit.ly/2pZptuQ
