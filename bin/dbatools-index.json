@@ -10269,6 +10269,14 @@
                            ""
                        ],
                        [
+                           "IncludeMirror",
+                           "By default mirrors of backups are not returned, this switch will cause them to be returned",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
                            "Type",
                            "Specifies one or more types of backups to return. Valid options are \u0027Full\u0027, \u0027Log\u0027, \u0027Differential\u0027, \u0027File\u0027, \u0027Differential File\u0027, \u0027Partial Full\u0027, and \u0027Partial Differential\u0027. Otherwise, all types of \r\nbackups will be returned unless one of the -Last* switches is enabled.",
                            "",
@@ -10285,7 +10293,7 @@
                            "False"
                        ]
                    ],
-        "Syntax":  "Get-DbaBackupHistory -SqlInstance \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Database \u003cObject[]\u003e] [-ExcludeDatabase \u003cObject[]\u003e] [-IncludeCopyOnly] [-Since \u003cDateTime\u003e] [-RecoveryFork \u003cString\u003e] [-DeviceType \u003cString[]\u003e] [-Raw] [-LastLsn \u003cBigInteger\u003e] [-Type \u003cString[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]\nGet-DbaBackupHistory -SqlInstance \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Database \u003cObject[]\u003e] [-ExcludeDatabase \u003cObject[]\u003e] [-IncludeCopyOnly] [-Force] [-Since \u003cDateTime\u003e] [-RecoveryFork \u003cString\u003e] [-DeviceType \u003cString[]\u003e] [-Raw] [-LastLsn \u003cBigInteger\u003e] [-Type \u003cString[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]\nGet-DbaBackupHistory -SqlInstance \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Database \u003cObject[]\u003e] [-ExcludeDatabase \u003cObject[]\u003e] [-IncludeCopyOnly] [-Since \u003cDateTime\u003e] [-RecoveryFork \u003cString\u003e] [-Last] [-LastFull] [-LastDiff] [-LastLog] [-DeviceType \u003cString[]\u003e] [-Raw] [-LastLsn \u003cBigInteger\u003e] [-Type \u003cString[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Get-DbaBackupHistory -SqlInstance \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Database \u003cObject[]\u003e] [-ExcludeDatabase \u003cObject[]\u003e] [-IncludeCopyOnly] [-Since \u003cDateTime\u003e] [-RecoveryFork \u003cString\u003e] [-DeviceType \u003cString[]\u003e] [-Raw] [-LastLsn \u003cBigInteger\u003e] [-IncludeMirror] [-Type \u003cString[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]\nGet-DbaBackupHistory -SqlInstance \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Database \u003cObject[]\u003e] [-ExcludeDatabase \u003cObject[]\u003e] [-IncludeCopyOnly] [-Force] [-Since \u003cDateTime\u003e] [-RecoveryFork \u003cString\u003e] [-DeviceType \u003cString[]\u003e] [-Raw] [-LastLsn \u003cBigInteger\u003e] [-IncludeMirror] [-Type \u003cString[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]\nGet-DbaBackupHistory -SqlInstance \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Database \u003cObject[]\u003e] [-ExcludeDatabase \u003cObject[]\u003e] [-IncludeCopyOnly] [-Since \u003cDateTime\u003e] [-RecoveryFork \u003cString\u003e] [-Last] [-LastFull] [-LastDiff] [-LastLog] [-DeviceType \u003cString[]\u003e] [-Raw] [-LastLsn \u003cBigInteger\u003e] [-IncludeMirror] [-Type \u003cString[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Get-DbaBackupInformation",
