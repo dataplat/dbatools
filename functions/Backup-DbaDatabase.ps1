@@ -18,7 +18,7 @@ function Backup-DbaDatabase {
     .PARAMETER ExcludeDatabase
         The database(s) to exclude. This list is auto-populated from the server.
 
-    .PARAMETER BackupFileName
+    .PARAMETER backupFileName
         The name of the file to backup to. This is only accepted for single database backups.
         If no name is specified then the backup files will be named DatabaseName_yyyyMMddHHmm (i.e. "Database1_201714022131") with the appropriate extension.
 
@@ -26,7 +26,7 @@ function Backup-DbaDatabase {
 
         SQL Server needs permissions to write to the specified location. Path names are based on the SQL Server (C:\ is the C drive on the SQL Server, not the machine running the script).
 
-        Passing in NUL as the BackupFileName will backup to the NUL: device
+        Passing in NUL as the backupFileName will backup to the NUL: device
 
     .PARAMETER TimeStampFormat
         By default the command timestamps backups using the format yyyyMMddHHmm. Using this parameter this can be overridden. The timestamp format should be defined using the Get-Date formats, illegal formats will cause an error to be thrown
@@ -40,7 +40,7 @@ function Backup-DbaDatabase {
         File Names with be suffixed with x-of-y to enable identifying striped sets, where y is the number of files in the set and x ranges from 1 to y.
 
     .PARAMETER ReplaceInName
-        If this switch is set, the following list of strings will be replaced in the BackupFileName and BackupDirectory strings:
+        If this switch is set, the following list of strings will be replaced in the backupFileName and BackupDirectory strings:
             instancename - will be replaced with the instance Name
             servername - will be replaced with the server name
             dbname - will be replaced with the database name
@@ -160,12 +160,12 @@ function Backup-DbaDatabase {
         Performs a full backup of db1 into the folder \\filestore\backups\server1\prod\db1
 
     .EXAMPLE
-        PS C:\> Backup-Dbadatabase -SqlInstance Server1\Prod -BackupDirectory \\filestore\backups\servername\instancename\dbname\backuptype -BackupFileName dbname-backuptype-timestamp.trn -Type Log -ReplaceInName
+        PS C:\> Backup-Dbadatabase -SqlInstance Server1\Prod -BackupDirectory \\filestore\backups\servername\instancename\dbname\backuptype -backupFileName dbname-backuptype-timestamp.trn -Type Log -ReplaceInName
 
         Performs a log backup for every database. For the database db1 this would results in backup files in \\filestore\backups\server1\prod\db1\Log\db1-log-31102018.trn
 
     .EXAMPLE
-        PS C:\> Backup-DbaDatabase -SqlInstance Sql2017 -Database master -BackupFileName NUL
+        PS C:\> Backup-DbaDatabase -SqlInstance Sql2017 -Database master -backupFileName NUL
 
         Performs a backup of master, but sends the output to the NUL device (ie; throws it away)
     #>
@@ -179,7 +179,7 @@ function Backup-DbaDatabase {
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
         [string[]]$BackupDirectory,
-        [string]$BackupFileName,
+        [string]$backupFileName,
         [switch]$ReplaceInName,
         [switch]$CopyOnly,
         [ValidateSet('Full', 'Log', 'Differential', 'Diff', 'Database')]
@@ -216,7 +216,16 @@ function Backup-DbaDatabase {
 
         if ((Test-Bound 'AzureBaseUrl') -and (Test-Bound 'CreateFolder')) {
             Stop-Function -Message 'CreateFolder cannot be specified with an Azure Backup, the container must exist and be referenced by the URL'
-            return
+            Return
+        }
+
+        if ((Test-Bound 'AzureBaseUrl') -and (Test-Bound 'BackupFolder')) {
+            Stop-Function -Message "AzureBaseUrl and BackupFolder cannot be specified together"
+            Return
+        }
+
+        if (Test-Bound 'AzureBaseUrl') {
+            Write-Message -Level Warning -Message "AzureBaseUrl is deprecated and will be removed in v1.0"
         }
 
         if ($SqlInstance) {
@@ -224,7 +233,7 @@ function Backup-DbaDatabase {
                 $Server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential -AzureUnsupported
             } catch {
                 Stop-Function -Message "Cannot connect to $SqlInstance" -ErrorRecord $_
-                return
+                Return
             }
 
             $InputObject = $server.Databases | Where-Object Name -ne 'tempdb'
@@ -237,7 +246,7 @@ function Backup-DbaDatabase {
                 $InputObject = $InputObject | Where-Object Name -notin $ExcludeDatabase
             }
 
-            if ($null -eq $BackupDirectory -and $backupfileName -ne 'NUL') {
+            if ($null -eq $BackupDirectory -and $backupFileName -ne 'NUL') {
                 Write-Message -Message 'No backupfolder passed in, setting it to instance default' -Level Verbose
                 $BackupDirectory = (Get-DbaDefaultPath -SqlInstance $server).Backup
             }
@@ -247,25 +256,43 @@ function Backup-DbaDatabase {
                 $Filecount = $BackupDirectory.Count
             }
 
-            if ($InputObject.Count -gt 1 -and $BackupFileName -ne '' -and $True -ne $ReplaceInFile) {
-                Stop-Function -Message "1 BackupFile specified, but more than 1 database."
-                return
+            $urlcount = 0
+            Foreach ($directory in $BackupDirectory) {
+                if ($directory -like 'http*') {
+                    $urlcount++
+                }
+            }
+            if ($urlcount -gt 0 -and $urlcount -ne $BackupDirectory.Count) {
+                Stop-Function -Message "Backing up to File and URLs in the same operation is not supported"
+                Return
+            }
+
+            if ($InputObject.Count -gt 1 -and $backupFileName -ne '' -and $True -ne $ReplaceInFile) {
+                Stop-Function -Message "1 backupFile specified, but more than 1 database."
+                Return
             }
 
             if (($MaxTransferSize % 64kb) -ne 0 -or $MaxTransferSize -gt 4mb) {
                 Stop-Function -Message "MaxTransferSize value must be a multiple of 64kb and no greater than 4MB"
-                return
+                Return
             }
             if ($BlockSize) {
                 if ($BlockSize -notin (0.5kb, 1kb, 2kb, 4kb, 8kb, 16kb, 32kb, 64kb)) {
                     Stop-Function -Message "Block size must be one of 0.5kb,1kb,2kb,4kb,8kb,16kb,32kb,64kb"
-                    return
+                    Return
                 }
             }
             if ('' -ne $AzureBaseUrl) {
-                $AzureBaseUrl = $AzureBaseUrl.Trim("/")
+                $BackupDirectory = $AzureBaseUrl
+            }
+
+            if ($urlcount -gt 0) {
+                # $BackupDirectory = $AzureBaseUrl.Trim("/")
                 if ('' -ne $AzureCredential) {
-                    Write-Message -Message "Azure Credential name passed in, will proceed assuming it's value" -Level Verbose
+                    if ( -not (Get-DbaCredential -SqlInstance $server -Name $AzureCredential)) {
+                        Stop-Function -Message "A credential matching the name passed in with AzureCredential cannot be found, stopping"
+                        Return
+                    }
                     $FileCount = 1
                 } else {
                     Write-Message -Message "AzureUrl and no credential, testing for SAS credential"
@@ -273,10 +300,9 @@ function Backup-DbaDatabase {
                         Write-Message -Message "Found a SAS backup credental" -Level Verbose
                     } else {
                         Stop-Function -Message "You must provide the credential name for the Azure Storage Account"
-                        return
+                        Return
                     }
                 }
-                $BackupDirectory = $AzureBaseUrl
             }
 
             if ($OutputScriptOnly) {
@@ -288,7 +314,7 @@ function Backup-DbaDatabase {
     process {
         if (-not $SqlInstance -and -not $InputObject) {
             Stop-Function -Message "You must specify a server and database or pipe some databases"
-            return
+            Return
         }
 
         Write-Message -Level Verbose -Message "$($InputObject.Count) database to backup"
@@ -402,14 +428,16 @@ function Backup-DbaDatabase {
             $BackupFinalName = ''
             $FinalBackupPath = @()
             $timestamp = Get-Date -Format $TimeStampFormat
-            if ('NUL' -eq $BackupFileName) {
+            if ('NUL' -eq $backupFileName) {
                 $FinalBackupPath += 'NUL:'
                 $IgnoreFileChecks = $true
-            } elseif ('' -ne $BackupFileName) {
-                $File = New-Object System.IO.FileInfo($BackupFileName)
+            } elseif ($backupFileName -like 'http*') {
+
+            } elseif ('' -ne $backupFileName) {
+                $File = New-Object System.IO.FileInfo($backupFileName)
                 $BackupFinalName = $file.Name
                 $suffix = $file.extension -Replace '^\.', ''
-                if ( '' -ne (Split-Path $BackupFileName)) {
+                if ( '' -ne (Split-Path $backupFileName)) {
                     Write-Message -Level Verbose -Message "Fully qualified path passed in"
                     $FinalBackupPath += [IO.Path]::GetFullPath($file.DirectoryName)
                 }
@@ -429,7 +457,7 @@ function Backup-DbaDatabase {
                 }
             }
 
-            if ($AzureBaseUrl -or $AzureCredential) {
+            if ($urlCount -ne 0) {
                 $slash = "/"
             } else {
                 $slash = "\"
@@ -461,7 +489,7 @@ function Backup-DbaDatabase {
                 }
             }
 
-            if (-not $IgnoreFileChecks -and -not $AzureBaseUrl) {
+            if (-not $IgnoreFileChecks -and $urlCount -gt 0) {
                 $parentPaths = ($FinalBackupPath | ForEach-Object { Split-Path $_ } | Select-Object -Unique)
                 foreach ($parentPath in $parentPaths) {
                     if (-not (Test-DbaPath -SqlInstance $server -Path $parentPath)) {
@@ -477,7 +505,7 @@ function Backup-DbaDatabase {
             }
 
 
-            if ('' -eq $AzureBaseUrl -and $BackupDirectory) {
+            if ($BackupDirectory -and $urlCount -eq 0) {
                 $FinalBackupPath = $FinalBackupPath | ForEach-Object { [IO.Path]::GetFullPath($_) }
             }
 
@@ -488,9 +516,9 @@ function Backup-DbaDatabase {
             if (!$failures) {
                 $Filecount = $FinalBackupPath.Count
 
-                foreach ($backupfile in $FinalBackupPath) {
+                foreach ($backupFile in $FinalBackupPath) {
                     $device = New-Object Microsoft.SqlServer.Management.Smo.BackupDeviceItem
-                    if ('' -ne $AzureBaseUrl) {
+                    if ($backupFile -like 'http*') {
                         $device.DeviceType = "URL"
                     } else {
                         $device.DeviceType = "File"
@@ -505,13 +533,13 @@ function Backup-DbaDatabase {
                     $backup.FormatMedia = $WithFormat
                     $backup.Initialize = $Initialize
                     $backup.SkipTapeHeader = $SkipTapeHeader
-                    $device.Name = $backupfile
+                    $device.Name = $backupFile
                     $backup.Devices.Add($device)
                 }
-                $humanBackupFile = $FinalBackupPath -Join ','
+                $humanbackupFile = $FinalBackupPath -Join ','
                 Write-Message -Level Verbose -Message "Devices added"
                 $percent = [Microsoft.SqlServer.Management.Smo.PercentCompleteEventHandler] {
-                    Write-Progress -id $ProgressId -activity "Backing up database $dbname to $humanBackupFile" -percentcomplete $_.Percent -status ([System.String]::Format("Progress: {0} %", $_.Percent))
+                    Write-Progress -id $ProgressId -activity "Backing up database $dbname to $humanbackupFile" -percentcomplete $_.Percent -status ([System.String]::Format("Progress: {0} %", $_.Percent))
                 }
                 $backup.add_PercentComplete($percent)
                 $backup.PercentCompleteNotification = 1
@@ -527,10 +555,10 @@ function Backup-DbaDatabase {
                     $backup.Blocksize = $BlockSize
                 }
 
-                Write-Progress -id $ProgressId -activity "Backing up database $dbname to $humanBackupFile" -percentcomplete 0 -status ([System.String]::Format("Progress: {0} %", 0))
+                Write-Progress -id $ProgressId -activity "Backing up database $dbname to $humanbackupFile" -percentcomplete 0 -status ([System.String]::Format("Progress: {0} %", 0))
 
                 try {
-                    if ($Pscmdlet.ShouldProcess($server.Name, "Backing up $dbname to $humanBackupFile")) {
+                    if ($Pscmdlet.ShouldProcess($server.Name, "Backing up $dbname to $humanbackupFile")) {
                         if ($OutputScriptOnly -ne $True) {
                             $Filelist = @()
                             $FileList += $server.Databases[$dbname].FileGroups.Files | Select-Object @{ Name = "FileType"; Expression = { "D" } }, @{ Name = "Type"; Expression = { "D" } }, @{ Name = "LogicalName"; Expression = { $_.Name } }, @{ Name = "PhysicalName"; Expression = { $_.FileName } }
@@ -538,7 +566,7 @@ function Backup-DbaDatabase {
 
                             $backup.SqlBackup($server)
                             $script = $backup.Script($server)
-                            Write-Progress -id $ProgressId -activity "Backing up database $dbname to $backupfile" -status "Complete" -Completed
+                            Write-Progress -id $ProgressId -activity "Backing up database $dbname to $backupFile" -status "Complete" -Completed
                             $BackupComplete = $true
                             if ($server.VersionMajor -eq '8') {
                                 $HeaderInfo = Get-BackupAncientHistory -SqlInstance $server -Database $dbname
@@ -553,8 +581,8 @@ function Backup-DbaDatabase {
                                     SqlInstance          = $server.DomainInstanceName
                                     DatabaseName         = $dbname
                                     BackupComplete       = $BackupComplete
-                                    BackupFilesCount     = $FinalBackupPath.Count
-                                    BackupFile           = (Split-Path $FinalBackupPath -Leaf)
+                                    backupFilesCount     = $FinalBackupPath.Count
+                                    backupFile           = (Split-Path $FinalBackupPath -Leaf)
                                     BackupFolder         = (Split-Path $FinalBackupPath | Sort-Object -Unique)
                                     BackupPath           = ($FinalBackupPath | Sort-Object -Unique)
                                     Script               = $script
@@ -579,8 +607,8 @@ function Backup-DbaDatabase {
                                 }
                             }
                             $HeaderInfo | Add-Member -Type NoteProperty -Name BackupComplete -Value $BackupComplete
-                            $HeaderInfo | Add-Member -Type NoteProperty -Name BackupFile -Value (Split-Path $FinalBackupPath -Leaf)
-                            $HeaderInfo | Add-Member -Type NoteProperty -Name BackupFilesCount -Value $FinalBackupPath.Count
+                            $HeaderInfo | Add-Member -Type NoteProperty -Name backupFile -Value (Split-Path $FinalBackupPath -Leaf)
+                            $HeaderInfo | Add-Member -Type NoteProperty -Name backupFilesCount -Value $FinalBackupPath.Count
                             if ($FinalBackupPath[0] -eq 'NUL:') {
                                 $pathresult = "NUL:"
                             } else {
@@ -611,7 +639,7 @@ function Backup-DbaDatabase {
                 $OutputExclude += ('Notes', 'FirstLsn', 'DatabaseBackupLsn', 'CheckpointLsn', 'LastLsn', 'BackupSetId', 'LastRecoveryForkGuid')
             }
             $headerinfo | Select-DefaultView -ExcludeProperty $OutputExclude
-            $BackupFileName = $null
+            $backupFileName = $null
         }
     }
 }
