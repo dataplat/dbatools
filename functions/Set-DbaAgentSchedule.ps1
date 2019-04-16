@@ -340,7 +340,7 @@ function Set-DbaAgentSchedule {
                         $JobSchedule = $Server.JobServer.Jobs[$j].JobSchedules[$ScheduleName][0]
 
                         # Set the frequency interval to make up for newly created schedules without an interval
-                        if ($JobSchedule.FrequencyInterval -eq 0) {
+                        if ($JobSchedule.FrequencyInterval -eq 0 -and $Interval -lt 1) {
                             $Interval = 1
                         }
 
