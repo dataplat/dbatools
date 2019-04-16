@@ -79,10 +79,12 @@ function Start-DbaMigration {
     .PARAMETER SetSourceReadOnly
         If this switch is enabled, all migrated databases will be set to ReadOnly on the source instance prior to detach/attach & backup/restore. If -Reattach is specified, the database is set to read-only after reattaching.
 
-    
+    .PARAMETER AzureCredential
+        Name of the AzureCredential if SharedPath is Azure page blob
+
     .PARAMETER Exclude
         Exclude one or more objects to migrate
-    
+
         Databases
         Logins
         AgentServer
@@ -193,7 +195,7 @@ function Start-DbaMigration {
         [switch]$Reattach,
         [switch]$BackupRestore,
         [Alias("NetworkShare")]
-        [parameter(HelpMessage = "Specify a valid network share in the format \\server\share that can be accessed by your account and both Sql Server service accounts.")]
+        [parameter(HelpMessage = "Specify a valid network share in the format \\server\share that can be accessed by your account and both Sql Server service accounts, or a URL to an Azure Storage account")]
         [string]$SharedPath,
         [switch]$WithReplace,
         [switch]$NoRecovery,
@@ -210,19 +212,19 @@ function Start-DbaMigration {
         [switch]$UseLastBackup,
         [switch]$Continue,
         [switch]$Force,
+        [string]$AzureCredential,
         [switch]$EnableException
     )
-    
+
     begin {
         Test-DbaDeprecation -DeprecatedOn 1.0.0 -Parameter NetworkShare -CustomMessage "Using the parameter NetworkShare is deprecated. This parameter will be removed in version 1.0.0 or before. Use SharedPath instead."
-        
+
         if ($Exclude -notcontains "Databases") {
             if (-not $BackupRestore -and -not $DetachAttach -and -not $UseLastBackup) {
                 Stop-Function -Message "You must specify a database migration method (-BackupRestore or -DetachAttach) or -Exclude Databases"
                 return
             }
         }
-
         if ($DetachAttach -and ($BackupRestore -or $UseLastBackup)) {
             Stop-Function -Message "-DetachAttach cannot be used with -BackupRestore or -UseLastBackup"
             return
@@ -246,7 +248,7 @@ function Start-DbaMigration {
         if ($UseLastBackup -and -not $BackupRestore) {
             $BackupRestore = $true
         }
-        
+
         $elapsed = [System.Diagnostics.Stopwatch]::StartNew()
         $started = Get-Date
         $sourceserver = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
@@ -269,6 +271,10 @@ function Start-DbaMigration {
         }
         if ($BackupRestore -and (-not $SharedPath -and -not $UseLastBackup)) {
             Stop-Function -Message "When using -BackupRestore, you must specify -SharedPath or -UseLastBackup"
+            return
+        }
+        if ($SharedPath -like 'https*' -and $DetachAttach){
+            Stop-Function -Message "URL shared storage is only supported by BackupRstore"
             return
         }
         if ($SharedPath -and $UseLastBackup) {
@@ -328,7 +334,7 @@ function Start-DbaMigration {
                 if ($UseLastBackup) {
                     Copy-DbaDatabase -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -AllDatabases -SetSourceReadOnly:$SetSourceReadOnly -ReuseSourceFolderStructure:$ReuseSourceFolderStructure -BackupRestore -Force:$Force -NoRecovery:$NoRecovery -WithReplace:$WithReplace -IncludeSupportDbs:$IncludeSupportDbs -UseLastBackup:$UseLastBackup -Continue:$Continue
                 } else {
-                    Copy-DbaDatabase -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -AllDatabases -SetSourceReadOnly:$SetSourceReadOnly -ReuseSourceFolderStructure:$ReuseSourceFolderStructure -BackupRestore -SharedPath $SharedPath -Force:$Force -NoRecovery:$NoRecovery -WithReplace:$WithReplace -IncludeSupportDbs:$IncludeSupportDbs
+                    Copy-DbaDatabase -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -AllDatabases -SetSourceReadOnly:$SetSourceReadOnly -ReuseSourceFolderStructure:$ReuseSourceFolderStructure -BackupRestore -SharedPath $SharedPath -Force:$Force -NoRecovery:$NoRecovery -WithReplace:$WithReplace -IncludeSupportDbs:$IncludeSupportDbs -AzureCredential $AzureCredential
                 }
             } else {
                 Copy-DbaDatabase -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -AllDatabases -SetSourceReadOnly:$SetSourceReadOnly -ReuseSourceFolderStructure:$ReuseSourceFolderStructure -DetachAttach:$DetachAttach -Reattach:$Reattach -Force:$Force -IncludeSupportDbs:$IncludeSupportDbs
@@ -347,12 +353,12 @@ function Start-DbaMigration {
                 $null = Update-SqlDbOwner -Source $sourceserver -Destination $dest -DestinationSqlCredential $DestinationSqlCredential
             }
         }
-        
+
         if ($Exclude -notcontains 'LinkedServers') {
             Write-Message -Level Verbose -Message "Migrating linked servers"
             Copy-DbaLinkedServer -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Force:$Force
         }
-        
+
         if ($Exclude -notcontains 'DataCollector') {
             Write-Message -Level Verbose -Message "Migrating Data Collector collection sets"
             Copy-DbaDataCollector -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Force:$Force
