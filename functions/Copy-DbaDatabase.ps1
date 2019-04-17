@@ -804,6 +804,10 @@ function Copy-DbaDatabase {
             if ($destServer.DatabaseEngineEdition -eq 'SqlManagedInstance') {
                 # we have a managed instance destination, set an internal flag to disable switches that don't work
                 $miRestore = $True
+                if (Test-Bound 'ReuseSourceFolderStructure') {
+                    Write-Message -Level Warning -Message "ReuseSourceFolder cannot be used when restoring to a Managed Instance and will be ignored"
+                    $ReuseSourceFolderStructure = $false
+                }
             }
             if ($DetachAttach) {
                 if ($sourceServer.ComputerName -eq $env:COMPUTERNAME -or $destServer.ComputerName -eq $env:COMPUTERNAME) {

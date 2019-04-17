@@ -334,6 +334,12 @@ go
                 $results.DeviceType | Should -Be 'URL'
                 $results.BackupFile | Should -Be 'dbatoolsci_azure.bak'
             }
+            It "backs up to Azure properly using SHARED ACCESS SIGNATURE via BackupDirectory" {
+                $results = Backup-DbaDatabase -SqlInstance $script:instance2 -BackupDirectory $script:azureblob -Database dbatoolsci_azure -BackupFileName dbatoolsci_azure.bak -WithFormat -FileCount 1
+                $results.Database | Should -Be 'dbatoolsci_azure'
+                $results.DeviceType | Should -Be 'URL'
+                $results.BackupFile | Should -Be 'dbatoolsci_azure.bak'
+            }
             It "backs up to Azure properly using legacy credential" {
                 $results = Backup-DbaDatabase -SqlInstance $script:instance2 -AzureBaseUrl $script:azureblob -Database dbatoolsci_azure -BackupFileName dbatoolsci_azure2.bak -WithFormat -AzureCredential dbatools_ci
                 $results.Database | Should -Be 'dbatoolsci_azure'

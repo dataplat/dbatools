@@ -489,7 +489,7 @@ function Backup-DbaDatabase {
                 }
             }
 
-            if (-not $IgnoreFileChecks -and $urlCount -gt 0) {
+            if (-not $IgnoreFileChecks -or $urlCount -gt 0) {
                 $parentPaths = ($FinalBackupPath | ForEach-Object { Split-Path $_ } | Select-Object -Unique)
                 foreach ($parentPath in $parentPaths) {
                     if (-not (Test-DbaPath -SqlInstance $server -Path $parentPath)) {
