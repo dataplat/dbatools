@@ -241,7 +241,7 @@ function Invoke-DbaDbDataMasking {
                                     if ($columnMaskInfo) {
                                         # Generate a new value
                                         try {
-                                            if ($columnobject.SubType -in $supportedDataTypes) {
+                                            if ($columnMaskInfo.SubType -in $supportedDataTypes) {
                                                 $newValue = Get-DbaRandomizedValue -DataType $columnMaskInfo.SubType -Locale $Locale
                                             } else {
                                                 $newValue = Get-DbaRandomizedValue -RandomizerType $columnMaskInfo.MaskingType -RandomizerSubtype $columnMaskInfo.SubType -Locale $Locale
@@ -408,7 +408,7 @@ function Invoke-DbaDbDataMasking {
                                     }
                                 }
 
-                                if ($null -eq $columnValue -and $columnobject.Nullable -eq $true) {
+                                if ($null -eq $newValue -and $columnobject.Nullable -eq $true) {
                                     $updates += "[$($columnobject.Name)] = NULL"
                                 } elseif ($columnobject.ColumnType -eq 'xml') {
                                     # nothing, unsure how i'll handle this
@@ -526,6 +526,11 @@ function Invoke-DbaDbDataMasking {
                                     } else {
                                         $compositeItems += ""
                                     }
+                                }
+
+                                $compositeItems = $compositeItems | ForEach-Object {
+                                    $_ = "ISNULL($($_), '')"
+                                    $_
                                 }
 
                                 $updatequery = "UPDATE [$($tableobject.Schema)].[$($tableobject.Name)] SET $($columnObject.Name) = $($compositeItems -join ' + ')"
