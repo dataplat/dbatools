@@ -260,6 +260,7 @@ function Backup-DbaDatabase {
             Foreach ($directory in $BackupDirectory) {
                 if ($directory -like 'http*') {
                     $urlcount++
+                    $IgnoreFileChecks = $true
                 }
             }
             if ($urlcount -gt 0 -and $urlcount -ne $BackupDirectory.Count) {
@@ -489,7 +490,7 @@ function Backup-DbaDatabase {
                 }
             }
 
-            if (-not $IgnoreFileChecks -or $urlCount -gt 0) {
+            if (-not $IgnoreFileChecks) {
                 $parentPaths = ($FinalBackupPath | ForEach-Object { Split-Path $_ } | Select-Object -Unique)
                 foreach ($parentPath in $parentPaths) {
                     if (-not (Test-DbaPath -SqlInstance $server -Path $parentPath)) {
