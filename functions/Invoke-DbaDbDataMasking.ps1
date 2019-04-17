@@ -404,7 +404,7 @@ function Invoke-DbaDbDataMasking {
                                         }
 
                                     } catch {
-                                        Stop-Function -Message "Failure" -Target $faker -Continue -ErrorRecord $_
+                                        Stop-Function -Message "Failure" -Target $columnobject -Continue -ErrorRecord $_
                                     }
                                 }
 
@@ -469,7 +469,7 @@ function Invoke-DbaDbDataMasking {
                             }
 
                             $updatequery = "UPDATE [$($tableobject.Schema)].[$($tableobject.Name)] SET $($updates -join ', ') WHERE $($wheres -join ' AND ')"
-
+                            $updatequery
                             try {
                                 $sqlcmd = New-Object System.Data.SqlClient.SqlCommand($updatequery, $sqlconn, $transaction)
                                 $null = $sqlcmd.ExecuteNonQuery()
