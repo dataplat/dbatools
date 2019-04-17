@@ -273,7 +273,7 @@ function Start-DbaMigration {
             Stop-Function -Message "When using -BackupRestore, you must specify -SharedPath or -UseLastBackup"
             return
         }
-        if ($SharedPath -like 'https*' -and $DetachAttach){
+        if ($SharedPath -like 'https*' -and $DetachAttach) {
             Stop-Function -Message "URL shared storage is only supported by BackupRstore"
             return
         }
