@@ -842,7 +842,7 @@
         "CommandName":  "Backup-DbaDatabase",
         "Availability":  "Windows, Linux, macOS",
         "Links":  null,
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eBackup-DbaDatabase -SqlInstance Server1 -Database HR, Finance\nThis will perform a full database backup on the databases HR and Finance on SQL Server Instance Server1 to Server1 default backup directory.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eBackup-DbaDatabase -SqlInstance sql2016 -BackupDirectory C:\\temp -Database AdventureWorks2014 -Type Full\nBacks up AdventureWorks2014 to sql2016 C:\\temp folder.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eBackup-DbaDatabase -SqlInstance sql2016 -AzureBaseUrl https://dbatoolsaz.blob.core.windows.net/azbackups/ -AzureCredential dbatoolscred -Type Full -CreateFolder\nPerforms a full backup of all databases on the sql2016 instance to their own containers under the https://dbatoolsaz.blob.core.windows.net/azbackups/ container on Azure blog storage using the sql \r\ncredential \"dbatoolscred\" registered on the sql2016 instance.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eBackup-DbaDatabase -SqlInstance sql2016 -AzureBaseUrl https://dbatoolsaz.blob.core.windows.net/azbackups/  -Type Full\nPerforms a full backup of all databases on the sql2016 instance to the https://dbatoolsaz.blob.core.windows.net/azbackups/ container on Azure blog storage using the Shared Access Signature sql \r\ncredential \"https://dbatoolsaz.blob.core.windows.net/azbackups\" registered on the sql2016 instance.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eBackup-Dbadatabase -SqlInstance Server1\\Prod -Database db1 -BackupDirectory \\\\filestore\\backups\\servername\\instancename\\dbname\\backuptype -Type Full -ReplaceInName\nPerforms a full backup of db1 into the folder \\\\filestore\\backups\\server1\\prod\\db1\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eBackup-Dbadatabase -SqlInstance Server1\\Prod -BackupDirectory \\\\filestore\\backups\\servername\\instancename\\dbname\\backuptype -BackupFileName dbname-backuptype-timestamp.trn -Type Log \r\n-ReplaceInName\nPerforms a log backup for every database. For the database db1 this would results in backup files in \\\\filestore\\backups\\server1\\prod\\db1\\Log\\db1-log-31102018.trn\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003eBackup-DbaDatabase -SqlInstance Sql2017 -Database master -BackupFileName NUL\nPerforms a backup of master, but sends the output to the NUL device (ie; throws it away)",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eBackup-DbaDatabase -SqlInstance Server1 -Database HR, Finance\nThis will perform a full database backup on the databases HR and Finance on SQL Server Instance Server1 to Server1 default backup directory.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eBackup-DbaDatabase -SqlInstance sql2016 -BackupDirectory C:\\temp -Database AdventureWorks2014 -Type Full\nBacks up AdventureWorks2014 to sql2016 C:\\temp folder.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eBackup-DbaDatabase -SqlInstance sql2016 -AzureBaseUrl https://dbatoolsaz.blob.core.windows.net/azbackups/ -AzureCredential dbatoolscred -Type Full -CreateFolder\nPerforms a full backup of all databases on the sql2016 instance to their own containers under the https://dbatoolsaz.blob.core.windows.net/azbackups/ container on Azure blog storage using the sql \r\ncredential \"dbatoolscred\" registered on the sql2016 instance.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eBackup-DbaDatabase -SqlInstance sql2016 -AzureBaseUrl https://dbatoolsaz.blob.core.windows.net/azbackups/  -Type Full\nPerforms a full backup of all databases on the sql2016 instance to the https://dbatoolsaz.blob.core.windows.net/azbackups/ container on Azure blog storage using the Shared Access Signature sql \r\ncredential \"https://dbatoolsaz.blob.core.windows.net/azbackups\" registered on the sql2016 instance.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eBackup-Dbadatabase -SqlInstance Server1\\Prod -Database db1 -BackupDirectory \\\\filestore\\backups\\servername\\instancename\\dbname\\backuptype -Type Full -ReplaceInName\nPerforms a full backup of db1 into the folder \\\\filestore\\backups\\server1\\prod\\db1\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eBackup-Dbadatabase -SqlInstance Server1\\Prod -BackupDirectory \\\\filestore\\backups\\servername\\instancename\\dbname\\backuptype -BackupFileName dbname-backuptype-timestamp.trn -Type Log \r\n-ReplaceInName\nPerforms a log backup for every database. For the database db1 this would results in backup files in \\\\filestore\\backups\\server1\\prod\\db1\\Log\\db1-log-31102018.trn\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003eBackup-DbaDatabase -SqlInstance Sql2017 -Database master -BackupFileName NUL\nPerforms a backup of master, but sends the output to the NUL device (ie; throws it away)\n-------------------------- EXAMPLE 8 --------------------------\nPS C:\\\u003ePS C:\\ Backup-DbaDatabase -SqlInstance Sql2016 -Database stripetest -AzureBaseUrl https://az.blob.core.windows.net/sql,https://dbatools.blob.core.windows.net/sql\nPerforms a backup of the database striptest, striping it across the 2 Azure blob containers at https://az.blob.core.windows.net/sql and https://dbatools.blob.core.windows.net/sql, assuming that \r\nShared Access Signature credentials for both containers exist on the source instance",
         "Params":  [
                        [
                            "SqlInstance",
@@ -990,7 +990,7 @@
                        ],
                        [
                            "AzureBaseUrl",
-                           "The URL to the base container of an Azure Storage account to write backups to.\nIf specified, the only other parameters than can be used are \"CopyOnly\", \"Type\", \"CompressBackup\", \"Checksum\", \"Verify\", \"AzureCredential\", \"CreateFolder\".",
+                           "The URL(s) to the base container of an Azure Storage account to write backups to.\r\nIf specifying the AzureCredential parameter you can only provide 1 value as page blobs do not support multiple URLs\r\nIf useing Shared Access keys, you may specify as many URLs as you want, as long as a corresponding credential exists on the source server.\r\nIf specified, the only other parameters than can be used are \"CopyOnly\", \"Type\", \"CompressBackup\", \"Checksum\", \"Verify\", \"AzureCredential\", \"CreateFolder\".",
                            "",
                            false,
                            "false",
@@ -998,7 +998,7 @@
                        ],
                        [
                            "AzureCredential",
-                           "The name of the credential on the SQL instance that can write to the AzureBaseUrl, only needed if using Storage access keys\r\nIf using SAS credentials, the command will look for a credential with a name matching the AzureBaseUrl",
+                           "The name of the credential on the SQL instance that can write to the AzureBaseUrl, only needed if using Storage access keys\r\nIf using SAS credentials, the command will look for a credential with a name matching the AzureBaseUrl. As page blobs are used with this option we force the number of files to 1 and ignore any value \r\npassed in for BlockSize or MaxTransferSize",
                            "",
                            false,
                            "false",
@@ -1093,7 +1093,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Backup-DbaDatabase [-SqlCredential \u003cPSCredential\u003e] [-Database \u003cObject[]\u003e] [-ExcludeDatabase \u003cObject[]\u003e] [-BackupDirectory \u003cString[]\u003e] [-BackupFileName \u003cString\u003e] [-ReplaceInName] [-CopyOnly] [-Type \u003cString\u003e] [-CreateFolder] [-FileCount \u003cInt32\u003e] [-CompressBackup] [-Checksum] [-Verify] [-MaxTransferSize \u003cInt32\u003e] [-BlockSize \u003cInt32\u003e] [-BufferCount \u003cInt32\u003e] [-AzureBaseUrl \u003cString\u003e] [-AzureCredential \u003cString\u003e] [-NoRecovery] [-BuildPath] [-WithFormat] [-Initialize] [-SkipTapeHeader] [-TimeStampFormat \u003cString\u003e] [-IgnoreFileChecks] [-OutputScriptOnly] [-EnableException] [-WhatIf] [-Confirm] \r\n[\u003cCommonParameters\u003e]\nBackup-DbaDatabase -SqlInstance \u003cDbaInstanceParameter\u003e [-SqlCredential \u003cPSCredential\u003e] [-Database \u003cObject[]\u003e] [-ExcludeDatabase \u003cObject[]\u003e] [-BackupDirectory \u003cString[]\u003e] [-BackupFileName \u003cString\u003e] [-ReplaceInName] [-CopyOnly] [-Type \u003cString\u003e] [-CreateFolder] [-FileCount \u003cInt32\u003e] [-CompressBackup] [-Checksum] [-Verify] [-MaxTransferSize \u003cInt32\u003e] [-BlockSize \u003cInt32\u003e] [-BufferCount \u003cInt32\u003e] [-AzureBaseUrl \u003cString\u003e] [-AzureCredential \u003cString\u003e] [-NoRecovery] [-BuildPath] [-WithFormat] [-Initialize] [-SkipTapeHeader] [-TimeStampFormat \u003cString\u003e] [-IgnoreFileChecks] [-OutputScriptOnly] \r\n[-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nBackup-DbaDatabase [-SqlCredential \u003cPSCredential\u003e] [-Database \u003cObject[]\u003e] [-ExcludeDatabase \u003cObject[]\u003e] [-BackupDirectory \u003cString[]\u003e] [-BackupFileName \u003cString\u003e] [-ReplaceInName] [-CopyOnly] [-Type \u003cString\u003e] -InputObject \u003cObject[]\u003e [-CreateFolder] [-FileCount \u003cInt32\u003e] [-CompressBackup] [-Checksum] [-Verify] [-MaxTransferSize \u003cInt32\u003e] [-BlockSize \u003cInt32\u003e] [-BufferCount \u003cInt32\u003e] [-AzureBaseUrl \u003cString\u003e] [-AzureCredential \u003cString\u003e] [-NoRecovery] [-BuildPath] [-WithFormat] [-Initialize] [-SkipTapeHeader] [-TimeStampFormat \u003cString\u003e] [-IgnoreFileChecks] [-OutputScriptOnly] [-EnableException] \r\n[-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Backup-DbaDatabase [-SqlCredential \u003cPSCredential\u003e] [-Database \u003cObject[]\u003e] [-ExcludeDatabase \u003cObject[]\u003e] [-BackupDirectory \u003cString[]\u003e] [-BackupFileName \u003cString\u003e] [-ReplaceInName] [-CopyOnly] [-Type \u003cString\u003e] [-CreateFolder] [-FileCount \u003cInt32\u003e] [-CompressBackup] [-Checksum] [-Verify] [-MaxTransferSize \u003cInt32\u003e] [-BlockSize \u003cInt32\u003e] [-BufferCount \u003cInt32\u003e] [-AzureBaseUrl \u003cString[]\u003e] [-AzureCredential \u003cString\u003e] [-NoRecovery] [-BuildPath] [-WithFormat] [-Initialize] [-SkipTapeHeader] [-TimeStampFormat \u003cString\u003e] [-IgnoreFileChecks] [-OutputScriptOnly] [-EnableException] [-WhatIf] [-Confirm] \r\n[\u003cCommonParameters\u003e]\nBackup-DbaDatabase -SqlInstance \u003cDbaInstanceParameter\u003e [-SqlCredential \u003cPSCredential\u003e] [-Database \u003cObject[]\u003e] [-ExcludeDatabase \u003cObject[]\u003e] [-BackupDirectory \u003cString[]\u003e] [-BackupFileName \u003cString\u003e] [-ReplaceInName] [-CopyOnly] [-Type \u003cString\u003e] [-CreateFolder] [-FileCount \u003cInt32\u003e] [-CompressBackup] [-Checksum] [-Verify] [-MaxTransferSize \u003cInt32\u003e] [-BlockSize \u003cInt32\u003e] [-BufferCount \u003cInt32\u003e] [-AzureBaseUrl \u003cString[]\u003e] [-AzureCredential \u003cString\u003e] [-NoRecovery] [-BuildPath] [-WithFormat] [-Initialize] [-SkipTapeHeader] [-TimeStampFormat \u003cString\u003e] [-IgnoreFileChecks] [-OutputScriptOnly] \r\n[-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nBackup-DbaDatabase [-SqlCredential \u003cPSCredential\u003e] [-Database \u003cObject[]\u003e] [-ExcludeDatabase \u003cObject[]\u003e] [-BackupDirectory \u003cString[]\u003e] [-BackupFileName \u003cString\u003e] [-ReplaceInName] [-CopyOnly] [-Type \u003cString\u003e] -InputObject \u003cObject[]\u003e [-CreateFolder] [-FileCount \u003cInt32\u003e] [-CompressBackup] [-Checksum] [-Verify] [-MaxTransferSize \u003cInt32\u003e] [-BlockSize \u003cInt32\u003e] [-BufferCount \u003cInt32\u003e] [-AzureBaseUrl \u003cString[]\u003e] [-AzureCredential \u003cString\u003e] [-NoRecovery] [-BuildPath] [-WithFormat] [-Initialize] [-SkipTapeHeader] [-TimeStampFormat \u003cString\u003e] [-IgnoreFileChecks] [-OutputScriptOnly] [-EnableException] \r\n[-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Backup-DbaDbCertificate",
@@ -6984,6 +6984,14 @@
                            "False"
                        ],
                        [
+                           "DefaultDatabase",
+                           "If this switch is enabled, all logins will be scripted with specified default database,\r\nthat could help to successfuly import logins on server that is missing default database for login.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
                            "ExcludeJobs",
                            "If this switch is enabled, Agent job ownership will not be exported.",
                            "",
@@ -7040,7 +7048,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Export-DbaLogin [[-SqlInstance] \u003cDbaInstanceParameter\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Login] \u003cObject[]\u003e] [[-ExcludeLogin] \u003cObject[]\u003e] [[-Database] \u003cObject[]\u003e] [[-Path] \u003cString\u003e] [-NoClobber] [-Append] [-ExcludeDatabases] [-ExcludeJobs] [-EnableException] [-ExcludeGoBatchSeparator] [[-DestinationVersion] \u003cString\u003e] [[-InputObject] \u003cObject[]\u003e] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Export-DbaLogin [[-SqlInstance] \u003cDbaInstanceParameter\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Login] \u003cObject[]\u003e] [[-ExcludeLogin] \u003cObject[]\u003e] [[-Database] \u003cObject[]\u003e] [[-Path] \u003cString\u003e] [-NoClobber] [-Append] [-ExcludeDatabases] [[-DefaultDatabase] \u003cString\u003e] [-ExcludeJobs] [-EnableException] [-ExcludeGoBatchSeparator] [[-DestinationVersion] \u003cString\u003e] [[-InputObject] \u003cObject[]\u003e] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Export-DbaPfDataCollectorSetTemplate",
@@ -10261,6 +10269,14 @@
                            ""
                        ],
                        [
+                           "IncludeMirror",
+                           "By default mirrors of backups are not returned, this switch will cause them to be returned",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
                            "Type",
                            "Specifies one or more types of backups to return. Valid options are \u0027Full\u0027, \u0027Log\u0027, \u0027Differential\u0027, \u0027File\u0027, \u0027Differential File\u0027, \u0027Partial Full\u0027, and \u0027Partial Differential\u0027. Otherwise, all types of \r\nbackups will be returned unless one of the -Last* switches is enabled.",
                            "",
@@ -10277,7 +10293,7 @@
                            "False"
                        ]
                    ],
-        "Syntax":  "Get-DbaBackupHistory -SqlInstance \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Database \u003cObject[]\u003e] [-ExcludeDatabase \u003cObject[]\u003e] [-IncludeCopyOnly] [-Since \u003cDateTime\u003e] [-RecoveryFork \u003cString\u003e] [-DeviceType \u003cString[]\u003e] [-Raw] [-LastLsn \u003cBigInteger\u003e] [-Type \u003cString[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]\nGet-DbaBackupHistory -SqlInstance \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Database \u003cObject[]\u003e] [-ExcludeDatabase \u003cObject[]\u003e] [-IncludeCopyOnly] [-Force] [-Since \u003cDateTime\u003e] [-RecoveryFork \u003cString\u003e] [-DeviceType \u003cString[]\u003e] [-Raw] [-LastLsn \u003cBigInteger\u003e] [-Type \u003cString[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]\nGet-DbaBackupHistory -SqlInstance \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Database \u003cObject[]\u003e] [-ExcludeDatabase \u003cObject[]\u003e] [-IncludeCopyOnly] [-Since \u003cDateTime\u003e] [-RecoveryFork \u003cString\u003e] [-Last] [-LastFull] [-LastDiff] [-LastLog] [-DeviceType \u003cString[]\u003e] [-Raw] [-LastLsn \u003cBigInteger\u003e] [-Type \u003cString[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Get-DbaBackupHistory -SqlInstance \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Database \u003cObject[]\u003e] [-ExcludeDatabase \u003cObject[]\u003e] [-IncludeCopyOnly] [-Since \u003cDateTime\u003e] [-RecoveryFork \u003cString\u003e] [-DeviceType \u003cString[]\u003e] [-Raw] [-LastLsn \u003cBigInteger\u003e] [-IncludeMirror] [-Type \u003cString[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]\nGet-DbaBackupHistory -SqlInstance \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Database \u003cObject[]\u003e] [-ExcludeDatabase \u003cObject[]\u003e] [-IncludeCopyOnly] [-Force] [-Since \u003cDateTime\u003e] [-RecoveryFork \u003cString\u003e] [-DeviceType \u003cString[]\u003e] [-Raw] [-LastLsn \u003cBigInteger\u003e] [-IncludeMirror] [-Type \u003cString[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]\nGet-DbaBackupHistory -SqlInstance \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Database \u003cObject[]\u003e] [-ExcludeDatabase \u003cObject[]\u003e] [-IncludeCopyOnly] [-Since \u003cDateTime\u003e] [-RecoveryFork \u003cString\u003e] [-Last] [-LastFull] [-LastDiff] [-LastLog] [-DeviceType \u003cString[]\u003e] [-Raw] [-LastLsn \u003cBigInteger\u003e] [-IncludeMirror] [-Type \u003cString[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Get-DbaBackupInformation",
@@ -17790,6 +17806,269 @@
         "Syntax":  "Get-DbaQueryExecutionTime [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Database \u003cObject[]\u003e] [-ExcludeDatabase \u003cObject[]\u003e] [[-MaxResultsPerDb] \u003cInt32\u003e] [[-MinExecs] \u003cInt32\u003e] [[-MinExecMs] \u003cInt32\u003e] [[-ExcludeSystem]] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
+        "Name":  "Get-DbaRandomizedDataset",
+        "Description":  "Generates a random value based on a template.\nThe templates standardized in the templates folder and can be used to generate a data set.\nThere is also an option to point to a specific template",
+        "Tags":  "DataGeneration",
+        "Synopsis":  "This function will generate a random data set based on a template",
+        "Alias":  "",
+        "Author":  "Sander Stad (@sqlstad, sqlstad.nl)",
+        "CommandName":  "Get-DbaRandomizedDataset",
+        "Availability":  "Windows, Linux, macOS",
+        "Links":  "https://dbatools.io/Get-DbaRandomizedDataSet",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaRandomizedDataset -Template Personaldata\nGenerate a data set based on the default template PersonalData.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaRandomizedDataset -Template Personaldata -Rows 10\nGenerate a data set based on the default template PersonalData with 10 rows\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaRandomizedDataset -TemplateFile C:\\Dataset\\FinancialData.json\nGenerates data set based on a template file in another directory\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaRandomizedDataset -Template Personaldata, FinancialData\nGenerates multiple data sets\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eGet-DbaRandomizedDatasetTemplate -Template PersonalData | Get-DbaRandomizedDataset\nPipe the templates from Get-DbaRandomizedDatasetTemplate to Get-DbaRandomizedDataset and generate the data set",
+        "Params":  [
+                       [
+                           "Template",
+                           "The name of the template to use.\r\nIt will go through the default templates to see if it\u0027s present",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "TemplateFile",
+                           "File to use as a template",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Rows",
+                           "Amount of rows to generate. Th default is 100.",
+                           "",
+                           false,
+                           "false",
+                           "100"
+                       ],
+                       [
+                           "Locale",
+                           "Set the local to enable certain settings in the masking. The default is \u0027en\u0027",
+                           "",
+                           false,
+                           "false",
+                           "en"
+                       ],
+                       [
+                           "InputObject",
+                           "Accepts piped input from Get-DbaRandomizedDatasetTemplate",
+                           "",
+                           false,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ]
+                   ],
+        "Syntax":  "Get-DbaRandomizedDataset [[-Template] \u003cString[]\u003e] [[-TemplateFile] \u003cString[]\u003e] [[-Rows] \u003cInt32\u003e] [[-Locale] \u003cString\u003e] [[-InputObject] \u003cObject[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
+    },
+    {
+        "Name":  "Get-DbaRandomizedDatasetTemplate",
+        "Description":  "Retrieves the templates from the default directory and if assigned custom directories",
+        "Tags":  "DataGeneration",
+        "Synopsis":  "Gets the dataset templates",
+        "Alias":  "",
+        "Author":  "Sander Stad (@sqlstad, sqlstad.nl)",
+        "CommandName":  "Get-DbaRandomizedDatasetTemplate",
+        "Availability":  "Windows, Linux, macOS",
+        "Links":  "https://dbatools.io/Get-DbaRandomizedDatasetTemplate",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaRandomizedDatasetTemplate\nGet the templates from the default directory\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaRandomizedDatasetTemplate  -Template Personaldata, Test\nGet the templates from thedefault directory and filter on PersonalData and Test\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaRandomizedDatasetTemplate  -Path C:\\DatasetTemplates\nGet the templates from a custom directory",
+        "Params":  [
+                       [
+                           "Template",
+                           "The name of the template to use.\r\nIt will go through the default templates to see if it\u0027s present",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Path",
+                           "Path or paths that contain template files",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "ExcludeDefault",
+                           "Exclude the default templates",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ]
+                   ],
+        "Syntax":  "Get-DbaRandomizedDatasetTemplate [[-Template] \u003cString[]\u003e] [[-Path] \u003cString[]\u003e] [-ExcludeDefault] [-EnableException] [\u003cCommonParameters\u003e]"
+    },
+    {
+        "Name":  "Get-DbaRandomizedType",
+        "Description":  "Retrieves the types and sub types available",
+        "Tags":  "DataGeneration",
+        "Synopsis":  "Get the randomized types and sub types",
+        "Alias":  "",
+        "Author":  "Sander Stad (@sqlstad, sqlstad.nl)",
+        "CommandName":  "Get-DbaRandomizedType",
+        "Availability":  "Windows, Linux, macOS",
+        "Links":  "https://dbatools.io/Get-DbaRandomizedDatasetTemplate",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaRandomizedType\nGet all the types and subtypes\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaRandomizedType -Pattern \"Addr\"\nFind all the types and sub types based on a pattern\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaRandomizedType -RandomizedType Person\nFind all the sub types for Person\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaRandomizedType -RandomizedSubType LastName\nGet all the types and subtypes that known by \"LastName\"",
+        "Params":  [
+                       [
+                           "RandomizedType",
+                           "Filter the randomized types",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "RandomizedSubType",
+                           "Filter the randomized sub types",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Pattern",
+                           "Get the types and sub types based on a pattern",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ]
+                   ],
+        "Syntax":  "Get-DbaRandomizedType [[-RandomizedType] \u003cString[]\u003e] [[-RandomizedSubType] \u003cString[]\u003e] [[-Pattern] \u003cString\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
+    },
+    {
+        "Name":  "Get-DbaRandomizedValue",
+        "Description":  "Generates a random value based on the assigned sql data type or bogus type with sub type.\nIt supports a wide range of sql data types and an entire dictionary of various random values.",
+        "Tags":  [
+                     "DataMasking",
+                     "DataGeneration"
+                 ],
+        "Synopsis":  "This function will generate a random value for a specific data type or bogus type and subtype",
+        "Alias":  "",
+        "Author":  "Sander Stad (@sqlstad, sqlstad.nl)",
+        "CommandName":  "Get-DbaRandomizedValue",
+        "Availability":  "Windows, Linux, macOS",
+        "Links":  "https://dbatools.io/Get-DbaRandomizedValue",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaRandomizedValue -DataType bit\nWill return either a 1 or 0\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaRandomizedValue -DataType int\nWill generate a number between -2147483648 and 2147483647\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaRandomizedValue -RandomizerSubType Zipcode\nGenerates a random zipcode\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaRandomizedValue -RandomizerSubType Zipcode -Format \"#### ##\"\nGenerates a random zipcode like \"1234 56\"\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eGet-DbaRandomizedValue -RandomizerSubType PhoneNumber -Format \"(###) #######\"\nGenerates a random phonenumber like \"(123) 4567890\"",
+        "Params":  [
+                       [
+                           "DataType",
+                           "The target SQL Server instance or instances.\nSupported data types are bigint, bit, bool, char, date, datetime, datetime2, decimal, int, float, guid, money, numeric, nchar, ntext, nvarchar, real, smalldatetime, smallint, text, time, tinyint, \r\nuniqueidentifier, userdefineddatatype, varchar",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "RandomizerType",
+                           "Bogus type to use.\nSupported types are Address, Commerce, Company, Database, Date, Finance, Hacker, Hashids, Image, Internet, Lorem, Name, Person, Phone, Random, Rant, System",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "RandomizerSubType",
+                           "Subtype to use.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Min",
+                           "Minimum value used to generate certain lengths of values. Default is 0",
+                           "",
+                           false,
+                           "false",
+                           "1"
+                       ],
+                       [
+                           "Max",
+                           "Maximum value used to generate certain lengths of values. Default is 255",
+                           "",
+                           false,
+                           "false",
+                           "255"
+                       ],
+                       [
+                           "Precision",
+                           "Precision used for numeric sql data types like decimal, numeric, real and float",
+                           "",
+                           false,
+                           "false",
+                           "2"
+                       ],
+                       [
+                           "CharacterString",
+                           "The characters to use in string data. \u0027abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789\u0027 by default",
+                           "",
+                           false,
+                           "false",
+                           "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+                       ],
+                       [
+                           "Format",
+                           "Use specilized formatting with certain randomizer types like phone number.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Symbol",
+                           "Use a symbol in front of the value i.e. $100,12",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Locale",
+                           "Set the local to enable certain settings in the masking. The default is \u0027en\u0027",
+                           "",
+                           false,
+                           "false",
+                           "en"
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ]
+                   ],
+        "Syntax":  "Get-DbaRandomizedValue [[-DataType] \u003cString\u003e] [[-RandomizerType] \u003cString\u003e] [[-RandomizerSubType] \u003cString\u003e] [[-Min] \u003cInt64\u003e] [[-Max] \u003cInt64\u003e] [[-Precision] \u003cInt32\u003e] [[-CharacterString] \u003cString\u003e] [[-Format] \u003cString\u003e] [[-Symbol] \u003cString\u003e] [[-Locale] \u003cString\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
+    },
+    {
         "Name":  "Get-DbaRegistryRoot",
         "Description":  "Uses SQL WMI to find the Registry Root of each SQL Server instance on a computer",
         "Tags":  [
@@ -23288,6 +23567,152 @@
                        ]
                    ],
         "Syntax":  "Invoke-DbaDbClone [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString[]\u003e] [[-InputObject] \u003cDatabase[]\u003e] [[-CloneDatabase] \u003cString[]\u003e] [-ExcludeStatistics] [-ExcludeQueryStore] [-UpdateStatistics] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+    },
+    {
+        "Name":  "Invoke-DbaDbDataGenerator",
+        "Description":  "Invoke-DbaDbDataMasking is able to generate random data for tables.",
+        "Tags":  [
+                     "DataGeneration",
+                     "Database"
+                 ],
+        "Synopsis":  "Invoke-DbaDbDataGenerator generates random data for tables",
+        "Alias":  "",
+        "Author":  "Sander Stad (@sqlstad, sqlstad.nl)",
+        "CommandName":  "Invoke-DbaDbDataGenerator",
+        "Availability":  "Windows, Linux, macOS",
+        "Links":  "https://dbatools.io/Invoke-DbaDbDataGenerator",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eInvoke-DbaDbDataGenerator -SqlInstance sqldb2 -Database DB1 -FilePath C:\\temp\\sqldb1.db1.tables.json\nApply the data generation configuration from the file \"sqldb1.db1.tables.json\" to the db1 database on sqldb2. Prompt for confirmation for each table.",
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "The target SQL Server instance or instances.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "SqlCredential",
+                           "Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Database",
+                           "Databases to process through",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "FilePath",
+                           "Configuration file that contains the which tables and columns need to be masked",
+                           "Path,FullName",
+                           true,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
+                           "Locale",
+                           "Set the local to enable certain settings in the masking",
+                           "",
+                           false,
+                           "false",
+                           "en"
+                       ],
+                       [
+                           "CharacterString",
+                           "The characters to use in string data. \u0027abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789\u0027 by default",
+                           "",
+                           false,
+                           "false",
+                           "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+                       ],
+                       [
+                           "Table",
+                           "Tables to process. By default all the tables will be processed",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Column",
+                           "Columns to process. By default all the columns will be processed",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "ExcludeTable",
+                           "Exclude specific tables even if it\u0027s listed in the config file.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "ExcludeColumn",
+                           "Exclude specific columns even if it\u0027s listed in the config file.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "MaxValue",
+                           "Force a max length of strings instead of relying on datatype maxes. Note if a string datatype has a lower MaxValue, that will be used instead.\nUseful for adhoc updates and testing, otherwise, the config file should be used.",
+                           "",
+                           false,
+                           "false",
+                           "0"
+                       ],
+                       [
+                           "ExactLength",
+                           "Mask string values to the same length. So \u0027Tate\u0027 will be replaced with 4 random characters.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "ModulusFactor",
+                           "Calculating the next nullable by using the remainder from the modulus. Default is every 10.",
+                           "",
+                           false,
+                           "false",
+                           "10"
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "WhatIf",
+                           "If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.",
+                           "wi",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Confirm",
+                           "If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.",
+                           "cf",
+                           false,
+                           "false",
+                           ""
+                       ]
+                   ],
+        "Syntax":  "Invoke-DbaDbDataGenerator [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString[]\u003e] [-FilePath] \u003cObject\u003e [[-Locale] \u003cString\u003e] [[-CharacterString] \u003cString\u003e] [[-Table] \u003cString[]\u003e] [[-Column] \u003cString[]\u003e] [[-ExcludeTable] \u003cString[]\u003e] [[-ExcludeColumn] \u003cString[]\u003e] [[-MaxValue] \u003cInt32\u003e] [-ExactLength] [[-ModulusFactor] \u003cInt32\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Invoke-DbaDbDataMasking",
@@ -28797,6 +29222,104 @@
                        ]
                    ],
         "Syntax":  "New-DbaDbCertificate [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Name] \u003cString[]\u003e] [[-Database] \u003cString[]\u003e] [[-Subject] \u003cString[]\u003e] [[-StartDate] \u003cDateTime\u003e] [[-ExpirationDate] \u003cDateTime\u003e] [-ActiveForServiceBrokerDialog] [[-SecurePassword] \u003cSecureString\u003e] [[-InputObject] \u003cDatabase[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+    },
+    {
+        "Name":  "New-DbaDbDataGeneratorConfig",
+        "Description":  "Generates a new data generation configuration file. This file is important to apply any data generation to a table in a database.\n\nRead more here:\nhttps://sachabarbs.wordpress.com/2018/06/11/bogus-simple-fake-data-tool/\nhttps://github.com/bchavez/Bogus",
+        "Tags":  [
+                     "DataGeneration",
+                     "Database"
+                 ],
+        "Synopsis":  "Generates a new data generation configuration file.",
+        "Alias":  "",
+        "Author":  "Sander Stad (@sqlstad, sqlstad.nl)",
+        "CommandName":  "New-DbaDbDataGeneratorConfig",
+        "Availability":  "Windows, Linux, macOS",
+        "Links":  "https://dbatools.io/New-DbaDbDataGeneratorConfig",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eNew-DbaDbDataGeneratorConfig -SqlInstance SQLDB1 -Database DB1 -Path C:\\Temp\\clone\nProcess all tables and columns for database DB1 on instance SQLDB1\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eNew-DbaDbDataGeneratorConfig -SqlInstance SQLDB1 -Database DB1 -Table Customer -Path C:\\Temp\\clone\nProcess only table Customer with all the columns",
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "The target SQL Server instance or instances.",
+                           "",
+                           true,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "SqlCredential",
+                           "Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Database",
+                           "Databases to process through",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Table",
+                           "Tables to process. By default all the tables will be processed",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "ResetIdentity",
+                           "Resets the identity column for a table to it\u0027s starting value. By default it will continue with the next identity.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "TruncateTable",
+                           "Truncates the tabel befoe inserting the values",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "Rows",
+                           "Amount of rows that need to be generated. The default is 1000.",
+                           "",
+                           false,
+                           "false",
+                           "1000"
+                       ],
+                       [
+                           "Path",
+                           "Path where to save the generated JSON files.\r\nThe naming convention will be \"servername.databasename.tables.json\"",
+                           "",
+                           true,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Force",
+                           "Forcefully execute commands when needed",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ]
+                   ],
+        "Syntax":  "New-DbaDbDataGeneratorConfig [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString[]\u003e] [[-Table] \u003cString[]\u003e] [-ResetIdentity] [-TruncateTable] [[-Rows] \u003cInt32\u003e] [-Path] \u003cString\u003e [-Force] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "New-DbaDbMailAccount",
@@ -36537,7 +37060,7 @@
                            "",
                            false,
                            "false",
-                           ""
+                           "0"
                        ],
                        [
                            "FrequencySubdayType",
@@ -36636,7 +37159,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Set-DbaAgentSchedule [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [-Job] \u003cObject[]\u003e [-ScheduleName] \u003cString\u003e [[-NewName] \u003cString\u003e] [-Enabled] [-Disabled] [[-FrequencyType] \u003cObject\u003e] [[-FrequencyInterval] \u003cObject[]\u003e] [[-FrequencySubdayType] \u003cObject\u003e] [[-FrequencySubdayInterval] \u003cInt32\u003e] [[-FrequencyRelativeInterval] \u003cObject\u003e] [[-FrequencyRecurrenceFactor] \u003cInt32\u003e] [[-StartDate] \u003cString\u003e] [[-EndDate] \u003cString\u003e] [[-StartTime] \u003cString\u003e] [[-EndTime] \u003cString\u003e] [-EnableException] [-Force] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Set-DbaAgentSchedule [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [-Job] \u003cObject[]\u003e [-ScheduleName] \u003cString\u003e [[-NewName] \u003cString\u003e] [-Enabled] [-Disabled] [[-FrequencyType] \u003cObject\u003e] [[-FrequencyInterval] \u003cInt32\u003e] [[-FrequencySubdayType] \u003cObject\u003e] [[-FrequencySubdayInterval] \u003cInt32\u003e] [[-FrequencyRelativeInterval] \u003cObject\u003e] [[-FrequencyRecurrenceFactor] \u003cInt32\u003e] [[-StartDate] \u003cString\u003e] [[-EndDate] \u003cString\u003e] [[-StartTime] \u003cString\u003e] [[-EndTime] \u003cString\u003e] [-EnableException] [-Force] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Set-DbaAgentServer",
@@ -40079,6 +40602,14 @@
                            "False"
                        ],
                        [
+                           "AzureCredential",
+                           "Name of the AzureCredential if SharedPath is Azure page blob",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
                            "EnableException",
                            "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
                            "",
@@ -40103,7 +40634,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Start-DbaMigration [[-Source] \u003cDbaInstanceParameter\u003e] [[-Destination] \u003cDbaInstanceParameter[]\u003e] [-DetachAttach] [-Reattach] [-BackupRestore] [[-SharedPath] \u003cString\u003e] [-WithReplace] [-NoRecovery] [-SetSourceReadOnly] [-ReuseSourceFolderStructure] [-IncludeSupportDbs] [[-SourceSqlCredential] \u003cPSCredential\u003e] [[-DestinationSqlCredential] \u003cPSCredential\u003e] [[-Exclude] \u003cString[]\u003e] [-DisableJobsOnDestination] [-DisableJobsOnSource] [-ExcludeSaRename] [-UseLastBackup] [-Continue] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Start-DbaMigration [[-Source] \u003cDbaInstanceParameter\u003e] [[-Destination] \u003cDbaInstanceParameter[]\u003e] [-DetachAttach] [-Reattach] [-BackupRestore] [[-SharedPath] \u003cString\u003e] [-WithReplace] [-NoRecovery] [-SetSourceReadOnly] [-ReuseSourceFolderStructure] [-IncludeSupportDbs] [[-SourceSqlCredential] \u003cPSCredential\u003e] [[-DestinationSqlCredential] \u003cPSCredential\u003e] [[-Exclude] \u003cString[]\u003e] [-DisableJobsOnDestination] [-DisableJobsOnSource] [-ExcludeSaRename] [-UseLastBackup] [-Continue] [-Force] [[-AzureCredential] \u003cString\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Start-DbaPfDataCollectorSet",
