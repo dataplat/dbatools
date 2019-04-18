@@ -100,7 +100,7 @@ function Backup-DbaDatabase {
 
     .PARAMETER AzureCredential
         The name of the credential on the SQL instance that can write to the AzureBaseUrl, only needed if using Storage access keys
-        If using SAS credentials, the command will look for a credential with a name matching the AzureBaseUrl
+        If using SAS credentials, the command will look for a credential with a name matching the AzureBaseUrl. Setting this parameter will set number of files to 1 as striped sets are not supported
 
     .PARAMETER NoRecovery
         This is passed in to perform a tail log backup if needed
