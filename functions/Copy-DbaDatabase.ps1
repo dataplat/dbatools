@@ -45,8 +45,8 @@ function Copy-DbaDatabase {
         Can be either a full path 'c:\backups', a UNC path '\\server\backups' or an Azure storage Account 'https://example.blob.core.windows.net/sql/'
 
     .Parameter AzureCredential
-        The name of the credential on the SQL instance that can write to the AzureBaseUrl, only needed if using Storage access keys
-        If using SAS credentials, the command will look for a credential with a name matching the AzureBaseUrl
+        The name of the credential on the SQL instance that can write to the Azure Base Url passed in via SharedPath, only needed if using Storage access keys
+        If using SAS credentials, the command will look for a credential with a name matching the Azure Base Url
 
     .PARAMETER WithReplace
         If this switch is enabled, the restore is executed with WITH REPLACE.
@@ -1188,11 +1188,7 @@ function Copy-DbaDatabase {
                             } else {
                                 $backupTmpResult = $backupCollection | Where-Object Database -eq $dbName
                                 if (-not $backupTmpResult) {
-                                    if ($SharedPath -like 'https*') {
-                                        $backupTmpResult = Backup-DbaDatabase -SqlInstance $sourceServer -Database $dbName -AzureBaseUrl $SharedPath -FileCount $numberfiles -CopyOnly:$CopyOnly -AzureCredential $AzureCredential
-
-                                    } else {
-                                        $backupTmpResult = Backup-DbaDatabase -SqlInstance $sourceServer -Database $dbName -BackupDirectory $SharedPath -FileCount $numberfiles -CopyOnly:$CopyOnly
+                                        $backupTmpResult = Backup-DbaDatabase -SqlInstance $sourceServer -Database $dbName -BackupDirectory $SharedPath -FileCount $numberfiles -CopyOnly:$CopyOnly -AzureCredential $AzureCredential
                                     }
                                 }
                                 if ($backupTmpResult) {

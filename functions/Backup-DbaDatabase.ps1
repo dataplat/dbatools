@@ -285,6 +285,8 @@ function Backup-DbaDatabase {
             }
             if ('' -ne $AzureBaseUrl) {
                 $BackupDirectory = $AzureBaseUrl
+                $urlCount = $AzureBaseUrl.count
+                $IgnoreFileChecks = $true
             }
 
             if ($urlcount -gt 0) {
