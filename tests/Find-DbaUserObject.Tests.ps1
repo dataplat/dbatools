@@ -14,7 +14,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 }
 
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
-    Context "Command finds User Objects" {
+    Context "Command finds User Objects for SA" {
         BeforeAll {
             $null = New-DbaDatabase -SqlInstance $script:instance2 -Name 'dbatoolsci_userObject' -Owner 'sa'
         }
@@ -28,6 +28,12 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
         It "Should find more than 10 objects Owned by sa" {
             $results.Count | Should BeGreaterThan 10
+        }
+    }
+    Context "Command finds User Objects" {
+        $results = Find-DbaUserObject -SqlInstance $script:instance2
+        It "Should find resutls" {
+            $results | Should Not Be Null
         }
     }
 }

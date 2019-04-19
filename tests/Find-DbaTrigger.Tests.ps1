@@ -58,6 +58,10 @@ ON ALL SERVER;
         It "Should find a specific Trigger named dbatoolsci_ddl_trig_database" {
             $results.Name | Should Be "dbatoolsci_ddl_trig_database"
         }
+        $results = Find-DbaTrigger -SqlInstance $script:instance2 -Pattern dbatoolsci* -TriggerLevel All
+        It "Should find a specific Trigger when TriggerLevel is All" {
+            $results.Name | Should Be "dbatoolsci_ddl_trig_database"
+        }
     }
     Context "Command finds Triggers at the Database and Object Level" {
         BeforeAll {
@@ -108,6 +112,10 @@ GO
         }
         It "Should find a specific Trigger on the Table [dbo].[Customer]" {
             $results.Object | Should Be "[dbo].[Customer]"
+        }
+        $results = Find-DbaTrigger -SqlInstance $script:instance2 -Pattern dbatoolsci* -TriggerLevel All
+        It "Should find 2 Triggers when TriggerLevel is All" {
+            $results.name | Should Be @('dbatoolsci_safety', 'dbatoolsci_reminder1')
         }
     }
 }
