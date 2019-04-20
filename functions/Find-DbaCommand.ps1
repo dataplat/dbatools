@@ -58,24 +58,24 @@ function Find-DbaCommand {
         For rigorous typers: finds all commands searching the entire help for "snapshot"
 
     .EXAMPLE
-        PS C:\> Find-DbaCommand -Tag copy
+        PS C:\> Find-DbaCommand -Tag Job
 
-        Finds all commands tagged with "copy"
-
-    .EXAMPLE
-        PS C:\> Find-DbaCommand -Tag copy,user
-
-        Finds all commands tagged with BOTH "copy" and "user"
+        Finds all commands tagged with "Job"
 
     .EXAMPLE
-        PS C:\> Find-DbaCommand -Author chrissy
+        PS C:\> Find-DbaCommand -Tag Job,Owner
 
-        Finds every command whose author contains our beloved "chrissy"
+        Finds all commands tagged with BOTH "Job" and "Owner"
 
     .EXAMPLE
-        PS C:\> Find-DbaCommand -Author chrissy -Tag copy
+        PS C:\> Find-DbaCommand -Author Chrissy
 
-        Finds every command whose author contains our beloved "chrissy" and it tagged as "copy"
+        Finds every command whose author contains our beloved "Chrissy"
+
+    .EXAMPLE
+        PS C:\> Find-DbaCommand -Author Chrissy -Tag AG
+
+        Finds every command whose author contains our beloved "Chrissy" and it tagged as "AG"
 
     .EXAMPLE
         PS C:\> Find-DbaCommand -Pattern snapshot -Rebuild
