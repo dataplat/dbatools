@@ -97,9 +97,33 @@ function Test-DbaConnection {
                         FQDN             :
                         FullComputerName :
                      #>
-                $resolved = Resolve-DbaNetworkName -ComputerName $instance.ComputerName -Credential $Credential
+                $resolved = Resolve-DbaNetworkName -ComputerName $instance.ComputerName -Credential $Credential -EnableException
             } catch {
-                Stop-Function -Message "Unable to resolve server information" -Category ConnectionError -Target $instance -ErrorRecord $_ -Continue
+                Stop-Function -Message "Unable to resolve server information" -Category ConnectionError -Target $instance -ErrorRecord $_
+                [pscustomobject]@{
+                    ComputerName         = $instance.ComputerName
+                    InstanceName         = $instanceName
+                    SqlInstance          = $instance.FullSmoName
+                    SqlVersion           = $null
+                    ConnectingAsUser     = $username
+                    ConnectSuccess       = $false
+                    AuthType             = $authType
+                    AuthScheme           = $authscheme
+                    TcpPort              = $tcpport
+                    IPAddress            = $resolved.IPAddress
+                    NetBiosName          = $resolved.FullComputerName
+                    IsPingable           = $false
+                    PSRemotingAccessible = $false
+                    DomainName           = $resolved.Domain
+                    LocalWindows         = $localInfo.Windows
+                    LocalPowerShell      = $localInfo.PowerShell
+                    LocalCLR             = $localInfo.CLR
+                    LocalSMOVersion      = $localInfo.SMO
+                    LocalDomainUser      = $localInfo.DomainUser
+                    LocalRunAsAdmin      = $localInfo.RunAsAdmin
+                    LocalEdition         = $localInfo.Edition
+                }
+                continue
             }
 
             # Test for WinRM #Test-WinRM neh
@@ -118,29 +142,13 @@ function Test-DbaConnection {
             $reply = $ping.Send($instance.ComputerName, $timeout)
             $pingable = $reply.Status -eq 'Success'
 
-            # this whole section does nothing and returns errors for default instances with a non-default port - baseaddress not defined
-            # commenting it all out
-            # SQL Server connection
-            # if ($instance.InstanceName -ne "MSSQLSERVER") {
-            #     #Variable marked as unused by PSScriptAnalyzer, need to be in PSCustomObject?
-            #     #$sqlport = "N/A"
-            # } else {
-            #     Write-Message -Level Verbose -Message "Testing raw socket connection to default SQL port"
-            #     $tcp = New-Object System.Net.Sockets.TcpClient
-            #     try {
-            #         $tcp.Connect($baseaddress, 1433)
-            #         $tcp.Close()
-            #         $tcp.Dispose()
-            #     } catch {
-            #         # here to avoid an empty catch
-            #         $null = 1
-            #     }
-            # }
-
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance.FullSmoName -SqlCredential $SqlCredential
                 $connectSuccess = $true
                 $instanceName = $server.InstanceName
+                if (-not $instanceName) {
+                    $instanceName = $instance.InstanceName
+                }
             } catch {
                 $connectSuccess = $false
                 $instanceName = $instance.InstanceName
@@ -162,14 +170,15 @@ function Test-DbaConnection {
             }
 
             # Auth Scheme
+            $authwarning = $null
             try {
-                $authscheme = (Test-DbaConnectionAuthScheme -SqlInstance $server -WarningVariable authwarning -WarningAction SilentlyContinue).AuthScheme
+                $authscheme = (Test-DbaConnectionAuthScheme -SqlInstance $instance.FullSmoName -SqlCredential $SqlCredential -WarningVariable authwarning -WarningAction SilentlyContinue -EnableException).AuthScheme
             } catch {
                 $authscheme = $_
             }
 
             if ($authwarning) {
-                $authscheme = "N/A"
+                #$authscheme = "N/A"
             }
 
             [pscustomobject]@{
