@@ -100,7 +100,7 @@ function Test-DbaConnectionAuthScheme {
             try {
                 $results = $server.Query($sql)
             } catch {
-                Stop-Function -Message "Failure" -Target $server -Exception $_ -Continue
+                Stop-Function -Message "Failure" -Target $server -ErrorRecord $_ -Continue
             }
 
             # sorry, standards!
