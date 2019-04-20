@@ -99,31 +99,7 @@ function Test-DbaConnection {
                      #>
                 $resolved = Resolve-DbaNetworkName -ComputerName $instance.ComputerName -Credential $Credential -EnableException
             } catch {
-                Stop-Function -Message "Unable to resolve server information" -Category ConnectionError -Target $instance -ErrorRecord $_
-                [pscustomobject]@{
-                    ComputerName         = $instance.ComputerName
-                    InstanceName         = $instanceName
-                    SqlInstance          = $instance.FullSmoName
-                    SqlVersion           = $null
-                    ConnectingAsUser     = $username
-                    ConnectSuccess       = $false
-                    AuthType             = $authType
-                    AuthScheme           = $authscheme
-                    TcpPort              = $tcpport
-                    IPAddress            = $resolved.IPAddress
-                    NetBiosName          = $resolved.FullComputerName
-                    IsPingable           = $false
-                    PSRemotingAccessible = $false
-                    DomainName           = $resolved.Domain
-                    LocalWindows         = $localInfo.Windows
-                    LocalPowerShell      = $localInfo.PowerShell
-                    LocalCLR             = $localInfo.CLR
-                    LocalSMOVersion      = $localInfo.SMO
-                    LocalDomainUser      = $localInfo.DomainUser
-                    LocalRunAsAdmin      = $localInfo.RunAsAdmin
-                    LocalEdition         = $localInfo.Edition
-                }
-                continue
+                Stop-Function -Message "Unable to resolve server information" -Category ConnectionError -Target $instance -ErrorRecord $_ -Continue
             }
 
             # Test for WinRM #Test-WinRM neh
