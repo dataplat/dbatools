@@ -125,6 +125,8 @@ function New-DbaDacProfile {
                 $instance = $builder['server']
             }
 
+            $instance = $instance.ToString().Replace('TCP:', '')
+            $instance = $instance.ToString().Replace('tcp:', '')
             return $instance.ToString().Replace('\', '--')
         }
     }
