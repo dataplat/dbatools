@@ -564,7 +564,7 @@ function Write-DbaDbTableData {
             'Guid'                  = 'uniqueidentifier';
             'int'                   = 'int';
             'long'                  = 'bigint';
-        }      
+        }
 
         $validTypes = @([System.Data.DataSet], [System.Data.DataTable], [System.Data.DataRow], [System.Data.DataRow[]])
         #endregion Prepare database and bulk operations
