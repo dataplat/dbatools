@@ -377,7 +377,7 @@ function Write-DbaDbTableData {
         #endregion Prepare type for bulk copy
 
         #region Resolve Full Qualified Table Name
-        $fqtnObj = Get-TableNameParts $Table
+        $fqtnObj = Get-ObjectNameParts -ObjectName $Table
 
         if ($fqtnObj.$parsed) {
             Stop-Function -Message "Unable to parse $($fqtnObj.InputValue) as a valid tablename."
@@ -410,7 +410,7 @@ function Write-DbaDbTableData {
             $schemaName = $Schema
         }
 
-        $tableName = $fqtnObj.Table
+        $tableName = $fqtnObj.Name
 
         $quotedFQTN = New-Object System.Text.StringBuilder
 
