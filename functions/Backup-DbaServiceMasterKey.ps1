@@ -1,10 +1,10 @@
 function Backup-DbaServiceMasterKey {
     <#
     .SYNOPSIS
-        Backs up specified database master key.
+        Backs up specified service master key.
 
     .DESCRIPTION
-        Backs up specified database master key.
+        Backs up specified service master key.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
@@ -20,9 +20,6 @@ function Backup-DbaServiceMasterKey {
 
     .PARAMETER SecurePassword
         The password to encrypt the exported key. This must be a SecureString.
-
-    .PARAMETER InputObject
-        Database object piped in from Get-DbaDatabase
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
@@ -56,7 +53,7 @@ function Backup-DbaServiceMasterKey {
         Prompts for export password, then logs into server1\sql2016 with Windows credentials then backs up the service master key to the default backup directory.
 
     .EXAMPLE
-        PS C:\> Backup-DbaDbMasterKey -SqlInstance Server1 -Path \\nas\sqlbackups\keys
+        PS C:\> Backup-DbaServiceMasterKey -SqlInstance Server1 -Path \\nas\sqlbackups\keys
 
         Logs into sql2016 with Windows credentials then backs up the service master key to the \\nas\sqlbackups\keys directory.
 
@@ -97,7 +94,7 @@ function Backup-DbaServiceMasterKey {
 
             $masterkey = $server.ServiceMasterKey
 
-            # If you pass a password param, then you will not be prompted for each database, but it wouldn't be a good idea to build in insecurity
+            # If you pass a password param, then you will not be prompted, but it wouldn't be a good idea to build in insecurity
             if (-not $SecurePassword -and -not $Credential) {
                 $SecurePassword = Read-Host -AsSecureString -Prompt "You must enter an encryption password for $instance"
                 $SecurePassword2 = Read-Host -AsSecureString -Prompt "Type the password again"
