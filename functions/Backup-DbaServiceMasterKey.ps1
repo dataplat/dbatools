@@ -15,7 +15,7 @@ function Backup-DbaServiceMasterKey {
     .PARAMETER Path
         The directory to export the key. If no path is specified, the default backup directory for the instance will be used.
 
-    .PARAMETER Credential
+    .PARAMETER KeyCredential
         Pass a credential object for the password
 
     .PARAMETER SecurePassword
@@ -63,15 +63,15 @@ function Backup-DbaServiceMasterKey {
         [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [PSCredential]$Credential,
+        [PSCredential]$KeyCredential,
         [Alias("Password")]
         [Security.SecureString]$SecurePassword,
         [string]$Path,
         [switch]$EnableException
     )
     begin {
-        if ($Credential) {
-            $SecurePassword = $Credential.Password
+        if ($KeyCredential) {
+            $SecurePassword = $KeyCredential.Password
         }
     }
     process {
@@ -95,7 +95,7 @@ function Backup-DbaServiceMasterKey {
             $masterkey = $server.ServiceMasterKey
 
             # If you pass a password param, then you will not be prompted, but it wouldn't be a good idea to build in insecurity
-            if (-not $SecurePassword -and -not $Credential) {
+            if (-not $SecurePassword -and -not $KeyCredential) {
                 $SecurePassword = Read-Host -AsSecureString -Prompt "You must enter an encryption password for $instance"
                 $SecurePassword2 = Read-Host -AsSecureString -Prompt "Type the password again"
 
