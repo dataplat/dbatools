@@ -61,7 +61,7 @@ function Disable-DbaStartupProcedure {
   .EXAMPLE
         PS C:\> Get-DbaStartupProcedure -SqlInstance sql2016 | Disable-DbaStartupProcedure
 
-        Get all startup procedures for the sql2016 instance and disbales them by piping to Disable-DbaStartupProcedure
+        Get all startup procedures for the sql2016 instance and disables them by piping to Disable-DbaStartupProcedure
 
     #>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess, ConfirmImpact = 'High')]
