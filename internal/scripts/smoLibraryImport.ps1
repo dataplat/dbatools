@@ -60,14 +60,19 @@ $scriptBlock = {
         )
     } else {
         $names = @(
-            'Microsoft.SqlServer.BatchParser',
             'Microsoft.SqlServer.Smo',
-            'Microsoft.SqlServer.Dmf',
-            'Microsoft.SqlServer.SqlWmiManagement',
-            'Microsoft.SqlServer.ConnectionInfo',
             'Microsoft.SqlServer.SmoExtended',
-            'Microsoft.SqlServer.Management.RegisteredServers',
+            'Microsoft.SqlServer.ConnectionInfo',
+            'Microsoft.SqlServer.BatchParser',
+            'Microsoft.SqlServer.BatchParserClient',
+            'Microsoft.SqlServer.Management.SqlParser',
+            'Microsoft.SqlServer.Management.XEvent',
+            'Microsoft.SqlServer.Management.XEventDbScoped',
+            'Microsoft.SqlServer.Management.XEventDbScopedEnum',
+            'Microsoft.SqlServer.Management.XEventEnum',
             'Microsoft.SqlServer.Management.Sdk.Sfc',
+            'Microsoft.SqlServer.SqlWmiManagement',
+            'Microsoft.SqlServer.Management.RegisteredServers',
             'Microsoft.SqlServer.SqlEnum',
             'Microsoft.SqlServer.RegSvrEnum',
             'Microsoft.SqlServer.WmiEnum',
@@ -76,26 +81,23 @@ $scriptBlock = {
             'Microsoft.SqlServer.Management.CollectorEnum',
             'Microsoft.SqlServer.Management.Utility',
             'Microsoft.SqlServer.Management.UtilityEnum',
-            'Microsoft.SqlServer.Management.HadrDMF',
-            'Microsoft.SqlServer.BatchParserClient',
-            'Microsoft.SqlServer.Replication',
-            'Microsoft.SqlServer.XE.Core',
-            'Microsoft.SqlServer.XEvent.Linq',
-            'Microsoft.SqlServer.Rmo',
             'Microsoft.SqlServer.ConnectionInfoExtended',
             'Microsoft.SqlServer.Diagnostics.STrace',
-            'Microsoft.SqlServer.Dmf.Common',
-            'System.Collections.Immutable',
             'Microsoft.Data.Tools.Schema.Sql',
             'Microsoft.SqlServer.Management.IntegrationServices',
             'Microsoft.SqlServer.Management.IntegrationServicesEnum',
-            'Microsoft.SqlServer.Management.Sdk.Scripting',
             'Microsoft.SqlServer.PolicyEnum',
             'Microsoft.SqlServer.SqlClrProvider',
             'Microsoft.SqlServer.SqlTDiagm',
             'Microsoft.SqlServer.SString',
             'Microsoft.SqlServer.Dac',
-            'Microsoft.SqlServer.Dac.Extensions'
+            'Microsoft.SqlServer.Dac.Extensions',
+            'Microsoft.Data.Tools.Sql.BatchParser',
+            'Microsoft.Data.Tools.Utilities',
+            'Microsoft.SqlServer.Dmf',
+            'Microsoft.SqlServer.Dmf.Common',
+            'Microsoft.SqlServer.TransactSql.ScriptDom',
+            'Microsoft.SqlServer.Types'
         )
     }
     #endregion Names
@@ -110,8 +112,10 @@ $scriptBlock = {
     } else {
         foreach ($name in $names) {
             try {
+                $a = "$DllRoot\$name.dll"
                 Add-Type -Path (Resolve-Path -Path "$DllRoot\$name.dll") -ErrorAction Stop
             } catch {
+                write-warning $a
                 continue
             }
         }
