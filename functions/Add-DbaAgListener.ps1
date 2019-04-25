@@ -108,8 +108,9 @@ function Add-DbaAgListener {
                 return
             }
 
-            if ($SubnetMask.Count -gt 1) {
+            if ($SubnetMask.Count -gt 1 -or $SubnetIP.Count -gt 1) {
                 Stop-Function -Message "You can only specify a single subnet when using Dhcp."
+                return
             }
         }
 
@@ -150,7 +151,7 @@ function Add-DbaAgListener {
             if ((Test-Bound -Not -ParameterName Name)) {
                 $Name = $ag.Name
             }
-            if ($Pscmdlet.ShouldProcess($ag.Parent.Name, "Adding $($IPAddress) to $($ag.Name)")) {
+            if ($Pscmdlet.ShouldProcess($ag.Parent.Name, "Adding $($IPAddress.IPAddressToString) to $($ag.Name)")) {
                 try {
                     $aglistener = New-Object Microsoft.SqlServer.Management.Smo.AvailabilityGroupListener -ArgumentList $ag, $Name
                     $aglistener.PortNumber = $Port
@@ -162,6 +163,9 @@ function Add-DbaAgListener {
 
                         if (Test-Bound -ParameterName IPAddress) {
                             $listenerip.IPAddress = $IPAddress[$ipIndex]
+                        }
+
+                        if ($SubnetIP) {
                             $listenerip.SubnetMask = $SubnetMask[$ipIndex]
                             $listenerip.SubnetIP = $SubnetIP[$ipIndex]
                         }
