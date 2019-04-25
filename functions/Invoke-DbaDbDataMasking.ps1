@@ -242,9 +242,9 @@ function Invoke-DbaDbDataMasking {
                                         # Generate a new value
                                         try {
                                             if ($columnMaskInfo.SubType -in $supportedDataTypes) {
-                                                $newValue = Get-DbaRandomizedValue -DataType $columnMaskInfo.SubType -Locale $Locale
+                                                $newValue = Get-DbaRandomizedValue -DataType $columnMaskInfo.SubType -Min $min -Max $max -Locale $Locale
                                             } else {
-                                                $newValue = Get-DbaRandomizedValue -RandomizerType $columnMaskInfo.MaskingType -RandomizerSubtype $columnMaskInfo.SubType -Locale $Locale
+                                                $newValue = Get-DbaRandomizedValue -RandomizerType $columnMaskInfo.MaskingType -RandomizerSubtype $columnMaskInfo.SubType -Min $min -Max $max -Locale $Locale
                                             }
 
                                         } catch {
@@ -350,6 +350,16 @@ function Invoke-DbaDbDataMasking {
                                     $newValue = $uniqueValues[$rowNumber].$($columnobject.Name)
 
                                 } else {
+                                    # make sure min is good
+                                    if ($columnobject.MinValue) {
+                                        $min = $columnobject.MinValue
+                                    } else {
+                                        if ($columnobject.CharacterString) {
+                                            $min = 1
+                                        } else {
+                                            $min = 0
+                                        }
+                                    }
 
                                     # make sure max is good
                                     if ($MaxValue) {
@@ -372,25 +382,12 @@ function Invoke-DbaDbDataMasking {
                                         $charstring = $CharacterString
                                     }
 
-                                    # make sure min is good
-                                    if ($columnobject.MinValue) {
-                                        $min = $columnobject.MinValue
-                                    } else {
-                                        if ($columnobject.CharacterString) {
-                                            $min = 1
-                                        } else {
-                                            $min = 0
+                                    if ((-not $columnobject.MinValue -or -not $columnobject.MaxValue) -and ($columnobject.ColumnType -match 'date')) {
+                                        if (-not $columnobject.MinValue) {
+                                            $min = (Get-Date).AddDays(-365)
                                         }
-                                    }
-
-                                    if (($columnobject.MinValue -or $columnobject.MaxValue) -and ($columnobject.ColumnType -match 'date')) {
-                                        $nowmin = $columnobject.MinValue
-                                        $nowmax = $columnobject.MaxValue
-                                        if (-not $nowmin) {
-                                            $nowmin = (Get-Date -Date $nowmax).AddDays(-365)
-                                        }
-                                        if (-not $nowmax) {
-                                            $nowmax = (Get-Date -Date $nowmin).AddDays(365)
+                                        if (-not $columnobject.MaxValue) {
+                                            $max = (Get-Date).AddDays(365)
                                         }
                                     }
 
@@ -398,12 +395,15 @@ function Invoke-DbaDbDataMasking {
                                         $newValue = $null
 
                                         if ($columnobject.SubType -in $supportedDataTypes) {
-                                            $newValue = Get-DbaRandomizedValue -DataType $columnobject.SubType -CharacterString $charstring -Locale $Locale
+                                            Write-Message -Level VeryVerbose -Message "`$newValue = Get-DbaRandomizedValue -DataType $($columnobject.ColumnType) -Min $min -Max $max -CharacterString $charstring -Locale $Locale"
+                                            $newValue = Get-DbaRandomizedValue -DataType $columnobject.ColumnType -Min $min -Max $max -CharacterString $charstring -Locale $Locale
                                         } else {
-                                            $newValue = Get-DbaRandomizedValue -RandomizerType $columnobject.MaskingType -RandomizerSubtype $columnobject.SubType -CharacterString $charstring -Locale $Locale
+                                            $columnobject
+                                            $newValue = Get-DbaRandomizedValue -RandomizerType $columnobject.MaskingType -RandomizerSubtype $columnobject.SubType -Min $min -Max $max -CharacterString $charstring -Locale $Locale
                                         }
 
                                     } catch {
+
                                         Stop-Function -Message "Failure" -Target $columnobject -Continue -ErrorRecord $_
                                     }
                                 }
