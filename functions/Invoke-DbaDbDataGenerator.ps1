@@ -204,23 +204,23 @@ function Invoke-DbaDbDataGenerator {
                                     # Get the column mask info
                                     $columnMaskInfo = $tableobject.Columns | Where-Object Name -eq $indexColumn.Name
 
-                                    # Generate a new value
-                                    try {
-                                        $columnValue = $null
+                                    if ($columnMaskInfo) {
+                                        # Generate a new value
+                                        try {
+                                            if ($columnobject.SubType -in $supportedDataTypes) {
+                                                $newValue = Get-DbaRandomizedValue -DataType $columnMaskInfo.SubType -Locale $Locale
+                                            } else {
+                                                $newValue = Get-DbaRandomizedValue -RandomizerType $columnMaskInfo.MaskingType -RandomizerSubtype $columnMaskInfo.SubType -Locale $Locale
+                                            }
 
-                                        if ($columnobject.SubType -in $supportedDataTypes) {
-                                            $newValue = Get-DbaRandomizedValue -DataType $columnMaskInfo.SubType -Locale $Locale
-                                        } else {
-                                            $newValue = Get-DbaRandomizedValue -RandomizerType $columnMaskInfo.MaskingType -RandomizerSubtype $columnMaskInfo.SubType -Locale $Locale
+                                        } catch {
+                                            Stop-Function -Message "Failure" -Target $columnMaskInfo -Continue -ErrorRecord $_
                                         }
 
-                                    } catch {
-                                        Stop-Function -Message "Failure" -Target $faker -Continue -ErrorRecord $_
-                                    }
-
-                                    # Check if the value is already present as a property
-                                    if (($rowValue | Get-Member -MemberType NoteProperty).Name -notcontains $indexColumn.Name) {
-                                        $rowValue | Add-Member -Name $indexColumn.Name -Type NoteProperty -Value $newValue
+                                        # Check if the value is already present as a property
+                                        if (($rowValue | Get-Member -MemberType NoteProperty).Name -notcontains $indexColumn.Name) {
+                                            $rowValue | Add-Member -Name $indexColumn.Name -Type NoteProperty -Value $newValue
+                                        }
                                     }
 
                                 }
