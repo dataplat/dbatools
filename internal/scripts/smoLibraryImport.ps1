@@ -65,7 +65,6 @@ $scriptBlock = {
             'Microsoft.SqlServer.ConnectionInfo',
             'Microsoft.SqlServer.BatchParser',
             'Microsoft.SqlServer.BatchParserClient',
-            'Microsoft.SqlServer.Management.SqlParser',
             'Microsoft.SqlServer.Management.XEvent',
             'Microsoft.SqlServer.Management.XEventDbScoped',
             'Microsoft.SqlServer.Management.XEventDbScopedEnum',
