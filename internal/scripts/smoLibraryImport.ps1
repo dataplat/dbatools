@@ -97,7 +97,8 @@ $scriptBlock = {
             'Microsoft.SqlServer.Dmf',
             'Microsoft.SqlServer.Dmf.Common',
             'Microsoft.SqlServer.TransactSql.ScriptDom',
-            'Microsoft.SqlServer.Types'
+            'Microsoft.SqlServer.Types',
+            'Microsoft.SqlServer.XEvent.Linq'
         )
     }
     #endregion Names
