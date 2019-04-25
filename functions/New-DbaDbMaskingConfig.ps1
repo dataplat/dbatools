@@ -197,6 +197,7 @@ function New-DbaDbMaskingConfig {
                     if ($columnobject.InPrimaryKey -and $columnobject.DataType.SqlDataType.ToString().ToLower() -notmatch 'date') {
                         $min = 2
                     }
+
                     if (-not $columnType) {
                         $columnType = $columnobject.DataType.Name.ToLower()
                     }
@@ -328,6 +329,13 @@ function New-DbaDbMaskingConfig {
                                 $subType = "Number"
                                 $MaxValue = 9223372036854775807
                             }
+                            {
+                                $_ -in "char", "nchar", "nvarchar", "varchar"
+                            } {
+                                $subType = "String2"
+                                $min = [int]($columnLength / 2)
+                                $MaxValue = $columnLength
+                            }
                             "int" {
                                 $subType = "Number"
                                 $MaxValue = 2147483647
@@ -383,12 +391,14 @@ function New-DbaDbMaskingConfig {
                                     $subType = "Bool"
                                     $MaxValue = $columnLength
                                 } else {
-                                    $subType = "String"
+                                    $subType = "String2"
+                                    $min = [int]($columnLength / 2)
                                     $MaxValue = $columnLength
                                 }
                             }
                             default {
-                                $subType = "String"
+                                $subType = "String2"
+                                $min = [int]($columnLength / 2)
                                 $MaxValue = $columnLength
                             }
                         }
