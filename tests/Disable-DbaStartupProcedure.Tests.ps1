@@ -45,7 +45,11 @@ Describe "$commandname Integration Test" -Tag "IntegrationTests" {
         $result = Disable-DbaStartupProcedure -SqlInstance $script:instance2 -StartupProcedure $startupProc -Confirm:$false
 
         It "returns correct results" {
-            $null -eq $result | Should Be $true
+            $result.Schema -eq "dbo" | Should Be $true
+            $result.Name -eq "$startupProcName" | Should Be $true
+            $result.Action -eq "Disable" | Should Be $true
+            $result.Status | Should Be $false
+            $result.Note -eq "Action Disable already performed" | Should Be $true
         }
     }
 

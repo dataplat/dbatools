@@ -4,7 +4,8 @@ function Get-DbaStartupProcedure {
         Get-DbaStartupProcedure gets startup procedures (user defined procedures within master database) from a SQL Server.
 
     .DESCRIPTION
-        By default, this command returns for each SQL Server instance passed in, the name and schema for all procedures in the master database that are marked as a startup procedure.
+        By default, this command returns for each SQL Server instance passed in, the SMO StoredProcedure object for all procedures in the master database that are marked as a startup procedure.
+        Can be filtered to check only specific procedures
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.

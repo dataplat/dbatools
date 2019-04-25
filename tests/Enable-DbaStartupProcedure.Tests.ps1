@@ -43,7 +43,11 @@ Describe "$commandname Integration Test" -Tag "IntegrationTests" {
         $result = Enable-DbaStartupProcedure -SqlInstance $script:instance2 -StartupProcedure $startupProc -Confirm:$false
 
         It "returns correct results" {
-            $null -eq $result | Should Be $true
+            $result.Schema -eq "dbo" | Should Be $true
+            $result.Name -eq "$startupProcName" | Should Be $true
+            $result.Action -eq "Enable" | Should Be $true
+            $result.Status | Should Be $false
+            $result.Note -eq "Action Enable already performed" | Should Be $true
         }
     }
 
@@ -59,9 +63,7 @@ Describe "$commandname Integration Test" -Tag "IntegrationTests" {
         $result = Enable-DbaStartupProcedure -SqlInstance $script:instance2 -StartupProcedure "Four.Part.Schema.Name" -Confirm:$false
 
         It "returns correct results" {
-            $result.Action -eq "Enable" | Should Be $true
-            $result.Status | Should Be $false
-            $result.Note -eq "Unable to split procedure" | Should Be $true
+            $null -eq $result | Should Be $true
         }
     }
 }

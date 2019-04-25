@@ -6,6 +6,7 @@ function Disable-DbaStartupProcedure {
     .DESCRIPTION
          Used to revoke the designation of one or more stored procedures to automatically execute when the SQL Server service is started.
          Equivalent to running the system stored procedure sp_procoption with @OptionValue = off
+         Returns the SMO StoredProcedure object for procedures affected.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
@@ -123,7 +124,9 @@ function Disable-DbaStartupProcedure {
 
             try {
                 if ($sp.Startup -eq $startup) {
-                    Stop-Function -Message "No work being performed." -Continue -Target $server -Category InvalidData
+                    Write-Message -Level Verbose -Message "No work being performed. Startup property already $startup"
+                    $status = $false
+                    $note = "Action $action already performed"
                 } else {
                     if ($Pscmdlet.ShouldProcess("$instance", "Setting Startup status of $proc to $startup")) {
                         $sp.Startup = $startup
@@ -140,16 +143,17 @@ function Disable-DbaStartupProcedure {
                 $status = $false
                 $note = "$action failed"
             }
-            [PSCustomObject]@{
-                ComputerName = $server.ComputerName
-                SqlInstance  = $server.DomainInstanceName
-                InstanceName = $server.ServiceName
-                Schema       = $sp.Schema
-                Name         = $sp.Name
-                Action       = $action
-                Status       = $status
-                Note         = $note
-            }
         }
+
+        Add-Member -Force -InputObject $sp -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
+        Add-Member -Force -InputObject $sp -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
+        Add-Member -Force -InputObject $sp -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
+        Add-Member -Force -InputObject $sp -MemberType NoteProperty -Name Database -value $db.Name
+        Add-Member -Force -InputObject $sp -MemberType NoteProperty -Name Action -value $action
+        Add-Member -Force -InputObject $sp -MemberType NoteProperty -Name Status -value $status
+        Add-Member -Force -InputObject $sp -MemberType NoteProperty -Name Note -value $note
+
+        $defaults = 'ComputerName', 'InstanceName', 'SqlInstance', 'Database', 'Schema', 'Name', 'Startup', 'Action', 'Status', 'Note'
+        Select-DefaultView -InputObject $sp -Property $defaults
     }
 }
