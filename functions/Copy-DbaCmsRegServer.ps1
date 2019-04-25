@@ -88,11 +88,6 @@ function Copy-DbaCmsRegServer {
         [switch]$EnableException
     )
     begin {
-        if (-not $script:isWindows) {
-            Stop-Function -Message "Copy-DbaCmsRegServer does not support Linux - we're still waiting for the Core SMOs from Microsoft"
-            return
-        }
-        
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Copy-DbaCentralManagementServer
         function Invoke-ParseServerGroup {
             [cmdletbinding()]
@@ -213,7 +208,7 @@ function Copy-DbaCmsRegServer {
                     $newServer.Description = $instance.Description
 
                     if ($serverName -ne $fromCmStore.DomainInstanceName) {
-                        $newServer.SecureConnectionString = $instance.SecureConnectionString.ToString()
+                        $newServer.SecureConnectionString = $instance.SecureConnectionString
                         $newServer.ConnectionString = $instance.ConnectionString.ToString()
                     }
 
