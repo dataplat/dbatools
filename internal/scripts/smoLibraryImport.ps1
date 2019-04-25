@@ -60,6 +60,7 @@ $scriptBlock = {
         )
     } else {
         $names = @(
+            'Microsoft.SqlServer.BatchParser',
             'Microsoft.SqlServer.Smo',
             'Microsoft.SqlServer.Dmf',
             'Microsoft.SqlServer.SqlWmiManagement',
