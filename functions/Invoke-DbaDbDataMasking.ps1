@@ -398,7 +398,6 @@ function Invoke-DbaDbDataMasking {
                                             Write-Message -Level VeryVerbose -Message "`$newValue = Get-DbaRandomizedValue -DataType $($columnobject.ColumnType) -Min $min -Max $max -CharacterString $charstring -Locale $Locale"
                                             $newValue = Get-DbaRandomizedValue -DataType $columnobject.ColumnType -Min $min -Max $max -CharacterString $charstring -Locale $Locale
                                         } else {
-                                            $columnobject
                                             $newValue = Get-DbaRandomizedValue -RandomizerType $columnobject.MaskingType -RandomizerSubtype $columnobject.SubType -Min $min -Max $max -CharacterString $charstring -Locale $Locale
                                         }
 
@@ -469,7 +468,7 @@ function Invoke-DbaDbDataMasking {
                             }
 
                             $updatequery = "UPDATE [$($tableobject.Schema)].[$($tableobject.Name)] SET $($updates -join ', ') WHERE $($wheres -join ' AND ')"
-                            $updatequery
+
                             try {
                                 $sqlcmd = New-Object System.Data.SqlClient.SqlCommand($updatequery, $sqlconn, $transaction)
                                 $null = $sqlcmd.ExecuteNonQuery()
