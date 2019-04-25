@@ -115,10 +115,8 @@ $scriptBlock = {
     } else {
         foreach ($name in $names) {
             try {
-                $a = "$DllRoot\$name.dll"
                 Add-Type -Path (Resolve-Path -Path "$DllRoot\$name.dll") -ErrorAction Stop
             } catch {
-                write-warning $a
                 continue
             }
         }
