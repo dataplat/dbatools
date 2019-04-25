@@ -238,6 +238,17 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         }
     }
 
+    Context "Should proceed if backups from multiple dbs passed in and databasename specified" {
+        $results = Get-ChildItem $script:appveyorlabrepo\sql2008-backups | Restore-DbaDatabase -SqlInstance $script:instance2 -DatabaseName test -WarningVariable warnvar
+        It "Should return nothing" {
+            $null -eq $results | Should be $True
+        }
+
+        It "Should have warned with the correct error" {
+            $warnvar -like "*Multiple Databases' backups passed in, but only 1 name to restore them under. Stopping as cannot work out how to proceed*" | Should Be $True
+        }
+    }
+
     Context "Database is properly removed again after ola pipe test" {
         Get-DbaProcess $script:instance2 -ExcludeSystemSpids | Stop-DbaProcess -WarningVariable warn -WarningAction SilentlyContinue
         $results = Get-DbaDatabase -SqlInstance $script:instance2 -ExcludeSystem | Remove-DbaDatabase -Confirm:$false
@@ -866,7 +877,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
                 $server.Query("DROP CREDENTIAL dbatools_ci")
                 Get-DbaDatabase -SqlInstance $script:instance2 -Database "dbatoolsci_azure" | Remove-DbaDatabase -Confirm:$false
             }
-            It "supports legacy credential setups" {
+            It -Skip "supports legacy credential setups" {
                 $results = Restore-DbaDatabase -SqlInstance $script:instance2 -WithReplace -DatabaseName dbatoolsci_azure -Path https://dbatools.blob.core.windows.net/legacy/dbatoolsci_azure.bak -AzureCredential dbatools_ci
                 $results.BackupFile | Should -Be 'https://dbatools.blob.core.windows.net/legacy/dbatoolsci_azure.bak'
                 $results.Script -match 'CREDENTIAL' | Should -Be $true

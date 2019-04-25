@@ -33,7 +33,7 @@ function ConvertTo-DbaXESession {
         License: MIT https://opensource.org/licenses/MIT
 
     .EXAMPLE
-        PS C:\> Get-DbaTrace -SqlInstance sql2017, sql2012 | Where Id -eq 2 | ConvertTo-DbaXESession -Name 'Test'
+        PS C:\> Get-DbaTrace -SqlInstance sql2017, sql2012 | Where-Object Id -eq 2 | ConvertTo-DbaXESession -Name 'Test'
 
         Converts Trace with ID 2 to a Session named Test on SQL Server instances named sql2017 and sql2012 and creates the Session on each respective server.
 
@@ -43,7 +43,7 @@ function ConvertTo-DbaXESession {
         Converts selected traces on sql2014 to sessions, creates the session, and starts it.
 
     .EXAMPLE
-        PS C:\> Get-DbaTrace -SqlInstance sql2014 | Where Id -eq 1 | ConvertTo-DbaXESession -Name 'Test' -OutputScriptOnly
+        PS C:\> Get-DbaTrace -SqlInstance sql2014 | Where-Object Id -eq 1 | ConvertTo-DbaXESession -Name 'Test' -OutputScriptOnly
 
         Converts trace ID 1 on sql2014 to an Extended Event and outputs the resulting T-SQL.
 

@@ -1,7 +1,7 @@
 cd C:\github\dbatools\bin\smo
 $phase1 = @()
 $leftover = @()
-dir | %{
+dir *.dll | %{
 
  $file = $_
  try
@@ -13,8 +13,39 @@ dir | %{
 }
 
 $dep = @()
-dir | %{
-    try { Add-Type -Path $_.FullName -ErrorAction Stop }
-    catch { $_.Exception.LoaderExceptions.FileName | %{ $dep += $_ }}
+dir *.dll | %{
+    try { $hello = $_.FullName; Add-Type -Path $_.FullName -ErrorAction Stop }
+    catch { write-warning $hello; $_.Exception.LoaderExceptions.FileName | %{ $dep += $_ }}
 }
-$dep | select -unique
+$dep | Select-Object -unique
+
+
+
+cd C:\github\dbatools\bin\smo
+$dir = "C:\Program Files (x86)\Microsoft SQL Server Management Studio 18\Common7\IDE"
+dir *.dll | %{
+ cp "$dir\$($_.Name)" . -EA ignore
+}
+
+$names
+
+cd C:\github\dbatools\bin\smo
+$newnames = @()
+foreach ($name in $names) {
+    if ((Get-ChildItem "$($name).dll" -EA Ignore)) {
+        $newnames += $name
+    }
+}
+$newnames -join "',`r`n'" | clip
+
+$newernames = @()
+$filenames = dir *.dll
+foreach ($name in $filenames.basename) {
+    if ($name -notin $newnames) {
+        $newernames += $name
+    }
+}
+$newernames -join "',`r`n'" | clip
+
+
+

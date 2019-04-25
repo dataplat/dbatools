@@ -1304,6 +1304,8 @@ function Invoke-DbaDbLogShipping {
                                 $comment = "The path to the full backup could not be reached"
                                 Stop-Function -Message ("The path to the full backup could not be reached. Check the path and/or the crdential") -ErrorRecord $_ -Target $destInstance -Continue
                             }
+
+                            $BackupPath = $FullBackupPath
                         } elseif ($UseBackupFolder.Length -ge 1) {
                             Write-Message -Message "Testing backup folder $UseBackupFolder" -Level Verbose
                             if ((Test-DbaPath -Path $UseBackupFolder -SqlInstance $destInstance -SqlCredential $DestinationCredential) -ne $true) {

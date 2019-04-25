@@ -69,9 +69,6 @@ function Set-DbaAgentSchedule {
         Example: '010000' for 01:00:00 AM.
         Example: '140000' for 02:00:00 PM.
 
-    .PARAMETER Owner
-        The name of the server principal that owns the schedule. If no value is given the schedule is owned by the creator.
-
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
 
@@ -141,7 +138,7 @@ function Set-DbaAgentSchedule {
         [switch]$Disabled,
         [ValidateSet(1, "Once", 4, "Daily", 8, "Weekly", 16, "Monthly", 32, "MonthlyRelative", 64, "AgentStart", 128, "IdleComputer")]
         [object]$FrequencyType,
-        [object[]]$FrequencyInterval,
+        [int]$FrequencyInterval,
         [ValidateSet(1, "Time", 2, "Seconds", 4, "Minutes", 8, "Hours")]
         [object]$FrequencySubdayType,
         [int]$FrequencySubdayInterval,
@@ -166,11 +163,11 @@ function Set-DbaAgentSchedule {
 
         # Check of the FrequencySubdayType value is of type string and set the integer value
         if ($FrequencySubdayType -notin 0, 1, 2, 4, 8) {
-            [int]$FrequencySubdayType = switch ($FrequencySubdayType) { "Time" { 1 } "Seconds" { 2 } "Minutes" { 4 } "Hours" { 8 } default {0} }
+            [int]$FrequencySubdayType = switch ($FrequencySubdayType) { "Time" { 1 } "Seconds" { 2 } "Minutes" { 4 } "Hours" { 8 } default { 0 } }
         }
 
         # Check if the interval is valid
-        if (($FrequencyType -eq 4) -and ($FrequencyInterval -lt 1 -or $FrequencyInterval -ge 365)) {
+        if ($null = $FrequencyInterval -and ($FrequencyType -eq 4) -and ($FrequencyInterval -lt 1 -or $FrequencyInterval -ge 365)) {
             Stop-Function -Message "The interval $FrequencyInterval needs to be higher than 1 and lower than 365 when using a daily frequency the interval." -Target $SqlInstance
             return
         }
@@ -214,7 +211,7 @@ function Set-DbaAgentSchedule {
                         "Saturday" { $Interval += 64 }
                         "Weekdays" { $Interval = 62 }
                         "Weekend" { $Interval = 65 }
-                        "EveryDay" {$Interval = 127 }
+                        "EveryDay" { $Interval = 127 }
                         1 { $Interval += 1 }
                         2 { $Interval += 2 }
                         4 { $Interval += 4 }
@@ -224,7 +221,7 @@ function Set-DbaAgentSchedule {
                         64 { $Interval += 64 }
                         62 { $Interval = 62 }
                         65 { $Interval = 65 }
-                        127 {$Interval = 127 }
+                        127 { $Interval = 127 }
                     }
                 }
             }
@@ -261,14 +258,10 @@ function Set-DbaAgentSchedule {
 
         # Check of the relative FrequencyInterval value is of type string and set the integer value
         if (($FrequencyRelativeInterval -notin 1, 2, 4, 8, 16) -and $null -ne $FrequencyRelativeInterval) {
-            [int]$FrequencyRelativeInterval = switch ($FrequencyRelativeInterval) { "First" { 1 } "Second" { 2 } "Third" { 4 } "Fourth" { 8 } "Last" { 16 } "Unused" { 0 } default { 0 }}
+            [int]$FrequencyRelativeInterval = switch ($FrequencyRelativeInterval) { "First" { 1 } "Second" { 2 } "Third" { 4 } "Fourth" { 8 } "Last" { 16 } "Unused" { 0 } default { 0 } }
         }
 
-        # Check if the interval is valid
-        if (($FrequencyType -eq 4) -and ($FrequencyInterval -lt 1 -or $FrequencyInterval -ge 365)) {
-            Stop-Function -Message "The interval $FrequencyInterval needs to be higher than 1 and lower than 365 when using a daily frequency the interval." -Target $SqlInstance
-            return
-        }
+
 
         # Setup the regex
         $RegexDate = '(?<!\d)(?:(?:(?:1[6-9]|[2-9]\d)?\d{2})(?:(?:(?:0[13578]|1[02])31)|(?:(?:0[1,3-9]|1[0-2])(?:29|30)))|(?:(?:(?:(?:1[6-9]|[2-9]\d)?(?:0[48]|[2468][048]|[13579][26])|(?:(?:16|[2468][048]|[3579][26])00)))0229)|(?:(?:1[6-9]|[2-9]\d)?\d{2})(?:(?:0?[1-9])|(?:1[0-2]))(?:0?[1-9]|1\d|2[0-8]))(?!\d)'
@@ -342,6 +335,11 @@ function Set-DbaAgentSchedule {
                         # Get the job schedule
                         # If for some reason the there are multiple schedules with the same name, the first on is chosen
                         $JobSchedule = $Server.JobServer.Jobs[$j].JobSchedules[$ScheduleName][0]
+
+                        # Set the frequency interval to make up for newly created schedules without an interval
+                        if ($JobSchedule.FrequencyInterval -eq 0 -and $Interval -lt 1) {
+                            $Interval = 1
+                        }
 
                         #region job step options
                         # Setting the options for the job schedule
