@@ -223,7 +223,7 @@ function Test-DbaDbCompression {
                         $sqlOrderBy Desc
                 )
                 DELETE tdc
-                FROM ##testdbacompression tdc
+                FROM ##TestDbaCompression tdc
                 LEFT JOIN TopN t
                     ON t.SchemaName = tdc.[Schema] COLLATE DATABASE_DEFAULT
                     $sqlJoinFiltered
@@ -250,7 +250,7 @@ function Test-DbaDbCompression {
             BEGIN
                 -- remove memory optimized tables
                 DELETE tdc
-                FROM ##testdbacompression tdc
+                FROM ##TestDbaCompression tdc
                 INNER JOIN sys.tables t
                     ON SCHEMA_NAME(t.schema_id) = tdc.[Schema] COLLATE DATABASE_DEFAULT
                     AND t.name = tdc.TableName COLLATE DATABASE_DEFAULT
@@ -262,7 +262,7 @@ function Test-DbaDbCompression {
             BEGIN
                 -- remove tables with encrypted columns
                 DELETE tdc
-                FROM ##testdbacompression tdc
+                FROM ##TestDbaCompression tdc
                 INNER JOIN sys.tables t
                     ON SCHEMA_NAME(t.schema_id) = tdc.[Schema] COLLATE DATABASE_DEFAULT
                     AND t.name = tdc.TableName COLLATE DATABASE_DEFAULT
@@ -276,7 +276,7 @@ function Test-DbaDbCompression {
             BEGIN
                 -- remove graph (node/edge) tables
                 DELETE tdc
-                FROM ##testdbacompression tdc
+                FROM ##TestDbaCompression tdc
                 INNER JOIN sys.tables t
                     ON tdc.[Schema] = SCHEMA_NAME(t.schema_id) COLLATE DATABASE_DEFAULT
                     AND tdc.TableName = t.name COLLATE DATABASE_DEFAULT
@@ -285,8 +285,8 @@ function Test-DbaDbCompression {
             }
             $sql = "SET NOCOUNT ON;
 
-IF OBJECT_ID('tempdb..##testdbacompression', 'U') IS NOT NULL
-    DROP TABLE ##testdbacompression
+IF OBJECT_ID('tempdb..##TestDbaCompression', 'U') IS NOT NULL
+    DROP TABLE ##TestDbaCompression
 
 IF OBJECT_ID('tempdb..##tmpEstimateRow', 'U') IS NOT NULL
     DROP TABLE ##tmpEstimateRow
@@ -294,7 +294,7 @@ IF OBJECT_ID('tempdb..##tmpEstimateRow', 'U') IS NOT NULL
 IF OBJECT_ID('tempdb..##tmpEstimatePage', 'U') IS NOT NULL
     DROP TABLE ##tmpEstimatePage
 
-CREATE TABLE ##testdbacompression (
+CREATE TABLE ##TestDbaCompression (
     [Schema] SYSNAME
     ,[TableName] SYSNAME
     ,[ObjectId] INT
@@ -334,7 +334,7 @@ CREATE TABLE ##tmpEstimatePage (
     ,SampleRequested BIGINT
     );
 
-INSERT INTO ##testdbacompression (
+INSERT INTO ##TestDbaCompression (
     [Schema]
     ,[TableName]
     ,[ObjectId]
@@ -379,7 +379,7 @@ FOR
 SELECT [Schema]
     ,[TableName]
     ,[IndexID]
-FROM ##testdbacompression
+FROM ##TestDbaCompression
 
 OPEN cur
 
@@ -433,7 +433,7 @@ CLOSE cur
 DEALLOCATE cur;
 
 --Update usage and partition_number - If database was restore the sys.dm_db_index_operational_stats will be empty until tables have accesses. Executing the sp_estimate_data_compression_savings first will make those entries appear
-UPDATE ##testdbacompression
+UPDATE ##TestDbaCompression
 SET
  [PercentScan] =
      case when (i.range_scan_count + i.leaf_insert_count + i.leaf_delete_count + i.leaf_update_count + i.leaf_page_merge_count + i.singleton_lookup_count) = 0 THEN 0
@@ -444,7 +444,7 @@ SET
     ELSE i.leaf_update_count * 100.0 / NULLIF((i.range_scan_count + i.leaf_insert_count + i.leaf_delete_count + i.leaf_update_count + i.leaf_page_merge_count + i.singleton_lookup_count), 0)
     END
 FROM sys.dm_db_index_operational_stats(db_id(), NULL, NULL, NULL) i
-INNER JOIN ##testdbacompression tmp
+INNER JOIN ##TestDbaCompression tmp
     ON tmp.ObjectId = i.object_id
     AND tmp.IndexID = i.index_id;
 
@@ -476,20 +476,20 @@ AS (
             END AS pct_of_orig_page
         ,tr.SizeCurrent
         ,tr.SizeRequested
-    FROM ##tmpestimaterow tr
-    INNER JOIN ##tmpestimatepage tp ON tr.objname = tp.objname
+    FROM ##tmpEstimateRow tr
+    INNER JOIN ##tmpEstimatePage tp ON tr.objname = tp.objname
         AND tr.schname = tp.schname
         AND tr.indid = tp.indid
         AND tr.partnr = tp.partnr
     )
-UPDATE ##testdbacompression
+UPDATE ##TestDbaCompression
 SET [RowEstimatePercentOriginal] = tcte.pct_of_orig_row
     ,[PageEstimatePercentOriginal] = tcte.pct_of_orig_page
     ,SizeCurrent = tcte.SizeCurrent
     ,SizeRequested = tcte.SizeRequested
     ,PercentCompression = 100 - (cast(tcte.[SizeRequested] AS NUMERIC(21, 2)) * 100 / (tcte.[SizeCurrent] - ABS(SIGN(tcte.[SizeCurrent])) + 1))
 FROM tmp_cte tcte
-    ,##testdbacompression tcomp
+    ,##TestDbaCompression tcomp
 WHERE tcte.objname = tcomp.TableName
     AND tcte.schname = tcomp.[schema]
     AND tcte.indid = tcomp.IndexID
@@ -527,12 +527,12 @@ AS (
                 THEN '?'
             ELSE 'ROW'
             END
-    FROM ##testdbacompression
+    FROM ##TestDbaCompression
     )
-UPDATE ##testdbacompression
+UPDATE ##TestDbaCompression
 SET [CompressionTypeRecommendation] = tcte2.[CompressionTypeRecommendation]
 FROM tmp_cte2 tcte2
-    ,##testdbacompression tcomp2
+    ,##TestDbaCompression tcomp2
 WHERE tcte2.TableName = tcomp2.TableName
     AND tcte2.[schema] = tcomp2.[schema]
     AND tcte2.IndexID = tcomp2.IndexID;
@@ -554,10 +554,10 @@ SELECT DBName = DB_Name()
     ,SizeCurrentKB = [SizeCurrent]
     ,SizeRequestedKB = [SizeRequested]
     ,PercentCompression
-FROM ##testdbacompression;
+FROM ##TestDbaCompression;
 
 IF OBJECT_ID('tempdb..##setdbacompression', 'U') IS NOT NULL
-    DROP TABLE ##testdbacompression
+    DROP TABLE ##TestDbaCompression
 
 IF OBJECT_ID('tempdb..##tmpEstimateRow', 'U') IS NOT NULL
     DROP TABLE ##tmpEstimateRow
