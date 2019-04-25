@@ -82,9 +82,6 @@ function New-DbaAgentSchedule {
 
         If force is used the start time will be '23:59:59'
 
-    .PARAMETER Owner
-        The name of the server principal that owns the schedule. If no value is given the schedule is owned by the creator.
-
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
 
