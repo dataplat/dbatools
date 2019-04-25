@@ -28,7 +28,6 @@ Describe "$commandname Integration Test" -Tag "IntegrationTests" {
 
     Context "Validate returns correct output" {
         $result = Get-DbaStartupProcedure -SqlInstance $script:instance2
-
         It "returns correct results" {
             $result.Schema -eq 'dbo' | Should Be $true
             $result.Name -eq "StartUpProc$random" | Should Be $true
@@ -37,7 +36,6 @@ Describe "$commandname Integration Test" -Tag "IntegrationTests" {
 
     Context "Validate returns correct output for StartupProcedure parameter " {
         $result = Get-DbaStartupProcedure -SqlInstance $script:instance2 -StartupProcedure $startupProc
-
         It "returns correct results" {
             $result.Schema -eq 'dbo' | Should Be $true
             $result.Name -eq "StartUpProc$random" | Should Be $true
@@ -46,7 +44,6 @@ Describe "$commandname Integration Test" -Tag "IntegrationTests" {
 
     Context "Validate returns correct output for incorrect StartupProcedure parameter " {
         $result = Get-DbaStartupProcedure -SqlInstance $script:instance2 -StartupProcedure 'Not.Here'
-
         It "returns correct results" {
             $null -eq $result | Should Be $true
         }
