@@ -130,13 +130,13 @@ function Invoke-DbaDbPiiScan {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
-            $Activity = "Scanning databases for PII"
-            $Id = 1
+            $progressActivity = "Scanning databases for PII"
+            $progressId = 1
 
             # Loop through the databases
             foreach ($dbName in $Database) {
-                $Task = "Scanning Database $dbName"
-                Write-Progress -Id $Id -Activity $Activity -Status $Task
+                $progressTask = "Scanning Database $dbName"
+                Write-Progress -Id $progressId -Activity $progressActivity -Status $progressTask
 
                 # Get the database object
                 $db = $server.Databases[$($dbName)]
@@ -153,17 +153,17 @@ function Invoke-DbaDbPiiScan {
                     $tables = $tables | Where-Object { $_.Columns.Name -in $Column }
                 }
 
-                $TableNumber = 1
-                $StepText = "Scanning Tables"
-                $StatusText = '"Table $($TableNumber.ToString().PadLeft($($tables.Count).Count.ToString().Length)) of $($tables.Count) | $StepText"'
-                $StatusBlock = [ScriptBlock]::Create($StatusText)
+                $tableNumber = 1
+                $progressStepText = "Scanning Tables"
+                $progressStatusText = '"Table $($tableNumber.ToString().PadLeft($($tables.Count).Count.ToString().Length)) of $($tables.Count) | $progressStepText"'
+                $progressStatusBlock = [ScriptBlock]::Create($progressStatusText)
 
 
                 # Loop through the tables
                 foreach ($tableobject in $tables) {
 
-                    $Task = "Scanning columns and data"
-                    Write-Progress -Id $Id -Activity $Activity -Status (& $StatusBlock) -CurrentOperation $Task -PercentComplete ($TableNumber / $($tables.Count) * 100)
+                    $progressTask = "Scanning columns and data"
+                    Write-Progress -Id $progressId -Activity $progressActivity -Status (& $progressStatusBlock) -CurrentOperation $progressTask -PercentComplete ($tableNumber / $($tables.Count) * 100)
 
                     # Get the columns
                     if ($Column) {
