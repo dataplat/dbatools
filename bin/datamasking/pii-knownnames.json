@@ -54,5 +54,19 @@
         "Pattern": [
             "^.*(email|e-mail|mail).*$"
         ]
+    },
+    {
+        "Name": "Username",
+        "Category": "Security",
+        "Pattern": [
+            "^.*user.*$"
+        ]
+    },
+    {
+        "Name": "Password",
+        "Category": "Communication",
+        "Pattern": [
+            "^.*pass.*$"
+        ]
     }
 ]
