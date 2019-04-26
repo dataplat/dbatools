@@ -154,7 +154,7 @@ function Invoke-DbaDbPiiScan {
                 }
 
                 $tableNumber = 1
-                $progressStepText = "Scanning Tables"
+                $progressStepText = "Scanning tables for database $dbName"
                 $progressStatusText = '"Table $($tableNumber.ToString().PadLeft($($tables.Count).Count.ToString().Length)) of $($tables.Count) | $progressStepText"'
                 $progressStatusBlock = [ScriptBlock]::Create($progressStatusText)
 
