@@ -130,8 +130,13 @@ function Invoke-DbaDbPiiScan {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
+            $Activity = "Scanning databases for PII"
+            $Id = 1
+
             # Loop through the databases
             foreach ($dbName in $Database) {
+                $Task = "Scanning Database $dbName"
+                Write-Progress -Id $Id -Activity $Activity -Status $Task
 
                 # Get the database object
                 $db = $server.Databases[$($dbName)]
@@ -148,8 +153,17 @@ function Invoke-DbaDbPiiScan {
                     $tables = $tables | Where-Object { $_.Columns.Name -in $Column }
                 }
 
+                $TableNumber = 1
+                $StepText = "Scanning Tables"
+                $StatusText = '"Table $($TableNumber.ToString().PadLeft($($tables.Count).Count.ToString().Length)) of $($tables.Count) | $StepText"'
+                $StatusBlock = [ScriptBlock]::Create($StatusText)
+
+
                 # Loop through the tables
                 foreach ($tableobject in $tables) {
+
+                    $Task = "Scanning columns and data"
+                    Write-Progress -Id $Id -Activity $Activity -Status (& $StatusBlock) -CurrentOperation $Task -PercentComplete ($TableNumber / $($tables.Count) * 100)
 
                     # Get the columns
                     if ($Column) {
@@ -179,8 +193,8 @@ function Invoke-DbaDbPiiScan {
                                             Schema         = $tableobject.Schema
                                             Table          = $tableobject.Name
                                             Column         = $columnobject.Name
-                                            "PII Name"     = $knownName.Name
-                                            "PII Category" = $knownName.Category
+                                            "PII-Name"     = $knownName.Name
+                                            "PII-Category" = $knownName.Category
                                         }
 
                                     }
@@ -226,8 +240,8 @@ function Invoke-DbaDbPiiScan {
                                                 Schema         = $tableobject.Schema
                                                 Table          = $tableobject.Name
                                                 Column         = $columnobject.Name
-                                                "PII Name"     = $patternobject.Name
-                                                "PII Category" = $patternobject.category
+                                                "PII-Name"     = $patternobject.Name
+                                                "PII-Category" = $patternobject.category
                                             }
 
                                         }
@@ -244,13 +258,16 @@ function Invoke-DbaDbPiiScan {
 
                     } # End for each column
 
+                    $TableNumber++
+
                 } # End for each table
 
             } # End for each database
 
         } # End for each instance
 
-        $results
+        # Return the results
+        return $results
 
     } # End process
 }
