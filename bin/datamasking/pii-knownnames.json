@@ -3,7 +3,7 @@
         "Name": "Name",
         "Category": "Personal",
         "Pattern": [
-            "^.*name.*$"
+            "^.*(firstname|fname|lastname|lname|fullname|fname).*$"
         ]
     },
     {
@@ -56,10 +56,17 @@
         ]
     },
     {
+        "Name": "IPAddres",
+        "Category": "System",
+        "Pattern": [
+            "^.*(ip|ipaddress|ipv4|ipv6).*$"
+        ]
+    },
+    {
         "Name": "Username",
         "Category": "Security",
         "Pattern": [
-            "^.*user.*$"
+            "^.*(userid|username).*$"
         ]
     },
     {
