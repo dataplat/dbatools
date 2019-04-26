@@ -32,6 +32,12 @@ function Invoke-DbaDbPiiScan {
     .PARAMETER SampleCount
         Amount of rows to sample to make an assessment. The default is 100
 
+    .PARAMETER ExcludeTable
+        Exclude certain tables
+
+    .PARAMETER ExcludeColumn
+        Exclude certain columns
+
     .PARAMETER Force
         Forcefully execute commands when needed
 
@@ -58,8 +64,24 @@ function Invoke-DbaDbPiiScan {
         https://dbatools.io/Invoke-DbaDbPiiScan
 
     .EXAMPLE
+        Invoke-DbaDbPiiScan -SqlInstance sql1 -Database db1
 
+        Scan the database db1 on instance sql1
 
+    .EXAMPLE
+        Invoke-DbaDbPiiScan -SqlInstance sql1, sql2 -Database db1, db2
+
+        Scan multiple databases on multiple instances
+
+    .EXAMPLE
+        Invoke-DbaDbPiiScan -SqlInstance sql1 -Database db2 -ExcludeColumn firstname
+
+        Scan database db2 but exclude the column firstname
+
+    .EXAMPLE
+        Invoke-DbaDbPiiScan -SqlInstance sql1 -Database db2 -CountryCode US
+
+        Scan database db2 but only apply data patterns used for the United States
     #>
     [CmdLetBinding()]
     param (
@@ -70,6 +92,8 @@ function Invoke-DbaDbPiiScan {
         [string[]]$Column,
         [string[]]$Country,
         [string[]]$CountryCode,
+        [string[]]$ExcludeTable,
+        [string[]]$ExcludeColumn,
         [int]$SampleCount = 100,
         [switch]$EnableException
     )
@@ -148,6 +172,10 @@ function Invoke-DbaDbPiiScan {
                     $tables = $db.Tables
                 }
 
+                if ($ExcludeTable) {
+                    $tables = $tables | Where-Object Name -notin $ExcludeTable
+                }
+
                 # Filter the tables based on the column
                 if ($Column) {
                     $tables = $tables | Where-Object { $_.Columns.Name -in $Column }
@@ -170,6 +198,10 @@ function Invoke-DbaDbPiiScan {
                         $columns = $tableobject.Columns | Where-Object Name -in $Column
                     } else {
                         $columns = $tableobject.Columns
+                    }
+
+                    if ($ExcludeColumn) {
+                        $columns = $columns | Where-Object Name -notin $ExcludeColumn
                     }
 
                     # Loop through the columns
