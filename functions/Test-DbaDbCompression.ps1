@@ -7,8 +7,7 @@ function Test-DbaDbCompression {
 
         Remember Uptime is critical, the longer uptime, the more accurate the analysis is, and it would be best if you utilized Get-DbaUptime first, before running this command.
 
-        Test-DbaDbCompression script derived from GitHub and the tigertoolbox
-        (https://github.com/Microsoft/tigertoolbox/tree/master/Evaluate-Compression-Gains)
+        Test-DbaDbCompression script derived from GitHub and the Tiger Team's repository: (https://github.com/Microsoft/tigertoolbox/tree/master/Evaluate-Compression-Gains)
         In the output, you will find the following information:
         - Column Percent_Update shows the percentage of update operations on a specific table, index, or partition, relative to total operations on that object. The lower the percentage of Updates (that is, the table, index, or partition is infrequently updated), the better candidate it is for page compression.
         - Column Percent_Scan shows the percentage of scan operations on a table, index, or partition, relative to total operations on that object. The higher the value of Scan (that is, the table, index, or partition is mostly scanned), the better candidate it is for page compression.
@@ -126,7 +125,7 @@ function Test-DbaDbCompression {
         PS C:\> Test-DbaDbCompression -SqlInstance ServerA -Database MyDB -SqlCredential $cred -Schema Test -Table Test1, Test2
 
         Returns results of all potential compression options for objects in Database MyDb on instance ServerA using SQL credentials to authentication to ServerA.
-        Returns the recommendation of either Page, Row or NO_GAIN for tables with SchemA Test and name in Test1 or Test2
+        Returns the recommendation of either Page, Row or NO_GAIN for tables with Schema Test and name in Test1 or Test2
 
     .EXAMPLE
         PS C:\> $servers = 'Server1','Server2'
@@ -237,7 +236,7 @@ function Test-DbaDbCompression {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 10
             } catch {
-                Stop-Function -Message "Failed to process Instance $Instance" -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "Failed to process Instance $instance" -ErrorRecord $_ -Target $instance -Continue
             }
 
             $Server.ConnectionContext.StatementTimeout = 0
@@ -359,7 +358,7 @@ INNER JOIN sys.schemas s ON t.schema_id = s.schema_id
 INNER JOIN sys.indexes x ON x.object_id = t.object_id
 INNER JOIN sys.partitions p ON x.object_id = p.object_id
     AND x.Index_ID = p.Index_ID
-WHERE objectproperty(t.object_id, 'IsUserTable') = 1
+WHERE OBJECTPROPERTY(t.object_id, 'IsUserTable') = 1
     AND p.data_compression_desc = 'NONE'
     AND p.rows > 0
     $sqlSchemaWhere
@@ -556,7 +555,7 @@ SELECT DBName = DB_Name()
     ,PercentCompression
 FROM ##TestDbaCompression;
 
-IF OBJECT_ID('tempdb..##setdbacompression', 'U') IS NOT NULL
+IF OBJECT_ID('tempdb..##TestDbaCompression', 'U') IS NOT NULL
     DROP TABLE ##TestDbaCompression
 
 IF OBJECT_ID('tempdb..##tmpEstimateRow', 'U') IS NOT NULL
@@ -571,8 +570,8 @@ IF OBJECT_ID('tempdb..##tmpEstimatePage', 'U') IS NOT NULL
 
 
             #If SQL Server 2016 SP1 (13.0.4001.0) or higher every version supports compression.
-            if ($Server.EngineEdition -ne "EnterpriseOrDeveloper" -and $instanceVersionNumber -lt 13040010) {
-                Stop-Function -Message "Compression before SQLServer 2016 SP1 (13.0.4001.0) is only supported by enterprise, developer or evaluation edition. $Server has version $($server.VersionString) and edition is $($Server.EngineEdition)." -Target $db -Continue
+            if ($server.EngineEdition -ne "EnterpriseOrDeveloper" -and $instanceVersionNumber -lt 13040010) {
+                Stop-Function -Message "Compression before SQLServer 2016 SP1 (13.0.4001.0) is only supported by enterprise, developer or evaluation edition. $server has version $($server.VersionString) and edition is $($server.EngineEdition)." -Target $db -Continue
             }
             #Filter Database list
             try {
@@ -609,7 +608,7 @@ IF OBJECT_ID('tempdb..##tmpEstimatePage', 'U') IS NOT NULL
                     }
                     #Execute query against individual database and add to output
                     foreach ($row in ($server.Query($sql, $db.Name))) {
-                        [pscustomobject]@{
+                        [PSCustomObject]@{
                             ComputerName                  = $server.ComputerName
                             InstanceName                  = $server.ServiceName
                             SqlInstance                   = $server.DomainInstanceName
@@ -625,8 +624,8 @@ IF OBJECT_ID('tempdb..##tmpEstimatePage', 'U') IS NOT NULL
                             RowEstimatePercentOriginal    = $row.RowEstimatePercentOriginal
                             PageEstimatePercentOriginal   = $row.PageEstimatePercentOriginal
                             CompressionTypeRecommendation = $row.CompressionTypeRecommendation
-                            SizeCurrent                   = [dbasize]($row.SizeCurrentKB * 1024)
-                            SizeRequested                 = [dbasize]($row.SizeRequestedKB * 1024)
+                            SizeCurrent                   = [DbaSize]($row.SizeCurrentKB * 1024)
+                            SizeRequested                 = [DbaSize]($row.SizeRequestedKB * 1024)
                             PercentCompression            = $row.PercentCompression
                         }
                     }
