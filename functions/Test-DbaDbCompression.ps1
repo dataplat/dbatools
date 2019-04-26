@@ -491,19 +491,19 @@ SET [RowEstimatePercentOriginal] = tcte.pct_of_orig_row
 FROM tmp_cte tcte
     ,##TestDbaCompression tcomp
 WHERE tcte.objname = tcomp.TableName
-    AND tcte.schname = tcomp.[schema]
+    AND tcte.schname = tcomp.[Schema]
     AND tcte.indid = tcomp.IndexID
     AND tcte.partnr = tcomp.Partition;
 
 WITH tmp_cte2 (
     TableName
-    ,[schema]
+    ,[Schema]
     ,IndexID
     ,[CompressionTypeRecommendation]
     )
 AS (
     SELECT TableName
-        ,[schema]
+        ,[Schema]
         ,IndexID
         ,CASE
             WHEN [RowEstimatePercentOriginal] >= 100
@@ -534,7 +534,7 @@ SET [CompressionTypeRecommendation] = tcte2.[CompressionTypeRecommendation]
 FROM tmp_cte2 tcte2
     ,##TestDbaCompression tcomp2
 WHERE tcte2.TableName = tcomp2.TableName
-    AND tcte2.[schema] = tcomp2.[schema]
+    AND tcte2.[Schema] = tcomp2.[Schema]
     AND tcte2.IndexID = tcomp2.IndexID;
 
 SET NOCOUNT ON;
