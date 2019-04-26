@@ -87,8 +87,8 @@ function Invoke-DbaDbPiiScan {
 
         # Get the known types
         try {
-            $knownTypesFile = Resolve-Path -Path "$script:PSModuleRoot\bin\datamasking\pii-knowntypes.json"
-            $knownTypes = Get-Content -Path $knownTypesFile -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
+            $knownNamesFile = Resolve-Path -Path "$script:PSModuleRoot\bin\datamasking\pii-knownnames.json"
+            $knownNames = Get-Content -Path $knownNamesFile -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
         } catch {
             Stop-Function -Message "Couldn't parse known types file" -ErrorRecord $_
             return
@@ -162,9 +162,9 @@ function Invoke-DbaDbPiiScan {
                     foreach ($columnobject in $columns) {
 
                         # Go through the first check to see if any column is found with a known type
-                        foreach ($knownType in $knownTypes) {
+                        foreach ($knownName in $knownNames) {
 
-                            foreach ($pattern in $knownType.Pattern) {
+                            foreach ($pattern in $knownName.Pattern) {
 
                                 if ($columnobject.Name -match $pattern ) {
                                     # Check if the results not already contain a similar object
@@ -179,8 +179,8 @@ function Invoke-DbaDbPiiScan {
                                             Schema         = $tableobject.Schema
                                             Table          = $tableobject.Name
                                             Column         = $columnobject.Name
-                                            "PII Name"     = $knownType.Name
-                                            "PII Category" = $knownType.Category
+                                            "PII Name"     = $knownName.Name
+                                            "PII Category" = $knownName.Category
                                         }
 
                                     }
