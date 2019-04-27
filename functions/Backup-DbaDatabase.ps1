@@ -422,7 +422,7 @@ function Backup-DbaDatabase {
 
             $backup.CopyOnly = $copyonly
             $backup.Action = $SMOBackupType
-            if ('' -ne $AzureBaseUrl -and $null -ne $AzureCredential) {
+            if ($null -ne $AzureCredential -and $AzureCredential -notlike 'https*') {
                 $backup.CredentialName = $AzureCredential
             }
 

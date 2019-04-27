@@ -34,7 +34,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     AfterAll {
         Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance2, $script:instance3 -Database $backuprestoredb, $detachattachdb, $backuprestoredb2
     }
-<#
+
     # if failed Disable-NetFirewallRule -DisplayName 'Core Networking - Group Policy (TCP-Out)'
     Context "Detach Attach" {
         It "Should be success" {
@@ -210,7 +210,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
             $Warnvar | Should -BeLike "*Cannot use NewName when copying multiple databases"
         }
     }
-    #>
+
     if ($env:azurepasswd) {
         Context "Copying via Azure storage" {
             BeforeAll {
@@ -229,6 +229,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
             }
             AfterAll {
                 Get-DbaDatabase -SqlInstance $script:instance3 -Database $backuprestoredb | Remove-DbaDatabase -Confirm:$false
+                Get-DbaDatabase -SqlInstance $script:instance3 -Database djkhgfkjghfdjgd | Remove-DbaDatabase -Confirm:$false
                 $server = Connect-DbaInstance -SqlInstance $script:instance2
                 $server.Query("DROP CREDENTIAL [$script:azureblob]")
                 $server.Query("DROP CREDENTIAL dbatools_ci")

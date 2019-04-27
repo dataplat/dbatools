@@ -750,6 +750,7 @@ function Copy-DbaDatabase {
                 $tAzureCredential = $AzureCredential
             }
             if (-not (Get-DbaCredential -SqlInstance $sourceServer -Name $tAzureCredential.trim('/'))) {
+                write-verbose "tazure = $tAzureCredential"
                 Stop-Function -Message "Azure storage path passed in, but no matching credential found" -Category InvalidArgument -Target $sourceServer
                 return
             }
@@ -784,6 +785,7 @@ function Copy-DbaDatabase {
                     $tAzureCredential = $AzureCredential
                 }
                 if (-not (Get-DbaCredential -SqlInstance $destServer -Name $tAzureCredential.trim('/'))) {
+                    write-verbose "tazure = $tAzureCredential"
                     Stop-Function -Message "Azure storage path passed in, but no matching credential found" -Category InvalidArgument -Target $destServer -Continue
                 }
             }
@@ -1188,7 +1190,7 @@ function Copy-DbaDatabase {
                             } else {
                                 $backupTmpResult = $backupCollection | Where-Object Database -eq $dbName
                                 if (-not $backupTmpResult) {
-                                    $backupTmpResult = Backup-DbaDatabase -SqlInstance $sourceServer -Database $dbName -BackupDirectory $SharedPath -FileCount $numberfiles -CopyOnly:$CopyOnly -AzureCredential $AzureCredential
+                                    $backupTmpResult = Backup-DbaDatabase -SqlInstance $sourceServer -Database $dbName -BackupDirectory $SharedPath -FileCount $numberfiles -CopyOnly:$CopyOnly -AzureCredential $tAzureCredential
                                 }
                                 if ($backupTmpResult) {
                                     $backupCollection += $backupTmpResult
