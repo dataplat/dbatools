@@ -135,6 +135,8 @@ function Copy-DbaAgentAlert {
                 }
             }
 
+            $destServerOperators = $destServer.JobServer.Operators
+
             foreach ($serverAlert in $serverAlerts) {
                 $alertName = $serverAlert.name
                 $copyAgentAlertStatus = [pscustomobject]@{
