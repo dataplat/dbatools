@@ -328,6 +328,9 @@ function Connect-DbaInstance {
                     # this is the way, as recommended by Microsoft
                     # https://docs.microsoft.com/en-us/sql/relational-databases/security/encryption/configure-always-encrypted-using-powershell?view=sql-server-2017
                     $sqlconn = New-Object System.Data.SqlClient.SqlConnection $azureconnstring
+                    if ($PSBoundParameters.AccessToken) {
+                        $sqlconn.AccessToken = $AccessToken
+                    }
                     $serverconn = New-Object Microsoft.SqlServer.Management.Common.ServerConnection $sqlconn
                     $null = $serverconn.Connect()
                     $server = New-Object Microsoft.SqlServer.Management.Smo.Server $serverconn
