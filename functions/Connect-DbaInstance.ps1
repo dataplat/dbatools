@@ -328,7 +328,12 @@ function Connect-DbaInstance {
                     # this is the way, as recommended by Microsoft
                     # https://docs.microsoft.com/en-us/sql/relational-databases/security/encryption/configure-always-encrypted-using-powershell?view=sql-server-2017
                     $sqlconn = New-Object System.Data.SqlClient.SqlConnection $azureconnstring
+                    Write-Message -Level Debug -Message $sqlconn.ConnectionString
+                    if ($PSBoundParameters.AccessToken) {
+                        $sqlconn.AccessToken = $AccessToken
+                    }
                     $serverconn = New-Object Microsoft.SqlServer.Management.Common.ServerConnection $sqlconn
+                    Write-Message -Level Verbose -Message "Connecting to Azure: $instance"
                     $null = $serverconn.Connect()
                     $server = New-Object Microsoft.SqlServer.Management.Smo.Server $serverconn
                     # Make ComputerName easily available in the server object
@@ -454,9 +459,6 @@ function Connect-DbaInstance {
                 # It's okay to skip Azure because this is addressed above with New-DbaConnectionString
                 $server.ConnectionContext.ApplicationName = $ClientName
 
-                if (Test-Bound -ParameterName 'AccessToken') {
-                    $server.ConnectionContext.AccessToken = $AccessToken
-                }
                 if (Test-Bound -ParameterName 'BatchSeparator') {
                     $server.ConnectionContext.BatchSeparator = $BatchSeparator
                 }
