@@ -16,9 +16,6 @@ function New-DbaConnectionString {
     .PARAMETER Credential
         Credential object used to connect to the SQL Server as a different user be it Windows or SQL Server. Windows users are determined by the existence of a backslash, so if you are intending to use an alternative Windows connection instead of a SQL login, ensure it contains a backslash.
 
-    .PARAMETER AccessToken
-        Gets or sets the access token for the connection.
-
     .PARAMETER AppendConnectionString
         Appends to the current connection string. Note that you cannot pass authentication information using this method. Use -SqlInstance and, optionally, -SqlCredential to set authentication information.
 
@@ -170,7 +167,6 @@ function New-DbaConnectionString {
         [DbaInstanceParameter[]]$SqlInstance,
         [Alias("SqlCredential")]
         [PSCredential]$Credential,
-        [string]$AccessToken,
         [ValidateSet('ReadOnly', 'ReadWrite')]
         [string]$ApplicationIntent,
         [string]$BatchSeparator,
@@ -205,7 +201,7 @@ function New-DbaConnectionString {
                     if ($instance.InputObject.GetType() -eq [Microsoft.SqlServer.Management.Smo.Server]) {
                         $connstring = $instance.InputObject.ConnectionContext.ConnectionString
                         if ($Database) {
-                            $olddb = $connstring -split ';' | Where-Object { $_.StartsWith("Initial Catalog")}
+                            $olddb = $connstring -split ';' | Where-Object { $_.StartsWith("Initial Catalog") }
                             $newdb = "Initial Catalog=$Database"
                             if ($olddb) {
                                 $connstring = $connstring.Replace("$olddb", "$newdb")
@@ -245,7 +241,6 @@ function New-DbaConnectionString {
 
                         $server.ConnectionContext.ApplicationName = $clientname
 
-                        if ($AccessToken) { $server.ConnectionContext.AccessToken = $AccessToken }
                         if ($BatchSeparator) { $server.ConnectionContext.BatchSeparator = $BatchSeparator }
                         if ($ConnectTimeout) { $server.ConnectionContext.ConnectTimeout = $ConnectTimeout }
                         if ($Database) { $server.ConnectionContext.DatabaseName = $Database }
