@@ -457,9 +457,6 @@ function Connect-DbaInstance {
                 # It's okay to skip Azure because this is addressed above with New-DbaConnectionString
                 $server.ConnectionContext.ApplicationName = $ClientName
 
-                if (Test-Bound -ParameterName 'AccessToken') {
-                    $server.ConnectionContext.AccessToken = $AccessToken
-                }
                 if (Test-Bound -ParameterName 'BatchSeparator') {
                     $server.ConnectionContext.BatchSeparator = $BatchSeparator
                 }
