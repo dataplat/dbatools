@@ -8248,7 +8248,7 @@
         "CommandName":  "Find-DbaDbUnusedIndex",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Find-DbaDbUnusedIndex",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eFind-DbaDbUnusedIndex -SqlInstance sql2016 -Database db1, db2\nFinds unused databases on db1 and db2 on sql2016\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eFind-DbaDbUnusedIndex -SqlInstance sql2016 -SqlCredential $cred\nFinds unused databases on db1 and db2 on sql2016 using SQL Authentication to connect to the server\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaDatabase -SqlInstance sql2016 | Find-DbaDbUnusedIndex\nFinds unused databases on all databases on sql2016",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eFind-DbaDbUnusedIndex -SqlInstance sql2016 -Database db1, db2\nFinds unused indexes on db1 and db2 on sql2016\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eFind-DbaDbUnusedIndex -SqlInstance sql2016 -SqlCredential $cred\nFinds unused indexes on db1 and db2 on sql2016 using SQL Authentication to connect to the server\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaDatabase -SqlInstance sql2016 | Find-DbaDbUnusedIndex\nFinds unused indexes on all databases on sql2016",
         "Params":  [
                        [
                            "SqlInstance",
