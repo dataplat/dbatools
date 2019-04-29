@@ -2590,13 +2590,13 @@
         "CommandName":  "Copy-DbaAgentSchedule",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Copy-DbaAgentSchedule",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eCopy-DbaAgentSchedule -Source sqlserver2014a -Destination sqlcluster\nCopies all shared job schedules from sqlserver2014a to sqlcluster using Windows credentials. If shared job schedules with the same name exist on sqlcluster, they will be skipped.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eCopy-DbaAgentSchedule -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force\nShows what would happen if the command were executed using force.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eCopy-DbaAgentSchedule -Source sqlserver2014a -Destination sqlcluster\nCopies all shared job schedules from sqlserver2014a to sqlcluster using Windows credentials. If shared job schedules with the same name exist on sqlcluster, they will be skipped.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eCopy-DbaAgentSchedule -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force\nShows what would happen if the command were executed using force.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaAgentSchedule -SqlInstance sql2016 | Out-GridView -Passthru | Copy-DbaAgentSchedule -Destination sqlcluster\nGets a list of schedule, outputs to a gridview which can be selected from, then copies to SqlInstance",
         "Params":  [
                        [
                            "Source",
                            "Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or higher.",
                            "",
-                           true,
+                           false,
                            "false",
                            ""
                        ],
@@ -2625,6 +2625,30 @@
                            ""
                        ],
                        [
+                           "Schedule",
+                           "Copy only specific schedules. Note that SQL Server allows multiple schedules with the same name. Use Id for more accurate schedule copies.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Id",
+                           "Copy only specific schedule.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "InputObject",
+                           "Enables piping from Get-DbaAgentSchedule",
+                           "",
+                           false,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
                            "Force",
                            "If this switch is enabled, the Operator will be dropped and recreated on Destination.",
                            "",
@@ -2635,7 +2659,7 @@
                        [
                            "EnableException",
                            "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
-                           "Silent",
+                           "",
                            false,
                            "false",
                            "False"
@@ -2657,7 +2681,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Copy-DbaAgentSchedule [-Source] \u003cDbaInstanceParameter\u003e [[-SourceSqlCredential] \u003cPSCredential\u003e] [-Destination] \u003cDbaInstanceParameter[]\u003e [[-DestinationSqlCredential] \u003cPSCredential\u003e] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Copy-DbaAgentSchedule [[-Source] \u003cDbaInstanceParameter\u003e] [[-SourceSqlCredential] \u003cPSCredential\u003e] [-Destination] \u003cDbaInstanceParameter[]\u003e [[-DestinationSqlCredential] \u003cPSCredential\u003e] [[-Schedule] \u003cString[]\u003e] [[-Id] \u003cInt32[]\u003e] [[-InputObject] \u003cJobSchedule[]\u003e] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Copy-DbaAgentServer",
@@ -9823,7 +9847,7 @@
         "CommandName":  "Get-DbaAgentSchedule",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Get-DbaAgentSchedule",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaAgentSchedule -SqlInstance localhost\nReturns all SQL Agent Shared Schedules on the local default SQL Server instance\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaAgentSchedule -SqlInstance localhost, sql2016\nReturns all SQL Agent Shared Schedules for the local and sql2016 SQL Server instances\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaAgentSchedule -SqlInstance sql2016 -Schedule \"Maintenance10min\",\"Maintenance60min\"\nReturns the \"Maintenance10min\" \u0026 \"Maintenance60min\" schedules from the sql2016 SQL Server instance",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaAgentSchedule -SqlInstance localhost\nReturns all SQL Agent Shared Schedules on the local default SQL Server instance\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaAgentSchedule -SqlInstance localhost, sql2016\nReturns all SQL Agent Shared Schedules for the local and sql2016 SQL Server instances\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaAgentSchedule -SqlInstance localhost, sql2016 -Id 3\nReturns the SQL Agent Shared Schedules with the Id of 3\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaAgentSchedule -SqlInstance sql2016 -Schedule \"Maintenance10min\",\"Maintenance60min\"\nReturns the \"Maintenance10min\" \u0026 \"Maintenance60min\" schedules from the sql2016 SQL Server instance",
         "Params":  [
                        [
                            "SqlInstance",
@@ -9831,14 +9855,6 @@
                            "ServerInstance,Instance,SqlServer",
                            true,
                            "true (ByValue)",
-                           ""
-                       ],
-                       [
-                           "Schedule",
-                           "Parameter to filter the schedules returned",
-                           "Schedules",
-                           false,
-                           "false",
                            ""
                        ],
                        [
@@ -9850,15 +9866,31 @@
                            ""
                        ],
                        [
+                           "Schedule",
+                           "Parameter to filter the schedules returned",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Id",
+                           "Parameter to filter the schedules returned",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
                            "EnableException",
                            "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
-                           "Silent",
+                           "",
                            false,
                            "false",
                            "False"
                        ]
                    ],
-        "Syntax":  "Get-DbaAgentSchedule [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [-Schedule \u003cObject[]\u003e] [-SqlCredential \u003cPSCredential\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Get-DbaAgentSchedule [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Schedule \u003cString[]\u003e] [-Id \u003cInt32[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Get-DbaAgentServer",
@@ -28438,7 +28470,7 @@
                        ],
                        [
                            "AccessToken",
-                           "Gets or sets the access token for the connection.",
+                           "Basically tells the connection string to ignore authentication. Does not include the AccessToken in the resulting connecstring.",
                            "",
                            false,
                            "false",
