@@ -70,7 +70,7 @@ function New-DbaAccessToken {
                         Method  = "GET"
                         Headers = @{ Metadata = "true" }
                     }
-                    $response = Invoke-WebRequest @params -UseBasicParsing -ErrorAction Stop
+                    $response = Invoke-TlsWebRequest @params -UseBasicParsing -ErrorAction Stop
                     ($response.Content | ConvertFrom-Json).access_token
                 }
             }
