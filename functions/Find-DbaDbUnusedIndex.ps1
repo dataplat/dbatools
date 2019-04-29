@@ -46,17 +46,17 @@ function Find-DbaDbUnusedIndex {
     .EXAMPLE
         PS C:\> Find-DbaDbUnusedIndex -SqlInstance sql2016 -Database db1, db2
 
-        Finds unused databases on db1 and db2 on sql2016
+        Finds unused indexes on db1 and db2 on sql2016
 
     .EXAMPLE
         PS C:\> Find-DbaDbUnusedIndex -SqlInstance sql2016 -SqlCredential $cred
 
-        Finds unused databases on db1 and db2 on sql2016 using SQL Authentication to connect to the server
+        Finds unused indexes on db1 and db2 on sql2016 using SQL Authentication to connect to the server
 
     .EXAMPLE
         PS C:\> Get-DbaDatabase -SqlInstance sql2016 | Find-DbaDbUnusedIndex
 
-        Finds unused databases on all databases on sql2016
+        Finds unused indexes on all databases on sql2016
 
        #>
     [CmdletBinding()]
