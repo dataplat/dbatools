@@ -16,6 +16,9 @@ function New-DbaConnectionString {
     .PARAMETER Credential
         Credential object used to connect to the SQL Server as a different user be it Windows or SQL Server. Windows users are determined by the existence of a backslash, so if you are intending to use an alternative Windows connection instead of a SQL login, ensure it contains a backslash.
 
+    .PARAMETER AccessToken
+        Basically tells the connection string to ignore authentication. Does not include the AccessToken in the resulting connecstring.
+
     .PARAMETER AppendConnectionString
         Appends to the current connection string. Note that you cannot pass authentication information using this method. Use -SqlInstance and, optionally, -SqlCredential to set authentication information.
 
@@ -167,6 +170,7 @@ function New-DbaConnectionString {
         [DbaInstanceParameter[]]$SqlInstance,
         [Alias("SqlCredential")]
         [PSCredential]$Credential,
+        [string]$AccessToken,
         [ValidateSet('ReadOnly', 'ReadWrite')]
         [string]$ApplicationIntent,
         [string]$BatchSeparator,
@@ -239,8 +243,7 @@ function New-DbaConnectionString {
                         $server.ConnectionContext.ConnectionString
                     } else {
 
-                        $server.ConnectionContext.ApplicationName = $clientname
-
+                        $server.ConnectionContext.ApplicationName = $ClientName
                         if ($BatchSeparator) { $server.ConnectionContext.BatchSeparator = $BatchSeparator }
                         if ($ConnectTimeout) { $server.ConnectionContext.ConnectTimeout = $ConnectTimeout }
                         if ($Database) { $server.ConnectionContext.DatabaseName = $Database }
@@ -295,8 +298,12 @@ function New-DbaConnectionString {
                                     $server.ConnectionContext.set_SecurePassword($Credential.Password)
                                 }
                             } else {
-                                $connstring = $connstring.Replace("Integrated Security=True;", "")
-                                $connstring = "$connstring;Authentication=`"Active Directory Integrated`""
+                                if ($AccessToken) {
+                                    $connstring = $connstring.Replace("Integrated Security=True;", "")
+                                } else {
+                                    $connstring = $connstring.Replace("Integrated Security=True;", "")
+                                    $connstring = "$connstring;Authentication=`"Active Directory Integrated`""
+                                }
                             }
                         }
 
