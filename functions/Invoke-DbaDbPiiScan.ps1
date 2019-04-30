@@ -125,15 +125,15 @@ function Invoke-DbaDbPiiScan {
     )
 
     begin {
-
+        # Initialize the arrays
         $knownNames = @()
         $patterns = @()
 
         # Get the known names
         if (-not $ExcludeDefaultKnownNames) {
             try {
-                $knownNameFile = Resolve-Path -Path "$script:PSModuleRoot\bin\datamasking\pii-knownnames.json"
-                $knownNames += Get-Content -Path $knownNameFile -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
+                $knownNameFilePath = Resolve-Path -Path "$script:PSModuleRoot\bin\datamasking\pii-knownnames.json"
+                $knownNames += Get-Content -Path $knownNameFilePath -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
             } catch {
                 Stop-Function -Message "Couldn't parse known names file" -ErrorRecord $_
                 return
@@ -143,8 +143,8 @@ function Invoke-DbaDbPiiScan {
         # Get the patterns
         if (-not $ExcludeDefaultPatterns) {
             try {
-                $patternFile = Resolve-Path -Path "$script:PSModuleRoot\bin\datamasking\pii-patterns.json"
-                $patterns = Get-Content -Path $patternFile -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
+                $patternFilePath = Resolve-Path -Path "$script:PSModuleRoot\bin\datamasking\pii-patterns.json"
+                $patterns = Get-Content -Path $patternFilePath -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
             } catch {
                 Stop-Function -Message "Couldn't parse pattern file" -ErrorRecord $_
                 return
