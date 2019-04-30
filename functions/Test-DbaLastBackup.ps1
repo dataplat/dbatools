@@ -369,7 +369,7 @@ function Test-DbaLastBackup {
                 $ogdbname = $dbname
                 $restorelist = Read-DbaBackupHeader -SqlInstance $destserver -Path $lastbackup[0].Path -AzureCredential $AzureCredential
 
-                $totalsize = ($restorelist.BackupSize.Megabyte |Measure-Object -sum ).Sum
+                $totalsize = ($restorelist.BackupSize.Megabyte | Measure-Object -sum ).Sum
 
                 if ($MaxSize -and $MaxSize -lt $totalsize) {
                     $success = "The backup size for $dbname ($mb MB) exceeds the specified maximum size ($MaxSize MB)."
@@ -419,7 +419,10 @@ function Test-DbaLastBackup {
                     if (-not $NoCheck -and -not $VerifyOnly) {
                         # shouldprocess is taken care of in Start-DbccCheck
                         if ($ogdbname -eq "master") {
-                            $dbccresult = "DBCC CHECKDB skipped for restored master ($dbname) database."
+                            $dbccresult =
+                            "DBCC CHECKDB skipped for restored master ($dbname) database. `
+                             The master database cannot be copied off of a server and have a successful DBCC CHECKDB. `
+                             See https://www.itprotoday.com/my-master-database-really-corrupt for more information."
                         } else {
                             if ($success -eq "Success") {
                                 Write-Message -Level Verbose -Message "Starting DBCC."
