@@ -32,6 +32,18 @@ function Invoke-DbaDbPiiScan {
     .PARAMETER SampleCount
         Amount of rows to sample to make an assessment. The default is 100
 
+    .PARAMETER KnownNamesFile
+        Points to a file containing the custom known names
+
+    .PARAMETER PatternsFile
+        Points to a file containing the custom patterns
+
+    .PARAMETER ExcludeKnownNames
+        Excludes the default known names
+
+    .PARAMETER ExcludePatterns
+        Excludes the default patterns
+
     .PARAMETER ExcludeTable
         Exclude certain tables
 
@@ -95,27 +107,65 @@ function Invoke-DbaDbPiiScan {
         [string[]]$ExcludeTable,
         [string[]]$ExcludeColumn,
         [int]$SampleCount = 100,
+        [string]$KnownNamesFile,
+        [string]$PatternsFile,
+        [switch]$ExcludeKnownNames,
+        [switch]$ExcludePatterns,
         [switch]$EnableException
     )
 
     begin {
 
-        # Get the patterns
-        try {
-            $patternFile = Resolve-Path -Path "$script:PSModuleRoot\bin\datamasking\pii-patterns.json"
-            $patterns = Get-Content -Path $patternFile -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
-        } catch {
-            Stop-Function -Message "Couldn't parse pattern file" -ErrorRecord $_
-            return
+        $knownNames = @()
+        $patterns = @()
+
+        # Get the known names
+        if (-not $ExcludeKnownNames) {
+            try {
+                $knownNameFile = Resolve-Path -Path "$script:PSModuleRoot\bin\datamasking\pii-knownnames.json"
+                $knownNames += Get-Content -Path $knownNameFile -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
+            } catch {
+                Stop-Function -Message "Couldn't parse known names file" -ErrorRecord $_
+                return
+            }
         }
 
-        # Get the known types
-        try {
-            $knownNamesFile = Resolve-Path -Path "$script:PSModuleRoot\bin\datamasking\pii-knownnames.json"
-            $knownNames = Get-Content -Path $knownNamesFile -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
-        } catch {
-            Stop-Function -Message "Couldn't parse known types file" -ErrorRecord $_
-            return
+        # Get the patterns
+        if (-not $ExcludePatterns) {
+            try {
+                $patternFile = Resolve-Path -Path "$script:PSModuleRoot\bin\datamasking\pii-patterns.json"
+                $patterns = Get-Content -Path $patternFile -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
+            } catch {
+                Stop-Function -Message "Couldn't parse pattern file" -ErrorRecord $_
+                return
+            }
+        }
+
+        # Get custom known names and patterns
+        if ($KnownNamesFile) {
+            if (Test-Path -Path $KnownNamesFile) {
+                try {
+                    $knownNames += Get-Content -Path $KnownNamesFile -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
+                } catch {
+                    Stop-Function -Message "Couldn't parse known types file" -ErrorRecord $_ -Target $KnownNamesFile
+                    return
+                }
+            } else {
+                Stop-Function -Message "Couldn't not find known names file" -Target $KnownNamesFile
+            }
+        }
+
+        if ($PatternsFile) {
+            if (Test-Path -Path $PatternsFile) {
+                try {
+                    $patterns += Get-Content -Path $PatternsFile -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
+                } catch {
+                    Stop-Function -Message "Couldn't parse patterns file" -ErrorRecord $_ -Target $PatternsFile
+                    return
+                }
+            } else {
+                Stop-Function -Message "Couldn't not find patterns file" -Target $PatternsFile
+            }
         }
 
         # Check parameters
@@ -207,59 +257,13 @@ function Invoke-DbaDbPiiScan {
                     # Loop through the columns
                     foreach ($columnobject in $columns) {
 
-                        # Go through the first check to see if any column is found with a known type
-                        foreach ($knownName in $knownNames) {
+                        if ($knownNames.Count -ge 1) {
+                            # Go through the first check to see if any column is found with a known type
+                            foreach ($knownName in $knownNames) {
 
-                            foreach ($pattern in $knownName.Pattern) {
+                                foreach ($pattern in $knownName.Pattern) {
 
-                                if ($columnobject.Name -match $pattern ) {
-                                    # Check if the results not already contain a similar object
-                                    if ($null -eq ($results | Where-Object { $_.Database -eq $dbName -and $_.Schema -eq $tableobject.Schema -and $_.Table -eq $tableobject.Name -and $_.Column -eq $columnobject.Name })) {
-
-                                        # Add the results
-                                        $results += [pscustomobject]@{
-                                            ComputerName   = $db.Parent.ComputerName
-                                            InstanceName   = $db.Parent.ServiceName
-                                            SqlInstance    = $db.Parent.DomainInstanceName
-                                            Database       = $dbName
-                                            Schema         = $tableobject.Schema
-                                            Table          = $tableobject.Name
-                                            Column         = $columnobject.Name
-                                            "PII-Name"     = $knownName.Name
-                                            "PII-Category" = $knownName.Category
-                                        }
-
-                                    }
-
-                                }
-
-                            }
-
-                        }
-
-                        # Check if the results not already contain a similar object
-                        if ($null -eq ($results | Where-Object { $_.Database -eq $dbName -and $_.Schema -eq $tableobject.Schema -and $_.Table -eq $tableobject.Name -and $_.Column -eq $columnobject.Name })) {
-                            # Setup the query
-                            $query = "SELECT TOP($SampleCount) " + "[" + ($columns.Name -join "],[") + "] FROM [$($tableobject.Schema)].[$($tableobject.Name)]"
-
-                            # Get the data
-                            try {
-                                $dataset = @()
-                                $dataset += Invoke-DbaQuery -SqlInstance $instance -SqlCredential $SqlCredential -Database $dbName -Query $query
-                            } catch {
-
-                                Stop-Function -Message "Something went wrong retrieving the data from [$($tableobject.Schema)].[$($tableobject.Name)]`n$query" -Target $tableobject -Continue
-                            }
-
-                            # Check if there is any data
-                            if ($dataset.Count -ge 1) {
-
-                                # Loop through the patterns
-                                foreach ($patternobject in $patterns) {
-
-                                    # If there is a result from the match
-                                    if ($dataset.$($columnobject.Name) -match $patternobject.Pattern) {
-
+                                    if ($columnobject.Name -match $pattern ) {
                                         # Check if the results not already contain a similar object
                                         if ($null -eq ($results | Where-Object { $_.Database -eq $dbName -and $_.Schema -eq $tableobject.Schema -and $_.Table -eq $tableobject.Name -and $_.Column -eq $columnobject.Name })) {
 
@@ -272,8 +276,8 @@ function Invoke-DbaDbPiiScan {
                                                 Schema         = $tableobject.Schema
                                                 Table          = $tableobject.Name
                                                 Column         = $columnobject.Name
-                                                "PII-Name"     = $patternobject.Name
-                                                "PII-Category" = $patternobject.category
+                                                "PII-Name"     = $knownName.Name
+                                                "PII-Category" = $knownName.Category
                                             }
 
                                         }
@@ -282,10 +286,65 @@ function Invoke-DbaDbPiiScan {
 
                                 }
 
-                            } else {
-                                Write-Message -Message "Table $($tableobject.Name) does not contain any rows" -Level Verbose
                             }
+                        } else {
+                            Write-Message -Level Verbose -Message "No known names found to perform check on"
+                        }
 
+
+                        if ($patterns.Count -ge 1) {
+                            # Check if the results not already contain a similar object
+                            if ($null -eq ($results | Where-Object { $_.Database -eq $dbName -and $_.Schema -eq $tableobject.Schema -and $_.Table -eq $tableobject.Name -and $_.Column -eq $columnobject.Name })) {
+                                # Setup the query
+                                $query = "SELECT TOP($SampleCount) " + "[" + ($columns.Name -join "],[") + "] FROM [$($tableobject.Schema)].[$($tableobject.Name)]"
+
+                                # Get the data
+                                try {
+                                    $dataset = @()
+                                    $dataset += Invoke-DbaQuery -SqlInstance $instance -SqlCredential $SqlCredential -Database $dbName -Query $query
+                                } catch {
+
+                                    Stop-Function -Message "Something went wrong retrieving the data from [$($tableobject.Schema)].[$($tableobject.Name)]`n$query" -Target $tableobject -Continue
+                                }
+
+                                # Check if there is any data
+                                if ($dataset.Count -ge 1) {
+
+                                    # Loop through the patterns
+                                    foreach ($patternobject in $patterns) {
+
+                                        # If there is a result from the match
+                                        if ($dataset.$($columnobject.Name) -match $patternobject.Pattern) {
+
+                                            # Check if the results not already contain a similar object
+                                            if ($null -eq ($results | Where-Object { $_.Database -eq $dbName -and $_.Schema -eq $tableobject.Schema -and $_.Table -eq $tableobject.Name -and $_.Column -eq $columnobject.Name })) {
+
+                                                # Add the results
+                                                $results += [pscustomobject]@{
+                                                    ComputerName   = $db.Parent.ComputerName
+                                                    InstanceName   = $db.Parent.ServiceName
+                                                    SqlInstance    = $db.Parent.DomainInstanceName
+                                                    Database       = $dbName
+                                                    Schema         = $tableobject.Schema
+                                                    Table          = $tableobject.Name
+                                                    Column         = $columnobject.Name
+                                                    "PII-Name"     = $patternobject.Name
+                                                    "PII-Category" = $patternobject.category
+                                                }
+
+                                            }
+
+                                        }
+
+                                    }
+
+                                } else {
+                                    Write-Message -Message "Table $($tableobject.Name) does not contain any rows" -Level Verbose
+                                }
+
+                            }
+                        } else {
+                            Write-Message -Level Verbose -Message "No patterns found to perform check on"
                         }
 
                     } # End for each column
