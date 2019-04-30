@@ -1,4 +1,4 @@
-function New-DbaAccessToken {
+function New-DbaAzAccessToken {
     <#
     .SYNOPSIS
         Simplifies the generation of Azure oauth2 tokens.
@@ -6,12 +6,17 @@ function New-DbaAccessToken {
     .DESCRIPTION
         Generates an oauth2 access token.
 
-        Currently, only Azure Managed Identities are built-in. This allows you to use a Windows VM system-assigned managed identity to access Azure SQL.
-
-        Read more here: https://docs.microsoft.com/en-us/azure/active-directory/managed-identities-azure-resources/tutorial-windows-vm-access-sql
+        Currently, only Azure Managed Identities are built-in.
 
     .PARAMETER Type
         The type of request. Currently, only Managed Identities are built-in.
+
+    .PARAMETER Subtype
+        The subtype. Auto-complete
+
+        This allows you to use a Windows VM system-assigned managed identity to access Azure SQL.
+
+        Read more here: https://docs.microsoft.com/en-us/azure/active-directory/managed-identities-azure-resources/tutorial-windows-vm-access-sql
 
     .PARAMETER Config
         The hashtable or json configuration.
@@ -32,15 +37,15 @@ function New-DbaAccessToken {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/New-DbaAccessToken
+        https://dbatools.io/New-DbaAzAccessToken
 
     .EXAMPLE
-        PS C:\> New-DbaAccessToken
+        PS C:\> New-DbaAzAccessToken -Type ManagedIdentity -Subtype AzureSqlDb
 
     Returns a plain-text token for Managed Identities for SQL Azure Db.
 
     .EXAMPLE
-        PS C:\> $token = New-DbaAccessToken
+        PS C:\> $token = New-DbaAzAccessToken -Type ManagedIdentity -Subtype AzureSqlDb
         PS C:\> $server = Connect-DbaInstance -SqlInstance myserver.database.windows.net -Database mydb -AccessToken $token -DisableException
 
         Generates a token then uses it to connect to Azure SQL DB
@@ -49,17 +54,46 @@ function New-DbaAccessToken {
     [CmdletBinding()]
     param (
         [ValidateSet('ManagedIdentity')]
-        [string]$Type = 'ManagedIdentity',
-        [object]$Config = @{
-            Version  = '2018-04-02'
-            Resource = 'https://database.windows.net/'
-        },
+        [string]$Type,
+        [ValidateSet('AzureSqlDb', 'Management')]
+        [string]$Subtype,
+        [object]$Config,
+        [string]$Uri,
         [switch]$EnableException
     )
     begin {
-        # then we can do if Type -eq SomethingElse and -not $Config, go with some other type defaults
+        if (-not ($Type -and $Subtype) -and -not ($Uri)) {
+            Stop-Function -Message "You must specify Type and Subtype or $Uri"
+            return
+        }
+        if ($Type -eq "ManagedIdentity") {
+            switch ($Subtype) {
+                AzureSqlDb {
+                    $Config = @{
+                        Version  = '2018-04-02'
+                        Resource = 'https://database.windows.net/'
+                    }
+                }
+                Management {
+                    $Config = @{
+                        Version  = '2018-04-02'
+                        Resource = 'https://management.windows.net/'
+                    }
+                }
+            }
+        }
     }
     process {
+        if (Test-FunctionInterrupt) { return }
+        if ($Uri) {
+            $params = @{
+                Uri     = $Uri
+                Method  = "GET"
+                Headers = @{ Metadata = "true" }
+            }
+            $response = Invoke-TlsWebRequest @params -UseBasicParsing -ErrorAction Stop
+            return ($response.Content | ConvertFrom-Json).access_token
+        }
         try {
             switch ($Type) {
                 ManagedIdentity {
