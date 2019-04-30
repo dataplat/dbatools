@@ -1443,7 +1443,9 @@ $script:xplat = @(
     'Get-DbaRandomizedDataset',
     'Get-DbaRandomizedType',
     'Export-DbaDbTableData',
-    'Backup-DbaServiceMasterKey'
+    'Backup-DbaServiceMasterKey',
+    'Invoke-DbaDbPiiScan',
+    'New-DbaAzAccessToken'
 )
 
 $script:noncoresmo = @(
