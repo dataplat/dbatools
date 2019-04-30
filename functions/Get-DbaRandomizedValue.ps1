@@ -94,8 +94,8 @@ function Get-DbaRandomizedValue {
         [string]$DataType,
         [string]$RandomizerType,
         [string]$RandomizerSubType,
-        [int64]$Min = 1,
-        [int64]$Max = 255,
+        [object]$Min = 1,
+        [object]$Max = 255,
         [int]$Precision = 2,
         [string]$CharacterString = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789',
         [string]$Format,
@@ -161,9 +161,9 @@ function Get-DbaRandomizedValue {
             }
         }
 
-        if ($Min -gt $Max) {
+        <# if ($Min -gt $Max) {
             Stop-Function -Message "Min value cannot be greater than max value" -Continue -Target $Min
-        }
+        } #>
     }
 
     process {
@@ -194,12 +194,19 @@ function Get-DbaRandomizedValue {
                 }
                 'date' {
                     if ($Min -or $Max) {
-                        ($faker.Date.Between($Min, $Max)).ToString("yyyyMMdd")
+                        ($faker.Date.Between($Min, $Max)).ToString("yyyy-MM-dd")
                     } else {
-                        ($faker.Date.Past()).ToString("yyyyMMdd")
+                        ($faker.Date.Past()).ToString("yyyy-MM-dd")
                     }
                 }
-                { $psitem -in 'datetime', 'datetime2', 'smalldatetime' } {
+                'datetime' {
+                    if ($Min -or $Max) {
+                        ($faker.Date.Between($Min, $Max)).ToString("yyyy-MM-dd HH:mm:ss.fff")
+                    } else {
+                        ($faker.Date.Past()).ToString("yyyy-MM-dd HH:mm:ss.fff")
+                    }
+                }
+                'datetime2' {
                     if ($Min -or $Max) {
                         ($faker.Date.Between($Min, $Max)).ToString("yyyy-MM-dd HH:mm:ss.fffffff")
                     } else {
@@ -222,6 +229,13 @@ function Get-DbaRandomizedValue {
 
                     $faker.System.Random.Int($Min, $Max)
 
+                }
+                'smalldatetime' {
+                    if ($Min -or $Max) {
+                        ($faker.Date.Between($Min, $Max)).ToString("yyyy-MM-dd HH:mm:ss")
+                    } else {
+                        ($faker.Date.Past()).ToString("yyyy-MM-dd HH:mm:ss")
+                    }
                 }
                 'smallint' {
                     if ($Min -lt -32768) {
@@ -320,8 +334,6 @@ function Get-DbaRandomizedValue {
                     } else {
                         $faker.Date.$RandomizerSubType()
                     }
-
-
                 }
                 'finance' {
                     if ($randSubType -eq 'account') {
@@ -408,7 +420,7 @@ function Get-DbaRandomizedValue {
                         $faker.Random.$RandomizerSubType($Min, $Max)
                     } elseif ($randSubType -eq 'bytes') {
                         $faker.Random.Bytes($Max)
-                    } elseif ($randSubType -eq 'string2') {
+                    } elseif ($randSubType -in 'string', 'string2') {
                         $faker.Random.$RandomizerSubType($Min, $Max, $CharacterString)
                     } else {
                         $faker.Random.$RandomizerSubType()
