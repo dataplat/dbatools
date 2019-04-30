@@ -21,6 +21,9 @@ function New-DbaAzAccessToken {
     .PARAMETER Config
         The hashtable or json configuration.
 
+    .PARAMETER Uri
+        Plug-in a manual uri. If this is used, Type, Subtype and Config are ignored.
+
     .PARAMETER EnableException
         By default in most of our commands, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
 
@@ -63,7 +66,7 @@ function New-DbaAzAccessToken {
     )
     begin {
         if (-not ($Type -and $Subtype) -and -not ($Uri)) {
-            Stop-Function -Message "You must specify Type and Subtype or $Uri"
+            Stop-Function -Message "You must specify Type and Subtype or Uri"
             return
         }
         if ($Type -eq "ManagedIdentity") {
