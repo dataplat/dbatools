@@ -38,10 +38,10 @@ function Invoke-DbaDbPiiScan {
     .PARAMETER PatternsFile
         Points to a file containing the custom patterns
 
-    .PARAMETER ExcludeKnownNames
+    .PARAMETER ExcludeDefaultKnownNames
         Excludes the default known names
 
-    .PARAMETER ExcludePatterns
+    .PARAMETER ExcludeDefaultPatterns
         Excludes the default patterns
 
     .PARAMETER ExcludeTable
@@ -94,6 +94,16 @@ function Invoke-DbaDbPiiScan {
         Invoke-DbaDbPiiScan -SqlInstance sql1 -Database db2 -CountryCode US
 
         Scan database db2 but only apply data patterns used for the United States
+
+    .EXAMPLE
+        Invoke-DbaDbPiiScan -SqlInstance sql1 -Database db1 -PatternsFile c:\pii\patterns.json
+
+        Scans db1 on instance sql1 with additional custom patterns
+
+    .EXAMPLE
+        Invoke-DbaDbPiiScan -SqlInstance sql1 -Database db1 -PatternsFile c:\pii\patterns.json -ExcludeDefaultPatterns
+
+        Scans db1 on instance sql1 with additional custom patterns, excluding the default patterns
     #>
     [CmdLetBinding()]
     param (
@@ -109,8 +119,8 @@ function Invoke-DbaDbPiiScan {
         [int]$SampleCount = 100,
         [string]$KnownNamesFile,
         [string]$PatternsFile,
-        [switch]$ExcludeKnownNames,
-        [switch]$ExcludePatterns,
+        [switch]$ExcludeDefaultKnownNames,
+        [switch]$ExcludeDefaultPatterns,
         [switch]$EnableException
     )
 
@@ -120,7 +130,7 @@ function Invoke-DbaDbPiiScan {
         $patterns = @()
 
         # Get the known names
-        if (-not $ExcludeKnownNames) {
+        if (-not $ExcludeDefaultKnownNames) {
             try {
                 $knownNameFile = Resolve-Path -Path "$script:PSModuleRoot\bin\datamasking\pii-knownnames.json"
                 $knownNames += Get-Content -Path $knownNameFile -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
@@ -131,7 +141,7 @@ function Invoke-DbaDbPiiScan {
         }
 
         # Get the patterns
-        if (-not $ExcludePatterns) {
+        if (-not $ExcludeDefaultPatterns) {
             try {
                 $patternFile = Resolve-Path -Path "$script:PSModuleRoot\bin\datamasking\pii-patterns.json"
                 $patterns = Get-Content -Path $patternFile -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
