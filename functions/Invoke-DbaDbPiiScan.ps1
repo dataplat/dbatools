@@ -18,10 +18,10 @@ function Invoke-DbaDbPiiScan {
         Databases to process through
 
     .PARAMETER Table
-        Tables to process. By default all the tables will be processed
+        Table(s) to process. By default all the tables will be processed
 
     .PARAMETER Column
-        Columns to process. By default all the columns will be processed
+        Column(s) to process. By default all the columns will be processed
 
     .PARAMETER Country
         Filter out the patterns and known types for one or more countries
