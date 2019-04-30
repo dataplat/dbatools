@@ -71,6 +71,7 @@ function New-DbaAzAccessToken {
         [pscredential]$Credential,
         [string]$TenantId,
         [string]$TenantAdName,
+        [string]$ClientId,
         [switch]$EnableException
     )
     begin {
@@ -98,12 +99,8 @@ function New-DbaAzAccessToken {
                 }
             }
         }
-        $clientId = '1950a258-227b-4e31-a9cf-717495945fc2'
     }
     process {
-        # fix help,
-        # test param combos
-        # 0c2cb2a0-9525-4b30-8524-40d0a1f50e74
         if (Test-FunctionInterrupt) { return }
         if ($Uri) {
             $params = @{
@@ -131,18 +128,20 @@ function New-DbaAzAccessToken {
                     if ($TenantId) {
                         $authority = "https://login.windows.net/$TenantId"
                     } else {
-                        $authority = "https://login.windows.net/common/$TenantAdName"
+                        $authority = "https://login.windows.net/$TenantAdName"
                     }
 
-                    #$authority = "https://login.windows.net/common/oauth2/authorize/"
-                    $cred = [Microsoft.IdentityModel.Clients.ActiveDirectory.UserPasswordCredential]::New($Credential.UserName, $Credential.Password)
+                    # thanks to Jose M Jurado - MSFT for this code
+                    # https://blogs.msdn.microsoft.com/azuresqldbsupport/2018/05/10/lesson-learned-49-does-azure-sql-database-support-azure-active-directory-connections-using-service-principals/
+                    $cred = [Microsoft.IdentityModel.Clients.ActiveDirectory.ClientCredential]::New($Credential.UserName, $Credential.GetNetworkCredential().Password)
                     $context = [Microsoft.IdentityModel.Clients.ActiveDirectory.AuthenticationContext]::New($authority)
-                    [Microsoft.IdentityModel.Clients.ActiveDirectory.AuthenticationContextIntegratedAuthExtensions]::AcquireTokenAsync($context, "https://database.windows.net/", $clientId, $cred)
-                    #.Result.AccessToken
+                    $result = $context.AcquireTokenAsync("https://database.windows.net/", $cred)
 
-                    #$context = New-Object -TypeName 'Microsoft.IdentityModel.Clients.ActiveDirectory.AuthenticationContext' -ArgumentList $authority
-                    #$authResult = $context.AcquireToken("https://database.windows.net/", $clientId, $clientcred)
-                    #$authResult.CreateAuthorizationHeader()
+                    if ($result.Result.AccessToken) {
+                        $result.Result.AccessToken
+                    } else {
+                        throw ($result.Exception | ConvertTo-Json | ConvertFrom-Json).InnerException.Message
+                    }
                 }
             }
         } catch {
