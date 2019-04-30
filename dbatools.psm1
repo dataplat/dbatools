@@ -67,7 +67,7 @@ function Write-ImportTime {
 
     if (-not $script:dbatools_ImportPerformance) { $script:dbatools_ImportPerformance = @() }
 
-    if (([System.Management.Automation.PSTypeName]'Sqlcollaborative.Dbatools.Configuration.Config').Type -eq $null) {
+    if ($null -eq ([System.Management.Automation.PSTypeName]'Sqlcollaborative.Dbatools.Configuration.Config').Type) {
         $script:dbatools_ImportPerformance += New-Object PSObject -Property @{ Time = $timestamp; Action = $Text }
     } else {
         if ([Sqlcollaborative.Dbatools.dbaSystem.DebugHost]::ImportTimeEntries.Count -eq 0) {
@@ -1442,7 +1442,8 @@ $script:xplat = @(
     'Get-DbaRandomizedDatasetTemplate',
     'Get-DbaRandomizedDataset',
     'Get-DbaRandomizedType',
-    'Export-DbaDbTableData'
+    'Export-DbaDbTableData',
+    'Backup-DbaServiceMasterKey'
 )
 
 $script:noncoresmo = @(

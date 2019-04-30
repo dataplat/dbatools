@@ -276,7 +276,7 @@ function Copy-DbaDbTableData {
                 $DestinationTable = '[' + $sqltable.Schema + '].[' + $sqltable.Name + ']'
             }
 
-            $newTableParts = Get-TableNameParts $DestinationTable
+            $newTableParts = Get-ObjectNameParts -ObjectName $DestinationTable
             #using FQTN to determine database name
             if ($newTableParts.Database) {
                 $DestinationDatabase = $newTableParts.Database
@@ -306,13 +306,13 @@ function Copy-DbaDbTableData {
                     try {
                         $tablescript = $sqltable | Export-DbaScript -Passthru | Out-String
                         #replacing table name
-                        if ($newTableParts.Table) {
+                        if ($newTableParts.Name) {
                             $rX = "(CREATE TABLE \[$([regex]::Escape($sqltable.Schema))\]\.\[)$([regex]::Escape($sqltable.Name))(\]\()"
-                            $tablescript = $tablescript -replace $rX, "`$1$($newTableParts.Table)`$2"
+                            $tablescript = $tablescript -replace $rX, "`$1$($newTableParts.Name)`$2"
                         }
                         #replacing table schema
                         if ($newTableParts.Schema) {
-                            $rX = "(CREATE TABLE \[)$([regex]::Escape($sqltable.Schema))(\]\.\[$([regex]::Escape($newTableParts.Table))\]\()"
+                            $rX = "(CREATE TABLE \[)$([regex]::Escape($sqltable.Schema))(\]\.\[$([regex]::Escape($newTableParts.Name))\]\()"
                             $tablescript = $tablescript -replace $rX, "`$1$($newTableParts.Schema)`$2"
                         }
 
@@ -407,7 +407,7 @@ function Copy-DbaDbTableData {
                             SourceDatabase      = $Database
                             SourceSchema        = $sqltable.Schema
                             SourceTable         = $sqltable.Name
-                            DestinationInstance = $destServer.name
+                            DestinationInstance = $destServer.Name
                             DestinationDatabase = $DestinationDatabase
                             DestinationSchema   = $desttable.Schema
                             DestinationTable    = $desttable.Name

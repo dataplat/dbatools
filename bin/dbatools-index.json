@@ -136,7 +136,7 @@
         "CommandName":  "Add-DbaAgListener",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Add-DbaAgListener",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eAdd-DbaAgListener -SqlInstance sql2017 -AvailabilityGroup SharePoint -IPAddress 10.0.20.20\nCreates a listener on 10.0.20.20 port 1433 for the SharePoint availability group on sql2017.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaAvailabilityGroup -SqlInstance sql2017 -AvailabilityGroup availabilitygroup1 | Add-DbaAgListener -Dhcp\nCreates a listener on port 1433 with a dynamic IP for the group1 availability group on sql2017.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eAdd-DbaAgListener -SqlInstance sql2017 -AvailabilityGroup SharePoint -IPAddress 10.0.20.20\nCreates a listener on 10.0.20.20 port 1433 for the SharePoint availability group on sql2017.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaAvailabilityGroup -SqlInstance sql2017 -AvailabilityGroup availabilitygroup1 | Add-DbaAgListener -Dhcp\nCreates a listener on port 1433 with a dynamic IP for the group1 availability group on sql2017.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eAdd-DbaAgListener -SqlInstance sql2017 -AvailabilityGroup SharePoint -IPAddress 10.0.20.20,10.1.77.77 -SubnetMask 255.255.252.0\nCreates a multi-subnet listener with 10.0.20.20 and 10.1.77.77, on two /22 subnets, on port 1433 for the SharePoint availability group on sql2017.",
         "Params":  [
                        [
                            "SqlInstance",
@@ -172,7 +172,15 @@
                        ],
                        [
                            "IPAddress",
-                           "Sets the IP address of the availability group listener.",
+                           "Sets the IP address(es) of the availability group listener.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "SubnetIP",
+                           "Sets the Subnet IP address(es) of the availability group listener.",
                            "",
                            false,
                            "false",
@@ -180,7 +188,7 @@
                        ],
                        [
                            "SubnetMask",
-                           "Sets the subnet IP mask of the availability group listener. Defaults to 255.255.255.0.",
+                           "Sets the subnet IP mask(s) of the availability group listener. Defaults to 255.255.255.0.",
                            "",
                            false,
                            "false",
@@ -243,7 +251,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Add-DbaAgListener [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-AvailabilityGroup] \u003cString[]\u003e] [[-Name] \u003cString\u003e] [[-IPAddress] \u003cIPAddress\u003e] [[-SubnetMask] \u003cIPAddress\u003e] [[-Port] \u003cInt32\u003e] [-Dhcp] [-Passthru] [[-InputObject] \u003cAvailabilityGroup[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Add-DbaAgListener [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-AvailabilityGroup] \u003cString[]\u003e] [[-Name] \u003cString\u003e] [[-IPAddress] \u003cIPAddress[]\u003e] [[-SubnetIP] \u003cIPAddress[]\u003e] [[-SubnetMask] \u003cIPAddress[]\u003e] [[-Port] \u003cInt32\u003e] [-Dhcp] [-Passthru] [[-InputObject] \u003cAvailabilityGroup[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Add-DbaAgReplica",
@@ -842,7 +850,7 @@
         "CommandName":  "Backup-DbaDatabase",
         "Availability":  "Windows, Linux, macOS",
         "Links":  null,
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eBackup-DbaDatabase -SqlInstance Server1 -Database HR, Finance\nThis will perform a full database backup on the databases HR and Finance on SQL Server Instance Server1 to Server1 default backup directory.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eBackup-DbaDatabase -SqlInstance sql2016 -BackupDirectory C:\\temp -Database AdventureWorks2014 -Type Full\nBacks up AdventureWorks2014 to sql2016 C:\\temp folder.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eBackup-DbaDatabase -SqlInstance sql2016 -AzureBaseUrl https://dbatoolsaz.blob.core.windows.net/azbackups/ -AzureCredential dbatoolscred -Type Full -CreateFolder\nPerforms a full backup of all databases on the sql2016 instance to their own containers under the https://dbatoolsaz.blob.core.windows.net/azbackups/ container on Azure blog storage using the sql \r\ncredential \"dbatoolscred\" registered on the sql2016 instance.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eBackup-DbaDatabase -SqlInstance sql2016 -AzureBaseUrl https://dbatoolsaz.blob.core.windows.net/azbackups/  -Type Full\nPerforms a full backup of all databases on the sql2016 instance to the https://dbatoolsaz.blob.core.windows.net/azbackups/ container on Azure blog storage using the Shared Access Signature sql \r\ncredential \"https://dbatoolsaz.blob.core.windows.net/azbackups\" registered on the sql2016 instance.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eBackup-Dbadatabase -SqlInstance Server1\\Prod -Database db1 -BackupDirectory \\\\filestore\\backups\\servername\\instancename\\dbname\\backuptype -Type Full -ReplaceInName\nPerforms a full backup of db1 into the folder \\\\filestore\\backups\\server1\\prod\\db1\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eBackup-Dbadatabase -SqlInstance Server1\\Prod -BackupDirectory \\\\filestore\\backups\\servername\\instancename\\dbname\\backuptype -BackupFileName dbname-backuptype-timestamp.trn -Type Log \r\n-ReplaceInName\nPerforms a log backup for every database. For the database db1 this would results in backup files in \\\\filestore\\backups\\server1\\prod\\db1\\Log\\db1-log-31102018.trn\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003eBackup-DbaDatabase -SqlInstance Sql2017 -Database master -BackupFileName NUL\nPerforms a backup of master, but sends the output to the NUL device (ie; throws it away)",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eBackup-DbaDatabase -SqlInstance Server1 -Database HR, Finance\nThis will perform a full database backup on the databases HR and Finance on SQL Server Instance Server1 to Server1 default backup directory.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eBackup-DbaDatabase -SqlInstance sql2016 -BackupDirectory C:\\temp -Database AdventureWorks2014 -Type Full\nBacks up AdventureWorks2014 to sql2016 C:\\temp folder.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eBackup-DbaDatabase -SqlInstance sql2016 -AzureBaseUrl https://dbatoolsaz.blob.core.windows.net/azbackups/ -AzureCredential dbatoolscred -Type Full -CreateFolder\nPerforms a full backup of all databases on the sql2016 instance to their own containers under the https://dbatoolsaz.blob.core.windows.net/azbackups/ container on Azure blog storage using the sql \r\ncredential \"dbatoolscred\" registered on the sql2016 instance.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eBackup-DbaDatabase -SqlInstance sql2016 -AzureBaseUrl https://dbatoolsaz.blob.core.windows.net/azbackups/  -Type Full\nPerforms a full backup of all databases on the sql2016 instance to the https://dbatoolsaz.blob.core.windows.net/azbackups/ container on Azure blog storage using the Shared Access Signature sql \r\ncredential \"https://dbatoolsaz.blob.core.windows.net/azbackups\" registered on the sql2016 instance.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eBackup-Dbadatabase -SqlInstance Server1\\Prod -Database db1 -BackupDirectory \\\\filestore\\backups\\servername\\instancename\\dbname\\backuptype -Type Full -ReplaceInName\nPerforms a full backup of db1 into the folder \\\\filestore\\backups\\server1\\prod\\db1\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eBackup-Dbadatabase -SqlInstance Server1\\Prod -BackupDirectory \\\\filestore\\backups\\servername\\instancename\\dbname\\backuptype -BackupFileName dbname-backuptype-timestamp.trn -Type Log \r\n-ReplaceInName\nPerforms a log backup for every database. For the database db1 this would results in backup files in \\\\filestore\\backups\\server1\\prod\\db1\\Log\\db1-log-31102018.trn\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003eBackup-DbaDatabase -SqlInstance Sql2017 -Database master -BackupFileName NUL\nPerforms a backup of master, but sends the output to the NUL device (ie; throws it away)\n-------------------------- EXAMPLE 8 --------------------------\nPS C:\\\u003ePS C:\\ Backup-DbaDatabase -SqlInstance Sql2016 -Database stripetest -AzureBaseUrl https://az.blob.core.windows.net/sql,https://dbatools.blob.core.windows.net/sql\nPerforms a backup of the database striptest, striping it across the 2 Azure blob containers at https://az.blob.core.windows.net/sql and https://dbatools.blob.core.windows.net/sql, assuming that \r\nShared Access Signature credentials for both containers exist on the source instance",
         "Params":  [
                        [
                            "SqlInstance",
@@ -990,7 +998,7 @@
                        ],
                        [
                            "AzureBaseUrl",
-                           "The URL to the base container of an Azure Storage account to write backups to.\nIf specified, the only other parameters than can be used are \"CopyOnly\", \"Type\", \"CompressBackup\", \"Checksum\", \"Verify\", \"AzureCredential\", \"CreateFolder\".",
+                           "The URL(s) to the base container of an Azure Storage account to write backups to.\r\nIf specifying the AzureCredential parameter you can only provide 1 value as page blobs do not support multiple URLs\r\nIf useing Shared Access keys, you may specify as many URLs as you want, as long as a corresponding credential exists on the source server.\r\nIf specified, the only other parameters than can be used are \"CopyOnly\", \"Type\", \"CompressBackup\", \"Checksum\", \"Verify\", \"AzureCredential\", \"CreateFolder\".",
                            "",
                            false,
                            "false",
@@ -998,7 +1006,7 @@
                        ],
                        [
                            "AzureCredential",
-                           "The name of the credential on the SQL instance that can write to the AzureBaseUrl, only needed if using Storage access keys\r\nIf using SAS credentials, the command will look for a credential with a name matching the AzureBaseUrl",
+                           "The name of the credential on the SQL instance that can write to the AzureBaseUrl, only needed if using Storage access keys\r\nIf using SAS credentials, the command will look for a credential with a name matching the AzureBaseUrl. As page blobs are used with this option we force the number of files to 1 and ignore any value \r\npassed in for BlockSize or MaxTransferSize",
                            "",
                            false,
                            "false",
@@ -1093,7 +1101,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Backup-DbaDatabase [-SqlCredential \u003cPSCredential\u003e] [-Database \u003cObject[]\u003e] [-ExcludeDatabase \u003cObject[]\u003e] [-BackupDirectory \u003cString[]\u003e] [-BackupFileName \u003cString\u003e] [-ReplaceInName] [-CopyOnly] [-Type \u003cString\u003e] [-CreateFolder] [-FileCount \u003cInt32\u003e] [-CompressBackup] [-Checksum] [-Verify] [-MaxTransferSize \u003cInt32\u003e] [-BlockSize \u003cInt32\u003e] [-BufferCount \u003cInt32\u003e] [-AzureBaseUrl \u003cString\u003e] [-AzureCredential \u003cString\u003e] [-NoRecovery] [-BuildPath] [-WithFormat] [-Initialize] [-SkipTapeHeader] [-TimeStampFormat \u003cString\u003e] [-IgnoreFileChecks] [-OutputScriptOnly] [-EnableException] [-WhatIf] [-Confirm] \r\n[\u003cCommonParameters\u003e]\nBackup-DbaDatabase -SqlInstance \u003cDbaInstanceParameter\u003e [-SqlCredential \u003cPSCredential\u003e] [-Database \u003cObject[]\u003e] [-ExcludeDatabase \u003cObject[]\u003e] [-BackupDirectory \u003cString[]\u003e] [-BackupFileName \u003cString\u003e] [-ReplaceInName] [-CopyOnly] [-Type \u003cString\u003e] [-CreateFolder] [-FileCount \u003cInt32\u003e] [-CompressBackup] [-Checksum] [-Verify] [-MaxTransferSize \u003cInt32\u003e] [-BlockSize \u003cInt32\u003e] [-BufferCount \u003cInt32\u003e] [-AzureBaseUrl \u003cString\u003e] [-AzureCredential \u003cString\u003e] [-NoRecovery] [-BuildPath] [-WithFormat] [-Initialize] [-SkipTapeHeader] [-TimeStampFormat \u003cString\u003e] [-IgnoreFileChecks] [-OutputScriptOnly] \r\n[-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nBackup-DbaDatabase [-SqlCredential \u003cPSCredential\u003e] [-Database \u003cObject[]\u003e] [-ExcludeDatabase \u003cObject[]\u003e] [-BackupDirectory \u003cString[]\u003e] [-BackupFileName \u003cString\u003e] [-ReplaceInName] [-CopyOnly] [-Type \u003cString\u003e] -InputObject \u003cObject[]\u003e [-CreateFolder] [-FileCount \u003cInt32\u003e] [-CompressBackup] [-Checksum] [-Verify] [-MaxTransferSize \u003cInt32\u003e] [-BlockSize \u003cInt32\u003e] [-BufferCount \u003cInt32\u003e] [-AzureBaseUrl \u003cString\u003e] [-AzureCredential \u003cString\u003e] [-NoRecovery] [-BuildPath] [-WithFormat] [-Initialize] [-SkipTapeHeader] [-TimeStampFormat \u003cString\u003e] [-IgnoreFileChecks] [-OutputScriptOnly] [-EnableException] \r\n[-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Backup-DbaDatabase [-SqlCredential \u003cPSCredential\u003e] [-Database \u003cObject[]\u003e] [-ExcludeDatabase \u003cObject[]\u003e] [-BackupDirectory \u003cString[]\u003e] [-BackupFileName \u003cString\u003e] [-ReplaceInName] [-CopyOnly] [-Type \u003cString\u003e] [-CreateFolder] [-FileCount \u003cInt32\u003e] [-CompressBackup] [-Checksum] [-Verify] [-MaxTransferSize \u003cInt32\u003e] [-BlockSize \u003cInt32\u003e] [-BufferCount \u003cInt32\u003e] [-AzureBaseUrl \u003cString[]\u003e] [-AzureCredential \u003cString\u003e] [-NoRecovery] [-BuildPath] [-WithFormat] [-Initialize] [-SkipTapeHeader] [-TimeStampFormat \u003cString\u003e] [-IgnoreFileChecks] [-OutputScriptOnly] [-EnableException] [-WhatIf] [-Confirm] \r\n[\u003cCommonParameters\u003e]\nBackup-DbaDatabase -SqlInstance \u003cDbaInstanceParameter\u003e [-SqlCredential \u003cPSCredential\u003e] [-Database \u003cObject[]\u003e] [-ExcludeDatabase \u003cObject[]\u003e] [-BackupDirectory \u003cString[]\u003e] [-BackupFileName \u003cString\u003e] [-ReplaceInName] [-CopyOnly] [-Type \u003cString\u003e] [-CreateFolder] [-FileCount \u003cInt32\u003e] [-CompressBackup] [-Checksum] [-Verify] [-MaxTransferSize \u003cInt32\u003e] [-BlockSize \u003cInt32\u003e] [-BufferCount \u003cInt32\u003e] [-AzureBaseUrl \u003cString[]\u003e] [-AzureCredential \u003cString\u003e] [-NoRecovery] [-BuildPath] [-WithFormat] [-Initialize] [-SkipTapeHeader] [-TimeStampFormat \u003cString\u003e] [-IgnoreFileChecks] [-OutputScriptOnly] \r\n[-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nBackup-DbaDatabase [-SqlCredential \u003cPSCredential\u003e] [-Database \u003cObject[]\u003e] [-ExcludeDatabase \u003cObject[]\u003e] [-BackupDirectory \u003cString[]\u003e] [-BackupFileName \u003cString\u003e] [-ReplaceInName] [-CopyOnly] [-Type \u003cString\u003e] -InputObject \u003cObject[]\u003e [-CreateFolder] [-FileCount \u003cInt32\u003e] [-CompressBackup] [-Checksum] [-Verify] [-MaxTransferSize \u003cInt32\u003e] [-BlockSize \u003cInt32\u003e] [-BufferCount \u003cInt32\u003e] [-AzureBaseUrl \u003cString[]\u003e] [-AzureCredential \u003cString\u003e] [-NoRecovery] [-BuildPath] [-WithFormat] [-Initialize] [-SkipTapeHeader] [-TimeStampFormat \u003cString\u003e] [-IgnoreFileChecks] [-OutputScriptOnly] [-EnableException] \r\n[-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Backup-DbaDbCertificate",
@@ -1322,6 +1330,88 @@
                        ]
                    ],
         "Syntax":  "Backup-DbaDbMasterKey [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Credential] \u003cPSCredential\u003e] [[-Database] \u003cString[]\u003e] [[-ExcludeDatabase] \u003cString[]\u003e] [[-SecurePassword] \u003cSecureString\u003e] [[-Path] \u003cString\u003e] [[-InputObject] \u003cDatabase[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+    },
+    {
+        "Name":  "Backup-DbaServiceMasterKey",
+        "Description":  "Backs up specified service master key.",
+        "Tags":  [
+                     "Certificate",
+                     "Database"
+                 ],
+        "Synopsis":  "Backs up specified service master key.",
+        "Alias":  "",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
+        "CommandName":  "Backup-DbaServiceMasterKey",
+        "Availability":  "Windows, Linux, macOS",
+        "Links":  null,
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eBackup-DbaServiceMasterKey -SqlInstance server1\\sql2016\n```\r\nComputerName : SERVER1\r\nInstanceName : SQL2016\r\nSqlInstance  : SERVER1\\SQL2016\r\nFilename     : E:\\MSSQL13.SQL2016\\MSSQL\\Backup\\server1$sql2016-SMK-20170614162311.key\r\nStatus       : Success\r\n```\nPrompts for export password, then logs into server1\\sql2016 with Windows credentials then backs up the service master key to the default backup directory.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eBackup-DbaServiceMasterKey -SqlInstance Server1 -Path \\\\nas\\sqlbackups\\keys\nLogs into sql2016 with Windows credentials then backs up the service master key to the \\\\nas\\sqlbackups\\keys directory.",
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "The target SQL Server instance or instances.",
+                           "",
+                           true,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
+                           "SqlCredential",
+                           "Allows you to login to SQL Server using alternative credentials.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "KeyCredential",
+                           "Pass a credential object for the password",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "SecurePassword",
+                           "The password to encrypt the exported key. This must be a SecureString.",
+                           "Password",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Path",
+                           "The directory to export the key. If no path is specified, the default backup directory for the instance will be used.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "WhatIf",
+                           "Shows what would happen if the command were to run. No actions are actually performed.",
+                           "wi",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Confirm",
+                           "Prompts you for confirmation before executing any changing operations within the command.",
+                           "cf",
+                           false,
+                           "false",
+                           ""
+                       ]
+                   ],
+        "Syntax":  "Backup-DbaServiceMasterKey [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-KeyCredential] \u003cPSCredential\u003e] [[-SecurePassword] \u003cSecureString\u003e] [[-Path] \u003cString\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Clear-DbaConnectionPool",
@@ -2500,13 +2590,13 @@
         "CommandName":  "Copy-DbaAgentSchedule",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Copy-DbaAgentSchedule",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eCopy-DbaAgentSchedule -Source sqlserver2014a -Destination sqlcluster\nCopies all shared job schedules from sqlserver2014a to sqlcluster using Windows credentials. If shared job schedules with the same name exist on sqlcluster, they will be skipped.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eCopy-DbaAgentSchedule -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force\nShows what would happen if the command were executed using force.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eCopy-DbaAgentSchedule -Source sqlserver2014a -Destination sqlcluster\nCopies all shared job schedules from sqlserver2014a to sqlcluster using Windows credentials. If shared job schedules with the same name exist on sqlcluster, they will be skipped.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eCopy-DbaAgentSchedule -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force\nShows what would happen if the command were executed using force.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaAgentSchedule -SqlInstance sql2016 | Out-GridView -Passthru | Copy-DbaAgentSchedule -Destination sqlcluster\nGets a list of schedule, outputs to a gridview which can be selected from, then copies to SqlInstance",
         "Params":  [
                        [
                            "Source",
                            "Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or higher.",
                            "",
-                           true,
+                           false,
                            "false",
                            ""
                        ],
@@ -2535,6 +2625,30 @@
                            ""
                        ],
                        [
+                           "Schedule",
+                           "Copy only specific schedules. Note that SQL Server allows multiple schedules with the same name. Use Id for more accurate schedule copies.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Id",
+                           "Copy only specific schedule.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "InputObject",
+                           "Enables piping from Get-DbaAgentSchedule",
+                           "",
+                           false,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
                            "Force",
                            "If this switch is enabled, the Operator will be dropped and recreated on Destination.",
                            "",
@@ -2545,7 +2659,7 @@
                        [
                            "EnableException",
                            "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
-                           "Silent",
+                           "",
                            false,
                            "false",
                            "False"
@@ -2567,7 +2681,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Copy-DbaAgentSchedule [-Source] \u003cDbaInstanceParameter\u003e [[-SourceSqlCredential] \u003cPSCredential\u003e] [-Destination] \u003cDbaInstanceParameter[]\u003e [[-DestinationSqlCredential] \u003cPSCredential\u003e] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Copy-DbaAgentSchedule [[-Source] \u003cDbaInstanceParameter\u003e] [[-SourceSqlCredential] \u003cPSCredential\u003e] [-Destination] \u003cDbaInstanceParameter[]\u003e [[-DestinationSqlCredential] \u003cPSCredential\u003e] [[-Schedule] \u003cString[]\u003e] [[-Id] \u003cInt32[]\u003e] [[-InputObject] \u003cJobSchedule[]\u003e] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Copy-DbaAgentServer",
@@ -7893,7 +8007,7 @@
         "CommandName":  "Find-DbaCommand",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Find-DbaCommand",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eFind-DbaCommand \"snapshot\"\nFor lazy typers: finds all commands searching the entire help for \"snapshot\"\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eFind-DbaCommand -Pattern \"snapshot\"\nFor rigorous typers: finds all commands searching the entire help for \"snapshot\"\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eFind-DbaCommand -Tag copy\nFinds all commands tagged with \"copy\"\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eFind-DbaCommand -Tag copy,user\nFinds all commands tagged with BOTH \"copy\" and \"user\"\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eFind-DbaCommand -Author chrissy\nFinds every command whose author contains our beloved \"chrissy\"\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eFind-DbaCommand -Author chrissy -Tag copy\nFinds every command whose author contains our beloved \"chrissy\" and it tagged as \"copy\"\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003eFind-DbaCommand -Pattern snapshot -Rebuild\nFinds all commands searching the entire help for \"snapshot\", rebuilding the index (good for developers)",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eFind-DbaCommand \"snapshot\"\nFor lazy typers: finds all commands searching the entire help for \"snapshot\"\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eFind-DbaCommand -Pattern \"snapshot\"\nFor rigorous typers: finds all commands searching the entire help for \"snapshot\"\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eFind-DbaCommand -Tag Job\nFinds all commands tagged with \"Job\"\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eFind-DbaCommand -Tag Job,Owner\nFinds all commands tagged with BOTH \"Job\" and \"Owner\"\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eFind-DbaCommand -Author Chrissy\nFinds every command whose author contains our beloved \"Chrissy\"\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eFind-DbaCommand -Author Chrissy -Tag AG\nFinds every command whose author contains our beloved \"Chrissy\" and it tagged as \"AG\"\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003eFind-DbaCommand -Pattern snapshot -Rebuild\nFinds all commands searching the entire help for \"snapshot\", rebuilding the index (good for developers)",
         "Params":  [
                        [
                            "Pattern",
@@ -8134,7 +8248,7 @@
         "CommandName":  "Find-DbaDbUnusedIndex",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Find-DbaDbUnusedIndex",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eFind-DbaDbUnusedIndex -SqlInstance sql2016 -Database db1, db2\nFinds unused databases on db1 and db2 on sql2016\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eFind-DbaDbUnusedIndex -SqlInstance sql2016 -SqlCredential $cred\nFinds unused databases on db1 and db2 on sql2016 using SQL Authentication to connect to the server\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaDatabase -SqlInstance sql2016 | Find-DbaDbUnusedIndex\nFinds unused databases on all databases on sql2016",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eFind-DbaDbUnusedIndex -SqlInstance sql2016 -Database db1, db2\nFinds unused indexes on db1 and db2 on sql2016\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eFind-DbaDbUnusedIndex -SqlInstance sql2016 -SqlCredential $cred\nFinds unused indexes on db1 and db2 on sql2016 using SQL Authentication to connect to the server\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaDatabase -SqlInstance sql2016 | Find-DbaDbUnusedIndex\nFinds unused indexes on all databases on sql2016",
         "Params":  [
                        [
                            "SqlInstance",
@@ -9733,7 +9847,7 @@
         "CommandName":  "Get-DbaAgentSchedule",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Get-DbaAgentSchedule",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaAgentSchedule -SqlInstance localhost\nReturns all SQL Agent Shared Schedules on the local default SQL Server instance\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaAgentSchedule -SqlInstance localhost, sql2016\nReturns all SQL Agent Shared Schedules for the local and sql2016 SQL Server instances\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaAgentSchedule -SqlInstance sql2016 -Schedule \"Maintenance10min\",\"Maintenance60min\"\nReturns the \"Maintenance10min\" \u0026 \"Maintenance60min\" schedules from the sql2016 SQL Server instance",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaAgentSchedule -SqlInstance localhost\nReturns all SQL Agent Shared Schedules on the local default SQL Server instance\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaAgentSchedule -SqlInstance localhost, sql2016\nReturns all SQL Agent Shared Schedules for the local and sql2016 SQL Server instances\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaAgentSchedule -SqlInstance localhost, sql2016 -Id 3\nReturns the SQL Agent Shared Schedules with the Id of 3\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaAgentSchedule -SqlInstance sql2016 -Schedule \"Maintenance10min\",\"Maintenance60min\"\nReturns the \"Maintenance10min\" \u0026 \"Maintenance60min\" schedules from the sql2016 SQL Server instance",
         "Params":  [
                        [
                            "SqlInstance",
@@ -9741,14 +9855,6 @@
                            "ServerInstance,Instance,SqlServer",
                            true,
                            "true (ByValue)",
-                           ""
-                       ],
-                       [
-                           "Schedule",
-                           "Parameter to filter the schedules returned",
-                           "Schedules",
-                           false,
-                           "false",
                            ""
                        ],
                        [
@@ -9760,15 +9866,31 @@
                            ""
                        ],
                        [
+                           "Schedule",
+                           "Parameter to filter the schedules returned",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Id",
+                           "Parameter to filter the schedules returned",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
                            "EnableException",
                            "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
-                           "Silent",
+                           "",
                            false,
                            "false",
                            "False"
                        ]
                    ],
-        "Syntax":  "Get-DbaAgentSchedule [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [-Schedule \u003cObject[]\u003e] [-SqlCredential \u003cPSCredential\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Get-DbaAgentSchedule [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Schedule \u003cString[]\u003e] [-Id \u003cInt32[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Get-DbaAgentServer",
@@ -10269,6 +10391,14 @@
                            ""
                        ],
                        [
+                           "IncludeMirror",
+                           "By default mirrors of backups are not returned, this switch will cause them to be returned",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
                            "Type",
                            "Specifies one or more types of backups to return. Valid options are \u0027Full\u0027, \u0027Log\u0027, \u0027Differential\u0027, \u0027File\u0027, \u0027Differential File\u0027, \u0027Partial Full\u0027, and \u0027Partial Differential\u0027. Otherwise, all types of \r\nbackups will be returned unless one of the -Last* switches is enabled.",
                            "",
@@ -10285,7 +10415,7 @@
                            "False"
                        ]
                    ],
-        "Syntax":  "Get-DbaBackupHistory -SqlInstance \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Database \u003cObject[]\u003e] [-ExcludeDatabase \u003cObject[]\u003e] [-IncludeCopyOnly] [-Since \u003cDateTime\u003e] [-RecoveryFork \u003cString\u003e] [-DeviceType \u003cString[]\u003e] [-Raw] [-LastLsn \u003cBigInteger\u003e] [-Type \u003cString[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]\nGet-DbaBackupHistory -SqlInstance \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Database \u003cObject[]\u003e] [-ExcludeDatabase \u003cObject[]\u003e] [-IncludeCopyOnly] [-Force] [-Since \u003cDateTime\u003e] [-RecoveryFork \u003cString\u003e] [-DeviceType \u003cString[]\u003e] [-Raw] [-LastLsn \u003cBigInteger\u003e] [-Type \u003cString[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]\nGet-DbaBackupHistory -SqlInstance \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Database \u003cObject[]\u003e] [-ExcludeDatabase \u003cObject[]\u003e] [-IncludeCopyOnly] [-Since \u003cDateTime\u003e] [-RecoveryFork \u003cString\u003e] [-Last] [-LastFull] [-LastDiff] [-LastLog] [-DeviceType \u003cString[]\u003e] [-Raw] [-LastLsn \u003cBigInteger\u003e] [-Type \u003cString[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Get-DbaBackupHistory -SqlInstance \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Database \u003cObject[]\u003e] [-ExcludeDatabase \u003cObject[]\u003e] [-IncludeCopyOnly] [-Since \u003cDateTime\u003e] [-RecoveryFork \u003cString\u003e] [-DeviceType \u003cString[]\u003e] [-Raw] [-LastLsn \u003cBigInteger\u003e] [-IncludeMirror] [-Type \u003cString[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]\nGet-DbaBackupHistory -SqlInstance \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Database \u003cObject[]\u003e] [-ExcludeDatabase \u003cObject[]\u003e] [-IncludeCopyOnly] [-Force] [-Since \u003cDateTime\u003e] [-RecoveryFork \u003cString\u003e] [-DeviceType \u003cString[]\u003e] [-Raw] [-LastLsn \u003cBigInteger\u003e] [-IncludeMirror] [-Type \u003cString[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]\nGet-DbaBackupHistory -SqlInstance \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Database \u003cObject[]\u003e] [-ExcludeDatabase \u003cObject[]\u003e] [-IncludeCopyOnly] [-Since \u003cDateTime\u003e] [-RecoveryFork \u003cString\u003e] [-Last] [-LastFull] [-LastDiff] [-LastLog] [-DeviceType \u003cString[]\u003e] [-Raw] [-LastLsn \u003cBigInteger\u003e] [-IncludeMirror] [-Type \u003cString[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Get-DbaBackupInformation",
@@ -18058,7 +18188,7 @@
                            "False"
                        ]
                    ],
-        "Syntax":  "Get-DbaRandomizedValue [[-DataType] \u003cString\u003e] [[-RandomizerType] \u003cString\u003e] [[-RandomizerSubType] \u003cString\u003e] [[-Min] \u003cInt64\u003e] [[-Max] \u003cInt64\u003e] [[-Precision] \u003cInt32\u003e] [[-CharacterString] \u003cString\u003e] [[-Format] \u003cString\u003e] [[-Symbol] \u003cString\u003e] [[-Locale] \u003cString\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Get-DbaRandomizedValue [[-DataType] \u003cString\u003e] [[-RandomizerType] \u003cString\u003e] [[-RandomizerSubType] \u003cString\u003e] [[-Min] \u003cObject\u003e] [[-Max] \u003cObject\u003e] [[-Precision] \u003cInt32\u003e] [[-CharacterString] \u003cString\u003e] [[-Format] \u003cString\u003e] [[-Symbol] \u003cString\u003e] [[-Locale] \u003cString\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Get-DbaRegistryRoot",
@@ -28340,7 +28470,7 @@
                        ],
                        [
                            "AccessToken",
-                           "Gets or sets the access token for the connection.",
+                           "Basically tells the connection string to ignore authentication. Does not include the AccessToken in the resulting connecstring.",
                            "",
                            false,
                            "false",
@@ -37052,7 +37182,7 @@
                            "",
                            false,
                            "false",
-                           ""
+                           "0"
                        ],
                        [
                            "FrequencySubdayType",
@@ -37151,7 +37281,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Set-DbaAgentSchedule [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [-Job] \u003cObject[]\u003e [-ScheduleName] \u003cString\u003e [[-NewName] \u003cString\u003e] [-Enabled] [-Disabled] [[-FrequencyType] \u003cObject\u003e] [[-FrequencyInterval] \u003cObject[]\u003e] [[-FrequencySubdayType] \u003cObject\u003e] [[-FrequencySubdayInterval] \u003cInt32\u003e] [[-FrequencyRelativeInterval] \u003cObject\u003e] [[-FrequencyRecurrenceFactor] \u003cInt32\u003e] [[-StartDate] \u003cString\u003e] [[-EndDate] \u003cString\u003e] [[-StartTime] \u003cString\u003e] [[-EndTime] \u003cString\u003e] [-EnableException] [-Force] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Set-DbaAgentSchedule [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [-Job] \u003cObject[]\u003e [-ScheduleName] \u003cString\u003e [[-NewName] \u003cString\u003e] [-Enabled] [-Disabled] [[-FrequencyType] \u003cObject\u003e] [[-FrequencyInterval] \u003cInt32\u003e] [[-FrequencySubdayType] \u003cObject\u003e] [[-FrequencySubdayInterval] \u003cInt32\u003e] [[-FrequencyRelativeInterval] \u003cObject\u003e] [[-FrequencyRecurrenceFactor] \u003cInt32\u003e] [[-StartDate] \u003cString\u003e] [[-EndDate] \u003cString\u003e] [[-StartTime] \u003cString\u003e] [[-EndTime] \u003cString\u003e] [-EnableException] [-Force] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Set-DbaAgentServer",
@@ -40423,7 +40553,7 @@
     },
     {
         "Name":  "Start-DbaMigration",
-        "Description":  "Start-DbaMigration consolidates most of the migration tools in dbatools into one command.  This is useful when you\u0027re looking to migrate entire instances. It less flexible than using the underlying functions. Think of it as an easy button. It migrates:\n\nAll user databases to exclude support databases such as ReportServerTempDB (Use -IncludeSupportDbs for this). Use -Exclude Databases to skip.\nAll logins. Use -Exclude Logins to skip.\nAll database mail objects. Use -Exclude DatabaseMail\nAll credentials. Use -Exclude Credentials to skip.\nAll objects within the Job Server (SQL Agent). Use -Exclude AgentServer to skip.\nAll linked servers. Use -Exclude LinkedServers to skip.\nAll groups and servers within Central Management Server. Use -Exclude CentralManagementServer to skip.\nAll SQL Server configuration objects (everything in sp_configure). Use -Exclude SpConfigure to skip.\nAll user objects in system databases. Use -Exclude SysDbUserObjects to skip.\nAll system triggers. Use -Exclude SystemTriggers to skip.\nAll system backup devices. Use -Exclude BackupDevices to skip.\nAll Audits. Use -Exclude Audits to skip.\nAll Endpoints. Use -Exclude Endpoints to skip.\nAll Extended Events. Use -Exclude ExtendedEvents to skip.\nAll Policy Management objects. Use -Exclude PolicyManagement to skip.\nAll Resource Governor objects. Use -Exclude ResourceGovernor to skip.\nAll Server Audit Specifications. Use -Exclude ServerAuditSpecifications to skip.\nAll Custom Errors (User Defined Messages). Use -Exclude CustomErrors to skip.\nCopies All Data Collector collection sets. Does not configure the server. Use -Exclude DataCollector to skip.\n\nThis script provides the ability to migrate databases using detach/copy/attach or backup/restore. SQL Server logins, including passwords, SID and database/server roles can also be migrated. In addition, job server objects can be migrated and server configuration settings can be exported or migrated. This script works with named instances, clusters and SQL Express.\n\nBy default, databases will be migrated to the destination SQL Server\u0027s default data and log directories. You can override this by specifying -ReuseSourceFolderStructure. Filestreams and filegroups are also migrated. Safety is emphasized.",
+        "Description":  "Start-DbaMigration consolidates most of the migration tools in dbatools into one command.  This is useful when you\u0027re looking to migrate entire instances. It less flexible than using the underlying functions. Think of it as an easy button. It migrates:\n\nAll user databases to exclude support databases such as ReportServerTempDB (Use -IncludeSupportDbs for this). Use -Exclude Databases to skip.\nAll logins. Use -Exclude Logins to skip.\nAll database mail objects. Use -Exclude DatabaseMail\nAll credentials. Use -Exclude Credentials to skip.\nAll objects within the Job Server (SQL Agent). Use -Exclude AgentServer to skip.\nAll linked servers. Use -Exclude LinkedServers to skip.\nAll groups and servers within Central Management Server. Use -Exclude CentralManagementServer to skip.\nAll SQL Server configuration objects (everything in sp_configure). Use -Exclude SpConfigure to skip.\nAll user objects in system databases. Use -Exclude SysDbUserObjects to skip.\nAll system triggers. Use -Exclude SystemTriggers to skip.\nAll system backup devices. Use -Exclude BackupDevices to skip.\nAll Audits. Use -Exclude Audits to skip.\nAll Endpoints. Use -Exclude Endpoints to skip.\nAll Extended Events. Use -Exclude ExtendedEvents to skip.\nAll Policy Management objects. Use -Exclude PolicyManagement to skip.\nAll Resource Governor objects. Use -Exclude ResourceGovernor to skip.\nAll Server Audit Specifications. Use -Exclude ServerAuditSpecifications to skip.\nAll Custom Errors (User Defined Messages). Use -Exclude CustomErrors to skip.\nAll Data Collector collection sets. Does not configure the server. Use -Exclude DataCollector to skip.\nAll startup procedures. Use -Exclude StartupProcedures to skip.\n\nThis script provides the ability to migrate databases using detach/copy/attach or backup/restore. SQL Server logins, including passwords, SID and database/server roles can also be migrated. In addition, job server objects can be migrated and server configuration settings can be exported or migrated. This script works with named instances, clusters and SQL Express.\n\nBy default, databases will be migrated to the destination SQL Server\u0027s default data and log directories. You can override this by specifying -ReuseSourceFolderStructure. Filestreams and filegroups are also migrated. Safety is emphasized.",
         "Tags":  "Migration",
         "Synopsis":  "Migrates SQL Server *ALL* databases, logins, database mail profiles/accounts, credentials, SQL Agent objects, linked servers,\nCentral Management Server objects, server configuration settings (sp_configure), user objects in systems databases,\nsystem triggers and backup devices from one SQL Server to another.\n\nFor more granular control, please use Exclude or use the other functions available within the dbatools module.",
         "Alias":  "Start-SqlMigration",
@@ -40539,7 +40669,7 @@
                        ],
                        [
                            "Exclude",
-                           "Exclude one or more objects to migrate\nDatabases\r\nLogins\r\nAgentServer\r\nCredentials\r\nLinkedServers\r\nSpConfigure\r\nCentralManagementServer\r\nDatabaseMail\r\nSysDbUserObjects\r\nSystemTriggers\r\nBackupDevices\r\nAudits\r\nEndpoints\r\nExtendedEvents\r\nPolicyManagement\r\nResourceGovernor\r\nServerAuditSpecifications\r\nCustomErrors\r\nDataCollector",
+                           "Exclude one or more objects to migrate\nDatabases\r\nLogins\r\nAgentServer\r\nCredentials\r\nLinkedServers\r\nSpConfigure\r\nCentralManagementServer\r\nDatabaseMail\r\nSysDbUserObjects\r\nSystemTriggers\r\nBackupDevices\r\nAudits\r\nEndpoints\r\nExtendedEvents\r\nPolicyManagement\r\nResourceGovernor\r\nServerAuditSpecifications\r\nCustomErrors\r\nDataCollector\r\nStartupProcedures",
                            "",
                            false,
                            "false",
@@ -40594,6 +40724,14 @@
                            "False"
                        ],
                        [
+                           "AzureCredential",
+                           "Name of the AzureCredential if SharedPath is Azure page blob",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
                            "EnableException",
                            "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
                            "",
@@ -40618,7 +40756,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Start-DbaMigration [[-Source] \u003cDbaInstanceParameter\u003e] [[-Destination] \u003cDbaInstanceParameter[]\u003e] [-DetachAttach] [-Reattach] [-BackupRestore] [[-SharedPath] \u003cString\u003e] [-WithReplace] [-NoRecovery] [-SetSourceReadOnly] [-ReuseSourceFolderStructure] [-IncludeSupportDbs] [[-SourceSqlCredential] \u003cPSCredential\u003e] [[-DestinationSqlCredential] \u003cPSCredential\u003e] [[-Exclude] \u003cString[]\u003e] [-DisableJobsOnDestination] [-DisableJobsOnSource] [-ExcludeSaRename] [-UseLastBackup] [-Continue] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Start-DbaMigration [[-Source] \u003cDbaInstanceParameter\u003e] [[-Destination] \u003cDbaInstanceParameter[]\u003e] [-DetachAttach] [-Reattach] [-BackupRestore] [[-SharedPath] \u003cString\u003e] [-WithReplace] [-NoRecovery] [-SetSourceReadOnly] [-ReuseSourceFolderStructure] [-IncludeSupportDbs] [[-SourceSqlCredential] \u003cPSCredential\u003e] [[-DestinationSqlCredential] \u003cPSCredential\u003e] [[-Exclude] \u003cString[]\u003e] [-DisableJobsOnDestination] [-DisableJobsOnSource] [-ExcludeSaRename] [-UseLastBackup] [-Continue] [-Force] [[-AzureCredential] \u003cString\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Start-DbaPfDataCollectorSet",
@@ -42610,7 +42748,7 @@
     },
     {
         "Name":  "Test-DbaDbCompression",
-        "Description":  "This function returns the results of a full table/index compression analysis and the estimated, best option to date for either NONE, Page, or Row Compression.\n\nRemember Uptime is critical, the longer uptime, the more accurate the analysis is, and it would be best if you utilized Get-DbaUptime first, before running this command.\n\nTest-DbaDbCompression script derived from GitHub and the tigertoolbox\n(https://github.com/Microsoft/tigertoolbox/tree/master/Evaluate-Compression-Gains)\nIn the output, you will find the following information:\n- Column Percent_Update shows the percentage of update operations on a specific table, index, or partition, relative to total operations on that object. The lower the percentage of Updates (that is, the table, index, or partition is infrequently updated), the better candidate it is for page compression.\n- Column Percent_Scan shows the percentage of scan operations on a table, index, or partition, relative to total operations on that object. The higher the value of Scan (that is, the table, index, or partition is mostly scanned), the better candidate it is for page compression.\n- Column Compression_Type_Recommendation can have four possible outputs indicating where there is most gain, if any: \u0027PAGE\u0027, \u0027ROW\u0027, \u0027NO_GAIN\u0027 or \u0027?\u0027. When the output is \u0027?\u0027 this approach could not give a recommendation, so as a rule of thumb I would lean to ROW if the object suffers mainly UPDATES, or PAGE if mainly INSERTS, but this is where knowing your workload is essential. When the output is \u0027NO_GAIN\u0027 well, that means that according to sp_estimate_data_compression_savings no space gains will be attained when compressing, as in the above output example, where compressing would grow the affected object.\n\nThis script will execute on the context of the current database.\nAlso be aware that this may take a while to execute on large objects, because if the IS locks taken by the\nsp_estimate_data_compression_savings cannot be honored, the SP will be blocked.\nIt only considers Row or Page Compression (not column compression)\nIt only evaluates User Tables",
+        "Description":  "This function returns the results of a full table/index compression analysis and the estimated, best option to date for either NONE, Page, or Row Compression.\n\nRemember Uptime is critical, the longer uptime, the more accurate the analysis is, and it would be best if you utilized Get-DbaUptime first, before running this command.\n\nTest-DbaDbCompression script derived from GitHub and the Tiger Team\u0027s repository: (https://github.com/Microsoft/tigertoolbox/tree/master/Evaluate-Compression-Gains)\nIn the output, you will find the following information:\n- Column Percent_Update shows the percentage of update operations on a specific table, index, or partition, relative to total operations on that object. The lower the percentage of Updates (that is, the table, index, or partition is infrequently updated), the better candidate it is for page compression.\n- Column Percent_Scan shows the percentage of scan operations on a table, index, or partition, relative to total operations on that object. The higher the value of Scan (that is, the table, index, or partition is mostly scanned), the better candidate it is for page compression.\n- Column Compression_Type_Recommendation can have four possible outputs indicating where there is most gain, if any: \u0027PAGE\u0027, \u0027ROW\u0027, \u0027NO_GAIN\u0027 or \u0027?\u0027. When the output is \u0027?\u0027 this approach could not give a recommendation, so as a rule of thumb I would lean to ROW if the object suffers mainly UPDATES, or PAGE if mainly INSERTS, but this is where knowing your workload is essential. When the output is \u0027NO_GAIN\u0027 well, that means that according to sp_estimate_data_compression_savings no space gains will be attained when compressing, as in the above output example, where compressing would grow the affected object.\n\nThis script will execute on the context of the current database.\nAlso be aware that this may take a while to execute on large objects, because if the IS locks taken by the\nsp_estimate_data_compression_savings cannot be honored, the SP will be blocked.\nIt only considers Row or Page Compression (not column compression)\nIt only evaluates User Tables",
         "Tags":  [
                      "Compression",
                      "Table",
@@ -42622,7 +42760,7 @@
         "CommandName":  "Test-DbaDbCompression",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Test-DbaDbCompression",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eTest-DbaDbCompression -SqlInstance localhost\nReturns results of all potential compression options for all databases for the default instance on the local host. Returns a recommendation of either Page, Row or NO_GAIN\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eTest-DbaDbCompression -SqlInstance ServerA\nReturns results of all potential compression options for all databases on the instance ServerA\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eTest-DbaDbCompression -SqlInstance ServerA -Database DBName | Out-GridView\nReturns results of all potential compression options for a single database DBName with the recommendation of either Page or Row or NO_GAIN in a nicely formatted GridView\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003e$cred = Get-Credential sqladmin\nPS C:\\\u003e Test-DbaDbCompression -SqlInstance ServerA -ExcludeDatabase MyDatabase -SqlCredential $cred\nReturns results of all potential compression options for all databases except MyDatabase on instance ServerA using SQL credentials to authentication to ServerA.\r\nReturns the recommendation of either Page, Row or NO_GAIN\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eTest-DbaDbCompression -SqlInstance ServerA -Schema Test -Table MyTable\nReturns results of all potential compression options for the Table Test.MyTable in instance ServerA on ServerA and ServerB.\r\nReturns the recommendation of either Page, Row or NO_GAIN.\r\nReturns a result for each partition of any Heap, Clustered or NonClustered index.\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eTest-DbaDbCompression -SqlInstance ServerA, ServerB -ResultSize 10\nReturns results of all potential compression options for all databases on ServerA and ServerB.\r\nReturns the recommendation of either Page, Row or NO_GAIN.\r\nReturns results for the top 10 partitions by TotalPages used per database.\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003eServerA | Test-DbaDbCompression -Schema Test -ResultSize 10 -Rank UsedPages -FilterBy Table\nReturns results of all potential compression options for all databases on ServerA containing a schema Test\r\nReturns results for the top 10 Tables by Used Pages per database.\r\nResults are split by Table, Index and Partition so more than 10 results may be returned.\n-------------------------- EXAMPLE 8 --------------------------\nPS C:\\\u003e$servers = \u0027Server1\u0027,\u0027Server2\u0027\nPS C:\\\u003e $servers | Test-DbaDbCompression -Database DBName | Out-GridView\nReturns results of all potential compression options for a single database DBName on Server1 or Server2\r\nReturns the recommendation of either Page, Row or NO_GAIN in a nicely formatted GridView\n-------------------------- EXAMPLE 9 --------------------------\nPS C:\\\u003e$cred = Get-Credential sqladmin\nPS C:\\\u003e Test-DbaDbCompression -SqlInstance ServerA -Database MyDB -SqlCredential $cred -Schema Test -Table Test1, Test2\nReturns results of all potential compression options for objects in Database MyDb on instance ServerA using SQL credentials to authentication to ServerA.\r\nReturns the recommendation of either Page, Row or NO_GAIN for tables with SchemA Test and name in Test1 or Test2\n-------------------------- EXAMPLE 10 --------------------------\nPS C:\\\u003e$servers = \u0027Server1\u0027,\u0027Server2\u0027\nPS C:\\\u003e foreach ($svr in $servers) {\r\n\u003e\u003e Test-DbaDbCompression -SqlInstance $svr | Export-Csv -Path C:\\temp\\CompressionAnalysisPAC.csv -Append\r\n\u003e\u003e }\nThis produces a full analysis of all your servers listed and is pushed to a csv for you to analyze.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eTest-DbaDbCompression -SqlInstance localhost\nReturns results of all potential compression options for all databases for the default instance on the local host. Returns a recommendation of either Page, Row or NO_GAIN\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eTest-DbaDbCompression -SqlInstance ServerA\nReturns results of all potential compression options for all databases on the instance ServerA\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eTest-DbaDbCompression -SqlInstance ServerA -Database DBName | Out-GridView\nReturns results of all potential compression options for a single database DBName with the recommendation of either Page or Row or NO_GAIN in a nicely formatted GridView\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003e$cred = Get-Credential sqladmin\nPS C:\\\u003e Test-DbaDbCompression -SqlInstance ServerA -ExcludeDatabase MyDatabase -SqlCredential $cred\nReturns results of all potential compression options for all databases except MyDatabase on instance ServerA using SQL credentials to authentication to ServerA.\r\nReturns the recommendation of either Page, Row or NO_GAIN\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eTest-DbaDbCompression -SqlInstance ServerA -Schema Test -Table MyTable\nReturns results of all potential compression options for the Table Test.MyTable in instance ServerA on ServerA and ServerB.\r\nReturns the recommendation of either Page, Row or NO_GAIN.\r\nReturns a result for each partition of any Heap, Clustered or NonClustered index.\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eTest-DbaDbCompression -SqlInstance ServerA, ServerB -ResultSize 10\nReturns results of all potential compression options for all databases on ServerA and ServerB.\r\nReturns the recommendation of either Page, Row or NO_GAIN.\r\nReturns results for the top 10 partitions by TotalPages used per database.\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003eServerA | Test-DbaDbCompression -Schema Test -ResultSize 10 -Rank UsedPages -FilterBy Table\nReturns results of all potential compression options for all databases on ServerA containing a schema Test\r\nReturns results for the top 10 Tables by Used Pages per database.\r\nResults are split by Table, Index and Partition so more than 10 results may be returned.\n-------------------------- EXAMPLE 8 --------------------------\nPS C:\\\u003e$servers = \u0027Server1\u0027,\u0027Server2\u0027\nPS C:\\\u003e $servers | Test-DbaDbCompression -Database DBName | Out-GridView\nReturns results of all potential compression options for a single database DBName on Server1 or Server2\r\nReturns the recommendation of either Page, Row or NO_GAIN in a nicely formatted GridView\n-------------------------- EXAMPLE 9 --------------------------\nPS C:\\\u003e$cred = Get-Credential sqladmin\nPS C:\\\u003e Test-DbaDbCompression -SqlInstance ServerA -Database MyDB -SqlCredential $cred -Schema Test -Table Test1, Test2\nReturns results of all potential compression options for objects in Database MyDb on instance ServerA using SQL credentials to authentication to ServerA.\r\nReturns the recommendation of either Page, Row or NO_GAIN for tables with Schema Test and name in Test1 or Test2\n-------------------------- EXAMPLE 10 --------------------------\nPS C:\\\u003e$servers = \u0027Server1\u0027,\u0027Server2\u0027\nPS C:\\\u003e foreach ($svr in $servers) {\r\n\u003e\u003e Test-DbaDbCompression -SqlInstance $svr | Export-Csv -Path C:\\temp\\CompressionAnalysisPAC.csv -Append\r\n\u003e\u003e }\nThis produces a full analysis of all your servers listed and is pushed to a csv for you to analyze.",
         "Params":  [
                        [
                            "SqlInstance",
