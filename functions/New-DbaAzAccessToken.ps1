@@ -70,7 +70,7 @@ function New-DbaAzAccessToken {
         [string]$Uri,
         [pscredential]$Credential,
         [string]$TenantId,
-        [string]$TenantAdName,
+        [string]$TenantName,
         [string]$ClientId,
         [switch]$EnableException
     )
@@ -79,7 +79,7 @@ function New-DbaAzAccessToken {
             Stop-Function -Message "You must specify Type and Subtype or Uri"
             return
         }
-        if ($Type -eq "ServicePrincipal" -and -not $Credential -and (-not $TenantId -or -not $TenantAdName)) {
+        if ($Type -eq "ServicePrincipal" -and -not $Credential -and -not (-not $TenantId -or -not $TenantName)) {
             Stop-Function -Message "You must specify Type and Subtype or Uri"
             return
         }
@@ -128,7 +128,7 @@ function New-DbaAzAccessToken {
                     if ($TenantId) {
                         $authority = "https://login.windows.net/$TenantId"
                     } else {
-                        $authority = "https://login.windows.net/$TenantAdName"
+                        $authority = "https://login.windows.net/$TenantName"
                     }
 
                     # thanks to Jose M Jurado - MSFT for this code
