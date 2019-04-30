@@ -25329,6 +25329,146 @@
         "Syntax":  "Invoke-DbaDbMirroring [[-Primary] \u003cDbaInstanceParameter\u003e] [[-PrimarySqlCredential] \u003cPSCredential\u003e] [-Mirror] \u003cDbaInstanceParameter[]\u003e [[-MirrorSqlCredential] \u003cPSCredential\u003e] [[-Witness] \u003cDbaInstanceParameter\u003e] [[-WitnessSqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString[]\u003e] [[-SharedPath] \u003cString\u003e] [[-InputObject] \u003cDatabase[]\u003e] [-UseLastBackup] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
+        "Name":  "Invoke-DbaDbPiiScan",
+        "Description":  "This command will go through the tables in your database and asses each column.\nIt will first check the columns names if it was named in such a way that it would indicate PII.\nThe next thing that it will do is pattern recognition by looking into the data from the table.",
+        "Tags":  [
+                     "Data Masking",
+                     "Database",
+                     "Personal Information",
+                     "GDPR"
+                 ],
+        "Synopsis":  "Command to return any columns that could potentially contain PII (Personal Identifiable Information)",
+        "Alias":  "",
+        "Author":  "Sander Stad (@sqlstad, sqlstad.nl)",
+        "CommandName":  "Invoke-DbaDbPiiScan",
+        "Availability":  "Windows, Linux, macOS",
+        "Links":  "https://dbatools.io/Invoke-DbaDbPiiScan",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eInvoke-DbaDbPiiScan -SqlInstance sql1 -Database db1\nScan the database db1 on instance sql1\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eInvoke-DbaDbPiiScan -SqlInstance sql1, sql2 -Database db1, db2\nScan multiple databases on multiple instances\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eInvoke-DbaDbPiiScan -SqlInstance sql1 -Database db2 -ExcludeColumn firstname\nScan database db2 but exclude the column firstname\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eInvoke-DbaDbPiiScan -SqlInstance sql1 -Database db2 -CountryCode US\nScan database db2 but only apply data patterns used for the United States\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eInvoke-DbaDbPiiScan -SqlInstance sql1 -Database db1 -PatternsFile c:\\pii\\patterns.json\nScans db1 on instance sql1 with additional custom patterns\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eInvoke-DbaDbPiiScan -SqlInstance sql1 -Database db1 -PatternsFile c:\\pii\\patterns.json -ExcludeDefaultPatterns\nScans db1 on instance sql1 with additional custom patterns, excluding the default patterns",
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "The target SQL Server instance or instances.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "SqlCredential",
+                           "Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Database",
+                           "Databases to process through",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Table",
+                           "Table(s) to process. By default all the tables will be processed",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Column",
+                           "Column(s) to process. By default all the columns will be processed",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Country",
+                           "Filter out the patterns and known types for one or more countries",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "CountryCode",
+                           "Filter out the patterns and known types for one or more country code",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "ExcludeTable",
+                           "Exclude certain tables",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "ExcludeColumn",
+                           "Exclude certain columns",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "SampleCount",
+                           "Amount of rows to sample to make an assessment. The default is 100",
+                           "",
+                           false,
+                           "false",
+                           "100"
+                       ],
+                       [
+                           "KnownNamesFile",
+                           "Points to a file containing the custom known names",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "PatternsFile",
+                           "Points to a file containing the custom patterns",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "ExcludeDefaultKnownNames",
+                           "Excludes the default known names",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "ExcludeDefaultPatterns",
+                           "Excludes the default patterns",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ]
+                   ],
+        "Syntax":  "Invoke-DbaDbPiiScan [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString[]\u003e] [[-Table] \u003cString[]\u003e] [[-Column] \u003cString[]\u003e] [[-Country] \u003cString[]\u003e] [[-CountryCode] \u003cString[]\u003e] [[-ExcludeTable] \u003cString[]\u003e] [[-ExcludeColumn] \u003cString[]\u003e] [[-SampleCount] \u003cInt32\u003e] [[-KnownNamesFile] \u003cString\u003e] [[-PatternsFile] \u003cString\u003e] [-ExcludeDefaultKnownNames] [-ExcludeDefaultPatterns] [-EnableException] [\u003cCommonParameters\u003e]"
+    },
+    {
         "Name":  "Invoke-DbaDbShrink",
         "Description":  "Shrinks all files in a database. Databases should be shrunk only when completely necessary.\n\nMany awesome SQL people have written about why you should not shrink your data files. Paul Randal and Kalen Delaney wrote great posts about this topic:\n\nhttp://www.sqlskills.com/blogs/paul/why-you-should-not-shrink-your-data-files\nhttp://sqlmag.com/sql-server/shrinking-data-files\n\nHowever, there are some cases where a database will need to be shrunk. In the event that you must shrink your database:\n\n1. Ensure you have plenty of space for your T-Log to grow\n2. Understand that shrinks require a lot of CPU and disk resources\n3. Consider running DBCC INDEXDEFRAG or ALTER INDEX ... REORGANIZE after the shrink is complete.",
         "Tags":  [
@@ -28076,6 +28216,65 @@
                        ]
                    ],
         "Syntax":  "New-DbaAvailabilityGroup [[-Primary] \u003cDbaInstanceParameter\u003e] [[-PrimarySqlCredential] \u003cPSCredential\u003e] [[-Secondary] \u003cDbaInstanceParameter[]\u003e] [[-SecondarySqlCredential] \u003cPSCredential\u003e] [-Name] \u003cString\u003e [-DtcSupport] [[-ClusterType] \u003cString\u003e] [[-AutomatedBackupPreference] \u003cString\u003e] [[-FailureConditionLevel] \u003cString\u003e] [[-HealthCheckTimeout] \u003cInt32\u003e] [-Basic] [-DatabaseHealthTrigger] [-Passthru] [[-Database] \u003cString[]\u003e] [[-SharedPath] \u003cString\u003e] [-UseLastBackup] [-Force] [[-AvailabilityMode] \u003cString\u003e] [[-FailoverMode] \u003cString\u003e] [[-BackupPriority] \u003cInt32\u003e] [[-ConnectionModeInPrimaryRole] \u003cString\u003e] \r\n[[-ConnectionModeInSecondaryRole] \u003cString\u003e] [[-SeedingMode] \u003cString\u003e] [[-Endpoint] \u003cString\u003e] [[-ReadonlyRoutingConnectionUrl] \u003cString\u003e] [[-Certificate] \u003cString\u003e] [[-IPAddress] \u003cIPAddress[]\u003e] [[-SubnetMask] \u003cIPAddress\u003e] [[-Port] \u003cInt32\u003e] [-Dhcp] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+    },
+    {
+        "Name":  "New-DbaAzAccessToken",
+        "Description":  "Generates an oauth2 access token.\n\nCurrently, only Azure Managed Identities are built-in.",
+        "Tags":  [
+                     "Connect",
+                     "Connection",
+                     "Azure"
+                 ],
+        "Synopsis":  "Simplifies the generation of Azure oauth2 tokens.",
+        "Alias":  "",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
+        "CommandName":  "New-DbaAzAccessToken",
+        "Availability":  "Windows, Linux, macOS",
+        "Links":  "https://dbatools.io/New-DbaAzAccessToken",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eNew-DbaAzAccessToken -Type ManagedIdentity -Subtype AzureSqlDb\nReturns a plain-text token for Managed Identities for SQL Azure Db.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003e$token = New-DbaAzAccessToken -Type ManagedIdentity -Subtype AzureSqlDb\nPS C:\\\u003e $server = Connect-DbaInstance -SqlInstance myserver.database.windows.net -Database mydb -AccessToken $token -DisableException\nGenerates a token then uses it to connect to Azure SQL DB",
+        "Params":  [
+                       [
+                           "Type",
+                           "The type of request. Currently, only Managed Identities are built-in.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Subtype",
+                           "The subtype. Auto-complete\nThis allows you to use a Windows VM system-assigned managed identity to access Azure SQL.\nRead more here: https://docs.microsoft.com/en-us/azure/active-directory/managed-identities-azure-resources/tutorial-windows-vm-access-sql",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Config",
+                           "The hashtable or json configuration.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Uri",
+                           "Plug-in a manual uri. If this is used, Type, Subtype and Config are ignored.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "EnableException",
+                           "By default in most of our commands, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\nThis command, however, gifts you  with \"sea of red\" exceptions, by default, because it is useful for advanced scripting.\nUsing this switch turns our \"nice by default\" feature on which makes errors into pretty warnings.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ]
+                   ],
+        "Syntax":  "New-DbaAzAccessToken [[-Type] \u003cString\u003e] [[-Subtype] \u003cString\u003e] [[-Config] \u003cObject\u003e] [[-Uri] \u003cString\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "New-DbaClientAlias",
