@@ -21,6 +21,12 @@ function New-DbaAzAccessToken {
     .PARAMETER Config
         The hashtable or json configuration.
 
+    .PARAMETER Credential
+        The credential for whatever
+
+    .PARAMETER TenantId
+        The tenant
+
     .PARAMETER Uri
         Plug-in a manual uri. If this is used, Type, Subtype and Config are ignored.
 
@@ -56,16 +62,23 @@ function New-DbaAzAccessToken {
     #>
     [CmdletBinding()]
     param (
-        [ValidateSet('ManagedIdentity')]
+        [ValidateSet('ManagedIdentity', 'ServicePrincipal')]
         [string]$Type,
         [ValidateSet('AzureSqlDb', 'Management')]
         [string]$Subtype,
         [object]$Config,
         [string]$Uri,
+        [pscredential]$Credential,
+        [string]$TenantId,
+        [string]$TenantAdName,
         [switch]$EnableException
     )
     begin {
         if (-not ($Type -and $Subtype) -and -not ($Uri)) {
+            Stop-Function -Message "You must specify Type and Subtype or Uri"
+            return
+        }
+        if ($Type -eq "ServicePrincipal" -and -not $Credential -and (-not $TenantId -or -not $TenantAdName)) {
             Stop-Function -Message "You must specify Type and Subtype or Uri"
             return
         }
@@ -85,8 +98,12 @@ function New-DbaAzAccessToken {
                 }
             }
         }
+        $clientId = '1950a258-227b-4e31-a9cf-717495945fc2'
     }
     process {
+        # fix help,
+        # test param combos
+        # 0c2cb2a0-9525-4b30-8524-40d0a1f50e74
         if (Test-FunctionInterrupt) { return }
         if ($Uri) {
             $params = @{
@@ -109,6 +126,23 @@ function New-DbaAzAccessToken {
                     }
                     $response = Invoke-TlsWebRequest @params -UseBasicParsing -ErrorAction Stop
                     ($response.Content | ConvertFrom-Json).access_token
+                }
+                ServicePrincipal {
+                    if ($TenantId) {
+                        $authority = "https://login.windows.net/$TenantId"
+                    } else {
+                        $authority = "https://login.windows.net/common/$TenantAdName"
+                    }
+
+                    #$authority = "https://login.windows.net/common/oauth2/authorize/"
+                    $cred = [Microsoft.IdentityModel.Clients.ActiveDirectory.UserPasswordCredential]::New($Credential.UserName, $Credential.Password)
+                    $context = [Microsoft.IdentityModel.Clients.ActiveDirectory.AuthenticationContext]::New($authority)
+                    [Microsoft.IdentityModel.Clients.ActiveDirectory.AuthenticationContextIntegratedAuthExtensions]::AcquireTokenAsync($context, "https://database.windows.net/", $clientId, $cred)
+                    #.Result.AccessToken
+
+                    #$context = New-Object -TypeName 'Microsoft.IdentityModel.Clients.ActiveDirectory.AuthenticationContext' -ArgumentList $authority
+                    #$authResult = $context.AcquireToken("https://database.windows.net/", $clientId, $clientcred)
+                    #$authResult.CreateAuthorizationHeader()
                 }
             }
         } catch {
